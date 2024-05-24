@@ -1132,7 +1132,7 @@ pub mod share {
                             req.insert_header("x-ms-meta", x_ms_meta);
                         }
                         if let Some(x_ms_share_quota) = &this.x_ms_share_quota {
-                            req.insert_header("x-ms-share-quota", &x_ms_share_quota.to_string());
+                            req.insert_header("x-ms-share-quota", x_ms_share_quota.to_string());
                         }
                         if let Some(x_ms_access_tier) = &this.x_ms_access_tier {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
@@ -1418,7 +1418,7 @@ pub mod share {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_lease_duration) = &this.x_ms_lease_duration {
-                            req.insert_header("x-ms-lease-duration", &x_ms_lease_duration.to_string());
+                            req.insert_header("x-ms-lease-duration", x_ms_lease_duration.to_string());
                         }
                         if let Some(x_ms_proposed_lease_id) = &this.x_ms_proposed_lease_id {
                             req.insert_header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
@@ -2023,7 +2023,7 @@ pub mod share {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_lease_break_period) = &this.x_ms_lease_break_period {
-                            req.insert_header("x-ms-lease-break-period", &x_ms_lease_break_period.to_string());
+                            req.insert_header("x-ms-lease-break-period", x_ms_lease_break_period.to_string());
                         }
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
@@ -2538,7 +2538,7 @@ pub mod share {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_share_quota) = &this.x_ms_share_quota {
-                            req.insert_header("x-ms-share-quota", &x_ms_share_quota.to_string());
+                            req.insert_header("x-ms-share-quota", x_ms_share_quota.to_string());
                         }
                         if let Some(x_ms_access_tier) = &this.x_ms_access_tier {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
@@ -3805,13 +3805,13 @@ pub mod directory {
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
                         if let Some(x_ms_file_creation_time) = &this.x_ms_file_creation_time {
-                            req.insert_header("x-ms-file-creation-time", &x_ms_file_creation_time.to_string());
+                            req.insert_header("x-ms-file-creation-time", x_ms_file_creation_time.to_string());
                         }
                         if let Some(x_ms_file_last_write_time) = &this.x_ms_file_last_write_time {
-                            req.insert_header("x-ms-file-last-write-time", &x_ms_file_last_write_time.to_string());
+                            req.insert_header("x-ms-file-last-write-time", x_ms_file_last_write_time.to_string());
                         }
                         if let Some(x_ms_file_change_time) = &this.x_ms_file_change_time {
-                            req.insert_header("x-ms-file-change-time", &x_ms_file_change_time.to_string());
+                            req.insert_header("x-ms-file-change-time", x_ms_file_change_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -4120,13 +4120,13 @@ pub mod directory {
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
                         if let Some(x_ms_file_creation_time) = &this.x_ms_file_creation_time {
-                            req.insert_header("x-ms-file-creation-time", &x_ms_file_creation_time.to_string());
+                            req.insert_header("x-ms-file-creation-time", x_ms_file_creation_time.to_string());
                         }
                         if let Some(x_ms_file_last_write_time) = &this.x_ms_file_last_write_time {
-                            req.insert_header("x-ms-file-last-write-time", &x_ms_file_last_write_time.to_string());
+                            req.insert_header("x-ms-file-last-write-time", x_ms_file_last_write_time.to_string());
                         }
                         if let Some(x_ms_file_change_time) = &this.x_ms_file_change_time {
-                            req.insert_header("x-ms-file-change-time", &x_ms_file_change_time.to_string());
+                            req.insert_header("x-ms-file-change-time", x_ms_file_change_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -4416,7 +4416,7 @@ pub mod directory {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_file_extended_info) = &this.x_ms_file_extended_info {
-                            req.insert_header("x-ms-file-extended-info", &x_ms_file_extended_info.to_string());
+                            req.insert_header("x-ms-file-extended-info", x_ms_file_extended_info.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         if let Some(value) = continuation.as_ref() {
@@ -4581,7 +4581,7 @@ pub mod directory {
                             req.url_mut().query_pairs_mut().append_pair("sharesnapshot", sharesnapshot);
                         }
                         if let Some(x_ms_recursive) = &this.x_ms_recursive {
-                            req.insert_header("x-ms-recursive", &x_ms_recursive.to_string());
+                            req.insert_header("x-ms-recursive", x_ms_recursive.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -4744,7 +4744,7 @@ pub mod directory {
                         }
                         req.insert_header("x-ms-handle-id", &this.x_ms_handle_id);
                         if let Some(x_ms_recursive) = &this.x_ms_recursive {
-                            req.insert_header("x-ms-recursive", &x_ms_recursive.to_string());
+                            req.insert_header("x-ms-recursive", x_ms_recursive.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -4975,13 +4975,10 @@ pub mod directory {
                         }
                         req.insert_header("x-ms-file-rename-source", &this.x_ms_file_rename_source);
                         if let Some(x_ms_file_rename_replace_if_exists) = &this.x_ms_file_rename_replace_if_exists {
-                            req.insert_header(
-                                "x-ms-file-rename-replace-if-exists",
-                                &x_ms_file_rename_replace_if_exists.to_string(),
-                            );
+                            req.insert_header("x-ms-file-rename-replace-if-exists", x_ms_file_rename_replace_if_exists.to_string());
                         }
                         if let Some(x_ms_file_rename_ignore_readonly) = &this.x_ms_file_rename_ignore_readonly {
-                            req.insert_header("x-ms-file-rename-ignore-readonly", &x_ms_file_rename_ignore_readonly.to_string());
+                            req.insert_header("x-ms-file-rename-ignore-readonly", x_ms_file_rename_ignore_readonly.to_string());
                         }
                         if let Some(x_ms_source_lease_id) = &this.x_ms_source_lease_id {
                             req.insert_header("x-ms-source-lease-id", x_ms_source_lease_id);
@@ -5801,7 +5798,7 @@ pub mod file {
                             req.insert_header("x-ms-range", x_ms_range);
                         }
                         if let Some(x_ms_range_get_content_md5) = &this.x_ms_range_get_content_md5 {
-                            req.insert_header("x-ms-range-get-content-md5", &x_ms_range_get_content_md5.to_string());
+                            req.insert_header("x-ms-range-get-content-md5", x_ms_range_get_content_md5.to_string());
                         }
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
@@ -6061,7 +6058,7 @@ pub mod file {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-content-length", &this.x_ms_content_length.to_string());
+                        req.insert_header("x-ms-content-length", this.x_ms_content_length.to_string());
                         req.insert_header("x-ms-type", &this.x_ms_type);
                         if let Some(x_ms_content_type) = &this.x_ms_content_type {
                             req.insert_header("x-ms-content-type", x_ms_content_type);
@@ -6092,13 +6089,13 @@ pub mod file {
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
                         if let Some(x_ms_file_creation_time) = &this.x_ms_file_creation_time {
-                            req.insert_header("x-ms-file-creation-time", &x_ms_file_creation_time.to_string());
+                            req.insert_header("x-ms-file-creation-time", x_ms_file_creation_time.to_string());
                         }
                         if let Some(x_ms_file_last_write_time) = &this.x_ms_file_last_write_time {
-                            req.insert_header("x-ms-file-last-write-time", &x_ms_file_last_write_time.to_string());
+                            req.insert_header("x-ms-file-last-write-time", x_ms_file_last_write_time.to_string());
                         }
                         if let Some(x_ms_file_change_time) = &this.x_ms_file_change_time {
-                            req.insert_header("x-ms-file-change-time", &x_ms_file_change_time.to_string());
+                            req.insert_header("x-ms-file-change-time", x_ms_file_change_time.to_string());
                         }
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
@@ -6720,7 +6717,7 @@ pub mod file {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_content_length) = &this.x_ms_content_length {
-                            req.insert_header("x-ms-content-length", &x_ms_content_length.to_string());
+                            req.insert_header("x-ms-content-length", x_ms_content_length.to_string());
                         }
                         if let Some(x_ms_content_type) = &this.x_ms_content_type {
                             req.insert_header("x-ms-content-type", x_ms_content_type);
@@ -6748,13 +6745,13 @@ pub mod file {
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
                         if let Some(x_ms_file_creation_time) = &this.x_ms_file_creation_time {
-                            req.insert_header("x-ms-file-creation-time", &x_ms_file_creation_time.to_string());
+                            req.insert_header("x-ms-file-creation-time", x_ms_file_creation_time.to_string());
                         }
                         if let Some(x_ms_file_last_write_time) = &this.x_ms_file_last_write_time {
-                            req.insert_header("x-ms-file-last-write-time", &x_ms_file_last_write_time.to_string());
+                            req.insert_header("x-ms-file-last-write-time", x_ms_file_last_write_time.to_string());
                         }
                         if let Some(x_ms_file_change_time) = &this.x_ms_file_change_time {
-                            req.insert_header("x-ms-file-change-time", &x_ms_file_change_time.to_string());
+                            req.insert_header("x-ms-file-change-time", x_ms_file_change_time.to_string());
                         }
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
@@ -7044,7 +7041,7 @@ pub mod file {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_lease_duration) = &this.x_ms_lease_duration {
-                            req.insert_header("x-ms-lease-duration", &x_ms_lease_duration.to_string());
+                            req.insert_header("x-ms-lease-duration", x_ms_lease_duration.to_string());
                         }
                         if let Some(x_ms_proposed_lease_id) = &this.x_ms_proposed_lease_id {
                             req.insert_header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
@@ -7653,7 +7650,7 @@ pub mod file {
                         }
                         req.insert_header("x-ms-range", &this.x_ms_range);
                         req.insert_header("x-ms-write", &this.x_ms_write);
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -7848,7 +7845,7 @@ pub mod file {
                             req.insert_header("x-ms-source-range", x_ms_source_range);
                         }
                         req.insert_header("x-ms-write", &this.x_ms_write);
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(x_ms_source_content_crc64) = &this.x_ms_source_content_crc64 {
                             req.insert_header("x-ms-source-content-crc64", x_ms_source_content_crc64);
                         }
@@ -8249,7 +8246,7 @@ pub mod file {
                             req.insert_header("x-ms-file-permission-copy-mode", x_ms_file_permission_copy_mode);
                         }
                         if let Some(x_ms_file_copy_ignore_readonly) = &this.x_ms_file_copy_ignore_readonly {
-                            req.insert_header("x-ms-file-copy-ignore-readonly", &x_ms_file_copy_ignore_readonly.to_string());
+                            req.insert_header("x-ms-file-copy-ignore-readonly", x_ms_file_copy_ignore_readonly.to_string());
                         }
                         if let Some(x_ms_file_attributes) = &this.x_ms_file_attributes {
                             req.insert_header("x-ms-file-attributes", x_ms_file_attributes);
@@ -8264,7 +8261,7 @@ pub mod file {
                             req.insert_header("x-ms-file-change-time", x_ms_file_change_time);
                         }
                         if let Some(x_ms_file_copy_set_archive) = &this.x_ms_file_copy_set_archive {
-                            req.insert_header("x-ms-file-copy-set-archive", &x_ms_file_copy_set_archive.to_string());
+                            req.insert_header("x-ms-file-copy-set-archive", x_ms_file_copy_set_archive.to_string());
                         }
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
@@ -8929,13 +8926,10 @@ pub mod file {
                         }
                         req.insert_header("x-ms-file-rename-source", &this.x_ms_file_rename_source);
                         if let Some(x_ms_file_rename_replace_if_exists) = &this.x_ms_file_rename_replace_if_exists {
-                            req.insert_header(
-                                "x-ms-file-rename-replace-if-exists",
-                                &x_ms_file_rename_replace_if_exists.to_string(),
-                            );
+                            req.insert_header("x-ms-file-rename-replace-if-exists", x_ms_file_rename_replace_if_exists.to_string());
                         }
                         if let Some(x_ms_file_rename_ignore_readonly) = &this.x_ms_file_rename_ignore_readonly {
-                            req.insert_header("x-ms-file-rename-ignore-readonly", &x_ms_file_rename_ignore_readonly.to_string());
+                            req.insert_header("x-ms-file-rename-ignore-readonly", x_ms_file_rename_ignore_readonly.to_string());
                         }
                         if let Some(x_ms_source_lease_id) = &this.x_ms_source_lease_id {
                             req.insert_header("x-ms-source-lease-id", x_ms_source_lease_id);

@@ -589,7 +589,7 @@ pub mod individual_enrollment {
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(x_ms_max_item_count) = &this.x_ms_max_item_count {
-                            req.insert_header("x-ms-max-item-count", &x_ms_max_item_count.to_string());
+                            req.insert_header("x-ms-max-item-count", x_ms_max_item_count.to_string());
                         }
                         if let Some(x_ms_continuation) = &this.x_ms_continuation {
                             req.insert_header("x-ms-continuation", x_ms_continuation);
@@ -1290,7 +1290,7 @@ pub mod enrollment_group {
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(x_ms_max_item_count) = &this.x_ms_max_item_count {
-                            req.insert_header("x-ms-max-item-count", &x_ms_max_item_count.to_string());
+                            req.insert_header("x-ms-max-item-count", x_ms_max_item_count.to_string());
                         }
                         if let Some(x_ms_continuation) = &this.x_ms_continuation {
                             req.insert_header("x-ms-continuation", x_ms_continuation);
@@ -1848,7 +1848,7 @@ pub mod device_registration_state {
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(x_ms_max_item_count) = &this.x_ms_max_item_count {
-                            req.insert_header("x-ms-max-item-count", &x_ms_max_item_count.to_string());
+                            req.insert_header("x-ms-max-item-count", x_ms_max_item_count.to_string());
                         }
                         if let Some(x_ms_continuation) = &this.x_ms_continuation {
                             req.insert_header("x-ms-continuation", x_ms_continuation);

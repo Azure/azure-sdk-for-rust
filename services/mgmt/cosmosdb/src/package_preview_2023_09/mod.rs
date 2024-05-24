@@ -23961,7 +23961,7 @@ pub mod cassandra_clusters {
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(x_ms_force_deallocate) = &this.x_ms_force_deallocate {
-                            req.insert_header("x-ms-force-deallocate", &x_ms_force_deallocate.to_string());
+                            req.insert_header("x-ms-force-deallocate", x_ms_force_deallocate.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");

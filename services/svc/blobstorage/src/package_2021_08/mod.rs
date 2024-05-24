@@ -1105,7 +1105,7 @@ pub mod service {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2021-08-06");
                         let req_body = azure_core::to_json(&this.body)?;
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         req.insert_header("content-type", &this.content_type);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -1954,7 +1954,7 @@ pub mod container {
                         if let Some(x_ms_deny_encryption_scope_override) = &this.x_ms_deny_encryption_scope_override {
                             req.insert_header(
                                 "x-ms-deny-encryption-scope-override",
-                                &x_ms_deny_encryption_scope_override.to_string(),
+                                x_ms_deny_encryption_scope_override.to_string(),
                             );
                         }
                         let req_body = azure_core::EMPTY_BODY;
@@ -2092,10 +2092,10 @@ pub mod container {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
@@ -2246,7 +2246,7 @@ pub mod container {
                             req.insert_header("x-ms-meta", x_ms_meta);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
@@ -2578,10 +2578,10 @@ pub mod container {
                             req.insert_header("x-ms-blob-public-access", x_ms_blob_public_access);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
@@ -2972,7 +2972,7 @@ pub mod container {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2021-08-06");
                         let req_body = azure_core::to_json(&this.body)?;
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         req.insert_header("content-type", &this.content_type);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -3317,16 +3317,16 @@ pub mod container {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_lease_duration) = &this.x_ms_lease_duration {
-                            req.insert_header("x-ms-lease-duration", &x_ms_lease_duration.to_string());
+                            req.insert_header("x-ms-lease-duration", x_ms_lease_duration.to_string());
                         }
                         if let Some(x_ms_proposed_lease_id) = &this.x_ms_proposed_lease_id {
                             req.insert_header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
@@ -3473,10 +3473,10 @@ pub mod container {
                         }
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
@@ -3627,10 +3627,10 @@ pub mod container {
                         }
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
@@ -3785,13 +3785,13 @@ pub mod container {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_lease_break_period) = &this.x_ms_lease_break_period {
-                            req.insert_header("x-ms-lease-break-period", &x_ms_lease_break_period.to_string());
+                            req.insert_header("x-ms-lease-break-period", x_ms_lease_break_period.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
@@ -3944,10 +3944,10 @@ pub mod container {
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         req.insert_header("x-ms-proposed-lease-id", &this.x_ms_proposed_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
@@ -5409,10 +5409,10 @@ pub mod blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(x_ms_range_get_content_md5) = &this.x_ms_range_get_content_md5 {
-                            req.insert_header("x-ms-range-get-content-md5", &x_ms_range_get_content_md5.to_string());
+                            req.insert_header("x-ms-range-get-content-md5", x_ms_range_get_content_md5.to_string());
                         }
                         if let Some(x_ms_range_get_content_crc64) = &this.x_ms_range_get_content_crc64 {
-                            req.insert_header("x-ms-range-get-content-crc64", &x_ms_range_get_content_crc64.to_string());
+                            req.insert_header("x-ms-range-get-content-crc64", x_ms_range_get_content_crc64.to_string());
                         }
                         if let Some(x_ms_encryption_key) = &this.x_ms_encryption_key {
                             req.insert_header("x-ms-encryption-key", x_ms_encryption_key);
@@ -5424,10 +5424,10 @@ pub mod blob {
                             req.insert_header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -5640,10 +5640,10 @@ pub mod blob {
                             req.insert_header("x-ms-delete-snapshots", x_ms_delete_snapshots);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -6065,10 +6065,10 @@ pub mod blob {
                             req.insert_header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -6563,10 +6563,10 @@ pub mod blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -6739,12 +6739,12 @@ pub mod blob {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
                             req.insert_header(
                                 "x-ms-immutability-policy-until-date",
-                                &x_ms_immutability_policy_until_date.to_string(),
+                                x_ms_immutability_policy_until_date.to_string(),
                             );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
@@ -6999,7 +6999,7 @@ pub mod blob {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("x-ms-legal-hold", &this.x_ms_legal_hold.to_string());
+                        req.insert_header("x-ms-legal-hold", this.x_ms_legal_hold.to_string());
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -7231,10 +7231,10 @@ pub mod blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7424,16 +7424,16 @@ pub mod blob {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_lease_duration) = &this.x_ms_lease_duration {
-                            req.insert_header("x-ms-lease-duration", &x_ms_lease_duration.to_string());
+                            req.insert_header("x-ms-lease-duration", x_ms_lease_duration.to_string());
                         }
                         if let Some(x_ms_proposed_lease_id) = &this.x_ms_proposed_lease_id {
                             req.insert_header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7609,10 +7609,10 @@ pub mod blob {
                         }
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7792,10 +7792,10 @@ pub mod blob {
                         }
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7977,10 +7977,10 @@ pub mod blob {
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         req.insert_header("x-ms-proposed-lease-id", &this.x_ms_proposed_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -8164,13 +8164,13 @@ pub mod blob {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_lease_break_period) = &this.x_ms_lease_break_period {
-                            req.insert_header("x-ms-lease-break-period", &x_ms_lease_break_period.to_string());
+                            req.insert_header("x-ms-lease-break-period", x_ms_lease_break_period.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -8406,10 +8406,10 @@ pub mod blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -8693,10 +8693,10 @@ pub mod blob {
                             req.insert_header("x-ms-rehydrate-priority", x_ms_rehydrate_priority);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
+                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
+                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -8708,10 +8708,10 @@ pub mod blob {
                             req.insert_header("x-ms-source-if-tags", x_ms_source_if_tags);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -8733,19 +8733,19 @@ pub mod blob {
                             req.insert_header("x-ms-tags", x_ms_tags);
                         }
                         if let Some(x_ms_seal_blob) = &this.x_ms_seal_blob {
-                            req.insert_header("x-ms-seal-blob", &x_ms_seal_blob.to_string());
+                            req.insert_header("x-ms-seal-blob", x_ms_seal_blob.to_string());
                         }
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
                             req.insert_header(
                                 "x-ms-immutability-policy-until-date",
-                                &x_ms_immutability_policy_until_date.to_string(),
+                                x_ms_immutability_policy_until_date.to_string(),
                             );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
                         }
                         if let Some(x_ms_legal_hold) = &this.x_ms_legal_hold {
-                            req.insert_header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                            req.insert_header("x-ms-legal-hold", x_ms_legal_hold.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -9032,10 +9032,10 @@ pub mod blob {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
+                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
+                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -9044,10 +9044,10 @@ pub mod blob {
                             req.insert_header("x-ms-source-if-none-match", x_ms_source_if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -9074,14 +9074,14 @@ pub mod blob {
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
                             req.insert_header(
                                 "x-ms-immutability-policy-until-date",
-                                &x_ms_immutability_policy_until_date.to_string(),
+                                x_ms_immutability_policy_until_date.to_string(),
                             );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
                         }
                         if let Some(x_ms_legal_hold) = &this.x_ms_legal_hold {
-                            req.insert_header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                            req.insert_header("x-ms-legal-hold", x_ms_legal_hold.to_string());
                         }
                         if let Some(x_ms_copy_source_authorization) = &this.x_ms_copy_source_authorization {
                             req.insert_header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
@@ -9839,10 +9839,10 @@ pub mod blob {
                             req.insert_header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -10848,7 +10848,7 @@ pub mod page_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(x_ms_access_tier) = &this.x_ms_access_tier {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
                         }
@@ -10889,10 +10889,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -10903,9 +10903,9 @@ pub mod page_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-blob-content-length", &this.x_ms_blob_content_length.to_string());
+                        req.insert_header("x-ms-blob-content-length", this.x_ms_blob_content_length.to_string());
                         if let Some(x_ms_blob_sequence_number) = &this.x_ms_blob_sequence_number {
-                            req.insert_header("x-ms-blob-sequence-number", &x_ms_blob_sequence_number.to_string());
+                            req.insert_header("x-ms-blob-sequence-number", x_ms_blob_sequence_number.to_string());
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
@@ -10916,14 +10916,14 @@ pub mod page_blob {
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
                             req.insert_header(
                                 "x-ms-immutability-policy-until-date",
-                                &x_ms_immutability_policy_until_date.to_string(),
+                                x_ms_immutability_policy_until_date.to_string(),
                             );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
                         }
                         if let Some(x_ms_legal_hold) = &this.x_ms_legal_hold {
-                            req.insert_header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                            req.insert_header("x-ms-legal-hold", x_ms_legal_hold.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -11179,7 +11179,7 @@ pub mod page_blob {
                         req.insert_header("x-ms-page-write", &this.x_ms_page_write);
                         req.insert_header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -11208,19 +11208,19 @@ pub mod page_blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(x_ms_if_sequence_number_le) = &this.x_ms_if_sequence_number_le {
-                            req.insert_header("x-ms-if-sequence-number-le", &x_ms_if_sequence_number_le.to_string());
+                            req.insert_header("x-ms-if-sequence-number-le", x_ms_if_sequence_number_le.to_string());
                         }
                         if let Some(x_ms_if_sequence_number_lt) = &this.x_ms_if_sequence_number_lt {
-                            req.insert_header("x-ms-if-sequence-number-lt", &x_ms_if_sequence_number_lt.to_string());
+                            req.insert_header("x-ms-if-sequence-number-lt", x_ms_if_sequence_number_lt.to_string());
                         }
                         if let Some(x_ms_if_sequence_number_eq) = &this.x_ms_if_sequence_number_eq {
-                            req.insert_header("x-ms-if-sequence-number-eq", &x_ms_if_sequence_number_eq.to_string());
+                            req.insert_header("x-ms-if-sequence-number-eq", x_ms_if_sequence_number_eq.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -11457,7 +11457,7 @@ pub mod page_blob {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2021-08-06");
                         req.insert_header("x-ms-page-write", &this.x_ms_page_write);
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -11480,19 +11480,19 @@ pub mod page_blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(x_ms_if_sequence_number_le) = &this.x_ms_if_sequence_number_le {
-                            req.insert_header("x-ms-if-sequence-number-le", &x_ms_if_sequence_number_le.to_string());
+                            req.insert_header("x-ms-if-sequence-number-le", x_ms_if_sequence_number_le.to_string());
                         }
                         if let Some(x_ms_if_sequence_number_lt) = &this.x_ms_if_sequence_number_lt {
-                            req.insert_header("x-ms-if-sequence-number-lt", &x_ms_if_sequence_number_lt.to_string());
+                            req.insert_header("x-ms-if-sequence-number-lt", x_ms_if_sequence_number_lt.to_string());
                         }
                         if let Some(x_ms_if_sequence_number_eq) = &this.x_ms_if_sequence_number_eq {
-                            req.insert_header("x-ms-if-sequence-number-eq", &x_ms_if_sequence_number_eq.to_string());
+                            req.insert_header("x-ms-if-sequence-number-eq", x_ms_if_sequence_number_eq.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -11787,7 +11787,7 @@ pub mod page_blob {
                         if let Some(x_ms_source_content_crc64) = &this.x_ms_source_content_crc64 {
                             req.insert_header("x-ms-source-content-crc64", x_ms_source_content_crc64);
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -11808,19 +11808,19 @@ pub mod page_blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(x_ms_if_sequence_number_le) = &this.x_ms_if_sequence_number_le {
-                            req.insert_header("x-ms-if-sequence-number-le", &x_ms_if_sequence_number_le.to_string());
+                            req.insert_header("x-ms-if-sequence-number-le", x_ms_if_sequence_number_le.to_string());
                         }
                         if let Some(x_ms_if_sequence_number_lt) = &this.x_ms_if_sequence_number_lt {
-                            req.insert_header("x-ms-if-sequence-number-lt", &x_ms_if_sequence_number_lt.to_string());
+                            req.insert_header("x-ms-if-sequence-number-lt", x_ms_if_sequence_number_lt.to_string());
                         }
                         if let Some(x_ms_if_sequence_number_eq) = &this.x_ms_if_sequence_number_eq {
-                            req.insert_header("x-ms-if-sequence-number-eq", &x_ms_if_sequence_number_eq.to_string());
+                            req.insert_header("x-ms-if-sequence-number-eq", x_ms_if_sequence_number_eq.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -11832,10 +11832,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
+                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
+                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -12052,10 +12052,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -12308,10 +12308,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -12552,10 +12552,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -12566,7 +12566,7 @@ pub mod page_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-blob-content-length", &this.x_ms_blob_content_length.to_string());
+                        req.insert_header("x-ms-blob-content-length", this.x_ms_blob_content_length.to_string());
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -12749,10 +12749,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -12765,7 +12765,7 @@ pub mod page_blob {
                         }
                         req.insert_header("x-ms-sequence-number-action", &this.x_ms_sequence_number_action);
                         if let Some(x_ms_blob_sequence_number) = &this.x_ms_blob_sequence_number {
-                            req.insert_header("x-ms-blob-sequence-number", &x_ms_blob_sequence_number.to_string());
+                            req.insert_header("x-ms-blob-sequence-number", x_ms_blob_sequence_number.to_string());
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
@@ -12937,10 +12937,10 @@ pub mod page_blob {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -13395,7 +13395,7 @@ pub mod append_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(x_ms_blob_content_type) = &this.x_ms_blob_content_type {
                             req.insert_header("x-ms-blob-content-type", x_ms_blob_content_type);
                         }
@@ -13433,10 +13433,10 @@ pub mod append_blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -13456,14 +13456,14 @@ pub mod append_blob {
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
                             req.insert_header(
                                 "x-ms-immutability-policy-until-date",
-                                &x_ms_immutability_policy_until_date.to_string(),
+                                x_ms_immutability_policy_until_date.to_string(),
                             );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
                         }
                         if let Some(x_ms_legal_hold) = &this.x_ms_legal_hold {
-                            req.insert_header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                            req.insert_header("x-ms-legal-hold", x_ms_legal_hold.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -13713,7 +13713,7 @@ pub mod append_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -13724,10 +13724,10 @@ pub mod append_blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(x_ms_blob_condition_maxsize) = &this.x_ms_blob_condition_maxsize {
-                            req.insert_header("x-ms-blob-condition-maxsize", &x_ms_blob_condition_maxsize.to_string());
+                            req.insert_header("x-ms-blob-condition-maxsize", x_ms_blob_condition_maxsize.to_string());
                         }
                         if let Some(x_ms_blob_condition_appendpos) = &this.x_ms_blob_condition_appendpos {
-                            req.insert_header("x-ms-blob-condition-appendpos", &x_ms_blob_condition_appendpos.to_string());
+                            req.insert_header("x-ms-blob-condition-appendpos", x_ms_blob_condition_appendpos.to_string());
                         }
                         if let Some(x_ms_encryption_key) = &this.x_ms_encryption_key {
                             req.insert_header("x-ms-encryption-key", x_ms_encryption_key);
@@ -13742,10 +13742,10 @@ pub mod append_blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -14051,7 +14051,7 @@ pub mod append_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -14071,16 +14071,16 @@ pub mod append_blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(x_ms_blob_condition_maxsize) = &this.x_ms_blob_condition_maxsize {
-                            req.insert_header("x-ms-blob-condition-maxsize", &x_ms_blob_condition_maxsize.to_string());
+                            req.insert_header("x-ms-blob-condition-maxsize", x_ms_blob_condition_maxsize.to_string());
                         }
                         if let Some(x_ms_blob_condition_appendpos) = &this.x_ms_blob_condition_appendpos {
-                            req.insert_header("x-ms-blob-condition-appendpos", &x_ms_blob_condition_appendpos.to_string());
+                            req.insert_header("x-ms-blob-condition-appendpos", x_ms_blob_condition_appendpos.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -14092,10 +14092,10 @@ pub mod append_blob {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
+                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
+                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -14283,10 +14283,10 @@ pub mod append_blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -14295,7 +14295,7 @@ pub mod append_blob {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(x_ms_blob_condition_appendpos) = &this.x_ms_blob_condition_appendpos {
-                            req.insert_header("x-ms-blob-condition-appendpos", &x_ms_blob_condition_appendpos.to_string());
+                            req.insert_header("x-ms-blob-condition-appendpos", x_ms_blob_condition_appendpos.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -14863,7 +14863,7 @@ pub mod block_blob {
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(x_ms_blob_content_type) = &this.x_ms_blob_content_type {
                             req.insert_header("x-ms-blob-content-type", x_ms_blob_content_type);
                         }
@@ -14904,10 +14904,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -14927,14 +14927,14 @@ pub mod block_blob {
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
                             req.insert_header(
                                 "x-ms-immutability-policy-until-date",
-                                &x_ms_immutability_policy_until_date.to_string(),
+                                x_ms_immutability_policy_until_date.to_string(),
                             );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
                         }
                         if let Some(x_ms_legal_hold) = &this.x_ms_legal_hold {
-                            req.insert_header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                            req.insert_header("x-ms-legal-hold", x_ms_legal_hold.to_string());
                         }
                         if let Some(x_ms_content_crc64) = &this.x_ms_content_crc64 {
                             req.insert_header("x-ms-content-crc64", x_ms_content_crc64);
@@ -15269,7 +15269,7 @@ pub mod block_blob {
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(x_ms_blob_content_type) = &this.x_ms_blob_content_type {
                             req.insert_header("x-ms-blob-content-type", x_ms_blob_content_type);
                         }
@@ -15310,10 +15310,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -15325,10 +15325,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
+                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
+                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -15350,7 +15350,7 @@ pub mod block_blob {
                         }
                         req.insert_header("x-ms-copy-source", &this.x_ms_copy_source);
                         if let Some(x_ms_copy_source_blob_properties) = &this.x_ms_copy_source_blob_properties {
-                            req.insert_header("x-ms-copy-source-blob-properties", &x_ms_copy_source_blob_properties.to_string());
+                            req.insert_header("x-ms-copy-source-blob-properties", x_ms_copy_source_blob_properties.to_string());
                         }
                         if let Some(x_ms_copy_source_authorization) = &this.x_ms_copy_source_authorization {
                             req.insert_header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
@@ -15544,7 +15544,7 @@ pub mod block_blob {
                         req.insert_header(azure_core::headers::VERSION, "2021-08-06");
                         let blockid = &this.blockid;
                         req.url_mut().query_pairs_mut().append_pair("blockid", blockid);
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -15795,7 +15795,7 @@ pub mod block_blob {
                         req.insert_header(azure_core::headers::VERSION, "2021-08-06");
                         let blockid = &this.blockid;
                         req.url_mut().query_pairs_mut().append_pair("blockid", blockid);
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         req.insert_header("x-ms-copy-source", &this.x_ms_copy_source);
                         if let Some(x_ms_source_range) = &this.x_ms_source_range {
                             req.insert_header("x-ms-source-range", x_ms_source_range);
@@ -15825,10 +15825,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
+                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
+                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -16376,10 +16376,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -16401,14 +16401,14 @@ pub mod block_blob {
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
                             req.insert_header(
                                 "x-ms-immutability-policy-until-date",
-                                &x_ms_immutability_policy_until_date.to_string(),
+                                x_ms_immutability_policy_until_date.to_string(),
                             );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
                         }
                         if let Some(x_ms_legal_hold) = &this.x_ms_legal_hold {
-                            req.insert_header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                            req.insert_header("x-ms-legal-hold", x_ms_legal_hold.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))

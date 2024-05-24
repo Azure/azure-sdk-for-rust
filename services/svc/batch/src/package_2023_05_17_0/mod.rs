@@ -321,10 +321,10 @@ pub mod application {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -474,10 +474,10 @@ pub mod application {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -964,10 +964,10 @@ pub mod pool {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1167,10 +1167,10 @@ pub mod pool {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1321,10 +1321,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1504,10 +1504,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -1516,10 +1516,10 @@ pub mod pool {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1696,10 +1696,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -1708,10 +1708,10 @@ pub mod pool {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1860,10 +1860,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -1872,10 +1872,10 @@ pub mod pool {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -2033,10 +2033,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -2045,10 +2045,10 @@ pub mod pool {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -2186,10 +2186,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -2355,10 +2355,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -2367,10 +2367,10 @@ pub mod pool {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2515,10 +2515,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2694,10 +2694,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -2706,10 +2706,10 @@ pub mod pool {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2870,10 +2870,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -2882,10 +2882,10 @@ pub mod pool {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -3027,10 +3027,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3194,10 +3194,10 @@ pub mod pool {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -3206,10 +3206,10 @@ pub mod pool {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3413,10 +3413,10 @@ pub mod account {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -3590,10 +3590,10 @@ pub mod account {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -3879,10 +3879,10 @@ pub mod certificate {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -4033,10 +4033,10 @@ pub mod certificate {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -4174,10 +4174,10 @@ pub mod certificate {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -4332,10 +4332,10 @@ pub mod certificate {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -4487,10 +4487,10 @@ pub mod certificate {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -4881,19 +4881,19 @@ pub mod file {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(ocp_range) = &this.ocp_range {
                             req.insert_header("ocp-range", ocp_range);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5048,10 +5048,10 @@ pub mod file {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5230,16 +5230,16 @@ pub mod file {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5429,19 +5429,19 @@ pub mod file {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(ocp_range) = &this.ocp_range {
                             req.insert_header("ocp-range", ocp_range);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5596,10 +5596,10 @@ pub mod file {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5778,16 +5778,16 @@ pub mod file {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5975,10 +5975,10 @@ pub mod file {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -6176,10 +6176,10 @@ pub mod file {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -6576,10 +6576,10 @@ pub mod job_schedule {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -6588,10 +6588,10 @@ pub mod job_schedule {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -6768,10 +6768,10 @@ pub mod job_schedule {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -6780,10 +6780,10 @@ pub mod job_schedule {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -6947,10 +6947,10 @@ pub mod job_schedule {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -6959,10 +6959,10 @@ pub mod job_schedule {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -7111,10 +7111,10 @@ pub mod job_schedule {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7123,10 +7123,10 @@ pub mod job_schedule {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -7284,10 +7284,10 @@ pub mod job_schedule {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7296,10 +7296,10 @@ pub mod job_schedule {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -7461,10 +7461,10 @@ pub mod job_schedule {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7473,10 +7473,10 @@ pub mod job_schedule {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -7643,10 +7643,10 @@ pub mod job_schedule {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7655,10 +7655,10 @@ pub mod job_schedule {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -7821,10 +7821,10 @@ pub mod job_schedule {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7833,10 +7833,10 @@ pub mod job_schedule {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -8030,10 +8030,10 @@ pub mod job_schedule {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -8184,10 +8184,10 @@ pub mod job_schedule {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -8609,10 +8609,10 @@ pub mod job {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -8621,10 +8621,10 @@ pub mod job {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -8801,10 +8801,10 @@ pub mod job {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -8813,10 +8813,10 @@ pub mod job {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -8980,10 +8980,10 @@ pub mod job {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -8992,10 +8992,10 @@ pub mod job {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -9144,10 +9144,10 @@ pub mod job {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -9156,10 +9156,10 @@ pub mod job {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -9324,10 +9324,10 @@ pub mod job {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -9336,10 +9336,10 @@ pub mod job {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -9500,10 +9500,10 @@ pub mod job {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -9512,10 +9512,10 @@ pub mod job {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -9690,10 +9690,10 @@ pub mod job {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -9702,10 +9702,10 @@ pub mod job {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -9893,10 +9893,10 @@ pub mod job {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -10047,10 +10047,10 @@ pub mod job {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -10239,10 +10239,10 @@ pub mod job {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -10436,10 +10436,10 @@ pub mod job {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -10585,10 +10585,10 @@ pub mod job {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -10988,10 +10988,10 @@ pub mod task {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -11143,10 +11143,10 @@ pub mod task {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -11279,10 +11279,10 @@ pub mod task {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -11479,10 +11479,10 @@ pub mod task {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -11491,10 +11491,10 @@ pub mod task {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -11672,10 +11672,10 @@ pub mod task {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -11684,10 +11684,10 @@ pub mod task {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -11837,10 +11837,10 @@ pub mod task {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -11849,10 +11849,10 @@ pub mod task {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -12001,10 +12001,10 @@ pub mod task {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -12184,10 +12184,10 @@ pub mod task {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -12196,10 +12196,10 @@ pub mod task {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -12368,10 +12368,10 @@ pub mod task {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -12380,10 +12380,10 @@ pub mod task {
                             req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", &if_modified_since.to_string());
+                            req.insert_header("if-modified-since", if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
+                            req.insert_header("if-unmodified-since", if_unmodified_since.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -12783,10 +12783,10 @@ pub mod compute_node {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -12933,10 +12933,10 @@ pub mod compute_node {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -13069,10 +13069,10 @@ pub mod compute_node {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -13227,10 +13227,10 @@ pub mod compute_node {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -13398,10 +13398,10 @@ pub mod compute_node {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -13556,10 +13556,10 @@ pub mod compute_node {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -13717,10 +13717,10 @@ pub mod compute_node {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -13863,10 +13863,10 @@ pub mod compute_node {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -14012,10 +14012,10 @@ pub mod compute_node {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -14172,10 +14172,10 @@ pub mod compute_node {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -14325,10 +14325,10 @@ pub mod compute_node {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         req.insert_header("content-type", "application/json; odata=minimalmetadata");
                         let req_body = azure_core::to_json(&this.upload_batch_service_logs_configuration)?;
@@ -14527,10 +14527,10 @@ pub mod compute_node {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -14743,10 +14743,10 @@ pub mod compute_node_extension {
                             req.insert_header("client-request-id", client_request_id);
                         }
                         if let Some(return_client_request_id) = &this.return_client_request_id {
-                            req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                            req.insert_header("return-client-request-id", return_client_request_id.to_string());
                         }
                         if let Some(ocp_date) = &this.ocp_date {
-                            req.insert_header("ocp-date", &ocp_date.to_string());
+                            req.insert_header("ocp-date", ocp_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -14937,10 +14937,10 @@ pub mod compute_node_extension {
                                     req.insert_header("client-request-id", client_request_id);
                                 }
                                 if let Some(return_client_request_id) = &this.return_client_request_id {
-                                    req.insert_header("return-client-request-id", &return_client_request_id.to_string());
+                                    req.insert_header("return-client-request-id", return_client_request_id.to_string());
                                 }
                                 if let Some(ocp_date) = &this.ocp_date {
-                                    req.insert_header("ocp-date", &ocp_date.to_string());
+                                    req.insert_header("ocp-date", ocp_date.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
