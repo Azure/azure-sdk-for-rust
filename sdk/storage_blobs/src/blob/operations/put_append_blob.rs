@@ -11,6 +11,8 @@ operation! {
     ?content_disposition: BlobContentDisposition,
     ?metadata: Metadata,
     ?tags: Tags,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
     ?lease_id: LeaseId
 }
 
@@ -31,6 +33,8 @@ impl PutAppendBlobBuilder {
                     headers.add(m);
                 }
             }
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
             headers.add(self.lease_id);
 
             let mut request =
