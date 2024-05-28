@@ -116,8 +116,7 @@ jobs:
         include:
           - no_clippy: false
           - build: nightly
-            ${{ github.event_name != 'scheduled' }}:
-              no_clippy: true
+            no_clippy: ${{ github.event_name != 'scheduled' }}
             experimental: true
     steps:
       - uses: actions/checkout@v4
