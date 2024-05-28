@@ -114,18 +114,19 @@ jobs:
         experimental:
           - false
         include:
+          - no_clippy: false
           - build: nightly
-            clippy: false
+            ${{ github.event_name != 'scheduled' }}:
+              no_clippy: true
             experimental: true
-          - clippy: true
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: services
-      - run: echo "NO_CLIPPY=true" >> $GITHUB_ENV
-        if: github.event_name != 'schedule' && ! matrix.clippy
       - run: eng/scripts/services_tests.sh ${{ matrix.build }}
+        env:
+          NO_CLIPPY: ${{ matrix.no_clippy }}
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
