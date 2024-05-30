@@ -23,7 +23,7 @@ impl GetPartitionKeyRangesBuilder {
                     self.client.database_client().database_name(),
                     self.client.collection_name()
                 ),
-                azure_core::Method::Get,
+                azure_core::Method::GET,
             );
 
             request.insert_headers(&self.if_match_condition);

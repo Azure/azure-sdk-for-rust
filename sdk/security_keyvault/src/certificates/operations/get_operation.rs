@@ -14,7 +14,7 @@ impl GetCertificateOperationBuilder {
             uri.set_path(&format!("certificates/{}/pending", self.name));
 
             let headers = Headers::new();
-            let mut request = KeyvaultClient::finalize_request(uri, Method::Get, headers, None);
+            let mut request = KeyvaultClient::finalize_request(uri, Method::GET, headers, None);
 
             self.client
                 .keyvault_client

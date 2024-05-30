@@ -3,8 +3,8 @@
 use crate::identifier::parse_ident;
 use crate::{Error, ErrorKind, Result};
 use autorust_openapi::StatusCode;
-use heck::ToPascalCase;
-use http_types::StatusCode as HttpStatusCode;
+use heck::ToShoutySnakeCase;
+use http::StatusCode as HttpStatusCode;
 use proc_macro2::Ident;
 use std::convert::TryFrom;
 
@@ -16,16 +16,20 @@ fn try_from_u16(status_code: u16) -> Result<HttpStatusCode> {
 /// Get the status code canonical reason
 pub fn get_status_code_name(status_code: &StatusCode) -> Result<&'static str> {
     match status_code {
-        StatusCode::Code(status_code) => Ok(try_from_u16(*status_code)?.canonical_reason()),
+        StatusCode::Code(status_code) => Ok(try_from_u16(*status_code)?.canonical_reason().ok_or_else(|| {
+            Error::with_message(ErrorKind::Parse, || {
+                format!("failed to get canonical reason for status code '{status_code}'")
+            })
+        })?),
         StatusCode::Default => Err(Error::with_message(ErrorKind::Parse, || "no status code name for default")),
     }
 }
 
-/// The canonical name in camel case.
-/// examples: Ok, Created, LoopDetected
+/// The canonical name in SHOUTY_SNAKE_CASE.
+/// examples: OK, CRATED, LOOP_DETECTED
 pub fn get_status_code_ident(status_code: &StatusCode) -> Result<Ident> {
     match status_code {
-        StatusCode::Code(_) => parse_ident(&get_status_code_name(status_code)?.to_pascal_case()),
+        StatusCode::Code(_) => parse_ident(&get_status_code_name(status_code)?.to_shouty_snake_case()),
         StatusCode::Default => parse_ident("Default"),
     }
 }

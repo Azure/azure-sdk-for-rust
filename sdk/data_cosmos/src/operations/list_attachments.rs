@@ -33,7 +33,7 @@ impl ListAttachmentsBuilder {
                         this.client.collection_client().collection_name(),
                         this.client.document_name()
                     ),
-                    azure_core::Method::Get,
+                    azure_core::Method::GET,
                 );
 
                 request.insert_headers(&this.if_match_condition);

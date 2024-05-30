@@ -16,7 +16,7 @@ impl DeleteStoredProcedureBuilder {
         Box::pin(async move {
             let mut request = self
                 .client
-                .stored_procedure_request(azure_core::Method::Delete);
+                .stored_procedure_request(azure_core::Method::DELETE);
 
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

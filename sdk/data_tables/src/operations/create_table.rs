@@ -30,7 +30,7 @@ impl CreateTableBuilder {
             headers.insert(PREFER, "return-content");
 
             let mut request =
-                TableClient::finalize_request(url, Method::Post, headers, Some(body))?;
+                TableClient::finalize_request(url, Method::POST, headers, Some(body))?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

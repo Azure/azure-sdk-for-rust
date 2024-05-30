@@ -59,7 +59,7 @@ impl UpdateSecretBuilder {
 
             let headers = Headers::new();
             let mut request =
-                KeyvaultClient::finalize_request(uri, Method::Patch, headers, Some(body.into()));
+                KeyvaultClient::finalize_request(uri, Method::PATCH, headers, Some(body.into()));
 
             self.client
                 .keyvault_client

@@ -37,7 +37,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
             self.position.append_to_url_query(&mut url);
             self.retain_uncommitted_data.append_to_url_query(&mut url);
 
-            let mut request = Request::new(url, azure_core::Method::Patch);
+            let mut request = Request::new(url, azure_core::Method::PATCH);
 
             request.insert_headers(&self.acl);
             request.insert_headers(&self.properties);

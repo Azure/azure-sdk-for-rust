@@ -14,7 +14,7 @@ impl DeleteFileSystemBuilder {
             let mut url = self.client.url()?;
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
-            let mut request = Request::new(url, azure_core::Method::Delete);
+            let mut request = Request::new(url, azure_core::Method::DELETE);
 
             request.insert_headers(&self.if_modified_since_condition);
             request.insert_headers(&ContentLength::new(0));

@@ -20,7 +20,7 @@ impl SetFileSystemPropertiesBuilder {
             let mut url = self.client.url()?;
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
-            let mut request = Request::new(url, azure_core::Method::Patch);
+            let mut request = Request::new(url, azure_core::Method::PATCH);
 
             request.insert_headers(&self.if_modified_since_condition);
             request.insert_headers(&self.properties);

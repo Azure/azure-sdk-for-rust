@@ -19,7 +19,7 @@ impl RestoreSecretBuilder {
             let headers = Headers::new();
             let mut request = KeyvaultClient::finalize_request(
                 uri,
-                Method::Post,
+                Method::POST,
                 headers,
                 Some(serde_json::Value::Object(request_body).to_string().into()),
             );

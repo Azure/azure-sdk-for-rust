@@ -81,7 +81,7 @@ impl CreateOrUpdateConfigurationBuilder {
                 self.client.iot_hub_name, &self.configuration_id, API_VERSION
             );
 
-            let mut request = self.client.finalize_request(&uri, Method::Put)?;
+            let mut request = self.client.finalize_request(&uri, Method::PUT)?;
 
             match &self.etag {
                 Some(etag) => {

@@ -56,7 +56,7 @@ impl ImportCertificateBuilder {
 
             let headers = Headers::new();
             let mut request =
-                KeyvaultClient::finalize_request(uri, Method::Post, headers, Some(body.into()));
+                KeyvaultClient::finalize_request(uri, Method::POST, headers, Some(body.into()));
 
             self.client
                 .keyvault_client

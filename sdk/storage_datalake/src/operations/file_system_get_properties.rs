@@ -18,7 +18,7 @@ impl GetFileSystemPropertiesBuilder {
             let mut url = self.client.url()?;
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
-            let mut request = Request::new(url, azure_core::Method::Head);
+            let mut request = Request::new(url, azure_core::Method::HEAD);
 
             request.insert_headers(&ContentLength::new(0));
 

@@ -15,7 +15,7 @@ operation! {
 impl CreateDatabaseBuilder {
     pub fn into_future(self) -> CreateDatabase {
         Box::pin(async move {
-            let mut request = self.client.request("dbs", azure_core::Method::Post);
+            let mut request = self.client.request("dbs", azure_core::Method::POST);
 
             #[derive(Serialize)]
             struct CreateDatabaseBody<'a> {

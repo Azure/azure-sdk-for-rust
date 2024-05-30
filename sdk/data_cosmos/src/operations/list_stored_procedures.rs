@@ -27,7 +27,7 @@ impl ListStoredProceduresBuilder {
                         this.client.database_client().database_name(),
                         this.client.collection_name(),
                     ),
-                    azure_core::Method::Get,
+                    azure_core::Method::GET,
                 );
 
                 if let Some(cl) = &this.consistency_level {

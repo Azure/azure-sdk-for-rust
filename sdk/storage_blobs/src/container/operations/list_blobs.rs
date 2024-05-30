@@ -74,7 +74,7 @@ impl ListBlobsBuilder {
                 }
 
                 let mut request =
-                    ContainerClient::finalize_request(url, Method::Get, Headers::new(), None)?;
+                    ContainerClient::finalize_request(url, Method::GET, Headers::new(), None)?;
 
                 let response = this.client.send(&mut ctx, &mut request).await?;
 
