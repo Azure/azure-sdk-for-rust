@@ -320,6 +320,18 @@ pub struct RefKey {
     pub name: String,
 }
 
+impl Ord for RefKey {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.name.cmp(&other.name)
+    }
+}
+
+impl PartialOrd for RefKey {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.name.cmp(&other.name))
+    }
+}
+
 #[derive(Clone)]
 pub struct ResolvedSchema {
     pub ref_key: Option<RefKey>,
