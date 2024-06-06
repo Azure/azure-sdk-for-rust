@@ -1,3 +1,4 @@
+use crate::policies::BearerTokenCredentialPolicy;
 use crate::policies::TransportPolicy;
 use crate::policies::{CustomHeadersPolicy, Policy, TelemetryPolicy};
 use crate::{ClientOptions, Context, Request, Response};
