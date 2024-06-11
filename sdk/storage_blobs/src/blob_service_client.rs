@@ -23,9 +23,9 @@ impl<T: AccountStructure> BlobServiceClient<T> {
         &self.endpoint
     }
 
-    pub fn get_blob_conatiner_client(&self, container_name: &str) -> BlobContainerClient<Unset> {
-        todo!()
-    }
+    // pub fn get_blob_conatiner_client(&self, container_name: &str) -> BlobContainerClient<Unset> {
+    //     todo!()
+    // }
 
     pub fn get_containers(&self) -> Pageable<ContainerItem, HttpError> {
         todo!()
