@@ -27,7 +27,7 @@ uuid = { version = "1.0",  features = ["v4"] }
 pin-project = "1.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-async-process = "2.0"
+tokio = { version = "1", features = ["process"] }
 
 [target.'cfg(unix)'.dependencies]
 tz-rs = { version = "0.6", optional = true }
