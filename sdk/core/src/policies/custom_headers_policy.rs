@@ -27,7 +27,7 @@ impl Policy for CustomHeadersPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        if let Some(CustomHeaders(custom_headers)) = ctx.get::<CustomHeaders>() {
+        if let Some(CustomHeaders(custom_headers)) = ctx.value::<CustomHeaders>() {
             custom_headers
                 .iter()
                 .for_each(|(header_name, header_value)| {

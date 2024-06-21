@@ -315,7 +315,7 @@ impl TransportOptions {
     /// Use these options to send a request.
     pub async fn send(
         &self,
-        ctx: &crate::Context,
+        ctx: &crate::Context<'_>,
         request: &mut crate::Request,
     ) -> crate::Result<crate::Response> {
         use TransportOptionsImpl as I;
