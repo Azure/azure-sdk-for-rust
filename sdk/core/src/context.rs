@@ -19,7 +19,7 @@ impl<'a> Context<'a> {
 
     /// Returns a new `Context` that borrows the type map of the given `context`.
     ///
-    /// Once you [`Context::insert`] or [`Context::remove`] entities the type map is copied.
+    /// Once you [`Context::insert`] entities the type map is copied.
     #[must_use]
     pub fn with_context<'b>(context: &'a Context) -> Context<'b>
     where
@@ -41,7 +41,7 @@ impl<'a> Context<'a> {
     /// let context = Context::new()
     ///     .with_value(1)
     ///     .with_value("test");
-    /// assert_eq!(context.len(), 2);
+    /// assert_eq!(context.value(), Some(&"test"));
     /// ```
     #[must_use]
     pub fn with_value<E>(mut self, entity: E) -> Self
@@ -79,28 +79,6 @@ impl<'a> Context<'a> {
             .map(|displaced| displaced.downcast().expect("failed to unwrap downcast"))
     }
 
-    /// Removes an entity from the type map. If present, the entity will be returned.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use azure_core::Context;
-    /// use std::sync::Arc;
-    ///
-    /// let mut context = Context::new().with_value("a".to_string());
-    /// assert_eq!(context.remove::<String>(), Some(Arc::new("a".to_string())));
-    /// assert_eq!(context.value::<String>(), None);
-    /// ```
-    pub fn remove<E>(&mut self) -> Option<Arc<E>>
-    where
-        E: Send + Sync + 'static,
-    {
-        let type_map = self.type_map.to_mut();
-        type_map
-            .remove(&TypeId::of::<E>())
-            .map(|removed| removed.downcast().expect("failed to unwrap downcast"))
-    }
-
     /// Returns a reference of the entity of the specified type signature, if it exists.
     ///
     /// If there is no entity with the specific type signature, `None` is returned instead.
@@ -113,14 +91,15 @@ impl<'a> Context<'a> {
             .and_then(|item| item.downcast_ref())
     }
 
-    /// Returns the number of entities in the type map.
-    pub fn len(&self) -> usize {
-        self.type_map.len()
-    }
-
     /// Returns `true` if the type map is empty; otherwise, `false`.
     pub fn is_empty(&self) -> bool {
         self.type_map.is_empty()
+    }
+
+    /// Returns the number of entities in the type map.
+    #[cfg(test)]
+    pub fn len(&self) -> usize {
+        self.type_map.len()
     }
 }
 
