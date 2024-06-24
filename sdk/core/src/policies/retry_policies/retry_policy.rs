@@ -101,12 +101,12 @@ impl<T> Policy for T
 where
     T: RetryPolicy,
 {
-    async fn send(
+    async fn send<V>(
         &self,
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult {
+    ) -> PolicyResult<V> {
         let mut retry_count = 0;
         let mut start = None;
 

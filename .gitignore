@@ -1,4 +1,5 @@
 .vscode/
+!.vscode/cspell.json
 !.vscode/extensions.json
 !.vscode/settings.json
 target/

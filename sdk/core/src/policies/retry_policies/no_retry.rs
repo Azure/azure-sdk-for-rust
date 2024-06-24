@@ -14,12 +14,12 @@ pub struct NoRetryPolicy {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Policy for NoRetryPolicy {
-    async fn send(
+    async fn send<T>(
         &self,
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult {
+    ) -> PolicyResult<T> {
         // just call the following policies and bubble up the error
         let response = next[0].send(ctx, request, &next[1..]).await?;
 

@@ -137,7 +137,7 @@ pub fn diff(first: OffsetDateTime, second: OffsetDateTime) -> Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::from_json;
+    use crate::json::from_json;
     use serde::{Deserialize, Serialize};
     use time::macros::datetime;
 

@@ -1,22 +1,22 @@
-use crate::{from_json, headers, Response, StatusCode};
+use crate::{headers, json::from_json, Response, StatusCode};
 use bytes::Bytes;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
-/// An unsuccessful HTTP response
+/// An HTTP error response.
 #[derive(Debug)]
 pub struct HttpError {
     status: StatusCode,
     details: ErrorDetails,
-    headers: std::collections::HashMap<String, String>,
+    headers: HashMap<String, String>,
     body: Bytes,
 }
 
 impl HttpError {
-    /// Create an error from an http response.
+    /// Create an error from an HTTP response.
     ///
-    /// This does not check whether the response was a success and should only be used with unsuccessful responses.
-    pub async fn new(response: Response) -> Self {
+    /// This does not check whether the response was successful and should only be used with unsuccessful responses.
+    pub async fn new<T>(response: Response<T>) -> Self {
         let status = response.status();
         let headers: HashMap<String, String> = response
             .headers()
@@ -37,24 +37,24 @@ impl HttpError {
         }
     }
 
-    /// Get the status code for the http error
+    /// Get the status code for the HTTP error.
     pub fn status(&self) -> StatusCode {
         self.status
     }
 
-    /// Get a reference to the http error's error code.
+    /// Get a reference to the HTTP error's error code.
     pub fn error_code(&self) -> Option<&str> {
         self.details.code.as_deref()
     }
 
-    /// Get a reference to the http error's error message.
+    /// Get a reference to the HTTP error's error message.
     pub fn error_message(&self) -> Option<&str> {
         self.details.message.as_deref()
     }
 }
 
-impl std::fmt::Display for HttpError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for HttpError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let newline = if f.alternate() { "\n" } else { " " };
         let tab = if f.alternate() { "\t" } else { " " };
         write!(f, "HttpError {{{newline}")?;
@@ -97,9 +97,9 @@ impl ErrorDetails {
     }
 }
 
-/// Gets the error code if it's present in the headers
+/// Gets the error code if it's present in the headers.
 ///
-/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
+/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
 fn get_error_code_from_header(headers: &HashMap<String, String>) -> Option<String> {
     headers.get(headers::ERROR_CODE.as_str()).cloned()
 }
@@ -117,7 +117,7 @@ struct ErrorBody {
     code: Option<String>,
 }
 
-/// Gets the error code if it's present in the body
+/// Gets the error code if it's present in the body.
 ///
 /// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
 pub(crate) fn get_error_code_from_body(body: &[u8]) -> Option<String> {
@@ -125,7 +125,7 @@ pub(crate) fn get_error_code_from_body(body: &[u8]) -> Option<String> {
     decoded.error.and_then(|e| e.code).or(decoded.code)
 }
 
-/// Gets the error message if it's present in the body
+/// Gets the error message if it's present in the body.
 ///
 /// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
 pub(crate) fn get_error_message_from_body(body: &[u8]) -> Option<String> {

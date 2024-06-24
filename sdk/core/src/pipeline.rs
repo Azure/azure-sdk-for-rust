@@ -85,7 +85,11 @@ impl Pipeline {
         &self.pipeline
     }
 
-    pub async fn send(&self, ctx: &Context<'_>, request: &mut Request) -> crate::Result<Response> {
+    pub async fn send<T>(
+        &self,
+        ctx: &Context<'_>,
+        request: &mut Request,
+    ) -> crate::Result<Response<T>> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await

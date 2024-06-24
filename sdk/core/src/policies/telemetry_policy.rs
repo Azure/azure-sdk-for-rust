@@ -55,12 +55,12 @@ impl<'a> TelemetryPolicy {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Policy for TelemetryPolicy {
-    async fn send(
+    async fn send<T>(
         &self,
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult {
+    ) -> PolicyResult<T> {
         request.insert_header(USER_AGENT, HeaderValue::from(self.header.to_string()));
 
         next[0].send(ctx, request, &next[1..]).await
