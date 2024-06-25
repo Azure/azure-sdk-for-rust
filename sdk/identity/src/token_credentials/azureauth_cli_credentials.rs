@@ -3,7 +3,7 @@ use async_process::Command;
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind},
-    from_json,
+    json::from_json,
 };
 use serde::Deserialize;
 use std::str;

@@ -313,11 +313,11 @@ impl TransportOptions {
     }
 
     /// Use these options to send a request.
-    pub async fn send<T>(
+    pub async fn send(
         &self,
         ctx: &crate::Context<'_>,
         request: &mut crate::Request,
-    ) -> crate::Result<crate::Response<T>> {
+    ) -> crate::Result<crate::RawResponse> {
         use TransportOptionsImpl as I;
         match &self.inner {
             I::Http { http_client } => http_client.execute_request(request).await,

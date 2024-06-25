@@ -10,12 +10,12 @@ pub use telemetry_policy::*;
 pub use timeout_policy::*;
 pub use transport::*;
 
-use crate::{Context, Request, Response};
+use crate::{Context, Request, RawResponse};
 use async_trait::async_trait;
 use std::sync::Arc;
 
 /// A specialized `Result` type for policies.
-pub type PolicyResult<T> = crate::error::Result<Response<T>>;
+pub type PolicyResult = crate::error::Result<RawResponse>;
 
 /// A pipeline policy.
 ///
@@ -27,12 +27,10 @@ pub type PolicyResult<T> = crate::error::Result<Response<T>>;
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait Policy: Send + Sync + std::fmt::Debug {
-    async fn send<T>(
+    async fn send(
         &self,
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<T>
-    where
-        Self: Sized;
+    ) -> PolicyResult;
 }

@@ -2,8 +2,8 @@ use crate::{token_credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind},
-    from_json,
     headers::HeaderName,
+    json::from_json,
     HttpClient, Method, Request, StatusCode, Url,
 };
 use serde::{

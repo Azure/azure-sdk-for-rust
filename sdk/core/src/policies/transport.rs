@@ -20,12 +20,12 @@ impl TransportPolicy {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl Policy for TransportPolicy {
-    async fn send<T>(
+    async fn send(
         &self,
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<T> {
+    ) -> PolicyResult {
         // there must be no more policies
         assert_eq!(0, next.len());
 

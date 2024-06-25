@@ -33,10 +33,7 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for ::reqwest::Client {
-    async fn execute_request<T>(
-        &self,
-        request: &crate::Request,
-    ) -> crate::Result<crate::Response<T>> {
+    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::RawResponse> {
         let url = request.url().clone();
         let method = request.method();
         let mut req = self.request(try_from_method(*method)?, url.clone());
@@ -74,7 +71,7 @@ impl HttpClient for ::reqwest::Client {
             )
         }));
 
-        Ok(crate::Response::new(
+        Ok(crate::RawResponse::new(
             try_from_status(status)?,
             headers,
             body,

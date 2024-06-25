@@ -6,7 +6,7 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers, HttpClient, Request, Url,
 };
-use azure_core::{from_json, Method};
+use azure_core::{json::from_json, Method};
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;

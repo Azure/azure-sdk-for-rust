@@ -31,8 +31,5 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     ///
     /// It does not consume the request. Implementors are expected to clone the necessary parts
     /// of the request and pass them to the underlying transport.
-    async fn execute_request<T>(
-        &self,
-        request: &crate::Request,
-    ) -> crate::Result<crate::Response<T>>;
+    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::RawResponse>;
 }

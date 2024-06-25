@@ -14,22 +14,20 @@ pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> +
 #[cfg(target_arch = "wasm32")]
 pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
-/// An HTTP Response.
-pub struct Response<T> {
+/// An HTTP response.
+pub struct RawResponse {
     status: StatusCode,
     headers: Headers,
     body: ResponseBody,
-    phantom: PhantomData<T>,
 }
 
-impl<T> Response<T> {
+impl RawResponse {
     /// Create an HTTP response.
     pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
         Self {
             status,
             headers,
             body: ResponseBody::new(stream),
-            phantom: PhantomData,
         }
     }
 
@@ -54,6 +52,81 @@ impl<T> Response<T> {
     }
 
     /// Get the response body as the specified type from JSON.
+    pub async fn json<T>(self) -> crate::Result<T>
+    where
+        T: DeserializeOwned,
+    {
+        self.into_body().json().await
+    }
+
+    /// Get the response body as the specified type from XML.
+    #[cfg(feature = "xml")]
+    pub async fn xml<T>(self) -> crate::Result<T>
+    where
+        T: DeserializeOwned,
+    {
+        self.into_body().xml().await
+    }
+}
+
+impl fmt::Debug for RawResponse {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Response")
+            .field("status", &self.status)
+            .field("headers", &self.headers)
+            .field("body", &"(body)")
+            .finish()
+    }
+}
+
+impl<T> From<RawResponse> for Response<T> {
+    fn from(response: RawResponse) -> Self {
+        Self {
+            response,
+            phantom: PhantomData,
+        }
+    }
+}
+
+pub struct Response<T> {
+    response: RawResponse,
+    phantom: PhantomData<T>,
+}
+
+impl<T> Response<T> {
+    /// Create an HTTP response.
+    pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
+        Self {
+            response: RawResponse::new(status, headers, stream),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Get the status code from the response.
+    pub fn status(&self) -> StatusCode {
+        self.response.status
+    }
+
+    /// Get the headers from the response.
+    pub fn headers(&self) -> &Headers {
+        &self.response.headers
+    }
+
+    /// Deconstruct the HTTP response into its components.
+    pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody) {
+        (
+            self.response.status,
+            self.response.headers,
+            self.response.body,
+        )
+    }
+
+    /// Consume the HTTP response and return the HTTP body bytes.
+    pub fn into_body(self) -> ResponseBody {
+        self.response.body
+    }
+
+    /// Get the response body as the specified type from JSON.
     pub async fn json(self) -> crate::Result<T>
     where
         T: DeserializeOwned,
@@ -74,8 +147,8 @@ impl<T> Response<T> {
 impl<T> fmt::Debug for Response<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Response")
-            .field("status", &self.status)
-            .field("headers", &self.headers)
+            .field("status", &self.response.status)
+            .field("headers", &self.response.headers)
             .field("body", &"(body)")
             .finish()
     }
@@ -116,8 +189,8 @@ impl<T> CollectedResponse<T> {
         &self.body
     }
 
-    /// Create a collected HTTP response from a [`Response<T>`].
-    pub async fn from_response(response: Response<T>) -> crate::Result<Self> {
+    /// Create a collected HTTP response from a [`Response`].
+    pub async fn from_response(response: RawResponse) -> crate::Result<Self> {
         let (status, headers, body) = response.deconstruct();
         let body = body.collect().await?;
         Ok(Self::new(status, headers, body))
