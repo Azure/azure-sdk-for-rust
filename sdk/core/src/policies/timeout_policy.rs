@@ -22,7 +22,7 @@ impl Policy for TimeoutPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        let timeout = ctx.get::<Timeout>().or(self.default_timeout.as_ref());
+        let timeout = ctx.value::<Timeout>().or(self.default_timeout.as_ref());
         timeout.append_to_url_query(request.url_mut());
         next[0].send(ctx, request, &next[1..]).await
     }

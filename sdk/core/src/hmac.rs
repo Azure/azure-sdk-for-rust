@@ -54,7 +54,8 @@ pub fn hmac_sha256(_data: &str, _key: &Secret) -> crate::Result<String> {
 mod tests {
     use super::*;
 
-    #[test]
+    #[allow(dead_code)]
+    #[cfg_attr(any(feature = "hmac_rust", feature = "hmac_openssl"), test)]
     fn test_hmac_sign() {
         let data = "create hmac signature for data";
         let key = Secret::new("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");

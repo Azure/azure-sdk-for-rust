@@ -2,10 +2,9 @@ use crate::token_credentials::cache::TokenCache;
 use async_process::Command;
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
-    error::{Error, ErrorKind, ResultExt},
+    error::{Error, ErrorKind},
     from_json,
 };
-use oauth2::ClientId;
 use serde::Deserialize;
 use std::str;
 use time::OffsetDateTime;
@@ -40,8 +39,6 @@ mod unix_date_string {
 
 #[derive(Debug, Clone, Deserialize)]
 struct CliTokenResponse {
-    pub user: String,
-    pub display_name: String,
     #[serde(rename = "token")]
     pub access_token: Secret,
     #[serde(with = "unix_date_string", rename = "expiration_date")]

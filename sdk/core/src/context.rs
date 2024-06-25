@@ -1,66 +1,88 @@
 use std::any::{Any, TypeId};
+use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Pipeline execution context.
 #[derive(Clone, Debug)]
-pub struct Context {
-    type_map: HashMap<TypeId, Arc<dyn Any + Send + Sync>>,
+pub struct Context<'a> {
+    type_map: Cow<'a, HashMap<TypeId, Arc<dyn Any + Send + Sync>>>,
 }
 
-impl Default for Context {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Context {
-    /// Creates a new, empty Context.
+impl<'a> Context<'a> {
+    /// Creates a new, empty `Context`.
     pub fn new() -> Self {
         Self {
-            type_map: HashMap::new(),
+            type_map: Cow::Owned(HashMap::new()),
         }
     }
 
-    /// Inserts or replaces an entity in the type map. If an entity with the same type was displaced
-    /// by the insert, it will be returned to the caller.
-    pub fn insert_or_replace<E>(&mut self, entity: E) -> Option<Arc<E>>
+    /// Returns a new `Context` that borrows the type map of the given `context`.
+    ///
+    /// Once you [`Context::insert`] entities the type map is copied.
+    #[must_use]
+    pub fn with_context<'b>(context: &'a Context) -> Context<'b>
     where
-        E: Send + Sync + 'static,
+        'a: 'b,
     {
-        // we make sure that for every TypeId of E as key we ALWAYS retrieve an Option<Arc<E>>. That's why
-        // the `unwrap` below is safe.
-        self.type_map
-            .insert(TypeId::of::<E>(), Arc::new(entity))
-            .map(|displaced| displaced.downcast().expect("failed to unwrap downcast"))
+        let type_map = context.type_map.borrow();
+        Self {
+            type_map: Cow::Borrowed(type_map),
+        }
     }
 
-    /// Inserts an entity in the type map. If the an entity with the same type signature is
-    /// already present it will be silently dropped. This function returns a mutable reference to
-    /// the same Context so it can be chained to itself.
-    pub fn insert<E>(&mut self, entity: E) -> &mut Self
+    /// Inserts or replaces an entity in the type map and returns `Self` to allow chaining.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use azure_core::Context;
+    ///
+    /// let context = Context::new()
+    ///     .with_value(1)
+    ///     .with_value("test");
+    /// assert_eq!(context.value(), Some(&"test"));
+    /// ```
+    #[must_use]
+    pub fn with_value<E>(mut self, entity: E) -> Self
     where
         E: Send + Sync + 'static,
     {
-        self.type_map.insert(TypeId::of::<E>(), Arc::new(entity));
+        let type_map = self.type_map.to_mut();
+        type_map.insert(TypeId::of::<E>(), Arc::new(entity));
 
         self
     }
 
-    /// Removes an entity from the type map. If present, the entity will be returned.
-    pub fn remove<E>(&mut self) -> Option<Arc<E>>
+    /// Inserts or replaces an entity in the type map. If an entity with the same type was displaced
+    /// by the insert, it will be returned to the caller.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use azure_core::Context;
+    /// use std::sync::Arc;
+    ///
+    /// let mut context = Context::new().with_value("a".to_string());
+    /// assert_eq!(context.insert("b".to_string()), Some(Arc::new("a".to_string())));
+    /// assert_eq!(context.value(), Some(&"b".to_string()));
+    /// ```
+    pub fn insert<E>(&mut self, entity: E) -> Option<Arc<E>>
     where
         E: Send + Sync + 'static,
     {
-        self.type_map
-            .remove(&TypeId::of::<E>())
-            .map(|removed| removed.downcast().expect("failed to unwrap downcast"))
+        // We make sure that for every TypeId of E as key we ALWAYS retrieve an Option<Arc<E>>.
+        // That's why the `expect` below is safe.
+        let type_map = self.type_map.to_mut();
+        type_map
+            .insert(TypeId::of::<E>(), Arc::new(entity))
+            .map(|displaced| displaced.downcast().expect("failed to unwrap downcast"))
     }
 
     /// Returns a reference of the entity of the specified type signature, if it exists.
     ///
     /// If there is no entity with the specific type signature, `None` is returned instead.
-    pub fn get<E>(&self) -> Option<&E>
+    pub fn value<E>(&self) -> Option<&E>
     where
         E: Send + Sync + 'static,
     {
@@ -69,14 +91,21 @@ impl Context {
             .and_then(|item| item.downcast_ref())
     }
 
+    /// Returns `true` if the type map is empty; otherwise, `false`.
+    pub fn is_empty(&self) -> bool {
+        self.type_map.is_empty()
+    }
+
     /// Returns the number of entities in the type map.
+    #[cfg(test)]
     pub fn len(&self) -> usize {
         self.type_map.len()
     }
+}
 
-    /// Returns `true` if the type map is empty, `false` otherwise.
-    pub fn is_empty(&self) -> bool {
-        self.type_map.is_empty()
+impl<'a> Default for Context<'a> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -88,8 +117,8 @@ mod tests {
     #[test]
     fn insert_get_string() {
         let mut context = Context::new();
-        context.insert_or_replace("pollo".to_string());
-        assert_eq!(Some(&"pollo".to_string()), context.get());
+        context.insert("test".to_string());
+        assert_eq!(Some(&"test".to_string()), context.value());
     }
 
     #[test]
@@ -100,14 +129,14 @@ mod tests {
         struct S2 {}
 
         let mut context = Context::new();
-        context.insert_or_replace(S1 {});
-        context.insert_or_replace(S2 {});
+        context.insert(S1 {});
+        context.insert(S2 {});
 
-        assert_eq!(Some(Arc::new(S1 {})), context.insert_or_replace(S1 {}));
-        assert_eq!(Some(Arc::new(S2 {})), context.insert_or_replace(S2 {}));
+        assert_eq!(Some(Arc::new(S1 {})), context.insert(S1 {}));
+        assert_eq!(Some(Arc::new(S2 {})), context.insert(S2 {}));
 
-        assert_eq!(Some(&S1 {}), context.get());
-        assert_eq!(Some(&S2 {}), context.get());
+        assert_eq!(Some(&S1 {}), context.value());
+        assert_eq!(Some(&S2 {}), context.value());
     }
 
     #[test]
@@ -117,17 +146,15 @@ mod tests {
         #[derive(Debug, PartialEq, Eq, Default)]
         struct S2 {}
 
-        let mut context = Context::new();
-
-        context
-            .insert("static str")
-            .insert("a String".to_string())
-            .insert(S1::default())
-            .insert(S1::default()) // notice we are REPLACING S1. This call will *not* increment the counter
-            .insert(S2::default());
+        let context = Context::new()
+            .with_value("static str")
+            .with_value("a String".to_string())
+            .with_value(S1::default())
+            .with_value(S1::default()) // notice we are REPLACING S1. This call will *not* increment the counter
+            .with_value(S2::default());
 
         assert_eq!(4, context.len());
-        assert_eq!(Some(&"static str"), context.get());
+        assert_eq!(Some(&"static str"), context.value());
     }
 
     fn require_send_sync<T: Send + Sync>(_: &T) {}
@@ -145,30 +172,47 @@ mod tests {
             num: u8,
         }
         let mut context = Context::new();
-        context.insert_or_replace(Mutex::new(S1::default()));
+        context.insert(Mutex::new(S1::default()));
 
         // the stored value is 0.
-        assert_eq!(0, context.get::<Mutex<S1>>().unwrap().lock().unwrap().num);
+        assert_eq!(0, context.value::<Mutex<S1>>().unwrap().lock().unwrap().num);
 
         // we change the number to 42 in a thread safe manner.
-        context.get::<Mutex<S1>>().unwrap().lock().unwrap().num = 42;
+        context.value::<Mutex<S1>>().unwrap().lock().unwrap().num = 42;
 
         // now the number is 42.
-        assert_eq!(42, context.get::<Mutex<S1>>().unwrap().lock().unwrap().num);
+        assert_eq!(
+            42,
+            context.value::<Mutex<S1>>().unwrap().lock().unwrap().num
+        );
 
         // we replace the struct with a new one.
-        let displaced = context
-            .insert_or_replace(Mutex::new(S1::default()))
-            .unwrap();
+        let displaced = context.insert(Mutex::new(S1::default())).unwrap();
 
         // the displaced struct still holds 42 as number
         assert_eq!(42, displaced.lock().unwrap().num);
 
         // the new struct has 0 has number.
-        assert_eq!(0, context.get::<Mutex<S1>>().unwrap().lock().unwrap().num);
+        assert_eq!(0, context.value::<Mutex<S1>>().unwrap().lock().unwrap().num);
 
-        context.insert_or_replace(Mutex::new(33u32));
-        *context.get::<Mutex<u32>>().unwrap().lock().unwrap() = 42;
-        assert_eq!(42, *context.get::<Mutex<u32>>().unwrap().lock().unwrap());
+        context.insert(Mutex::new(33u32));
+        *context.value::<Mutex<u32>>().unwrap().lock().unwrap() = 42;
+        assert_eq!(42, *context.value::<Mutex<u32>>().unwrap().lock().unwrap());
+    }
+
+    #[test]
+    fn with_context_borrows() {
+        let a = Context::new().with_value("a".to_string());
+        let mut b = Context::with_context(&a);
+
+        // TODO: Use is_owned(), is_borrowed() once stabilized.
+        let a_ptr = std::ptr::addr_of!(*a.type_map);
+        let b_ptr = std::ptr::addr_of!(*b.type_map);
+        assert_eq!(a_ptr, b_ptr);
+
+        b.insert("b".to_string());
+        let a_ptr = std::ptr::addr_of!(*a.type_map);
+        let b_ptr = std::ptr::addr_of!(*b.type_map);
+        assert_ne!(a_ptr, b_ptr);
     }
 }
