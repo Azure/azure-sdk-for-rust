@@ -2,7 +2,8 @@
 use crate::SeekableStream;
 use crate::{
     headers::{AsHeaders, Headers},
-    to_json, Method, Url,
+    json::to_json,
+    Method, Url,
 };
 use bytes::Bytes;
 use serde::Serialize;

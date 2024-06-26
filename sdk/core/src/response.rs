@@ -1,27 +1,28 @@
 use crate::{
     error::{ErrorKind, ResultExt},
-    from_json,
     headers::Headers,
+    json::from_json,
     StatusCode,
 };
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
-use std::{fmt::Debug, pin::Pin};
+use std::{fmt, marker::PhantomData, pin::Pin};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
 #[cfg(target_arch = "wasm32")]
 pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
-/// An HTTP Response.
-pub struct Response {
+/// An HTTP response.
+pub struct RawResponse {
     status: StatusCode,
     headers: Headers,
     body: ResponseBody,
 }
 
-impl Response {
+impl RawResponse {
+    /// Create an HTTP response.
     pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
         Self {
             status,
@@ -50,6 +51,7 @@ impl Response {
         self.body
     }
 
+    /// Get the response body as the specified type from JSON.
     pub async fn json<T>(self) -> crate::Result<T>
     where
         T: DeserializeOwned,
@@ -57,6 +59,7 @@ impl Response {
         self.into_body().json().await
     }
 
+    /// Get the response body as the specified type from XML.
     #[cfg(feature = "xml")]
     pub async fn xml<T>(self) -> crate::Result<T>
     where
@@ -66,63 +69,134 @@ impl Response {
     }
 }
 
-impl std::fmt::Debug for Response {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Debug for RawResponse {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Response")
             .field("status", &self.status)
             .field("headers", &self.headers)
-            .field("body", &"<BODY>")
+            .field("body", &"(body)")
             .finish()
     }
 }
 
-/// A response with the body collected as bytes
-#[derive(Debug, Clone)]
-pub struct CollectedResponse {
-    status: StatusCode,
-    headers: Headers,
-    body: Bytes,
-}
-
-impl AsRef<[u8]> for CollectedResponse {
-    fn as_ref(&self) -> &[u8] {
-        self.body.as_ref()
+impl<T> From<RawResponse> for Response<T> {
+    fn from(response: RawResponse) -> Self {
+        Self {
+            response,
+            phantom: PhantomData,
+        }
     }
 }
 
-impl CollectedResponse {
-    /// Create a new instance
+pub struct Response<T> {
+    response: RawResponse,
+    phantom: PhantomData<T>,
+}
+
+impl<T> Response<T> {
+    /// Create an HTTP response.
+    pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
+        Self {
+            response: RawResponse::new(status, headers, stream),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Get the status code from the response.
+    pub fn status(&self) -> StatusCode {
+        self.response.status
+    }
+
+    /// Get the headers from the response.
+    pub fn headers(&self) -> &Headers {
+        &self.response.headers
+    }
+
+    /// Deconstruct the HTTP response into its components.
+    pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody) {
+        (
+            self.response.status,
+            self.response.headers,
+            self.response.body,
+        )
+    }
+
+    /// Consume the HTTP response and return the HTTP body bytes.
+    pub fn into_body(self) -> ResponseBody {
+        self.response.body
+    }
+
+    /// Get the response body as the specified type from JSON.
+    pub async fn json(self) -> crate::Result<T>
+    where
+        T: DeserializeOwned,
+    {
+        self.into_body().json().await
+    }
+
+    /// Get the response body as the specified type from XML.
+    #[cfg(feature = "xml")]
+    pub async fn xml(self) -> crate::Result<T>
+    where
+        T: DeserializeOwned,
+    {
+        self.into_body().xml().await
+    }
+}
+
+impl<T> fmt::Debug for Response<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Response")
+            .field("status", &self.response.status)
+            .field("headers", &self.response.headers)
+            .field("body", &"(body)")
+            .finish()
+    }
+}
+
+/// An HTTP response with the body collected as bytes.
+#[derive(Debug, Clone)]
+pub struct CollectedResponse<T> {
+    status: StatusCode,
+    headers: Headers,
+    body: Bytes,
+    phantom: PhantomData<T>,
+}
+
+impl<T> CollectedResponse<T> {
+    /// Create a collected HTTP response.
     pub fn new(status: StatusCode, headers: Headers, body: Bytes) -> Self {
         Self {
             status,
             headers,
             body,
+            phantom: PhantomData,
         }
     }
 
-    /// Get the status
+    /// Get the status code from the response.
     pub fn status(&self) -> &StatusCode {
         &self.status
     }
 
-    /// Get the headers
+    /// Get the headers from the response.
     pub fn headers(&self) -> &Headers {
         &self.headers
     }
 
-    /// Get the body
+    /// Get the collected body from the response.
     pub fn body(&self) -> &Bytes {
         &self.body
     }
 
-    /// From a response
-    pub async fn from_response(response: Response) -> crate::Result<Self> {
+    /// Create a collected HTTP response from a [`Response`].
+    pub async fn from_response(response: RawResponse) -> crate::Result<Self> {
         let (status, headers, body) = response.deconstruct();
         let body = body.collect().await?;
         Ok(Self::new(status, headers, body))
     }
 
-    pub fn json<T>(&self) -> crate::Result<T>
+    pub fn json(&self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {
@@ -130,7 +204,7 @@ impl CollectedResponse {
     }
 
     #[cfg(feature = "xml")]
-    pub fn xml<T>(&self) -> crate::Result<T>
+    pub fn xml(&self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {
@@ -138,9 +212,15 @@ impl CollectedResponse {
     }
 }
 
-/// A response body stream
+impl<T> AsRef<[u8]> for CollectedResponse<T> {
+    fn as_ref(&self) -> &[u8] {
+        self.body.as_ref()
+    }
+}
+
+/// A response body stream.
 ///
-/// This body can either be streamed or collected into `Bytes`
+/// This body can either be streamed or collected into [`Bytes`].
 #[pin_project::pin_project]
 pub struct ResponseBody(#[pin] PinnedStream);
 
@@ -149,7 +229,7 @@ impl ResponseBody {
         Self(stream)
     }
 
-    /// Collect the stream into a `Bytes` collection
+    /// Collect the stream into a [`Bytes`] collection.
     pub async fn collect(mut self) -> crate::Result<Bytes> {
         let mut final_result = Vec::new();
 
@@ -160,7 +240,7 @@ impl ResponseBody {
         Ok(final_result.into())
     }
 
-    /// Collect the stream into a `String`
+    /// Collect the stream into a [`String`].
     pub async fn collect_string(self) -> crate::Result<String> {
         std::str::from_utf8(&self.collect().await?)
             .context(
@@ -170,6 +250,7 @@ impl ResponseBody {
             .map(ToOwned::to_owned)
     }
 
+    /// Deserialize the JSON stream into type `T`.
     pub async fn json<T>(self) -> crate::Result<T>
     where
         T: DeserializeOwned,
@@ -178,6 +259,7 @@ impl ResponseBody {
         from_json(body)
     }
 
+    /// Deserialize the XML stream into type `T`.
     #[cfg(feature = "xml")]
     pub async fn xml<T>(self) -> crate::Result<T>
     where
@@ -199,8 +281,8 @@ impl Stream for ResponseBody {
     }
 }
 
-impl Debug for ResponseBody {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Debug for ResponseBody {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("ResponseBody")
     }
 }

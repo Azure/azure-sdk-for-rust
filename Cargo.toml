@@ -1,6 +1,6 @@
 [workspace]
-members = ["eng/test/mock_transport", "sdk/*"]
 resolver = "2"
+members = ["sdk/*", "eng/test/mock_transport"]
 
 [workspace.package]
 authors = ["Microsoft"]
@@ -58,6 +58,5 @@ tracing-subscriber = "0.3"
 tz-rs = { version = "0.6" }
 url = "2.2"
 uuid = { version = "1.0", features = ["v4"] }
-
 
 [workspace.lints]

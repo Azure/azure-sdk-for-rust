@@ -85,9 +85,76 @@ impl Pipeline {
         &self.pipeline
     }
 
-    pub async fn send(&self, ctx: &Context<'_>, request: &mut Request) -> crate::Result<Response> {
+    pub async fn send<T>(
+        &self,
+        ctx: &Context<'_>,
+        request: &mut Request,
+    ) -> crate::Result<Response<T>> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
+            .map(|resp| resp.into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use bytes::Bytes;
+    use serde::Deserialize;
+
+    use super::*;
+    use crate::{
+        headers::Headers, BytesStream, Method, PolicyResult, RawResponse, StatusCode,
+        TransportOptions,
+    };
+
+    #[tokio::test]
+    async fn deserializes_response() {
+        #[derive(Debug)]
+        struct Responder {}
+
+        #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+        #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+        impl Policy for Responder {
+            async fn send(
+                &self,
+                _ctx: &Context,
+                _request: &mut Request,
+                _next: &[Arc<dyn Policy>],
+            ) -> PolicyResult {
+                let buffer = Bytes::from_static(br#"{"foo":1,"bar":"baz"}"#);
+                let stream: BytesStream = buffer.into();
+                let response = RawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
+                Ok(std::future::ready(response).await)
+            }
+        }
+
+        #[derive(Debug, Deserialize)]
+        struct Model {
+            foo: i32,
+            bar: String,
+        }
+
+        let options =
+            ClientOptions::new(TransportOptions::new_custom_policy(Arc::new(Responder {})));
+        let pipeline = Pipeline::new(
+            Some("deserializes_response"),
+            Some("0.1.0"),
+            options,
+            Vec::new(),
+            Vec::new(),
+        );
+
+        let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
+        let model: Model = pipeline
+            .send(&Context::default(), &mut request)
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
+
+        assert_eq!(1, model.foo);
+        assert_eq!("baz", &model.bar);
     }
 }

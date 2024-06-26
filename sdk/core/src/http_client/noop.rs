@@ -14,7 +14,7 @@ pub(crate) fn new_noop_client() -> std::sync::Arc<dyn crate::HttpClient> {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl crate::HttpClient for NoopClient {
     #[allow(clippy::diverging_sub_expression)]
-    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response> {
+    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::RawResponse> {
         panic!(
             "A request was called on the default http client `NoopClient`.\
 	This client does nothing but panic. Make sure to enable an http\

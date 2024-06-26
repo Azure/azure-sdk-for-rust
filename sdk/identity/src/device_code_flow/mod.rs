@@ -8,7 +8,9 @@ mod device_code_responses;
 use azure_core::{
     content_type,
     error::{Error, ErrorKind},
-    from_json, headers, sleep, HttpClient, Method, Request, Response, Url,
+    headers,
+    json::from_json,
+    sleep, HttpClient, Method, RawResponse, Request, Url,
 };
 pub use device_code_responses::*;
 use futures::stream::unfold;
@@ -169,7 +171,7 @@ async fn post_form(
     http_client: Arc<dyn HttpClient>,
     url: &str,
     form_body: String,
-) -> azure_core::Result<Response> {
+) -> azure_core::Result<RawResponse> {
     let url = Url::parse(url)?;
     let mut req = Request::new(url, Method::Post);
     req.insert_header(

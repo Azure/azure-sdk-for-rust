@@ -30,7 +30,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::from_json;
+    use crate::json::from_json;
     use serde::Serialize;
 
     #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]

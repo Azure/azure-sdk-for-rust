@@ -1,17 +1,14 @@
-.vscode/
-!.vscode/extensions.json
-!.vscode/settings.json
 target/
-Cargo.lock
-.env
 
+.env
+Cargo.lock
+
+.vscode/launch.json
 .idea/
-*.rs.bk
-/.project
-\#*\#
-\.#*
+
 *~
 *.code-workspace
-*.swp
+*.rs.bk
 *.swo
+*.swp
 *.vim

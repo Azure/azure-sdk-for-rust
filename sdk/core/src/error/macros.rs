@@ -1,4 +1,4 @@
-/// A convenient way to create a new error using the normal formatting infrastructure
+/// A convenient way to create a new error using the normal formatting infrastructure.
 #[macro_export]
 macro_rules! format_err {
     ($kind:expr, $msg:literal $(,)?) => {{

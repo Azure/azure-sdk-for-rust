@@ -87,7 +87,7 @@ enum RetryMode {
 impl Debug for RetryMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RetryMode::Exponential(o) => write!(f, "Exponetial({o:?})"),
+            RetryMode::Exponential(o) => write!(f, "Exponential({o:?})"),
             RetryMode::Fixed(o) => write!(f, "Fixed({o:?})"),
             RetryMode::Custom(_) => write!(f, "Custom"),
             RetryMode::None => write!(f, "None"),
@@ -317,7 +317,7 @@ impl TransportOptions {
         &self,
         ctx: &crate::Context<'_>,
         request: &mut crate::Request,
-    ) -> crate::Result<crate::Response> {
+    ) -> crate::Result<crate::RawResponse> {
         use TransportOptionsImpl as I;
         match &self.inner {
             I::Http { http_client } => http_client.execute_request(request).await,

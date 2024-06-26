@@ -7,11 +7,11 @@ use futures::TryStreamExt;
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 use tracing::{debug, warn};
 
-/// Construct a new `HttpClient` with the `reqwest` backend.
+/// Create a new [`HttpClient`] with the `reqwest` backend.
 pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
     debug!("instantiating an http client using the reqwest backend");
 
-    // set `pool_max_idle_per_host` to `0` to avoid an issue in the underlying
+    // Set `pool_max_idle_per_host` to `0` to avoid an issue in the underlying
     // `hyper` library that causes the `reqwest` client to hang in some cases.
     //
     // See <https://github.com/hyperium/hyper/issues/2312> for more details.
@@ -33,7 +33,7 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for ::reqwest::Client {
-    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response> {
+    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::RawResponse> {
         let url = request.url().clone();
         let method = request.method();
         let mut req = self.request(try_from_method(*method)?, url.clone());
@@ -71,7 +71,7 @@ impl HttpClient for ::reqwest::Client {
             )
         }));
 
-        Ok(crate::Response::new(
+        Ok(crate::RawResponse::new(
             try_from_status(status)?,
             headers,
             body,

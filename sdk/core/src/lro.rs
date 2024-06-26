@@ -43,8 +43,8 @@ pub fn get_retry_after(headers: &Headers) -> Duration {
 
 pub mod location {
     use crate::{
-        from_json,
         headers::{Headers, AZURE_ASYNCOPERATION, LOCATION, OPERATION_LOCATION},
+        json::from_json,
         lro::LroStatus,
         Url,
     };
@@ -75,7 +75,8 @@ pub mod location {
 }
 
 pub mod body_content {
-    use crate::{from_json, lro::LroStatus, to_json, StatusCode};
+    use crate::json::{from_json, to_json};
+    use crate::{lro::LroStatus, StatusCode};
     use serde::{Deserialize, Serialize};
 
     /// Extract the provisioning state based on the status code and response body
