@@ -10,7 +10,7 @@ pub use telemetry_policy::*;
 pub use timeout_policy::*;
 pub use transport::*;
 
-use crate::{Context, Request, RawResponse};
+use crate::{Context, RawResponse, Request};
 use async_trait::async_trait;
 use std::sync::Arc;
 
