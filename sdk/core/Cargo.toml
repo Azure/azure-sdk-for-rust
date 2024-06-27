@@ -2,13 +2,12 @@
 name = "azure_core"
 version = "0.19.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
-readme = "README.md"
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_core"
-keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+keywords = ["sdk", "azure", "rest", "cloud"]
 categories = ["api-bindings"]
 edition.workspace = true
 rust-version.workspace = true

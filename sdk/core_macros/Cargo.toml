@@ -1,0 +1,26 @@
+[package]
+name = "azure_core_macros"
+version = "0.1.0"
+description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_core_macros"
+keywords = ["sdk", "azure", "rest", "cloud"]
+categories = ["api-bindings"]
+edition.workspace = true
+rust-version.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = { workspace = true, features = ["proc-macro"] }
+quote = { workspace = true, features = ["proc-macro"] }
+syn = { workspace = true, features = [
+  "derive",
+  "parsing",
+  "printing",
+  "proc-macro",
+] }
