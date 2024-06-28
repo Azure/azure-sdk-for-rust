@@ -35,7 +35,7 @@ Building each crate should be as straight forward as `cargo build`, but check ea
 
 ### Mock testing framework
 
-This library comes with a testing framework that executes against prerecorded sessions to quickly validate code changes without incurring in Azure costs. You can read more about it in the [Mock testing framework's README](docs/mock_transport.md).
+This library comes with a testing framework that executes against prerecorded sessions to quickly validate code changes without incurring in Azure costs. You can read more about it in the [Mock testing framework's README](https://github.com/Azure/azure-sdk-for-rust/tree/feature/track2/doc/mock_transport.md).
 
 ## Contributing
 
