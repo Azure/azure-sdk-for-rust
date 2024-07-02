@@ -7,6 +7,8 @@ use azure_core::Url;
 pub enum CloudLocation {
     /// Azure public cloud
     Public { account: String },
+    /// Microsoft Fabric
+    Fabric { account: String },
     /// Azure China cloud
     China { account: String },
     /// Use the well-known emulator
@@ -19,6 +21,7 @@ impl CloudLocation {
     pub fn account(&self) -> &str {
         match self {
             CloudLocation::Public { account, .. }
+            | CloudLocation::Fabric { account, .. }
             | CloudLocation::China { account, .. }
             | CloudLocation::Custom { account, .. } => account,
             CloudLocation::Emulator { .. } => EMULATOR_ACCOUNT,
@@ -31,6 +34,13 @@ impl CloudLocation {
             CloudLocation::Public { account, .. } => {
                 format!(
                     "https://{}.{}.core.windows.net",
+                    account,
+                    service_type.subdomain()
+                )
+            }
+            CloudLocation::Fabric { account, .. } => {
+                format!(
+                    "https://{}.{}.fabric.microsoft.com",
                     account,
                     service_type.subdomain()
                 )
@@ -77,6 +87,7 @@ impl TryFrom<&Url> for CloudLocation {
 
         match rest.as_str() {
             "core.windows.net" => Ok(CloudLocation::Public { account }),
+            "fabric.microsoft.com" => Ok(CloudLocation::Fabric { account }),
             "core.chinacloudapi.cn" => Ok(CloudLocation::China { account }),
             _ => Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
@@ -118,6 +129,15 @@ mod tests {
         let missing_service_type = Url::parse("https://core.windows.net?token=1")?;
         let result: azure_core::Result<CloudLocation> = (&missing_service_type).try_into();
         assert!(result.is_err());
+
+        let fabric_cloud = Url::parse("https://test.blob.fabric.microsoft.com/?token=1")?;
+        let fabric_cloud_without_token = Url::parse("https://test.blob.fabric.microsoft.com")?;
+
+        let fabric_location: CloudLocation = (&fabric_cloud).try_into()?;
+        assert_eq!(
+            fabric_cloud_without_token,
+            fabric_location.url(ServiceType::Blob)?
+        );
 
         let china_cloud = Url::parse("https://test.blob.core.chinacloudapi.cn/?token=1")?;
         let china_cloud_without_token = Url::parse("https://test.blob.core.chinacloudapi.cn")?;
