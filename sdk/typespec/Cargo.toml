@@ -1,0 +1,16 @@
+[package]
+name = "typespec"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+description = "Project root for all TypeSpec-related crates"
+homepage = "https://typespec.io"
+repository.workspace = true
+license.workspace = true
+categories = [
+  "compilers",
+  "development-tools",
+]
+keywords = [
+  "typespec",
+]
