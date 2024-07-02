@@ -11,6 +11,8 @@ use std::time::Duration;
 
 use azure_core::{auth::Secret, error::Error, HttpClient};
 
+use super::SettableBrokerProperties;
+
 /// Client object that allows interaction with the `ServiceBus` API
 #[derive(Debug, Clone)]
 pub struct TopicClient {
@@ -73,7 +75,11 @@ impl TopicSender {
         Self { topic_client }
     }
     /// Sends a message to the topic
-    pub async fn send_message(&self, msg: &str) -> Result<(), Error> {
+    pub async fn send_message(
+        &self,
+        msg: &str,
+        broker_properties: Option<SettableBrokerProperties>,
+    ) -> Result<(), Error> {
         send_message(
             &self.topic_client.http_client,
             &self.topic_client.namespace,
@@ -81,6 +87,7 @@ impl TopicSender {
             &self.topic_client.policy_name,
             &self.topic_client.signing_key,
             msg,
+            broker_properties,
         )
         .await
     }

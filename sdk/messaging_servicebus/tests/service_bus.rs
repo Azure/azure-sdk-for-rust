@@ -1,13 +1,30 @@
 #![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
 
-use azure_messaging_servicebus::service_bus::QueueClient;
+use azure_messaging_servicebus::service_bus::{QueueClient, SettableBrokerProperties};
 use std::time::Duration;
+use time::OffsetDateTime;
 
 #[tokio::test]
 async fn send_message_test() {
     let client = create_client().unwrap();
     client
-        .send_message("hello, world!")
+        .send_message("hello, world!", None)
+        .await
+        .expect("Failed to send message");
+}
+
+#[tokio::test]
+async fn send_message_delayed_test() {
+    let client = create_client().unwrap();
+    client
+        .send_message(
+            "hello, world!",
+            Some(SettableBrokerProperties {
+                scheduled_enqueue_time_utc: Some(
+                    OffsetDateTime::now_utc() + Duration::from_secs(10),
+                ),
+            }),
+        )
         .await
         .expect("Failed to send message");
 }

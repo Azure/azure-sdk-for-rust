@@ -28,7 +28,7 @@ async fn main() {
     let message_to_send = "hello, world!";
 
     client
-        .send_message(message_to_send)
+        .send_message(message_to_send, None)
         .await
         .expect("Failed to send message while testing receive");
 
