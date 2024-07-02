@@ -11,6 +11,8 @@ use std::time::Duration;
 
 use azure_core::{auth::Secret, error::Error, HttpClient};
 
+use super::SettableBrokerProperties;
+
 /// Client object that allows interaction with the `ServiceBus` API
 #[derive(Debug, Clone)]
 pub struct QueueClient {
@@ -49,7 +51,11 @@ impl QueueClient {
     }
 
     /// Sends a message to the queue
-    pub async fn send_message(&self, msg: &str) -> Result<(), Error> {
+    pub async fn send_message(
+        &self,
+        msg: &str,
+        broker_properties: Option<SettableBrokerProperties>,
+    ) -> Result<(), Error> {
         send_message(
             &self.http_client,
             &self.namespace,
@@ -57,6 +63,7 @@ impl QueueClient {
             &self.policy_name,
             &self.signing_key,
             msg,
+            broker_properties,
         )
         .await
     }

@@ -22,7 +22,7 @@ async fn main() -> azure_core::Result<()> {
         policy_key,
     )?;
 
-    client.send_message("hello world").await?;
+    client.send_message("hello world", None).await?;
 
     let received_message = client.receive_and_delete_message().await?;
     println!("Received Message: {}", received_message);

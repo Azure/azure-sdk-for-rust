@@ -10,7 +10,7 @@ use azure_core::{
     auth::Secret, error::Error, from_json, headers, hmac::hmac_sha256, CollectedResponse,
     HttpClient, Method, Request, StatusCode, Url,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     str::FromStr,
     time::Duration,
@@ -89,16 +89,24 @@ async fn send_message(
     policy_name: &str,
     signing_key: &Secret,
     msg: &str,
+    broker_properties: Option<SettableBrokerProperties>,
 ) -> azure_core::Result<()> {
     let url = format!("https://{namespace}.servicebus.windows.net/{queue_or_topic}/messages");
 
-    let req = finalize_request(
+    let mut req = finalize_request(
         &url,
         Method::Post,
         Some(msg.to_string()),
         policy_name,
         signing_key,
     )?;
+
+    if let Some(broker_properties) = broker_properties {
+        req.insert_header(
+            "brokerproperties",
+            serde_json::to_string(&broker_properties)?,
+        );
+    }
 
     http_client
         .as_ref()
@@ -284,7 +292,7 @@ impl PeekLockResponse {
 pub struct BrokerProperties {
     pub delivery_count: i32,
     pub enqueued_sequence_number: Option<i32>,
-    #[serde(deserialize_with = "BrokerProperties::option_rfc2822")]
+    #[serde(with = "time::serde::rfc2822::option")]
     pub enqueued_time_utc: Option<OffsetDateTime>,
     pub lock_token: String,
     #[serde(with = "time::serde::rfc2822")]
@@ -295,19 +303,20 @@ pub struct BrokerProperties {
     pub time_to_live: f64,
 }
 
-impl BrokerProperties {
-    fn option_rfc2822<'de, D>(value: D) -> Result<Option<OffsetDateTime>, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        Ok(Some(time::serde::rfc2822::deserialize(value)?))
-    }
-}
-
 impl FromStr for BrokerProperties {
     type Err = azure_core::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         from_json(s)
     }
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct SettableBrokerProperties {
+    #[serde(
+        with = "time::serde::rfc2822::option",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub scheduled_enqueue_time_utc: Option<OffsetDateTime>,
 }
