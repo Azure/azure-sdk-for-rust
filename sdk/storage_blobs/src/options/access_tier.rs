@@ -3,6 +3,7 @@ use azure_core::headers::{self, Header};
 create_enum!(
     AccessTier,
     (Hot, "Hot"),
+    (Cold, "Cold"),
     (Cool, "Cool"),
     (Archive, "Archive")
 );
