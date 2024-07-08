@@ -1,0 +1,35 @@
+parameters:
+  FolderForUpload: ''
+  TargetLanguage: ''
+  BlobName: ''
+  ScriptPath: ''
+  ArtifactLocation: ''
+  RepoId: $(Build.Repository.Name)
+
+steps:
+- template: /eng/common/pipelines/templates/steps/set-default-branch.yml
+- pwsh: |
+    if (!(Test-Path '$(Build.BinariesDirectory)/azcopy/azcopy_windows_amd64_*/azcopy.exe')) {
+      Invoke-WebRequest -MaximumRetryCount 10 -Uri "https://aka.ms/downloadazcopy-v10-windows" -OutFile "azcopy.zip" | Wait-Process;
+      Expand-Archive -Path "azcopy.zip" -DestinationPath "$(Build.BinariesDirectory)/azcopy/" -Force
+    }
+  workingDirectory: $(Build.BinariesDirectory)
+  displayName: Download and Extract azcopy Zip
+
+- task: AzurePowerShell@5
+  displayName: 'Copy Docs to Blob Storage'
+  continueOnError: false
+  inputs:
+    azureSubscription: 'Azure SDK Artifacts'
+    ScriptType: 'FilePath'
+    ScriptPath: ${{ parameters.ScriptPath }}
+    ScriptArguments: >
+      -AzCopy $(Resolve-Path "$(Build.BinariesDirectory)/azcopy/azcopy_windows_amd64_*/azcopy.exe")[0]
+      -DocLocation "${{ parameters.FolderForUpload }}"
+      -BlobName "${{ parameters.BlobName }}"
+      -PublicArtifactLocation "${{ parameters.ArtifactLocation }}"
+      -RepoReplaceRegex "(https://github.com/${{ parameters.RepoId }}/(?:blob|tree)/)$(DefaultBranch)"
+    azurePowerShellVersion: latestVersion
+    pwsh: true
+  env:
+    AZCOPY_AUTO_LOGIN_TYPE: 'PSCRED'
