@@ -1,0 +1,71 @@
+[package]
+name = "azure_messaging_eventhubs"
+version = "0.19.0"
+description = "Rust client for Azure Eventhubs Service"
+readme = "README.md"
+authors = ["Microsoft Corp."]
+license = "MIT"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_messaging_eventhubs"
+
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+categories = ["api-bindings"]
+
+edition = "2021"
+
+[dependencies]
+azure_core = { path = "../core", version = "0.19" }
+time = { version = "0.3.10", features = ["serde-well-known"] }
+log = "0.4"
+url = "2.2"
+bytes = "1.0"
+serde = "1.0"
+async-trait = "*"
+fe2o3-amqp = { version = "0.11.0", features = [
+  "native-tls",
+  "log",
+  "uuid",
+], optional = true }
+fe2o3-amqp-ext = { version = "0.11.0", features = [], optional = true }
+fe2o3-amqp-management = { version = "0.11.0", optional = true }
+fe2o3-amqp-cbs = { version = "0.11.0", optional = true }
+fe2o3-amqp-types = { version = "0.11.0", optional = true }
+serde_amqp = { version = "0.11.0", optional = true, features = ["uuid"] }
+uuid = { version = "1.8" }
+tokio = { version = "1.0", features = [
+  "macros",
+  "rt-multi-thread",
+  "net",
+  "rt",
+] }
+serde_bytes = { version = "0.11", optional = true }
+ordered-float = { version = "4.2.0", optional = true }
+
+[build-dependencies]
+rustc_version = "0.4"
+
+[dev-dependencies]
+futures = "0.3"
+azure_identity = { path = "../identity", version = "0.19" }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+tracing-subscriber = "0.3"
+env_logger = "0.8"
+lazy_static = { version = "1.4" }
+
+[features]
+default = ["enable-fe2o3-amqp"]
+enable-fe2o3-amqp = [
+  "fe2o3-amqp",
+  "fe2o3-amqp-types",
+  "fe2o3-amqp-ext",
+  "fe2o3-amqp-management",
+  "fe2o3-amqp-cbs",
+  "serde_amqp",
+  "serde_bytes",
+  "ordered-float",
+]
+test_e2e = []
+
+[package.metadata.docs.rs]
+features = ["enable-fe2o3-amqp"]
