@@ -4,9 +4,7 @@
 /// please make sure to set the `send_certificate_chain` option to true otherwise
 /// the authentication will fail.
 use azure_core::auth::{Secret, TokenCredential};
-use azure_identity::{
-    ClientCertificateCredential, ClientCertificateCredentialOptions, DefaultAzureCredential,
-};
+use azure_identity::{ClientCertificateCredential, ClientCertificateCredentialOptions};
 use azure_security_keyvault::KeyvaultClient;
 use std::env::var;
 use url::Url;
@@ -44,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let creds =
         ClientCertificateCredential::new(tenant_id, client_id, cert, String::new(), options);
 
-    let res = creds
+    let res = creds?
         .get_token(&["https://management.azure.com/.default"])
         .await?;
     // Let's enumerate the Azure SQL Databases instances

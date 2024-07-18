@@ -116,22 +116,22 @@ impl ClientCertificateCredential {
         client_certificate: C,
         client_certificate_pass: P,
         options: impl Into<ClientCertificateCredentialOptions>,
-    ) -> ClientCertificateCredential
+    ) -> azure_core::Result<ClientCertificateCredential>
     where
         C: Into<Secret>,
         P: Into<Secret>,
     {
         let options = options.into();
-        ClientCertificateCredential {
+        Ok(ClientCertificateCredential {
             tenant_id,
             client_id,
             client_certificate: client_certificate.into(),
             client_certificate_pass: client_certificate_pass.into(),
             http_client: options.options().http_client().clone(),
-            authority_host: options.options().authority_host().clone(),
+            authority_host: options.options().authority_host()?.clone(),
             send_certificate_chain: options.send_certificate_chain(),
             cache: TokenCache::new(),
-        }
+        })
     }
 
     fn sign(jwt: &str, pkey: &PKey<Private>) -> Result<Vec<u8>, ErrorStack> {
@@ -258,8 +258,12 @@ impl ClientCertificateCredential {
         let rsp_status = rsp.status();
 
         if !rsp_status.is_success() {
-            let rsp_body = rsp.into_body().collect().await?;
-            return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
+            let (rsp_status, rsp_headers, rsp_body) = rsp.deconstruct();
+            let rsp_body = rsp_body.collect().await?;
+            return Err(
+                ErrorKind::http_response_from_parts(rsp_status, &rsp_headers, &rsp_body)
+                    .into_error(),
+            );
         }
 
         let response: AadTokenResponse = rsp.json().await?;
@@ -315,13 +319,13 @@ impl ClientCertificateCredential {
                 )
             })?;
 
-        Ok(ClientCertificateCredential::new(
+        ClientCertificateCredential::new(
             tenant_id,
             client_id,
             client_certificate,
             client_certificate_password,
             options,
-        ))
+        )
     }
 }
 

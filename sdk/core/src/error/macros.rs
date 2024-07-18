@@ -76,12 +76,6 @@ mod tests {
         }
     }
 
-    #[derive(thiserror::Error, Debug)]
-    enum IntermediateError {
-        #[error("second error")]
-        Io(#[from] std::io::Error),
-    }
-
     #[test]
     fn ensure_works() {
         fn test_ensure(predicate: bool) -> crate::Result<()> {
