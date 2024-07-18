@@ -51,7 +51,7 @@ pub trait Header {
 }
 
 /// A collection of headers
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, PartialEq, Eq, Default)]
 pub struct Headers(std::collections::HashMap<HeaderName, HeaderValue>);
 
 impl Headers {
@@ -148,6 +148,32 @@ impl Headers {
     /// Iterate over all the header name/value pairs
     pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)> {
         self.0.iter()
+    }
+}
+
+fn matching_ignore_ascii_case(a: &str, b: &str) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    a.chars()
+        .zip(b.chars())
+        .all(|(a_c, b_c)| a_c.to_ascii_lowercase() == b_c.to_ascii_lowercase())
+}
+
+impl Debug for Headers {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Headers(")?;
+        let redacted = HeaderValue::from_static("[redacted]");
+        f.debug_map()
+            .entries(self.0.iter().map(|(name, value)| {
+                if matching_ignore_ascii_case(name.as_str(), AUTHORIZATION.as_str()) {
+                    (name, value)
+                } else {
+                    (name, &redacted)
+                }
+            }))
+            .finish()?;
+        write!(f, ")")
     }
 }
 
