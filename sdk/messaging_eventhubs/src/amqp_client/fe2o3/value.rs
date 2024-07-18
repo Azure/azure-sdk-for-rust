@@ -338,8 +338,8 @@ impl PartialEq<fe2o3_amqp_types::primitives::Value> for AmqpValue {
 
 impl<K, V> From<fe2o3_amqp_types::definitions::Fields> for AmqpOrderedMap<K, V>
 where
-    K: PartialEq + From<fe2o3_amqp_types::primitives::Symbol> + Clone,
-    V: From<fe2o3_amqp_types::primitives::Value> + Clone,
+    K: PartialEq + From<fe2o3_amqp_types::primitives::Symbol> + Clone + Default,
+    V: From<fe2o3_amqp_types::primitives::Value> + Clone + Default,
 {
     fn from(fields: fe2o3_amqp_types::definitions::Fields) -> Self {
         let mut map = AmqpOrderedMap::new();

@@ -1,10 +1,7 @@
 //cspell: words amqp
 
 use super::value::{AmqpSymbol, AmqpTimestamp};
-use crate::amqp_client::{
-    fe2o3::error::AmqpSerializationError,
-    value::{AmqpList, AmqpOrderedMap, AmqpValue},
-};
+use crate::amqp_client::value::{AmqpList, AmqpOrderedMap, AmqpValue};
 use azure_core::error::Result;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -42,6 +39,30 @@ pub enum AmqpMessageId {
     Uuid(uuid::Uuid),
     Binary(Vec<u8>),
     Ulong(u64),
+}
+
+impl Into<AmqpMessageId> for uuid::Uuid {
+    fn into(self) -> AmqpMessageId {
+        AmqpMessageId::Uuid(self)
+    }
+}
+
+impl Into<AmqpMessageId> for String {
+    fn into(self) -> AmqpMessageId {
+        AmqpMessageId::String(self)
+    }
+}
+
+impl Into<AmqpMessageId> for Vec<u8> {
+    fn into(self) -> AmqpMessageId {
+        AmqpMessageId::Binary(self)
+    }
+}
+
+impl Into<AmqpMessageId> for u64 {
+    fn into(self) -> AmqpMessageId {
+        AmqpMessageId::Ulong(self)
+    }
 }
 
 /// A target node in an AMQP message
@@ -108,7 +129,7 @@ impl AmqpSource {
 pub struct AmqpMessageHeader {
     durable: Option<bool>,
     priority: Option<u8>,
-    time_to_live: Option<u32>,
+    time_to_live: Option<std::time::Duration>,
     first_acquirer: Option<bool>,
     delivery_count: Option<u32>,
 }
@@ -126,7 +147,7 @@ impl AmqpMessageHeader {
         self.priority.as_ref()
     }
 
-    pub fn time_to_live(&self) -> Option<&u32> {
+    pub fn time_to_live(&self) -> Option<&std::time::Duration> {
         self.time_to_live.as_ref()
     }
 
@@ -139,7 +160,7 @@ impl AmqpMessageHeader {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct AmqpMessageProperties {
     message_id: Option<AmqpMessageId>,
     user_id: Option<Vec<u8>>,
@@ -212,6 +233,10 @@ impl AmqpMessageProperties {
     pub fn reply_to_group_id(&self) -> Option<&String> {
         self.reply_to_group_id.as_ref()
     }
+
+    pub fn set_message_id(&mut self, message_id: impl Into<AmqpMessageId>) {
+        self.message_id = Some(message_id.into());
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -225,6 +250,12 @@ pub enum AmqpMessageBody {
 impl From<Vec<u8>> for AmqpMessageBody {
     fn from(body: Vec<u8>) -> Self {
         AmqpMessageBody::Binary(vec![body])
+    }
+}
+
+impl From<Vec<Vec<u8>>> for AmqpMessageBody {
+    fn from(body: Vec<Vec<u8>>) -> Self {
+        AmqpMessageBody::Binary(body)
     }
 }
 
@@ -252,11 +283,49 @@ pub enum AmqpAnnotationKey {
     Ulong(u64),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+impl Default for AmqpAnnotationKey {
+    fn default() -> Self {
+        Self::Ulong(0)
+    }
+}
+
+impl Into<AmqpAnnotationKey> for AmqpSymbol {
+    fn into(self) -> AmqpAnnotationKey {
+        AmqpAnnotationKey::Symbol(self)
+    }
+}
+
+impl Into<AmqpAnnotationKey> for u64 {
+    fn into(self) -> AmqpAnnotationKey {
+        AmqpAnnotationKey::Ulong(self)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct AmqpAnnotations(pub AmqpOrderedMap<AmqpAnnotationKey, AmqpValue>);
+
+impl AmqpAnnotations {
+    pub fn new() -> Self {
+        AmqpAnnotations(AmqpOrderedMap::new())
+    }
+
+    pub fn insert(&mut self, key: impl Into<AmqpAnnotationKey>, value: impl Into<AmqpValue>) {
+        self.0.insert(key.into(), value.into());
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AmqpApplicationProperties(pub AmqpOrderedMap<String, AmqpValue>);
+
+impl AmqpApplicationProperties {
+    pub fn new() -> Self {
+        AmqpApplicationProperties(AmqpOrderedMap::new())
+    }
+
+    pub fn insert(&mut self, key: impl Into<String>, value: impl Into<AmqpValue>) {
+        self.0.insert(key.into(), value.into());
+    }
+}
 
 /// An AMQP message
 /// This is a simplified version of the AMQP message
@@ -309,6 +378,14 @@ impl AmqpMessage {
         self.footer.as_ref()
     }
 
+    pub fn set_properties(&mut self, properties: AmqpMessageProperties) {
+        self.properties = Some(properties);
+    }
+
+    pub fn set_message_annotations(&mut self, message_annotations: impl Into<AmqpAnnotations>) {
+        self.message_annotations = Some(message_annotations.into());
+    }
+
     pub fn serialize(message: AmqpMessage) -> Result<Vec<u8>> {
         #[cfg(any(feature = "enable-fe2o3-amqp"))]
         {
@@ -320,7 +397,7 @@ impl AmqpMessage {
             let res = serde_amqp::ser::to_vec(
                 &fe2o3_amqp_types::messaging::message::__private::Serializable(amqp_message),
             )
-            .map_err(AmqpSerializationError::from)?;
+            .map_err(crate::amqp_client::fe2o3::error::AmqpSerializationError::from)?;
             Ok(res)
         }
         #[cfg(not(any(feature = "enable-fe2o3-amqp")))]
@@ -489,8 +566,8 @@ pub mod builders {
             self.header.priority = Some(priority);
             self
         }
-        pub fn with_time_to_live(mut self, time_to_live: u32) -> Self {
-            self.header.time_to_live = Some(time_to_live);
+        pub fn with_time_to_live(mut self, time_to_live: impl Into<std::time::Duration>) -> Self {
+            self.header.time_to_live = Some(time_to_live.into());
             self
         }
         pub fn with_first_acquirer(mut self, first_acquirer: bool) -> Self {
@@ -530,44 +607,47 @@ pub mod builders {
                 },
             }
         }
-        pub fn with_message_id(mut self, message_id: AmqpMessageId) -> Self {
-            self.properties.message_id = Some(message_id);
+        pub fn with_message_id(mut self, message_id: impl Into<AmqpMessageId>) -> Self {
+            self.properties.message_id = Some(message_id.into());
             self
         }
-        pub fn with_user_id(mut self, user_id: Vec<u8>) -> Self {
-            self.properties.user_id = Some(user_id);
+        pub fn with_user_id(mut self, user_id: impl Into<Vec<u8>>) -> Self {
+            self.properties.user_id = Some(user_id.into());
             self
         }
-        pub fn with_to(mut self, to: String) -> Self {
-            self.properties.to = Some(to);
+        pub fn with_to(mut self, to: impl Into<String>) -> Self {
+            self.properties.to = Some(to.into());
             self
         }
         pub fn with_subject(mut self, subject: impl Into<String>) -> Self {
             self.properties.subject = Some(subject.into());
             self
         }
-        pub fn with_reply_to(mut self, reply_to: String) -> Self {
-            self.properties.reply_to = Some(reply_to);
+        pub fn with_reply_to(mut self, reply_to: impl Into<String>) -> Self {
+            self.properties.reply_to = Some(reply_to.into());
             self
         }
-        pub fn with_correlation_id(mut self, correlation_id: AmqpMessageId) -> Self {
-            self.properties.correlation_id = Some(correlation_id);
+        pub fn with_correlation_id(mut self, correlation_id: impl Into<AmqpMessageId>) -> Self {
+            self.properties.correlation_id = Some(correlation_id.into());
             self
         }
-        pub fn with_content_type(mut self, content_type: AmqpSymbol) -> Self {
-            self.properties.content_type = Some(content_type);
+        pub fn with_content_type(mut self, content_type: impl Into<AmqpSymbol>) -> Self {
+            self.properties.content_type = Some(content_type.into());
             self
         }
         pub fn with_content_encoding(mut self, content_encoding: AmqpSymbol) -> Self {
             self.properties.content_encoding = Some(content_encoding);
             self
         }
-        pub fn with_absolute_expiry_time(mut self, absolute_expiry_time: AmqpTimestamp) -> Self {
-            self.properties.absolute_expiry_time = Some(absolute_expiry_time);
+        pub fn with_absolute_expiry_time(
+            mut self,
+            absolute_expiry_time: impl Into<AmqpTimestamp>,
+        ) -> Self {
+            self.properties.absolute_expiry_time = Some(absolute_expiry_time.into());
             self
         }
-        pub fn with_creation_time(mut self, creation_time: AmqpTimestamp) -> Self {
-            self.properties.creation_time = Some(creation_time);
+        pub fn with_creation_time(mut self, creation_time: impl Into<AmqpTimestamp>) -> Self {
+            self.properties.creation_time = Some(creation_time.into());
             self
         }
         pub fn with_group_id(mut self, group_id: impl Into<String>) -> Self {
@@ -652,7 +732,103 @@ pub mod builders {
 
 #[cfg(test)]
 mod tests {
+    use std::time::SystemTime;
+
+    use uuid::Uuid;
+
     use super::*;
+
+    #[test]
+    fn test_amqp_message_header_builder() {
+        let header = AmqpMessageHeader::builder()
+            .with_durable(true)
+            .with_priority(5)
+            .with_time_to_live(std::time::Duration::from_millis(1000))
+            .with_first_acquirer(false)
+            .with_delivery_count(3)
+            .build();
+
+        assert_eq!(header.durable, Some(true));
+        assert_eq!(header.priority, Some(5));
+        assert_eq!(
+            header.time_to_live,
+            Some(std::time::Duration::from_millis(1000))
+        );
+        assert_eq!(header.first_acquirer, Some(false));
+        assert_eq!(header.delivery_count, Some(3));
+    }
+
+    #[test]
+    fn test_amqp_message_properties_builder() {
+        let time_now = SystemTime::now();
+        let test_uuid1 = Uuid::new_v4();
+        let test_uuid2 = Uuid::new_v4();
+        let properties = AmqpMessageProperties::builder()
+            .with_message_id(test_uuid1)
+            .with_user_id(vec![1, 2, 3])
+            .with_to("destination".to_string())
+            .with_subject("subject")
+            .with_reply_to("reply_to".to_string())
+            .with_correlation_id(test_uuid2)
+            .with_content_type("content_type")
+            .with_content_encoding(AmqpSymbol::from("content_encoding"))
+            .with_absolute_expiry_time(time_now)
+            .with_creation_time(time_now)
+            .with_group_id("group_id")
+            .with_group_sequence(1)
+            .with_reply_to_group_id("reply_to_group_id")
+            .build();
+
+        assert_eq!(properties.message_id, Some(test_uuid1.into()));
+        assert_eq!(properties.user_id, Some(vec![1, 2, 3]));
+        assert_eq!(properties.to, Some("destination".to_string()));
+        assert_eq!(properties.subject, Some("subject".to_string()));
+        assert_eq!(properties.reply_to, Some("reply_to".to_string()));
+        assert_eq!(properties.correlation_id, Some(test_uuid2.into()));
+        assert_eq!(
+            properties.content_type,
+            Some(AmqpSymbol::from("content_type"))
+        );
+        assert_eq!(
+            properties.content_encoding,
+            Some(AmqpSymbol::from("content_encoding"))
+        );
+        assert_eq!(properties.absolute_expiry_time, Some(time_now.into()));
+        assert_eq!(properties.creation_time, Some(time_now.into()));
+        assert_eq!(properties.group_id, Some("group_id".to_string()));
+        assert_eq!(properties.group_sequence, Some(1));
+        assert_eq!(
+            properties.reply_to_group_id,
+            Some("reply_to_group_id".to_string())
+        );
+    }
+
+    #[test]
+    fn test_amqp_message_builder() {
+        let message = AmqpMessage::builder()
+            .with_body(AmqpMessageBody::Binary(vec![vec![1, 2, 3]]))
+            .with_header(AmqpMessageHeader::builder().build())
+            .with_application_properties(AmqpApplicationProperties::new())
+            .add_application_property("key".to_string(), AmqpValue::from(123))
+            .with_message_annotations(AmqpAnnotations::new())
+            .with_delivery_annotations(AmqpAnnotations::new())
+            .with_properties(AmqpMessageProperties::builder().build())
+            .with_footer(AmqpAnnotations::new())
+            .build();
+
+        assert_eq!(message.body, AmqpMessageBody::Binary(vec![vec![1, 2, 3]]));
+        assert_eq!(message.header, Some(AmqpMessageHeader::builder().build()));
+        let mut properties = AmqpApplicationProperties::new();
+        properties.insert("key", AmqpValue::from(123));
+        assert_eq!(message.application_properties, Some(properties));
+        assert_eq!(message.message_annotations, Some(AmqpAnnotations::new()));
+        assert_eq!(message.delivery_annotations, Some(AmqpAnnotations::new()));
+        assert_eq!(
+            message.properties,
+            Some(AmqpMessageProperties::builder().build())
+        );
+        assert_eq!(message.footer, Some(AmqpAnnotations::new()));
+    }
 
     #[test]
     fn test_amqp_source_builder() {
@@ -709,5 +885,122 @@ mod tests {
             target.capabilities,
             Some(vec![AmqpValue::from("capability")])
         );
+    }
+
+    #[test]
+    fn test_empty_message_serialization() {
+        {
+            let message = AmqpMessage::builder().build();
+            let serialized = AmqpMessage::serialize(message).unwrap();
+            assert_eq!(serialized, vec![0, 0x53, 0x77, 0x40]);
+        }
+        {
+            let message = AmqpMessage::builder()
+                .with_header(
+                    AmqpMessageHeader::builder()
+                        .with_time_to_live(std::time::Duration::from_millis(23))
+                        .build(),
+                )
+                .build();
+            let serialized = AmqpMessage::serialize(message).unwrap();
+
+            // The serialized body should contain:
+            // - 0x0 DESCRIPTOR
+            // - 0x53 // smallulong
+            // - 0x70: MESSAGE HEADER
+            // - 0xc0: 0 (COMPOUND LIST)
+            // - 0x5: 5 (WIDTH 5 bytes)
+            // - 0x3: 3 (LENGTH 3 items)
+            // - 0x40: (ITEM 0 - Durable - EMPTY)
+            // - 0x40: (ITEM 1 - Priority - EMPTY)
+            // - 0x52: (ITEM 2 - Time to Live - SMALLUINT)
+            // - 23: 23 Time To Live == 23.
+            // - 0x00: 0 DESCRIPTOR
+            // - 0x53: SMALLULONG
+            // - 0x77: AMQP VALUE BODY
+            // - 0x40: EMPTY
+
+            assert_eq!(
+                serialized,
+                vec![0, 0x53, 0x70, 0xc0, 0x5, 0x3, 0x40, 0x40, 0x52, 23, 0x00, 0x53, 0x77, 0x40]
+            );
+        }
+    }
+
+    #[test]
+    fn test_value_message_serialization() {
+        {
+            let message = AmqpMessage::builder()
+                .with_body(AmqpValue::from(123))
+                .build();
+            let serialized = AmqpMessage::serialize(message).unwrap();
+            // The serialized body should contain:
+            // - 0x00: 0 DESCRIPTOR
+            // - 0x53: SMALLULONG
+            // - 0x77: AMQP VALUE BODY
+            // - 0x54: AMQP INT
+            // - 0x7b: 0x7b: 123
+            assert_eq!(serialized, vec![0, 0x53, 0x77, 0x54, 123]);
+        }
+        {
+            let message = AmqpMessage::builder()
+                .with_body(AmqpValue::from("hello"))
+                .build();
+            let serialized = AmqpMessage::serialize(message).unwrap();
+            // The serialized body should contain:
+            // - 0x00: 0 DESCRIPTOR
+            // - 0x53: SMALLULONG
+            // - 0x77: AMQP VALUE BODY
+            // - 0xa1: AMQP STRING
+            // - 0x5:  LENGTH
+            // - 0x68, 0x65, 0x6c, 0x6c, 0x6f: hello
+            assert_eq!(
+                serialized,
+                vec![0, 0x53, 0x77, 0xa1, 0x5, 0x68, 0x65, 0x6c, 0x6c, 0x6f]
+            );
+        }
+    }
+
+    #[test]
+    fn test_binary_message_serialization() {
+        {
+            let message = AmqpMessage::builder()
+                .with_body(AmqpMessageBody::Binary(vec![vec![1, 2, 3]]))
+                .build();
+            let serialized = AmqpMessage::serialize(message).unwrap();
+            // The serialized body should contain:
+            // - 0x00: 0 DESCRIPTOR
+            // - 0x53: SMALLULONG
+            // - 0x75: AMQP DATA
+            // - 0x03: LENGTH OF DATA
+            // - 0x01, 0x02, 0x03: DATA
+            assert_eq!(serialized, vec![0x00, 0x53, 0x75, 160, 3, 1, 2, 3]);
+        }
+
+        {
+            let message = AmqpMessage::builder()
+                .with_body(vec![vec![1, 2, 3]])
+                .build();
+            let serialized = AmqpMessage::serialize(message).unwrap();
+            // The serialized body should contain:
+            // - 0x00: 0 DESCRIPTOR
+            // - 0x53: SMALLULONG
+            // - 0x75: AMQP DATA
+            // - 0x03: LENGTH OF DATA
+            // - 0x01, 0x02, 0x03: DATA
+            assert_eq!(serialized, vec![0x00, 0x53, 0x75, 160, 3, 1, 2, 3]);
+        }
+
+        {
+            let message = AmqpMessage::builder().with_body(vec![1, 2, 3]).build();
+            let serialized = AmqpMessage::serialize(message).unwrap();
+            // The serialized body should contain:
+            // - 0x00: 0 DESCRIPTOR
+            // - 0x53: SMALLULONG
+            // - 0x75: AMQP DATA
+            // - 0x03: LENGTH OF DATA
+            // - 0x01, 0x02, 0x03: DATA
+            assert_eq!(serialized, vec![0x00, 0x53, 0x75, 160, 3, 1, 2, 3]);
+        }
     }
 }

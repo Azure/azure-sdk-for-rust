@@ -39,6 +39,12 @@ macro_rules! impl_from_external_error {
             )
         }
     }
+
+    impl std::fmt::Debug for $amqp_error {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{:?}", self.0)
+        }
+    }
 };
 
     ($($amqp_error:ident, $foreign_error:ty),*) => {
@@ -46,7 +52,7 @@ macro_rules! impl_from_external_error {
     }
 }
 impl_from_external_error! {
-   AmqpSerializationError, serde_amqp::error::Error,
+    AmqpSerializationError, serde_amqp::error::Error,
     TimeError, time::error::ComponentRange,
     AmqpSessionError, fe2o3_amqp::session::Error,
     AmqpLinkDetachError, fe2o3_amqp::link::DetachError,

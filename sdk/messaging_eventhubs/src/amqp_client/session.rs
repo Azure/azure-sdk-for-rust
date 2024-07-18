@@ -105,30 +105,37 @@ pub mod builders {
         pub fn build(self) -> AmqpSessionOptions {
             self.options
         }
+        #[allow(dead_code)]
         pub fn with_next_outgoing_id(mut self, next_outgoing_id: u32) -> Self {
             self.options.next_outgoing_id = Some(next_outgoing_id);
             self
         }
+        #[allow(dead_code)]
         pub fn with_incoming_window(mut self, incoming_window: u32) -> Self {
             self.options.incoming_window = Some(incoming_window);
             self
         }
+        #[allow(dead_code)]
         pub fn with_outgoing_window(mut self, outgoing_window: u32) -> Self {
             self.options.outgoing_window = Some(outgoing_window);
             self
         }
+        #[allow(dead_code)]
         pub fn with_handle_max(mut self, handle_max: u32) -> Self {
             self.options.handle_max = Some(handle_max);
             self
         }
+        #[allow(dead_code)]
         pub fn with_offered_capabilities(mut self, offered_capabilities: Vec<AmqpSymbol>) -> Self {
             self.options.offered_capabilities = Some(offered_capabilities);
             self
         }
+        #[allow(dead_code)]
         pub fn with_desired_capabilities(mut self, desired_capabilities: Vec<AmqpSymbol>) -> Self {
             self.options.desired_capabilities = Some(desired_capabilities);
             self
         }
+        #[allow(dead_code)]
         pub fn with_properties(mut self, properties: Vec<(&str, &str)>) -> Self {
             let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = properties
                 .into_iter()
@@ -137,6 +144,7 @@ pub mod builders {
             self.options.properties = Some(properties_map);
             self
         }
+        #[allow(dead_code)]
         pub fn with_buffer_size(mut self, buffer_size: usize) -> Self {
             self.options.buffer_size = Some(buffer_size);
             self

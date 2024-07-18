@@ -110,10 +110,12 @@ pub mod builders {
                 },
             }
         }
+        #[allow(dead_code)]
         pub fn with_sender_settle_mode(mut self, sender_settle_mode: SenderSettleMode) -> Self {
             self.options.sender_settle_mode = Some(sender_settle_mode);
             self
         }
+        #[allow(dead_code)]
         pub fn with_receiver_settle_mode(
             mut self,
             receiver_settle_mode: ReceiverSettleMode,
@@ -121,18 +123,22 @@ pub mod builders {
             self.options.receiver_settle_mode = Some(receiver_settle_mode);
             self
         }
+        #[allow(dead_code)]
         pub fn with_source(mut self, source: impl Into<AmqpSource>) -> Self {
             self.options.source = Some(source.into());
             self
         }
+        #[allow(dead_code)]
         pub fn with_offered_capabilities(mut self, offered_capabilities: Vec<AmqpSymbol>) -> Self {
             self.options.offered_capabilities = Some(offered_capabilities);
             self
         }
+        #[allow(dead_code)]
         pub fn with_desired_capabilities(mut self, desired_capabilities: Vec<AmqpSymbol>) -> Self {
             self.options.desired_capabilities = Some(desired_capabilities);
             self
         }
+        #[allow(dead_code)]
         pub fn with_properties(
             mut self,
             properties: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
@@ -146,6 +152,7 @@ pub mod builders {
             self.options.properties = Some(properties_map);
             self
         }
+        #[allow(dead_code)]
         pub fn with_initial_delivery_count(mut self, initial_delivery_count: u32) -> Self {
             self.options.initial_delivery_count = Some(initial_delivery_count);
             self

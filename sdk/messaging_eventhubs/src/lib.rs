@@ -257,15 +257,14 @@ pub mod models {
             let mut message_builder = AmqpMessage::builder();
             if let Some(content_type) = event_data.content_type {
                 message_properties_builder =
-                    message_properties_builder.with_content_type(content_type.into());
+                    message_properties_builder.with_content_type(content_type);
             }
             if let Some(correlation_id) = event_data.correlation_id {
                 message_properties_builder =
-                    message_properties_builder.with_correlation_id(correlation_id.into());
+                    message_properties_builder.with_correlation_id(correlation_id);
             }
             if let Some(message_id) = event_data.message_id {
-                message_properties_builder =
-                    message_properties_builder.with_message_id(message_id.into());
+                message_properties_builder = message_properties_builder.with_message_id(message_id);
             }
             if let Some(properties) = event_data.properties {
                 message_builder =

@@ -1,6 +1,6 @@
 // cspell: words amqp
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct AmqpSymbol(pub String);
 
 #[derive(Debug, PartialEq, Clone)]
@@ -9,10 +9,17 @@ pub struct AmqpList(pub Vec<AmqpValue>);
 #[derive(Debug, PartialEq, Clone)]
 pub struct AmqpTimestamp(pub std::time::SystemTime);
 
-#[derive(Debug, PartialEq, Clone)]
+impl Into<AmqpTimestamp> for std::time::SystemTime {
+    fn into(self) -> AmqpTimestamp {
+        AmqpTimestamp(self)
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct AmqpOrderedMap<K, V>
 where
-    K: PartialEq,
+    K: PartialEq + Default,
+    V: Default,
 {
     inner: Vec<(K, V)>,
 }
@@ -29,8 +36,9 @@ pub struct AmqpDescribed {
     pub value: AmqpValue,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub enum AmqpValue {
+    #[default]
     Null,
     Boolean(bool),
     UByte(u8),
@@ -60,8 +68,8 @@ impl AmqpValue {}
 
 impl<K, V> AmqpOrderedMap<K, V>
 where
-    K: PartialEq + Clone,
-    V: Clone,
+    K: PartialEq + Clone + Default,
+    V: Clone + Default,
 {
     pub fn new() -> Self {
         Self { inner: Vec::new() }
@@ -97,7 +105,8 @@ where
 
 impl<K, V> IntoIterator for AmqpOrderedMap<K, V>
 where
-    K: PartialEq,
+    K: PartialEq + Default,
+    V: Default,
 {
     type Item = (K, V);
     type IntoIter = <Vec<(K, V)> as IntoIterator>::IntoIter;
@@ -256,7 +265,8 @@ impl From<&str> for AmqpSymbol {
 
 impl<K, V> From<Vec<(K, V)>> for AmqpOrderedMap<K, V>
 where
-    K: PartialEq,
+    K: PartialEq + Default,
+    V: Default,
 {
     fn from(v: Vec<(K, V)>) -> Self {
         AmqpOrderedMap {
@@ -267,7 +277,8 @@ where
 
 impl<K, V> FromIterator<(K, V)> for AmqpOrderedMap<K, V>
 where
-    K: PartialEq,
+    K: PartialEq + Default,
+    V: Default,
 {
     fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
         AmqpOrderedMap {

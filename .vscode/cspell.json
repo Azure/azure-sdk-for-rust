@@ -39,12 +39,10 @@
     {
       "name": "rust-custom",
       "path": "../eng/dict/rust-custom.txt",
-      "noSuggest": true
     }
   ],
   "overrides": [
     {
-      "filename": "**/Cargo.toml",
       "dictionaries": [
         "crates",
         "rust-custom"
