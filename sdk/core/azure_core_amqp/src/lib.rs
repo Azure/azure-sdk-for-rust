@@ -1,3 +1,4 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp sasl
 
 #[cfg(any(feature = "enable-fe2o3-amqp"))]
@@ -18,14 +19,14 @@ pub mod value;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum SenderSettleMode {
+pub enum SenderSettleMode {
     Unsettled = 0,
     Settled = 1,
     Mixed = 2,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum ReceiverSettleMode {
+pub enum ReceiverSettleMode {
     First = 0,
     Second = 1,
 }

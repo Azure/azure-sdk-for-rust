@@ -1,3 +1,4 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp sasl
 
 use super::{
@@ -27,15 +28,15 @@ impl AmqpSessionOptions {
 
 #[allow(unused_variables)]
 pub trait AmqpSessionTrait {
-    async fn begin(
+    fn begin(
         &self,
         connection: &AmqpConnection,
         options: Option<AmqpSessionOptions>,
-    ) -> Result<()> {
-        unimplemented!()
+    ) -> impl std::future::Future<Output = Result<()>> {
+        async { unimplemented!() }
     }
-    async fn end(&self) -> Result<()> {
-        unimplemented!()
+    fn end(&self) -> impl std::future::Future<Output = Result<()>> {
+        async { unimplemented!() }
     }
 }
 

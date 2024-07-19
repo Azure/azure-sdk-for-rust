@@ -1,3 +1,4 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
 //cspell: words amqp
 
 use super::messaging::{AmqpMessage, AmqpSource, AmqpTarget};
@@ -26,20 +27,20 @@ impl AmqpSenderOptions {
 
 #[allow(unused_variables)]
 pub trait AmqpSenderTrait {
-    async fn attach(
+    fn attach(
         &self,
         session: &AmqpSession,
         name: impl Into<String>,
         target: impl Into<AmqpTarget>,
         options: Option<AmqpSenderOptions>,
-    ) -> Result<()> {
-        unimplemented!()
+    ) -> impl std::future::Future<Output = Result<()>> {
+        async { unimplemented!() }
     }
-    async fn max_message_size(&self) -> Option<u64> {
-        unimplemented!()
+    fn max_message_size(&self) -> impl std::future::Future<Output = Option<u64>> {
+        async { unimplemented!() }
     }
-    async fn send(&self, message: AmqpMessage) -> Result<()> {
-        unimplemented!()
+    fn send(&self, message: AmqpMessage) -> impl std::future::Future<Output = Result<()>> {
+        async { unimplemented!() }
     }
 }
 

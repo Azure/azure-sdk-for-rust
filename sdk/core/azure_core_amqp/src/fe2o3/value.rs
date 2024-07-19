@@ -1,3 +1,4 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp
 
 use serde_bytes::ByteBuf;

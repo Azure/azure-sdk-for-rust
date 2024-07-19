@@ -1,4 +1,5 @@
-// cspell: words amqp eventhub
+// Copyright (c) Microsoft Corp. All Rights Reserved.
+// cspell: words amqp eventhub eventhubs
 
 #![recursion_limit = "128"]
 

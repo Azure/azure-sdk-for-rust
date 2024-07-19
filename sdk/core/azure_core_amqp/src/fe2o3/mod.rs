@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
+
 pub mod cbs;
 pub mod connection;
 pub mod error;

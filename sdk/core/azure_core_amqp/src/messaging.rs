@@ -1,4 +1,5 @@
-//cspell: words amqp
+// Copyright (c) Microsoft Corp. All Rights Reserved
+//cspell: words amqp SMALLUINT SMALLULONG
 
 use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 use azure_core::error::Result;

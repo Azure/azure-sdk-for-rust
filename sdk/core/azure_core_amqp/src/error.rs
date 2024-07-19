@@ -1,3 +1,4 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp
 
 #[cfg(any(feature = "enable-fe2o3-amqp"))]

@@ -1,3 +1,4 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell:: words amqp servicebus sastoken
 
 use super::error::AmqpManagementAttachError;
@@ -6,7 +7,6 @@ use crate::{cbs::AmqpClaimsBasedSecurityTrait, fe2o3::error::AmqpManagementError
 use azure_core::error::Result;
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
-use futures::{FutureExt, TryFutureExt};
 use log::{debug, trace};
 use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};
@@ -42,7 +42,7 @@ impl AmqpClaimsBasedSecurityTrait for Fe2o3ClaimsBasedSecurity {
     async fn attach(&self) -> Result<()> {
         let mut session = self.session.lock().await;
         let cbs_client = fe2o3_amqp_cbs::client::CbsClient::builder()
-            .client_node_addr("rust_eventhubs_cbs")
+            .client_node_addr("rust_amqp_cbs")
             .attach(session.borrow_mut())
             .await
             .map_err(AmqpManagementAttachError::from)?;
@@ -50,12 +50,12 @@ impl AmqpClaimsBasedSecurityTrait for Fe2o3ClaimsBasedSecurity {
         Ok(())
     }
 
-    fn authorize_path(
+    async fn authorize_path(
         &self,
         path: &String,
         secret: impl Into<String>,
         expires_at: time::OffsetDateTime,
-    ) -> impl std::future::Future<Output = Result<()>> + Send {
+    ) -> Result<()> {
         trace!(
             "authorize_path: path: {:?}, expires_at: {:?}",
             path,
@@ -76,13 +76,11 @@ impl AmqpClaimsBasedSecurityTrait for Fe2o3ClaimsBasedSecurity {
             .get()
             .unwrap()
             .lock()
-            .then(move |cbs| {
-                //                let cbs = Arc::new(cbs);
-                let mut cbs = cbs;
-                let path = path.clone();
-                let cbs_token = cbs_token.clone();
-                async move { cbs.borrow_mut().put_token(path, cbs_token).await }
-            })
-            .map_err(|err| AmqpManagementError::from(err).into())
+            .await
+            .borrow_mut()
+            .put_token(path, cbs_token)
+            .await
+            .map_err(AmqpManagementError::from)?;
+        Ok(())
     }
 }

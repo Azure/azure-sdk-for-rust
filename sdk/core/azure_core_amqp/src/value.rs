@@ -1,3 +1,4 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp
 
 #[derive(Debug, PartialEq, Clone, Default)]

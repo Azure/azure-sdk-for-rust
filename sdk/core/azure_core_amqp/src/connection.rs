@@ -1,3 +1,4 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp sasl
 
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
@@ -26,16 +27,20 @@ impl AmqpConnectionOptions {
 
 pub trait AmqpConnectionTrait {
     #[allow(unused_variables)]
-    async fn open(
+    fn open(
         &self,
         name: impl Into<String>,
         url: Url,
         options: Option<AmqpConnectionOptions>,
-    ) -> Result<()> {
-        unimplemented!();
+    ) -> impl std::future::Future<Output = Result<()>> {
+        async {
+            unimplemented!();
+        }
     }
-    async fn close(&self) -> Result<()> {
-        unimplemented!();
+    fn close(&self) -> impl std::future::Future<Output = Result<()>> {
+        async {
+            unimplemented!();
+        }
     }
 }
 
@@ -61,16 +66,16 @@ where
 pub struct AmqpConnection(pub(crate) AmqpConnectionImpl<ConnectionImplementation>);
 
 impl AmqpConnectionTrait for AmqpConnection {
-    async fn open(
+    fn open(
         &self,
         name: impl Into<String>,
         url: Url,
         options: Option<AmqpConnectionOptions>,
-    ) -> Result<()> {
-        self.0 .0.open(name, url, options).await
+    ) -> impl std::future::Future<Output = Result<()>> {
+        self.0 .0.open(name, url, options)
     }
-    async fn close(&self) -> Result<()> {
-        self.0 .0.close().await
+    fn close(&self) -> impl std::future::Future<Output = Result<()>> {
+        self.0 .0.close()
     }
 }
 

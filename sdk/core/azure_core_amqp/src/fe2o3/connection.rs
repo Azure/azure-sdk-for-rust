@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
+
 // cspell: words amqp widnow eventhubs sasl
 
 use crate::{
@@ -104,6 +106,7 @@ impl AmqpConnectionTrait for Fe2o3AmqpConnection {
                     builder = builder.buffer_size(options.buffer_size.unwrap());
                 }
             }
+
             self.connection
                 .set(Mutex::new(
                     builder.open(url).await.map_err(AmqpOpenError::from)?,
@@ -122,20 +125,4 @@ impl AmqpConnectionTrait for Fe2o3AmqpConnection {
             .map_err(AmqpConnectionError::from)?;
         Ok(())
     }
-    // async fn create_claims_based_security(&self) -> Result<AmqpClaimsBasedSecurity> {
-    //     let mut connection = self.connection.get().unwrap().lock().await;
-    //     let mut session = fe2o3_amqp::session::Session::begin(connection.borrow_mut())
-    //         .await
-    //         .map_err(AmqpBeginError::from)?;
-
-    //     let cbs_client = fe2o3_amqp_cbs::client::CbsClient::builder()
-    //         .client_node_addr("rust_eventhubs_cbs")
-    //         .attach(&mut session)
-    //         .await
-    //         .map_err(AmqpManagementAttachError::from)?;
-
-    //     Ok(AmqpClaimsBasedSecurity::new(Fe2o3ClaimsBasedSecurity::new(
-    //         cbs_client, session,
-    //     )))
-    // }
 }

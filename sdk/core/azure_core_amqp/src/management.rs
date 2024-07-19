@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
+
 // cspell: words amqp sasl
 
 use super::{
@@ -8,17 +10,17 @@ use azure_core::{auth::AccessToken, error::Result};
 use std::fmt::Debug;
 
 pub trait AmqpManagementTrait {
-    async fn attach(&self) -> Result<()> {
-        unimplemented!()
+    fn attach(&self) -> impl std::future::Future<Output = Result<()>> {
+        async { unimplemented!() }
     }
 
     #[allow(unused_variables)]
-    async fn call(
+    fn call(
         &self,
         operation_type: impl Into<String>,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
-    ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
-        unimplemented!()
+    ) -> impl std::future::Future<Output = Result<AmqpOrderedMap<String, AmqpValue>>> {
+        async { unimplemented!() }
     }
 }
 

@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
+
 //#![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
 //cspell: words eventhubs eventhub
 

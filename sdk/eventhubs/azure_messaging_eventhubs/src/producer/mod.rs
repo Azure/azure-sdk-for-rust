@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
+
 //cspell: words amqp eventhub amqps servicebus eventhubs mgmt
 
 use azure_core_amqp::{

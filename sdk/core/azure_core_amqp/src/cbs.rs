@@ -1,3 +1,4 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp sasl
 
 use azure_core::error::Result;
@@ -22,7 +23,7 @@ pub trait AmqpClaimsBasedSecurityTrait {
     /// - `Ok(())` on successful attachment of the CBS node.
     /// - `Err(e)` where `e` is an error from the `azure_core::error::Result` indicating the failure reason.
     ///
-    fn attach(&self) -> impl std::future::Future<Output = Result<()>> + Send {
+    fn attach(&self) -> impl std::future::Future<Output = Result<()>> {
         async { unimplemented!() }
     }
 
@@ -48,7 +49,7 @@ pub trait AmqpClaimsBasedSecurityTrait {
         path: &String,
         secret: impl Into<String>,
         expires_on: time::OffsetDateTime,
-    ) -> impl std::future::Future<Output = Result<()>> + Send {
+    ) -> impl std::future::Future<Output = Result<()>> {
         async { unimplemented!() }
     }
 }
@@ -69,18 +70,17 @@ where
 pub struct AmqpClaimsBasedSecurity(AmqpClaimsBasedSecurityImpl<CbsImplementation>);
 
 impl AmqpClaimsBasedSecurityTrait for AmqpClaimsBasedSecurity {
-    fn authorize_path(
+    async fn authorize_path(
         &self,
         path: &String,
         secret: impl Into<String>,
         expires_on: time::OffsetDateTime,
-    ) -> impl std::future::Future<Output = Result<()>> + Send {
-        self.0 .0.authorize_path(path, secret, expires_on)
+    ) -> Result<()> {
+        self.0 .0.authorize_path(path, secret, expires_on).await
     }
 
     async fn attach(&self) -> Result<()> {
-        self.0 .0.attach().await?;
-        Ok(())
+        self.0 .0.attach().await
     }
 }
 

@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corp. All Rights Reserved.
+
 [package]
 name = "azure_messaging_eventhubs"
 version = "0.19.0"

@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corp. All Rights Reserved.
+
 // cspell: words amqp eventhubs
 use azure_core_amqp::error::AmqpError;
 
