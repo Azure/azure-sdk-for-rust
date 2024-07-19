@@ -4,7 +4,7 @@
 
 use fe2o3_amqp_types::messaging::annotations::OwnedKey;
 
-use crate::amqp_client::{
+use crate::{
     messaging::{
         AmqpAnnotationKey, AmqpAnnotations, AmqpApplicationProperties, AmqpMessageHeader,
         AmqpMessageId, AmqpMessageProperties,
@@ -51,7 +51,7 @@ impl From<AmqpMessageId> for fe2o3_amqp_types::messaging::MessageId {
 }
 
 impl From<fe2o3_amqp_types::messaging::ApplicationProperties>
-    for crate::amqp_client::messaging::AmqpApplicationProperties
+    for crate::messaging::AmqpApplicationProperties
 {
     fn from(application_properties: fe2o3_amqp_types::messaging::ApplicationProperties) -> Self {
         let mut properties = AmqpOrderedMap::<String, AmqpValue>::new();
@@ -99,7 +99,7 @@ impl From<AmqpMessageHeader> for fe2o3_amqp_types::messaging::Header {
     }
 }
 
-impl From<crate::amqp_client::messaging::AmqpApplicationProperties>
+impl From<crate::messaging::AmqpApplicationProperties>
     for fe2o3_amqp_types::messaging::ApplicationProperties
 {
     fn from(application_properties: AmqpApplicationProperties) -> Self {
@@ -111,7 +111,7 @@ impl From<crate::amqp_client::messaging::AmqpApplicationProperties>
     }
 }
 
-impl From<crate::amqp_client::messaging::AmqpAnnotationKey> for OwnedKey {
+impl From<crate::messaging::AmqpAnnotationKey> for OwnedKey {
     fn from(key: AmqpAnnotationKey) -> Self {
         match key {
             AmqpAnnotationKey::Ulong(key) => OwnedKey::Ulong(key),
@@ -120,20 +120,16 @@ impl From<crate::amqp_client::messaging::AmqpAnnotationKey> for OwnedKey {
     }
 }
 
-impl From<OwnedKey> for crate::amqp_client::messaging::AmqpAnnotationKey {
+impl From<OwnedKey> for crate::messaging::AmqpAnnotationKey {
     fn from(key: OwnedKey) -> Self {
         match key {
-            OwnedKey::Ulong(key) => crate::amqp_client::messaging::AmqpAnnotationKey::Ulong(key),
-            OwnedKey::Symbol(key) => {
-                crate::amqp_client::messaging::AmqpAnnotationKey::Symbol(key.into())
-            }
+            OwnedKey::Ulong(key) => crate::messaging::AmqpAnnotationKey::Ulong(key),
+            OwnedKey::Symbol(key) => crate::messaging::AmqpAnnotationKey::Symbol(key.into()),
         }
     }
 }
 
-impl From<crate::amqp_client::messaging::AmqpAnnotations>
-    for fe2o3_amqp_types::messaging::Annotations
-{
+impl From<crate::messaging::AmqpAnnotations> for fe2o3_amqp_types::messaging::Annotations {
     fn from(annotations: AmqpAnnotations) -> Self {
         let mut message_annotations = fe2o3_amqp_types::messaging::Annotations::new();
         for (key, value) in annotations.0 {

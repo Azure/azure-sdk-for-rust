@@ -7,7 +7,7 @@ use super::{
 use azure_core::{auth::AccessToken, error::Result};
 use std::fmt::Debug;
 
-pub(crate) trait AmqpManagementTrait {
+pub trait AmqpManagementTrait {
     async fn attach(&self) -> Result<()> {
         unimplemented!()
     }
@@ -57,7 +57,7 @@ impl AmqpManagementTrait for AmqpManagement {
 }
 
 impl AmqpManagement {
-    pub(crate) fn new(
+    pub fn new(
         session: AmqpSession,
         client_node_name: impl Into<String>,
         access_token: AccessToken,

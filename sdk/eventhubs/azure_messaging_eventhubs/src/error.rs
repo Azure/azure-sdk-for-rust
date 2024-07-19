@@ -1,5 +1,5 @@
 // cspell: words amqp eventhubs
-use crate::amqp_client::error::AmqpError;
+use azure_core_amqp::error::AmqpError;
 
 pub enum ErrorKind {
     InvalidParameter(String),

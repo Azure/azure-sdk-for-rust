@@ -1,6 +1,6 @@
 //cspell: words amqp eventhub
-use crate::amqp_client::connection::AmqpConnection;
 use azure_core::RetryOptions;
+use azure_core_amqp::connection::AmqpConnection;
 
 pub struct ConsumerClientOptions {
     application_id: Option<String>,

@@ -10,7 +10,7 @@ pub mod messaging_types;
 use fe2o3_amqp_types::messaging::{message::EmptyBody, IntoBody};
 use serde_amqp::{extensions::TransparentVec, Value};
 
-use crate::amqp_client::{
+use crate::{
     messaging::{AmqpMessage, AmqpMessageBody},
     value::AmqpValue,
 };

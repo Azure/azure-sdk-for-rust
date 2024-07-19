@@ -1,7 +1,6 @@
 //cspell: words amqp
 
-use super::value::{AmqpSymbol, AmqpTimestamp};
-use crate::amqp_client::value::{AmqpList, AmqpOrderedMap, AmqpValue};
+use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 use azure_core::error::Result;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -397,7 +396,7 @@ impl AmqpMessage {
             let res = serde_amqp::ser::to_vec(
                 &fe2o3_amqp_types::messaging::message::__private::Serializable(amqp_message),
             )
-            .map_err(crate::amqp_client::fe2o3::error::AmqpSerializationError::from)?;
+            .map_err(crate::fe2o3::error::AmqpSerializationError::from)?;
             Ok(res)
         }
         #[cfg(not(any(feature = "enable-fe2o3-amqp")))]

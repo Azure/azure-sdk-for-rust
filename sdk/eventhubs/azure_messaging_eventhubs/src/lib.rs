@@ -2,7 +2,6 @@
 
 #![recursion_limit = "128"]
 
-pub mod amqp_client;
 pub(crate) mod common;
 pub mod consumer;
 pub mod error;
@@ -10,7 +9,7 @@ pub mod producer;
 
 pub mod models {
 
-    use crate::amqp_client::{
+    use azure_core_amqp::{
         messaging::{AmqpMessage, AmqpMessageId, AmqpMessageProperties},
         value::AmqpValue,
     };
@@ -337,7 +336,7 @@ pub mod models {
 #[cfg(test)]
 mod tests {
     use super::models::*;
-    use crate::amqp_client::{messaging::AmqpMessageId, value::AmqpValue};
+    use azure_core_amqp::{messaging::AmqpMessageId, value::AmqpValue};
 
     #[test]
     fn test_message_id_from_u64() {

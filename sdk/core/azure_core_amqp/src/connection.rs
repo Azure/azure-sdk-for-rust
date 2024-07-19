@@ -6,7 +6,7 @@ use std::fmt::Debug;
 use time::Duration;
 use url::Url;
 
-pub(crate) struct AmqpConnectionOptions {
+pub struct AmqpConnectionOptions {
     pub(crate) max_frame_size: Option<u32>,
     pub(crate) channel_max: Option<u16>,
     pub(crate) idle_timeout: Option<Duration>,
@@ -19,12 +19,12 @@ pub(crate) struct AmqpConnectionOptions {
 }
 
 impl AmqpConnectionOptions {
-    pub(crate) fn builder() -> builders::AmqpConnectionOptionsBuilder {
+    pub fn builder() -> builders::AmqpConnectionOptionsBuilder {
         builders::AmqpConnectionOptionsBuilder::new()
     }
 }
 
-pub(crate) trait AmqpConnectionTrait {
+pub trait AmqpConnectionTrait {
     #[allow(unused_variables)]
     async fn open(
         &self,
@@ -58,7 +58,7 @@ where
 }
 
 #[derive(Debug)]
-pub(crate) struct AmqpConnection(pub(crate) AmqpConnectionImpl<ConnectionImplementation>);
+pub struct AmqpConnection(pub(crate) AmqpConnectionImpl<ConnectionImplementation>);
 
 impl AmqpConnectionTrait for AmqpConnection {
     async fn open(
@@ -75,7 +75,7 @@ impl AmqpConnectionTrait for AmqpConnection {
 }
 
 impl AmqpConnection {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         let connection = ConnectionImplementation::new();
 
         Self(AmqpConnectionImpl::new(connection))
@@ -84,7 +84,7 @@ impl AmqpConnection {
 
 pub mod builders {
     use super::*;
-    pub(crate) struct AmqpConnectionOptionsBuilder {
+    pub struct AmqpConnectionOptionsBuilder {
         options: AmqpConnectionOptions,
     }
 

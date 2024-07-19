@@ -1,6 +1,6 @@
 // cspell: words amqp widnow eventhubs sasl
 
-use crate::amqp_client::{
+use crate::{
     connection::{AmqpConnectionOptions, AmqpConnectionTrait},
     fe2o3::error::AmqpConnectionError,
 };

@@ -4,7 +4,7 @@
 
 use fe2o3_amqp_types::definitions::Fields;
 
-use crate::amqp_client::{
+use crate::{
     messaging::AmqpSource,
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };

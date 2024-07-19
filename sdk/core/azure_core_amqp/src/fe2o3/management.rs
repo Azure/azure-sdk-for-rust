@@ -4,7 +4,7 @@
 
 use std::borrow::BorrowMut;
 
-use crate::amqp_client::{
+use crate::{
     fe2o3::error::AmqpManagementError,
     management::AmqpManagementTrait,
     value::{AmqpOrderedMap, AmqpValue},

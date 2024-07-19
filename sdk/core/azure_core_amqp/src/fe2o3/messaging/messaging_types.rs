@@ -2,7 +2,7 @@
 
 // cspell: words amqp servicebus eventhub mgmt
 
-use crate::amqp_client::messaging::AmqpOutcome;
+use crate::messaging::AmqpOutcome;
 
 impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpOutcome {
     fn from(outcome: fe2o3_amqp_types::messaging::Outcome) -> Self {
@@ -39,35 +39,35 @@ impl From<AmqpOutcome> for fe2o3_amqp_types::messaging::Outcome {
 }
 
 impl From<fe2o3_amqp_types::messaging::TerminusDurability>
-    for crate::amqp_client::messaging::TerminusDurability
+    for crate::messaging::TerminusDurability
 {
     fn from(durability: fe2o3_amqp_types::messaging::TerminusDurability) -> Self {
         match durability {
             fe2o3_amqp_types::messaging::TerminusDurability::None => {
-                crate::amqp_client::messaging::TerminusDurability::None
+                crate::messaging::TerminusDurability::None
             }
             fe2o3_amqp_types::messaging::TerminusDurability::Configuration => {
-                crate::amqp_client::messaging::TerminusDurability::Configuration
+                crate::messaging::TerminusDurability::Configuration
             }
             fe2o3_amqp_types::messaging::TerminusDurability::UnsettledState => {
-                crate::amqp_client::messaging::TerminusDurability::UnsettledState
+                crate::messaging::TerminusDurability::UnsettledState
             }
         }
     }
 }
 
-impl From<crate::amqp_client::messaging::TerminusDurability>
+impl From<crate::messaging::TerminusDurability>
     for fe2o3_amqp_types::messaging::TerminusDurability
 {
-    fn from(durability: crate::amqp_client::messaging::TerminusDurability) -> Self {
+    fn from(durability: crate::messaging::TerminusDurability) -> Self {
         match durability {
-            crate::amqp_client::messaging::TerminusDurability::None => {
+            crate::messaging::TerminusDurability::None => {
                 fe2o3_amqp_types::messaging::TerminusDurability::None
             }
-            crate::amqp_client::messaging::TerminusDurability::Configuration => {
+            crate::messaging::TerminusDurability::Configuration => {
                 fe2o3_amqp_types::messaging::TerminusDurability::Configuration
             }
-            crate::amqp_client::messaging::TerminusDurability::UnsettledState => {
+            crate::messaging::TerminusDurability::UnsettledState => {
                 fe2o3_amqp_types::messaging::TerminusDurability::UnsettledState
             }
         }
@@ -75,71 +75,67 @@ impl From<crate::amqp_client::messaging::TerminusDurability>
 }
 
 impl From<fe2o3_amqp_types::messaging::TerminusExpiryPolicy>
-    for crate::amqp_client::messaging::TerminusExpiryPolicy
+    for crate::messaging::TerminusExpiryPolicy
 {
     fn from(expiry_policy: fe2o3_amqp_types::messaging::TerminusExpiryPolicy) -> Self {
         match expiry_policy {
             fe2o3_amqp_types::messaging::TerminusExpiryPolicy::LinkDetach => {
-                crate::amqp_client::messaging::TerminusExpiryPolicy::LinkDetach
+                crate::messaging::TerminusExpiryPolicy::LinkDetach
             }
             fe2o3_amqp_types::messaging::TerminusExpiryPolicy::SessionEnd => {
-                crate::amqp_client::messaging::TerminusExpiryPolicy::SessionEnd
+                crate::messaging::TerminusExpiryPolicy::SessionEnd
             }
             fe2o3_amqp_types::messaging::TerminusExpiryPolicy::ConnectionClose => {
-                crate::amqp_client::messaging::TerminusExpiryPolicy::ConnectionClose
+                crate::messaging::TerminusExpiryPolicy::ConnectionClose
             }
             fe2o3_amqp_types::messaging::TerminusExpiryPolicy::Never => {
-                crate::amqp_client::messaging::TerminusExpiryPolicy::Never
+                crate::messaging::TerminusExpiryPolicy::Never
             }
         }
     }
 }
 
-impl From<crate::amqp_client::messaging::TerminusExpiryPolicy>
+impl From<crate::messaging::TerminusExpiryPolicy>
     for fe2o3_amqp_types::messaging::TerminusExpiryPolicy
 {
-    fn from(expiry_policy: crate::amqp_client::messaging::TerminusExpiryPolicy) -> Self {
+    fn from(expiry_policy: crate::messaging::TerminusExpiryPolicy) -> Self {
         match expiry_policy {
-            crate::amqp_client::messaging::TerminusExpiryPolicy::LinkDetach => {
+            crate::messaging::TerminusExpiryPolicy::LinkDetach => {
                 fe2o3_amqp_types::messaging::TerminusExpiryPolicy::LinkDetach
             }
-            crate::amqp_client::messaging::TerminusExpiryPolicy::SessionEnd => {
+            crate::messaging::TerminusExpiryPolicy::SessionEnd => {
                 fe2o3_amqp_types::messaging::TerminusExpiryPolicy::SessionEnd
             }
-            crate::amqp_client::messaging::TerminusExpiryPolicy::ConnectionClose => {
+            crate::messaging::TerminusExpiryPolicy::ConnectionClose => {
                 fe2o3_amqp_types::messaging::TerminusExpiryPolicy::ConnectionClose
             }
-            crate::amqp_client::messaging::TerminusExpiryPolicy::Never => {
+            crate::messaging::TerminusExpiryPolicy::Never => {
                 fe2o3_amqp_types::messaging::TerminusExpiryPolicy::Never
             }
         }
     }
 }
 
-impl From<fe2o3_amqp_types::messaging::DistributionMode>
-    for crate::amqp_client::messaging::DistributionMode
-{
+impl From<fe2o3_amqp_types::messaging::DistributionMode> for crate::messaging::DistributionMode {
     fn from(distribution_mode: fe2o3_amqp_types::messaging::DistributionMode) -> Self {
         match distribution_mode {
             fe2o3_amqp_types::messaging::DistributionMode::Move => {
-                crate::amqp_client::messaging::DistributionMode::Move
+                crate::messaging::DistributionMode::Move
             }
             fe2o3_amqp_types::messaging::DistributionMode::Copy => {
-                crate::amqp_client::messaging::DistributionMode::Copy
+                crate::messaging::DistributionMode::Copy
             }
         }
     }
 }
 
-impl From<crate::amqp_client::messaging::DistributionMode>
-    for fe2o3_amqp_types::messaging::DistributionMode
-{
-    fn from(distribution_mode: crate::amqp_client::messaging::DistributionMode) -> Self {
+impl From<crate::messaging::DistributionMode> for fe2o3_amqp_types::messaging::DistributionMode {
+    fn from(distribution_mode: crate::messaging::DistributionMode) -> Self {
         match distribution_mode {
-            crate::amqp_client::messaging::DistributionMode::Move => {
+            crate::messaging::DistributionMode::Move => {
                 fe2o3_amqp_types::messaging::DistributionMode::Move
             }
-            crate::amqp_client::messaging::DistributionMode::Copy => {
+            crate::messaging::DistributionMode::Copy => {
                 fe2o3_amqp_types::messaging::DistributionMode::Copy
             }
         }

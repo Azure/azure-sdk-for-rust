@@ -4,13 +4,13 @@ use std::sync::Mutex;
 
 use super::ProducerClient;
 
-use crate::amqp_client::{
+use crate::models::EventData;
+use azure_core::error::Result;
+use azure_core_amqp::{
     messaging::{AmqpAnnotations, AmqpMessage, AmqpMessageProperties},
     sender::AmqpSenderTrait,
     value::{AmqpSymbol, AmqpValue},
 };
-use crate::models::EventData;
-use azure_core::error::Result;
 use log::debug;
 use uuid::Uuid;
 
@@ -81,7 +81,7 @@ impl<'a> EventDataBatch<'a> {
 
     pub fn add_amqp_message(
         &self,
-        message: crate::amqp_client::messaging::AmqpMessage,
+        message: AmqpMessage,
         #[allow(unused_variables)] options: Option<AddEventDataOptions>,
     ) -> Result<()> {
         let mut message = message;

@@ -1,7 +1,7 @@
 // cspell: words amqp mgmt
 
 use super::error::AmqpBeginError;
-use crate::amqp_client::{
+use crate::{
     connection::AmqpConnection,
     session::{AmqpSessionOptions, AmqpSessionTrait},
 };

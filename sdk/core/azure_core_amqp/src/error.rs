@@ -1,7 +1,7 @@
 // cspell: words amqp
 
 #[cfg(any(feature = "enable-fe2o3-amqp"))]
-use crate::amqp_client::fe2o3::error::Fe2o3AmqpError;
+use crate::fe2o3::error::Fe2o3AmqpError;
 
 pub enum ErrorKind {
     #[cfg(any(feature = "enable-fe2o3-amqp"))]

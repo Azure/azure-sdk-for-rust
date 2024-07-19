@@ -8,7 +8,7 @@ use azure_core::error::Result;
 use std::fmt::Debug;
 
 #[derive(Debug)]
-pub(crate) struct AmqpSessionOptions {
+pub struct AmqpSessionOptions {
     pub(crate) next_outgoing_id: Option<u32>,
     pub(crate) incoming_window: Option<u32>,
     pub(crate) outgoing_window: Option<u32>,
@@ -26,7 +26,7 @@ impl AmqpSessionOptions {
 }
 
 #[allow(unused_variables)]
-pub(crate) trait AmqpSessionTrait {
+pub trait AmqpSessionTrait {
     async fn begin(
         &self,
         connection: &AmqpConnection,
@@ -58,7 +58,7 @@ type SessionImplementation = super::fe2o3::session::Fe2o3AmqpSession;
 type SessionImplementation = super::noop::NoopAmqpSession;
 
 #[derive(Debug)]
-pub(crate) struct AmqpSession(pub(crate) AmqpSessionImpl<SessionImplementation>);
+pub struct AmqpSession(pub(crate) AmqpSessionImpl<SessionImplementation>);
 
 impl AmqpSessionTrait for AmqpSession {
     async fn begin(
@@ -75,7 +75,7 @@ impl AmqpSessionTrait for AmqpSession {
 }
 
 impl AmqpSession {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self(AmqpSessionImpl::new(SessionImplementation::new()))
     }
 }
@@ -83,7 +83,7 @@ impl AmqpSession {
 pub mod builders {
     use super::*;
 
-    pub(crate) struct AmqpSessionOptionsBuilder {
+    pub struct AmqpSessionOptionsBuilder {
         options: AmqpSessionOptions,
     }
 

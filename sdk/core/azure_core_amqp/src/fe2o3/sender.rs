@@ -1,8 +1,8 @@
 //cspell: words amqp
 
-use crate::amqp_client::messaging::{AmqpMessage, AmqpTarget};
-use crate::amqp_client::sender::{AmqpSenderOptions, AmqpSenderTrait};
-use crate::amqp_client::session::AmqpSession;
+use crate::messaging::{AmqpMessage, AmqpTarget};
+use crate::sender::{AmqpSenderOptions, AmqpSenderTrait};
+use crate::session::AmqpSession;
 use azure_core::error::Result;
 use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};

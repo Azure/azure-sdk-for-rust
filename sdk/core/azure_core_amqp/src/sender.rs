@@ -3,11 +3,11 @@
 use super::messaging::{AmqpMessage, AmqpSource, AmqpTarget};
 use super::session::AmqpSession;
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
-use crate::amqp_client::{ReceiverSettleMode, SenderSettleMode};
+use super::{ReceiverSettleMode, SenderSettleMode};
 use azure_core::error::Result;
 
 #[derive(Debug)]
-pub(crate) struct AmqpSenderOptions {
+pub struct AmqpSenderOptions {
     pub(super) sender_settle_mode: Option<SenderSettleMode>,
     pub(super) receiver_settle_mode: Option<ReceiverSettleMode>,
     pub(super) source: Option<AmqpSource>,
@@ -25,7 +25,7 @@ impl AmqpSenderOptions {
 }
 
 #[allow(unused_variables)]
-pub(crate) trait AmqpSenderTrait {
+pub trait AmqpSenderTrait {
     async fn attach(
         &self,
         session: &AmqpSession,
@@ -62,7 +62,7 @@ type SenderImplementation = super::fe2o3::sender::Fe2o3AmqpSender;
 type SenderImplementation = super::noop::NoopAmqpSender;
 
 #[derive(Debug)]
-pub(crate) struct AmqpSender(pub(crate) AmqpSenderImpl<SenderImplementation>);
+pub struct AmqpSender(pub(crate) AmqpSenderImpl<SenderImplementation>);
 
 impl AmqpSenderTrait for AmqpSender {
     async fn attach(
@@ -83,7 +83,7 @@ impl AmqpSenderTrait for AmqpSender {
 }
 
 impl AmqpSender {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self(AmqpSenderImpl::new(SenderImplementation::new()))
     }
 }
@@ -91,7 +91,7 @@ impl AmqpSender {
 pub mod builders {
     use super::*;
 
-    pub(crate) struct AmqpSenderOptionsBuilder {
+    pub struct AmqpSenderOptionsBuilder {
         options: AmqpSenderOptions,
     }
 

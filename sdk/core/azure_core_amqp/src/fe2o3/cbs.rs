@@ -2,10 +2,11 @@
 
 use super::error::AmqpManagementAttachError;
 use super::session::Fe2o3AmqpSession;
-use crate::amqp_client::{cbs::AmqpClaimsBasedSecurityTrait, fe2o3::error::AmqpManagementError};
+use crate::{cbs::AmqpClaimsBasedSecurityTrait, fe2o3::error::AmqpManagementError};
 use azure_core::error::Result;
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
+use futures::{FutureExt, TryFutureExt};
 use log::{debug, trace};
 use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};
@@ -49,12 +50,12 @@ impl AmqpClaimsBasedSecurityTrait for Fe2o3ClaimsBasedSecurity {
         Ok(())
     }
 
-    async fn authorize_path(
+    fn authorize_path(
         &self,
         path: &String,
         secret: impl Into<String>,
         expires_at: time::OffsetDateTime,
-    ) -> Result<()> {
+    ) -> impl std::future::Future<Output = Result<()>> + Send {
         trace!(
             "authorize_path: path: {:?}, expires_at: {:?}",
             path,
@@ -75,12 +76,13 @@ impl AmqpClaimsBasedSecurityTrait for Fe2o3ClaimsBasedSecurity {
             .get()
             .unwrap()
             .lock()
-            .await
-            .borrow_mut()
-            .put_token(path, cbs_token)
-            .await
-            .map_err(AmqpManagementError::from)?;
-        trace!("Path authorized successfully.");
-        Ok(())
+            .then(move |cbs| {
+                //                let cbs = Arc::new(cbs);
+                let mut cbs = cbs;
+                let path = path.clone();
+                let cbs_token = cbs_token.clone();
+                async move { cbs.borrow_mut().put_token(path, cbs_token).await }
+            })
+            .map_err(|err| AmqpManagementError::from(err).into())
     }
 }

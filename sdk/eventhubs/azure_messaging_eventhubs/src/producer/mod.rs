@@ -1,14 +1,15 @@
 //cspell: words amqp eventhub amqps servicebus eventhubs mgmt
 
+use azure_core_amqp::{
+    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityTrait},
+    connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
+    management::{AmqpManagement, AmqpManagementTrait},
+    sender::{AmqpSender, AmqpSenderOptions, AmqpSenderTrait},
+    session::{AmqpSession, AmqpSessionOptions, AmqpSessionTrait},
+    value::{AmqpOrderedMap, AmqpTimestamp, AmqpValue},
+};
+
 use crate::{
-    amqp_client::{
-        cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityTrait},
-        connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
-        management::{AmqpManagement, AmqpManagementTrait},
-        sender::{AmqpSender, AmqpSenderOptions, AmqpSenderTrait},
-        session::{AmqpSession, AmqpSessionOptions, AmqpSessionTrait},
-        value::{AmqpOrderedMap, AmqpTimestamp, AmqpValue},
-    },
     common::user_agent::{
         get_package_name, get_package_version, get_platform_info, get_user_agent,
     },

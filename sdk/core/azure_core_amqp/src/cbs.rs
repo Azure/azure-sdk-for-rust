@@ -10,7 +10,7 @@ type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
 #[cfg(not(any(feature = "enable-fe2o3-amqp")))]
 type CbsImplementation = super::noop::NoopAmqpClaimsBasedSecurity;
 
-pub(crate) trait AmqpClaimsBasedSecurityTrait {
+pub trait AmqpClaimsBasedSecurityTrait {
     /// Asynchronously attaches the Claims-Based Security (CBS) node to the AMQP session.
     ///
     /// This method is responsible for setting up the necessary AMQP links for CBS operations.
@@ -22,8 +22,8 @@ pub(crate) trait AmqpClaimsBasedSecurityTrait {
     /// - `Ok(())` on successful attachment of the CBS node.
     /// - `Err(e)` where `e` is an error from the `azure_core::error::Result` indicating the failure reason.
     ///
-    async fn attach(&self) -> Result<()> {
-        unimplemented!()
+    fn attach(&self) -> impl std::future::Future<Output = Result<()>> + Send {
+        async { unimplemented!() }
     }
 
     /// Asynchronously authorizes an AMQP path using the provided secret.
@@ -43,13 +43,13 @@ pub(crate) trait AmqpClaimsBasedSecurityTrait {
     /// - `Err(e)` where `e` is an error from the `azure_core::error::Result` indicating the failure reason.
     ///
     #[allow(unused_variables)]
-    async fn authorize_path(
+    fn authorize_path(
         &self,
         path: &String,
         secret: impl Into<String>,
         expires_on: time::OffsetDateTime,
-    ) -> Result<()> {
-        unimplemented!()
+    ) -> impl std::future::Future<Output = Result<()>> + Send {
+        async { unimplemented!() }
     }
 }
 
@@ -66,17 +66,16 @@ where
 }
 
 #[derive(Debug)]
-pub(crate) struct AmqpClaimsBasedSecurity(AmqpClaimsBasedSecurityImpl<CbsImplementation>);
+pub struct AmqpClaimsBasedSecurity(AmqpClaimsBasedSecurityImpl<CbsImplementation>);
 
 impl AmqpClaimsBasedSecurityTrait for AmqpClaimsBasedSecurity {
-    async fn authorize_path(
+    fn authorize_path(
         &self,
         path: &String,
         secret: impl Into<String>,
         expires_on: time::OffsetDateTime,
-    ) -> Result<()> {
-        self.0 .0.authorize_path(path, secret, expires_on).await?;
-        Ok(())
+    ) -> impl std::future::Future<Output = Result<()>> + Send {
+        self.0 .0.authorize_path(path, secret, expires_on)
     }
 
     async fn attach(&self) -> Result<()> {
@@ -86,7 +85,7 @@ impl AmqpClaimsBasedSecurityTrait for AmqpClaimsBasedSecurity {
 }
 
 impl AmqpClaimsBasedSecurity {
-    pub(crate) fn new(session: AmqpSession) -> Self {
+    pub fn new(session: AmqpSession) -> Self {
         let session = CbsImplementation::new(session.0 .0);
 
         Self(AmqpClaimsBasedSecurityImpl::new(session))
