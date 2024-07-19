@@ -6,6 +6,20 @@ pub struct AmqpSymbol(pub String);
 #[derive(Debug, PartialEq, Clone)]
 pub struct AmqpList(pub Vec<AmqpValue>);
 
+impl AmqpList {
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    pub fn push(&mut self, value: AmqpValue) {
+        self.0.push(value);
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &AmqpValue> {
+        self.0.iter()
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct AmqpTimestamp(pub std::time::SystemTime);
 

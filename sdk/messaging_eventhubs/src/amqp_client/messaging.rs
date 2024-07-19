@@ -893,6 +893,21 @@ mod tests {
             let message = AmqpMessage::builder().build();
             let serialized = AmqpMessage::serialize(message).unwrap();
             assert_eq!(serialized, vec![0, 0x53, 0x77, 0x40]);
+            #[cfg(any(feature = "enable-fe2o3-amqp"))]
+            {
+                // Verify that the serialization of an AmqpMessage with no body matches
+                // the fe2o3-amqp serialization.
+                let body_type: fe2o3_amqp_types::messaging::Body<()> =
+                    fe2o3_amqp_types::messaging::Body::Empty;
+                let amqp_message = fe2o3_amqp_types::messaging::message::Builder::new()
+                    .body(body_type)
+                    .build();
+                let serialized_fe2o3 = serde_amqp::ser::to_vec(
+                    &fe2o3_amqp_types::messaging::message::__private::Serializable(amqp_message),
+                )
+                .unwrap();
+                assert_eq!(serialized, serialized_fe2o3);
+            }
         }
         {
             let message = AmqpMessage::builder()
@@ -976,6 +991,22 @@ mod tests {
             // - 0x01, 0x02, 0x03: DATA
             assert_eq!(serialized, vec![0x00, 0x53, 0x75, 160, 3, 1, 2, 3]);
         }
+        {
+            let message = AmqpMessage::builder()
+                .with_body(AmqpMessageBody::Binary(vec![vec![1, 2, 3], vec![4, 5, 6]]))
+                .build();
+            let serialized = AmqpMessage::serialize(message).unwrap();
+            // The serialized body should contain:
+            // - 0x00: 0 DESCRIPTOR
+            // - 0x53: SMALLULONG
+            // - 0x75: AMQP DATA
+            // - 0x03: LENGTH OF DATA
+            // - 0x01, 0x02, 0x03: DATA
+            assert_eq!(
+                serialized,
+                vec![0x00, 0x53, 0x75, 0xA0, 3, 1, 2, 3, 0, 0x53, 0x75, 0xA0, 3, 4, 5, 6]
+            );
+        }
 
         {
             let message = AmqpMessage::builder()
@@ -1001,6 +1032,55 @@ mod tests {
             // - 0x03: LENGTH OF DATA
             // - 0x01, 0x02, 0x03: DATA
             assert_eq!(serialized, vec![0x00, 0x53, 0x75, 160, 3, 1, 2, 3]);
+        }
+    }
+
+    #[test]
+    fn test_sequence_message_serialization() {
+        {
+            let message = AmqpMessage::builder()
+                .with_body(AmqpMessageBody::Sequence(vec![AmqpList::new()]))
+                .build();
+
+            let serialized = AmqpMessage::serialize(message).unwrap();
+
+            // The serialized body should contain:
+            // - 0x00: 0 DESCRIPTOR
+            // - 0x53: SMALLULONG
+            // - 0x76: AMQP SEQUENCE
+            // - 0x45: LIST 0
+            assert_eq!(serialized, vec![0, 0x53, 0x76, 0x45]);
+        }
+        {
+            let mut body = AmqpList::new();
+            body.push(AmqpValue::from(123));
+            body.push(AmqpValue::from("hello"));
+
+            let message = AmqpMessage::builder()
+                .with_body(AmqpMessageBody::Sequence(vec![body]))
+                .build();
+
+            let serialized = AmqpMessage::serialize(message).unwrap();
+
+            // The serialized body should contain:
+            // - 0x00: 0 DESCRIPTOR
+            // - 0x53: SMALLULONG
+            // - 0x76: AMQP SEQUENCE
+            // - 0xC0 : Compound LIST8
+            // - 0x0a - width of list
+            // - 0x02 - length of list
+            // - 0x54: AMQP INT
+            // - 0x7b: 123
+            // - 0xa1: AMQP STRING
+            // - 0x5:  LENGTH
+            // - 0x68, 0x65, 0x6c, 0x6c, 0x6f: hello
+            assert_eq!(
+                serialized,
+                vec![
+                    0, 0x53, 0x76, 0xC0, 10, 0x02, 0x54, 0x7B, 0xA1, 0x5, 0x68, 0x65, 0x6C, 0x6C,
+                    0x6F
+                ]
+            );
         }
     }
 }
