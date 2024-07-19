@@ -13,7 +13,7 @@ use azure_core_amqp::{
     sender::AmqpSenderTrait,
     value::{AmqpSymbol, AmqpValue},
 };
-use log::debug;
+use tracing::debug;
 use uuid::Uuid;
 
 pub struct AddEventDataOptions {}
@@ -111,7 +111,7 @@ impl<'a> EventDataBatch<'a> {
         if batch_state.serialized_messages.len() == 0 {
             // The first message serialized is the batch envelope - we capture the parameters from the first message to use for the batch
             batch_state.size_in_bytes += AmqpMessage::serialize(message.clone())?.len() as u64;
-            batch_state.batch_envelope = Some(message.clone());
+            batch_state.batch_envelope = Some(self.create_batch_envelope(message.clone()));
         }
         let serialized_message = AmqpMessage::serialize(message)?;
         let actual_message_size = Self::calculate_actual_size_for_payload(serialized_message.len());
@@ -149,7 +149,7 @@ impl<'a> EventDataBatch<'a> {
         self.add_amqp_message(event_data.into(), options)
     }
 
-    fn get_batch_path(&self) -> String {
+    pub(crate) fn get_batch_path(&self) -> String {
         if self.partition_id.is_none() {
             format!("{}", self.producer.base_url())
         } else {
@@ -159,6 +159,10 @@ impl<'a> EventDataBatch<'a> {
                 self.partition_id.as_ref().unwrap()
             )
         }
+    }
+
+    fn create_batch_envelope(&self, message: AmqpMessage) -> AmqpMessage {
+        todo!()
     }
 }
 pub struct EventDataBatchOptions {

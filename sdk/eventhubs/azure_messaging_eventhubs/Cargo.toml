@@ -11,38 +11,26 @@ repository = "https://github.com/azure/azure-sdk-for-rust"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_messaging_eventhubs"
 
-keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+keywords = ["sdk", "azure", "rest", "iot", "cloud", "eventhubs"]
 categories = ["api-bindings"]
 
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../../core/azure_core", version = "0.19" }
-azure_core_amqp = { path = "../../core/azure_core_amqp", version = "0.19" }
-time = { version = "0.3.10", features = ["serde-well-known"] }
-log = "0.4"
-url = "2.2"
-bytes = "1.0"
-serde = "1.0"
-async-trait = "*"
-uuid = { version = "1.8" }
-tokio = { version = "1.0", features = [
-  "macros",
-  "rt-multi-thread",
-  "net",
-  "rt",
-] }
+azure_core = { path = "../../core/azure_core" }
+azure_core_amqp = { path = "../../core/azure_core_amqp" }
+time = { workspace = true }
+tracing = { workspace = true }
+url = { workspace = true }
+uuid = { workspace = true }
+tokio = { workspace = true }
 
 [build-dependencies]
 rustc_version = "0.4"
 
 [dev-dependencies]
-futures = "0.3"
-azure_identity = { path = "../../identity/azure_identity", version = "0.19" }
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-tracing-subscriber = "0.3"
-env_logger = "0.8"
-lazy_static = { version = "1.4" }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+azure_identity = { path = "../../identity/azure_identity" }
 
 [features]
 test_e2e = []

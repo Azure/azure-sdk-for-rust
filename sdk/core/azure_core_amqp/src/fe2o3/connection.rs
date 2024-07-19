@@ -9,9 +9,9 @@ use crate::{
 
 use azure_core::Result;
 use fe2o3_amqp::connection::ConnectionHandle;
-use log::debug;
 use std::{borrow::BorrowMut, sync::OnceLock};
 use tokio::sync::Mutex;
+use tracing::debug;
 use url::Url;
 
 use super::error::AmqpOpenError;

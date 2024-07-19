@@ -2,5 +2,7 @@
 
 pub fn setup() {
     println!("Setting up tests...");
-    let _ = env_logger::builder().is_test(true).try_init();
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .try_init();
 }

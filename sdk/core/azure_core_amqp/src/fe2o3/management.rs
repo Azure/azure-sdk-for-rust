@@ -13,9 +13,9 @@ use crate::{
 use azure_core::{auth::AccessToken, error::Result};
 use fe2o3_amqp_management::operations::ReadResponse;
 use fe2o3_amqp_types::{messaging::ApplicationProperties, primitives::SimpleValue};
-use log::debug;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
+use tracing::debug;
 
 use super::{error::AmqpManagementAttachError, session::Fe2o3AmqpSession};
 

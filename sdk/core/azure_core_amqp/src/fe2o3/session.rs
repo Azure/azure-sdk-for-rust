@@ -7,12 +7,12 @@ use crate::{
     session::{AmqpSessionOptions, AmqpSessionTrait},
 };
 use azure_core::Result;
-use log::debug;
 use std::{
     borrow::BorrowMut,
     sync::{Arc, OnceLock},
 };
 use tokio::sync::Mutex;
+use tracing::debug;
 
 #[derive(Debug, Clone)]
 pub(crate) struct Fe2o3AmqpSession {

@@ -24,13 +24,13 @@ use azure_core::{
     error::{Error, Result},
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
-use log::{debug, trace};
 use std::{boxed::Box, collections::HashMap};
 use std::{
     sync::{Arc, OnceLock},
     time::SystemTime,
 };
 use tokio::sync::Mutex;
+use tracing::{debug, trace};
 use url::Url;
 
 pub mod batch;
@@ -42,53 +42,8 @@ pub struct ProducerClientOptions {
 }
 
 impl ProducerClientOptions {
-    pub fn builder() -> ProducerClientOptionsBuilder {
-        ProducerClientOptionsBuilder::new()
-    }
-}
-
-pub struct ProducerClientOptionsBuilder {
-    application_id: Option<String>,
-    retry_options: Option<RetryOptions>,
-    max_message_size: Option<u64>,
-}
-
-impl ProducerClientOptionsBuilder {
-    pub fn new() -> Self {
-        Self {
-            application_id: None,
-            retry_options: None,
-            max_message_size: None,
-        }
-    }
-
-    pub fn with_application_id<T: Into<String>>(self, application_id: T) -> Self {
-        Self {
-            application_id: Some(application_id.into()),
-            ..self
-        }
-    }
-
-    pub fn with_retry_options(self, retry_options: RetryOptions) -> Self {
-        Self {
-            retry_options: Some(retry_options),
-            ..self
-        }
-    }
-
-    pub fn with_max_message_size(self, max_message_size: u64) -> Self {
-        Self {
-            max_message_size: Some(max_message_size),
-            ..self
-        }
-    }
-
-    pub fn build(self) -> ProducerClientOptions {
-        ProducerClientOptions {
-            application_id: self.application_id,
-            retry_options: self.retry_options,
-            max_message_size: self.max_message_size,
-        }
+    pub fn builder() -> builders::ProducerClientOptionsBuilder {
+        builders::ProducerClientOptionsBuilder::new()
     }
 }
 
@@ -161,6 +116,16 @@ impl ProducerClient {
 
         batch.attach().await?;
         Ok(batch)
+    }
+
+    pub async fn submit_batch<'a>(&self, batch: EventDataBatch<'a>) -> Result<()> {
+        // let sender = self.ensure_sender(batch.get_batch_path()).await?;
+        // let mut sender = sender.lock().await;
+        // let messages = batch.get_messages().await?;
+        // for message in messages {
+        //     sender.send(message).await?;
+        // }
+        Ok(())
     }
 
     pub async fn get_eventhub_properties(&self) -> Result<EventHubProperties> {
@@ -418,6 +383,44 @@ impl ProducerClient {
             scopes.insert(url.clone(), token);
         }
         Ok(scopes.get(url.as_str()).unwrap().clone())
+    }
+}
+
+mod builders {
+    use super::*;
+    pub struct ProducerClientOptionsBuilder {
+        options: ProducerClientOptions,
+    }
+
+    impl ProducerClientOptionsBuilder {
+        pub(super) fn new() -> Self {
+            Self {
+                options: ProducerClientOptions {
+                    application_id: None,
+                    retry_options: None,
+                    max_message_size: None,
+                },
+            }
+        }
+
+        pub fn with_application_id(mut self, application_id: impl Into<String>) -> Self {
+            self.options.application_id = Some(application_id.into());
+            self
+        }
+
+        pub fn with_retry_options(mut self, retry_options: RetryOptions) -> Self {
+            self.options.retry_options = Some(retry_options);
+            self
+        }
+
+        pub fn with_max_message_size(mut self, max_message_size: u64) -> Self {
+            self.options.max_message_size = Some(max_message_size);
+            self
+        }
+
+        pub fn build(self) -> ProducerClientOptions {
+            self.options
+        }
     }
 }
 

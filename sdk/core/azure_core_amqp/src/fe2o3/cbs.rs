@@ -7,10 +7,10 @@ use crate::{cbs::AmqpClaimsBasedSecurityTrait, fe2o3::error::AmqpManagementError
 use azure_core::error::Result;
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
-use log::{debug, trace};
 use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
+use tracing::{debug, trace};
 
 #[derive(Debug)]
 pub(crate) struct Fe2o3ClaimsBasedSecurity {

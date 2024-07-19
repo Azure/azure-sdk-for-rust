@@ -3,13 +3,14 @@ use azure_core::error::Result;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
 
-use env_logger;
-use log::info;
 use std::env;
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    env_logger::init();
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .finish();
 
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
