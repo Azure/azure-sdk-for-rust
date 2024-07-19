@@ -5,6 +5,7 @@ members = [
   "sdk/typespec/typespec_client_core",
   "sdk/core/azure_core",
   "sdk/identity/azure_identity",
+  "sdk/eventhubs/azure_messaging_eventhubs",
   "eng/test/mock_transport",
   "sdk/storage",
   "sdk/storage/azure_storage_blob",
