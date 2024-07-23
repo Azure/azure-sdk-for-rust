@@ -1,6 +1,6 @@
 use crate::policies::TransportPolicy;
 use crate::policies::{CustomHeadersPolicy, Policy, TelemetryPolicy};
-use crate::{ClientOptions, Context, Request, Response};
+use crate::{ClientOptions, Context, Request, Response, RetryOptions};
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -51,7 +51,7 @@ impl Pipeline {
         let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
             options.per_call_policies.len()
                 + per_call_policies.len()
-                + options.per_retry_policies.len()
+                + options.per_try_policies.len()
                 + per_retry_policies.len()
                 + 3,
         );
@@ -59,18 +59,24 @@ impl Pipeline {
         pipeline.extend_from_slice(&per_call_policies);
         pipeline.extend_from_slice(&options.per_call_policies);
 
-        let telemetry_policy = TelemetryPolicy::new(crate_name, crate_version, &options.telemetry);
+        let telemetry_policy = TelemetryPolicy::new(
+            crate_name,
+            crate_version,
+            &options.telemetry.unwrap_or_default(),
+        );
         pipeline.push(Arc::new(telemetry_policy));
 
         pipeline.push(Arc::new(CustomHeadersPolicy::default()));
 
-        let retry_policy = options.retry.to_policy();
+        // TODO: Consider whether this should be initially customizable as we onboard more services.
+        let retry_policy = RetryOptions::default().to_policy();
         pipeline.push(retry_policy);
 
         pipeline.extend_from_slice(&per_retry_policies);
-        pipeline.extend_from_slice(&options.per_retry_policies);
+        pipeline.extend_from_slice(&options.per_try_policies);
 
-        let transport: Arc<dyn Policy> = Arc::new(TransportPolicy::new(options.transport.clone()));
+        let transport: Arc<dyn Policy> =
+            Arc::new(TransportPolicy::new(options.transport.unwrap_or_default()));
 
         pipeline.push(transport);
 
