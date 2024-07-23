@@ -3,6 +3,7 @@ use crate::Context;
 use std::fmt::Debug;
 use std::sync::Arc;
 
+/// Builders for client and method options in this crate.
 pub mod builders;
 
 mod retry;

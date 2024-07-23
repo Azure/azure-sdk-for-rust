@@ -1,6 +1,8 @@
 #![allow(unused_mut, unused_variables)]
 
 use super::{RetryOptions, TelemetryOptions, TransportOptions};
+#[cfg(doc)]
+use crate::{ClientMethodOptions, ClientOptions};
 use crate::{Context, Policy};
 use std::sync::Arc;
 
