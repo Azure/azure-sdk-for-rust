@@ -45,6 +45,7 @@ use azure_core::{
 use azure_core::{json::from_json, Method};
 use login_response::LoginResponse;
 use std::sync::Arc;
+use typespec_client_core::error::http_response_from_body;
 use url::form_urlencoded;
 
 /// Perform the client credentials flow
@@ -79,7 +80,7 @@ pub async fn perform(
     let rsp_status = rsp.status();
     let rsp_body = rsp.into_body().collect().await?;
     if !rsp_status.is_success() {
-        return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
+        return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
     }
     from_json(&rsp_body)
 }

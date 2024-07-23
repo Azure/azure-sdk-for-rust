@@ -28,7 +28,6 @@ mod pageable;
 mod pipeline;
 mod policies;
 mod request;
-mod response;
 mod seekable_stream;
 
 pub mod auth;
@@ -62,9 +61,11 @@ pub use pageable::*;
 pub use pipeline::Pipeline;
 pub use policies::*;
 pub use request::*;
-pub use response::*;
 pub use seekable_stream::*;
 pub use sleep::sleep;
+pub use typespec_client_core::http::{
+    CollectedResponse, PinnedStream, RawResponse, Response, ResponseBody,
+};
 
 // re-export important types at crate level
 pub use http_types::Method;

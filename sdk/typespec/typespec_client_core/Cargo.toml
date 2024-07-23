@@ -1,0 +1,25 @@
+[package]
+name = "typespec_client_core"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+description = "Client runtime for TypeSpec-generated libraries."
+homepage = "https://typespec.io"
+repository.workspace = true
+license.workspace = true
+categories = ["compilers", "development-tools"]
+keywords = ["typespec"]
+
+[dependencies]
+bytes = { workspace = true }
+futures = { workspace = true }
+http-types = { workspace = true, optional = true }
+pin-project = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+typespec = { workspace = true, default-features = false }
+
+[features]
+default = ["http", "json"]
+http = ["dep:http-types", "typespec/http"]
+json = ["typespec/json"]

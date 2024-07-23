@@ -43,6 +43,7 @@ use azure_core::{
 use login_response::LoginResponse;
 use std::sync::Arc;
 use tracing::{debug, error};
+use typespec_client_core::error::http_response_from_body;
 use url::form_urlencoded;
 
 /// Perform the client credentials flow
@@ -86,6 +87,6 @@ pub async fn perform(
         let rsp_body = rsp.into_body().collect().await?;
         let text = std::str::from_utf8(&rsp_body)?;
         error!("rsp_body == {:?}", text);
-        Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error())
+        Err(http_response_from_body(rsp_status, &rsp_body).into_error())
     }
 }

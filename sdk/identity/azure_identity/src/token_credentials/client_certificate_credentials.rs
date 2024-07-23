@@ -18,6 +18,7 @@ use openssl::{
 use serde::Deserialize;
 use std::{str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
+use typespec_client_core::error::http_response_from_body;
 use url::{form_urlencoded, Url};
 
 /// Refresh time to use in seconds
@@ -261,7 +262,7 @@ impl ClientCertificateCredential {
 
         if !rsp_status.is_success() {
             let rsp_body = rsp.into_body().collect().await?;
-            return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
+            return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
         }
 
         let response: AadTokenResponse = rsp.json().await?;

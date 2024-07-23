@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![doc = include_str!("../README.md")]
+use super::*;
 
-pub mod error;
+pub const ERROR_CODE: HeaderName = HeaderName::from_static("x-ms-error-code");

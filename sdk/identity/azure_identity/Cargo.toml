@@ -13,6 +13,8 @@ categories = ["api-bindings"]
 edition.workspace = true
 
 [dependencies]
+typespec = { workspace = true, features = ["http", "json"] }
+typespec_client_core = { workspace = true, features = ["http", "json"] }
 azure_core = { workspace = true }
 async-lock = { workspace = true }
 oauth2 = { workspace = true }

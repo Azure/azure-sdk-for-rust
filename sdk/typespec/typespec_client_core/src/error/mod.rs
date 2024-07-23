@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![doc = include_str!("../README.md")]
+#[cfg(feature = "http")]
+mod http_error;
 
-pub mod error;
+#[cfg(feature = "http")]
+pub use http_error::*;

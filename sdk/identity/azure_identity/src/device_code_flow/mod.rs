@@ -16,6 +16,7 @@ pub use device_code_responses::*;
 use futures::stream::unfold;
 use serde::Deserialize;
 use std::{borrow::Cow, pin::Pin, sync::Arc, time::Duration};
+use typespec_client_core::error::http_response_from_body;
 use url::form_urlencoded;
 
 /// Start the device authorization grant flow.
@@ -41,7 +42,7 @@ where
     let rsp_status = rsp.status();
     let rsp_body = rsp.into_body().collect().await?;
     if !rsp_status.is_success() {
-        return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
+        return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
     }
     let device_code_response: DeviceCodePhaseOneResponse = from_json(&rsp_body)?;
 

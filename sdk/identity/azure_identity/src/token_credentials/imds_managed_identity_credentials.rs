@@ -12,6 +12,7 @@ use serde::{
 };
 use std::{str, sync::Arc};
 use time::OffsetDateTime;
+use typespec_client_core::error::http_response_from_body;
 
 #[derive(Debug)]
 pub(crate) enum ImdsId {
@@ -107,9 +108,7 @@ impl ImdsManagedIdentityCredential {
                     ))
                 }
                 rsp_status => {
-                    return Err(
-                        ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error()
-                    )
+                    return Err(http_response_from_body(rsp_status, &rsp_body).into_error())
                 }
             }
         }
