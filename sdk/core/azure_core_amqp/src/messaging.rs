@@ -386,6 +386,10 @@ impl AmqpMessage {
         self.message_annotations = Some(message_annotations.into());
     }
 
+    pub fn set_message_body(&mut self, body: impl Into<AmqpMessageBody>) {
+        self.body = body.into();
+    }
+
     pub fn serialize(message: AmqpMessage) -> Result<Vec<u8>> {
         #[cfg(any(feature = "enable-fe2o3-amqp"))]
         {

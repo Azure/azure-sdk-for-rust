@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 
 //#![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
-//cspell: words eventhubs eventhub
+//cspell: words eventhubs eventhub eventdata
 
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
-use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+use azure_messaging_eventhubs::producer::{
+    batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions,
+};
 use std::env;
-use tracing::info;
+use tracing::{info, trace};
 
 mod common;
 
@@ -130,6 +132,30 @@ async fn test_get_partition_properties() {
     }
 }
 
+#[test]
+fn test_create_eventdata() {
+    common::setup();
+    let data = b"hello world";
+    let ed1 = azure_messaging_eventhubs::models::EventData::builder()
+        .with_body(data.to_vec())
+        .build();
+
+    assert_eq!(ed1.body().unwrap(), data.to_vec());
+    assert!(ed1.content_type().is_none());
+    assert!(ed1.correlation_id().is_none());
+    assert!(ed1.message_id().is_none());
+    assert!(ed1.properties().is_none());
+
+    let data = b"hello world";
+    let _ = azure_messaging_eventhubs::models::EventData::builder()
+        .with_body(data.to_vec())
+        .with_content_type("text/plain")
+        .with_correlation_id("correlation_id")
+        .with_message_id(35u64)
+        .add_property("key", "value")
+        .build();
+}
+
 #[tokio::test]
 async fn test_create_batch() {
     common::setup();
@@ -154,26 +180,121 @@ async fn test_create_batch() {
     }
 }
 
-#[test]
-fn test_create_eventdata() {
+#[tokio::test]
+async fn test_create_and_send_batch() {
     common::setup();
-    let data = b"hello world";
-    let ed1 = azure_messaging_eventhubs::models::EventData::builder()
-        .with_body(data.to_vec())
-        .build();
+    let host = env::var("EVENTHUBS_HOST").unwrap();
+    let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    assert_eq!(ed1.body().unwrap(), data.to_vec());
-    assert!(ed1.content_type().is_none());
-    assert!(ed1.correlation_id().is_none());
-    assert!(ed1.message_id().is_none());
-    assert!(ed1.properties().is_none());
+    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
 
-    let data = b"hello world";
-    let _ = azure_messaging_eventhubs::models::EventData::builder()
-        .with_body(data.to_vec())
-        .with_content_type("text/plain")
-        .with_correlation_id("correlation_id")
-        .with_message_id(35u64)
-        .add_property("key", "value")
-        .build();
+    let client = ProducerClient::new(
+        host,
+        eventhub.clone(),
+        credential,
+        ProducerClientOptions::builder()
+            .with_application_id("test_create_batch")
+            .build(),
+    )
+    .unwrap();
+    client.open().await.unwrap();
+    {
+        let mut batch = client.create_batch(None).await.unwrap();
+        assert_eq!(batch.len(), 0);
+        let res = batch.add_event_data(vec![1, 2, 3, 4], None);
+        assert!(res.is_ok());
+
+        let res = client.submit_batch(&batch).await;
+        assert!(res.is_ok());
+    }
+    {
+        let mut batch = client
+            .create_batch(Some(
+                EventDataBatchOptions::builder()
+                    .with_partition_id("0")
+                    .build(),
+            ))
+            .await
+            .unwrap();
+        for i in 0..10 {
+            let res = batch.add_event_data(vec![i as u8], None);
+            assert!(res.is_ok());
+        }
+        let res = batch.add_event_data("This is data", None);
+        assert!(res.is_ok());
+        let res = batch.add_event_data([23], None);
+        assert!(res.is_ok());
+        let res = batch.add_event_data(vec![1, 2, 4, 8], None);
+        assert!(res.is_ok());
+        let res = batch.add_event_data("&data", None);
+        assert!(res.is_ok());
+        let res = batch.add_event_data("&data", None);
+        assert!(res.is_ok());
+        let res = batch.add_event_data("&data", None);
+        assert!(res.is_ok());
+        let res = batch.add_event_data("&data", None);
+        assert!(res.is_ok());
+        let res = batch.add_event_data("&data", None);
+        assert!(res.is_ok());
+
+        let res = client.submit_batch(&batch).await;
+        assert!(res.is_ok());
+    }
+}
+
+#[tokio::test]
+async fn test_overload_batch() {
+    common::setup();
+
+    let host = env::var("EVENTHUBS_HOST").unwrap();
+    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+
+    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+
+    info!("Create producer client...");
+
+    let client = ProducerClient::new(
+        host,
+        eventhub.clone(),
+        credential,
+        ProducerClientOptions::builder()
+            .with_application_id("test_create_batch")
+            .build(),
+    )
+    .unwrap();
+
+    info!("Open producer client...");
+    client.open().await.unwrap();
+
+    info!("Client is open.");
+    {
+        let mut batch = client
+            .create_batch(Some(
+                EventDataBatchOptions::builder()
+                    .with_partition_id("0")
+                    .build(),
+            ))
+            .await
+            .unwrap();
+        trace!("Batch created.");
+        for i in 0..120_000 {
+            if i % 10_000 == 0 {
+                info!("Add event data, now at {}", i);
+                info!("Batch size: {}", batch.size());
+            }
+            if batch.add_event_data(format!("Message {i}"), None).is_err() {
+                info!("Batch is full, sending batch");
+                let result = client.submit_batch(&batch).await;
+                if result.is_err() {
+                    info!("Batch submit failed. {:?}", result);
+                }
+                assert!(result.is_ok());
+            }
+        }
+        let result = client.submit_batch(&batch).await;
+        if result.is_err() {
+            info!("Batch submit failed. {:?}", result);
+        }
+        assert!(result.is_ok());
+    }
 }

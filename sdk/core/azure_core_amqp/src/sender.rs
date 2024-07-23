@@ -18,7 +18,6 @@ pub struct AmqpSenderOptions {
     pub(super) initial_delivery_count: Option<u32>,
     pub(super) max_message_size: Option<u64>,
 }
-
 impl AmqpSenderOptions {
     pub fn builder() -> builders::AmqpSenderOptionsBuilder {
         builders::AmqpSenderOptionsBuilder::new()
@@ -39,7 +38,11 @@ pub trait AmqpSenderTrait {
     fn max_message_size(&self) -> impl std::future::Future<Output = Option<u64>> {
         async { unimplemented!() }
     }
-    fn send(&self, message: AmqpMessage) -> impl std::future::Future<Output = Result<()>> {
+    fn send(
+        &self,
+        message: AmqpMessage,
+        options: Option<AmqpSendOptions>,
+    ) -> impl std::future::Future<Output = Result<()>> {
         async { unimplemented!() }
     }
 }
@@ -78,8 +81,8 @@ impl AmqpSenderTrait for AmqpSender {
     async fn max_message_size(&self) -> Option<u64> {
         self.0 .0.max_message_size().await
     }
-    async fn send(&self, message: AmqpMessage) -> Result<()> {
-        self.0 .0.send(message).await
+    async fn send(&self, message: AmqpMessage, options: Option<AmqpSendOptions>) -> Result<()> {
+        self.0 .0.send(message, options).await
     }
 }
 
@@ -89,8 +92,52 @@ impl AmqpSender {
     }
 }
 
+/// Options for sending an AMQP message.
+#[derive(Debug)]
+pub struct AmqpSendOptions {
+    /// The message format.
+    pub(crate) message_format: Option<u32>,
+
+    /// The message priority.
+    pub(crate) settled: Option<bool>,
+}
+
+impl AmqpSendOptions {
+    pub fn builder() -> builders::AmqpSendOptionsBuilder {
+        builders::AmqpSendOptionsBuilder::new()
+    }
+}
+
 pub mod builders {
     use super::*;
+
+    pub struct AmqpSendOptionsBuilder {
+        options: AmqpSendOptions,
+    }
+
+    impl AmqpSendOptionsBuilder {
+        pub(super) fn new() -> Self {
+            AmqpSendOptionsBuilder {
+                options: AmqpSendOptions {
+                    message_format: None,
+                    settled: None,
+                },
+            }
+        }
+        #[allow(dead_code)]
+        pub fn with_message_format(mut self, message_format: u32) -> Self {
+            self.options.message_format = Some(message_format);
+            self
+        }
+        #[allow(dead_code)]
+        pub fn with_settled(mut self, settled: bool) -> Self {
+            self.options.settled = Some(settled);
+            self
+        }
+        pub fn build(self) -> Option<AmqpSendOptions> {
+            Some(self.options)
+        }
+    }
 
     pub struct AmqpSenderOptionsBuilder {
         options: AmqpSenderOptions,

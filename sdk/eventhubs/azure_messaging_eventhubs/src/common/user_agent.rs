@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 
-// cspell: words AZSDK RUSTC
+// cspell: words AZSDK RUSTC consts
 
 use std::env::consts::{ARCH, OS};
 

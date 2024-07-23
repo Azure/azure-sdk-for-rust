@@ -2,14 +2,17 @@
 //cspell: words amqp
 
 use crate::messaging::{AmqpMessage, AmqpTarget};
-use crate::sender::{AmqpSenderOptions, AmqpSenderTrait};
+use crate::sender::{AmqpSendOptions, AmqpSenderOptions, AmqpSenderTrait};
 use crate::session::AmqpSession;
 use azure_core::error::Result;
 use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 
-use super::error::AmqpSenderAttachError;
+use super::error::{
+    AmqpDeliveryRejectedError, AmqpNotAcceptedError, AmqpSenderAttachError, AmqpSenderSendError,
+    Fe2o3AmqpError,
+};
 
 #[derive(Debug)]
 pub(crate) struct Fe2o3AmqpSender {
@@ -72,8 +75,40 @@ impl AmqpSenderTrait for Fe2o3AmqpSender {
         self.sender.get().unwrap().lock().await.max_message_size()
     }
 
-    async fn send(&self, _message: AmqpMessage) -> Result<()> {
-        todo!()
+    #[tracing::instrument]
+    async fn send(&self, message: AmqpMessage, options: Option<AmqpSendOptions>) -> Result<()> {
+        let message: fe2o3_amqp_types::messaging::Message<
+            fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
+        > = message.into();
+        let mut sendable = fe2o3_amqp::link::delivery::Sendable {
+            message: message,
+            message_format: 0,
+            settled: Default::default(),
+        };
+        if let Some(options) = options {
+            if let Some(message_format) = options.message_format {
+                sendable.message_format = message_format;
+            }
+            sendable.settled = options.settled;
+        }
+
+        let outcome = self
+            .sender
+            .get()
+            .unwrap()
+            .lock()
+            .await
+            .send(sendable)
+            .await
+            .map_err(AmqpSenderSendError::from)?;
+
+        match outcome {
+            fe2o3_amqp_types::messaging::Outcome::Accepted(_) => Ok(()),
+            fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => {
+                Err(AmqpDeliveryRejectedError(rejected).into())
+            }
+            _ => Err(Fe2o3AmqpError::from(AmqpNotAcceptedError::from(outcome)).into()),
+        }
     }
 }
 

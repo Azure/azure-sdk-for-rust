@@ -183,16 +183,6 @@ pub mod models {
             builders::EventDataBuilder::new()
         }
 
-        fn new() -> Self {
-            Self {
-                body: None,
-                content_type: None,
-                correlation_id: None,
-                message_id: None,
-                properties: None,
-            }
-        }
-
         pub fn properties(&self) -> Option<&HashMap<String, AmqpValue>> {
             self.properties.as_ref()
         }
@@ -214,43 +204,31 @@ pub mod models {
         }
     }
 
-    impl From<Vec<u8>> for EventData {
-        fn from(body: Vec<u8>) -> Self {
-            Self {
-                body: Some(body),
-                content_type: None,
-                correlation_id: None,
-                message_id: None,
-                properties: None,
-            }
-        }
-    }
+    // impl From<AmqpMessage> for EventData {
+    //     fn from(message: AmqpMessage) -> Self {
+    //         let mut event_data_builder = EventData::builder();
 
-    impl From<AmqpMessage> for EventData {
-        fn from(message: AmqpMessage) -> Self {
-            let mut event_data_builder = EventData::builder();
-
-            if let Some(properties) = message.properties() {
-                if let Some(content_type) = properties.content_type() {
-                    event_data_builder = event_data_builder
-                        .with_content_type(Into::<String>::into(content_type.clone()));
-                }
-                if let Some(correlation_id) = properties.correlation_id() {
-                    event_data_builder =
-                        event_data_builder.with_correlation_id(correlation_id.clone());
-                }
-                if let Some(message_id) = properties.message_id() {
-                    event_data_builder = event_data_builder.with_message_id(message_id.clone());
-                }
-            }
-            if let Some(application_properties) = message.application_properties() {
-                for (key, value) in application_properties.0.clone() {
-                    event_data_builder = event_data_builder.add_property(key, value);
-                }
-            }
-            event_data_builder.build()
-        }
-    }
+    //         if let Some(properties) = message.properties() {
+    //             if let Some(content_type) = properties.content_type() {
+    //                 event_data_builder = event_data_builder
+    //                     .with_content_type(Into::<String>::into(content_type.clone()));
+    //             }
+    //             if let Some(correlation_id) = properties.correlation_id() {
+    //                 event_data_builder =
+    //                     event_data_builder.with_correlation_id(correlation_id.clone());
+    //             }
+    //             if let Some(message_id) = properties.message_id() {
+    //                 event_data_builder = event_data_builder.with_message_id(message_id.clone());
+    //             }
+    //         }
+    //         if let Some(application_properties) = message.application_properties() {
+    //             for (key, value) in application_properties.0.clone() {
+    //                 event_data_builder = event_data_builder.add_property(key, value);
+    //             }
+    //         }
+    //         event_data_builder.build()
+    //     }
+    // }
     impl From<EventData> for AmqpMessage {
         fn from(event_data: EventData) -> Self {
             let mut message_properties_builder = AmqpMessageProperties::builder();
@@ -277,6 +255,21 @@ pub mod models {
         }
     }
 
+    impl<T> From<T> for EventData
+    where
+        T: Into<Vec<u8>>,
+    {
+        fn from(body: T) -> Self {
+            Self {
+                body: Some(body.into()),
+                content_type: None,
+                correlation_id: None,
+                message_id: None,
+                properties: None,
+            }
+        }
+    }
+
     pub mod builders {
         use super::*;
 
@@ -287,7 +280,13 @@ pub mod models {
         impl EventDataBuilder {
             pub fn new() -> Self {
                 Self {
-                    event_data: EventData::new(),
+                    event_data: EventData {
+                        body: None,
+                        content_type: None,
+                        correlation_id: None,
+                        message_id: None,
+                        properties: None,
+                    },
                 }
             }
 

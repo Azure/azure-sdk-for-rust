@@ -29,7 +29,7 @@ tokio = { workspace = true }
 rustc_version = "0.4"
 
 [dev-dependencies]
-tracing-subscriber = { workspace = true, features = ["env-filter"] }
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 azure_identity = { path = "../../identity/azure_identity" }
 
 [features]

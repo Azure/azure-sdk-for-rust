@@ -1,6 +1,11 @@
-# azure_messaging_eventhubs
+<!-- cspell: words EVENTHUB eventhubs -->
 
-Azure Eventhubs crate for the Microsoft Azure SDK for Rust.
+# azure_core_amqp
+
+Azure AMQP crate for consumption of AMQP based packages in the Azure SDK for C++.
+
+NOTE: THIS IS NOT A GENERAL PURPOSE AMQP LIBRARY AND SHOULD NOT BE USED AS SUCH.
+
 This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 
 ## Example

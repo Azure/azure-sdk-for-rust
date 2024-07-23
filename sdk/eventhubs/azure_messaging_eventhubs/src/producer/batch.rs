@@ -9,7 +9,7 @@ use super::ProducerClient;
 use crate::models::EventData;
 use azure_core::error::Result;
 use azure_core_amqp::{
-    messaging::{AmqpAnnotations, AmqpMessage, AmqpMessageProperties},
+    messaging::{AmqpAnnotations, AmqpMessage, AmqpMessageBody, AmqpMessageProperties},
     sender::AmqpSenderTrait,
     value::{AmqpSymbol, AmqpValue},
 };
@@ -108,10 +108,14 @@ impl<'a> EventDataBatch<'a> {
         }
 
         let mut batch_state = self.batch_state.lock().unwrap();
+        let message_len = AmqpMessage::serialize(message.clone())?.len();
         if batch_state.serialized_messages.len() == 0 {
             // The first message serialized is the batch envelope - we capture the parameters from the first message to use for the batch
-            batch_state.size_in_bytes += AmqpMessage::serialize(message.clone())?.len() as u64;
-            batch_state.batch_envelope = Some(self.create_batch_envelope(message.clone()));
+            batch_state.size_in_bytes = batch_state
+                .size_in_bytes
+                .checked_add(message_len as u64)
+                .unwrap() as u64;
+            batch_state.batch_envelope = Some(self.create_batch_envelope(&message));
         }
         let serialized_message = AmqpMessage::serialize(message)?;
         let actual_message_size = Self::calculate_actual_size_for_payload(serialized_message.len());
@@ -149,6 +153,26 @@ impl<'a> EventDataBatch<'a> {
         self.add_amqp_message(event_data.into(), options)
     }
 
+    pub(crate) fn get_messages(&self) -> AmqpMessage {
+        let mut batch_state = self.batch_state.lock().unwrap();
+
+        let mut batch_envelope = batch_state.batch_envelope.clone().unwrap();
+
+        // Move the messages out of the batch state into a local variable so we
+        // can subsequently move it to the message body.
+        let mut serialized_messages = Vec::<Vec<u8>>::new();
+        serialized_messages.append(&mut batch_state.serialized_messages);
+
+        batch_envelope.set_message_body(AmqpMessageBody::Binary(serialized_messages));
+
+        // Reset the batch state for the next batch
+        batch_state.batch_envelope = None;
+        batch_state.size_in_bytes = 0;
+        batch_state.serialized_messages.clear();
+
+        batch_envelope
+    }
+
     pub(crate) fn get_batch_path(&self) -> String {
         if self.partition_id.is_none() {
             format!("{}", self.producer.base_url())
@@ -161,8 +185,34 @@ impl<'a> EventDataBatch<'a> {
         }
     }
 
-    fn create_batch_envelope(&self, message: AmqpMessage) -> AmqpMessage {
-        todo!()
+    fn create_batch_envelope(&self, message: &AmqpMessage) -> AmqpMessage {
+        // Transfer all the message options from the original message to the batch envelope
+        // Do NOT transfer the body, that will be handled later.
+        let mut batch_builder = AmqpMessage::builder();
+
+        if message.header().is_some() {
+            batch_builder = batch_builder.with_header(message.header().unwrap().clone());
+        }
+        if message.properties().is_some() {
+            batch_builder = batch_builder.with_properties(message.properties().unwrap().clone());
+        }
+        if message.application_properties().is_some() {
+            batch_builder = batch_builder
+                .with_application_properties(message.application_properties().unwrap().clone());
+        }
+        if message.delivery_annotations().is_some() {
+            batch_builder = batch_builder
+                .with_delivery_annotations(message.delivery_annotations().unwrap().clone());
+        }
+        if message.message_annotations().is_some() {
+            batch_builder = batch_builder
+                .with_message_annotations(message.message_annotations().unwrap().clone());
+        }
+        if message.footer().is_some() {
+            batch_builder = batch_builder.with_footer(message.footer().unwrap().clone());
+        }
+
+        batch_builder.build()
     }
 }
 pub struct EventDataBatchOptions {
@@ -172,46 +222,46 @@ pub struct EventDataBatchOptions {
 }
 
 impl EventDataBatchOptions {
-    pub fn builder() -> EventDataBatchOptionsBuilder {
-        EventDataBatchOptionsBuilder::new()
+    pub fn builder() -> builders::EventDataBatchOptionsBuilder {
+        builders::EventDataBatchOptionsBuilder::new()
     }
 }
 
-pub struct EventDataBatchOptionsBuilder {
-    max_size_in_bytes: Option<u64>,
-    partition_key: Option<String>,
-    partition_id: Option<String>,
-}
+mod builders {
+    use super::*;
 
-impl EventDataBatchOptionsBuilder {
-    pub fn new() -> Self {
-        Self {
-            max_size_in_bytes: None,
-            partition_key: None,
-            partition_id: None,
+    pub struct EventDataBatchOptionsBuilder {
+        options: EventDataBatchOptions,
+    }
+
+    impl EventDataBatchOptionsBuilder {
+        pub(super) fn new() -> Self {
+            Self {
+                options: EventDataBatchOptions {
+                    max_size_in_bytes: None,
+                    partition_key: None,
+                    partition_id: None,
+                },
+            }
         }
-    }
 
-    pub fn max_size_in_bytes(mut self, max_size_in_bytes: u64) -> Self {
-        self.max_size_in_bytes = Some(max_size_in_bytes);
-        self
-    }
+        pub fn with_max_size_in_bytes(mut self, max_size_in_bytes: u64) -> Self {
+            self.options.max_size_in_bytes = Some(max_size_in_bytes);
+            self
+        }
 
-    pub fn partition_key(mut self, partition_key: impl Into<String>) -> Self {
-        self.partition_key = Some(partition_key.into());
-        self
-    }
+        pub fn with_partition_key(mut self, partition_key: impl Into<String>) -> Self {
+            self.options.partition_key = Some(partition_key.into());
+            self
+        }
 
-    pub fn partition_id(mut self, partition_id: impl Into<String>) -> Self {
-        self.partition_id = Some(partition_id.into());
-        self
-    }
+        pub fn with_partition_id(mut self, partition_id: impl Into<String>) -> Self {
+            self.options.partition_id = Some(partition_id.into());
+            self
+        }
 
-    pub fn build(self) -> EventDataBatchOptions {
-        EventDataBatchOptions {
-            max_size_in_bytes: self.max_size_in_bytes,
-            partition_key: self.partition_key,
-            partition_id: self.partition_id,
+        pub fn build(self) -> EventDataBatchOptions {
+            self.options
         }
     }
 }
@@ -223,13 +273,27 @@ mod tests {
     #[test]
     fn test_batch_builder() {
         let options = EventDataBatchOptions::builder()
-            .max_size_in_bytes(1024)
-            .partition_key("pk")
-            .partition_id("pid")
+            .with_max_size_in_bytes(1024)
+            .with_partition_key("pk")
+            .with_partition_id("pid")
             .build();
 
         assert_eq!(options.max_size_in_bytes, Some(1024));
         assert_eq!(options.partition_key, Some("pk".to_string()));
         assert_eq!(options.partition_id, Some("pid".to_string()));
+    }
+
+    #[test]
+    fn test_clone_array() {
+        let mut array = vec![1, 2, 3, 4, 5];
+        let mut copy = Vec::<i32>::new();
+
+        // while let Some(val) = array.pop() {
+        //     println!("{:?}", val);
+        //     copy.push(val);
+        // }
+        copy.append(&mut array);
+        assert_eq!(array.len(), 0);
+        assert_eq!(copy, vec![1, 2, 3, 4, 5]);
     }
 }

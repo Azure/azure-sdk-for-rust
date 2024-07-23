@@ -6,7 +6,7 @@ use azure_core_amqp::{
     cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityTrait},
     connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
     management::{AmqpManagement, AmqpManagementTrait},
-    sender::{AmqpSender, AmqpSenderOptions, AmqpSenderTrait},
+    sender::{AmqpSendOptions, AmqpSender, AmqpSenderOptions, AmqpSenderTrait},
     session::{AmqpSession, AmqpSessionOptions, AmqpSessionTrait},
     value::{AmqpOrderedMap, AmqpTimestamp, AmqpValue},
 };
@@ -107,7 +107,7 @@ impl ProducerClient {
         self.connection.get().unwrap().close().await?;
         Ok(())
     }
-
+    const BATCH_MESSAGE_FORMAT: u32 = 0x80013700;
     pub async fn create_batch(
         &self,
         batch_options: Option<EventDataBatchOptions>,
@@ -118,13 +118,19 @@ impl ProducerClient {
         Ok(batch)
     }
 
-    pub async fn submit_batch<'a>(&self, batch: EventDataBatch<'a>) -> Result<()> {
-        // let sender = self.ensure_sender(batch.get_batch_path()).await?;
-        // let mut sender = sender.lock().await;
-        // let messages = batch.get_messages().await?;
-        // for message in messages {
-        //     sender.send(message).await?;
-        // }
+    pub async fn submit_batch<'a>(&self, batch: &EventDataBatch<'a>) -> Result<()> {
+        let sender = self.ensure_sender(batch.get_batch_path()).await?;
+        let messages = batch.get_messages();
+        sender
+            .lock()
+            .await
+            .send(
+                messages,
+                AmqpSendOptions::builder()
+                    .with_message_format(Self::BATCH_MESSAGE_FORMAT)
+                    .build(),
+            )
+            .await?;
         Ok(())
     }
 

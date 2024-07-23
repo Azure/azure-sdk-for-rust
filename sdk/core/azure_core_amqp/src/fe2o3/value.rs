@@ -504,7 +504,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_fe2o3_amqp_types_to_amqpvalue() {
+    fn test_from_fe2o3_amqp_types_to_amqp_value() {
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Null;
             let amqp: AmqpValue = fe2o3.clone().into();

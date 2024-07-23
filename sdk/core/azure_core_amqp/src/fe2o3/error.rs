@@ -82,6 +82,33 @@ pub enum AmqpNotAcceptedError {
     },
 }
 
+impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpNotAcceptedError {
+    fn from(outcome: fe2o3_amqp_types::messaging::Outcome) -> Self {
+        match outcome {
+            fe2o3_amqp_types::messaging::Outcome::Accepted(_) => {
+                panic!("Accepted outcomes should not be converted to errors")
+            }
+            fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => {
+                AmqpNotAcceptedError::AmqpNotAcceptedError { source: rejected }
+            }
+            fe2o3_amqp_types::messaging::Outcome::Released(released) => {
+                AmqpNotAcceptedError::AmqpReleasedError { source: released }
+            }
+            fe2o3_amqp_types::messaging::Outcome::Modified(modified) => {
+                AmqpNotAcceptedError::AmqpModifiedError { source: modified }
+            }
+        }
+    }
+}
+
+impl From<AmqpNotAcceptedError> for Fe2o3AmqpError {
+    fn from(e: AmqpNotAcceptedError) -> Self {
+        Fe2o3AmqpError {
+            kind: ErrorKind::NotAcceptedError { source: e },
+        }
+    }
+}
+
 pub enum ErrorKind {
     AmqpSerializationError { source: AmqpSerializationError },
     AmqpDeliveryRejectedError { source: AmqpDeliveryRejectedError },
