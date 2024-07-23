@@ -1,0 +1,395 @@
+//! Defines Cosmos DB's unique Authentication Policy.
+//!
+//! The Cosmos DB data plane doesn't use a standard `Authorization: Bearer` header for authentication.
+//! Instead, it uses a custom header format, as defined in the [official documentation](https://docs.microsoft.com/en-us/rest/api/cosmos-db/access-control-on-cosmosdb-resources).
+//! We implement that policy here, because we can't use any standard Azure SDK authentication policy.
+
+use azure_core::auth::TokenCredential;
+use azure_core::{
+    date,
+    headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION},
+    Context, Policy, PolicyResult, Request, Url,
+};
+use std::sync::Arc;
+use time::OffsetDateTime;
+use tracing::trace;
+use url::form_urlencoded;
+
+#[cfg(feature = "key-auth")]
+use azure_core::{auth::Secret, hmac::hmac_sha256};
+
+const AZURE_VERSION: &str = "2018-12-31";
+const VERSION_NUMBER: &str = "1.0";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ResourceType {
+    Databases,
+    Collections,
+    Documents,
+    StoredProcedures,
+    Users,
+    Permissions,
+    Attachments,
+    PartitionKeyRanges,
+    UserDefinedFunctions,
+    Triggers,
+}
+
+#[derive(Debug, Clone)]
+enum Credential {
+    /// The credential is an Entra ID token.
+    Token(Arc<dyn TokenCredential>),
+
+    /// The credential is a key to be used to sign the HTTP request (a shared key)
+    #[cfg(feature = "key-auth")]
+    SigningKey(Secret),
+}
+
+#[cfg(feature = "key-auth")]
+struct SignatureTarget<'a> {
+    http_method: &'a azure_core::Method,
+    resource_type: &'a ResourceType,
+    resource_link: &'a str,
+    time_nonce: OffsetDateTime,
+}
+
+#[derive(Debug, Clone)]
+pub struct AuthorizationPolicy {
+    credential: Credential,
+}
+
+impl AuthorizationPolicy {
+    pub(crate) fn from_token_credential(token: Arc<dyn TokenCredential>) -> Self {
+        Self {
+            credential: Credential::Token(token),
+        }
+    }
+
+    #[cfg(feature = "key-auth")]
+    pub(crate) fn from_shared_key(key: Secret) -> Self {
+        Self {
+            credential: Credential::SigningKey(key),
+        }
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl Policy for AuthorizationPolicy {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        trace!("called AuthorizationPolicy::send. self == {:#?}", self);
+
+        assert!(
+            !next.is_empty(),
+            "Authorization policies cannot be the last policy of a pipeline"
+        );
+
+        let time_nonce = OffsetDateTime::now_utc();
+
+        let resource_link = generate_resource_link(request);
+        let resource_type: &ResourceType = ctx
+            .value()
+            .expect("ResourceType must be in the Context at this point");
+        let auth = generate_authorization(
+            &self.credential,
+            request.url(),
+            #[cfg(feature = "key-auth")]
+            SignatureTarget {
+                http_method: request.method(),
+                resource_type,
+                resource_link: &resource_link,
+                time_nonce,
+            },
+        )
+        .await?;
+
+        trace!(?resource_type, resource_link, "AuthorizationPolicy applied");
+
+        request.insert_header(MS_DATE, HeaderValue::from(date::to_rfc1123(&time_nonce)));
+        request.insert_header(VERSION, HeaderValue::from_static(AZURE_VERSION));
+        request.insert_header(AUTHORIZATION, HeaderValue::from(auth));
+
+        // next[0] will not panic, because we checked at the beginning of the function
+        next[0].send(ctx, request, &next[1..]).await
+    }
+}
+
+/// This function strips the leading slash and the resource name from the uri of the passed request.
+/// It does not strip the resource name if the resource name is not present. This is accomplished in
+/// four steps (with eager return):
+/// 1. Strip leading slash from the uri of the passed request.
+/// 2. Find if the uri ends with a `ENDING_STRING`. If so, strip it and return. Every `ENDING_STRING`
+///    starts with a leading slash so this check will not match uri compsed **only** by the
+///    `ENDING_STRING`.
+/// 3. Find if the uri **is** the ending string (without the leading slash). If so return an empty
+///    string. This covers the exception of the rule above.
+/// 4. Return the received uri unchanged.
+fn generate_resource_link(request: &Request) -> String {
+    static ENDING_STRINGS: &[&str] = &[
+        "/dbs",
+        "/colls",
+        "/docs",
+        "/sprocs",
+        "/users",
+        "/permissions",
+        "/attachments",
+        "/pkranges",
+        "/udfs",
+        "/triggers",
+    ];
+
+    // This strips the leading slash from the uri of the passed request.
+    let uri_path = request.path_and_query();
+    let uri = uri_path.trim_start_matches('/');
+
+    // We find the above resource names. If found, we strip it and eagerly return. Note that the
+    // resource names have a leading slash so the suffix will match `test/users` but not
+    // `test-users`.
+    for ending in ENDING_STRINGS {
+        if let Some(uri_without_ending) = uri.strip_suffix(ending) {
+            return uri_without_ending.to_string();
+        }
+    }
+
+    // This check handles the uris comprised by resource names only. It will match `users` and
+    // return an empty string. This is necessary because the previous check included a leading
+    // slash.
+    if ENDING_STRINGS
+        .iter()
+        .map(|ending| &ending[1..]) // this is safe since every ENDING_STRING starts with a slash
+        .any(|item| uri == item)
+    {
+        String::new()
+    } else {
+        uri.to_string()
+    }
+}
+
+/// The `CosmosDB` authorization can either be:
+/// - "primary": one of the two service-level tokens
+/// - "resource": e.g. a single database
+/// - "aad": Azure Active Directory token
+/// In the "primary" case the signature must be constructed by signing the HTTP method,
+/// resource type, resource link (the relative URI) and the current time.
+///
+/// In the "resource" case, the signature is just the resource key.
+///
+/// In the "aad" case, the signature is the AAD token.
+async fn generate_authorization<'a>(
+    auth_token: &Credential,
+    url: &Url,
+    #[cfg(feature = "key-auth")] signature_target: SignatureTarget<'a>,
+) -> azure_core::Result<String> {
+    let (authorization_type, signature) = match auth_token {
+        Credential::Token(token_credential) => (
+            "aad",
+            token_credential
+                .get_token(&[&scope_from_url(url)])
+                .await?
+                .token
+                .secret()
+                .to_string(),
+        ),
+
+        #[cfg(feature = "key-auth")]
+        Credential::SigningKey(key) => {
+            let string_to_sign = string_to_sign(signature_target);
+            ("master", hmac_sha256(&string_to_sign, key)?)
+        }
+    };
+
+    let str_unencoded = format!("type={authorization_type}&ver={VERSION_NUMBER}&sig={signature}");
+
+    Ok(form_urlencoded::byte_serialize(str_unencoded.as_bytes()).collect::<String>())
+}
+
+/// This function generates the scope string from the passed url. The scope string is used to
+/// request the AAD token.
+fn scope_from_url(url: &Url) -> String {
+    let scheme = url.scheme();
+    let hostname = url.host_str().unwrap();
+    format!("{scheme}://{hostname}/.default")
+}
+
+/// This function generates a valid authorization string, according to the documentation.
+/// In case of authorization problems we can compare the `string_to_sign` generated by Azure against
+/// our own.
+#[cfg(feature = "key-auth")]
+fn string_to_sign(signature_target: SignatureTarget) -> String {
+    // From official docs:
+    // StringToSign =
+    //      Verb.toLowerCase() + "\n" +
+    //      ResourceType.toLowerCase() + "\n" +
+    //      ResourceLink + "\n" +
+    //      Date.toLowerCase() + "\n" +
+    //      "" + "\n";
+    // Notice the empty string at the end so we need to add two new lines
+
+    format!(
+        "{}\n{}\n{}\n{}\n\n",
+        match *signature_target.http_method {
+            azure_core::Method::Get => "get",
+            azure_core::Method::Put => "put",
+            azure_core::Method::Post => "post",
+            azure_core::Method::Delete => "delete",
+            azure_core::Method::Head => "head",
+            azure_core::Method::Trace => "trace",
+            azure_core::Method::Options => "options",
+            azure_core::Method::Connect => "connect",
+            azure_core::Method::Patch => "patch",
+            _ => "extension",
+        },
+        match signature_target.resource_type {
+            ResourceType::Databases => "dbs",
+            ResourceType::Collections => "colls",
+            ResourceType::Documents => "docs",
+            ResourceType::StoredProcedures => "sprocs",
+            ResourceType::Users => "users",
+            ResourceType::Permissions => "permissions",
+            ResourceType::Attachments => "attachments",
+            ResourceType::PartitionKeyRanges => "pkranges",
+            ResourceType::UserDefinedFunctions => "udfs",
+            ResourceType::Triggers => "triggers",
+        },
+        signature_target.resource_link,
+        date::to_rfc1123(&signature_target.time_nonce).to_lowercase()
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[cfg(feature = "key-auth")]
+    fn string_to_sign_00() {
+        let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+
+        let ret = string_to_sign(
+            &azure_core::Method::Get,
+            &ResourceType::Databases,
+            "dbs/MyDatabase/colls/MyCollection",
+            time,
+        );
+        assert_eq!(
+            ret,
+            "get
+dbs
+dbs/MyDatabase/colls/MyCollection
+mon, 01 jan 1900 01:00:00 gmt
+
+"
+        );
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "key-auth")]
+    async fn generate_authorization_00() {
+        let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+
+        let auth_token = Credential::SigningKey(
+            "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
+        )
+            .unwrap();
+
+        let url = Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
+
+        let ret = generate_authorization(
+            &auth_token,
+            &azure_core::Method::Get,
+            &url,
+            &ResourceType::Databases,
+            "dbs/MyDatabase/colls/MyCollection",
+            time,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            ret,
+            "type%3Dmaster%26ver%3D1.0%26sig%3DQkz%2Fr%2B1N2%2BPEnNijxGbGB%2FADvLsLBQmZ7uBBMuIwf4I%3D"
+        );
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "key-auth")]
+    async fn generate_authorization_01() {
+        let time = date::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
+
+        let auth_token = Credential::SigningKey(
+            "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
+        )
+        .unwrap();
+
+        let url = Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
+
+        let ret = generate_authorization(
+            &auth_token,
+            &azure_core::Method::Get,
+            &url,
+            &ResourceType::Databases,
+            "dbs/ToDoList",
+            time,
+        )
+        .await
+        .unwrap();
+
+        // This is the result shown in the MSDN page. It's clearly wrong :)
+        // below is the correct one.
+        //assert_eq!(ret,
+        //           "type%3dmaster%26ver%3d1.0%26sig%3dc09PEVJrgp2uQRkr934kFbTqhByc7TVr3O");
+
+        assert_eq!(
+            ret,
+            "type%3Dmaster%26ver%3D1.0%26sig%3DKvBM8vONofkv3yKm%2F8zD9MEGlbu6jjHDJBp4E9c2ZZI%3D"
+        );
+    }
+
+    #[test]
+    fn generate_resource_link_00() {
+        let request = Request::new(
+            Url::parse("https://.documents.azure.com/dbs/second").unwrap(),
+            azure_core::Method::Get,
+        );
+        assert_eq!(&generate_resource_link(&request), "dbs/second");
+    }
+
+    #[test]
+    fn generate_resource_link_01() {
+        let request = Request::new(
+            Url::parse("https://.documents.azure.com/dbs").unwrap(),
+            azure_core::Method::Get,
+        );
+        assert_eq!(&generate_resource_link(&request), "");
+    }
+
+    #[test]
+    fn generate_resource_link_02() {
+        let request = Request::new(
+            Url::parse("https://.documents.azure.com/colls/second/third").unwrap(),
+            azure_core::Method::Get,
+        );
+        assert_eq!(&generate_resource_link(&request), "colls/second/third");
+    }
+
+    #[test]
+    fn generate_resource_link_03() {
+        let request = Request::new(
+            Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap(),
+            azure_core::Method::Get,
+        );
+        assert_eq!(&generate_resource_link(&request), "dbs/test_db");
+    }
+
+    #[test]
+    fn scope_from_url_01() {
+        let scope =
+            scope_from_url(&Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap());
+        assert_eq!(scope, "https://.documents.azure.com/.default");
+    }
+}

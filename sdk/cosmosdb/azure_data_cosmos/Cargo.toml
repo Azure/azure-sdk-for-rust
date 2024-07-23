@@ -1,0 +1,37 @@
+[package]
+name = "azure_data_cosmos"
+version = "1.19.0"
+description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_identity"
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+categories = ["api-bindings"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait.workspace = true
+azure_core.workspace = true
+time.workspace = true
+tracing.workspace = true
+url.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+serde_json.workspace = true
+azure_core.workspace = true
+azure_identity.workspace = true
+clap.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+key-auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)

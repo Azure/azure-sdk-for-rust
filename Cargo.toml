@@ -6,6 +6,7 @@ members = [
   "sdk/typespec/typespec_derive",
   "sdk/core/azure_core",
   "sdk/core/azure_core_amqp",
+  "sdk/cosmosdb/azure_data_cosmos",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "eng/test/mock_transport",
@@ -75,8 +76,8 @@ proc-macro2 = "1.0.86"
 quick-xml = { version = "0.31", features = ["serialize", "serde-types"] }
 rand = "0.8"
 reqwest = { version = "0.12", features = [
-  "json",
-  "stream",
+    "json",
+    "stream",
 ], default-features = false }
 rustc_version = "0.4"
 serde = { version = "1.0", features = ["derive"] }
@@ -90,9 +91,9 @@ syn = { version = "2.0.74", features = ["full"] }
 quote = "1.0.36"
 thiserror = "1.0"
 time = { version = "0.3.10", features = [
-  "serde-well-known",
-  "macros",
-  "wasm-bindgen",
+    "serde-well-known",
+    "macros",
+    "wasm-bindgen",
 ] }
 tokio = { version = "1.0", default-features = false, features = [
   "macros",
