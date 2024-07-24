@@ -33,18 +33,18 @@ impl MockResponse {
 
     pub(crate) async fn duplicate(response: Response<ResponseBody>) -> error::Result<(Response<ResponseBody>, Self)> {
         use error::ResultExt;
-        let (status, headers, body) = response.deconstruct();
+        let (status_code, header_map, body) = response.deconstruct();
         let response_bytes = body.collect().await.context(
             error::ErrorKind::Io,
             "an error occurred fetching the next part of the byte stream",
         )?;
 
         let response = Response::new(
-            status.clone(),
-            headers.clone(),
+            status_code,
+            header_map.clone(),
             ResponseBody::new(Box::pin(BytesStream::new(response_bytes.clone()))),
         );
-        let mock_response = MockResponse::new(status, headers, response_bytes);
+        let mock_response = MockResponse::new(status_code, header_map, response_bytes);
 
         Ok((response, mock_response))
     }

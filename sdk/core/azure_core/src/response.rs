@@ -9,6 +9,11 @@ pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> +
 #[cfg(target_arch = "wasm32")]
 pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
+/// The response to an HTTP request, including the status code, headers, and body.
+///
+/// The HTTP pipeline produces responses that contain a body of type [ResponseBody], representing the raw bytes.
+/// This "raw" response can then be parsed using the [Response<ResponseBody>::json] or [Response<ResponseBody>::xml] methods to deserialize the body into a structured type.
+/// Parsing the body will transform the instance into a new [Response] instance containing the parsed body object, but retaining the original status code and headers.
 pub struct Response<T> {
     status: StatusCode,
     headers: Headers,
@@ -38,20 +43,21 @@ impl<T> Response<T> {
     /// Gets a reference to the body of the response.
     pub fn body(&self) -> &T { &self.body }
 
-    /// Consume the HTTP response and return the HTTP body bytes.
+    /// Consume the HTTP response and return the body.
     pub fn into_body(self) -> T {
         self.body
     }
 
-    /// Consumes this instance and returns its component parts.
+    /// Deconstruct the HTTP response into its components.
     pub fn deconstruct(self) -> (StatusCode, Headers, T) {
         (self.status, self.headers, self.body)
     }
 }
 
 impl Response<ResponseBody> {
-    pub fn from_bytes(status: StatusCode, headers: Headers, body: Bytes) -> Self {
-        let stream: BytesStream = body.into();
+    /// Creates a [Response<ResponseBody>] from a raw collection of bytes.
+    pub fn from_bytes(status: StatusCode, headers: Headers, body: impl Into<Bytes>) -> Self {
+        let stream: BytesStream = body.into().into();
         let stream = Box::pin(stream);
         Self::new(status, headers, ResponseBody::new(stream))
     }
@@ -69,6 +75,13 @@ impl Response<ResponseBody> {
         let (status, headers, body) = self.deconstruct();
         let body = body.xml().await?;
         Ok(Response::new(status, headers, body))
+    }
+
+    /// Collect the stream into a [Response] containing the complete body.
+    ///
+    /// This method will wait until the entire stream has been read before returning.
+    pub async fn collect(self) -> crate::Result<Response<Bytes>> {
+        Response::from_response(self).await
     }
 }
 
