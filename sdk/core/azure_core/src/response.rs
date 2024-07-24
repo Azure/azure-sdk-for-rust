@@ -17,7 +17,7 @@ pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>
 /// The response to an HTTP request, including the status code, headers, and body.
 ///
 /// The HTTP pipeline produces responses that contain a body of type [`ResponseBody`], representing the raw bytes.
-/// This "raw" response can then be parsed using the [`Response<ResponseBody>::json`] or [`Response<ResponseBody>::xml`] methods to deserialize the body into a structured type.
+/// This "raw" response can then be parsed using a method such as [`Response<ResponseBody>::json`] to deserialize the body into a structured type.
 /// Parsing the body will transform the instance into a new [`Response`] instance containing the parsed body object, but retaining the original status code and headers.
 pub struct Response<T> {
     status: StatusCode,
