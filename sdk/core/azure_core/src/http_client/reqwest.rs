@@ -1,6 +1,6 @@
 use crate::{
     error::{ErrorKind, ResultExt},
-    Body, HttpClient, PinnedStream, ResponseBody,
+    Body, HttpClient, ResponseBody,
 };
 use async_trait::async_trait;
 use futures::TryStreamExt;

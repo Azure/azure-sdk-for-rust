@@ -16,9 +16,9 @@ pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>
 
 /// The response to an HTTP request, including the status code, headers, and body.
 ///
-/// The HTTP pipeline produces responses that contain a body of type [ResponseBody], representing the raw bytes.
-/// This "raw" response can then be parsed using the [Response<ResponseBody>::json] or [Response<ResponseBody>::xml] methods to deserialize the body into a structured type.
-/// Parsing the body will transform the instance into a new [Response] instance containing the parsed body object, but retaining the original status code and headers.
+/// The HTTP pipeline produces responses that contain a body of type [`ResponseBody`], representing the raw bytes.
+/// This "raw" response can then be parsed using the [`Response<ResponseBody>::json`] or [`Response<ResponseBody>::xml`] methods to deserialize the body into a structured type.
+/// Parsing the body will transform the instance into a new [`Response`] instance containing the parsed body object, but retaining the original status code and headers.
 pub struct Response<T> {
     status: StatusCode,
     headers: Headers,
@@ -62,21 +62,21 @@ impl<T> Response<T> {
 }
 
 impl Response<ResponseBody> {
-    /// Creates a [Response<ResponseBody>] from a raw collection of bytes.
+    /// Creates a [`Response<ResponseBody>`] from a raw collection of bytes.
     pub fn from_bytes(status: StatusCode, headers: Headers, body: impl Into<Bytes>) -> Self {
         let stream: BytesStream = body.into().into();
         let stream = Box::pin(stream);
         Self::new(status, headers, ResponseBody::new(stream))
     }
 
-    /// Consumes this instance, parses the body as JSON, and returns a new Response<T> containing the parsed value.
+    /// Consumes this instance, parses the body as JSON, and returns a new [`Response<T>`] containing the parsed value.
     pub async fn json<T: DeserializeOwned>(self) -> crate::Result<Response<T>> {
         let (status, headers, body) = self.deconstruct();
         let body = body.json().await?;
         Ok(Response::new(status, headers, body))
     }
 
-    /// Consumes this instance, parses the body as XML, and returns a new Response<T> containing the parsed value.
+    /// Consumes this instance, parses the body as XML, and returns a new [`Response<T>`] containing the parsed value.
     #[cfg(feature = "xml")]
     pub async fn xml<T: DeserializeOwned>(self) -> crate::Result<Response<T>> {
         let (status, headers, body) = self.deconstruct();
