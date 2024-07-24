@@ -127,6 +127,7 @@ impl WorkloadIdentityCredential {
         )
         .await
         .map(|r| {
+            let r = r.into_body();
             AccessToken::new(
                 r.access_token().clone(),
                 OffsetDateTime::now_utc() + Duration::from_secs(r.expires_in),

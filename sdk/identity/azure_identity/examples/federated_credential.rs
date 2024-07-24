@@ -27,7 +27,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         &AZURE_PUBLIC_CLOUD,
     )
     .await
-    .expect("federated_credentials_flow failed");
+    .expect("federated_credentials_flow failed")
+    .into_body();
+
     println!("Non interactive authorization == {token:?}");
 
     let url = Url::parse(&format!(

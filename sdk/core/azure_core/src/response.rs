@@ -1,33 +1,27 @@
-use crate::{
-    error::{ErrorKind, ResultExt},
-    headers::Headers,
-    json::from_json,
-    StatusCode,
-};
+use crate::{BytesStream, error::{ErrorKind, ResultExt}, headers::Headers, json::from_json, StatusCode};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
-use std::{fmt, marker::PhantomData, pin::Pin};
+use std::{fmt, pin::Pin};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
 #[cfg(target_arch = "wasm32")]
 pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
-/// An HTTP response.
-pub struct RawResponse {
+pub struct Response<T> {
     status: StatusCode,
     headers: Headers,
-    body: ResponseBody,
+    body: T,
 }
 
-impl RawResponse {
+impl<T> Response<T> {
     /// Create an HTTP response.
-    pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
+    pub fn new(status: StatusCode, headers: Headers, body: T) -> Self {
         Self {
             status,
             headers,
-            body: ResponseBody::new(stream),
+            body
         }
     }
 
@@ -41,178 +35,63 @@ impl RawResponse {
         &self.headers
     }
 
-    /// Deconstruct the HTTP response into its components.
-    pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody) {
-        (self.status, self.headers, self.body)
-    }
+    /// Gets a reference to the body of the response.
+    pub fn body(&self) -> &T { &self.body }
 
     /// Consume the HTTP response and return the HTTP body bytes.
-    pub fn into_body(self) -> ResponseBody {
+    pub fn into_body(self) -> T {
         self.body
     }
 
-    /// Get the response body as the specified type from JSON.
-    pub async fn json<T>(self) -> crate::Result<T>
-    where
-        T: DeserializeOwned,
-    {
-        self.into_body().json().await
-    }
-
-    /// Get the response body as the specified type from XML.
-    #[cfg(feature = "xml")]
-    pub async fn xml<T>(self) -> crate::Result<T>
-    where
-        T: DeserializeOwned,
-    {
-        self.into_body().xml().await
+    /// Consumes this instance and returns its component parts.
+    pub fn deconstruct(self) -> (StatusCode, Headers, T) {
+        (self.status, self.headers, self.body)
     }
 }
 
-impl fmt::Debug for RawResponse {
+impl Response<ResponseBody> {
+    pub fn from_bytes(status: StatusCode, headers: Headers, body: Bytes) -> Self {
+        let stream: BytesStream = body.into();
+        let stream = Box::pin(stream);
+        Self::new(status, headers, ResponseBody::new(stream))
+    }
+
+    /// Consumes this instance, parses the body as JSON, and returns a new Response<T> containing the parsed value.
+    pub async fn json<T: DeserializeOwned>(self) -> crate::Result<Response<T>> {
+        let (status, headers, body) = self.deconstruct();
+        let body = body.json().await?;
+        Ok(Response::new(status, headers, body))
+    }
+
+    /// Consumes this instance, parses the body as XML, and returns a new Response<T> containing the parsed value.
+    #[cfg(feature = "xml")]
+    pub async fn xml<T: DeserializeOwned>(self) -> crate::Result<Response<T>> {
+        let (status, headers, body) = self.deconstruct();
+        let body = body.xml().await?;
+        Ok(Response::new(status, headers, body))
+    }
+}
+
+impl<T: fmt::Debug> fmt::Debug for Response<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Response")
             .field("status", &self.status)
             .field("headers", &self.headers)
-            .field("body", &"(body)")
+            .field("body", &self.body)
             .finish()
     }
 }
 
-impl<T> From<RawResponse> for Response<T> {
-    fn from(response: RawResponse) -> Self {
-        Self {
-            response,
-            phantom: PhantomData,
-        }
-    }
-}
-
-pub struct Response<T> {
-    response: RawResponse,
-    phantom: PhantomData<T>,
-}
-
-impl<T> Response<T> {
-    /// Create an HTTP response.
-    pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
-        Self {
-            response: RawResponse::new(status, headers, stream),
-            phantom: PhantomData,
-        }
-    }
-
-    /// Get the status code from the response.
-    pub fn status(&self) -> StatusCode {
-        self.response.status
-    }
-
-    /// Get the headers from the response.
-    pub fn headers(&self) -> &Headers {
-        &self.response.headers
-    }
-
-    /// Deconstruct the HTTP response into its components.
-    pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody) {
-        (
-            self.response.status,
-            self.response.headers,
-            self.response.body,
-        )
-    }
-
-    /// Consume the HTTP response and return the HTTP body bytes.
-    pub fn into_body(self) -> ResponseBody {
-        self.response.body
-    }
-
-    /// Get the response body as the specified type from JSON.
-    pub async fn json(self) -> crate::Result<T>
-    where
-        T: DeserializeOwned,
-    {
-        self.into_body().json().await
-    }
-
-    /// Get the response body as the specified type from XML.
-    #[cfg(feature = "xml")]
-    pub async fn xml(self) -> crate::Result<T>
-    where
-        T: DeserializeOwned,
-    {
-        self.into_body().xml().await
-    }
-}
-
-impl<T> fmt::Debug for Response<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Response")
-            .field("status", &self.response.status)
-            .field("headers", &self.response.headers)
-            .field("body", &"(body)")
-            .finish()
-    }
-}
-
-/// An HTTP response with the body collected as bytes.
-#[derive(Debug, Clone)]
-pub struct CollectedResponse<T> {
-    status: StatusCode,
-    headers: Headers,
-    body: Bytes,
-    phantom: PhantomData<T>,
-}
-
-impl<T> CollectedResponse<T> {
-    /// Create a collected HTTP response.
-    pub fn new(status: StatusCode, headers: Headers, body: Bytes) -> Self {
-        Self {
-            status,
-            headers,
-            body,
-            phantom: PhantomData,
-        }
-    }
-
-    /// Get the status code from the response.
-    pub fn status(&self) -> &StatusCode {
-        &self.status
-    }
-
-    /// Get the headers from the response.
-    pub fn headers(&self) -> &Headers {
-        &self.headers
-    }
-
-    /// Get the collected body from the response.
-    pub fn body(&self) -> &Bytes {
-        &self.body
-    }
-
+impl Response<Bytes> {
     /// Create a collected HTTP response from a [`Response`].
-    pub async fn from_response(response: RawResponse) -> crate::Result<Self> {
+    pub async fn from_response(response: Response<ResponseBody>) -> crate::Result<Self> {
         let (status, headers, body) = response.deconstruct();
         let body = body.collect().await?;
         Ok(Self::new(status, headers, body))
     }
-
-    pub fn json(&self) -> crate::Result<T>
-    where
-        T: DeserializeOwned,
-    {
-        from_json(&self.body)
-    }
-
-    #[cfg(feature = "xml")]
-    pub fn xml(&self) -> crate::Result<T>
-    where
-        T: DeserializeOwned,
-    {
-        crate::xml::read_xml(&self.body)
-    }
 }
 
-impl<T> AsRef<[u8]> for CollectedResponse<T> {
+impl AsRef<[u8]> for Response<Bytes> {
     fn as_ref(&self) -> &[u8] {
         self.body.as_ref()
     }
@@ -225,7 +104,7 @@ impl<T> AsRef<[u8]> for CollectedResponse<T> {
 pub struct ResponseBody(#[pin] PinnedStream);
 
 impl ResponseBody {
-    fn new(stream: PinnedStream) -> Self {
+    pub fn new(stream: PinnedStream) -> Self {
         Self(stream)
     }
 
@@ -284,5 +163,115 @@ impl Stream for ResponseBody {
 impl fmt::Debug for ResponseBody {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("ResponseBody")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use http_types::StatusCode;
+    use serde::Deserialize;
+    use crate::headers::{Headers, HeaderName, HeaderValue};
+    use crate::Response;
+
+    #[derive(Deserialize)]
+    pub struct TestObj {
+        string_prop: String,
+        int_prop: i32,
+        float_prop: f32,
+        bool_prop: bool,
+        null_prop: Option<String>,
+        obj_prop: NestedObj,
+        arr_prop: Vec<String>,
+    }
+
+    #[derive(Deserialize)]
+    pub struct NestedObj {
+        nested_prop: String,
+    }
+
+    #[tokio::test]
+    pub async fn deserialize_json_response() {
+        // It's not really that necessary to test all kinds of deserialization here.
+        // We're using serde which should handle deserialization for us.
+        // So just a quick smattering of property types as a basic test.
+        let body = r#"{
+            "string_prop": "foo",
+            "int_prop": 42,
+            "float_prop": 4.2,
+            "bool_prop": true,
+            "null_prop": null,
+            "obj_prop": {
+                "nested_prop": "bar"
+            },
+            "arr_prop": [ "a", "b", "c" ]
+        }"#;
+        let mut headers = Headers::new();
+        headers.insert("content-type", "application/json");
+        headers.insert("foo", "bar");
+
+        let resp = Response::from_bytes(StatusCode::Accepted, headers, body.into());
+        let json_resp = resp.json::<TestObj>().await.unwrap();
+
+        // Header order is inconsistent, so order the list
+        let mut header_list = json_resp.headers().iter().collect::<Vec<_>>();
+        header_list.sort_by(|(nl, _), (nr, _)| nl.cmp(nr));
+
+        assert_eq!(StatusCode::Accepted, json_resp.status());
+        assert_eq!(vec![
+            (&HeaderName::from("content-type"), &HeaderValue::from("application/json")),
+            (&HeaderName::from("foo"), &HeaderValue::from("bar")),
+        ], json_resp.headers().iter().collect::<Vec<_>>());
+        assert_eq!("foo", json_resp.body().string_prop);
+        assert_eq!(42, json_resp.body().int_prop);
+        assert_eq!(4.2, json_resp.body().float_prop);
+        assert_eq!(true, json_resp.body().bool_prop);
+        assert_eq!(None, json_resp.body().null_prop);
+        assert_eq!("bar", json_resp.body().obj_prop.nested_prop);
+        assert_eq!(vec!["a", "b", "c"], json_resp.body().arr_prop);
+    }
+
+    #[tokio::test]
+    #[cfg(feature="xml")]
+    pub async fn deserialize_xml_response() {
+        // It's not really that necessary to test all kinds of deserialization here.
+        // We're using serde which should handle deserialization for us.
+        // So just a quick smattering of property types as a basic test.
+        let body = r#"
+            <TestObj>
+                <string_prop>foo</string_prop>
+                <int_prop>42</int_prop>
+                <float_prop>4.2</float_prop>
+                <bool_prop>true</bool_prop>
+                <obj_prop>
+                    <nested_prop>bar</nested_prop>
+                </obj_prop>
+                <arr_prop>a</arr_prop>
+                <arr_prop>b</arr_prop>
+                <arr_prop>c</arr_prop>
+            </TestObj>
+        "#;
+        let mut headers = Headers::new();
+        headers.insert("content-type", "application/json");
+        headers.insert("foo", "bar");
+
+        let resp = Response::from_bytes(StatusCode::Accepted, headers, body.into());
+        let xml_resp = resp.xml::<TestObj>().await.unwrap();
+
+        // Header order is inconsistent, so order the list
+        let mut header_list = xml_resp.headers().iter().collect::<Vec<_>>();
+        header_list.sort_by(|(nl, _), (nr, _)| nl.cmp(nr));
+
+        assert_eq!(StatusCode::Accepted, xml_resp.status());
+        assert_eq!(vec![
+            (&HeaderName::from("content-type"), &HeaderValue::from("application/json")),
+            (&HeaderName::from("foo"), &HeaderValue::from("bar")),
+        ], header_list);
+        assert_eq!("foo", xml_resp.body().string_prop);
+        assert_eq!(42, xml_resp.body().int_prop);
+        assert_eq!(4.2, xml_resp.body().float_prop);
+        assert_eq!(true, xml_resp.body().bool_prop);
+        assert_eq!(None, xml_resp.body().null_prop);
+        assert_eq!("bar", xml_resp.body().obj_prop.nested_prop);
+        assert_eq!(vec!["a", "b", "c"], xml_resp.body().arr_prop);
     }
 }

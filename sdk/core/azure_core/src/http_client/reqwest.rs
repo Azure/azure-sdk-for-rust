@@ -1,7 +1,4 @@
-use crate::{
-    error::{ErrorKind, ResultExt},
-    Body, HttpClient, PinnedStream,
-};
+use crate::{error::{ErrorKind, ResultExt}, Body, HttpClient, PinnedStream, ResponseBody};
 use async_trait::async_trait;
 use futures::TryStreamExt;
 use std::{collections::HashMap, str::FromStr, sync::Arc};
@@ -33,7 +30,7 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for ::reqwest::Client {
-    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::RawResponse> {
+    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response<crate::ResponseBody>> {
         let url = request.url().clone();
         let method = request.method();
         let mut req = self.request(try_from_method(*method)?, url.clone());
@@ -63,15 +60,15 @@ impl HttpClient for ::reqwest::Client {
         let status = rsp.status();
         let headers = to_headers(rsp.headers());
 
-        let body: PinnedStream = Box::pin(rsp.bytes_stream().map_err(|error| {
+        let body = ResponseBody::new(Box::pin(rsp.bytes_stream().map_err(|error| {
             crate::error::Error::full(
                 ErrorKind::Io,
                 error,
                 "error converting `reqwest` request into a byte stream",
             )
-        }));
+        })));
 
-        Ok(crate::RawResponse::new(
+        Ok(crate::Response::new(
             try_from_status(status)?,
             headers,
             body,

@@ -19,7 +19,7 @@ pub async fn exchange(
     client_id: &str,
     client_secret: Option<&str>,
     refresh_token: &Secret,
-) -> azure_core::Result<RefreshTokenResponse> {
+) -> azure_core::Result<azure_core::Response<RefreshTokenResponse>> {
     let encoded = {
         let mut encoded = &mut form_urlencoded::Serializer::new(String::new());
         encoded = encoded

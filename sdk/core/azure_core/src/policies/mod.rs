@@ -8,12 +8,12 @@ pub use retry_policies::*;
 pub use telemetry_policy::*;
 pub use transport::*;
 
-use crate::{Context, RawResponse, Request};
+use crate::{Context, Request, Response, ResponseBody};
 use async_trait::async_trait;
 use std::sync::Arc;
 
 /// A specialized `Result` type for policies.
-pub type PolicyResult = crate::error::Result<RawResponse>;
+pub type PolicyResult = crate::error::Result<Response<ResponseBody>>;
 
 /// A pipeline policy.
 ///

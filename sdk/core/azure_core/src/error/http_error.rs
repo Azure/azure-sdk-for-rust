@@ -1,4 +1,4 @@
-use crate::{headers, json::from_json, RawResponse, StatusCode};
+use crate::{headers, json::from_json, Response, ResponseBody, StatusCode};
 use bytes::Bytes;
 use serde::Deserialize;
 use std::{collections::HashMap, fmt};
@@ -16,7 +16,7 @@ impl HttpError {
     /// Create an error from an HTTP response.
     ///
     /// This does not check whether the response was successful and should only be used with unsuccessful responses.
-    pub async fn new(response: RawResponse) -> Self {
+    pub async fn new(response: Response<ResponseBody>) -> Self {
         let status = response.status();
         let headers: HashMap<String, String> = response
             .headers()

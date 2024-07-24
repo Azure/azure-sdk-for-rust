@@ -36,7 +36,7 @@ impl TransportOptions {
         &self,
         ctx: &crate::Context<'_>,
         request: &mut crate::Request,
-    ) -> crate::Result<crate::RawResponse> {
+    ) -> crate::Result<crate::Response<crate::ResponseBody>> {
         use TransportOptionsImpl as I;
         match &self.inner {
             I::Http { http_client } => http_client.execute_request(request).await,

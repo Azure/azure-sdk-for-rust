@@ -53,7 +53,7 @@ pub async fn perform(
     scopes: &[&str],
     tenant_id: &str,
     host: &Url,
-) -> azure_core::Result<LoginResponse> {
+) -> azure_core::Result<azure_core::Response<LoginResponse>> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
         .append_pair("client_id", client_id)
         .append_pair("scope", &scopes.join(" "))

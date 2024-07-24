@@ -1,8 +1,4 @@
-use azure_core::{
-    base64, error,
-    headers::{HeaderName, HeaderValue, Headers},
-    BytesStream, RawResponse, StatusCode,
-};
+use azure_core::{base64, error, headers::{HeaderName, HeaderValue, Headers}, BytesStream, StatusCode, Response, ResponseBody};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -14,14 +10,14 @@ pub(crate) struct MockResponse {
     body: Bytes,
 }
 
-impl From<MockResponse> for RawResponse {
+impl From<MockResponse> for Response<ResponseBody> {
     fn from(mock_response: MockResponse) -> Self {
         let bytes_stream: azure_core::BytesStream = mock_response.body.into();
 
         Self::new(
             mock_response.status,
             mock_response.headers,
-            Box::pin(bytes_stream),
+            ResponseBody::new(Box::pin(bytes_stream)),
         )
     }
 }
@@ -35,20 +31,20 @@ impl MockResponse {
         }
     }
 
-    pub(crate) async fn duplicate(response: RawResponse) -> error::Result<(RawResponse, Self)> {
+    pub(crate) async fn duplicate(response: Response<ResponseBody>) -> error::Result<(Response<ResponseBody>, Self)> {
         use error::ResultExt;
-        let (status_code, header_map, body) = response.deconstruct();
+        let (status, headers, body) = response.deconstruct();
         let response_bytes = body.collect().await.context(
             error::ErrorKind::Io,
             "an error occurred fetching the next part of the byte stream",
         )?;
 
-        let response = RawResponse::new(
-            status_code,
-            header_map.clone(),
-            Box::pin(BytesStream::new(response_bytes.clone())),
+        let response = Response::new(
+            status.clone(),
+            headers.clone(),
+            ResponseBody::new(Box::pin(BytesStream::new(response_bytes.clone()))),
         );
-        let mock_response = MockResponse::new(status_code, header_map, response_bytes);
+        let mock_response = MockResponse::new(status, headers, response_bytes);
 
         Ok((response, mock_response))
     }

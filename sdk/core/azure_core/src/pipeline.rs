@@ -1,6 +1,6 @@
 use crate::policies::TransportPolicy;
 use crate::policies::{CustomHeadersPolicy, Policy, TelemetryPolicy};
-use crate::{ClientOptions, Context, Request, Response, RetryOptions};
+use crate::{ClientOptions, Context, Request, Response, ResponseBody, RetryOptions};
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -91,11 +91,11 @@ impl Pipeline {
         &self.pipeline
     }
 
-    pub async fn send<T>(
+    pub async fn send(
         &self,
         ctx: &Context<'_>,
         request: &mut Request,
-    ) -> crate::Result<Response<T>> {
+    ) -> crate::Result<Response<ResponseBody>> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
@@ -110,7 +110,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        headers::Headers, BytesStream, Method, PolicyResult, RawResponse, StatusCode,
+        headers::Headers, BytesStream, Method, PolicyResult, StatusCode,
         TransportOptions,
     };
 
@@ -130,7 +130,8 @@ mod tests {
             ) -> PolicyResult {
                 let buffer = Bytes::from_static(br#"{"foo":1,"bar":"baz"}"#);
                 let stream: BytesStream = buffer.into();
-                let response = RawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
+                let body = ResponseBody::new(Box::pin(stream));
+                let response = Response::new(StatusCode::Ok, Headers::new(), body);
                 Ok(std::future::ready(response).await)
             }
         }
@@ -158,7 +159,8 @@ mod tests {
             .unwrap()
             .json()
             .await
-            .unwrap();
+            .unwrap()
+            .into_body();
 
         assert_eq!(1, model.foo);
         assert_eq!("baz", &model.bar);
