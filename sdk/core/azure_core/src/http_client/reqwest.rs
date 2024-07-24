@@ -1,4 +1,7 @@
-use crate::{error::{ErrorKind, ResultExt}, Body, HttpClient, PinnedStream, ResponseBody};
+use crate::{
+    error::{ErrorKind, ResultExt},
+    Body, HttpClient, PinnedStream, ResponseBody,
+};
 use async_trait::async_trait;
 use futures::TryStreamExt;
 use std::{collections::HashMap, str::FromStr, sync::Arc};
@@ -30,7 +33,10 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for ::reqwest::Client {
-    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response<crate::ResponseBody>> {
+    async fn execute_request(
+        &self,
+        request: &crate::Request,
+    ) -> crate::Result<crate::Response<crate::ResponseBody>> {
         let url = request.url().clone();
         let method = request.method();
         let mut req = self.request(try_from_method(*method)?, url.clone());

@@ -1,4 +1,9 @@
-use crate::{BytesStream, error::{ErrorKind, ResultExt}, headers::Headers, json::from_json, StatusCode};
+use crate::{
+    error::{ErrorKind, ResultExt},
+    headers::Headers,
+    json::from_json,
+    BytesStream, StatusCode,
+};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
@@ -26,7 +31,7 @@ impl<T> Response<T> {
         Self {
             status,
             headers,
-            body
+            body,
         }
     }
 
@@ -41,7 +46,9 @@ impl<T> Response<T> {
     }
 
     /// Gets a reference to the body of the response.
-    pub fn body(&self) -> &T { &self.body }
+    pub fn body(&self) -> &T {
+        &self.body
+    }
 
     /// Consume the HTTP response and return the body.
     pub fn into_body(self) -> T {
@@ -181,10 +188,10 @@ impl fmt::Debug for ResponseBody {
 
 #[cfg(test)]
 mod tests {
+    use crate::headers::{HeaderName, HeaderValue, Headers};
+    use crate::Response;
     use http_types::StatusCode;
     use serde::Deserialize;
-    use crate::headers::{Headers, HeaderName, HeaderValue};
-    use crate::Response;
 
     #[derive(Deserialize)]
     pub struct TestObj {
@@ -230,10 +237,16 @@ mod tests {
         header_list.sort_by(|(nl, _), (nr, _)| nl.cmp(nr));
 
         assert_eq!(StatusCode::Accepted, json_resp.status());
-        assert_eq!(vec![
-            (&HeaderName::from("content-type"), &HeaderValue::from("application/json")),
-            (&HeaderName::from("foo"), &HeaderValue::from("bar")),
-        ], json_resp.headers().iter().collect::<Vec<_>>());
+        assert_eq!(
+            vec![
+                (
+                    &HeaderName::from("content-type"),
+                    &HeaderValue::from("application/json")
+                ),
+                (&HeaderName::from("foo"), &HeaderValue::from("bar")),
+            ],
+            json_resp.headers().iter().collect::<Vec<_>>()
+        );
         assert_eq!("foo", json_resp.body().string_prop);
         assert_eq!(42, json_resp.body().int_prop);
         assert_eq!(4.2, json_resp.body().float_prop);
@@ -244,7 +257,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(feature="xml")]
+    #[cfg(feature = "xml")]
     pub async fn deserialize_xml_response() {
         // It's not really that necessary to test all kinds of deserialization here.
         // We're using serde which should handle deserialization for us.
@@ -275,10 +288,16 @@ mod tests {
         header_list.sort_by(|(nl, _), (nr, _)| nl.cmp(nr));
 
         assert_eq!(StatusCode::Accepted, xml_resp.status());
-        assert_eq!(vec![
-            (&HeaderName::from("content-type"), &HeaderValue::from("application/json")),
-            (&HeaderName::from("foo"), &HeaderValue::from("bar")),
-        ], header_list);
+        assert_eq!(
+            vec![
+                (
+                    &HeaderName::from("content-type"),
+                    &HeaderValue::from("application/json")
+                ),
+                (&HeaderName::from("foo"), &HeaderValue::from("bar")),
+            ],
+            header_list
+        );
         assert_eq!("foo", xml_resp.body().string_prop);
         assert_eq!(42, xml_resp.body().int_prop);
         assert_eq!(4.2, xml_resp.body().float_prop);

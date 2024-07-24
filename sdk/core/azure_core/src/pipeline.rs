@@ -110,8 +110,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        headers::Headers, BytesStream, Method, PolicyResult, StatusCode,
-        TransportOptions,
+        headers::Headers, BytesStream, Method, PolicyResult, StatusCode, TransportOptions,
     };
 
     #[tokio::test]

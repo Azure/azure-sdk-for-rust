@@ -1,4 +1,8 @@
-use azure_core::{base64, error, headers::{HeaderName, HeaderValue, Headers}, BytesStream, StatusCode, Response, ResponseBody};
+use azure_core::{
+    base64, error,
+    headers::{HeaderName, HeaderValue, Headers},
+    BytesStream, Response, ResponseBody, StatusCode,
+};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -31,7 +35,9 @@ impl MockResponse {
         }
     }
 
-    pub(crate) async fn duplicate(response: Response<ResponseBody>) -> error::Result<(Response<ResponseBody>, Self)> {
+    pub(crate) async fn duplicate(
+        response: Response<ResponseBody>,
+    ) -> error::Result<(Response<ResponseBody>, Self)> {
         use error::ResultExt;
         let (status_code, header_map, body) = response.deconstruct();
         let response_bytes = body.collect().await.context(
