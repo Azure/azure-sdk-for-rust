@@ -229,7 +229,7 @@ mod tests {
         headers.insert("content-type", "application/json");
         headers.insert("foo", "bar");
 
-        let resp = Response::from_bytes(StatusCode::Accepted, headers, body.into());
+        let resp = Response::from_bytes(StatusCode::Accepted, headers, body);
         let json_resp = resp.json::<TestObj>().await.unwrap();
 
         // Header order is inconsistent, so order the list
@@ -245,7 +245,7 @@ mod tests {
                 ),
                 (&HeaderName::from("foo"), &HeaderValue::from("bar")),
             ],
-            json_resp.headers().iter().collect::<Vec<_>>()
+            header_list
         );
         assert_eq!("foo", json_resp.body().string_prop);
         assert_eq!(42, json_resp.body().int_prop);
@@ -280,7 +280,7 @@ mod tests {
         headers.insert("content-type", "application/json");
         headers.insert("foo", "bar");
 
-        let resp = Response::from_bytes(StatusCode::Accepted, headers, body.into());
+        let resp = Response::from_bytes(StatusCode::Accepted, headers, body);
         let xml_resp = resp.xml::<TestObj>().await.unwrap();
 
         // Header order is inconsistent, so order the list

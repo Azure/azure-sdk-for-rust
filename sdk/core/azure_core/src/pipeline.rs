@@ -99,7 +99,6 @@ impl Pipeline {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
-            .map(|resp| resp.into())
     }
 }
 
