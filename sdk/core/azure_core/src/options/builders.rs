@@ -59,7 +59,7 @@ pub trait ClientOptionsBuilder {
 /// Methods to set general method options for client-specific [`ClientMethodOptions`].
 pub trait ClientMethodOptionsBuilder<'a> {
     /// Set optional [`Context`] for each client method call.
-    fn with_context<P>(mut self, context: &'a Context) -> Self
+    fn with_context(mut self, context: &'a Context) -> Self
     where
         Self: Sized,
     {
