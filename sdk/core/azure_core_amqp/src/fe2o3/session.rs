@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp mgmt
 
-use super::error::AmqpBeginError;
+use super::error::AmqpBegin;
 use crate::{
     connection::AmqpConnection,
     session::{AmqpSessionOptions, AmqpSessionTrait},
@@ -90,7 +90,7 @@ impl AmqpSessionTrait for Fe2o3AmqpSession {
         let session = session_builder
             .begin(connection.borrow_mut())
             .await
-            .map_err(AmqpBeginError::from)?;
+            .map_err(AmqpBegin::from)?;
         self.session.set(Arc::new(Mutex::new(session))).unwrap();
         Ok(())
     }

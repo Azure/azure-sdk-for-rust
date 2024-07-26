@@ -44,13 +44,13 @@ pub trait AmqpConnectionTrait {
     }
 }
 
-#[cfg(any(feature = "enable-fe2o3-amqp"))]
+#[cfg(feature = "enable-fe2o3-amqp")]
 type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
 
 #[cfg(not(any(feature = "enable-fe2o3-amqp")))]
 type ConnectionImplementation = super::noop::NoopAmqpConnection;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct AmqpConnectionImpl<T>(pub(crate) T);
 
 impl<T> AmqpConnectionImpl<T>
@@ -62,7 +62,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AmqpConnection(pub(crate) AmqpConnectionImpl<ConnectionImplementation>);
 
 impl AmqpConnectionTrait for AmqpConnection {

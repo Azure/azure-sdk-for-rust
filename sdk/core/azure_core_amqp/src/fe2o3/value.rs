@@ -163,8 +163,8 @@ impl From<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             ),
             AmqpValue::Described(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
                 serde_amqp::described::Described {
-                    descriptor: (*d).descriptor.clone().into(),
-                    value: (*d).value.clone().into(),
+                    descriptor: d.descriptor.clone().into(),
+                    value: d.value.clone().into(),
                 },
             )),
             AmqpValue::Unknown => todo!(),

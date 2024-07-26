@@ -1,14 +1,19 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell:: words amqp servicebus sastoken
 
-use super::error::AmqpManagementAttachError;
-use super::session::Fe2o3AmqpSession;
-use crate::{cbs::AmqpClaimsBasedSecurityTrait, fe2o3::error::AmqpManagementError};
+use super::{
+    error::{AmqpManagement, AmqpManagementAttach},
+    session::Fe2o3AmqpSession,
+};
+use crate::cbs::AmqpClaimsBasedSecurityTrait;
 use azure_core::error::Result;
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
 use std::borrow::BorrowMut;
-use std::sync::{Arc, OnceLock};
+use std::{
+    fmt::Debug,
+    sync::{Arc, OnceLock},
+};
 use tokio::sync::Mutex;
 use tracing::{debug, trace};
 
@@ -42,14 +47,14 @@ impl AmqpClaimsBasedSecurityTrait for Fe2o3ClaimsBasedSecurity {
             .client_node_addr("rust_amqp_cbs")
             .attach(session.borrow_mut())
             .await
-            .map_err(AmqpManagementAttachError::from)?;
+            .map_err(AmqpManagementAttach::from)?;
         self.cbs.set(Mutex::new(cbs_client)).unwrap();
         Ok(())
     }
 
     async fn authorize_path(
         &self,
-        path: &String,
+        path: impl Into<String> + Debug,
         secret: impl Into<String>,
         expires_at: time::OffsetDateTime,
     ) -> Result<()> {
@@ -75,9 +80,9 @@ impl AmqpClaimsBasedSecurityTrait for Fe2o3ClaimsBasedSecurity {
             .lock()
             .await
             .borrow_mut()
-            .put_token(path, cbs_token)
+            .put_token(path.into(), cbs_token)
             .await
-            .map_err(AmqpManagementError::from)?;
+            .map_err(AmqpManagement::from)?;
         Ok(())
     }
 }

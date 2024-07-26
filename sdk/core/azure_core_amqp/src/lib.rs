@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp sasl
 
-#[cfg(any(feature = "enable-fe2o3-amqp"))]
+#[cfg(feature = "enable-fe2o3-amqp")]
 mod fe2o3;
 
-#[cfg(not(any(feature = "enable-fe2o3-amqp")))]
+#[cfg(not(feature = "enable-fe2o3-amqp"))]
 mod noop;
 
 pub mod cbs;

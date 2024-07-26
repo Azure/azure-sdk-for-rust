@@ -23,7 +23,7 @@ impl From<AmqpSource> for fe2o3_amqp_types::messaging::Source {
             builder = builder.expiry_policy(expiry_policy.into());
         }
         if let Some(timeout) = source.timeout {
-            builder = builder.timeout(timeout.into());
+            builder = builder.timeout(timeout);
         }
         if let Some(dynamic) = source.dynamic {
             builder = builder.dynamic(dynamic);
@@ -79,7 +79,7 @@ impl From<fe2o3_amqp_types::messaging::Source> for AmqpSource {
         amqp_source_builder = amqp_source_builder
             .with_durable(source.durable.into())
             .with_expiry_policy(source.expiry_policy.into())
-            .with_timeout(source.timeout.into())
+            .with_timeout(source.timeout)
             .with_dynamic(source.dynamic);
 
         if let Some(dynamic_node_properties) = source.dynamic_node_properties {

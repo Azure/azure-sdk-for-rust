@@ -59,10 +59,10 @@ where
     }
 }
 
-#[cfg(any(feature = "enable-fe2o3-amqp"))]
+#[cfg(feature = "enable-fe2o3-amqp")]
 type SenderImplementation = super::fe2o3::sender::Fe2o3AmqpSender;
 
-#[cfg(not(any(feature = "enable-fe2o3-amqp")))]
+#[cfg(not(feature = "enable-fe2o3-amqp"))]
 type SenderImplementation = super::noop::NoopAmqpSender;
 
 #[derive(Debug)]

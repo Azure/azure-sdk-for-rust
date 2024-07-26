@@ -2,10 +2,11 @@
 // cspell: words amqp sasl
 
 use azure_core::error::Result;
+use std::fmt::Debug;
 
 use super::session::AmqpSession;
 
-#[cfg(any(feature = "enable-fe2o3-amqp"))]
+#[cfg(feature = "enable-fe2o3-amqp")]
 type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
 
 #[cfg(not(any(feature = "enable-fe2o3-amqp")))]
@@ -46,7 +47,7 @@ pub trait AmqpClaimsBasedSecurityTrait {
     #[allow(unused_variables)]
     fn authorize_path(
         &self,
-        path: &String,
+        path: impl Into<String> + Debug,
         secret: impl Into<String>,
         expires_on: time::OffsetDateTime,
     ) -> impl std::future::Future<Output = Result<()>> {
@@ -72,7 +73,7 @@ pub struct AmqpClaimsBasedSecurity(AmqpClaimsBasedSecurityImpl<CbsImplementation
 impl AmqpClaimsBasedSecurityTrait for AmqpClaimsBasedSecurity {
     async fn authorize_path(
         &self,
-        path: &String,
+        path: impl Into<String> + Debug,
         secret: impl Into<String>,
         expires_on: time::OffsetDateTime,
     ) -> Result<()> {

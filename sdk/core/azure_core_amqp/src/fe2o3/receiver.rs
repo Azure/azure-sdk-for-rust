@@ -1,11 +1,10 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 //cspell: words amqp
 
-use crate::error::AmqpError;
-use crate::fe2o3::error::{
-    AmqpIllegalLinkStateError, AmqpReceiverAttachError, AmqpReceiverError, ErrorKind,
-    Fe2o3AmqpError,
+use super::error::{
+    AmqpIllegalLinkState, AmqpReceiver, AmqpReceiverAttach, ErrorKind, Fe2o3AmqpError,
 };
+use crate::error::AmqpError;
 use crate::messaging::{AmqpMessage, AmqpSource};
 use crate::receiver::{AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode};
 use crate::session::AmqpSession;
@@ -43,7 +42,7 @@ impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
             return Err(Error::new(
                 azure_core::error::ErrorKind::Other,
                 Box::new(AmqpError::new_iron_oxide_error(Fe2o3AmqpError::from(
-                    ErrorKind::AmqpReceiverAlreadyAttachedError,
+                    ErrorKind::AmqpReceiverAlreadyAttached,
                 ))),
             ));
         }
@@ -63,7 +62,7 @@ impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
             .name(name)
             .attach(session.0 .0.get().lock().await.borrow_mut())
             .await
-            .map_err(AmqpReceiverAttachError::from)?;
+            .map_err(AmqpReceiverAttach::from)?;
         self.receiver.set(Arc::new(Mutex::new(receiver))).unwrap();
         Ok(())
     }
@@ -78,7 +77,7 @@ impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
 
         let delivery: fe2o3_amqp::link::delivery::Delivery<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-        > = receiver.recv().await.map_err(AmqpReceiverError::from)?;
+        > = receiver.recv().await.map_err(AmqpReceiver::from)?;
 
         trace!("Received delivery: {:?}", delivery);
 
@@ -86,7 +85,7 @@ impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
         receiver
             .accept(&delivery)
             .await
-            .map_err(AmqpIllegalLinkStateError::from)?;
+            .map_err(AmqpIllegalLinkState::from)?;
         trace!("Accepted delivery");
 
         let message = AmqpMessage::from(delivery.into_message());

@@ -72,7 +72,7 @@ where
     } else if body.is_value() {
         let value = body.try_into_value().unwrap();
         let value = value.try_into().unwrap();
-        amqp_message_builder = amqp_message_builder.with_body(AmqpMessageBody::Value(value.into()));
+        amqp_message_builder = amqp_message_builder.with_body(AmqpMessageBody::Value(value));
     } else if body.is_sequence() {
         let sequence = body.try_into_sequence().unwrap();
         let body = AmqpMessageBody::Sequence(
@@ -231,7 +231,7 @@ impl From<AmqpMessage>
                 let data: Vec<serde_bytes::ByteBuf> = data
                     .clone()
                     .into_iter()
-                    .map(|x| serde_bytes::ByteBuf::from(x))
+                    .map(serde_bytes::ByteBuf::from)
                     .collect();
                 let message_builder =
                     message_builder.body(fe2o3_amqp_types::messaging::Body::Data(
@@ -250,7 +250,7 @@ impl From<AmqpMessage>
                 let sequence: TransparentVec<
                     fe2o3_amqp_types::primitives::List<fe2o3_amqp_types::primitives::Value>,
                 > = sequence
-                    .into_iter()
+                    .iter()
                     .map(|x| {
                         let mut l = fe2o3_amqp_types::primitives::List::new();
                         let c =
@@ -269,7 +269,7 @@ impl From<AmqpMessage>
                     sequence
                         .into_iter()
                         .map(|x| {
-                            let iter = x.into_iter().map(|y| y.into());
+                            let iter = x.into_iter().map(|y| y);
                             iter.collect::<fe2o3_amqp_types::primitives::List<
                                 fe2o3_amqp_types::primitives::Value,
                             >>()
@@ -343,8 +343,7 @@ impl From<AmqpMessage>
                     })
                     .collect();
                 let message_builder = message_builder.sequence_batch(sequence);
-                let message = message_builder.build();
-                return message;
+                message_builder.build()
             }
             _ => panic!("Expected AmqpSequence"),
         }
@@ -369,8 +368,7 @@ impl From<AmqpMessage>
                     .into_iter()
                     .map(|x| serde_bytes::ByteBuf::from(x))
                     .collect();
-                let message = message_builder.data_batch(data).build();
-                message
+                message_builder.data_batch(data).build()
             }
             _ => panic!("Expected Data"),
         }

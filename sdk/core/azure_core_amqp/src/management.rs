@@ -36,10 +36,10 @@ where
     }
 }
 
-#[cfg(any(feature = "enable-fe2o3-amqp"))]
+#[cfg(feature = "enable-fe2o3-amqp")]
 type ManagementImplementation = super::fe2o3::management::Fe2o3AmqpManagement;
 
-#[cfg(not(any(feature = "enable-fe2o3-amqp")))]
+#[cfg(not(feature = "enable-fe2o3-amqp"))]
 type ManagementImplementation = super::noop::NoopAmqpManagement;
 
 #[derive(Debug)]

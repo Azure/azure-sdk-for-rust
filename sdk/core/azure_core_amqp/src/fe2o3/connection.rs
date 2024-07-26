@@ -2,10 +2,7 @@
 
 // cspell: words amqp widnow eventhubs sasl
 
-use crate::{
-    connection::{AmqpConnectionOptions, AmqpConnectionTrait},
-    fe2o3::error::AmqpConnectionError,
-};
+use crate::connection::{AmqpConnectionOptions, AmqpConnectionTrait};
 
 use azure_core::Result;
 use fe2o3_amqp::connection::ConnectionHandle;
@@ -14,9 +11,9 @@ use tokio::sync::Mutex;
 use tracing::debug;
 use url::Url;
 
-use super::error::AmqpOpenError;
+use super::error::{AmqpConnection, AmqpOpen};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct Fe2o3AmqpConnection {
     connection: OnceLock<Mutex<ConnectionHandle<()>>>,
 }
@@ -106,9 +103,7 @@ impl AmqpConnectionTrait for Fe2o3AmqpConnection {
             }
 
             self.connection
-                .set(Mutex::new(
-                    builder.open(url).await.map_err(AmqpOpenError::from)?,
-                ))
+                .set(Mutex::new(builder.open(url).await.map_err(AmqpOpen::from)?))
                 .unwrap();
             Ok(())
         }
@@ -120,7 +115,7 @@ impl AmqpConnectionTrait for Fe2o3AmqpConnection {
             .borrow_mut()
             .close()
             .await
-            .map_err(AmqpConnectionError::from)?;
+            .map_err(AmqpConnection::from)?;
         Ok(())
     }
 }

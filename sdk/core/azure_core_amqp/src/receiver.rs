@@ -98,10 +98,10 @@ where
     }
 }
 
-#[cfg(any(feature = "enable-fe2o3-amqp"))]
+#[cfg(feature = "enable-fe2o3-amqp")]
 type ReceiverImplementation = super::fe2o3::receiver::Fe2o3AmqpReceiver;
 
-#[cfg(not(any(feature = "enable-fe2o3-amqp")))]
+#[cfg(not(feature = "enable-fe2o3-amqp"))]
 type ReceiverImplementation = super::noop::NoopAmqpReceiver;
 
 #[derive(Debug)]

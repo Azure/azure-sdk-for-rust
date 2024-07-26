@@ -10,8 +10,7 @@ use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 
 use super::error::{
-    AmqpDeliveryRejectedError, AmqpNotAcceptedError, AmqpSenderAttachError, AmqpSenderSendError,
-    Fe2o3AmqpError,
+    AmqpDeliveryRejected, AmqpNotAccepted, AmqpSenderAttach, AmqpSenderSend, Fe2o3AmqpError,
 };
 
 #[derive(Debug)]
@@ -66,7 +65,7 @@ impl AmqpSenderTrait for Fe2o3AmqpSender {
             .target(target.into())
             .attach(session.0 .0.get().lock().await.borrow_mut())
             .await
-            .map_err(AmqpSenderAttachError::from)?;
+            .map_err(AmqpSenderAttach::from)?;
         self.sender.set(Arc::new(Mutex::new(sender))).unwrap();
         Ok(())
     }
@@ -81,7 +80,7 @@ impl AmqpSenderTrait for Fe2o3AmqpSender {
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
         > = message.into();
         let mut sendable = fe2o3_amqp::link::delivery::Sendable {
-            message: message,
+            message,
             message_format: 0,
             settled: Default::default(),
         };
@@ -100,14 +99,14 @@ impl AmqpSenderTrait for Fe2o3AmqpSender {
             .await
             .send(sendable)
             .await
-            .map_err(AmqpSenderSendError::from)?;
+            .map_err(AmqpSenderSend::from)?;
 
         match outcome {
             fe2o3_amqp_types::messaging::Outcome::Accepted(_) => Ok(()),
             fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => {
-                Err(AmqpDeliveryRejectedError(rejected).into())
+                Err(AmqpDeliveryRejected(rejected).into())
             }
-            _ => Err(Fe2o3AmqpError::from(AmqpNotAcceptedError::from(outcome)).into()),
+            _ => Err(Fe2o3AmqpError::from(AmqpNotAccepted::from(outcome)).into()),
         }
     }
 }

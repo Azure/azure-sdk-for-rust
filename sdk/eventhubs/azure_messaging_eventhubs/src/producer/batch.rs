@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 
-// cspell: words amqp
+// cspell: words amqp eventhubs
 
 use std::sync::Mutex;
 

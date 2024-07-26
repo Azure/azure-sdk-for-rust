@@ -5,7 +5,6 @@
 use std::borrow::BorrowMut;
 
 use crate::{
-    fe2o3::error::AmqpManagementError,
     management::AmqpManagementTrait,
     value::{AmqpOrderedMap, AmqpValue},
 };
@@ -17,7 +16,10 @@ use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 use tracing::debug;
 
-use super::{error::AmqpManagementAttachError, session::Fe2o3AmqpSession};
+use super::{
+    error::{AmqpManagement, AmqpManagementAttach},
+    session::Fe2o3AmqpSession,
+};
 
 #[derive(Debug)]
 pub(crate) struct Fe2o3AmqpManagement {
@@ -57,7 +59,7 @@ impl AmqpManagementTrait for Fe2o3AmqpManagement {
             .client_node_addr(&self.client_node_name)
             .attach(self.session.lock().await.borrow_mut())
             .await
-            .map_err(AmqpManagementAttachError::from)?;
+            .map_err(AmqpManagementAttach::from)?;
 
         self.management.set(Mutex::new(management)).unwrap();
         Ok(())
@@ -78,7 +80,7 @@ impl AmqpManagementTrait for Fe2o3AmqpManagement {
         let response = management
             .call(request)
             .await
-            .map_err(AmqpManagementError::from)?;
+            .map_err(AmqpManagement::from)?;
         Ok(response.entity_attributes.into())
     }
 }

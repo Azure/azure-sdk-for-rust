@@ -52,81 +52,81 @@ macro_rules! impl_from_external_error {
     }
 }
 impl_from_external_error! {
-    AmqpSerializationError, serde_amqp::error::Error,
+    AmqpSerialization, serde_amqp::error::Error,
     TimeError, time::error::ComponentRange,
-    AmqpSessionError, fe2o3_amqp::session::Error,
-    AmqpLinkDetachError, fe2o3_amqp::link::DetachError,
-    AmqpOpenError, fe2o3_amqp::connection::OpenError,
-    AmqpConnectionError, fe2o3_amqp::connection::Error,
-    AmqpManagementAttachError, fe2o3_amqp_management::error::AttachError,
-    AmqpManagementError, fe2o3_amqp_management::error::Error,
-    AmqpBeginError, fe2o3_amqp::session::BeginError,
-    AmqpSenderAttachError, fe2o3_amqp::link::SenderAttachError,
-    AmqpReceiverAttachError, fe2o3_amqp::link::ReceiverAttachError,
-    AmqpReceiverError, fe2o3_amqp::link::RecvError,
-    AmqpIllegalLinkStateError, fe2o3_amqp::link::IllegalLinkStateError,
-    AmqpSenderSendError, fe2o3_amqp::link::SendError,
-    AmqpDeliveryRejectedError, fe2o3_amqp::types::messaging::Rejected
+    AmqpSession, fe2o3_amqp::session::Error,
+    AmqpLinkDetach, fe2o3_amqp::link::DetachError,
+    AmqpOpen, fe2o3_amqp::connection::OpenError,
+    AmqpConnection, fe2o3_amqp::connection::Error,
+    AmqpManagementAttach, fe2o3_amqp_management::error::AttachError,
+    AmqpManagement, fe2o3_amqp_management::error::Error,
+    AmqpBegin, fe2o3_amqp::session::BeginError,
+    AmqpSenderAttach, fe2o3_amqp::link::SenderAttachError,
+    AmqpReceiverAttach, fe2o3_amqp::link::ReceiverAttachError,
+    AmqpReceiver, fe2o3_amqp::link::RecvError,
+    AmqpIllegalLinkState, fe2o3_amqp::link::IllegalLinkStateError,
+    AmqpSenderSend, fe2o3_amqp::link::SendError,
+    AmqpDeliveryRejected, fe2o3_amqp::types::messaging::Rejected
 }
 
 #[derive(Debug)]
-pub enum AmqpNotAcceptedError {
-    AmqpNotAcceptedError {
+pub enum AmqpNotAccepted {
+    Rejected {
         source: fe2o3_amqp_types::messaging::Rejected,
     },
-    AmqpReleasedError {
+    Released {
         source: fe2o3_amqp_types::messaging::Released,
     },
-    AmqpModifiedError {
+    Modified {
         source: fe2o3_amqp_types::messaging::Modified,
     },
 }
 
-impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpNotAcceptedError {
+impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpNotAccepted {
     fn from(outcome: fe2o3_amqp_types::messaging::Outcome) -> Self {
         match outcome {
             fe2o3_amqp_types::messaging::Outcome::Accepted(_) => {
                 panic!("Accepted outcomes should not be converted to errors")
             }
             fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => {
-                AmqpNotAcceptedError::AmqpNotAcceptedError { source: rejected }
+                AmqpNotAccepted::Rejected { source: rejected }
             }
             fe2o3_amqp_types::messaging::Outcome::Released(released) => {
-                AmqpNotAcceptedError::AmqpReleasedError { source: released }
+                AmqpNotAccepted::Released { source: released }
             }
             fe2o3_amqp_types::messaging::Outcome::Modified(modified) => {
-                AmqpNotAcceptedError::AmqpModifiedError { source: modified }
+                AmqpNotAccepted::Modified { source: modified }
             }
         }
     }
 }
 
-impl From<AmqpNotAcceptedError> for Fe2o3AmqpError {
-    fn from(e: AmqpNotAcceptedError) -> Self {
+impl From<AmqpNotAccepted> for Fe2o3AmqpError {
+    fn from(e: AmqpNotAccepted) -> Self {
         Fe2o3AmqpError {
-            kind: ErrorKind::NotAcceptedError { source: e },
+            kind: ErrorKind::NotAccepted { source: e },
         }
     }
 }
 
 pub enum ErrorKind {
-    AmqpReceiverAlreadyAttachedError,
-    AmqpSerializationError { source: AmqpSerializationError },
-    AmqpDeliveryRejectedError { source: AmqpDeliveryRejectedError },
-    NotAcceptedError { source: AmqpNotAcceptedError },
+    AmqpReceiverAlreadyAttached,
+    AmqpSerialization { source: AmqpSerialization },
+    AmqpDeliveryRejected { source: AmqpDeliveryRejected },
+    NotAccepted { source: AmqpNotAccepted },
     TimeError { source: TimeError },
-    AmqpOpenError { source: AmqpOpenError },
-    AmqpManagementAttachError { source: AmqpManagementAttachError },
-    AmqpBeginError { source: AmqpBeginError },
-    AmqpManagementError { source: AmqpManagementError },
-    AmqpConnectionError { source: AmqpConnectionError },
-    AmqpLinkDetachError { source: AmqpLinkDetachError },
-    AmqpSessionError { source: AmqpSessionError },
-    AmqpSenderAttachError { source: AmqpSenderAttachError },
-    AmqpSenderSendError { source: AmqpSenderSendError },
-    AmqpReceiverAttachError { source: AmqpReceiverAttachError },
-    AmqpReceiverError { source: AmqpReceiverError },
-    AmqpIllegalLinkStateError { source: AmqpIllegalLinkStateError },
+    AmqpOpen { source: AmqpOpen },
+    AmqpManagementAttach { source: AmqpManagementAttach },
+    AmqpBegin { source: AmqpBegin },
+    AmqpManagement { source: AmqpManagement },
+    AmqpConnection { source: AmqpConnection },
+    AmqpLinkDetach { source: AmqpLinkDetach },
+    AmqpSession { source: AmqpSession },
+    AmqpSenderAttach { source: AmqpSenderAttach },
+    AmqpSenderSend { source: AmqpSenderSend },
+    AmqpReceiverAttach { source: AmqpReceiverAttach },
+    AmqpReceiver { source: AmqpReceiver },
+    AmqpIllegalLinkState { source: AmqpIllegalLinkState },
 }
 
 pub struct Fe2o3AmqpError {
@@ -148,52 +148,52 @@ impl std::error::Error for Fe2o3AmqpError {
 impl std::fmt::Display for Fe2o3AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            ErrorKind::AmqpReceiverAlreadyAttachedError => {
+            ErrorKind::AmqpReceiverAlreadyAttached => {
                 write!(f, "Receiver already attached")
             }
             ErrorKind::TimeError { source } => {
                 write!(f, "Time Component Range Error {:?}", source.0)
             }
-            ErrorKind::AmqpIllegalLinkStateError { source } => {
+            ErrorKind::AmqpIllegalLinkState { source } => {
                 write!(f, "Illegal Link State Error {:?}", source.0)
             }
-            ErrorKind::AmqpDeliveryRejectedError { source } => {
+            ErrorKind::AmqpDeliveryRejected { source } => {
                 write!(f, "Delivery Rejected Error: {:?}", source.0)
             }
-            ErrorKind::AmqpOpenError { source } => {
+            ErrorKind::AmqpOpen { source } => {
                 write!(f, "Connection Open Error: {:?}", source.0)
             }
-            ErrorKind::AmqpManagementAttachError { source } => {
-                write!(f, "AttachError: {:?}", source.0)
+            ErrorKind::AmqpManagementAttach { source } => {
+                write!(f, "Management Attach Error: {:?}", source.0)
             }
-            ErrorKind::AmqpLinkDetachError { source } => {
+            ErrorKind::AmqpLinkDetach { source } => {
                 write!(f, "Link Detach Error: {:?}", source.0)
             }
-            ErrorKind::AmqpReceiverAttachError { source } => {
+            ErrorKind::AmqpReceiverAttach { source } => {
                 write!(f, "Receiver attach error {:?}", source.0)
             }
-            ErrorKind::AmqpBeginError { source } => write!(f, "BeginError: {:?}", source.0),
-            ErrorKind::AmqpManagementError { source } => {
-                write!(f, "ManagementError: {:?}", source.0)
+            ErrorKind::AmqpBegin { source } => write!(f, "BeginError: {:?}", source.0),
+            ErrorKind::AmqpManagement { source } => {
+                write!(f, "Management Error: {:?}", source.0)
             }
-            ErrorKind::AmqpConnectionError { source } => {
-                write!(f, "ConnectionError: {:?}", source.0)
+            ErrorKind::AmqpConnection { source } => {
+                write!(f, "Connection : {:?}", source.0)
             }
-            ErrorKind::AmqpSessionError { source } => write!(f, "Session error: {:?}", source.0),
-            ErrorKind::AmqpSenderAttachError { source } => {
+            ErrorKind::AmqpSession { source } => write!(f, "Session error: {:?}", source.0),
+            ErrorKind::AmqpSenderAttach { source } => {
                 write!(f, "Sender attach error {:?}", source.0)
             }
             // ErrorKind::AmqpSerializationError { source } => {
-            ErrorKind::NotAcceptedError { source } => {
+            ErrorKind::NotAccepted { source } => {
                 write!(f, "Not accepted error: {:?}", source)
             }
-            ErrorKind::AmqpReceiverError { source } => {
+            ErrorKind::AmqpReceiver { source } => {
                 write!(f, "Receiver error: {:?}", source.0)
             }
-            ErrorKind::AmqpSenderSendError { source } => {
+            ErrorKind::AmqpSenderSend { source } => {
                 write!(f, "Sender send error {:?}", source.0)
             }
-            ErrorKind::AmqpSerializationError { source } => {
+            ErrorKind::AmqpSerialization { source } => {
                 write!(f, "Serialization error: {:?}", source.0)
             }
         }

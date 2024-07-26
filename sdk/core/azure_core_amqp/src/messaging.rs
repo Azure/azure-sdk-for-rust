@@ -41,27 +41,27 @@ pub enum AmqpMessageId {
     Ulong(u64),
 }
 
-impl Into<AmqpMessageId> for uuid::Uuid {
-    fn into(self) -> AmqpMessageId {
-        AmqpMessageId::Uuid(self)
+impl From<uuid::Uuid> for AmqpMessageId {
+    fn from(uuid: uuid::Uuid) -> Self {
+        AmqpMessageId::Uuid(uuid)
     }
 }
 
-impl Into<AmqpMessageId> for String {
-    fn into(self) -> AmqpMessageId {
-        AmqpMessageId::String(self)
+impl From<String> for AmqpMessageId {
+    fn from(string: String) -> Self {
+        AmqpMessageId::String(string)
     }
 }
 
-impl Into<AmqpMessageId> for Vec<u8> {
-    fn into(self) -> AmqpMessageId {
-        AmqpMessageId::Binary(self)
+impl From<Vec<u8>> for AmqpMessageId {
+    fn from(binary: Vec<u8>) -> Self {
+        AmqpMessageId::Binary(binary)
     }
 }
 
-impl Into<AmqpMessageId> for u64 {
-    fn into(self) -> AmqpMessageId {
-        AmqpMessageId::Ulong(self)
+impl From<u64> for AmqpMessageId {
+    fn from(ulong: u64) -> Self {
+        AmqpMessageId::Ulong(ulong)
     }
 }
 
@@ -83,16 +83,16 @@ impl AmqpTarget {
     }
 }
 
-impl Into<String> for AmqpTarget {
-    fn into(self) -> String {
-        self.address.unwrap()
+impl From<AmqpTarget> for String {
+    fn from(target: AmqpTarget) -> String {
+        target.address.unwrap()
     }
 }
 
-impl Into<AmqpTarget> for String {
-    fn into(self) -> AmqpTarget {
+impl From<String> for AmqpTarget {
+    fn from(address: String) -> AmqpTarget {
         AmqpTarget {
-            address: Some(self),
+            address: Some(address),
             durable: None,
             expiry_policy: None,
             timeout: None,
@@ -413,7 +413,7 @@ impl AmqpMessage {
     }
 
     pub fn serialize(message: AmqpMessage) -> Result<Vec<u8>> {
-        #[cfg(any(feature = "enable-fe2o3-amqp"))]
+        #[cfg(feature = "enable-fe2o3-amqp")]
         {
             let amqp_message = Into::<
                 fe2o3_amqp_types::messaging::Message<
@@ -423,10 +423,10 @@ impl AmqpMessage {
             let res = serde_amqp::ser::to_vec(
                 &fe2o3_amqp_types::messaging::message::__private::Serializable(amqp_message),
             )
-            .map_err(crate::fe2o3::error::AmqpSerializationError::from)?;
+            .map_err(crate::fe2o3::error::AmqpSerialization::from)?;
             Ok(res)
         }
-        #[cfg(not(any(feature = "enable-fe2o3-amqp")))]
+        #[cfg(not(feature = "enable-fe2o3-amqp"))]
         unimplemented!()
     }
 }
@@ -933,7 +933,7 @@ mod tests {
             let message = AmqpMessage::builder().build();
             let serialized = AmqpMessage::serialize(message).unwrap();
             assert_eq!(serialized, vec![0, 0x53, 0x77, 0x40]);
-            #[cfg(any(feature = "enable-fe2o3-amqp"))]
+            #[cfg(feature = "enable-fe2o3-amqp")]
             {
                 // Verify that the serialization of an AmqpMessage with no body matches
                 // the fe2o3-amqp serialization.

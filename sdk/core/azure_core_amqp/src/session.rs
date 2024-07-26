@@ -52,10 +52,10 @@ where
     }
 }
 
-#[cfg(any(feature = "enable-fe2o3-amqp"))]
+#[cfg(feature = "enable-fe2o3-amqp")]
 type SessionImplementation = super::fe2o3::session::Fe2o3AmqpSession;
 
-#[cfg(not(any(feature = "enable-fe2o3-amqp")))]
+#[cfg(not(feature = "enable-fe2o3-amqp"))]
 type SessionImplementation = super::noop::NoopAmqpSession;
 
 #[derive(Debug, Clone)]
