@@ -1,8 +1,5 @@
 {
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
-    "rust-analyzer.cargo.features": "all",
-    "vscode-nmake-tools.workspaceBuildDirectories": [
-        "."
-    ]
+    "rust-analyzer.cargo.features": "all"
 }
