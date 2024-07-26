@@ -56,7 +56,7 @@ impl From<fe2o3_amqp_types::messaging::ApplicationProperties>
     fn from(application_properties: fe2o3_amqp_types::messaging::ApplicationProperties) -> Self {
         let mut properties = AmqpOrderedMap::<String, AmqpValue>::new();
         for (key, value) in application_properties.0 {
-            properties.insert(key, value.into());
+            properties.insert(key, value);
         }
         AmqpApplicationProperties(properties)
     }
@@ -179,7 +179,7 @@ impl From<fe2o3_amqp_types::messaging::Annotations> for AmqpAnnotations {
     fn from(annotations: fe2o3_amqp_types::messaging::Annotations) -> Self {
         let mut amqp_annotations = AmqpOrderedMap::<AmqpAnnotationKey, AmqpValue>::new();
         for (key, value) in annotations {
-            amqp_annotations.insert(key.into(), value.into());
+            amqp_annotations.insert(key, value);
         }
         AmqpAnnotations(amqp_annotations)
     }

@@ -103,6 +103,28 @@ impl Into<AmqpTarget> for String {
     }
 }
 
+pub struct AmqpSourceFilter {
+    descriptor: &'static str,
+    code: u64,
+}
+
+impl AmqpSourceFilter {
+    fn new(descriptor: &'static str, code: u64) -> Self {
+        Self { descriptor, code }
+    }
+
+    pub fn description(&self) -> &'static str {
+        self.descriptor
+    }
+    pub fn code(&self) -> u64 {
+        self.code
+    }
+
+    pub fn selector_filter() -> AmqpSourceFilter {
+        AmqpSourceFilter::new("apache.org:selector-filter:string", 0x0000468_c00000004)
+    }
+}
+
 /// A source node in an AMQP message
 #[derive(Debug, Clone, PartialEq)]
 pub struct AmqpSource {
@@ -417,9 +439,6 @@ pub mod builders {
     }
 
     impl AmqpSourceBuilder {
-        pub fn build(self) -> AmqpSource {
-            self.source
-        }
         pub(super) fn new() -> AmqpSourceBuilder {
             AmqpSourceBuilder {
                 source: AmqpSource {
@@ -475,6 +494,20 @@ pub mod builders {
             self.source.filter = Some(filter.into());
             self
         }
+        pub fn add_to_filter(
+            mut self,
+            key: impl Into<AmqpSymbol>,
+            value: impl Into<AmqpValue>,
+        ) -> Self {
+            if let Some(filter) = &mut self.source.filter {
+                filter.insert(key.into(), value.into());
+            } else {
+                let mut filter = AmqpOrderedMap::new();
+                filter.insert(key.into(), value.into());
+                self.source.filter = Some(filter);
+            }
+            self
+        }
         pub fn with_default_outcome(mut self, default_outcome: AmqpOutcome) -> Self {
             self.source.default_outcome = Some(default_outcome);
             self
@@ -486,6 +519,9 @@ pub mod builders {
         pub fn with_capabilities(mut self, capabilities: Vec<AmqpSymbol>) -> Self {
             self.source.capabilities = Some(capabilities);
             self
+        }
+        pub fn build(self) -> AmqpSource {
+            self.source
         }
     }
 

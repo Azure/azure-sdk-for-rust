@@ -40,12 +40,12 @@ pub trait AmqpSessionTrait {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct AmqpSessionImpl<T>(pub(crate) T);
 
 impl<T> AmqpSessionImpl<T>
 where
-    T: AmqpSessionTrait,
+    T: AmqpSessionTrait + Clone,
 {
     pub(crate) fn new(session: T) -> Self {
         Self(session)
@@ -58,7 +58,7 @@ type SessionImplementation = super::fe2o3::session::Fe2o3AmqpSession;
 #[cfg(not(any(feature = "enable-fe2o3-amqp")))]
 type SessionImplementation = super::noop::NoopAmqpSession;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AmqpSession(pub(crate) AmqpSessionImpl<SessionImplementation>);
 
 impl AmqpSessionTrait for AmqpSession {

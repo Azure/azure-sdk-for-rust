@@ -8,12 +8,12 @@ use azure_core_amqp::{
     management::{AmqpManagement, AmqpManagementTrait},
     sender::{AmqpSendOptions, AmqpSender, AmqpSenderOptions, AmqpSenderTrait},
     session::{AmqpSession, AmqpSessionOptions, AmqpSessionTrait},
-    value::{AmqpOrderedMap, AmqpTimestamp, AmqpValue},
 };
 
 use crate::{
-    common::user_agent::{
-        get_package_name, get_package_version, get_platform_info, get_user_agent,
+    common::{
+        user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
+        ManagementInstance,
     },
     error::ErrorKind,
     models::{EventHubPartitionProperties, EventHubProperties},
@@ -53,24 +53,12 @@ struct SenderInstance {
     sender: Arc<Mutex<AmqpSender>>,
 }
 
-#[derive(Debug)]
-struct ManagementInstance {
-    management: AmqpManagement,
-}
-
-impl ManagementInstance {
-    fn new(management: AmqpManagement) -> Self {
-        Self { management }
-    }
-}
-
 pub struct ProducerClient {
     options: ProducerClientOptions,
     sender_instances: Mutex<HashMap<String, SenderInstance>>,
     mgmt_client: Mutex<OnceLock<ManagementInstance>>,
     connection: OnceLock<AmqpConnection>,
     credential: Box<dyn azure_core::auth::TokenCredential>,
-    fully_qualified_namespace: String,
     eventhub: String,
     url: String,
     authorization_scopes: Mutex<HashMap<String, AccessToken>>,
@@ -82,20 +70,19 @@ impl ProducerClient {
         eventhub: impl Into<String>,
         credential: impl azure_core::auth::TokenCredential + 'static,
         options: ProducerClientOptions,
-    ) -> Result<Self> {
+    ) -> Self {
         let eventhub: String = eventhub.into();
         let fully_qualified_namespace: String = fully_qualified_namespace.into();
-        Ok(Self {
+        Self {
             options,
             connection: OnceLock::new(),
             credential: Box::new(credential),
             url: format!("amqps://{}/{}", fully_qualified_namespace, eventhub),
             eventhub: eventhub,
-            fully_qualified_namespace: fully_qualified_namespace,
             authorization_scopes: Mutex::new(HashMap::new()),
             mgmt_client: Mutex::new(OnceLock::new()),
             sender_instances: Mutex::new(HashMap::new()),
-        })
+        }
     }
 
     pub async fn open(&self) -> Result<()> {
@@ -137,49 +124,13 @@ impl ProducerClient {
     pub async fn get_eventhub_properties(&self) -> Result<EventHubProperties> {
         self.ensure_management_client().await?;
 
-        let mut application_properties: AmqpOrderedMap<String, AmqpValue> = AmqpOrderedMap::new();
-        application_properties.insert("name".to_string(), self.eventhub.clone().into());
-
-        let response = self
-            .mgmt_client
+        self.mgmt_client
             .lock()
             .await
             .get()
             .unwrap()
-            .management
-            .call("com.microsoft:eventhub", application_properties)
-            .await?;
-
-        if !response.contains_key("name")
-            || !response.contains_key("type")
-            || !response.contains_key("created_at")
-            || !response.contains_key("partition_count")
-            || !response.contains_key("partition_ids")
-        {
-            return Err(ErrorKind::InvalidManagementResponse.into());
-        }
-        let name: String = response.get("name").unwrap().clone().into();
-        let created_at: SystemTime =
-            Into::<AmqpTimestamp>::into(response.get("created_at").unwrap().clone()).0;
-        //        let partition_count: i32 =
-        //            Into::<i32>::into(response.get("partition_count".to_string()).unwrap().clone());
-
-        let partition_ids = response.get("partition_ids").unwrap();
-        let partition_ids = match partition_ids {
-            AmqpValue::Array(partition_ids) => partition_ids
-                .iter()
-                .map(|id| match id {
-                    AmqpValue::String(id) => Ok(id.clone()),
-                    _ => Err(ErrorKind::InvalidManagementResponse.into()),
-                })
-                .collect::<Result<Vec<String>>>()?,
-            _ => return Err(ErrorKind::InvalidManagementResponse.into()),
-        };
-        Ok(EventHubProperties {
-            name,
-            created_on: created_at,
-            partition_ids,
-        })
+            .get_eventhub_properties(&self.eventhub)
+            .await
     }
 
     pub async fn get_partition_properties(
@@ -188,61 +139,13 @@ impl ProducerClient {
     ) -> Result<EventHubPartitionProperties> {
         self.ensure_management_client().await?;
 
-        let partition_id: String = partition_id.into();
-
-        let mut application_properties: AmqpOrderedMap<String, AmqpValue> = AmqpOrderedMap::new();
-        application_properties.insert("name".to_string(), self.eventhub.clone().into());
-        application_properties.insert("partition".to_string(), partition_id.into());
-
-        let response = self
-            .mgmt_client
+        self.mgmt_client
             .lock()
             .await
             .get()
             .unwrap()
-            .management
-            .call("com.microsoft:partition", application_properties)
-            .await?;
-
-        // Look for the required response properties
-        if !response.contains_key("name")
-            || !response.contains_key("type")
-            || !response.contains_key("partition")
-            || !response.contains_key("begin_sequence_number_epoch")
-            || !response.contains_key("begin_sequence_number")
-            || !response.contains_key("last_enqueued_sequence_number_epoch")
-            || !response.contains_key("last_enqueued_sequence_number")
-            || !response.contains_key("last_enqueued_offset")
-            || !response.contains_key("last_enqueued_time_utc")
-            || !response.contains_key("is_partition_empty")
-        {
-            return Err(ErrorKind::InvalidManagementResponse.into());
-        }
-
-        Ok(EventHubPartitionProperties {
-            beginning_sequence_number: response
-                .get("begin_sequence_number")
-                .unwrap()
-                .clone()
-                .into(),
-            id: response.get("partition").unwrap().clone().into(),
-            eventhub: response.get("name").unwrap().clone().into(),
-
-            last_enqueued_sequence_number: response
-                .get("last_enqueued_sequence_number")
-                .unwrap()
-                .clone()
-                .into(),
-            last_enqueued_offset: response.get("last_enqueued_offset").unwrap().clone().into(),
-            last_enqueued_time_utc: Into::<AmqpTimestamp>::into(
-                response
-                    .get("last_enqueued_time_utc".to_string())
-                    .unwrap()
-                    .clone(),
-            )
-            .0,
-            is_empty: response.get("is_partition_empty").unwrap().clone().into(),
-        })
+            .get_eventhub_partition_properties(&self.eventhub, partition_id)
+            .await
     }
 
     pub(crate) fn base_url(&self) -> String {

@@ -21,8 +21,6 @@ pub(crate) struct Fe2o3AmqpConnection {
     connection: OnceLock<Mutex<ConnectionHandle<()>>>,
 }
 
-unsafe impl Sync for Fe2o3AmqpConnection {}
-
 impl Fe2o3AmqpConnection {
     pub(crate) fn new() -> Self {
         Self {

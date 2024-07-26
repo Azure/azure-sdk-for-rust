@@ -12,18 +12,16 @@ use std::{
     sync::{Arc, OnceLock},
 };
 use tokio::sync::Mutex;
-use tracing::debug;
+use tracing::{debug, info};
 
 #[derive(Debug, Clone)]
 pub(crate) struct Fe2o3AmqpSession {
     session: OnceLock<Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>>>,
 }
 
-unsafe impl Sync for Fe2o3AmqpSession {}
-
 impl Drop for Fe2o3AmqpSession {
     fn drop(&mut self) {
-        debug!("Dropping Fe2o3AmqpSession.");
+        info!("Dropping Fe2o3AmqpSession.");
     }
 }
 

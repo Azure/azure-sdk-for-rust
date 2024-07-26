@@ -49,10 +49,9 @@
       ]
     },
     {
-      "filename": "**/*.md",
+        "eng/common/**"
       "dictionaries": [
         "rust",
-        "rust-custom"
       ],
       "ignoreRegExpList": [
         "@\\w+"

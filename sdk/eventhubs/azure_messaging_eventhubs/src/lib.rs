@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
-// cspell: words amqp eventhub eventhubs
+// cspell: words amqp eventhub eventhubs eventdata
 
 #![recursion_limit = "128"]
 
@@ -11,10 +11,16 @@ pub mod producer;
 pub mod models {
 
     use azure_core_amqp::{
-        messaging::{AmqpMessage, AmqpMessageId, AmqpMessageProperties},
+        messaging::{
+            AmqpAnnotationKey, AmqpMessage, AmqpMessageBody, AmqpMessageId, AmqpMessageProperties,
+        },
         value::AmqpValue,
     };
-    use std::collections::HashMap;
+    use std::{
+        collections::HashMap,
+        fmt::{Debug, Display, Formatter},
+    };
+    use tracing::warn;
 
     #[derive(Debug)]
     pub struct EventHubProperties {
@@ -169,7 +175,65 @@ pub mod models {
         }
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Default, PartialEq, Clone)]
+    pub enum StartLocation {
+        Offset(String),
+        SequenceNumber(i64),
+        EnqueuedTime(std::time::SystemTime),
+        Earliest,
+        #[default]
+        Latest,
+    }
+
+    const ENQUEUED_TIME_ANNOTATION: &str = "amqp.annotation.x-opt-enqueued-time";
+    const OFFSET_ANNOTATION: &str = "amqp.annotation.x-opt-offset";
+    const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number";
+
+    #[derive(Debug, PartialEq, Clone)]
+    pub struct StartPosition {
+        location: StartLocation,
+        inclusive: bool,
+    }
+
+    impl StartPosition {
+        pub fn builder() -> builders::StartPositionBuilder {
+            builders::StartPositionBuilder::new()
+        }
+        pub fn start_expression(position: &Option<StartPosition>) -> String {
+            if let Some(position) = position {
+                let mut greater_than: &str = ">";
+                if position.inclusive {
+                    greater_than = ">=";
+                }
+                match &position.location {
+                    StartLocation::Offset(offset) => {
+                        format!("{} {}'{}'", OFFSET_ANNOTATION, greater_than, offset)
+                    }
+                    StartLocation::SequenceNumber(sequence_number) => {
+                        format!(
+                            "{} {}'{}'",
+                            SEQUENCE_NUMBER_ANNOTATION, greater_than, sequence_number
+                        )
+                    }
+                    StartLocation::EnqueuedTime(enqueued_time) => {
+                        let enqueued_time = enqueued_time
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .expect("Time went backwards")
+                            .as_millis();
+                        format!(
+                            "{} {}'{}'",
+                            ENQUEUED_TIME_ANNOTATION, greater_than, enqueued_time
+                        )
+                    }
+                    StartLocation::Earliest => "amqp.annotation.x-opt-offset > '-1'".to_string(),
+                    StartLocation::Latest => "amqp.annotation.x-opt-offset > '@latest'".to_string(),
+                }
+            } else {
+                "amqp.annotation.x-opt-offset > '@latest'".to_string()
+            }
+        }
+    }
+
     pub struct EventData {
         body: Option<Vec<u8>>,
         content_type: Option<String>,
@@ -204,31 +268,30 @@ pub mod models {
         }
     }
 
-    // impl From<AmqpMessage> for EventData {
-    //     fn from(message: AmqpMessage) -> Self {
-    //         let mut event_data_builder = EventData::builder();
+    impl Debug for EventData {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("EventData")
+                .field("body", &self.body)
+                .field("content_type", &self.content_type)
+                .field("correlation_id", &self.correlation_id)
+                .field("message_id", &self.message_id)
+                .field("properties", &self.properties)
+                .finish()
+        }
+    }
 
-    //         if let Some(properties) = message.properties() {
-    //             if let Some(content_type) = properties.content_type() {
-    //                 event_data_builder = event_data_builder
-    //                     .with_content_type(Into::<String>::into(content_type.clone()));
-    //             }
-    //             if let Some(correlation_id) = properties.correlation_id() {
-    //                 event_data_builder =
-    //                     event_data_builder.with_correlation_id(correlation_id.clone());
-    //             }
-    //             if let Some(message_id) = properties.message_id() {
-    //                 event_data_builder = event_data_builder.with_message_id(message_id.clone());
-    //             }
-    //         }
-    //         if let Some(application_properties) = message.application_properties() {
-    //             for (key, value) in application_properties.0.clone() {
-    //                 event_data_builder = event_data_builder.add_property(key, value);
-    //             }
-    //         }
-    //         event_data_builder.build()
-    //     }
-    // }
+    impl Display for EventData {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            write!(f, "EventData: [")?;
+            write!(f, "  body: {:?}, ", self.body)?;
+            write!(f, "  content_type: {:?}, ", self.content_type)?;
+            write!(f, "  correlation_id: {:?}, ", self.correlation_id)?;
+            write!(f, "  message_id: {:?}, ", self.message_id)?;
+            write!(f, "  properties: {:?}", self.properties)?;
+            write!(f, "]")
+        }
+    }
+
     impl From<EventData> for AmqpMessage {
         fn from(event_data: EventData) -> Self {
             let mut message_properties_builder = AmqpMessageProperties::builder();
@@ -252,6 +315,145 @@ pub mod models {
                 }
             }
             message_builder.build()
+        }
+    }
+
+    pub struct ReceivedEventData {
+        message: AmqpMessage,
+        event_data: EventData,
+        enqueued_time: std::time::SystemTime,
+        offset: String,
+        sequence_number: i64,
+        partition_key: String,
+        system_properties: HashMap<String, AmqpValue>,
+    }
+
+    impl Debug for ReceivedEventData {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("ReceivedEventData")
+                //                .field("message", &self.message)
+                .field("event_data", &self.event_data)
+                .field("enqueued_time", &self.enqueued_time)
+                .field("offset", &self.offset)
+                .field("sequence_number", &self.sequence_number)
+                .field("partition_key", &self.partition_key)
+                .field("system_properties", &self.system_properties)
+                .finish()
+        }
+    }
+
+    impl ReceivedEventData {
+        pub fn raw_amqp_message(&self) -> &AmqpMessage {
+            &self.message
+        }
+
+        pub fn event_data(&self) -> &EventData {
+            &self.event_data
+        }
+
+        pub fn enqueued_time(&self) -> std::time::SystemTime {
+            self.enqueued_time
+        }
+
+        pub fn offset(&self) -> &str {
+            &self.offset
+        }
+
+        pub fn sequence_number(&self) -> i64 {
+            self.sequence_number
+        }
+
+        pub fn partition_key(&self) -> &str {
+            &self.partition_key
+        }
+
+        pub fn system_properties(&self) -> &HashMap<String, AmqpValue> {
+            &self.system_properties
+        }
+    }
+
+    const ENQUEUED_TIME_UTC: &str = "x-opt-enqueued-time";
+    const OFFSET: &str = "x-opt-offset";
+    const SEQUENCE_NUMBER: &str = "x-opt-sequence-number";
+    const PARTITION_KEY: &str = "x-opt-partition-key";
+
+    impl From<AmqpMessage> for ReceivedEventData {
+        fn from(message: AmqpMessage) -> Self {
+            // Create an eventdata from the message.
+            let mut event_data_builder = EventData::builder();
+
+            // If the AMQP message body is a single binary value, copy it to
+            // the event data body.
+            if let AmqpMessageBody::Binary(binary) = message.body() {
+                if binary.len() == 1 {
+                    event_data_builder = event_data_builder.with_body(binary[0].clone());
+                }
+            }
+
+            if let Some(properties) = message.properties() {
+                if let Some(content_type) = properties.content_type() {
+                    event_data_builder = event_data_builder
+                        .with_content_type(Into::<String>::into(content_type.clone()));
+                }
+                if let Some(correlation_id) = properties.correlation_id() {
+                    event_data_builder =
+                        event_data_builder.with_correlation_id(correlation_id.clone());
+                }
+                if let Some(message_id) = properties.message_id() {
+                    event_data_builder = event_data_builder.with_message_id(message_id.clone());
+                }
+            }
+            if let Some(application_properties) = message.application_properties() {
+                for (key, value) in application_properties.0.clone() {
+                    event_data_builder = event_data_builder.add_property(key, value);
+                }
+            }
+            let event_data = event_data_builder.build();
+
+            // Extract the Eventhubs specific properties from the message.
+            let mut enqueued_time: std::time::SystemTime = std::time::SystemTime::now();
+            let mut sequence_number: i64 = 0;
+            let mut partition_key: String = String::new();
+            let mut offset: String = String::new();
+            let mut system_properties: HashMap<String, AmqpValue> = HashMap::new();
+            if let Some(annotations) = message.message_annotations() {
+                for (key, value) in annotations.0.clone() {
+                    if let AmqpAnnotationKey::Symbol(symbol) = key {
+                        if symbol == ENQUEUED_TIME_UTC {
+                            if let AmqpValue::TimeStamp(timestamp) = value {
+                                enqueued_time = timestamp.0;
+                            }
+                        } else if symbol == OFFSET {
+                            if let AmqpValue::String(offset_value) = value {
+                                offset = offset_value;
+                            }
+                        } else if symbol == SEQUENCE_NUMBER {
+                            if let AmqpValue::Long(sequence_number_value) = value {
+                                sequence_number = sequence_number_value;
+                            }
+                        } else if symbol == PARTITION_KEY {
+                            if let AmqpValue::String(partition_key_value) = value {
+                                partition_key = partition_key_value;
+                            }
+                        } else {
+                            if system_properties.contains_key(&symbol.0) {
+                                warn!("Duplicate system property found: {}", symbol.0);
+                            }
+                            system_properties.insert(symbol.0, value);
+                        }
+                    }
+                }
+            }
+
+            Self {
+                event_data,
+                message,
+                enqueued_time,
+                offset,
+                sequence_number,
+                partition_key,
+                system_properties,
+            }
         }
     }
 
@@ -329,6 +531,180 @@ pub mod models {
             pub fn build(self) -> EventData {
                 self.event_data
             }
+        }
+
+        pub struct StartPositionBuilder {
+            position: StartPosition,
+        }
+
+        impl StartPositionBuilder {
+            pub(super) fn new() -> Self {
+                Self {
+                    position: StartPosition {
+                        location: StartLocation::Latest,
+                        inclusive: false,
+                    },
+                }
+            }
+
+            pub fn with_earliest_location(mut self) -> Self {
+                self.position.location = StartLocation::Earliest;
+                self
+            }
+
+            pub fn with_latest_location(mut self) -> Self {
+                self.position.location = StartLocation::Latest;
+                self
+            }
+
+            pub fn with_sequence_number(mut self, sequence_number: i64) -> Self {
+                self.position.location = StartLocation::SequenceNumber(sequence_number);
+                self
+            }
+
+            pub fn with_enqueued_time(mut self, enqueued_time: std::time::SystemTime) -> Self {
+                self.position.location = StartLocation::EnqueuedTime(enqueued_time);
+                self
+            }
+
+            pub fn with_offset(mut self, offset: String) -> Self {
+                self.position.location = StartLocation::Offset(offset);
+                self
+            }
+
+            pub fn inclusive(mut self) -> Self {
+                self.position.inclusive = true;
+                self
+            }
+
+            pub fn build(self) -> StartPosition {
+                self.position
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use tracing::info;
+        static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
+
+        #[test]
+        fn setup() {
+            INIT_LOGGING.call_once(|| {
+                println!("Setting up test logger...");
+
+                tracing_subscriber::fmt::init();
+            });
+        }
+
+        #[test]
+        fn test_start_position_builder_with_sequence_number() {
+            setup();
+            let sequence_number = 12345i64;
+            let start_position = StartPosition::builder()
+                .with_sequence_number(sequence_number)
+                .build();
+            assert_eq!(
+                start_position.location,
+                StartLocation::SequenceNumber(sequence_number)
+            );
+            assert_eq!(
+                StartPosition::start_expression(&Some(start_position)),
+                "amqp.annotation.x-opt-sequence-number >'12345'"
+            );
+
+            let start_position = StartPosition::builder()
+                .with_sequence_number(sequence_number)
+                .inclusive()
+                .build();
+            assert_eq!(
+                StartPosition::start_expression(&Some(start_position)),
+                "amqp.annotation.x-opt-sequence-number >='12345'"
+            );
+        }
+
+        #[test]
+        fn test_start_position_builder_with_enqueued_time() {
+            setup();
+            let enqueued_time = std::time::SystemTime::now();
+            let start_position = StartPosition::builder()
+                .with_enqueued_time(enqueued_time)
+                .build();
+            info!("enqueued_time: {:?}", enqueued_time);
+            info!(
+                "enqueued_time: {:?}",
+                enqueued_time.duration_since(std::time::UNIX_EPOCH)
+            );
+            info!(
+                "enqueued_time: {:?}",
+                enqueued_time
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis()
+            );
+            assert_eq!(
+                start_position.location,
+                StartLocation::EnqueuedTime(enqueued_time)
+            );
+            assert_eq!(
+                StartPosition::start_expression(&Some(start_position)),
+                format!(
+                    "amqp.annotation.x-opt-enqueued-time >'{}'",
+                    enqueued_time
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis()
+                )
+            );
+
+            let start_position = StartPosition::builder()
+                .with_enqueued_time(enqueued_time)
+                .inclusive()
+                .build();
+            assert_eq!(
+                StartPosition::start_expression(&Some(start_position)),
+                format!(
+                    "amqp.annotation.x-opt-enqueued-time >='{}'",
+                    enqueued_time
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis()
+                )
+            );
+        }
+
+        #[test]
+        fn test_start_position_builder_with_offset() {
+            setup();
+            let offset = "12345".to_string();
+            let start_position = StartPosition::builder().with_offset(offset.clone()).build();
+            assert_eq!(
+                start_position.location,
+                StartLocation::Offset(offset.clone())
+            );
+            assert_eq!(
+                "amqp.annotation.x-opt-offset >'12345'",
+                StartPosition::start_expression(&Some(start_position)),
+            );
+
+            let start_position = StartPosition::builder()
+                .with_offset(offset.clone())
+                .inclusive()
+                .build();
+            assert_eq!(
+                "amqp.annotation.x-opt-offset >='12345'",
+                StartPosition::start_expression(&Some(start_position)),
+            );
+        }
+
+        #[test]
+        fn test_start_position_builder_inclusive() {
+            setup();
+            let start_position = StartPosition::builder().inclusive().build();
+            assert!(start_position.inclusive);
+            let start_position = StartPosition::builder().build();
+            assert!(!start_position.inclusive);
         }
     }
 }

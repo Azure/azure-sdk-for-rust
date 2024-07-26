@@ -110,6 +110,7 @@ impl From<AmqpNotAcceptedError> for Fe2o3AmqpError {
 }
 
 pub enum ErrorKind {
+    AmqpReceiverAlreadyAttachedError,
     AmqpSerializationError { source: AmqpSerializationError },
     AmqpDeliveryRejectedError { source: AmqpDeliveryRejectedError },
     NotAcceptedError { source: AmqpNotAcceptedError },
@@ -132,6 +133,12 @@ pub struct Fe2o3AmqpError {
     kind: ErrorKind,
 }
 
+impl From<ErrorKind> for Fe2o3AmqpError {
+    fn from(e: ErrorKind) -> Self {
+        Fe2o3AmqpError { kind: e }
+    }
+}
+
 impl std::error::Error for Fe2o3AmqpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
@@ -141,6 +148,9 @@ impl std::error::Error for Fe2o3AmqpError {
 impl std::fmt::Display for Fe2o3AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
+            ErrorKind::AmqpReceiverAlreadyAttachedError => {
+                write!(f, "Receiver already attached")
+            }
             ErrorKind::TimeError { source } => {
                 write!(f, "Time Component Range Error {:?}", source.0)
             }

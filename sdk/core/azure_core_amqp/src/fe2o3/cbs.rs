@@ -27,9 +27,6 @@ impl Fe2o3ClaimsBasedSecurity {
     }
 }
 
-unsafe impl Send for Fe2o3ClaimsBasedSecurity {}
-unsafe impl Sync for Fe2o3ClaimsBasedSecurity {}
-
 impl Fe2o3ClaimsBasedSecurity {}
 
 impl Drop for Fe2o3ClaimsBasedSecurity {

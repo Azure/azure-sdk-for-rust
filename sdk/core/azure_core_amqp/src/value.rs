@@ -1,8 +1,31 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Eq)]
 pub struct AmqpSymbol(pub String);
+
+impl PartialEq<&str> for AmqpSymbol {
+    fn eq(&self, other: &&str) -> bool {
+        self.0 == *other
+    }
+}
+
+impl From<String> for AmqpSymbol {
+    fn from(s: String) -> Self {
+        AmqpSymbol(s.into())
+    }
+}
+impl From<AmqpSymbol> for String {
+    fn from(s: AmqpSymbol) -> Self {
+        s.0
+    }
+}
+
+impl From<&str> for AmqpSymbol {
+    fn from(s: &str) -> Self {
+        AmqpSymbol(s.to_string())
+    }
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AmqpList(pub Vec<AmqpValue>);
@@ -45,10 +68,34 @@ pub enum AmqpDescriptor {
     Name(AmqpSymbol),
 }
 
+impl From<u64> for AmqpDescriptor {
+    fn from(v: u64) -> Self {
+        AmqpDescriptor::Code(v)
+    }
+}
+
+impl<T> From<T> for AmqpDescriptor
+where
+    T: Into<AmqpSymbol>,
+{
+    fn from(v: T) -> Self {
+        AmqpDescriptor::Name(v.into())
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct AmqpDescribed {
     pub descriptor: AmqpDescriptor,
     pub value: AmqpValue,
+}
+
+impl AmqpDescribed {
+    pub fn new(descriptor: impl Into<AmqpDescriptor>, value: impl Into<AmqpValue>) -> Self {
+        Self {
+            descriptor: descriptor.into(),
+            value: value.into(),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Default)]
@@ -90,8 +137,8 @@ where
         Self { inner: Vec::new() }
     }
 
-    pub fn insert(&mut self, key: K, value: V) {
-        self.inner.push((key, value));
+    pub fn insert(&mut self, key: impl Into<K>, value: impl Into<V>) {
+        self.inner.push((key.into(), value.into()));
     }
 
     pub fn get(&self, key: impl Into<K> + Clone) -> Option<&V> {
@@ -203,7 +250,8 @@ conversions_for_amqp_types!(
     AmqpSymbol,Symbol,
     AmqpList,List,
     Vec<AmqpValue>,Array,
-    AmqpOrderedMap<AmqpValue, AmqpValue>, Map
+    AmqpOrderedMap<AmqpValue, AmqpValue>, Map,
+    Box<AmqpDescribed>, Described
 );
 conversions_for_amqp_types!(AmqpTimestamp, TimeStamp);
 
@@ -240,14 +288,14 @@ impl From<Box<AmqpDescribed>> for AmqpDescribed {
     }
 }
 
-impl From<AmqpValue> for AmqpDescribed {
-    fn from(v: AmqpValue) -> Self {
-        match v {
-            AmqpValue::Described(d) => *d,
-            _ => panic!("Expected a described value"),
-        }
-    }
-}
+// impl From<AmqpValue> for AmqpDescribed {
+//     fn from(v: AmqpValue) -> Self {
+//         match v {
+//             AmqpValue::Described(d) => *d,
+//             _ => panic!("Expected a described value"),
+//         }
+//     }
+// }
 
 impl From<&str> for AmqpValue {
     fn from(b: &str) -> Self {
@@ -258,23 +306,6 @@ impl From<&str> for AmqpValue {
 impl From<Box<AmqpValue>> for AmqpValue {
     fn from(b: Box<AmqpValue>) -> Self {
         *b
-    }
-}
-
-impl From<String> for AmqpSymbol {
-    fn from(s: String) -> Self {
-        AmqpSymbol(s.into())
-    }
-}
-impl From<AmqpSymbol> for String {
-    fn from(s: AmqpSymbol) -> Self {
-        s.0
-    }
-}
-
-impl From<&str> for AmqpSymbol {
-    fn from(s: &str) -> Self {
-        AmqpSymbol(s.to_string())
     }
 }
 
@@ -452,15 +483,12 @@ mod tests {
         );
 
         {
-            let described = AmqpDescribed {
-                descriptor: AmqpDescriptor::Code(23),
-                value: AmqpValue::Int(2),
-            };
+            let described = AmqpDescribed::new(23, 2u32);
             let v: AmqpValue = AmqpValue::Described(Box::new(described.clone()));
             assert_eq!(v, AmqpValue::Described(Box::new(described.clone())));
             assert_eq!(AmqpValue::Described(Box::new(described.clone())), v);
-            let b: AmqpDescribed = v.into();
-            assert_eq!(b, described);
+            let b: Box<AmqpDescribed> = v.into();
+            assert_eq!(*b, described);
         }
 
         {
@@ -692,14 +720,8 @@ mod tests {
             })),
             described_value
         );
-        let described_val: AmqpDescribed = described_value.into();
-        assert_eq!(
-            described_val,
-            AmqpDescribed {
-                descriptor: AmqpDescriptor::Code(23),
-                value: AmqpValue::Int(2),
-            }
-        );
+        let described_val: Box<AmqpDescribed> = described_value.into();
+        assert_eq!(*described_val, AmqpDescribed::new(23, 2i32));
 
         // Test AmqpValue::Unknown
         let unknown_value: AmqpValue = AmqpValue::Unknown;

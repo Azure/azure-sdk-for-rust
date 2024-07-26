@@ -15,6 +15,14 @@ pub struct AmqpError {
     kind: ErrorKind,
 }
 
+impl AmqpError {
+    #[cfg(any(feature = "enable-fe2o3-amqp"))]
+    pub fn new_iron_oxide_error(source: Fe2o3AmqpError) -> Self {
+        Self {
+            kind: ErrorKind::IronOxideError { source },
+        }
+    }
+}
 impl std::error::Error for AmqpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None

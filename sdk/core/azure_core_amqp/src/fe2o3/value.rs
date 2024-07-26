@@ -202,7 +202,7 @@ impl From<fe2o3_amqp_types::primitives::Value> for AmqpValue {
             fe2o3_amqp_types::primitives::Value::Map(m) => {
                 let mut map = AmqpOrderedMap::new();
                 for (k, v) in m {
-                    map.insert(k.into(), v.into());
+                    map.insert(k, v);
                 }
                 AmqpValue::Map(map)
             }
@@ -345,7 +345,7 @@ where
     fn from(fields: fe2o3_amqp_types::definitions::Fields) -> Self {
         let mut map = AmqpOrderedMap::new();
         for (k, v) in fields {
-            map.insert(k.into(), v.into());
+            map.insert(k, v);
         }
         map
     }
@@ -368,7 +368,7 @@ impl
         // Convert the OrderedMap to AmqpOrderedMap
         let mut amqp_ordered_map = AmqpOrderedMap::new();
         for (key, value) in value.into_iter() {
-            amqp_ordered_map.insert(key, value.into());
+            amqp_ordered_map.insert(key, value);
         }
         amqp_ordered_map
     }

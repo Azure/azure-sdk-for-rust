@@ -24,8 +24,7 @@ async fn main() -> Result<()> {
         ProducerClientOptions::builder()
             .with_application_id("test_get_properties")
             .build(),
-    )
-    .unwrap();
+    );
     let result = client.open().await;
     info!("Open result: {:?}", result);
     if result.is_err() {

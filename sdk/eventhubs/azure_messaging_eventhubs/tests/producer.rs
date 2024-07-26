@@ -38,8 +38,7 @@ async fn test_new_with_error() {
         ProducerClientOptions::builder()
             .with_application_id("test_new_with_error")
             .build(),
-    )
-    .unwrap();
+    );
     let result = producer.open().await;
     assert!(result.is_err());
     info!("Error: {:?}", result);
@@ -57,8 +56,7 @@ async fn test_open() {
         ProducerClientOptions::builder()
             .with_application_id("test_open")
             .build(),
-    )
-    .unwrap();
+    );
     client.open().await.unwrap();
 }
 #[tokio::test]
@@ -73,8 +71,7 @@ async fn test_close() {
         ProducerClientOptions::builder()
             .with_application_id("test_close")
             .build(),
-    )
-    .unwrap();
+    );
     client.open().await.unwrap();
     client.close().await.unwrap();
 }
@@ -94,8 +91,7 @@ async fn test_get_properties() {
         ProducerClientOptions::builder()
             .with_application_id("test_get_properties")
             .build(),
-    )
-    .unwrap();
+    );
     client.open().await.unwrap();
     let properties = client.get_eventhub_properties().await.unwrap();
     info!("Properties: {:?}", properties);
@@ -117,8 +113,7 @@ async fn test_get_partition_properties() {
         ProducerClientOptions::builder()
             .with_application_id("test_get_properties")
             .build(),
-    )
-    .unwrap();
+    );
     client.open().await.unwrap();
     let properties = client.get_eventhub_properties().await.unwrap();
 
@@ -171,8 +166,7 @@ async fn test_create_batch() {
         ProducerClientOptions::builder()
             .with_application_id("test_create_batch")
             .build(),
-    )
-    .unwrap();
+    );
     client.open().await.unwrap();
     {
         let batch = client.create_batch(None).await.unwrap();
@@ -195,8 +189,7 @@ async fn test_create_and_send_batch() {
         ProducerClientOptions::builder()
             .with_application_id("test_create_batch")
             .build(),
-    )
-    .unwrap();
+    );
     client.open().await.unwrap();
     {
         let mut batch = client.create_batch(None).await.unwrap();
@@ -260,8 +253,7 @@ async fn test_overload_batch() {
         ProducerClientOptions::builder()
             .with_application_id("test_create_batch")
             .build(),
-    )
-    .unwrap();
+    );
 
     info!("Open producer client...");
     client.open().await.unwrap();
