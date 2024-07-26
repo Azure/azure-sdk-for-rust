@@ -7,7 +7,7 @@ use crate::fe2o3::error::{
     Fe2o3AmqpError,
 };
 use crate::messaging::{AmqpMessage, AmqpSource};
-use crate::receiver::{AmqpReceiverOptions, AmqpReceiverTrait};
+use crate::receiver::{AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode};
 use crate::session::AmqpSession;
 use azure_core::error::{Error, Result};
 use std::borrow::BorrowMut;
@@ -18,6 +18,17 @@ use tracing::trace;
 #[derive(Debug)]
 pub(crate) struct Fe2o3AmqpReceiver {
     receiver: OnceLock<Arc<Mutex<fe2o3_amqp::Receiver>>>,
+}
+
+impl From<ReceiverCreditMode> for fe2o3_amqp::link::receiver::CreditMode {
+    fn from(credit_mode: ReceiverCreditMode) -> Self {
+        match credit_mode {
+            ReceiverCreditMode::Auto(prefetch) => {
+                fe2o3_amqp::link::receiver::CreditMode::Auto(prefetch)
+            }
+            ReceiverCreditMode::Manual => fe2o3_amqp::link::receiver::CreditMode::Manual,
+        }
+    }
 }
 
 impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
@@ -38,11 +49,17 @@ impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
         }
         let options = options.unwrap_or_default();
         let name = options.name().clone().unwrap_or_default();
+        let credit_mode = options.credit_mode().clone().unwrap_or_default();
+        let auto_accept = options.auto_accept();
+        let properties = options.properties().clone().unwrap_or_default();
         let source = source.into();
 
         let receiver = fe2o3_amqp::Receiver::builder()
             .receiver_settle_mode(fe2o3_amqp_types::definitions::ReceiverSettleMode::First)
             .source(source)
+            .credit_mode(credit_mode.into())
+            .auto_accept(auto_accept)
+            .properties(properties.into())
             .name(name)
             .attach(session.0 .0.get().lock().await.borrow_mut())
             .await

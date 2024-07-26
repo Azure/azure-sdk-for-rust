@@ -2,6 +2,111 @@
 
 //cspell: words amqp eventhub eventhubs mgmt amqps
 
+/// This module contains the `ConsumerClient` struct and related types, which are used for receiving events from an Event Hub.
+///
+/// The `ConsumerClient` provides functionality to establish a connection to an Event Hub, receive events from a specific partition,
+/// and manage the lifecycle of the consumer client.
+///
+/// # Examples
+///
+/// Creating a new `ConsumerClient` instance:
+///
+/// ```rust
+/// use azure_messaging_eventhubs::consumer::ConsumerClient;
+/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+///
+/// let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+/// let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+/// ```
+///
+/// Opening a connection to the Event Hub:
+///
+/// ```rust
+/// use azure_messaging_eventhubs::consumer::ConsumerClient;
+/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+///
+///     let result = consumer.open().await;
+///
+///     match result {
+///         Ok(()) => {
+///             // Connection opened successfully
+///             println!("Connection opened successfully");
+///         }
+///         Err(err) => {
+///             // Handle the error
+///             eprintln!("Error opening connection: {:?}", err);
+///         }
+///     }
+/// }
+/// ```
+///
+/// Closing the connection to the Event Hub:
+///
+/// ```rust
+/// use azure_messaging_eventhubs::consumer::ConsumerClient;
+/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+///
+///     consumer.open().await.unwrap();
+///
+///     let result = consumer.close().await;
+///
+///     match result {
+///         Ok(()) => {
+///             // Connection closed successfully
+///             println!("Connection closed successfully");
+///         }
+///         Err(err) => {
+///             // Handle the error
+///             eprintln!("Error closing connection: {:?}", err);
+///         }
+///     }
+/// }
+/// ```
+///
+/// Receiving events from a specific partition of the Event Hub:
+///
+/// ```rust
+/// use azure_messaging_eventhubs::consumer::ConsumerClient;
+/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+/// use async_std::stream::StreamExt;
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+///     let partition_id = "0";
+///     let options = None;
+///
+///     consumer.open().await.unwrap();
+///
+///     let event_stream = consumer.receive_events_on_partition(partition_id, options).await;
+///
+///     tokio::pin!(event_stream);
+///     while let Some(event_result) = event_stream.next().await {
+///         match event_result {
+///             Ok(event) => {
+///                 // Process the received event
+///                 println!("Received event: {:?}", event);
+///             }
+///             Err(err) => {
+///                 // Handle the error
+///                 eprintln!("Error receiving event: {:?}", err);
+///             }
+///         }
+///     }
+/// }
+/// ```
+///
 use super::{
     common::{
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
@@ -22,7 +127,7 @@ use azure_core_amqp::{
     connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
     management::{AmqpManagement, AmqpManagementTrait},
     messaging::{AmqpSource, AmqpSourceFilter},
-    receiver::{AmqpReceiver, AmqpReceiverOptions, AmqpReceiverTrait},
+    receiver::{AmqpReceiver, AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode},
     session::{AmqpSession, AmqpSessionTrait},
     value::AmqpDescribed,
 };
@@ -37,6 +142,7 @@ use tokio::sync::Mutex;
 use tracing::{debug, trace};
 use url::Url;
 
+/// Represents the options for configuring a ConsumerClient.
 #[derive(Debug, Default)]
 pub struct ConsumerClientOptions {
     application_id: Option<String>,
@@ -56,7 +162,9 @@ pub struct ReceiveOptions {
     prefetch: Option<u32>,
     start_position: Option<StartPosition>,
 }
+/// Represents the options for receiving events from an Event Hub.
 impl ReceiveOptions {
+    /// Creates a new `ReceiveOptionsBuilder` to configure the receive options.
     pub fn builder() -> builders::ReceiveOptionsBuilder {
         builders::ReceiveOptionsBuilder::new()
     }
@@ -73,11 +181,36 @@ pub struct ConsumerClient {
     url: String,
     authorization_scopes: Mutex<HashMap<String, AccessToken>>,
 }
-
 impl ConsumerClient {
+    /// Creates a new `ConsumerClient` instance.
+    ///
+    /// This function creates a new `ConsumerClient` instance with the specified parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `fully_qualified_namespace` - The fully qualified namespace of the Event Hubs instance.
+    /// * `eventhub_name` - The name of the Event Hub.
+    /// * `consumer_group` - Optional consumer group name. If not provided, the default consumer group will be used.
+    /// * `credential` - The token credential used to authenticate with the Event Hubs service.
+    /// * `options` - Optional `ConsumerClientOptions` to configure the behavior of the consumer client.
+    ///
+    /// # Returns
+    ///
+    /// A new `ConsumerClient` instance.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    ///
+    /// let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    /// let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    /// ```
+    #[tracing::instrument]
     pub fn new(
-        fully_qualified_namespace: impl Into<String>,
-        eventhub_name: impl Into<String>,
+        fully_qualified_namespace: impl Into<String> + Debug,
+        eventhub_name: impl Into<String> + Debug,
         consumer_group: Option<String>,
         credential: impl TokenCredential + 'static,
         options: Option<ConsumerClientOptions>,
@@ -102,12 +235,84 @@ impl ConsumerClient {
         }
     }
 
+    /// Opens a connection to the Event Hub.
+    ///
+    /// This method establishes a connection to the Event Hub associated with the `ConsumerClient`.
+    /// It returns a `Result` indicating whether the operation was successful or not.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating whether the operation was successful or not.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    ///
+    ///     let result = consumer.open().await;
+    ///
+    ///     match result {
+    ///         Ok(()) => {
+    ///             // Connection opened successfully
+    ///             println!("Connection opened successfully");
+    ///         }
+    ///         Err(err) => {
+    ///             // Handle the error
+    ///             eprintln!("Error opening connection: {:?}", err);
+    ///         }
+    ///     }
+    /// }
+    /// ```
     #[tracing::instrument]
     pub async fn open(&self) -> Result<()> {
         self.ensure_connection(&self.url).await?;
         Ok(())
     }
 
+    /// Closes the connection to the Event Hub.
+    ///
+    /// This method closes the connection to the Event Hub associated with the `ConsumerClient`.
+    /// It returns a `Result` indicating whether the operation was successful or not.
+    ///
+    /// Note that closing a consumer will cancel all outstanding receive requests.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating whether the operation was successful or not.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    ///
+    ///     consumer.open().await.unwrap();
+    ///
+    ///     let result = consumer.close().await;
+    ///
+    ///     match result {
+    ///         Ok(()) => {
+    ///             // Connection closed successfully
+    ///             println!("Connection closed successfully");
+    ///         }
+    ///         Err(err) => {
+    ///             // Handle the error
+    ///             eprintln!("Error closing connection: {:?}", err);
+    ///         }
+    ///     }
+    /// }
+    /// ```
     #[tracing::instrument]
     pub async fn close(self) -> Result<()> {
         self.connection.get().unwrap().close().await?;
@@ -142,6 +347,8 @@ impl ConsumerClient {
     ///     let partition_id = "0";
     ///     let options = None;
     ///
+    ///     consumer.open().await.unwrap();
+    ///
     ///     let event_stream = consumer.receive_events_on_partition(partition_id, options).await;
     ///
     ///     tokio::pin!(event_stream);
@@ -168,7 +375,11 @@ impl ConsumerClient {
         let partition_id = partition_id.into();
         let options = options.unwrap_or_default();
 
-        let receiver_name = format!("receiver-{}-{}", partition_id, uuid::Uuid::new_v4());
+        let receiver_name = self
+            .options
+            .instance_id
+            .clone()
+            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
         let start_expression = StartPosition::start_expression(&options.start_position);
         let source_url = format!("{}/Partitions/{}", self.url, partition_id);
 
@@ -187,18 +398,23 @@ impl ConsumerClient {
                 )),
             )
             .build();
+
+        let mut receiver_options_builder = AmqpReceiverOptions::builder()
+            .with_name(receiver_name.clone())
+            .add_property("com.microsoft.com:receiver-name", receiver_name)
+            .with_credit_mode(ReceiverCreditMode::Auto(options.prefetch.unwrap_or(300)))
+            .with_auto_accept(true);
+
+        if let Some(owner_level) = options.owner_level {
+            receiver_options_builder = receiver_options_builder.add_property("com.microsoft:epoch", owner_level);
+        }
+
         let receiver = AmqpReceiver::new();
         receiver
             .attach(
                 &session,
                 message_source,
-                Some(
-                    AmqpReceiverOptions::builder()
-                        //                        .with_auto_accept(true)
-                        //                        .with_credit_mode(ReceiverCreditMode::Auto(300))
-                        .with_name(receiver_name)
-                        .build(),
-                ),
+                Some(receiver_options_builder.build()),
             )
             .await?;
 
@@ -210,6 +426,40 @@ impl ConsumerClient {
         }
     }
 
+    /// Retrieves the properties of the Event Hub.
+    ///
+    /// This function retrieves the properties of the Event Hub associated with the `ConsumerClient`.
+    /// It returns a `Result` containing the `EventHubProperties` if the operation is successful.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the `EventHubProperties` if the operation is successful.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    ///
+    ///     let eventhub_properties = consumer.get_eventhub_properties().await;
+    ///
+    ///     match eventhub_properties {
+    ///         Ok(properties) => {
+    ///             // Process the Event Hub properties
+    ///             println!("Event Hub properties: {:?}", properties);
+    ///         }
+    ///         Err(err) => {
+    ///             // Handle the error
+    ///             eprintln!("Error retrieving Event Hub properties: {:?}", err);
+    ///         }
+    ///     }
+    /// }
+    /// ```
     #[tracing::instrument]
     pub async fn get_eventhub_properties(&self) -> Result<EventHubProperties> {
         self.ensure_management_client().await?;
@@ -223,6 +473,45 @@ impl ConsumerClient {
             .await
     }
 
+    /// Retrieves the properties of a specific partition in the Event Hub.
+    ///
+    /// This function retrieves the properties of the specified partition in the Event Hub.
+    /// It returns a `Result` containing the `EventHubPartitionProperties` if the operation is successful.
+    ///
+    /// # Arguments
+    ///
+    /// * `partition_id` - The ID of the partition to retrieve properties for.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the `EventHubPartitionProperties` if the operation is successful.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    ///     let partition_id = "0";
+    ///
+    ///     let partition_properties = consumer.get_partition_properties(partition_id).await;
+    ///
+    ///     match partition_properties {
+    ///         Ok(properties) => {
+    ///             // Process the partition properties
+    ///             println!("Partition properties: {:?}", properties);
+    ///         }
+    ///         Err(err) => {
+    ///             // Handle the error
+    ///             eprintln!("Error retrieving partition properties: {:?}", err);
+    ///         }
+    ///     }
+    /// }
+    /// ```
     #[tracing::instrument]
     pub async fn get_partition_properties<T>(
         &self,
@@ -360,7 +649,9 @@ mod builders {
         options: ConsumerClientOptions,
     }
 
+    /// Builder for configuring options for the `ConsumerClient`.
     impl ConsumerClientOptionsBuilder {
+        /// Creates a new `ConsumerClientOptionsBuilder` with default options.
         pub(super) fn new() -> Self {
             Self {
                 options: ConsumerClientOptions {
@@ -371,6 +662,17 @@ mod builders {
             }
         }
 
+        /// Sets the application ID for the `ConsumerClient`.
+        ///
+        /// # Arguments
+        ///
+        /// * `application_id` - The application ID to set.
+        ///
+        /// # Returns
+        ///
+        /// The updated `ConsumerClientOptionsBuilder`.
+        ///
+        /// # Note: The application ID identifies the application, it is used for telemetry.
         pub fn with_application_id<T>(mut self, application_id: T) -> Self
         where
             T: Into<String>,
@@ -379,11 +681,32 @@ mod builders {
             self
         }
 
+        /// Sets the retry options for the `ConsumerClient`.
+        ///
+        /// # Arguments
+        ///
+        /// * `retry_options` - The retry options to set.
+        ///
+        /// # Returns
+        ///
+        /// The updated `ConsumerClientOptionsBuilder`.
         pub fn with_retry_options(mut self, retry_options: RetryOptions) -> Self {
             self.options.retry_options = Some(retry_options);
             self
         }
 
+        /// Sets the instance ID for the `ConsumerClient`.
+        ///
+        /// The "instance ID" uniquely identifies the consumer client instance. If not set, a random UUID will be used.
+        ///
+        /// # Arguments
+        ///
+        /// * `instance_id` - The instance ID to set.
+        ///
+        /// # Returns
+        ///
+        /// The updated `ConsumerClientOptionsBuilder`.
+        ///
         pub fn with_instance_id<T>(mut self, instance_id: T) -> Self
         where
             T: Into<String>,
@@ -392,6 +715,11 @@ mod builders {
             self
         }
 
+        /// Builds the `ConsumerClientOptions` using the configured options.
+        ///
+        /// # Returns
+        ///
+        /// The `ConsumerClientOptions` with the configured options.
         pub fn build(self) -> ConsumerClientOptions {
             self.options
         }

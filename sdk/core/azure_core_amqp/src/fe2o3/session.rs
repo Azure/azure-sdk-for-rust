@@ -12,7 +12,7 @@ use std::{
     sync::{Arc, OnceLock},
 };
 use tokio::sync::Mutex;
-use tracing::{debug, info};
+use tracing::debug;
 
 #[derive(Debug, Clone)]
 pub(crate) struct Fe2o3AmqpSession {
@@ -21,7 +21,7 @@ pub(crate) struct Fe2o3AmqpSession {
 
 impl Drop for Fe2o3AmqpSession {
     fn drop(&mut self) {
-        info!("Dropping Fe2o3AmqpSession.");
+        debug!("Dropping Fe2o3AmqpSession.");
     }
 }
 

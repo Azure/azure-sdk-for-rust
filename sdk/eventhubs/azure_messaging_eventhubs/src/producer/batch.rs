@@ -24,6 +24,29 @@ struct EventDataBatchState {
     batch_envelope: Option<AmqpMessage>,
 }
 
+/// Represents a batch of event data that can be sent to an Event Hub.
+///
+/// The `EventDataBatch` struct is used to create and manage a batch of event data that can be sent to an Event Hub using the `ProducerClient`. It provides methods to add event data to the batch, calculate the size of the batch, and check if the batch is empty. The batch can be attached to a sender and the messages can be retrieved as an `AmqpMessage` to be sent to the Event Hub.
+///
+/// # Examples
+///
+/// ```rust
+/// use azure_messaging_eventhubs::producer::{ProducerClient, EventDataBatch};
+///
+/// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
+/// let producer = ProducerClient::new("connection_string", "event_hub_name").await?;
+///
+/// let mut batch = EventDataBatch::new(&producer, None);
+///
+/// batch.try_add_event_data("Hello, Event Hub!")?;
+/// batch.try_add_event_data("This is another event.")?;
+///
+/// let sender = producer.ensure_sender(batch.get_batch_path()).await?;
+/// sender.lock().await.send(batch.get_messages()).await?;
+///
+/// # Ok(())
+/// # }
+/// ```
 pub struct EventDataBatch<'a> {
     producer: &'a ProducerClient,
 
@@ -81,11 +104,11 @@ impl<'a> EventDataBatch<'a> {
         }
     }
 
-    pub fn add_amqp_message(
+    pub fn try_add_amqp_message(
         &self,
         message: AmqpMessage,
         #[allow(unused_variables)] options: Option<AddEventDataOptions>,
-    ) -> Result<()> {
+    ) -> Result<bool> {
         let mut message = message;
         if message.properties().is_none() || message.properties().unwrap().message_id().is_none() {
             let mut message_properties = AmqpMessageProperties::default();
@@ -133,24 +156,21 @@ impl<'a> EventDataBatch<'a> {
                 batch_state.batch_envelope = None;
                 batch_state.size_in_bytes = 0;
             }
-            return Err(azure_core::Error::from(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Batch is full. Cannot add more messages.",
-            )));
+            return Ok(false);
         }
         batch_state.size_in_bytes += actual_message_size;
         batch_state.serialized_messages.push(serialized_message);
 
-        Ok(())
+        Ok(true)
     }
 
-    pub fn add_event_data(
+    pub fn try_add_event_data(
         &mut self,
         event_data: impl Into<EventData>,
         #[allow(unused_variables)] options: Option<AddEventDataOptions>,
-    ) -> Result<()> {
+    ) -> Result<bool> {
         let event_data = event_data.into();
-        self.add_amqp_message(event_data.into(), options)
+        self.try_add_amqp_message(event_data.into(), options)
     }
 
     pub(crate) fn get_messages(&self) -> AmqpMessage {

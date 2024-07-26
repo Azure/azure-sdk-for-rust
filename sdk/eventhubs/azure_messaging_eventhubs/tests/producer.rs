@@ -194,8 +194,7 @@ async fn test_create_and_send_batch() {
     {
         let mut batch = client.create_batch(None).await.unwrap();
         assert_eq!(batch.len(), 0);
-        let res = batch.add_event_data(vec![1, 2, 3, 4], None);
-        assert!(res.is_ok());
+        assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None).unwrap());
 
         let res = client.submit_batch(&batch).await;
         assert!(res.is_ok());
@@ -210,25 +209,17 @@ async fn test_create_and_send_batch() {
             .await
             .unwrap();
         for i in 0..10 {
-            let res = batch.add_event_data(vec![i as u8], None);
-            assert!(res.is_ok());
+            let res = batch.try_add_event_data(vec![i as u8], None).unwrap();
+            assert!(res);
         }
-        let res = batch.add_event_data("This is data", None);
-        assert!(res.is_ok());
-        let res = batch.add_event_data([23], None);
-        assert!(res.is_ok());
-        let res = batch.add_event_data(vec![1, 2, 4, 8], None);
-        assert!(res.is_ok());
-        let res = batch.add_event_data("&data", None);
-        assert!(res.is_ok());
-        let res = batch.add_event_data("&data", None);
-        assert!(res.is_ok());
-        let res = batch.add_event_data("&data", None);
-        assert!(res.is_ok());
-        let res = batch.add_event_data("&data", None);
-        assert!(res.is_ok());
-        let res = batch.add_event_data("&data", None);
-        assert!(res.is_ok());
+        assert!(batch.try_add_event_data("This is data", None).unwrap());
+        assert!(batch.try_add_event_data([23], None).unwrap());
+        assert!(batch.try_add_event_data(vec![1, 2, 4, 8], None).unwrap());
+        assert!(batch.try_add_event_data("&data", None).unwrap());
+        assert!(batch.try_add_event_data("&data", None).unwrap());
+        assert!(batch.try_add_event_data("&data", None).unwrap());
+        assert!(batch.try_add_event_data("&data", None).unwrap());
+        assert!(batch.try_add_event_data("&data", None).unwrap());
 
         let res = client.submit_batch(&batch).await;
         assert!(res.is_ok());
@@ -274,7 +265,10 @@ async fn test_overload_batch() {
                 info!("Add event data, now at {}", i);
                 info!("Batch size: {}", batch.size());
             }
-            if batch.add_event_data(format!("Message {i}"), None).is_err() {
+            if !batch
+                .try_add_event_data(format!("Message {i}"), None)
+                .unwrap()
+            {
                 info!("Batch is full, sending batch");
                 let result = client.submit_batch(&batch).await;
                 if result.is_err() {

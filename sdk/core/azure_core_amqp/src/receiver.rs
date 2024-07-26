@@ -16,10 +16,16 @@ use azure_core::error::Result;
 ///   control the flow of messages by specifying how many messages it is ready to receive.
 /// - `Manual`: The receiver manually controls when to issue credit to the sender. This mode gives the receiver
 ///   complete control over the flow of messages, allowing it to request messages from the sender as needed.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ReceiverCreditMode {
     Auto(u32),
     Manual,
+}
+
+impl Default for ReceiverCreditMode {
+    fn default() -> Self {
+        ReceiverCreditMode::Auto(100)
+    }
 }
 
 #[derive(Debug, Default)]
@@ -174,6 +180,18 @@ pub mod builders {
                 .collect();
 
             self.options.properties = Some(properties_map);
+            self
+        }
+        pub fn add_property(mut self, key: impl Into<String>, value: impl Into<AmqpValue>) -> Self {
+            let key = AmqpSymbol::from(key.into());
+            let value = value.into();
+            if let Some(properties) = self.options.properties.as_mut() {
+                properties.insert(key, value);
+            } else {
+                let mut properties = AmqpOrderedMap::new();
+                properties.insert(key, value);
+                self.options.properties = Some(properties);
+            }
             self
         }
         pub fn with_credit_mode(mut self, credit_mode: ReceiverCreditMode) -> Self {

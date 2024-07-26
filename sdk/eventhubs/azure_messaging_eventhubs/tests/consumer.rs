@@ -156,8 +156,11 @@ async fn receive_lots_of_events() {
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
+    info!("Establishing credentials.");
+
     let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
 
+    info!("Creating client.");
     let client = ConsumerClient::new(
         host,
         eventhub,
@@ -169,8 +172,11 @@ async fn receive_lots_of_events() {
                 .build(),
         ),
     );
+
+    info!("Opening client.");
     client.open().await.unwrap();
 
+    info!("Creating event receive stream.");
     let event_stream = client
         .receive_events_on_partition(
             "0",
@@ -185,8 +191,11 @@ async fn receive_lots_of_events() {
     pin_mut!(event_stream); // Needed for iteration.
 
     let mut count = 0;
+    const TEST_DURATION: std::time::Duration = Duration::from_secs(10);
+
+    info!("Receiving events for {:?}.", TEST_DURATION);
     // Read events from the stream for 10 seconds.
-    let result = timeout(Duration::from_secs(10), async {
+    let result = timeout(TEST_DURATION, async {
         while let Some(event) = event_stream.next().await {
             match event {
                 Ok(_event) => {
@@ -203,8 +212,4 @@ async fn receive_lots_of_events() {
 
     assert!(result.is_err());
     info!("Received {count} messages.");
-
-    // let futures = vec![f(), f(), f(), f(), f(), f(), f(), f(), f(), f()];
-
-    // join_all(futures).await;
 }
