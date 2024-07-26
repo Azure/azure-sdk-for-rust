@@ -230,7 +230,7 @@ impl ConsumerClient {
             connection: OnceLock::new(),
             credential: Box::new(credential),
             eventhub: eventhub_name,
-            url: url,
+            url,
             authorization_scopes: Mutex::new(HashMap::new()),
         }
     }
@@ -583,9 +583,9 @@ impl ConsumerClient {
                         AmqpConnectionOptions::builder()
                             .with_properties(vec![
                                 ("user-agent", get_user_agent(&self.options.application_id)),
-                                ("version", get_package_version().into()),
-                                ("platform", get_platform_info().into()),
-                                ("product", get_package_name().into()),
+                                ("version", get_package_version()),
+                                ("platform", get_platform_info()),
+                                ("product", get_package_name()),
                             ])
                             .build(),
                     ),
@@ -616,7 +616,7 @@ impl ConsumerClient {
             debug!("Get Token.");
             let token = self
                 .credential
-                .get_token(&[&"https://eventhubs.azure.net/.default"])
+                .get_token(&["https://eventhubs.azure.net/.default"])
                 .await?;
             debug!("Got token: {:?}", token.token.secret());
             let expires_at = token.expires_on;

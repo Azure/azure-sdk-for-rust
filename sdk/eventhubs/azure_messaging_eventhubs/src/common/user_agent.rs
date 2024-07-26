@@ -16,14 +16,12 @@ pub(crate) fn get_user_agent(application_id: &Option<String>) -> String {
         crate_name = name.to_string();
     }
 
-    let header = match &application_id {
+    match &application_id {
         Some(application_id) => {
             format!("{application_id} azsdk-rust-{crate_name}/{crate_version} {platform_info}")
         }
         None => format!("azsdk-rust-{crate_name}/{crate_version} {platform_info}"),
-    };
-
-    header
+    }
 }
 
 pub(crate) fn get_package_version() -> String {
@@ -33,7 +31,7 @@ pub(crate) fn get_package_version() -> String {
 }
 
 pub(crate) fn get_platform_info() -> String {
-    format!("{OS}")
+    OS.to_string()
 }
 
 pub(crate) fn get_package_name() -> String {

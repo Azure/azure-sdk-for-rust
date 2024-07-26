@@ -68,9 +68,9 @@ impl<'a> EventDataBatch<'a> {
                 size_in_bytes: 0,
                 batch_envelope: None,
             }),
-            max_size_in_bytes: options.as_ref().map_or(std::u64::MAX, |o| {
-                o.max_size_in_bytes.unwrap_or(std::u64::MAX)
-            }),
+            max_size_in_bytes: options
+                .as_ref()
+                .map_or(u64::MAX, |o| o.max_size_in_bytes.unwrap_or(u64::MAX)),
             partition_key: options.as_ref().and_then(|o| o.partition_key.clone()),
             partition_id: options.and_then(|o| o.partition_id),
         }
@@ -132,12 +132,12 @@ impl<'a> EventDataBatch<'a> {
 
         let mut batch_state = self.batch_state.lock().unwrap();
         let message_len = AmqpMessage::serialize(message.clone())?.len();
-        if batch_state.serialized_messages.len() == 0 {
+        if batch_state.serialized_messages.is_empty() {
             // The first message serialized is the batch envelope - we capture the parameters from the first message to use for the batch
             batch_state.size_in_bytes = batch_state
                 .size_in_bytes
                 .checked_add(message_len as u64)
-                .unwrap() as u64;
+                .unwrap();
             batch_state.batch_envelope = Some(self.create_batch_envelope(&message));
         }
         let serialized_message = AmqpMessage::serialize(message)?;
@@ -152,7 +152,7 @@ impl<'a> EventDataBatch<'a> {
             debug!("Message size: {actual_message_size}");
             debug!("Current batch size: {:?}", batch_state.size_in_bytes);
             debug!("Max batch size: {:?}", self.max_size_in_bytes);
-            if batch_state.serialized_messages.len() == 0 {
+            if batch_state.serialized_messages.is_empty() {
                 batch_state.batch_envelope = None;
                 batch_state.size_in_bytes = 0;
             }
@@ -195,7 +195,7 @@ impl<'a> EventDataBatch<'a> {
 
     pub(crate) fn get_batch_path(&self) -> String {
         if self.partition_id.is_none() {
-            format!("{}", self.producer.base_url())
+            self.producer.base_url()
         } else {
             format!(
                 "{}/Partitions/{}",

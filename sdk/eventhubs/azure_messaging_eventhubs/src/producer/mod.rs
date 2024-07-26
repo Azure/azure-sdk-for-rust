@@ -75,7 +75,7 @@ impl ProducerClient {
             connection: OnceLock::new(),
             credential: Box::new(credential),
             url: format!("amqps://{}/{}", fully_qualified_namespace, eventhub),
-            eventhub: eventhub,
+            eventhub,
             authorization_scopes: Mutex::new(HashMap::new()),
             mgmt_client: Mutex::new(OnceLock::new()),
             sender_instances: Mutex::new(HashMap::new()),
@@ -96,7 +96,7 @@ impl ProducerClient {
         &self,
         batch_options: Option<EventDataBatchOptions>,
     ) -> Result<EventDataBatch> {
-        let mut batch = EventDataBatch::new(&self, batch_options);
+        let mut batch = EventDataBatch::new(self, batch_options);
 
         batch.attach().await?;
         Ok(batch)
@@ -183,7 +183,7 @@ impl ProducerClient {
         Ok(())
     }
 
-    async fn ensure_connection(&self, url: &String) -> Result<()> {
+    async fn ensure_connection(&self, url: &str) -> Result<()> {
         if self.connection.get().is_none() {
             let connection = AmqpConnection::new();
             connection
@@ -198,9 +198,9 @@ impl ProducerClient {
                         AmqpConnectionOptions::builder()
                             .with_properties(vec![
                                 ("user-agent", get_user_agent(&self.options.application_id)),
-                                ("version", get_package_version().into()),
-                                ("platform", get_platform_info().into()),
-                                ("product", get_package_name().into()),
+                                ("version", get_package_version()),
+                                ("platform", get_platform_info()),
+                                ("product", get_package_name()),
                             ])
                             .build(),
                     ),
@@ -225,8 +225,8 @@ impl ProducerClient {
                     connection,
                     Some(
                         AmqpSessionOptions::builder()
-                            .with_incoming_window(std::u32::MAX)
-                            .with_outgoing_window(std::u32::MAX)
+                            .with_incoming_window(u32::MAX)
+                            .with_outgoing_window(u32::MAX)
                             .build(),
                     ),
                 )
@@ -243,7 +243,7 @@ impl ProducerClient {
                     Some(
                         AmqpSenderOptions::builder()
                             .with_max_message_size(
-                                self.options.max_message_size.unwrap_or(std::u64::MAX),
+                                self.options.max_message_size.unwrap_or(u64::MAX),
                             )
                             .build(),
                     ),
@@ -280,7 +280,7 @@ impl ProducerClient {
             debug!("Get Token.");
             let token = self
                 .credential
-                .get_token(&[&"https://eventhubs.azure.net/.default"])
+                .get_token(&["https://eventhubs.azure.net/.default"])
                 .await?;
             debug!("Got token: {:?}", token.token.secret());
             let expires_at = token.expires_on;

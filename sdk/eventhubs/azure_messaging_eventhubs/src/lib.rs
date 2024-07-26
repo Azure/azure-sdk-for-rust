@@ -234,6 +234,7 @@ pub mod models {
         }
     }
 
+    #[derive(Default, PartialEq, Clone)]
     pub struct EventData {
         body: Option<Vec<u8>>,
         content_type: Option<String>,
@@ -252,7 +253,7 @@ pub mod models {
         }
 
         pub fn body(&self) -> Option<&[u8]> {
-            self.body.as_ref().map(|b| b.as_slice())
+            self.body.as_deref().map(|b| b.as_ref())
         }
 
         pub fn content_type(&self) -> Option<&str> {
@@ -479,6 +480,7 @@ pub mod models {
     pub mod builders {
         use super::*;
 
+        #[derive(Default)]
         pub struct EventDataBuilder {
             event_data: EventData,
         }
