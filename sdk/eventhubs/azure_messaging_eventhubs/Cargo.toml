@@ -32,6 +32,7 @@ futures-util = { version = "0.3.5" }
 rustc_version = "0.4"
 
 [dev-dependencies]
+async-std = { version = "1.12", features = ["attributes"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 azure_identity = { path = "../../identity/azure_identity" }
 

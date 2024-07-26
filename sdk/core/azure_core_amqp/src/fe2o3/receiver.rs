@@ -13,7 +13,7 @@ use azure_core::error::{Error, Result};
 use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
-use tracing::info;
+use tracing::{info, trace};
 
 #[derive(Debug)]
 pub(crate) struct Fe2o3AmqpReceiver {
@@ -64,14 +64,14 @@ impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
         > = receiver.recv().await.map_err(AmqpReceiverError::from)?;
 
-        info!("Received delivery: {:?}", delivery);
+        trace!("Received delivery: {:?}", delivery);
 
-        info!("Accepting delivery.");
+        trace!("Accepting delivery.");
         receiver
             .accept(&delivery)
             .await
             .map_err(AmqpIllegalLinkStateError::from)?;
-        info!("Accepted delivery");
+        trace!("Accepted delivery");
 
         let message = AmqpMessage::from(delivery.into_message());
         Ok(message)

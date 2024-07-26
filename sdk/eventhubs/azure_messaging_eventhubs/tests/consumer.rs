@@ -3,14 +3,14 @@
 //#![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
 //cspell: words eventhubs eventhub eventdata
 
-use futures_util::stream::StreamExt;
-
+use async_std::future::timeout;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 use azure_messaging_eventhubs::{
     consumer::{ConsumerClient, ConsumerClientOptions, ReceiveOptions},
     models::StartPosition,
 };
-use std::env;
+use futures::{pin_mut, Stream, StreamExt};
+use std::{env, time::Duration};
 use tracing::{info, trace};
 
 mod common;
@@ -202,7 +202,7 @@ async fn receive_lots_of_events() {
     );
     client.open().await.unwrap();
 
-    let mut event_stream = client
+    let event_stream = client
         .receive_events_on_partition(
             "0",
             Some(
@@ -213,9 +213,26 @@ async fn receive_lots_of_events() {
         )
         .await;
 
-    while let event = event_stream.next().await {
-        info!("Received the following message:: {:?}", event);
-    }
+    pin_mut!(event_stream); // Needed for iteration.
+
+    let mut count = 0;
+    // Read events from the stream for 10 seconds.
+    let result = timeout(Duration::from_secs(10), async {
+        while let Some(event) = event_stream.next().await {
+            match event {
+                Ok(_event) => {
+                    //                    info!("Received the following message:: {:?}", event);
+                    count += 1;
+                }
+                Err(err) => {
+                    info!("Error while receiving message: {:?}", err);
+                }
+            }
+        }
+    })
+    .await;
+    assert!(result.is_err());
+    info!("Received {count} messages.");
 
     // let futures = vec![f(), f(), f(), f(), f(), f(), f(), f(), f(), f()];
 
