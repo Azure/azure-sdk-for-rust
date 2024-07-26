@@ -245,6 +245,7 @@ impl TokenCredential for DefaultAzureCredentialKind {
 /// - `EnvironmentCredential`
 /// - `ManagedIdentityCredential`
 /// - `AzureCliCredential`
+///
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
 #[derive(Debug)]
 pub struct DefaultAzureCredential {
