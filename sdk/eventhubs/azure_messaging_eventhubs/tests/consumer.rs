@@ -9,7 +9,7 @@ use azure_messaging_eventhubs::{
     consumer::{ConsumerClient, ConsumerClientOptions, ReceiveOptions},
     models::StartPosition,
 };
-use futures::{pin_mut, Stream, StreamExt};
+use futures::{pin_mut, StreamExt};
 use std::{env, time::Duration};
 use tracing::{info, trace};
 
@@ -150,37 +150,6 @@ async fn test_get_partition_properties() {
 }
 
 #[tokio::test]
-async fn receive_one_event() {
-    common::setup();
-    let host = env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
-
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
-
-    let client = ConsumerClient::new(
-        host,
-        eventhub,
-        None,
-        credential,
-        Some(
-            ConsumerClientOptions::builder()
-                .with_application_id("receive_one_event")
-                .build(),
-        ),
-    );
-    client.open().await.unwrap();
-
-    let message = client
-        .receive_event_on_partition(
-            "0",
-            Some(StartPosition::builder().with_earliest_location().build()),
-        )
-        .await
-        .unwrap();
-    info!("Received the following message:: {:?}", message);
-}
-
-#[tokio::test]
 async fn receive_lots_of_events() {
     common::setup();
 
@@ -231,6 +200,7 @@ async fn receive_lots_of_events() {
         }
     })
     .await;
+
     assert!(result.is_err());
     info!("Received {count} messages.");
 

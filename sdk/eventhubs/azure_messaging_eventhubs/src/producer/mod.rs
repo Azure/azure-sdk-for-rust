@@ -24,11 +24,8 @@ use azure_core::{
     error::{Error, Result},
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
+use std::sync::{Arc, OnceLock};
 use std::{boxed::Box, collections::HashMap};
-use std::{
-    sync::{Arc, OnceLock},
-    time::SystemTime,
-};
 use tokio::sync::Mutex;
 use tracing::{debug, trace};
 use url::Url;

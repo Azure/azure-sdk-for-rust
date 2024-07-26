@@ -22,7 +22,7 @@ use azure_core_amqp::{
     connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
     management::{AmqpManagement, AmqpManagementTrait},
     messaging::{AmqpSource, AmqpSourceFilter},
-    receiver::{AmqpReceiver, AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode},
+    receiver::{AmqpReceiver, AmqpReceiverOptions, AmqpReceiverTrait},
     session::{AmqpSession, AmqpSessionTrait},
     value::AmqpDescribed,
 };
@@ -34,7 +34,7 @@ use std::{
     sync::{Arc, OnceLock},
 };
 use tokio::sync::Mutex;
-use tracing::{debug, info, trace};
+use tracing::{debug, trace};
 use url::Url;
 
 #[derive(Debug, Default)]
@@ -68,7 +68,6 @@ pub struct ConsumerClient {
     session_instances: Mutex<HashMap<String, Arc<AmqpSession>>>,
     mgmt_client: Mutex<OnceLock<ManagementInstance>>,
     connection: OnceLock<AmqpConnection>,
-    receiver: OnceLock<AmqpReceiver>,
     credential: Box<dyn azure_core::auth::TokenCredential>,
     eventhub: String,
     url: String,
@@ -96,7 +95,6 @@ impl ConsumerClient {
             session_instances: Mutex::new(HashMap::new()),
             mgmt_client: Mutex::new(OnceLock::new()),
             connection: OnceLock::new(),
-            receiver: OnceLock::new(),
             credential: Box::new(credential),
             eventhub: eventhub_name,
             url: url,
@@ -116,6 +114,51 @@ impl ConsumerClient {
         Ok(())
     }
 
+    /// Receives events from a specific partition of the Event Hub.
+    ///
+    /// This function establishes a connection to the specified partition of the Event Hub and starts receiving events from it.
+    /// It returns a stream of `ReceivedEventData` items, representing the events received from the partition.
+    ///
+    /// # Arguments
+    ///
+    /// * `partition_id` - The ID of the partition to receive events from.
+    /// * `options` - Optional `ReceiveOptions` to configure the behavior of the receiver.
+    ///
+    /// # Returns
+    ///
+    /// A stream of `Result<ReceivedEventData>`, where each item represents an event received from the partition.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use async_std::stream::StreamExt;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    ///     let partition_id = "0";
+    ///     let options = None;
+    ///
+    ///     let event_stream = consumer.receive_events_on_partition(partition_id, options).await;
+    ///
+    ///     tokio::pin!(event_stream);
+    ///     while let Some(event_result) = event_stream.next().await {
+    ///         match event_result {
+    ///             Ok(event) => {
+    ///                 // Process the received event
+    ///                 println!("Received event: {:?}", event);
+    ///             }
+    ///             Err(err) => {
+    ///                 // Handle the error
+    ///                 eprintln!("Error receiving event: {:?}", err);
+    ///             }
+    ///         }
+    ///     }
+    /// }
+    /// ```
     #[tracing::instrument]
     pub async fn receive_events_on_partition(
         &self,
@@ -165,53 +208,6 @@ impl ConsumerClient {
                 yield event;
             }
         }
-    }
-
-    pub async fn receive_event_on_partition(
-        &self,
-        partition_id: impl Into<String> + Debug,
-        starting_position: Option<StartPosition>,
-    ) -> Result<ReceivedEventData> {
-        let partition_id = partition_id.into();
-
-        if self.receiver.get().is_none() {
-            let receiver_name = format!("receiver-{}-{}", partition_id, uuid::Uuid::new_v4());
-            let start_expression = StartPosition::start_expression(&starting_position);
-            let source_address = format!("{}/Partitions/{}", self.url, partition_id);
-
-            // Authorize access to the source address.
-            self.authorize_path(source_address.clone()).await?;
-
-            let session = self.get_session(&partition_id).await?;
-            let message_source = AmqpSource::builder()
-                .with_address(source_address)
-                .add_to_filter(
-                    AmqpSourceFilter::selector_filter().description(),
-                    Box::new(AmqpDescribed::new(
-                        AmqpSourceFilter::selector_filter().code(),
-                        start_expression,
-                    )),
-                )
-                .build();
-            let receiver = AmqpReceiver::new();
-            receiver
-                .attach(
-                    &session,
-                    message_source,
-                    Some(
-                        AmqpReceiverOptions::builder()
-                            //                        .with_auto_accept(true)
-                            //                        .with_credit_mode(ReceiverCreditMode::Auto(300))
-                            .with_name(receiver_name)
-                            .build(),
-                    ),
-                )
-                .await?;
-            self.receiver.set(receiver).unwrap();
-        }
-
-        let message = self.receiver.get().unwrap().receive().await?;
-        Ok(message.into())
     }
 
     #[tracing::instrument]
@@ -345,14 +341,14 @@ impl ConsumerClient {
     async fn get_session(&self, partition_id: &String) -> Result<Arc<AmqpSession>> {
         let mut session_instances = self.session_instances.lock().await;
         if !session_instances.contains_key(partition_id) {
-            info!("Creating session for partition: {:?}", partition_id);
+            debug!("Creating session for partition: {:?}", partition_id);
             let connection = self.connection.get().unwrap();
             let session = AmqpSession::new();
             session.begin(connection, None).await?;
             session_instances.insert(partition_id.clone(), Arc::new(session));
         }
         let rv = session_instances.get(partition_id).unwrap().clone();
-        info!("Cloning session for partition {:?}: {:?}", partition_id, rv);
+        debug!("Cloning session for partition {:?}: {:?}", partition_id, rv);
         Ok(rv)
     }
 }

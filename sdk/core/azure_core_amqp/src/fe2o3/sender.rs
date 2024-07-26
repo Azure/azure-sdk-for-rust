@@ -118,9 +118,4 @@ impl Fe2o3AmqpSender {
             sender: OnceLock::new(),
         }
     }
-
-    /// Returns a reference to the sender
-    pub(crate) fn get(&self) -> Arc<Mutex<fe2o3_amqp::Sender>> {
-        self.sender.get().unwrap().clone()
-    }
 }

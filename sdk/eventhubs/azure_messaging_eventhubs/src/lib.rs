@@ -314,6 +314,10 @@ pub mod models {
                     message_builder = message_builder.add_application_property(key, value);
                 }
             }
+            if let Some(event_body) = event_data.body {
+                message_builder =
+                    message_builder.with_body(AmqpMessageBody::Binary(vec![event_body.to_vec()]));
+            }
             message_builder.build()
         }
     }

@@ -13,7 +13,7 @@ use azure_core::error::{Error, Result};
 use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
-use tracing::{info, trace};
+use tracing::trace;
 
 #[derive(Debug)]
 pub(crate) struct Fe2o3AmqpReceiver {
@@ -40,7 +40,6 @@ impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
         let name = options.name().clone().unwrap_or_default();
         let source = source.into();
 
-        info!("Attaching receiver on {:?} with name: {:?}", source, name);
         let receiver = fe2o3_amqp::Receiver::builder()
             .receiver_settle_mode(fe2o3_amqp_types::definitions::ReceiverSettleMode::First)
             .source(source)
@@ -83,10 +82,5 @@ impl Fe2o3AmqpReceiver {
         Self {
             receiver: OnceLock::new(),
         }
-    }
-
-    /// Returns a reference to the Receiver
-    pub(crate) fn get(&self) -> Arc<Mutex<fe2o3_amqp::Receiver>> {
-        self.receiver.get().unwrap().clone()
     }
 }
