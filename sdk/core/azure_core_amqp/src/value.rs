@@ -338,9 +338,7 @@ where
     V: Into<AmqpValue>,
 {
     fn from_iter<I: IntoIterator<Item = V>>(iter: I) -> Self {
-        AmqpList {
-            0: iter.into_iter().map(|v| v.into()).collect(),
-        }
+        AmqpList(iter.into_iter().map(|v| v.into()).collect())
     }
 }
 

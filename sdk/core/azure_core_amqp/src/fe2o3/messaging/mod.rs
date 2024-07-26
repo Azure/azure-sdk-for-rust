@@ -294,10 +294,7 @@ impl From<AmqpMessage> for fe2o3_amqp_types::messaging::Message<EmptyBody> {
             .message_annotations(message.message_annotations().map(|x| x.clone().into()))
             .footer(message.footer().map(|x| x.clone().into()));
         match message.body() {
-            AmqpMessageBody::Empty => {
-                let message = message_builder.body(EmptyBody {}).build();
-                return message;
-            }
+            AmqpMessageBody::Empty => message_builder.body(EmptyBody {}).build(),
             _ => panic!("Expected EmptyBody"),
         }
     }
