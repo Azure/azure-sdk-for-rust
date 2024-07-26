@@ -253,7 +253,7 @@ pub mod models {
         }
 
         pub fn body(&self) -> Option<&[u8]> {
-            self.body.as_deref().map(|b| b.as_ref())
+            self.body.as_deref().map(|b| b)
         }
 
         pub fn content_type(&self) -> Option<&str> {
