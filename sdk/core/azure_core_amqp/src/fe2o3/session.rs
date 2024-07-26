@@ -14,7 +14,7 @@ use std::{
 use tokio::sync::Mutex;
 use tracing::debug;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub(crate) struct Fe2o3AmqpSession {
     session: OnceLock<Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>>>,
 }

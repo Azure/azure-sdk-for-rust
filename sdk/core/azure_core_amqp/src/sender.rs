@@ -47,7 +47,7 @@ pub trait AmqpSenderTrait {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct AmqpSenderImpl<T>(pub(crate) T);
 
 impl<T> AmqpSenderImpl<T>
@@ -65,7 +65,7 @@ type SenderImplementation = super::fe2o3::sender::Fe2o3AmqpSender;
 #[cfg(not(feature = "enable-fe2o3-amqp"))]
 type SenderImplementation = super::noop::NoopAmqpSender;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AmqpSender(pub(crate) AmqpSenderImpl<SenderImplementation>);
 
 impl AmqpSenderTrait for AmqpSender {
@@ -191,11 +191,8 @@ pub mod builders {
             mut self,
             properties: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
         ) -> Self {
-            let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = properties
-                .into()
-                .into_iter()
-                .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
-                .collect();
+            let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
+                properties.into().iter().collect();
 
             self.options.properties = Some(properties_map);
             self

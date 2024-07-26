@@ -311,15 +311,15 @@ impl Default for AmqpAnnotationKey {
     }
 }
 
-impl Into<AmqpAnnotationKey> for AmqpSymbol {
-    fn into(self) -> AmqpAnnotationKey {
-        AmqpAnnotationKey::Symbol(self)
+impl From<AmqpSymbol> for AmqpAnnotationKey {
+    fn from(symbol: AmqpSymbol) -> Self {
+        AmqpAnnotationKey::Symbol(symbol)
     }
 }
 
-impl Into<AmqpAnnotationKey> for u64 {
-    fn into(self) -> AmqpAnnotationKey {
-        AmqpAnnotationKey::Ulong(self)
+impl From<u64> for AmqpAnnotationKey {
+    fn from(ulong: u64) -> Self {
+        AmqpAnnotationKey::Ulong(ulong)
     }
 }
 
@@ -336,7 +336,7 @@ impl AmqpAnnotations {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct AmqpApplicationProperties(pub AmqpOrderedMap<String, AmqpValue>);
 
 impl AmqpApplicationProperties {
@@ -465,7 +465,7 @@ pub mod builders {
             self
         }
         pub fn with_expiry_policy(mut self, expiry_policy: TerminusExpiryPolicy) -> Self {
-            self.source.expiry_policy = Some(expiry_policy.into());
+            self.source.expiry_policy = Some(expiry_policy);
             self
         }
         pub fn with_timeout(mut self, timeout: u32) -> Self {
@@ -555,7 +555,7 @@ pub mod builders {
             self
         }
         pub fn with_expiry_policy(mut self, expiry_policy: TerminusExpiryPolicy) -> Self {
-            self.target.expiry_policy = Some(expiry_policy.into());
+            self.target.expiry_policy = Some(expiry_policy);
             self
         }
         pub fn with_timeout(mut self, timeout: u32) -> Self {

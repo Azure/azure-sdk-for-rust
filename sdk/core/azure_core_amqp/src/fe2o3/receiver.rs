@@ -14,7 +14,7 @@ use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 use tracing::trace;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct Fe2o3AmqpReceiver {
     receiver: OnceLock<Arc<Mutex<fe2o3_amqp::Receiver>>>,
 }

@@ -86,7 +86,7 @@ pub trait AmqpReceiverTrait {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct AmqpReceiverImpl<T>(pub(crate) T);
 
 impl<T> AmqpReceiverImpl<T>
@@ -104,7 +104,7 @@ type ReceiverImplementation = super::fe2o3::receiver::Fe2o3AmqpReceiver;
 #[cfg(not(feature = "enable-fe2o3-amqp"))]
 type ReceiverImplementation = super::noop::NoopAmqpReceiver;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AmqpReceiver(pub(crate) AmqpReceiverImpl<ReceiverImplementation>);
 
 impl AmqpReceiverTrait for AmqpReceiver {
@@ -173,11 +173,8 @@ pub mod builders {
             mut self,
             properties: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
         ) -> Self {
-            let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = properties
-                .into()
-                .into_iter()
-                .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
-                .collect();
+            let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
+                properties.into().iter().collect();
 
             self.options.properties = Some(properties_map);
             self

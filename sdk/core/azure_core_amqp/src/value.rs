@@ -12,7 +12,7 @@ impl PartialEq<&str> for AmqpSymbol {
 
 impl From<String> for AmqpSymbol {
     fn from(s: String) -> Self {
-        AmqpSymbol(s.into())
+        AmqpSymbol(s)
     }
 }
 impl From<AmqpSymbol> for String {
@@ -27,7 +27,7 @@ impl From<&str> for AmqpSymbol {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct AmqpList(pub Vec<AmqpValue>);
 
 impl AmqpList {
@@ -47,9 +47,9 @@ impl AmqpList {
 #[derive(Debug, PartialEq, Clone)]
 pub struct AmqpTimestamp(pub std::time::SystemTime);
 
-impl Into<AmqpTimestamp> for std::time::SystemTime {
-    fn into(self) -> AmqpTimestamp {
-        AmqpTimestamp(self)
+impl From<std::time::SystemTime> for AmqpTimestamp {
+    fn from(v: std::time::SystemTime) -> Self {
+        AmqpTimestamp(v)
     }
 }
 
@@ -316,7 +316,7 @@ where
 {
     fn from(v: Vec<(K, V)>) -> Self {
         AmqpOrderedMap {
-            inner: v.into_iter().map(|(k, v)| (k, v)).collect(),
+            inner: v.into_iter().collect(),
         }
     }
 }

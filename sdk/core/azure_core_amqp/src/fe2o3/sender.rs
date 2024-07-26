@@ -13,7 +13,7 @@ use super::error::{
     AmqpDeliveryRejected, AmqpNotAccepted, AmqpSenderAttach, AmqpSenderSend, Fe2o3AmqpError,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct Fe2o3AmqpSender {
     sender: OnceLock<Arc<Mutex<fe2o3_amqp::Sender>>>,
 }

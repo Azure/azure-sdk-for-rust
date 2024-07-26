@@ -40,7 +40,7 @@ pub trait AmqpSessionTrait {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub(crate) struct AmqpSessionImpl<T>(pub(crate) T);
 
 impl<T> AmqpSessionImpl<T>
@@ -58,7 +58,7 @@ type SessionImplementation = super::fe2o3::session::Fe2o3AmqpSession;
 #[cfg(not(feature = "enable-fe2o3-amqp"))]
 type SessionImplementation = super::noop::NoopAmqpSession;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AmqpSession(pub(crate) AmqpSessionImpl<SessionImplementation>);
 
 impl AmqpSessionTrait for AmqpSession {
@@ -67,7 +67,7 @@ impl AmqpSessionTrait for AmqpSession {
         connection: &AmqpConnection,
         options: Option<AmqpSessionOptions>,
     ) -> Result<()> {
-        self.0 .0.begin(&connection, options).await
+        self.0 .0.begin(connection, options).await
     }
 
     async fn end(&self) -> Result<()> {
