@@ -354,7 +354,7 @@ impl AmqpApplicationProperties {
 /// that is used in the Azure SDK for Event Hubs
 /// and is not a complete implementation of the AMQP message
 /// as defined in the AMQP specification
-/// https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html
+/// <https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html>
 ///
 #[derive(Debug, Clone, PartialEq)]
 pub struct AmqpMessage {
