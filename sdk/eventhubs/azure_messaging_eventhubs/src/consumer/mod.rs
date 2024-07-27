@@ -11,7 +11,7 @@
 ///
 /// Creating a new `ConsumerClient` instance:
 ///
-/// ```rust
+/// ```rust no_run
 /// use azure_messaging_eventhubs::consumer::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 ///
@@ -21,7 +21,7 @@
 ///
 /// Opening a connection to the Event Hub:
 ///
-/// ```rust
+/// ```rust no_run
 /// use azure_messaging_eventhubs::consumer::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 ///
@@ -47,7 +47,7 @@
 ///
 /// Closing the connection to the Event Hub:
 ///
-/// ```rust
+/// ```rust no_run
 /// use azure_messaging_eventhubs::consumer::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 ///
@@ -75,7 +75,7 @@
 ///
 /// Receiving events from a specific partition of the Event Hub:
 ///
-/// ```rust
+/// ```rust no_run
 /// use azure_messaging_eventhubs::consumer::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 /// use async_std::stream::StreamExt;
@@ -200,7 +200,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust no_run
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
@@ -288,7 +288,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust no_run
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
@@ -335,7 +335,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust no_run
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use async_std::stream::StreamExt;
@@ -437,7 +437,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust no_run
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
