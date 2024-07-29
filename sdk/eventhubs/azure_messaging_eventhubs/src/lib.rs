@@ -2,7 +2,6 @@
 // cspell: words amqp eventhub eventhubs eventdata
 
 #![recursion_limit = "128"]
-
 pub(crate) mod common;
 pub mod consumer;
 pub mod error;

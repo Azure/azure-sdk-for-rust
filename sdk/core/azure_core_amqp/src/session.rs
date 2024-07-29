@@ -52,10 +52,10 @@ where
     }
 }
 
-#[cfg(feature = "enable-fe2o3-amqp")]
+#[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
 type SessionImplementation = super::fe2o3::session::Fe2o3AmqpSession;
 
-#[cfg(not(feature = "enable-fe2o3-amqp"))]
+#[cfg(any(not(feature = "enable-fe2o3-amqp"), target_arch = "wasm32"))]
 type SessionImplementation = super::noop::NoopAmqpSession;
 
 #[derive(Debug, Clone, Default)]

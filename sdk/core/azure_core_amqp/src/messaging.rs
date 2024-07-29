@@ -412,8 +412,9 @@ impl AmqpMessage {
         self.body = body.into();
     }
 
+    #[allow(unused_variables)]
     pub fn serialize(message: AmqpMessage) -> Result<Vec<u8>> {
-        #[cfg(feature = "enable-fe2o3-amqp")]
+        #[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
         {
             let amqp_message = Into::<
                 fe2o3_amqp_types::messaging::Message<
@@ -426,8 +427,10 @@ impl AmqpMessage {
             .map_err(crate::fe2o3::error::AmqpSerialization::from)?;
             Ok(res)
         }
-        #[cfg(not(feature = "enable-fe2o3-amqp"))]
-        unimplemented!()
+        #[cfg(any(not(feature = "enable-fe2o3-amqp"), target_arch = "wasm32"))]
+        {
+            unimplemented!();
+        }
     }
 }
 
@@ -937,7 +940,7 @@ mod tests {
             let message = AmqpMessage::builder().build();
             let serialized = AmqpMessage::serialize(message).unwrap();
             assert_eq!(serialized, vec![0, 0x53, 0x77, 0x40]);
-            #[cfg(feature = "enable-fe2o3-amqp")]
+            #[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
             {
                 // Verify that the serialization of an AmqpMessage with no body matches
                 // the fe2o3-amqp serialization.

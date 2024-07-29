@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp
 
-#[cfg(feature = "enable-fe2o3-amqp")]
+#[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
 use crate::fe2o3::error::Fe2o3AmqpError;
 
 pub enum ErrorKind {
-    #[cfg(feature = "enable-fe2o3-amqp")]
+    #[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
     IronOxideError { source: Fe2o3AmqpError },
-    #[cfg(not(feature = "enable-fe2o3-amqp"))]
+    #[cfg(any(not(feature = "enable-fe2o3-amqp"), target_arch = "wasm32"))]
     NoopError,
 }
 
@@ -16,7 +16,7 @@ pub struct AmqpError {
 }
 
 impl AmqpError {
-    #[cfg(feature = "enable-fe2o3-amqp")]
+    #[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
     pub fn new_iron_oxide_error(source: Fe2o3AmqpError) -> Self {
         Self {
             kind: ErrorKind::IronOxideError { source },
@@ -32,11 +32,11 @@ impl std::error::Error for AmqpError {
 impl std::fmt::Display for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            #[cfg(feature = "enable-fe2o3-amqp")]
+            #[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
             ErrorKind::IronOxideError { source } => {
                 write!(f, "AMQP Transport Error {:?}", source)
             }
-            #[cfg(not(feature = "enable-fe2o3-amqp"))]
+            #[cfg(any(not(feature = "enable-fe2o3-amqp"), target_arch = "wasm32"))]
             ErrorKind::NoopError => write!(f, "Noop Error"),
         }
     }

@@ -1,43 +1,44 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp
 
-use super::sender::AmqpSenderOptions;
-use super::session::AmqpSessionOptions;
-use crate::amqp_client::messaging::{AmqpMessage, AmqpTarget};
-use crate::amqp_client::value::{AmqpOrderedMap, AmqpValue};
-use azure_core::error::Result;
+use super::{
+    cbs::AmqpClaimsBasedSecurityTrait,
+    connection::{AmqpConnection, AmqpConnectionTrait},
+    management::AmqpManagementTrait,
+    messaging::{AmqpMessage, AmqpSource, AmqpTarget},
+    receiver::{AmqpReceiverOptions, AmqpReceiverTrait},
+    sender::{AmqpSendOptions, AmqpSenderOptions, AmqpSenderTrait},
+    session::{AmqpSession, AmqpSessionOptions, AmqpSessionTrait},
+    value::{AmqpOrderedMap, AmqpValue},
+};
+use azure_core::{auth::AccessToken, error::Result};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct NoopAmqpConnection {}
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct NoopAmqpManagement {}
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct NoopAmqpSender {}
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
+pub(crate) struct NoopAmqpReceiver {}
+
+#[derive(Debug, Default, Clone)]
 pub(crate) struct NoopAmqpSession {}
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct NoopAmqpClaimsBasedSecurity {}
 
 impl NoopAmqpConnection {
     pub(crate) fn new() -> Self {
         Self {}
     }
-    pub(crate) async fn close(&self) -> Result<()> {
-        todo!()
-    }
-    pub(crate) async fn create_session(
-        &self,
-        options: AmqpSessionOptions,
-    ) -> Result<NoopAmqpSession> {
-        Ok(NoopAmqpSession {})
-    }
-
-    pub(crate) async fn create_claims_based_security(&self) -> Result<NoopAmqpClaimsBasedSecurity> {
-        Ok(NoopAmqpClaimsBasedSecurity {})
+}
+impl AmqpConnectionTrait for NoopAmqpConnection {
+    async fn close(&self) -> Result<()> {
+        unimplemented!()
     }
 }
 
@@ -45,53 +46,58 @@ impl NoopAmqpSession {
     pub(crate) fn new() -> Self {
         Self {}
     }
+}
 
-    pub(crate) async fn create_sender(
+impl AmqpSessionTrait for NoopAmqpSession {
+    #[allow(unused_variables)]
+    async fn begin(
         &self,
-        target: AmqpTarget,
-        options: Option<AmqpSenderOptions>,
-    ) -> Result<NoopAmqpSender> {
-        Ok(NoopAmqpSender {})
+        connection: &AmqpConnection,
+        options: Option<AmqpSessionOptions>,
+    ) -> Result<()> {
+        unimplemented!()
     }
 
-    pub(crate) async fn create_management(
-        &self,
-        _client_node_name: &str,
-    ) -> Result<NoopAmqpManagement> {
-        Ok(NoopAmqpManagement {})
-    }
-
-    pub(crate) async fn end(&self) -> Result<()> {
-        todo!()
+    async fn end(&self) -> Result<()> {
+        unimplemented!()
     }
 }
 
 impl NoopAmqpClaimsBasedSecurity {
-    pub(crate) fn new() -> Self {
+    #[allow(unused_variables)]
+    pub(crate) fn new(session: NoopAmqpSession) -> Self {
         Self {}
     }
-    pub(crate) async fn authorize_path(
-        &self,
-        _path: &str,
-        _secret: &str,
-        _expires_on: i64,
-    ) -> Result<()> {
-        todo!()
+}
+
+impl AmqpClaimsBasedSecurityTrait for NoopAmqpClaimsBasedSecurity {
+    async fn attach(&self) -> Result<()> {
+        unimplemented!();
     }
 }
 
 impl NoopAmqpManagement {
-    pub(crate) fn new() -> Self {
+    #[allow(unused_variables)]
+    pub(crate) fn new(
+        session: NoopAmqpSession,
+        name: impl Into<String>,
+        access_token: AccessToken,
+    ) -> Self {
         Self {}
     }
+}
+impl AmqpManagementTrait for NoopAmqpManagement {
+    async fn attach(&self) -> Result<()> {
+        unimplemented!();
+    }
 
-    pub(crate) async fn call(
+    #[allow(unused_variables)]
+    async fn call(
         &self,
-        _operation_type: String,
-        _entity: String,
-        _application_properties: Option<AmqpOrderedMap<String, AmqpValue>>,
+        operation_type: impl Into<String>,
+        application_properties: AmqpOrderedMap<String, AmqpValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
-        todo!()
+        unimplemented!();
     }
 }
 
@@ -99,12 +105,53 @@ impl NoopAmqpSender {
     pub(crate) fn new() -> Self {
         Self {}
     }
+}
 
-    pub(crate) fn max_message_size(&self) -> Option<u64> {
-        todo!()
+impl AmqpSenderTrait for NoopAmqpSender {
+    #[allow(unused_variables)]
+    async fn attach(
+        &self,
+        session: &AmqpSession,
+        name: impl Into<String>,
+        target: impl Into<AmqpTarget>,
+        options: Option<AmqpSenderOptions>,
+    ) -> Result<()> {
+        unimplemented!();
     }
 
-    pub(crate) async fn send(&self, _message: AmqpMessage) -> Result<()> {
-        todo!()
+    async fn max_message_size(&self) -> Option<u64> {
+        unimplemented!();
+    }
+
+    #[allow(unused_variables)]
+    async fn send(&self, message: AmqpMessage, options: Option<AmqpSendOptions>) -> Result<()> {
+        unimplemented!();
+    }
+}
+
+impl NoopAmqpReceiver {
+    pub(crate) fn new() -> Self {
+        Self {}
+    }
+}
+
+impl AmqpReceiverTrait for NoopAmqpReceiver {
+    #[allow(unused_variables)]
+    async fn attach(
+        &self,
+        session: &AmqpSession,
+        source: impl Into<AmqpSource>,
+        options: Option<AmqpReceiverOptions>,
+    ) -> Result<()> {
+        unimplemented!();
+    }
+
+    async fn max_message_size(&self) -> Option<u64> {
+        unimplemented!();
+    }
+
+    #[allow(unused_variables)]
+    async fn receive(&self) -> Result<AmqpMessage> {
+        unimplemented!();
     }
 }

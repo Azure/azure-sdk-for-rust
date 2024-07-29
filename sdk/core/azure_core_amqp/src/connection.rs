@@ -44,10 +44,10 @@ pub trait AmqpConnectionTrait {
     }
 }
 
-#[cfg(feature = "enable-fe2o3-amqp")]
+#[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
 type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
 
-#[cfg(not(any(feature = "enable-fe2o3-amqp")))]
+#[cfg(any(not(feature = "enable-fe2o3-amqp"), target_arch = "wasm32"))]
 type ConnectionImplementation = super::noop::NoopAmqpConnection;
 
 #[derive(Debug, Default)]

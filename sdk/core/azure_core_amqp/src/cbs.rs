@@ -6,10 +6,10 @@ use std::fmt::Debug;
 
 use super::session::AmqpSession;
 
-#[cfg(feature = "enable-fe2o3-amqp")]
+#[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
 type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
 
-#[cfg(not(any(feature = "enable-fe2o3-amqp")))]
+#[cfg(any(not(any(feature = "enable-fe2o3-amqp")), target_arch = "wasm32"))]
 type CbsImplementation = super::noop::NoopAmqpClaimsBasedSecurity;
 
 pub trait AmqpClaimsBasedSecurityTrait {
