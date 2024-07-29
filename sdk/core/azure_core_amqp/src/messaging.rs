@@ -740,12 +740,16 @@ pub mod builders {
             self.message.application_properties = Some(application_properties);
             self
         }
-        pub fn add_application_property(mut self, key: String, value: AmqpValue) -> Self {
+        pub fn add_application_property(
+            mut self,
+            key: impl Into<String>,
+            value: impl Into<AmqpValue>,
+        ) -> Self {
             if let Some(application_properties) = &mut self.message.application_properties {
-                application_properties.0.insert(key, value);
+                application_properties.0.insert(key.into(), value.into());
             } else {
                 let mut application_properties = AmqpOrderedMap::new();
-                application_properties.insert(key, value);
+                application_properties.insert(key.into(), value.into());
                 self.message.application_properties =
                     Some(AmqpApplicationProperties(application_properties));
             }

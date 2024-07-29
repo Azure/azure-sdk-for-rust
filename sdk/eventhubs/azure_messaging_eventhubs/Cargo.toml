@@ -34,6 +34,7 @@ rustc_version = "0.4"
 async-std = { version = "1.12", features = ["attributes"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 azure_identity = { path = "../../identity/azure_identity" }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [features]
 test_e2e = []

@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
-//cspell: words eventhubs eventhub eventdata
+//cspell: words eventhubs eventhub eventdata amqp
 
 #![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
 
+use azure_core_amqp::messaging::{AmqpMessage, AmqpMessageBody};
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 use azure_messaging_eventhubs::producer::{
     batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions,
@@ -224,6 +225,48 @@ async fn test_create_and_send_batch() {
         let res = client.submit_batch(&batch).await;
         assert!(res.is_ok());
     }
+}
+
+#[tokio::test]
+async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Error>> {
+    common::setup();
+    let host = env::var("EVENTHUBS_HOST").unwrap();
+    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+
+    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+
+    let client = ProducerClient::new(
+        host,
+        eventhub.clone(),
+        credential,
+        ProducerClientOptions::builder()
+            .with_application_id("test_create_batch")
+            .build(),
+    );
+    client.open().await?;
+
+    let batch = client.create_batch(None).await?;
+    assert_eq!(batch.len(), 0);
+
+    assert!(batch.try_add_amqp_message(
+        AmqpMessage::builder()
+            .with_body(AmqpMessageBody::Value("This is data".into()))
+            .build(),
+        None
+    )?);
+
+    // Message with binary body and application property
+    assert!(batch.try_add_amqp_message(
+        AmqpMessage::builder()
+            .with_body(vec![1, 2, 3, 4])
+            .add_application_property("MessageName", "Frederick")
+            .build(),
+        None
+    )?);
+
+    client.submit_batch(&batch).await?;
+
+    Ok(())
 }
 
 #[tokio::test]
