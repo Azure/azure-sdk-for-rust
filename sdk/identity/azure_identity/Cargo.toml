@@ -34,7 +34,7 @@ tz-rs = { workspace = true, optional = true }
 
 [dev-dependencies]
 reqwest = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
 tracing-subscriber = { workspace = true }
 serde_test = { workspace = true }
 serial_test = { workspace = true }
