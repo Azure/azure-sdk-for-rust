@@ -4,10 +4,10 @@
 use crate::messaging::{AmqpMessage, AmqpTarget};
 use crate::sender::{AmqpSendOptions, AmqpSenderOptions, AmqpSenderTrait};
 use crate::session::AmqpSession;
+use async_std::sync::Mutex;
 use azure_core::error::Result;
 use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};
-use tokio::sync::Mutex;
 
 use super::error::{
     AmqpDeliveryRejected, AmqpNotAccepted, AmqpSenderAttach, AmqpSenderSend, Fe2o3AmqpError,

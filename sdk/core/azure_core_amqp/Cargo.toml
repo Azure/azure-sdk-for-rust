@@ -18,22 +18,22 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
+async-std = { workspace = true }
 azure_core = { path = "../../core/azure_core" }
 time = { workspace = true }
 tracing = { workspace = true }
 url = { workspace = true }
 uuid = { workspace = true }
-tokio = { workspace = true }
-fe2o3-amqp = { version = "0.11.0", features = [
+fe2o3-amqp = { version = "0.11", features = [
   "native-tls",
   "tracing",
   "uuid",
 ], optional = true }
-fe2o3-amqp-ext = { version = "0.11.0", features = [], optional = true }
-fe2o3-amqp-management = { version = "0.11.0", optional = true }
-fe2o3-amqp-cbs = { version = "0.11.0", optional = true }
-fe2o3-amqp-types = { version = "0.11.0", optional = true }
-serde_amqp = { version = "0.11.0", optional = true, features = ["uuid"] }
+fe2o3-amqp-ext = { version = "0.11", features = [], optional = true }
+fe2o3-amqp-management = { version = "0.11", optional = true }
+fe2o3-amqp-cbs = { version = "0.11", optional = true }
+fe2o3-amqp-types = { version = "0.11", optional = true }
+serde_amqp = { version = "0.11", optional = true, features = ["uuid"] }
 serde_bytes = { version = "0.11", optional = true }
 
 [build-dependencies]

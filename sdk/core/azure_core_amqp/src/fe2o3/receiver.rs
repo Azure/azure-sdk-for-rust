@@ -8,10 +8,10 @@ use crate::error::AmqpError;
 use crate::messaging::{AmqpMessage, AmqpSource};
 use crate::receiver::{AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode};
 use crate::session::AmqpSession;
+use async_std::sync::Mutex;
 use azure_core::error::{Error, Result};
 use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};
-use tokio::sync::Mutex;
 use tracing::trace;
 
 #[derive(Debug, Default)]

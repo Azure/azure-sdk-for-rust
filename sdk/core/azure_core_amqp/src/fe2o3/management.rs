@@ -9,11 +9,11 @@ use crate::{
     value::{AmqpOrderedMap, AmqpValue},
 };
 
+use async_std::sync::Mutex;
 use azure_core::{auth::AccessToken, error::Result};
 use fe2o3_amqp_management::operations::ReadResponse;
 use fe2o3_amqp_types::{messaging::ApplicationProperties, primitives::SimpleValue};
 use std::sync::{Arc, OnceLock};
-use tokio::sync::Mutex;
 use tracing::debug;
 
 use super::{

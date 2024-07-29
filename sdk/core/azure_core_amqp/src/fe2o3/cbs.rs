@@ -6,6 +6,7 @@ use super::{
     session::Fe2o3AmqpSession,
 };
 use crate::cbs::AmqpClaimsBasedSecurityTrait;
+use async_std::sync::Mutex;
 use azure_core::error::Result;
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
@@ -14,7 +15,6 @@ use std::{
     fmt::Debug,
     sync::{Arc, OnceLock},
 };
-use tokio::sync::Mutex;
 use tracing::{debug, trace};
 
 #[derive(Debug)]
