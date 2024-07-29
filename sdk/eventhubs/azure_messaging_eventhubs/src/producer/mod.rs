@@ -18,6 +18,7 @@ use crate::{
     error::ErrorKind,
     models::{EventHubPartitionProperties, EventHubProperties},
 };
+use async_std::sync::Mutex;
 use azure_core::RetryOptions;
 use azure_core::{
     auth::AccessToken,
@@ -26,7 +27,6 @@ use azure_core::{
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::sync::{Arc, OnceLock};
 use std::{boxed::Box, collections::HashMap};
-use tokio::sync::Mutex;
 use tracing::{debug, trace};
 use url::Url;
 
@@ -335,8 +335,8 @@ mod tests {
 
     use super::*;
 
-    #[tokio::test]
-    async fn test_producer_client_options_builder() {
+    #[test]
+    fn test_producer_client_options_builder() {
         let options = ProducerClientOptions::builder()
             .with_application_id("application_id")
             .with_retry_options(RetryOptions::default())

@@ -132,13 +132,13 @@ use azure_core_amqp::{
     value::AmqpDescribed,
 };
 
+use async_std::sync::Mutex;
 use futures::stream::Stream;
 use std::{
     collections::HashMap,
     fmt::Debug,
     sync::{Arc, OnceLock},
 };
-use tokio::sync::Mutex;
 use tracing::{debug, trace};
 use url::Url;
 
@@ -488,7 +488,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust no_run
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///

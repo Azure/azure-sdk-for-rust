@@ -23,15 +23,14 @@ time = { workspace = true }
 tracing = { workspace = true }
 url = { workspace = true }
 uuid = { workspace = true }
-tokio = { workspace = true }
 futures = { workspace = true }
 async-stream = { version = "0.3.5" }
+async-std = { workspace = true }
 
 [build-dependencies]
 rustc_version = "0.4"
 
 [dev-dependencies]
-async-std = { version = "1.12", features = ["attributes"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 azure_identity = { path = "../../identity/azure_identity" }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
