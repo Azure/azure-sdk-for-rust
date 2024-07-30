@@ -36,7 +36,7 @@ impl TransportOptions {
     }
 
     /// Use these options to send a request.
-    pub async fn send(&self, ctx: &Context<'_>, request: &mut Request) -> Result<RawResponse> {
+    pub async fn send(&self, ctx: &Context<'_>, request: &mut Request) -> Result<Response> {
         use TransportOptionsImpl as I;
         match &self.inner {
             I::Http { http_client } => http_client.execute_request(request).await,

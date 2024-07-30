@@ -45,11 +45,11 @@ pub async fn exchange(
     );
     req.set_body(encoded);
 
-    let rsp = http_client.execute_request(&req).await?;
+    let rsp = http_client.execute_request(&req).await?.map();
     let rsp_status = rsp.status();
 
     if rsp_status.is_success() {
-        rsp.json().await.map_kind(ErrorKind::Credential)
+        rsp.read_body().await.map_kind(ErrorKind::Credential)
     } else {
         let rsp_body = rsp.into_body().collect().await?;
         let token_error: RefreshTokenError =
@@ -69,6 +69,7 @@ pub struct RefreshTokenResponse {
     access_token: Secret,
     refresh_token: Secret,
 }
+azure_core::json_serializable!(RefreshTokenResponse);
 
 impl RefreshTokenResponse {
     /// Returns the `token_type`. Always `Bearer` for Azure AD.

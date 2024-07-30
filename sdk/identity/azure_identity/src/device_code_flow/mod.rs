@@ -5,14 +5,7 @@
 //! You can learn more about this authorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code).
 mod device_code_responses;
 
-use azure_core::{
-    content_type,
-    error::{http_response_from_body, Error, ErrorKind},
-    headers,
-    json::from_json,
-    sleep::sleep,
-    HttpClient, Method, RawResponse, Request, Url,
-};
+use azure_core::{content_type, error::{http_response_from_body, Error, ErrorKind}, headers, json::from_json, sleep::sleep, HttpClient, Method, Request, Response, Url};
 pub use device_code_responses::*;
 use futures::stream::unfold;
 use serde::Deserialize;
@@ -172,7 +165,7 @@ async fn post_form(
     http_client: Arc<dyn HttpClient>,
     url: &str,
     form_body: String,
-) -> azure_core::Result<RawResponse> {
+) -> azure_core::Result<Response> {
     let url = Url::parse(url)?;
     let mut req = Request::new(url, Method::Post);
     req.insert_header(

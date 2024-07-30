@@ -3,7 +3,7 @@
 
 use crate::http::{
     headers::{HeaderName, HeaderValue, Headers},
-    Body, HttpClient, Method, PinnedStream, RawResponse, Request, StatusCode,
+    Body, HttpClient, Method, PinnedStream, RawResponse, Request, Response, StatusCode,
 };
 use async_trait::async_trait;
 use futures::TryStreamExt;
@@ -37,7 +37,7 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for ::reqwest::Client {
-    async fn execute_request(&self, request: &Request) -> Result<RawResponse> {
+    async fn execute_request(&self, request: &Request) -> Result<Response> {
         let url = request.url().clone();
         let method = request.method();
         let mut req = self.request(try_from_method(*method)?, url.clone());
@@ -75,7 +75,7 @@ impl HttpClient for ::reqwest::Client {
             )
         }));
 
-        Ok(RawResponse::new(try_from_status(status)?, headers, body))
+        Ok(Response::new(try_from_status(status)?, headers, body))
     }
 }
 
