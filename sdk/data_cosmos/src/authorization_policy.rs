@@ -142,6 +142,7 @@ fn generate_resource_link(request: &Request) -> String {
 /// - "primary": one of the two service-level tokens
 /// - "resource": e.g. a single database
 /// - "aad": Azure Active Directory token
+///
 /// In the "primary" case the signature must be constructed by signing the HTTP method,
 /// resource type, resource link (the relative URI) and the current time.
 ///

@@ -80,7 +80,7 @@ impl QueueClient {
     /// Non-destructively read a message
     ///
     /// * `timeout` : Sets the maximum duration for the HTTP connection when receiving a message.
-    /// If no message is received within this time, an empty 204 HTTP response will be returned.
+    ///   If no message is received within this time, an empty 204 HTTP response will be returned.
     ///
     /// Note: This function does not return the delete location
     /// of the message, so, after reading, you will lose
@@ -107,7 +107,7 @@ impl QueueClient {
     /// Non-destructively read a message but track it
     ///
     /// * `timeout` : Sets the maximum duration for the HTTP connection when receiving a message.
-    /// If no message is received within this time, an empty 204 HTTP response will be returned.
+    ///   If no message is received within this time, an empty 204 HTTP response will be returned.
     ///
     /// Note: This function returns a `PeekLockResponse`
     /// that contains a helper `delete_message` function.
