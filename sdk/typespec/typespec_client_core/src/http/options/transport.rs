@@ -40,7 +40,7 @@ impl TransportOptions {
         use TransportOptionsImpl as I;
         match &self.inner {
             I::Http { http_client } => http_client.execute_request(request).await,
-            I::Custom(s) => s.send(ctx, request, &[]).await,
+            I::Custom(s) => s.send(ctx, request, &[]).await.map(|r| r.map_body()),
         }
     }
 }

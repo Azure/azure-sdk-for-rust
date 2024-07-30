@@ -118,10 +118,17 @@ impl<T> Response<T> {
     ///
     /// async fn parse_response(response: Response<GetSecretResponse>) {
     ///   // Calling `map` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
-    ///   let my_struct: MySecretResponse = response.map().read_body().await.unwrap();
+    ///   let my_struct: MySecretResponse = response.map_body().read_body().await.unwrap();
     ///   println!("value: {}", my_struct.value);
     /// }
-    pub fn map<U>(self) -> Response<U> {
+    // NOTE: You may ask yourself, why not just have 'read_body' which can deserialize into any type?
+    // We don't want users to have to specify the target type unless they plan to change it from the default.
+    // Service client methods are expected to return `Response<SomethingResponse>` where `SomethingResponse` is the service-specific response type.
+    // Users of those clients should be able to call `read_body` without having to specify the target type.
+    // However, we ALSO want to allow users to specify a different target type if they want to (for example, to limit what they deserialize or work around a service-specific issue).
+    // So this method is a compromise that allows most users to avoid specifying the target type while still allowing users to specify a different target type if they want to.
+    // If Rust ever stabilizes type parameter defaults for functions (https://github.com/rust-lang/rust/issues/27336), we could consider changing this.
+    pub fn map_body<U>(self) -> Response<U> {
         Response {
             status: self.status,
             headers: self.headers,
@@ -131,7 +138,6 @@ impl<T> Response<T> {
     }
 }
 
-// TODO: We don't want Bytes here, but I'm having ownership issues with &'a [u8] so we stick with this for now.
 impl<T: FromResponseBody> Response<T> {
     /// Fetches the entire body and tries to convert it into type `T`.
     pub async fn read_body(self) -> crate::Result<T> {
@@ -228,6 +234,33 @@ impl fmt::Debug for ResponseBody {
 
 #[cfg(test)]
 mod tests {
+    use crate::error::ErrorKind;
+    use crate::{FromResponseBody, Response};
+
+    #[tokio::test]
+    pub async fn body_type_controls_consumption_of_response_body() {
+        pub struct LazyBody;
+        impl FromResponseBody for LazyBody {
+            async fn from_response_body(_body: crate::ResponseBody) -> crate::Result<Self> {
+                // Don't actually consume the body
+                Ok(LazyBody)
+            }
+        }
+
+        // Create a response that fails as you read the body.
+        let response = Response::<()>::new(
+            http_types::StatusCode::Ok,
+            crate::headers::Headers::new(),
+            Box::pin(futures::stream::once(async {
+                Err(ErrorKind::Other.into_error())
+            })),
+        );
+
+        // Because LazyBody chose not to consume the body, this should succeed.
+        let res: crate::Result<LazyBody> = response.map_body().read_body().await;
+        assert!(res.is_ok());
+    }
+
     mod json {
         use crate::http::headers::Headers;
         use crate::http::Response;
@@ -270,7 +303,7 @@ mod tests {
             }
             json_serializable!(MySecretResponse);
 
-            let response = get_secret().map();
+            let response = get_secret().map_body();
             let secret: MySecretResponse = response.read_body().await.unwrap();
             assert_eq!(secret.yon_name, "my_secret");
             assert_eq!(secret.yon_value, "my_value");
@@ -320,7 +353,7 @@ mod tests {
             }
             xml_serializable!(MySecretResponse);
 
-            let response = get_secret().map();
+            let response = get_secret().map_body();
             let secret: MySecretResponse = response.read_body().await.unwrap();
             assert_eq!(secret.yon_name, "my_secret");
             assert_eq!(secret.yon_value, "my_value");

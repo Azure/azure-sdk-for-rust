@@ -77,7 +77,7 @@ pub async fn perform(
         content_type::APPLICATION_X_WWW_FORM_URLENCODED,
     );
     req.set_body(encoded);
-    let rsp: Response<LoginResponse> = http_client.execute_request(&req).await?.map();
+    let rsp: Response<LoginResponse> = http_client.execute_request(&req).await?.map_body();
     let rsp_status = rsp.status();
     debug!("rsp_status == {:?}", rsp_status);
     if rsp_status.is_success() {

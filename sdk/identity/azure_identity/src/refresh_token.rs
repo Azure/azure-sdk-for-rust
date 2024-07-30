@@ -45,7 +45,7 @@ pub async fn exchange(
     );
     req.set_body(encoded);
 
-    let rsp = http_client.execute_request(&req).await?.map();
+    let rsp = http_client.execute_request(&req).await?.map_body();
     let rsp_status = rsp.status();
 
     if rsp_status.is_success() {
