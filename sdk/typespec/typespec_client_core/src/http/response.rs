@@ -115,6 +115,7 @@ impl<T> Response<T> {
     /// struct MySecretResponse {
     ///    value: String,
     /// }
+    /// azure_core::json_serializable!(MySecretResponse); // Mark the type as deserializable from JSON.
     ///
     /// async fn parse_response(response: Response<GetSecretResponse>) {
     ///   // Calling `map` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
