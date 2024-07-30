@@ -6,8 +6,11 @@
 ###########
 
 # Catch all for non-code project files and unowned files | folders
-/**                      @heaths @RickWinter
-/sdk/                    @heaths @RickWinter
+/**                      @heaths @RickWinter @ronniegeraghty
+/sdk/                    @heaths @RickWinter @ronniegeraghty
+
+# Git Hub integration and bot rules
+/.github/                @heaths @RickWinter @ronniegeraghty
 
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Azure.Core
