@@ -68,6 +68,7 @@ impl std::fmt::Debug for IoTHubCredentials {
 /// There are several ways to construct the `IoTHub` Service object. Either by:
 /// - providing the `IoT` Hub name and the private key.
 /// - providing the connection string.
+///
 /// The `IoTHubService` then uses the provided information to create a SAS token that it will
 /// use to communicate with the `IoT` Hub.
 #[derive(Clone, Debug)]
