@@ -38,8 +38,7 @@ impl ToTokens for RequestBuilderSendCode {
             quote! { &self.#url_arg }
         });
         let url_str_args = quote! { #(#url_args),* };
-
-        let fpath = format!("{{}}{}", &format_path(&new_request_code.path));
+        let fpath = PARAM_RE.replace_all(&new_request_code.path, "{}");
 
         let mut match_status = TokenStream::new();
         for status_response in &self.response_code.status_responses {
@@ -58,7 +57,8 @@ impl ToTokens for RequestBuilderSendCode {
             let api_version = &self.request_builder.api_version;
             quote! {
                 fn url(&self) -> azure_core::Result<azure_core::Url> {
-                    let mut url = azure_core::Url::parse(&format!(#fpath, self.client.endpoint(), #url_str_args))?;
+                    let mut url = self.client.endpoint().clone();
+                    url.set_path(&format!(#fpath, #url_str_args));
 
                     let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                     if !has_api_version_already {
@@ -70,7 +70,9 @@ impl ToTokens for RequestBuilderSendCode {
         } else {
             quote! {
                 fn url(&self) -> azure_core::Result<azure_core::Url> {
-                    let url = azure_core::Url::parse(&format!(#fpath, self.client.endpoint(), #url_str_args))?;
+                    let mut url = self.client.endpoint().clone();
+                    url.set_path(&format!(#fpath, #url_str_args));
+
                     Ok(url)
                 }
             }
@@ -209,10 +211,6 @@ impl ToTokens for RequestBuilderSendCode {
         tokens.extend(fut);
         tokens.extend(urlfn)
     }
-}
-
-fn format_path(path: &str) -> String {
-    PARAM_RE.replace_all(path, "{}").to_string()
 }
 
 fn get_continuable_param(next_link_name: &str, request_builder: &SetRequestCode) -> Option<String> {
