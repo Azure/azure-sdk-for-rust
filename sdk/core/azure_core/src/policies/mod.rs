@@ -1,10 +1,12 @@
 mod custom_headers_policy;
 mod retry_policies;
+mod storage_bearer_token_policy;
 mod telemetry_policy;
 mod transport;
 
 pub use custom_headers_policy::{CustomHeaders, CustomHeadersPolicy};
 pub use retry_policies::*;
+pub use storage_bearer_token_policy::BearerTokenCredentialPolicy;
 pub use telemetry_policy::*;
 pub use transport::*;
 
