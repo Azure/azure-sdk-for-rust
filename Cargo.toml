@@ -5,6 +5,8 @@ members = [
   "sdk/core/azure_core",
   "sdk/identity/azure_identity",
   "eng/test/mock_transport",
+  "sdk/storage",
+  "sdk/storage/azure_storage_blob",
 ]
 
 [workspace.package]
@@ -21,6 +23,10 @@ path = "sdk/core/azure_core"
 [workspace.dependencies.azure_identity]
 version = "0.19.0"
 path = "sdk/identity/azure_identity"
+
+[workspace.dependencies.azure_storage_common]
+version = "0.1.0"
+path = "sdk/storage"
 
 [workspace.dependencies]
 async-lock = "3.0"
