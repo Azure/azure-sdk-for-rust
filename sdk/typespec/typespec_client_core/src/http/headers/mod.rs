@@ -9,7 +9,7 @@ mod microsoft;
 pub use common::*;
 pub use microsoft::*;
 
-use std::{fmt::Debug, str::FromStr};
+use std::{borrow::Cow, fmt::Debug, str::FromStr};
 use typespec::error::{Error, ErrorKind, ResultExt};
 
 /// A trait for converting a type into request headers.
@@ -179,18 +179,18 @@ impl From<std::collections::HashMap<HeaderName, HeaderValue>> for Headers {
 
 /// A header name.
 #[derive(Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
-pub struct HeaderName(std::borrow::Cow<'static, str>);
+pub struct HeaderName(Cow<'static, str>);
 
 impl HeaderName {
     /// Create a header name from a static `str`.
     pub const fn from_static(s: &'static str) -> Self {
         ensure_no_uppercase(s);
-        Self(std::borrow::Cow::Borrowed(s))
+        Self(Cow::Borrowed(s))
     }
 
     fn from_cow<C>(c: C) -> Self
     where
-        C: Into<std::borrow::Cow<'static, str>>,
+        C: Into<Cow<'static, str>>,
     {
         let c = c.into();
         assert!(
@@ -234,18 +234,18 @@ impl From<String> for HeaderName {
 
 /// A header value.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct HeaderValue(std::borrow::Cow<'static, str>);
+pub struct HeaderValue(Cow<'static, str>);
 
 impl HeaderValue {
     /// Create a header value from a static `str`.
     pub const fn from_static(s: &'static str) -> Self {
-        Self(std::borrow::Cow::Borrowed(s))
+        Self(Cow::Borrowed(s))
     }
 
     /// Create a header value from a [`Cow`].
     pub fn from_cow<C>(c: C) -> Self
     where
-        C: Into<std::borrow::Cow<'static, str>>,
+        C: Into<Cow<'static, str>>,
     {
         Self(c.into())
     }
