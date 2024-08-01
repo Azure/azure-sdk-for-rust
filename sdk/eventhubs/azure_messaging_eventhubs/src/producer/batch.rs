@@ -45,7 +45,7 @@ struct EventDataBatchState {
 /// batch.try_add_event_data("Hello, Event Hub!", None)?;
 /// batch.try_add_event_data("This is another event.", None)?;
 ///
-/// producer.submit_batch(&batch).await?;
+/// producer_client.submit_batch(&batch).await?;
 ///
 /// # Ok(())
 /// # }

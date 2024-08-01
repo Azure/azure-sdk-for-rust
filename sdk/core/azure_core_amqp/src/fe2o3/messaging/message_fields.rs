@@ -9,7 +9,6 @@ use crate::{
     },
     value::{AmqpOrderedMap, AmqpValue},
 };
-use fe2o3_amqp_types::messaging::annotations::OwnedKey;
 
 impl From<fe2o3_amqp_types::messaging::MessageId> for AmqpMessageId {
     fn from(message_id: fe2o3_amqp_types::messaging::MessageId) -> Self {
@@ -46,6 +45,78 @@ impl From<AmqpMessageId> for fe2o3_amqp_types::messaging::MessageId {
                 fe2o3_amqp_types::messaging::MessageId::Ulong(message_id)
             }
         }
+    }
+}
+
+#[test]
+fn test_message_id_conversion() {
+    use uuid::Uuid;
+    {
+        let message_id = fe2o3_amqp_types::messaging::MessageId::String("test".into());
+        let amqp_message_id: AmqpMessageId = message_id.clone().into();
+        assert_eq!(amqp_message_id, AmqpMessageId::String("test".into()));
+        let fe2o3_message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.into();
+        assert_eq!(fe2o3_message_id, message_id);
+    }
+
+    {
+        let uuid = Uuid::new_v4();
+        let message_id = fe2o3_amqp_types::messaging::MessageId::Uuid(uuid.into());
+        let amqp_message_id: AmqpMessageId = message_id.clone().into();
+        assert_eq!(amqp_message_id, AmqpMessageId::from(uuid));
+
+        let fe2o3_message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.into();
+        assert_eq!(fe2o3_message_id, message_id);
+    }
+
+    {
+        let message_id = fe2o3_amqp_types::messaging::MessageId::Binary(vec![1, 2, 3].into());
+        let amqp_message_id: AmqpMessageId = message_id.clone().into();
+        assert_eq!(amqp_message_id, AmqpMessageId::Binary(vec![1, 2, 3]));
+        let fe2o3_message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.into();
+        assert_eq!(fe2o3_message_id, message_id);
+    }
+
+    {
+        let message_id = fe2o3_amqp_types::messaging::MessageId::Ulong(1);
+        let amqp_message_id: AmqpMessageId = message_id.clone().into();
+        assert_eq!(amqp_message_id, AmqpMessageId::Ulong(1));
+        let fe2o3_message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.into();
+        assert_eq!(fe2o3_message_id, message_id);
+    }
+
+    {
+        let amqp_message_id = AmqpMessageId::String("test".into());
+        let message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.clone().into();
+        assert_eq!(
+            message_id,
+            fe2o3_amqp_types::messaging::MessageId::String("test".into())
+        );
+        let amqp_round_trip: AmqpMessageId = message_id.into();
+        assert_eq!(amqp_round_trip, amqp_message_id);
+    }
+    {
+        let uuid = Uuid::new_v4();
+        let amqp_message_id = AmqpMessageId::from(uuid);
+        let message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.clone().into();
+        assert_eq!(
+            message_id,
+            fe2o3_amqp_types::messaging::MessageId::Uuid(fe2o3_amqp_types::primitives::Uuid::from(
+                uuid
+            ))
+        );
+        let amqp_round_trip: AmqpMessageId = message_id.into();
+        assert_eq!(amqp_round_trip, amqp_message_id);
+    }
+    {
+        let amqp_message_id = AmqpMessageId::Binary(vec![1, 2, 3]);
+        let message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.clone().into();
+        assert_eq!(
+            message_id,
+            fe2o3_amqp_types::messaging::MessageId::Binary(vec![1, 2, 3].into())
+        );
+        let amqp_round_trip: AmqpMessageId = message_id.into();
+        assert_eq!(amqp_round_trip, amqp_message_id);
     }
 }
 
@@ -110,21 +181,55 @@ impl From<crate::messaging::AmqpApplicationProperties>
     }
 }
 
-impl From<crate::messaging::AmqpAnnotationKey> for OwnedKey {
+impl From<crate::messaging::AmqpAnnotationKey>
+    for fe2o3_amqp_types::messaging::annotations::OwnedKey
+{
     fn from(key: AmqpAnnotationKey) -> Self {
         match key {
-            AmqpAnnotationKey::Ulong(key) => OwnedKey::Ulong(key),
-            AmqpAnnotationKey::Symbol(key) => OwnedKey::Symbol(key.into()),
+            AmqpAnnotationKey::Ulong(key) => {
+                fe2o3_amqp_types::messaging::annotations::OwnedKey::Ulong(key)
+            }
+            AmqpAnnotationKey::Symbol(key) => {
+                fe2o3_amqp_types::messaging::annotations::OwnedKey::Symbol(key.into())
+            }
         }
     }
 }
 
-impl From<OwnedKey> for crate::messaging::AmqpAnnotationKey {
-    fn from(key: OwnedKey) -> Self {
+impl From<fe2o3_amqp_types::messaging::annotations::OwnedKey>
+    for crate::messaging::AmqpAnnotationKey
+{
+    fn from(key: fe2o3_amqp_types::messaging::annotations::OwnedKey) -> Self {
         match key {
-            OwnedKey::Ulong(key) => crate::messaging::AmqpAnnotationKey::Ulong(key),
-            OwnedKey::Symbol(key) => crate::messaging::AmqpAnnotationKey::Symbol(key.into()),
+            fe2o3_amqp_types::messaging::annotations::OwnedKey::Ulong(key) => {
+                crate::messaging::AmqpAnnotationKey::Ulong(key)
+            }
+            fe2o3_amqp_types::messaging::annotations::OwnedKey::Symbol(key) => {
+                crate::messaging::AmqpAnnotationKey::Symbol(key.into())
+            }
         }
+    }
+}
+
+#[test]
+fn test_owned_key_conversion() {
+    {
+        let fe2o3_key = fe2o3_amqp_types::messaging::annotations::OwnedKey::Ulong(1995);
+        let amqp_key = AmqpAnnotationKey::from(fe2o3_key.clone());
+
+        assert_eq!(amqp_key, AmqpAnnotationKey::Ulong(1995));
+        let round_trip_key = fe2o3_amqp_types::messaging::annotations::OwnedKey::from(amqp_key);
+        assert_eq!(round_trip_key, fe2o3_key);
+    }
+
+    {
+        let fe2o3_key =
+            fe2o3_amqp_types::messaging::annotations::OwnedKey::Symbol("OwnedSymbol".into());
+        let amqp_key = AmqpAnnotationKey::from(fe2o3_key.clone());
+
+        assert_eq!(amqp_key, AmqpAnnotationKey::Symbol("OwnedSymbol".into()));
+        let round_trip_key = fe2o3_amqp_types::messaging::annotations::OwnedKey::from(amqp_key);
+        assert_eq!(round_trip_key, fe2o3_key);
     }
 }
 
@@ -181,6 +286,57 @@ impl From<fe2o3_amqp_types::messaging::Annotations> for AmqpAnnotations {
             amqp_annotations.insert(key, value);
         }
         AmqpAnnotations(amqp_annotations)
+    }
+}
+
+#[test]
+fn test_message_annotation_conversion() {
+    {
+        let annotations = AmqpAnnotations::from(vec![
+            (AmqpAnnotationKey::Ulong(1), "test"),
+            (AmqpAnnotationKey::Symbol("test".into()), "test"),
+        ]);
+
+        let fe2o3_annotations = fe2o3_amqp_types::messaging::Annotations::from(annotations.clone());
+
+        // There does not appear to be a From<OrderedMap<>> for Annotations.
+        let mut annotations_to_test = fe2o3_amqp_types::messaging::Annotations::new();
+        annotations_to_test.insert(
+            fe2o3_amqp_types::messaging::annotations::OwnedKey::Ulong(1),
+            "test".into(),
+        );
+        annotations_to_test.insert(
+            fe2o3_amqp_types::messaging::annotations::OwnedKey::Symbol("test".into()),
+            "test".into(),
+        );
+        assert_eq!(fe2o3_annotations, annotations_to_test);
+
+        let amqp_round_trip: AmqpAnnotations = fe2o3_annotations.into();
+        assert_eq!(amqp_round_trip, annotations);
+    }
+
+    {
+        let mut fe2o3_annotations = fe2o3_amqp_types::messaging::Annotations::new();
+        fe2o3_annotations.insert(
+            fe2o3_amqp_types::messaging::annotations::OwnedKey::Ulong(1),
+            "test".into(),
+        );
+        fe2o3_annotations.insert(
+            fe2o3_amqp_types::messaging::annotations::OwnedKey::Symbol("test".into()),
+            "test".into(),
+        );
+
+        let annotations = AmqpAnnotations::from(fe2o3_annotations.clone());
+        assert_eq!(
+            annotations,
+            AmqpAnnotations::from(vec![
+                (AmqpAnnotationKey::Ulong(1), "test"),
+                (AmqpAnnotationKey::Symbol("test".into()), "test"),
+            ])
+        );
+
+        let fe2o3_round_trip: fe2o3_amqp_types::messaging::Annotations = annotations.into();
+        assert_eq!(fe2o3_round_trip, fe2o3_annotations);
     }
 }
 
@@ -291,215 +447,61 @@ impl From<AmqpMessageProperties> for fe2o3_amqp_types::messaging::Properties {
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[test]
+fn test_properties_conversion() {
+    {
+        let properties = fe2o3_amqp_types::messaging::Properties {
+            message_id: Some(fe2o3_amqp_types::messaging::MessageId::String(
+                "test".into(),
+            )),
+            user_id: Some(vec![1, 2, 3].into()),
+            to: Some("to".into()),
+            subject: Some("subject".into()),
+            reply_to: Some("reply_to".into()),
+            correlation_id: Some("correlation_id".to_string().into()),
+            content_type: Some("content_type".into()),
+            content_encoding: Some("content_encoding".into()),
+            absolute_expiry_time: Some(fe2o3_amqp_types::primitives::Timestamp::from(1)),
+            creation_time: Some(fe2o3_amqp_types::primitives::Timestamp::from(2)),
+            group_id: Some("group_id".into()),
+            group_sequence: Some(3),
+            reply_to_group_id: Some("reply_to_group_id".into()),
+        };
 
-    use super::*;
-    use uuid::Uuid;
-
-    #[test]
-    fn test_owned_key_conversion() {
-        {
-            let fe2o3_key = fe2o3_amqp_types::messaging::annotations::OwnedKey::Ulong(1995);
-            let amqp_key = AmqpAnnotationKey::from(fe2o3_key.clone());
-
-            assert_eq!(amqp_key, AmqpAnnotationKey::Ulong(1995));
-            let round_trip_key = fe2o3_amqp_types::messaging::annotations::OwnedKey::from(amqp_key);
-            assert_eq!(round_trip_key, fe2o3_key);
-        }
-
-        {
-            let fe2o3_key =
-                fe2o3_amqp_types::messaging::annotations::OwnedKey::Symbol("OwnedSymbol".into());
-            let amqp_key = AmqpAnnotationKey::from(fe2o3_key.clone());
-
-            assert_eq!(amqp_key, AmqpAnnotationKey::Symbol("OwnedSymbol".into()));
-            let round_trip_key = fe2o3_amqp_types::messaging::annotations::OwnedKey::from(amqp_key);
-            assert_eq!(round_trip_key, fe2o3_key);
-        }
+        let amqp_properties = AmqpMessageProperties::from(properties.clone());
+        let roundtrip_properties = fe2o3_amqp_types::messaging::Properties::from(amqp_properties);
+        assert_eq!(properties, roundtrip_properties);
     }
 
-    #[test]
-    fn test_message_annotation_conversion() {
-        {
-            let annotations = AmqpAnnotations::from(vec![
-                (AmqpAnnotationKey::Ulong(1), "test"),
-                (AmqpAnnotationKey::Symbol("test".into()), "test"),
-            ]);
+    {
+        let time_now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as i64;
 
-            let fe2o3_annotations =
-                fe2o3_amqp_types::messaging::Annotations::from(annotations.clone());
+        // Round trip time_now through milliseconds to round down from nanoseconds.
+        let time_now: std::time::SystemTime =
+            std::time::UNIX_EPOCH + std::time::Duration::from_millis(time_now as u64);
 
-            // There does not appear to be a From<OrderedMap<>> for Annotations.
-            let mut annotations_to_test = fe2o3_amqp_types::messaging::Annotations::new();
-            annotations_to_test.insert(
-                fe2o3_amqp_types::messaging::annotations::OwnedKey::Ulong(1),
-                "test".into(),
-            );
-            annotations_to_test.insert(
-                fe2o3_amqp_types::messaging::annotations::OwnedKey::Symbol("test".into()),
-                "test".into(),
-            );
-            assert_eq!(fe2o3_annotations, annotations_to_test);
+        let properties = AmqpMessageProperties::builder()
+            .with_absolute_expiry_time(time_now)
+            .with_content_encoding("content_encoding")
+            .with_content_type("content_type")
+            .with_correlation_id("correlation_id")
+            .with_creation_time(time_now)
+            .with_group_id("group_id")
+            .with_group_sequence(3)
+            .with_message_id("test")
+            .with_reply_to("reply_to")
+            .with_reply_to_group_id("reply_to_group_id")
+            .with_subject("subject")
+            .with_to("to")
+            .with_user_id(vec![1, 2, 3])
+            .build();
 
-            let amqp_round_trip: AmqpAnnotations = fe2o3_annotations.into();
-            assert_eq!(amqp_round_trip, annotations);
-        }
+        let fe2o3_properties: fe2o3_amqp_types::messaging::Properties = properties.clone().into();
 
-        {
-            let mut fe2o3_annotations = fe2o3_amqp_types::messaging::Annotations::new();
-            fe2o3_annotations.insert(
-                fe2o3_amqp_types::messaging::annotations::OwnedKey::Ulong(1),
-                "test".into(),
-            );
-            fe2o3_annotations.insert(
-                fe2o3_amqp_types::messaging::annotations::OwnedKey::Symbol("test".into()),
-                "test".into(),
-            );
-
-            let annotations = AmqpAnnotations::from(fe2o3_annotations.clone());
-            assert_eq!(
-                annotations,
-                AmqpAnnotations::from(vec![
-                    (AmqpAnnotationKey::Ulong(1), "test"),
-                    (AmqpAnnotationKey::Symbol("test".into()), "test"),
-                ])
-            );
-
-            let fe2o3_round_trip: fe2o3_amqp_types::messaging::Annotations = annotations.into();
-            assert_eq!(fe2o3_round_trip, fe2o3_annotations);
-        }
-    }
-
-    #[test]
-    fn test_message_id_conversion() {
-        {
-            let message_id = fe2o3_amqp_types::messaging::MessageId::String("test".into());
-            let amqp_message_id: AmqpMessageId = message_id.clone().into();
-            assert_eq!(amqp_message_id, AmqpMessageId::String("test".into()));
-            let fe2o3_message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.into();
-            assert_eq!(fe2o3_message_id, message_id);
-        }
-
-        {
-            let uuid = Uuid::new_v4();
-            let message_id = fe2o3_amqp_types::messaging::MessageId::Uuid(uuid.into());
-            let amqp_message_id: AmqpMessageId = message_id.clone().into();
-            assert_eq!(amqp_message_id, AmqpMessageId::from(uuid));
-
-            let fe2o3_message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.into();
-            assert_eq!(fe2o3_message_id, message_id);
-        }
-
-        {
-            let message_id = fe2o3_amqp_types::messaging::MessageId::Binary(vec![1, 2, 3].into());
-            let amqp_message_id: AmqpMessageId = message_id.clone().into();
-            assert_eq!(amqp_message_id, AmqpMessageId::Binary(vec![1, 2, 3]));
-            let fe2o3_message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.into();
-            assert_eq!(fe2o3_message_id, message_id);
-        }
-
-        {
-            let message_id = fe2o3_amqp_types::messaging::MessageId::Ulong(1);
-            let amqp_message_id: AmqpMessageId = message_id.clone().into();
-            assert_eq!(amqp_message_id, AmqpMessageId::Ulong(1));
-            let fe2o3_message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.into();
-            assert_eq!(fe2o3_message_id, message_id);
-        }
-
-        {
-            let amqp_message_id = AmqpMessageId::String("test".into());
-            let message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.clone().into();
-            assert_eq!(
-                message_id,
-                fe2o3_amqp_types::messaging::MessageId::String("test".into())
-            );
-            let amqp_round_trip: AmqpMessageId = message_id.into();
-            assert_eq!(amqp_round_trip, amqp_message_id);
-        }
-        {
-            let uuid = Uuid::new_v4();
-            let amqp_message_id = AmqpMessageId::from(uuid);
-            let message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.clone().into();
-            assert_eq!(
-                message_id,
-                fe2o3_amqp_types::messaging::MessageId::Uuid(
-                    fe2o3_amqp_types::primitives::Uuid::from(uuid)
-                )
-            );
-            let amqp_round_trip: AmqpMessageId = message_id.into();
-            assert_eq!(amqp_round_trip, amqp_message_id);
-        }
-        {
-            let amqp_message_id = AmqpMessageId::Binary(vec![1, 2, 3]);
-            let message_id: fe2o3_amqp_types::messaging::MessageId = amqp_message_id.clone().into();
-            assert_eq!(
-                message_id,
-                fe2o3_amqp_types::messaging::MessageId::Binary(vec![1, 2, 3].into())
-            );
-            let amqp_round_trip: AmqpMessageId = message_id.into();
-            assert_eq!(amqp_round_trip, amqp_message_id);
-        }
-    }
-
-    #[test]
-    fn test_properties_conversion() {
-        {
-            let properties = fe2o3_amqp_types::messaging::Properties {
-                message_id: Some(fe2o3_amqp_types::messaging::MessageId::String(
-                    "test".into(),
-                )),
-                user_id: Some(vec![1, 2, 3].into()),
-                to: Some("to".into()),
-                subject: Some("subject".into()),
-                reply_to: Some("reply_to".into()),
-                correlation_id: Some("correlation_id".to_string().into()),
-                content_type: Some("content_type".into()),
-                content_encoding: Some("content_encoding".into()),
-                absolute_expiry_time: Some(fe2o3_amqp_types::primitives::Timestamp::from(1)),
-                creation_time: Some(fe2o3_amqp_types::primitives::Timestamp::from(2)),
-                group_id: Some("group_id".into()),
-                group_sequence: Some(3),
-                reply_to_group_id: Some("reply_to_group_id".into()),
-            };
-
-            let amqp_properties = AmqpMessageProperties::from(properties.clone());
-            let roundtrip_properties =
-                fe2o3_amqp_types::messaging::Properties::from(amqp_properties);
-            assert_eq!(properties, roundtrip_properties);
-        }
-
-        {
-            let time_now = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_millis() as i64;
-
-            // Round trip time_now through milliseconds to round down from nanoseconds.
-            let time_now: std::time::SystemTime =
-                std::time::UNIX_EPOCH + std::time::Duration::from_millis(time_now as u64);
-
-            let properties = AmqpMessageProperties::builder()
-                .with_absolute_expiry_time(time_now)
-                .with_content_encoding("content_encoding")
-                .with_content_type("content_type")
-                .with_correlation_id("correlation_id")
-                .with_creation_time(time_now)
-                .with_group_id("group_id")
-                .with_group_sequence(3)
-                .with_message_id("test")
-                .with_reply_to("reply_to")
-                .with_reply_to_group_id("reply_to_group_id")
-                .with_subject("subject")
-                .with_to("to")
-                .with_user_id(vec![1, 2, 3])
-                .build();
-
-            let fe2o3_properties: fe2o3_amqp_types::messaging::Properties =
-                properties.clone().into();
-
-            let amqp_round_trip = AmqpMessageProperties::from(fe2o3_properties);
-            assert_eq!(properties, amqp_round_trip);
-        }
+        let amqp_round_trip = AmqpMessageProperties::from(fe2o3_properties);
+        assert_eq!(properties, amqp_round_trip);
     }
 }
