@@ -1,9 +1,80 @@
 {
-    "words": [
-        "Etag",
-        "hmac",
-        "pageable",
-        "reqwest",
-        "seekable"
-    ]
+  "version": "0.2",
+  "language": "en",
+  "useGitignore": true,
+  "ignorePaths": [
+    "eng/",
+    "NOTICE.txt"
+  ],
+  "words": [
+    "asyncoperation",
+    "azsdk",
+    "azurecli",
+    "datalake",
+    "devicecode",
+    "downcasted",
+    "downcasting",
+    "etag",
+    "hmac",
+    "iothub",
+    "keyvault",
+    "msrc",
+    "pageable",
+    "pkce",
+    "pkcs",
+    "posix",
+    "reqwest",
+    "seekable",
+    "stylesheet",
+    "typespec",
+    "virtualmachine"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "crates",
+      "path": "../eng/dict/crates.txt",
+      "noSuggest": true,
+      "useCompounds": false
+    },
+    {
+      "name": "rust-custom",
+      "path": "../eng/dict/rust-custom.txt",
+      "noSuggest": true
+    }
+  ],
+  "overrides": [
+    {
+      "filename": "**/Cargo.toml",
+      "dictionaries": [
+        "crates",
+        "rust-custom"
+      ]
+    },
+    {
+      "filename": "**/*.md",
+      "dictionaries": [
+        "rust",
+        "rust-custom"
+      ],
+      "ignoreRegExpList": [
+        "@\\w+"
+      ]
+    },
+    {
+      "filename": "**/*.rs",
+      "dictionaries": [
+        "crates",
+        "rust-custom"
+      ]
+    },
+    {
+      "filename": "sdk/identity/**",
+      "words": [
+        "adfs",
+        "azureauth",
+        "msal",
+        "imds"
+      ]
+    }
+  ]
 }

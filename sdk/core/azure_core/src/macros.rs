@@ -167,7 +167,7 @@ macro_rules! request_option {
 /// The following macro invocation:
 /// ```
 /// # #[macro_use] extern crate azure_core;
-/// create_enum!(Words, (Pollo, "Pollo"), (Bianco, "Bianco"), (Giallo, "Giallo"));
+/// create_enum!(Words, (Chicken, "Chicken"), (White, "White"), (Yellow, "Yellow"));
 /// ```
 /// Turns into a struct where each variant can be turned into and construct from the corresponding string.
 #[macro_export]

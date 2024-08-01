@@ -5,6 +5,8 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers, HttpClient, Method, Request,
 };
+
+// cspell:ignore pkey
 use openssl::{
     error::ErrorStack,
     hash::{hash, DigestBytes, MessageDigest},

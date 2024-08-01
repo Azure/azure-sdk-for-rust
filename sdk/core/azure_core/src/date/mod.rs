@@ -99,6 +99,7 @@ pub fn parse_last_state_change(s: &str) -> crate::Result<OffsetDateTime> {
         .assume_utc())
 }
 
+// cspell:ignore subsecond
 const LAST_STATE_CHANGE_FORMAT: &[FormatItem] = format_description!(
     "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second].[subsecond digits:3] GMT"
 );

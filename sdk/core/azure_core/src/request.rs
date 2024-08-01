@@ -244,6 +244,7 @@ impl<T> FromStr for RequestContent<T> {
     }
 }
 
+// cspell:ignore fromstr tryfrom
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -16,6 +16,7 @@ use std::sync::Arc;
 
 pub const AZURE_CREDENTIAL_KIND: &str = "AZURE_CREDENTIAL_KIND";
 
+// cspell:ignore appservice clientcertificate clientsecret workloadidentity
 pub mod azure_credential_kinds {
     pub const ENVIRONMENT: &str = "environment";
     #[cfg(not(target_arch = "wasm32"))]

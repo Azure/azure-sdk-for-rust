@@ -4,6 +4,8 @@ use crate::Header;
 use bytes::Bytes;
 use std::collections::HashMap;
 
+// cspell:ignore Metadatum
+
 #[derive(Debug, Clone)]
 pub struct Metadata(HashMap<String, Bytes>);
 

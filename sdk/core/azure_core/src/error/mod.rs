@@ -168,7 +168,7 @@ impl Error {
         }
     }
 
-    /// Consumes the `Error`, returning its inner erro, if any.
+    /// Consumes the `Error`, returning its inner error, if any.
     pub fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self> {
         match self.context {
             Context::Custom(Custom { error, .. }) | Context::Full(Custom { error, .. }, _) => {
@@ -231,7 +231,7 @@ impl Error {
         }
     }
 
-    /// Returns a mutable reference to the inner error, if any, downcastto the type provided.
+    /// Returns a mutable reference to the inner error, if any, downcasting to the type provided.
     pub fn downcast_mut<T: std::error::Error + 'static>(&mut self) -> Option<&mut T> {
         self.get_mut()?.downcast_mut()
     }
@@ -484,7 +484,7 @@ mod tests {
 
         let kind = ErrorKind::http_response_from_body(
             StatusCode::ImATeapot,
-            br#"{"error": {"code":"teepot"}}"#,
+            br#"{"error": {"code":"teapot"}}"#,
         );
 
         assert!(matches!(
@@ -493,7 +493,7 @@ mod tests {
                 status: StatusCode::ImATeapot,
                 error_code
             }
-            if error_code.as_deref() == Some("teepot")
+            if error_code.as_deref() == Some("teapot")
         ));
     }
 

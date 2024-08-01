@@ -3,6 +3,7 @@
 // based on https://crates.io/crates/futures-time
 // Licensed under either of Apache License, Version 2.0 or MIT license at your option.
 
+// cspell:ignore Yoshua Wuyts
 use azure_core::sleep::{sleep, Sleep};
 use futures::Future;
 use std::time::Duration;
