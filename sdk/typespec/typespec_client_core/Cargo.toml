@@ -15,6 +15,7 @@ bytes = { workspace = true }
 futures = { workspace = true }
 http-types = { workspace = true, optional = true }
 pin-project = { workspace = true }
+quick-xml = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 typespec = { workspace = true, default-features = false }
@@ -23,3 +24,4 @@ typespec = { workspace = true, default-features = false }
 default = ["http", "json"]
 http = ["dep:http-types", "typespec/http"]
 json = ["typespec/json"]
+xml = ["dep:quick-xml", "typespec/xml"]
