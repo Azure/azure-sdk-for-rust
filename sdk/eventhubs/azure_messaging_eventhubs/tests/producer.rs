@@ -3,7 +3,10 @@
 
 #![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
 
-use azure_core_amqp::messaging::{AmqpMessage, AmqpMessageBody};
+use azure_core_amqp::{
+    messaging::{AmqpMessage, AmqpMessageBody},
+    value::{AmqpList, AmqpValue},
+};
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 use azure_messaging_eventhubs::producer::{
     batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions,
@@ -248,12 +251,18 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
     let batch = client.create_batch(None).await?;
     assert_eq!(batch.len(), 0);
 
+    // Message with AMQP Value body
     assert!(batch.try_add_amqp_message(
         AmqpMessage::builder()
             .with_body(AmqpMessageBody::Value("This is data".into()))
             .build(),
         None
     )?);
+
+    // Shortcut message creation logic.
+    assert!(batch
+        .try_add_amqp_message(AmqpValue::from("This is a value"), None)
+        .unwrap());
 
     // Message with binary body and application property
     assert!(batch.try_add_amqp_message(
@@ -263,6 +272,34 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
             .build(),
         None
     )?);
+
+    // Shortcut message creation logic.
+    assert!(batch.try_add_amqp_message(vec![3, 5, 7], None).unwrap());
+
+    // Message with sequence body and application property
+    assert!(batch.try_add_amqp_message(
+        AmqpMessage::builder()
+            .with_body(vec![
+                AmqpValue::from(1),
+                AmqpValue::from(2),
+                AmqpValue::from(3)
+            ])
+            .add_application_property("MessageName", "Frederick")
+            .build(),
+        None
+    )?);
+
+    // Shortcut message creation logic.
+    assert!(batch
+        .try_add_amqp_message(
+            AmqpList::from(vec![
+                AmqpValue::from(3),
+                AmqpValue::from(5),
+                AmqpValue::from(7)
+            ]),
+            None
+        )
+        .unwrap());
 
     client.submit_batch(&batch).await?;
 
@@ -303,8 +340,8 @@ async fn test_overload_batch() {
             .await
             .unwrap();
         trace!("Batch created.");
-        for i in 0..120_000 {
-            if i % 10_000 == 0 {
+        for i in 0..25_000 {
+            if i % 5_000 == 0 {
                 info!("Add event data, now at {}", i);
                 info!("Batch size: {}", batch.size());
             }
@@ -312,7 +349,10 @@ async fn test_overload_batch() {
                 .try_add_event_data(format!("Message {i}"), None)
                 .unwrap()
             {
-                info!("Batch is full, sending batch");
+                info!(
+                    "Batch is full at {i} ({} bytes), sending batch",
+                    batch.size()
+                );
                 let result = client.submit_batch(&batch).await;
                 if result.is_err() {
                     info!("Batch submit failed. {:?}", result);

@@ -44,6 +44,12 @@ impl AmqpList {
     }
 }
 
+impl From<Vec<AmqpValue>> for AmqpList {
+    fn from(v: Vec<AmqpValue>) -> Self {
+        AmqpList(v)
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct AmqpTimestamp(pub std::time::SystemTime);
 

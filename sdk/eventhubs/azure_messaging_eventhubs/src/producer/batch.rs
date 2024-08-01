@@ -109,10 +109,10 @@ impl<'a> EventDataBatch<'a> {
 
     pub fn try_add_amqp_message(
         &self,
-        message: AmqpMessage,
+        message: impl Into<AmqpMessage>,
         #[allow(unused_variables)] options: Option<AddEventDataOptions>,
     ) -> Result<bool> {
-        let mut message = message;
+        let mut message = message.into();
         if message.properties().is_none() || message.properties().unwrap().message_id().is_none() {
             let mut message_properties = AmqpMessageProperties::default();
             if let Some(properties) = message.properties() {
@@ -173,7 +173,7 @@ impl<'a> EventDataBatch<'a> {
         #[allow(unused_variables)] options: Option<AddEventDataOptions>,
     ) -> Result<bool> {
         let event_data = event_data.into();
-        self.try_add_amqp_message(event_data.into(), options)
+        self.try_add_amqp_message(event_data, options)
     }
 
     pub(crate) fn get_messages(&self) -> AmqpMessage {

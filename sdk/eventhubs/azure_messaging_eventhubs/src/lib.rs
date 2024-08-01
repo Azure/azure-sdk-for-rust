@@ -292,24 +292,45 @@ pub mod models {
         }
     }
 
+    impl<T> From<T> for EventData
+    where
+        T: Into<Vec<u8>>,
+    {
+        fn from(body: T) -> Self {
+            Self {
+                body: Some(body.into()),
+                content_type: None,
+                correlation_id: None,
+                message_id: None,
+                properties: None,
+            }
+        }
+    }
+
     impl From<EventData> for AmqpMessage {
         fn from(event_data: EventData) -> Self {
-            let mut message_properties_builder = AmqpMessageProperties::builder();
             let mut message_builder = AmqpMessage::builder();
-            if let Some(content_type) = event_data.content_type {
-                message_properties_builder =
-                    message_properties_builder.with_content_type(content_type);
-            }
-            if let Some(correlation_id) = event_data.correlation_id {
-                message_properties_builder =
-                    message_properties_builder.with_correlation_id(correlation_id);
-            }
-            if let Some(message_id) = event_data.message_id {
-                message_properties_builder = message_properties_builder.with_message_id(message_id);
-            }
-            if let Some(properties) = event_data.properties {
+            if event_data.content_type.is_some()
+                || event_data.correlation_id.is_some()
+                || event_data.message_id.is_some()
+            {
+                let mut message_properties_builder = AmqpMessageProperties::builder();
+                if let Some(content_type) = event_data.content_type {
+                    message_properties_builder =
+                        message_properties_builder.with_content_type(content_type);
+                }
+                if let Some(correlation_id) = event_data.correlation_id {
+                    message_properties_builder =
+                        message_properties_builder.with_correlation_id(correlation_id);
+                }
+                if let Some(message_id) = event_data.message_id {
+                    message_properties_builder =
+                        message_properties_builder.with_message_id(message_id);
+                }
                 message_builder =
                     message_builder.with_properties(message_properties_builder.build());
+            }
+            if let Some(properties) = event_data.properties {
                 for (key, value) in properties {
                     message_builder = message_builder.add_application_property(key, value);
                 }
@@ -461,21 +482,6 @@ pub mod models {
         }
     }
 
-    impl<T> From<T> for EventData
-    where
-        T: Into<Vec<u8>>,
-    {
-        fn from(body: T) -> Self {
-            Self {
-                body: Some(body.into()),
-                content_type: None,
-                correlation_id: None,
-                message_id: None,
-                properties: None,
-            }
-        }
-    }
-
     pub mod builders {
         use super::*;
 
@@ -497,8 +503,11 @@ pub mod models {
                 }
             }
 
-            pub fn with_body(mut self, body: Vec<u8>) -> Self {
-                self.event_data.body = Some(body);
+            pub fn with_body<T>(mut self, body: T) -> Self
+            where
+                T: Into<Vec<u8>>,
+            {
+                self.event_data.body = Some(body.into());
                 self
             }
 

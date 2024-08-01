@@ -53,6 +53,12 @@ impl From<String> for AmqpMessageId {
     }
 }
 
+impl From<&str> for AmqpMessageId {
+    fn from(string: &str) -> Self {
+        AmqpMessageId::String(string.to_string())
+    }
+}
+
 impl From<Vec<u8>> for AmqpMessageId {
     fn from(binary: Vec<u8>) -> Self {
         AmqpMessageId::Binary(binary)
@@ -293,6 +299,12 @@ impl From<AmqpList> for AmqpMessageBody {
     }
 }
 
+impl From<Vec<AmqpValue>> for AmqpMessageBody {
+    fn from(values: Vec<AmqpValue>) -> Self {
+        AmqpMessageBody::Sequence(vec![AmqpList::from(values)])
+    }
+}
+
 impl From<Vec<AmqpList>> for AmqpMessageBody {
     fn from(lists: Vec<AmqpList>) -> Self {
         AmqpMessageBody::Sequence(lists)
@@ -333,6 +345,20 @@ impl AmqpAnnotations {
 
     pub fn insert(&mut self, key: impl Into<AmqpAnnotationKey>, value: impl Into<AmqpValue>) {
         self.0.insert(key.into(), value.into());
+    }
+}
+
+impl<K, V> From<Vec<(K, V)>> for AmqpAnnotations
+where
+    K: Into<AmqpAnnotationKey>,
+    V: Into<AmqpValue>,
+{
+    fn from(vec: Vec<(K, V)>) -> Self {
+        let mut map = AmqpOrderedMap::new();
+        for (k, v) in vec {
+            map.insert(k, v);
+        }
+        AmqpAnnotations(map)
     }
 }
 
@@ -430,6 +456,48 @@ impl AmqpMessage {
         #[cfg(any(not(feature = "enable-fe2o3-amqp"), target_arch = "wasm32"))]
         {
             unimplemented!();
+        }
+    }
+}
+
+impl From<Vec<u8>> for AmqpMessage {
+    fn from(body: Vec<u8>) -> Self {
+        AmqpMessage {
+            body: AmqpMessageBody::Binary(vec![body]),
+            header: None,
+            application_properties: None,
+            message_annotations: None,
+            delivery_annotations: None,
+            properties: None,
+            footer: None,
+        }
+    }
+}
+
+impl From<AmqpValue> for AmqpMessage {
+    fn from(value: AmqpValue) -> Self {
+        AmqpMessage {
+            body: AmqpMessageBody::Value(value),
+            header: None,
+            application_properties: None,
+            message_annotations: None,
+            delivery_annotations: None,
+            properties: None,
+            footer: None,
+        }
+    }
+}
+
+impl From<AmqpList> for AmqpMessage {
+    fn from(list: AmqpList) -> Self {
+        AmqpMessage {
+            body: AmqpMessageBody::Sequence(vec![list]),
+            header: None,
+            application_properties: None,
+            message_annotations: None,
+            delivery_annotations: None,
+            properties: None,
+            footer: None,
         }
     }
 }
@@ -678,8 +746,8 @@ pub mod builders {
             self.properties.content_type = Some(content_type.into());
             self
         }
-        pub fn with_content_encoding(mut self, content_encoding: AmqpSymbol) -> Self {
-            self.properties.content_encoding = Some(content_encoding);
+        pub fn with_content_encoding(mut self, content_encoding: impl Into<AmqpSymbol>) -> Self {
+            self.properties.content_encoding = Some(content_encoding.into());
             self
         }
         pub fn with_absolute_expiry_time(
@@ -766,8 +834,11 @@ pub mod builders {
             self.message.delivery_annotations = Some(delivery_annotations);
             self
         }
-        pub fn with_properties(mut self, properties: AmqpMessageProperties) -> Self {
-            self.message.properties = Some(properties);
+        pub fn with_properties<T>(mut self, properties: T) -> Self
+        where
+            T: Into<AmqpMessageProperties>,
+        {
+            self.message.properties = Some(properties.into());
             self
         }
         pub fn with_footer(mut self, footer: AmqpAnnotations) -> Self {
@@ -875,6 +946,67 @@ mod tests {
             Some(AmqpMessageProperties::builder().build())
         );
         assert_eq!(message.footer, Some(AmqpAnnotations::new()));
+    }
+
+    #[test]
+    fn amqp_message_body_inferences() {
+        {
+            // Message body from Value.
+            let message_body = AmqpMessageBody::from(AmqpValue::from(123));
+            assert_eq!(message_body, AmqpMessageBody::Value(AmqpValue::from(123)));
+        }
+
+        {
+            // Message body from binary array.
+            let message_body = AmqpMessageBody::from(vec![1, 2, 3]);
+            assert_eq!(message_body, AmqpMessageBody::Binary(vec![vec![1, 2, 3]]));
+
+            let message_body = AmqpMessageBody::from(vec![vec![1, 2, 3], vec![4, 5, 6]]);
+            assert_eq!(
+                message_body,
+                AmqpMessageBody::Binary(vec![vec![1, 2, 3], vec![4, 5, 6]])
+            );
+        }
+
+        {
+            // Message body from array of values.
+            let message_body =
+                AmqpMessageBody::from(vec![AmqpValue::from(123), AmqpValue::from("ABC")]);
+            assert_eq!(
+                message_body,
+                AmqpMessageBody::Sequence(vec![AmqpList::from(vec![
+                    AmqpValue::from(123),
+                    AmqpValue::from("ABC")
+                ])])
+            );
+        }
+    }
+
+    #[test]
+    fn amqp_message_inferences() {
+        let message = AmqpMessage::from(vec![1, 2, 3]);
+        assert_eq!(
+            message.body(),
+            &AmqpMessageBody::Binary(vec![vec![1, 2, 3]])
+        );
+
+        let message = AmqpMessage::from(AmqpValue::from(123));
+        assert_eq!(
+            message.body(),
+            &AmqpMessageBody::Value(AmqpValue::from(123))
+        );
+
+        let message = AmqpMessage::from(AmqpList::from(vec![
+            AmqpValue::from(123),
+            AmqpValue::from("ABC"),
+        ]));
+        assert_eq!(
+            message.body(),
+            &AmqpMessageBody::Sequence(vec![AmqpList::from(vec![
+                AmqpValue::from(123),
+                AmqpValue::from("ABC")
+            ])])
+        );
     }
 
     #[test]

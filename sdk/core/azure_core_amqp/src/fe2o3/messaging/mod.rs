@@ -7,13 +7,13 @@ pub mod message_source;
 pub mod message_target;
 pub mod messaging_types;
 
-use fe2o3_amqp_types::messaging::{message::EmptyBody, IntoBody};
-use serde_amqp::{extensions::TransparentVec, Value};
-
 use crate::{
     messaging::{AmqpMessage, AmqpMessageBody},
     value::AmqpValue,
 };
+use fe2o3_amqp_types::messaging::{message::EmptyBody, IntoBody};
+use serde_amqp::{extensions::TransparentVec, Value};
+use tracing::info;
 
 impl TryInto<AmqpValue> for fe2o3_amqp_types::messaging::Data {
     type Error = std::fmt::Error;
@@ -95,7 +95,7 @@ where
     }
 
     if let Some(properties) = message.properties {
-        amqp_message_builder = amqp_message_builder.with_properties(properties.into());
+        amqp_message_builder = amqp_message_builder.with_properties(properties);
     }
 
     if let Some(delivery_annotations) = message.delivery_annotations {
@@ -185,7 +185,8 @@ impl
         }
 
         if let Some(properties) = message.properties {
-            amqp_message_builder = amqp_message_builder.with_properties(properties.into());
+            info!("Converting properties to AmqpMessageProperties");
+            amqp_message_builder = amqp_message_builder.with_properties(properties);
         }
 
         if let Some(delivery_annotations) = message.delivery_annotations {
@@ -214,6 +215,7 @@ impl From<AmqpMessage>
     fn from(message: AmqpMessage) -> Self {
         let message_builder = fe2o3_amqp_types::messaging::Message::builder()
             .application_properties(message.application_properties().map(|x| x.clone().into()))
+            .properties(message.properties().map(|p| p.clone().into()))
             .header(message.header().map(|x| x.clone().into()))
             .delivery_annotations(message.delivery_annotations().map(|x| x.clone().into()))
             .message_annotations(message.message_annotations().map(|x| x.clone().into()))
@@ -369,10 +371,150 @@ impl From<AmqpMessage>
 #[cfg(test)]
 mod tests {
 
-    use fe2o3_amqp_types::messaging::Data;
-    use fe2o3_amqp_types::messaging::MessageAnnotations;
-
     use super::*;
+    use crate::messaging::{
+        AmqpAnnotationKey, AmqpAnnotations, AmqpMessageHeader, AmqpMessageProperties,
+    };
+    use crate::value::AmqpSymbol;
+    use fe2o3_amqp_types::messaging::{Data, MessageAnnotations};
+
+    #[test]
+    fn round_trip_message_amqp_to_fe2o3() {
+        // Fe2o3->Amqp
+        {
+            let body: fe2o3_amqp_types::messaging::Body<Value> =
+                fe2o3_amqp_types::messaging::Body::Value(fe2o3_amqp_types::messaging::AmqpValue(
+                    "hello".into(),
+                ));
+            let fe2o3_message = fe2o3_amqp_types::messaging::Message::builder()
+                .body(body)
+                .header(Some(
+                    fe2o3_amqp_types::messaging::Header::builder()
+                        .durable(true)
+                        .ttl(1000)
+                        .priority(3)
+                        .build(),
+                ))
+                .properties(
+                    fe2o3_amqp_types::messaging::Properties::builder()
+                        .absolute_expiry_time(
+                            fe2o3_amqp_types::primitives::Timestamp::from_milliseconds(25),
+                        )
+                        .content_encoding("utf-8")
+                        .content_type("text/json")
+                        .correlation_id(String::from("correlation_id"))
+                        .creation_time(fe2o3_amqp_types::primitives::Timestamp::from_milliseconds(
+                            25,
+                        ))
+                        .group_id(Some(String::from("group_id")))
+                        .group_sequence(5)
+                        .message_id(fe2o3_amqp_types::messaging::MessageId::String(
+                            "message_id".into(),
+                        ))
+                        .reply_to("reply_to")
+                        .reply_to_group_id(Some(String::from("reply_to_group_id")))
+                        .subject("subject")
+                        .to("to")
+                        .user_id(vec![1, 2, 3])
+                        .build(),
+                )
+                .footer(Some(
+                    fe2o3_amqp_types::messaging::Footer::builder()
+                        .insert("foo", 123)
+                        .insert("bar", 95)
+                        .build(),
+                ))
+                .delivery_annotations(Some(
+                    fe2o3_amqp_types::messaging::DeliveryAnnotations::builder()
+                        .insert("foo", 123)
+                        .insert("bar", 95)
+                        .build(),
+                ))
+                .message_annotations(Some(
+                    fe2o3_amqp_types::messaging::MessageAnnotations::builder()
+                        .insert("foo", 123)
+                        .insert("bar", 95)
+                        .build(),
+                ))
+                .application_properties(Some(
+                    fe2o3_amqp_types::messaging::ApplicationProperties::builder()
+                        .insert("foo", 123)
+                        .insert("bar", 95)
+                        .build(),
+                ))
+                .build();
+
+            let amqp_message = AmqpMessage::from(fe2o3_message.clone());
+            let round_trip: fe2o3_amqp_types::messaging::Message<
+                fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
+            > = amqp_message.into();
+
+            assert_eq!(round_trip, fe2o3_message);
+        }
+        // Amqp->Fe2o3
+        {
+            let timestamp = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as i64;
+
+            // Round trip timestamp through milliseconds to round down from nanoseconds.
+            let timestamp: std::time::SystemTime =
+                std::time::UNIX_EPOCH + std::time::Duration::from_millis(timestamp as u64);
+
+            let amqp_message = AmqpMessage::builder()
+                .add_application_property("abc", "23 skiddoo")
+                .add_application_property("What?", 29.5)
+                .with_body(AmqpValue::from("hello"))
+                .with_properties(
+                    AmqpMessageProperties::builder()
+                        .with_absolute_expiry_time(timestamp)
+                        .with_content_encoding(AmqpSymbol::from("utf-8"))
+                        .with_content_type(AmqpSymbol::from("text/plain"))
+                        .with_correlation_id("abc")
+                        .with_creation_time(timestamp)
+                        .with_group_id(AmqpSymbol::from("group"))
+                        .with_group_sequence(5)
+                        .with_message_id("message")
+                        .with_reply_to(AmqpSymbol::from("reply"))
+                        .with_reply_to_group_id(AmqpSymbol::from("reply_group"))
+                        .with_subject(AmqpSymbol::from("subject"))
+                        .with_to(AmqpSymbol::from("to"))
+                        .with_user_id(vec![39, 20, 54])
+                        .build(),
+                )
+                .with_header(
+                    AmqpMessageHeader::builder()
+                        .with_delivery_count(95)
+                        .with_first_acquirer(true)
+                        .with_durable(true)
+                        .with_time_to_live(std::time::Duration::from_millis(1000))
+                        .with_priority(3)
+                        .build(),
+                )
+                .with_delivery_annotations(AmqpAnnotations::from(vec![
+                    (AmqpAnnotationKey::from(93), 123),
+                    (AmqpAnnotationKey::from(128), 95),
+                ]))
+                .with_message_annotations(AmqpAnnotations::from(vec![
+                    (AmqpAnnotationKey::from(AmqpSymbol::from("foo")), 123),
+                    (AmqpAnnotationKey::from(AmqpSymbol::from("bar")), 95),
+                ]))
+                .with_footer(AmqpAnnotations::from(vec![
+                    (AmqpAnnotationKey::from(AmqpSymbol::from("foo")), 123),
+                    (AmqpAnnotationKey::from(AmqpSymbol::from("bar")), 95),
+                ]))
+                .build();
+
+            let fe2o3_message = fe2o3_amqp_types::messaging::Message::<
+                fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
+            >::from(amqp_message.clone());
+
+            let round_trip = AmqpMessage::from(fe2o3_message.clone());
+            assert_eq!(amqp_message, round_trip);
+        }
+    }
+
     #[test]
     fn convert_empty_message_to_amqp_message() {
         let body: fe2o3_amqp_types::messaging::Body<EmptyBody> =
