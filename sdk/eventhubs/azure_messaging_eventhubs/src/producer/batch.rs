@@ -30,17 +30,17 @@ struct EventDataBatchState {
 ///
 /// # Examples
 ///
-/// ```rust no_run
-/// use azure_messaging_eventhubs::producer::ProducerClient;
-/// use azure_messaging_eventhubs::producer::ProducerClientOptions;
-/// use azure_messaging_eventhubs::producer::batch::EventDataBatch;
-/// use azure_identity::TokenCredentialOptions;
+/// ``` no_run
+/// # use azure_messaging_eventhubs::producer::ProducerClient;
+/// # use azure_messaging_eventhubs::producer::ProducerClientOptions;
+/// # use azure_messaging_eventhubs::producer::batch::EventDataBatch;
+/// # use azure_identity::TokenCredentialOptions;
 ///
 /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credentials = azure_identity::DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
-/// let producer = ProducerClient::new("connection_string", "event_hub_name", credentials, ProducerClientOptions::builder().build());
+/// # let producer_client = ProducerClient::new("fully_qualified_domain_name", "event_hub_name", credentials, ProducerClientOptions::builder().build());
 ///
-/// let mut batch = producer.create_batch(None).await?;
+/// let mut batch = producer_client.create_batch(None).await?;
 ///
 /// batch.try_add_event_data("Hello, Event Hub!", None)?;
 /// batch.try_add_event_data("This is another event.", None)?;

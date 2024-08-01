@@ -11,7 +11,7 @@
 ///
 /// Creating a new `ConsumerClient` instance:
 ///
-/// ```rust no_run
+/// ``` no_run
 /// use azure_messaging_eventhubs::consumer::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 ///
@@ -21,7 +21,7 @@
 ///
 /// Opening a connection to the Event Hub:
 ///
-/// ```rust no_run
+/// ``` no_run
 /// use azure_messaging_eventhubs::consumer::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 ///
@@ -47,7 +47,7 @@
 ///
 /// Closing the connection to the Event Hub:
 ///
-/// ```rust no_run
+/// ``` no_run
 /// use azure_messaging_eventhubs::consumer::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 ///
@@ -75,7 +75,7 @@
 ///
 /// Receiving events from a specific partition of the Event Hub:
 ///
-/// ```rust no_run
+/// ``` no_run
 /// use azure_messaging_eventhubs::consumer::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 /// use async_std::stream::StreamExt;

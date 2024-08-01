@@ -23,6 +23,7 @@ mod common;
 #[tokio::test]
 async fn test_round_trip_batch() {
     const EVENTHUB_PARTITION: &str = "1";
+    const TEST_NAME: &str = "test_round_trip_batch";
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
@@ -31,7 +32,7 @@ async fn test_round_trip_batch() {
         eventhub.clone(),
         DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
         ProducerClientOptions::builder()
-            .with_application_id("test_new")
+            .with_application_id(TEST_NAME)
             .build(),
     );
 
@@ -114,7 +115,7 @@ async fn test_round_trip_batch() {
         DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
         Some(
             ConsumerClientOptions::builder()
-                .with_application_id("test_new")
+                .with_application_id(TEST_NAME)
                 .build(),
         ),
     );
