@@ -1,9 +1,11 @@
-use crate::StatusCode;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! Interfaces for working with errors.
+
+use http_types::StatusCode;
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
-mod http_error;
-mod macros;
-pub use http_error::HttpError;
 
 /// A convenience alias for `Result` where the error type is hard coded to [`Error`].
 pub type Result<T> = std::result::Result<T, Error>;
@@ -14,6 +16,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ErrorKind {
     /// An HTTP status code that was not expected.
+    #[cfg(feature = "http")]
     HttpResponse {
         status: StatusCode,
         error_code: Option<String>,
@@ -39,13 +42,8 @@ impl ErrorKind {
     }
 
     /// Create an `ErrorKind` from an HTTP response.
+    #[cfg(feature = "http")]
     pub fn http_response(status: StatusCode, error_code: Option<String>) -> Self {
-        Self::HttpResponse { status, error_code }
-    }
-
-    /// Create an `ErrorKind` from an HTTP response with response content.
-    pub fn http_response_from_body(status: StatusCode, body: &[u8]) -> Self {
-        let error_code = http_error::get_error_code_from_body(body);
         Self::HttpResponse { status, error_code }
     }
 }
@@ -70,7 +68,7 @@ impl Display for ErrorKind {
     }
 }
 
-/// An error encountered when communicating with Azure.
+/// An error encountered when communicating with the service.
 #[derive(Debug)]
 pub struct Error {
     context: Context,
@@ -202,20 +200,6 @@ impl Error {
         }
     }
 
-    /// Cast this error as an [`HttpError`].
-    ///
-    /// This searches the entire ["source" chain](https://doc.rust-lang.org/std/error/trait.Error.html#method.source)
-    /// looking for an `HttpError`.
-    pub fn as_http_error(&self) -> Option<&HttpError> {
-        let mut error = self.get_ref()? as &(dyn std::error::Error);
-        loop {
-            match error.downcast_ref::<HttpError>() {
-                Some(e) => return Some(e),
-                None => error = error.source()?,
-            }
-        }
-    }
-
     /// Returns a reference to the inner error, if any, downcast to the type provided.
     pub fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T> {
         self.get_ref()?.downcast_ref()
@@ -268,6 +252,7 @@ impl From<base64::DecodeError> for Error {
     }
 }
 
+#[cfg(feature = "json")]
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
         Self::new(ErrorKind::DataConversion, error)
@@ -468,33 +453,6 @@ mod tests {
         let inner = error.get_mut().unwrap();
         let inner = inner.downcast_ref::<std::io::Error>().unwrap();
         assert_eq!(format!("{inner}"), "second error");
-    }
-
-    #[test]
-    fn matching_against_http_error() {
-        let kind = ErrorKind::http_response_from_body(StatusCode::ImATeapot, b"{}");
-
-        assert!(matches!(
-            kind,
-            ErrorKind::HttpResponse {
-                status: StatusCode::ImATeapot,
-                error_code: None
-            }
-        ));
-
-        let kind = ErrorKind::http_response_from_body(
-            StatusCode::ImATeapot,
-            br#"{"error": {"code":"teapot"}}"#,
-        );
-
-        assert!(matches!(
-            kind,
-            ErrorKind::HttpResponse {
-                status: StatusCode::ImATeapot,
-                error_code
-            }
-            if error_code.as_deref() == Some("teapot")
-        ));
     }
 
     #[test]

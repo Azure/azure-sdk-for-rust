@@ -1,7 +1,7 @@
 use crate::{token_credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
-    error::{Error, ErrorKind},
+    error::{http_response_from_body, Error, ErrorKind},
     headers::HeaderName,
     json::from_json,
     HttpClient, Method, Request, StatusCode, Url,
@@ -107,9 +107,7 @@ impl ImdsManagedIdentityCredential {
                     ))
                 }
                 rsp_status => {
-                    return Err(
-                        ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error()
-                    )
+                    return Err(http_response_from_body(rsp_status, &rsp_body).into_error())
                 }
             }
         }

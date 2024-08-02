@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
   "sdk/typespec",
+  "sdk/typespec/typespec_client_core",
   "sdk/core/azure_core",
   "sdk/identity/azure_identity",
   "eng/test/mock_transport",
@@ -16,12 +17,18 @@ license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
 rust-version = "1.76"
 
+[workspace.dependencies.typespec]
+path = "sdk/typespec"
+default-features = false
+
+[workspace.dependencies.typespec_client_core]
+path = "sdk/typespec/typespec_client_core"
+default-features = false
+
 [workspace.dependencies.azure_core]
-version = "0.19.0"
 path = "sdk/core/azure_core"
 
 [workspace.dependencies.azure_identity]
-version = "0.19.0"
 path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_common]

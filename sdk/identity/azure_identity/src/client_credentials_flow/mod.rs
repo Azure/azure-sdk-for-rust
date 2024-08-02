@@ -42,7 +42,7 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     headers, HttpClient, Request, Url,
 };
-use azure_core::{json::from_json, Method};
+use azure_core::{error::http_response_from_body, json::from_json, Method};
 use login_response::LoginResponse;
 use std::sync::Arc;
 use url::form_urlencoded;
@@ -79,7 +79,7 @@ pub async fn perform(
     let rsp_status = rsp.status();
     let rsp_body = rsp.into_body().collect().await?;
     if !rsp_status.is_success() {
-        return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
+        return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
     }
     from_json(&rsp_body)
 }

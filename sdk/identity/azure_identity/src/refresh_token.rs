@@ -6,7 +6,7 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers, HttpClient, Request, Url,
 };
-use azure_core::{json::from_json, Method};
+use azure_core::{error::http_response_from_body, json::from_json, Method};
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;
@@ -51,8 +51,8 @@ pub async fn exchange(
         rsp.json().await.map_kind(ErrorKind::Credential)
     } else {
         let rsp_body = rsp.into_body().collect().await?;
-        let token_error: RefreshTokenError = from_json(&rsp_body)
-            .map_err(|_| ErrorKind::http_response_from_body(rsp_status, &rsp_body))?;
+        let token_error: RefreshTokenError =
+            from_json(&rsp_body).map_err(|_| http_response_from_body(rsp_status, &rsp_body))?;
         Err(Error::new(ErrorKind::Credential, token_error))
     }
 }

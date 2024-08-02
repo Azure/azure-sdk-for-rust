@@ -1,4 +1,12 @@
-use crate::{headers, json::from_json, RawResponse, StatusCode};
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+#[cfg(feature = "json")]
+use crate::json::from_json;
+use crate::{
+    http::{headers, RawResponse, StatusCode},
+    Error, ErrorKind,
+};
 use bytes::Bytes;
 use serde::Deserialize;
 use std::{collections::HashMap, fmt};
@@ -34,6 +42,20 @@ impl HttpError {
             details,
             headers,
             body,
+        }
+    }
+
+    /// Try to create an HTTP error from an [`Error`].
+    ///
+    /// This searches the entire ["source" chain](https://doc.rust-lang.org/std/error/trait.Error.html#method.source)
+    /// looking for an `HttpError`.
+    pub fn try_from(error: &Error) -> Option<&Self> {
+        let mut error = error.get_ref()? as &(dyn std::error::Error);
+        loop {
+            match error.downcast_ref::<Self>() {
+                Some(e) => return Some(e),
+                None => error = error.source()?,
+            }
         }
     }
 
@@ -99,7 +121,7 @@ impl ErrorDetails {
 
 /// Gets the error code if it's present in the headers.
 ///
-/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
+/// For more info, see [guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
 fn get_error_code_from_header(headers: &HashMap<String, String>) -> Option<String> {
     headers.get(headers::ERROR_CODE.as_str()).cloned()
 }
@@ -117,18 +139,54 @@ struct ErrorBody {
     code: Option<String>,
 }
 
+/// Create an [`ErrorKind`] from an HTTP response with response content.
+pub fn http_response_from_body(status: StatusCode, body: &[u8]) -> ErrorKind {
+    let error_code = get_error_code_from_body(body);
+    ErrorKind::http_response(status, error_code)
+}
+
 /// Gets the error code if it's present in the body.
 ///
-/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
-pub(crate) fn get_error_code_from_body(body: &[u8]) -> Option<String> {
+/// For more info, see [guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
+fn get_error_code_from_body(body: &[u8]) -> Option<String> {
     let decoded: ErrorBody = from_json(body).ok()?;
     decoded.error.and_then(|e| e.code).or(decoded.code)
 }
 
 /// Gets the error message if it's present in the body.
 ///
-/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
-pub(crate) fn get_error_message_from_body(body: &[u8]) -> Option<String> {
+/// For more info, see [guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
+fn get_error_message_from_body(body: &[u8]) -> Option<String> {
     let decoded: ErrorBody = from_json(body).ok()?;
     decoded.error.and_then(|e| e.message).or(decoded.message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn matching_against_http_error() {
+        let kind = http_response_from_body(StatusCode::ImATeapot, b"{}");
+
+        assert!(matches!(
+            kind,
+            ErrorKind::HttpResponse {
+                status: StatusCode::ImATeapot,
+                error_code: None
+            }
+        ));
+
+        let kind =
+            http_response_from_body(StatusCode::ImATeapot, br#"{"error": {"code":"teapot"}}"#);
+
+        assert!(matches!(
+            kind,
+            ErrorKind::HttpResponse {
+                status: StatusCode::ImATeapot,
+                error_code
+            }
+            if error_code.as_deref() == Some("teapot")
+        ));
+    }
 }

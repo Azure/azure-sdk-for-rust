@@ -7,7 +7,7 @@ mod device_code_responses;
 
 use azure_core::{
     content_type,
-    error::{Error, ErrorKind},
+    error::{http_response_from_body, Error, ErrorKind},
     headers,
     json::from_json,
     sleep, HttpClient, Method, RawResponse, Request, Url,
@@ -41,7 +41,7 @@ where
     let rsp_status = rsp.status();
     let rsp_body = rsp.into_body().collect().await?;
     if !rsp_status.is_success() {
-        return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
+        return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
     }
     let device_code_response: DeviceCodePhaseOneResponse = from_json(&rsp_body)?;
 

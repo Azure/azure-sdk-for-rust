@@ -2,7 +2,7 @@ use crate::{token_credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     base64, content_type,
-    error::{Error, ErrorKind, ResultExt},
+    error::{http_response_from_body, Error, ErrorKind, ResultExt},
     headers, HttpClient, Method, Request,
 };
 
@@ -261,7 +261,7 @@ impl ClientCertificateCredential {
 
         if !rsp_status.is_success() {
             let rsp_body = rsp.into_body().collect().await?;
-            return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
+            return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
         }
 
         let response: AadTokenResponse = rsp.json().await?;
