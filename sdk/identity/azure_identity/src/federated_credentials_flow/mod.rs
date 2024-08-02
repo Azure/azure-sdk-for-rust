@@ -31,13 +31,13 @@
 //! }
 //! ```
 //!
-//! You can learn more about this authorization flow [here](https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow#third-case-access-token-request-with-a-federated-credential).
+//! You can learn more about this authorization flow [here](https://learn.microsoft.com/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow#third-case-access-token-request-with-a-federated-credential).
 
 mod login_response;
 
 use azure_core::{
     content_type,
-    error::{ErrorKind, ResultExt, http_response_from_body},
+    error::{http_response_from_body, ErrorKind, ResultExt},
     headers, HttpClient, Method, Request, Url,
 };
 use login_response::LoginResponse;

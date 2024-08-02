@@ -2,7 +2,7 @@ use crate::{token_credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     base64, content_type,
-    error::{Error, ErrorKind, ResultExt},
+    error::{http_response_from_body, Error, ErrorKind, ResultExt},
     headers, HttpClient, Method, Request,
 };
 
@@ -18,7 +18,6 @@ use openssl::{
 use serde::Deserialize;
 use std::{str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
-use typespec_client_core::error::http_response_from_body;
 use url::{form_urlencoded, Url};
 
 /// Refresh time to use in seconds
