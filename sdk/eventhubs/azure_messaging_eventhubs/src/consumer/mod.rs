@@ -1,6 +1,40 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 
 //cspell: words amqp eventhub eventhubs mgmt amqps
+use super::{
+    common::{
+        user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
+        ManagementInstance,
+    },
+    error::ErrorKind,
+    models::{EventHubPartitionProperties, EventHubProperties, ReceivedEventData, StartPosition},
+};
+
+use async_stream::try_stream;
+use azure_core::{
+    auth::{AccessToken, TokenCredential},
+    error::{Error, Result},
+    RetryOptions,
+};
+use azure_core_amqp::{
+    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityTrait},
+    connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
+    management::{AmqpManagement, AmqpManagementTrait},
+    messaging::{AmqpSource, AmqpSourceFilter},
+    receiver::{AmqpReceiver, AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode},
+    session::{AmqpSession, AmqpSessionTrait},
+    value::AmqpDescribed,
+};
+
+use async_std::sync::Mutex;
+use futures::stream::Stream;
+use std::{
+    collections::HashMap,
+    fmt::Debug,
+    sync::{Arc, OnceLock},
+};
+use tracing::{debug, trace};
+use url::Url;
 
 /// This module contains the `ConsumerClient` struct and related types, which are used for receiving events from an Event Hub.
 ///
@@ -107,40 +141,6 @@
 /// }
 /// ```
 ///
-use super::{
-    common::{
-        user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
-        ManagementInstance,
-    },
-    error::ErrorKind,
-    models::{EventHubPartitionProperties, EventHubProperties, ReceivedEventData, StartPosition},
-};
-
-use async_stream::try_stream;
-use azure_core::{
-    auth::{AccessToken, TokenCredential},
-    error::{Error, Result},
-    RetryOptions,
-};
-use azure_core_amqp::{
-    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityTrait},
-    connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
-    management::{AmqpManagement, AmqpManagementTrait},
-    messaging::{AmqpSource, AmqpSourceFilter},
-    receiver::{AmqpReceiver, AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode},
-    session::{AmqpSession, AmqpSessionTrait},
-    value::AmqpDescribed,
-};
-
-use async_std::sync::Mutex;
-use futures::stream::Stream;
-use std::{
-    collections::HashMap,
-    fmt::Debug,
-    sync::{Arc, OnceLock},
-};
-use tracing::{debug, trace};
-use url::Url;
 
 /// Represents the options for configuring a ConsumerClient.
 #[derive(Debug, Default)]
@@ -200,7 +200,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ```rust no_run
+    /// ``` no_run
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
@@ -246,7 +246,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
@@ -288,7 +288,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ```rust no_run
+    /// ``` no_run
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
@@ -335,7 +335,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ```rust no_run
+    /// ``` no_run
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use async_std::stream::StreamExt;
@@ -437,7 +437,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ```rust no_run
+    /// ``` no_run
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
@@ -488,7 +488,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ```rust no_run
+    /// ``` no_run
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///

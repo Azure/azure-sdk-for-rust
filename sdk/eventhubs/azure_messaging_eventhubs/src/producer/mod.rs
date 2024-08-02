@@ -105,6 +105,7 @@ impl ProducerClient {
     pub async fn submit_batch<'a>(&self, batch: &EventDataBatch<'a>) -> Result<()> {
         let sender = self.ensure_sender(batch.get_batch_path()).await?;
         let messages = batch.get_messages();
+
         sender
             .lock()
             .await

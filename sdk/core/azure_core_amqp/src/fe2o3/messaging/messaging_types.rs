@@ -2,7 +2,7 @@
 
 // cspell: words amqp servicebus eventhub mgmt
 
-use crate::messaging::AmqpOutcome;
+use crate::messaging::{AmqpOutcome, DistributionMode, TerminusDurability, TerminusExpiryPolicy};
 
 impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpOutcome {
     fn from(outcome: fe2o3_amqp_types::messaging::Outcome) -> Self {
@@ -38,19 +38,33 @@ impl From<AmqpOutcome> for fe2o3_amqp_types::messaging::Outcome {
     }
 }
 
+#[test]
+fn test_outcome_round_trip() {
+    let outcomes = vec![
+        AmqpOutcome::Accepted,
+        AmqpOutcome::Released,
+        AmqpOutcome::Rejected,
+        AmqpOutcome::Modified,
+    ];
+
+    for outcome in outcomes {
+        let fe2o3_outcome: fe2o3_amqp_types::messaging::Outcome = outcome.clone().into();
+        let amqp_outcome: AmqpOutcome = fe2o3_outcome.into();
+        assert_eq!(outcome, amqp_outcome);
+    }
+}
+
 impl From<fe2o3_amqp_types::messaging::TerminusDurability>
     for crate::messaging::TerminusDurability
 {
     fn from(durability: fe2o3_amqp_types::messaging::TerminusDurability) -> Self {
         match durability {
-            fe2o3_amqp_types::messaging::TerminusDurability::None => {
-                crate::messaging::TerminusDurability::None
-            }
+            fe2o3_amqp_types::messaging::TerminusDurability::None => TerminusDurability::None,
             fe2o3_amqp_types::messaging::TerminusDurability::Configuration => {
-                crate::messaging::TerminusDurability::Configuration
+                TerminusDurability::Configuration
             }
             fe2o3_amqp_types::messaging::TerminusDurability::UnsettledState => {
-                crate::messaging::TerminusDurability::UnsettledState
+                TerminusDurability::UnsettledState
             }
         }
     }
@@ -61,70 +75,89 @@ impl From<crate::messaging::TerminusDurability>
 {
     fn from(durability: crate::messaging::TerminusDurability) -> Self {
         match durability {
-            crate::messaging::TerminusDurability::None => {
-                fe2o3_amqp_types::messaging::TerminusDurability::None
-            }
-            crate::messaging::TerminusDurability::Configuration => {
+            TerminusDurability::None => fe2o3_amqp_types::messaging::TerminusDurability::None,
+            TerminusDurability::Configuration => {
                 fe2o3_amqp_types::messaging::TerminusDurability::Configuration
             }
-            crate::messaging::TerminusDurability::UnsettledState => {
+            TerminusDurability::UnsettledState => {
                 fe2o3_amqp_types::messaging::TerminusDurability::UnsettledState
             }
         }
     }
 }
 
-impl From<fe2o3_amqp_types::messaging::TerminusExpiryPolicy>
-    for crate::messaging::TerminusExpiryPolicy
-{
+#[test]
+fn test_terminus_durability_round_trip() {
+    let durabilities = vec![
+        TerminusDurability::None,
+        TerminusDurability::Configuration,
+        TerminusDurability::UnsettledState,
+    ];
+
+    for durability in durabilities {
+        let fe2o3_durability =
+            fe2o3_amqp_types::messaging::TerminusDurability::from(durability.clone());
+        let amqp_durability = TerminusDurability::from(fe2o3_durability);
+        assert_eq!(durability, amqp_durability);
+    }
+}
+
+impl From<fe2o3_amqp_types::messaging::TerminusExpiryPolicy> for TerminusExpiryPolicy {
     fn from(expiry_policy: fe2o3_amqp_types::messaging::TerminusExpiryPolicy) -> Self {
         match expiry_policy {
             fe2o3_amqp_types::messaging::TerminusExpiryPolicy::LinkDetach => {
-                crate::messaging::TerminusExpiryPolicy::LinkDetach
+                TerminusExpiryPolicy::LinkDetach
             }
             fe2o3_amqp_types::messaging::TerminusExpiryPolicy::SessionEnd => {
-                crate::messaging::TerminusExpiryPolicy::SessionEnd
+                TerminusExpiryPolicy::SessionEnd
             }
             fe2o3_amqp_types::messaging::TerminusExpiryPolicy::ConnectionClose => {
-                crate::messaging::TerminusExpiryPolicy::ConnectionClose
+                TerminusExpiryPolicy::ConnectionClose
             }
-            fe2o3_amqp_types::messaging::TerminusExpiryPolicy::Never => {
-                crate::messaging::TerminusExpiryPolicy::Never
-            }
+            fe2o3_amqp_types::messaging::TerminusExpiryPolicy::Never => TerminusExpiryPolicy::Never,
         }
     }
 }
 
-impl From<crate::messaging::TerminusExpiryPolicy>
-    for fe2o3_amqp_types::messaging::TerminusExpiryPolicy
-{
-    fn from(expiry_policy: crate::messaging::TerminusExpiryPolicy) -> Self {
+impl From<TerminusExpiryPolicy> for fe2o3_amqp_types::messaging::TerminusExpiryPolicy {
+    fn from(expiry_policy: TerminusExpiryPolicy) -> Self {
         match expiry_policy {
-            crate::messaging::TerminusExpiryPolicy::LinkDetach => {
+            TerminusExpiryPolicy::LinkDetach => {
                 fe2o3_amqp_types::messaging::TerminusExpiryPolicy::LinkDetach
             }
-            crate::messaging::TerminusExpiryPolicy::SessionEnd => {
+            TerminusExpiryPolicy::SessionEnd => {
                 fe2o3_amqp_types::messaging::TerminusExpiryPolicy::SessionEnd
             }
-            crate::messaging::TerminusExpiryPolicy::ConnectionClose => {
+            TerminusExpiryPolicy::ConnectionClose => {
                 fe2o3_amqp_types::messaging::TerminusExpiryPolicy::ConnectionClose
             }
-            crate::messaging::TerminusExpiryPolicy::Never => {
-                fe2o3_amqp_types::messaging::TerminusExpiryPolicy::Never
-            }
+            TerminusExpiryPolicy::Never => fe2o3_amqp_types::messaging::TerminusExpiryPolicy::Never,
         }
     }
 }
 
-impl From<fe2o3_amqp_types::messaging::DistributionMode> for crate::messaging::DistributionMode {
+#[test]
+fn test_terminus_expiry_policy_round_trip() {
+    let expiry_policies = vec![
+        TerminusExpiryPolicy::LinkDetach,
+        TerminusExpiryPolicy::SessionEnd,
+        TerminusExpiryPolicy::ConnectionClose,
+        TerminusExpiryPolicy::Never,
+    ];
+
+    for expiry_policy in expiry_policies {
+        let fe2o3_expiry_policy =
+            fe2o3_amqp_types::messaging::TerminusExpiryPolicy::from(expiry_policy.clone());
+        let amqp_expiry_policy = TerminusExpiryPolicy::from(fe2o3_expiry_policy);
+        assert_eq!(expiry_policy, amqp_expiry_policy);
+    }
+}
+
+impl From<fe2o3_amqp_types::messaging::DistributionMode> for DistributionMode {
     fn from(distribution_mode: fe2o3_amqp_types::messaging::DistributionMode) -> Self {
         match distribution_mode {
-            fe2o3_amqp_types::messaging::DistributionMode::Move => {
-                crate::messaging::DistributionMode::Move
-            }
-            fe2o3_amqp_types::messaging::DistributionMode::Copy => {
-                crate::messaging::DistributionMode::Copy
-            }
+            fe2o3_amqp_types::messaging::DistributionMode::Move => DistributionMode::Move,
+            fe2o3_amqp_types::messaging::DistributionMode::Copy => DistributionMode::Copy,
         }
     }
 }
@@ -132,12 +165,20 @@ impl From<fe2o3_amqp_types::messaging::DistributionMode> for crate::messaging::D
 impl From<crate::messaging::DistributionMode> for fe2o3_amqp_types::messaging::DistributionMode {
     fn from(distribution_mode: crate::messaging::DistributionMode) -> Self {
         match distribution_mode {
-            crate::messaging::DistributionMode::Move => {
-                fe2o3_amqp_types::messaging::DistributionMode::Move
-            }
-            crate::messaging::DistributionMode::Copy => {
-                fe2o3_amqp_types::messaging::DistributionMode::Copy
-            }
+            DistributionMode::Move => fe2o3_amqp_types::messaging::DistributionMode::Move,
+            DistributionMode::Copy => fe2o3_amqp_types::messaging::DistributionMode::Copy,
         }
+    }
+}
+
+#[test]
+fn test_distribution_mode_round_trip() {
+    let distribution_modes = vec![DistributionMode::Move, DistributionMode::Copy];
+
+    for distribution_mode in distribution_modes {
+        let fe2o3_distribution_mode =
+            fe2o3_amqp_types::messaging::DistributionMode::from(distribution_mode.clone());
+        let amqp_distribution_mode = DistributionMode::from(fe2o3_distribution_mode);
+        assert_eq!(distribution_mode, amqp_distribution_mode);
     }
 }
