@@ -1,4 +1,4 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use typespec::json::*;
+pub use typespec_client_core::json::*;

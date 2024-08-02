@@ -6,10 +6,7 @@ use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
 use std::{fmt, marker::PhantomData, pin::Pin};
-use typespec::{
-    error::{ErrorKind, ResultExt},
-    json::from_json,
-};
+use typespec::error::{ErrorKind, ResultExt};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
@@ -198,19 +195,22 @@ impl<T> CollectedResponse<T> {
         Ok(Self::new(status, headers, body))
     }
 
+    /// Deserialize the JSON body into type `T`.
+    #[cfg(feature = "json")]
     pub fn json(&self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {
-        from_json(&self.body)
+        crate::json::from_json(&self.body)
     }
 
+    /// Deserialize the XML body into type `T`.
     #[cfg(feature = "xml")]
     pub fn xml(&self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {
-        typespec::xml::read_xml(&self.body)
+        crate::xml::read_xml(&self.body)
     }
 }
 
@@ -253,12 +253,13 @@ impl ResponseBody {
     }
 
     /// Deserialize the JSON stream into type `T`.
+    #[cfg(feature = "json")]
     pub async fn json<T>(self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {
         let body = self.collect().await?;
-        from_json(body)
+        crate::json::from_json(body)
     }
 
     /// Deserialize the XML stream into type `T`.
@@ -268,7 +269,7 @@ impl ResponseBody {
         T: DeserializeOwned,
     {
         let body = self.collect().await?;
-        typespec::xml::read_xml(&body)
+        crate::xml::read_xml(&body)
     }
 }
 

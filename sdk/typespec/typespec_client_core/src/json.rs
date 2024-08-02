@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::error::Result;
 use bytes::Bytes;
 use serde::{de::DeserializeOwned, Serialize};
+use typespec::error::Result;
 
 /// Serialize a type to JSON.
 pub fn to_json<T>(value: &T) -> Result<Bytes>

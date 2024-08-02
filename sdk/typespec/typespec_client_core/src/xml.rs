@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::error::{ErrorKind, Result, ResultExt};
 use bytes::Bytes;
 pub use quick_xml::serde_helpers::text_content;
 use quick_xml::{
@@ -9,6 +8,7 @@ use quick_xml::{
     se::{to_string, to_string_with_root},
 };
 use serde::de::DeserializeOwned;
+use typespec::error::{ErrorKind, Result, ResultExt};
 
 /// The UTF8 [byte order marker](https://en.wikipedia.org/wiki/Byte_order_mark).
 const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
