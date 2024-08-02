@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::error::Result;
 use bytes::Bytes;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// Serialize a type to JSON.
-pub fn to_json<T>(value: &T) -> crate::Result<Bytes>
+pub fn to_json<T>(value: &T) -> Result<Bytes>
 where
     T: ?Sized + Serialize,
 {
@@ -13,7 +14,7 @@ where
 }
 
 /// Reads the JSON from bytes.
-pub fn from_json<S, T>(body: S) -> crate::Result<T>
+pub fn from_json<S, T>(body: S) -> Result<T>
 where
     S: AsRef<[u8]>,
     T: DeserializeOwned,

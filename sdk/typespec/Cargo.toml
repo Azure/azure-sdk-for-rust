@@ -12,8 +12,10 @@ keywords = ["typespec"]
 
 [dependencies]
 base64 = { workspace = true }
+bytes = { workspace = true, optional = true }
 http-types = { workspace = true, optional = true }
 quick-xml = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 url = { workspace = true }
 
@@ -23,5 +25,5 @@ thiserror = { workspace = true }
 [features]
 default = ["http", "json"]
 http = ["dep:http-types"]
-json = ["dep:serde_json"]
-xml = ["dep:quick-xml"]
+json = ["dep:bytes", "dep:serde", "dep:serde_json"]
+xml = ["dep:bytes", "dep:quick-xml"]

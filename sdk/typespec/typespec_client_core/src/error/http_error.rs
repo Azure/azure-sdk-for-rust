@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(feature = "json")]
-use crate::json::from_json;
 use crate::{
     http::{headers, RawResponse, StatusCode},
     Error, ErrorKind,
@@ -10,6 +8,8 @@ use crate::{
 use bytes::Bytes;
 use serde::Deserialize;
 use std::{collections::HashMap, fmt};
+#[cfg(feature = "json")]
+use typespec::json::from_json;
 
 /// An HTTP error response.
 #[derive(Debug)]

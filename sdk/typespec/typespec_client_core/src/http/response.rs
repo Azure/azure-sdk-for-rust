@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    http::{headers::Headers, StatusCode},
-    json::from_json,
-};
+use crate::http::{headers::Headers, StatusCode};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
 use std::{fmt, marker::PhantomData, pin::Pin};
-use typespec::error::{ErrorKind, ResultExt};
+use typespec::{
+    error::{ErrorKind, ResultExt},
+    json::from_json,
+};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
@@ -210,7 +210,7 @@ impl<T> CollectedResponse<T> {
     where
         T: DeserializeOwned,
     {
-        crate::xml::read_xml(&self.body)
+        typespec::xml::read_xml(&self.body)
     }
 }
 
@@ -268,7 +268,7 @@ impl ResponseBody {
         T: DeserializeOwned,
     {
         let body = self.collect().await?;
-        crate::xml::read_xml(&body)
+        typespec::xml::read_xml(&body)
     }
 }
 
