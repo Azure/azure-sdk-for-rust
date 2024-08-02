@@ -39,7 +39,7 @@
     {
       "name": "rust-custom",
       "path": "../eng/dict/rust-custom.txt",
-      "noSuggest": true,
+      "noSuggest": true
     }
   ],
   "overrides": [
