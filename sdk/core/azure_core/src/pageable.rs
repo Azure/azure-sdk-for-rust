@@ -30,7 +30,7 @@ macro_rules! declare {
             /// Internally uses the Azure specific continuation header to
             /// make repeated requests to Azure yielding a new page each time.
             #[pin_project::pin_project]
-            // This is to surpress the unused `project_ref` warning
+            // This is to suppress the unused `project_ref` warning
             pub struct Pageable<T, E> {
                 #[pin]
                 pub(crate) stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, E>> $($extra)*>>,

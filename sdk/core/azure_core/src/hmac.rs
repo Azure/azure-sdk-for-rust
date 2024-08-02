@@ -28,13 +28,14 @@ pub fn hmac_sha256(data: &str, key: &Secret) -> crate::Result<String> {
     Ok(base64::encode(signature))
 }
 
+// cspell:ignore pkey
 #[cfg(feature = "hmac_openssl")]
 pub fn hmac_sha256(data: &str, key: &Secret) -> crate::Result<String> {
     use openssl::{error::ErrorStack, hash::MessageDigest, pkey::PKey, sign::Signer};
 
-    let dkey = base64::decode(key.secret())?;
+    let decoded = base64::decode(key.secret())?;
     let signature = || -> Result<Vec<u8>, ErrorStack> {
-        let pkey = PKey::hmac(&dkey)?;
+        let pkey = PKey::hmac(&decoded)?;
         let mut signer = Signer::new(MessageDigest::sha256(), &pkey)?;
         signer.update(data.as_bytes())?;
         signer.sign_to_vec()

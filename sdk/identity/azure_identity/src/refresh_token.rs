@@ -107,6 +107,8 @@ mod deserialize {
     }
 }
 
+// cspell:ignore suberror
+
 /// An error response body when there is an error requesting a token
 #[derive(Debug, Clone, Deserialize)]
 #[allow(unused)]

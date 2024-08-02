@@ -201,7 +201,7 @@ impl TokenCredential for DefaultAzureCredentialKind {
                 )
             }
             DefaultAzureCredentialKind::VirtualMachine(credential) => {
-                // IMSD timeout is only limited to 1 second when used in DefaultAzureCredential
+                // IMDS timeout is only limited to 1 second when used in DefaultAzureCredential
                 credential
                     .get_token(scopes)
                     .timeout(Duration::from_secs(1))
@@ -433,7 +433,7 @@ mod tests {
         );
     }
 
-    /// test exluding managed identity credential
+    /// test excluding managed identity credential
     #[test]
     fn test_exclude_managed_identity_credential() {
         let mut builder = DefaultAzureCredentialBuilder::new();

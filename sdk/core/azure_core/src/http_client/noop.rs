@@ -7,7 +7,7 @@ pub(crate) fn new_noop_client() -> std::sync::Arc<dyn crate::HttpClient> {
     std::sync::Arc::new(NoopClient)
 }
 
-// TODO(rylev): we probably don't want to limit this to wasm32
+// TODO: we probably don't want to limit this to wasm32
 // as there will be wasm environments with threads.
 // This should instead be a feature flag
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]

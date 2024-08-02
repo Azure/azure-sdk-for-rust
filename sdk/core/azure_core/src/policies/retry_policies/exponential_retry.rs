@@ -50,7 +50,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn exponentialy_increases_correctly() {
+    fn exponentially_increases_correctly() {
         let options = crate::options::ExponentialRetryOptions::default();
         let policy = ExponentialRetryPolicy::new(
             options.initial_delay,

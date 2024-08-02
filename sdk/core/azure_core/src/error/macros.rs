@@ -22,12 +22,12 @@ macro_rules! ensure {
             return ::std::result::Result::Err($crate::format_err!($kind, $msg));
         }
     };
-    ($cond:expr, $kind:expr, dicate $msg:expr $(,)?) => {
+    ($cond:expr, $kind:expr, dictate $msg:expr $(,)?) => {
         if !$cond {
             return ::std::result::Result::Err($crate::format_err!($kind, $msg));
         }
     };
-    ($cond:expr, $kind:expr, dicate $msg:expr, $($arg:tt)*) => {
+    ($cond:expr, $kind:expr, dictate $msg:expr, $($arg:tt)*) => {
         if !$cond {
             return ::std::result::Result::Err($crate::format_err!($kind, $msg, $($arg)*));
         }
@@ -40,10 +40,10 @@ macro_rules! ensure_eq {
     ($left:expr, $right:expr, $kind:expr, $msg:literal $(,)?) => {
         $crate::ensure!($left == $right, $kind, $msg);
     };
-    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr $(,)?) => {
+    ($left:expr, $right:expr, $kind:expr, dictate $msg:expr $(,)?) => {
         $crate::ensure!($left == $right, $kind, $msg);
     };
-    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr, $($arg:tt)*) => {
+    ($left:expr, $right:expr, $kind:expr, dictate $msg:expr, $($arg:tt)*) => {
         $crate::ensure!($left == $right, $kind, $msg, $($arg)*);
     };
 }
@@ -54,10 +54,10 @@ macro_rules! ensure_ne {
     ($left:expr, $right:expr, $kind:expr, $msg:literal $(,)?) => {
         $crate::ensure!($left != $right, $kind, $msg);
     };
-    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr $(,)?) => {
+    ($left:expr, $right:expr, $kind:expr, dictate $msg:expr $(,)?) => {
         $crate::ensure!($left != $right, $kind, $msg);
     };
-    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr, $($arg:tt)*) => {
+    ($left:expr, $right:expr, $kind:expr, dictate $msg:expr, $($arg:tt)*) => {
         $crate::ensure!($left != $right, $kind, $msg, $($arg)*);
     };
 }
