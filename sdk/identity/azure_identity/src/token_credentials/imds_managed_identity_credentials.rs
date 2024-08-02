@@ -1,7 +1,7 @@
 use crate::{token_credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
-    error::{Error, ErrorKind},
+    error::{http_response_from_body, Error, ErrorKind},
     headers::HeaderName,
     json::from_json,
     HttpClient, Method, Request, StatusCode, Url,
@@ -12,7 +12,6 @@ use serde::{
 };
 use std::{str, sync::Arc};
 use time::OffsetDateTime;
-use typespec_client_core::error::http_response_from_body;
 
 #[derive(Debug)]
 pub(crate) enum ImdsId {

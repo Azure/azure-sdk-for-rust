@@ -37,13 +37,12 @@ mod login_response;
 
 use azure_core::{
     content_type,
-    error::{ErrorKind, ResultExt},
+    error::{ErrorKind, ResultExt, http_response_from_body},
     headers, HttpClient, Method, Request, Url,
 };
 use login_response::LoginResponse;
 use std::sync::Arc;
 use tracing::{debug, error};
-use typespec_client_core::error::http_response_from_body;
 use url::form_urlencoded;
 
 /// Perform the client credentials flow

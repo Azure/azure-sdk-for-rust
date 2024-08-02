@@ -7,7 +7,7 @@ mod device_code_responses;
 
 use azure_core::{
     content_type,
-    error::{Error, ErrorKind},
+    error::{http_response_from_body, Error, ErrorKind},
     headers,
     json::from_json,
     sleep, HttpClient, Method, RawResponse, Request, Url,
@@ -16,7 +16,6 @@ pub use device_code_responses::*;
 use futures::stream::unfold;
 use serde::Deserialize;
 use std::{borrow::Cow, pin::Pin, sync::Arc, time::Duration};
-use typespec_client_core::error::http_response_from_body;
 use url::form_urlencoded;
 
 /// Start the device authorization grant flow.

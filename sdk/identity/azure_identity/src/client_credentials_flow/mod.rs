@@ -42,10 +42,9 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     headers, HttpClient, Request, Url,
 };
-use azure_core::{json::from_json, Method};
+use azure_core::{error::http_response_from_body, json::from_json, Method};
 use login_response::LoginResponse;
 use std::sync::Arc;
-use typespec_client_core::error::http_response_from_body;
 use url::form_urlencoded;
 
 /// Perform the client credentials flow

@@ -6,11 +6,10 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers, HttpClient, Request, Url,
 };
-use azure_core::{json::from_json, Method};
+use azure_core::{error::http_response_from_body, json::from_json, Method};
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;
-use typespec_client_core::error::http_response_from_body;
 use url::form_urlencoded;
 
 /// Exchange a refresh token for a new access token and refresh token
