@@ -1,40 +1,6 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 
 //cspell: words amqp eventhub eventhubs mgmt amqps
-use super::{
-    common::{
-        user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
-        ManagementInstance,
-    },
-    error::ErrorKind,
-    models::{EventHubPartitionProperties, EventHubProperties, ReceivedEventData, StartPosition},
-};
-
-use async_stream::try_stream;
-use azure_core::{
-    auth::{AccessToken, TokenCredential},
-    error::{Error, Result},
-    RetryOptions,
-};
-use azure_core_amqp::{
-    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityTrait},
-    connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
-    management::{AmqpManagement, AmqpManagementTrait},
-    messaging::{AmqpSource, AmqpSourceFilter},
-    receiver::{AmqpReceiver, AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode},
-    session::{AmqpSession, AmqpSessionTrait},
-    value::AmqpDescribed,
-};
-
-use async_std::sync::Mutex;
-use futures::stream::Stream;
-use std::{
-    collections::HashMap,
-    fmt::Debug,
-    sync::{Arc, OnceLock},
-};
-use tracing::{debug, trace};
-use url::Url;
 
 /// This module contains the `ConsumerClient` struct and related types, which are used for receiving events from an Event Hub.
 ///
@@ -141,35 +107,42 @@ use url::Url;
 /// }
 /// ```
 ///
+use super::{
+    common::{
+        user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
+        ManagementInstance,
+    },
+    error::ErrorKind,
+    models::{EventHubPartitionProperties, EventHubProperties, ReceivedEventData, StartPosition},
+};
 
-/// Represents the options for configuring a ConsumerClient.
-#[derive(Debug, Default)]
-pub struct ConsumerClientOptions {
-    application_id: Option<String>,
-    instance_id: Option<String>,
-    retry_options: Option<RetryOptions>,
-}
+use async_stream::try_stream;
+use azure_core::{
+    auth::{AccessToken, TokenCredential},
+    error::{Error, Result},
+    RetryOptions,
+};
+use azure_core_amqp::{
+    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityTrait},
+    connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
+    management::{AmqpManagement, AmqpManagementTrait},
+    messaging::{AmqpSource, AmqpSourceFilter},
+    receiver::{AmqpReceiver, AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode},
+    session::{AmqpSession, AmqpSessionTrait},
+    value::AmqpDescribed,
+};
 
-impl ConsumerClientOptions {
-    pub fn builder() -> builders::ConsumerClientOptionsBuilder {
-        builders::ConsumerClientOptionsBuilder::new()
-    }
-}
+use async_std::sync::Mutex;
+use futures::stream::Stream;
+use std::{
+    collections::HashMap,
+    fmt::Debug,
+    sync::{Arc, OnceLock},
+};
+use tracing::{debug, trace};
+use url::Url;
 
-#[derive(Debug, Clone, Default)]
-pub struct ReceiveOptions {
-    owner_level: Option<i64>,
-    prefetch: Option<u32>,
-    start_position: Option<StartPosition>,
-}
-/// Represents the options for receiving events from an Event Hub.
-impl ReceiveOptions {
-    /// Creates a new `ReceiveOptionsBuilder` to configure the receive options.
-    pub fn builder() -> builders::ReceiveOptionsBuilder {
-        builders::ReceiveOptionsBuilder::new()
-    }
-}
-
+/// A client that can be used to receive events from an Event Hub.
 #[derive(Debug)]
 pub struct ConsumerClient {
     options: ConsumerClientOptions,
@@ -200,12 +173,15 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ``` no_run
+    /// ```no_run
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
-    /// let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
     /// let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    /// # Ok(())}
     /// ```
     #[tracing::instrument]
     pub fn new(
@@ -639,6 +615,36 @@ impl ConsumerClient {
         let rv = session_instances.get(partition_id).unwrap().clone();
         debug!("Cloning session for partition {:?}: {:?}", partition_id, rv);
         Ok(rv)
+    }
+}
+
+/// Represents the options for configuring a ConsumerClient.
+#[derive(Debug, Default)]
+pub struct ConsumerClientOptions {
+    application_id: Option<String>,
+    instance_id: Option<String>,
+    retry_options: Option<RetryOptions>,
+}
+
+impl ConsumerClientOptions {
+    /// Creates a new `ConsumerClientOptionsBuilder` to configure the consumer client options.
+    pub fn builder() -> builders::ConsumerClientOptionsBuilder {
+        builders::ConsumerClientOptionsBuilder::new()
+    }
+}
+
+/// Represents the options for receiving events from an Event Hub.
+#[derive(Debug, Clone, Default)]
+pub struct ReceiveOptions {
+    owner_level: Option<i64>,
+    prefetch: Option<u32>,
+    start_position: Option<StartPosition>,
+}
+/// Represents the options for receiving events from an Event Hub.
+impl ReceiveOptions {
+    /// Creates a new `ReceiveOptionsBuilder` to configure the receive options.
+    pub fn builder() -> builders::ReceiveOptionsBuilder {
+        builders::ReceiveOptionsBuilder::new()
     }
 }
 

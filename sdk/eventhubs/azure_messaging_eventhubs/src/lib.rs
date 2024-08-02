@@ -2,19 +2,53 @@
 // cspell: words amqp eventhub eventhubs eventdata
 
 #![recursion_limit = "128"]
+#![warn(missing_docs)]
+
+/// This module contains the implementation of the Azure Messaging Event Hubs SDK for Rust.
+///
+/// The SDK provides types and functions to interact with Azure Event Hubs, which is a highly scalable data streaming platform and event ingestion service.
+/// It allows you to consume events from an Event Hub and create/send events to an Event Hub.
+///
+/// # Examples
+///
+/// Consuming events from an Event Hub:
+///
+/// ```no_run
+/// # use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+/// # #[tokio::main]
+/// # async fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
+/// # let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+
+/// use azure_messaging_eventhubs::consumer::ConsumerClient;
+/// use azure_messaging_eventhubs::models::EventData;
+///
+/// let consumer_client = ConsumerClient::new("fully_qualified_domain", "eventhub_name", None, my_credentials, None);
+/// let partition_properties = consumer_client.get_partition_properties("0").await?;
+/// # Ok(())
+/// # }
+/// ```
+///
+/// ```
 pub(crate) mod common;
+
+/// Types to consume events from an Event Hub
 pub mod consumer;
+
+/// Types related to errors processing events.
 pub mod error;
+
+/// Types to create and send events to an Event Hub.
 pub mod producer;
 
+/// Model types sent to and received from an Event Hub.
 pub mod models {
+    pub type AmqpMessage = azure_core_amqp::messaging::AmqpMessage;
+    pub type AmqpMessageBody = azure_core_amqp::messaging::AmqpMessageBody;
+    pub type AmqpMessageId = azure_core_amqp::messaging::AmqpMessageId;
+    pub type AmqpMessageProperties = azure_core_amqp::messaging::AmqpMessageProperties;
+    pub type AmqpValue = azure_core_amqp::value::AmqpValue;
 
-    use azure_core_amqp::{
-        messaging::{
-            AmqpAnnotationKey, AmqpMessage, AmqpMessageBody, AmqpMessageId, AmqpMessageProperties,
-        },
-        value::AmqpValue,
-    };
+    use azure_core_amqp::messaging::AmqpAnnotationKey;
     use std::{
         collections::HashMap,
         fmt::{Debug, Display, Formatter},
@@ -46,19 +80,15 @@ pub mod models {
     ///
     /// Basic usage:
     ///
-    /// ```rust
-    /// use azure_messaging_eventhubs::models::EventHubPartitionProperties;
-    /// use std::time::{SystemTime, UNIX_EPOCH};
+    /// ```no_run
+    /// # use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    /// let consumer_client = azure_messaging_eventhubs::consumer::ConsumerClient::new("fully_qualified_domain", "eventhub_name", None, my_credentials, None);
     ///
-    /// let partition_properties = EventHubPartitionProperties {
-    ///     id: "0".to_string(),
-    ///     eventhub: "example-hub".to_string(),
-    ///     beginning_sequence_number: 0,
-    ///     last_enqueued_sequence_number: 100,
-    ///     last_enqueued_offset: "12345".to_string(),
-    ///     last_enqueued_time_utc: SystemTime::now(),
-    ///     is_empty: false,
-    /// };
+    /// let partition_properties = consumer_client.get_partition_properties("0").await?;
+    /// # Ok(()) }
     /// ```
     ///
     #[derive(Debug)]

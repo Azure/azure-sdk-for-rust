@@ -30,8 +30,10 @@ use std::{boxed::Box, collections::HashMap};
 use tracing::{debug, trace};
 use url::Url;
 
+/// Types used to collect messages into a "batch" before submitting them to an Event Hub.
 pub mod batch;
 
+/// Options used when creating an Event Hubs ProducerClient.
 pub struct ProducerClientOptions {
     application_id: Option<String>,
     retry_options: Option<RetryOptions>,
@@ -39,6 +41,7 @@ pub struct ProducerClientOptions {
 }
 
 impl ProducerClientOptions {
+    /// Creates a builder to create ProducerClientOptions.
     pub fn builder() -> builders::ProducerClientOptionsBuilder {
         builders::ProducerClientOptionsBuilder::new()
     }
@@ -50,6 +53,32 @@ struct SenderInstance {
     sender: Arc<Mutex<AmqpSender>>,
 }
 
+/// A client that can be used to send events to an Event Hub.
+///
+/// The `ProducerClient` is used to send events to an Event Hub. It can be used to send events to a specific partition or to allow the Event Hub to automatically select the partition.
+///
+/// The `ProducerClient` can be created using the `new` method. The `new` method requires the fully qualified namespace of the Event Hub, the name of the Event Hub, a `TokenCredential` implementation, and `ProducerClientOptions`.
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+/// use std::error::Error;
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+///    let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
+///    let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
+///    let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+///    let options = ProducerClientOptions::builder()
+///      .with_application_id("your_application_id")
+///      .build();
+///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, options);
+///   producer.open().await?;
+///   Ok(())
+/// }
+/// ```
 pub struct ProducerClient {
     options: ProducerClientOptions,
     sender_instances: Mutex<HashMap<String, SenderInstance>>,
@@ -62,6 +91,18 @@ pub struct ProducerClient {
 }
 
 impl ProducerClient {
+    /// Creates a new instance of `ProducerClient`.
+    ///
+    /// # Arguments
+    ///
+    /// * `fully_qualified_namespace` - The fully qualified namespace of the Event Hubs instance.
+    /// * `eventhub` - The name of the Event Hub.
+    /// * `credential` - The token credential used for authorization.
+    /// * `options` - The options for configuring the `ProducerClient`.
+    ///
+    /// # Returns
+    ///
+    /// A new instance of `ProducerClient`.
     pub fn new(
         fully_qualified_namespace: impl Into<String>,
         eventhub: impl Into<String>,

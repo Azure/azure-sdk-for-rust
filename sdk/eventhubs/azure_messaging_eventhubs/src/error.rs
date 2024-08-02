@@ -3,17 +3,36 @@
 // cspell: words amqp eventhubs
 use azure_core_amqp::error::AmqpError;
 
+/// Represents the different kinds of errors that can occur in the Eventhubs module.
 pub enum ErrorKind {
+    /// An invalid parameter was passed to a function.
     InvalidParameter(String),
+
+    /// The connection string is missing.
     MissingConnectionString,
+
+    /// The shared access key name is missing.
     MissingSharedAccessKeyName,
+
+    /// The endpoint is missing.
     MissingEndpoint,
+
+    /// The host is missing in the endpoint.
     MissingHostInEndpoint,
+
+    /// The connection is not yet open.
     MissingConnection,
+
+    /// The management response is invalid.
     InvalidManagementResponse,
-    AmqpError { source: AmqpError },
+
+    /// Represents the source of the AMQP error.
+    /// This is used to wrap an AMQP error in an Eventhubs error.
+    ///
+    AmqpError(AmqpError),
 }
 
+/// Represents an error that can occur in the Eventhubs module.
 pub struct EventhubsError {
     kind: ErrorKind,
 }
@@ -28,7 +47,7 @@ impl std::fmt::Display for EventhubsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
             ErrorKind::InvalidManagementResponse => write!(f, "Invalid management response"),
-            ErrorKind::AmqpError { source } => write!(f, "AmqpError: {:?}", source),
+            ErrorKind::AmqpError(source) => write!(f, "AmqpError: {:?}", source),
             ErrorKind::MissingConnection => write!(f, "Connection is not yet open."),
             ErrorKind::InvalidParameter(s) => write!(f, "Invalid parameter: {}", s),
             ErrorKind::MissingConnectionString => write!(f, "Missing connection string"),

@@ -30,12 +30,18 @@ default-features = false
 [workspace.dependencies.azure_core]
 path = "sdk/core/azure_core"
 
+[workspace.dependencies.azure_core_amqp]
+path = "sdk/core/azure_core_amqp"
+
 [workspace.dependencies.azure_identity]
 path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_common]
 version = "0.1.0"
 path = "sdk/storage"
+
+[workspace.dependencies.azure_messaging_eventhubs]
+path = "sdk/eventhubs/azure_messaging_eventhubs"
 
 [workspace.dependencies]
 async-lock = "3.0"
