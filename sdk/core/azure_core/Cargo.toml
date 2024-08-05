@@ -49,7 +49,7 @@ rustc_version = { workspace = true }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true }
-tokio = { workspace = true, features = ["rt-multi-thread"] }
+tokio = { workspace = true }
 thiserror = { workspace = true }
 
 [features]
