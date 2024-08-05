@@ -317,13 +317,13 @@ impl ClientCertificateCredential {
                 )
             })?;
 
-        Ok(ClientCertificateCredential::new(
+        ClientCertificateCredential::new(
             tenant_id,
             client_id,
             client_certificate,
             client_certificate_password,
             options,
-        )?)
+        )
     }
 }
 

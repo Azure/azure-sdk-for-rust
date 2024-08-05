@@ -24,4 +24,4 @@ typespec = { workspace = true, default-features = false }
 default = ["http", "json"]
 http = ["dep:http-types", "typespec/http"]
 json = ["typespec/json"]
-xml = ["dep:quick-xml", "typespec/xml"]
+xml = ["dep:quick-xml"]

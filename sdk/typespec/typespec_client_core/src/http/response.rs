@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    http::{headers::Headers, StatusCode},
-    json::from_json,
-};
+use crate::http::{headers::Headers, StatusCode};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
@@ -198,13 +195,16 @@ impl<T> CollectedResponse<T> {
         Ok(Self::new(status, headers, body))
     }
 
+    /// Deserialize the JSON body into type `T`.
+    #[cfg(feature = "json")]
     pub fn json(&self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {
-        from_json(&self.body)
+        crate::json::from_json(&self.body)
     }
 
+    /// Deserialize the XML body into type `T`.
     #[cfg(feature = "xml")]
     pub fn xml(&self) -> crate::Result<T>
     where
@@ -253,12 +253,13 @@ impl ResponseBody {
     }
 
     /// Deserialize the JSON stream into type `T`.
+    #[cfg(feature = "json")]
     pub async fn json<T>(self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {
         let body = self.collect().await?;
-        from_json(body)
+        crate::json::from_json(body)
     }
 
     /// Deserialize the XML stream into type `T`.

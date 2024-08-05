@@ -8,5 +8,7 @@ pub mod error;
 pub mod http;
 #[cfg(feature = "json")]
 pub mod json;
+#[cfg(feature = "xml")]
+pub mod xml;
 
 pub use typespec::error::*;
