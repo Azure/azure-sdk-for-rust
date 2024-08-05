@@ -16,6 +16,7 @@ use azure_core_amqp::{
 use tracing::debug;
 use uuid::Uuid;
 
+/// Represents the options that can be set when adding event data to an `EventDataBatch`.
 pub struct AddEventDataOptions {}
 
 struct EventDataBatchState {
@@ -85,19 +86,37 @@ impl<'a> EventDataBatch<'a> {
         Ok(())
     }
 
+    /// Gets the size of the batch in bytes.
+    ///
+    /// The size of the batch is the sum of the size of the messages in the batch.
+    ///
+    /// # Returns
+    /// The size of the batch in bytes.
+    ///
     pub fn size(&self) -> u64 {
         self.batch_state.lock().unwrap().size_in_bytes
     }
 
+    /// Gets the number of messages in the batch.
+    ///
+    /// # Returns
+    ///
+    /// The number of messages in the batch.
+    ///
     pub fn len(&self) -> usize {
         self.batch_state.lock().unwrap().serialized_messages.len()
     }
 
+    /// Determines whether the batch is empty.
+    ///
+    /// # Returns
+    /// `true` if the batch is empty; otherwise, `false`.
+    ///
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    pub fn calculate_actual_size_for_payload(length: usize) -> u64 {
+    fn calculate_actual_size_for_payload(length: usize) -> u64 {
         const MESSAGE_HEADER_SIZE_32: usize = 8;
         const MESSAGE_HEADER_SIZE_8: usize = 5;
         if length < 256 {
@@ -107,6 +126,91 @@ impl<'a> EventDataBatch<'a> {
         }
     }
 
+    /// Tries to add an event data to the batch.
+    ///
+    /// If the event data is successfully added to the batch, the method returns `true`. If the event data cannot be added to the batch because the batch is full, the method returns `false`.
+    ///
+    /// # Parameters
+    /// `event_data` - The event data to add to the batch.
+    /// `options` - The options to set when adding the event data to the batch.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the event data was added to the batch; otherwise, `false`.
+    ///
+    /// # Remarks
+    /// If the event data does not have a message ID, a new message ID is generated for the event data.
+    /// If the batch has a partition key, the event data is assigned the partition key.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    ///
+    /// # use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// # use azure_messaging_eventhubs::producer::batch::EventDataBatch;
+    /// # use azure_messaging_eventhubs::producer::batch::EventDataBatchOptions;
+    /// # use azure_messaging_eventhubs::producer::batch::AddEventDataOptions;
+    /// # use azure_messaging_eventhubs::models::EventData;
+    ///
+    /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let my_credential = azure_identity::DefaultAzureCredential::create(azure_identity::TokenCredentialOptions::default()).unwrap();
+    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name", "event_hub_name", my_credential, ProducerClientOptions::builder().build());
+    /// let mut batch = producer_client.create_batch(None).await?;
+    ///
+    /// let event_data = EventData::builder().build();
+    /// batch.try_add_event_data(event_data, None)?;
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    /// # use azure_messaging_eventhubs::producer::batch::EventDataBatch;
+    ///
+    pub fn try_add_event_data(
+        &mut self,
+        event_data: impl Into<EventData>,
+        #[allow(unused_variables)] options: Option<AddEventDataOptions>,
+    ) -> Result<bool> {
+        let event_data = event_data.into();
+        self.try_add_amqp_message(event_data, options)
+    }
+
+    /// Tries to add an AMQP Message to the batch.
+    ///
+    /// If the message is successfully added to the batch, the method returns `true`. If the message cannot be added to the batch because the batch is full, the method returns `false`.
+    ///
+    /// # Parameters
+    /// `message` - The message to add to the batch.
+    /// `options` - The options to set when adding the message to the batch.
+    ///
+    /// # Returns
+    /// `true` if the message was added to the batch; otherwise, `false`.
+    ///
+    /// # Remarks
+    /// If the message does not have a message ID, a new message ID is generated for the message.
+    /// If the batch has a partition key, the message is assigned the partition key.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// # use azure_messaging_eventhubs::producer::batch::EventDataBatch;
+    /// # use azure_messaging_eventhubs::producer::batch::EventDataBatchOptions;
+    /// # use azure_messaging_eventhubs::producer::batch::AddEventDataOptions;
+    /// # use azure_messaging_eventhubs::models::EventData;
+    /// # use azure_messaging_eventhubs::models::AmqpMessage;
+    ///
+    /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let my_credential = azure_identity::DefaultAzureCredential::create(azure_identity::TokenCredentialOptions::default()).unwrap();
+    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name", "event_hub_name", my_credential, ProducerClientOptions::builder().build());
+    /// let mut batch = producer_client.create_batch(None).await?;
+    ///
+    /// let amqp_message = AmqpMessage::builder().build();
+    /// batch.try_add_amqp_message(amqp_message, None)?;
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
     pub fn try_add_amqp_message(
         &self,
         message: impl Into<AmqpMessage>,
@@ -165,15 +269,6 @@ impl<'a> EventDataBatch<'a> {
         batch_state.serialized_messages.push(serialized_message);
 
         Ok(true)
-    }
-
-    pub fn try_add_event_data(
-        &mut self,
-        event_data: impl Into<EventData>,
-        #[allow(unused_variables)] options: Option<AddEventDataOptions>,
-    ) -> Result<bool> {
-        let event_data = event_data.into();
-        self.try_add_amqp_message(event_data, options)
     }
 
     pub(crate) fn get_messages(&self) -> AmqpMessage {
@@ -238,13 +333,35 @@ impl<'a> EventDataBatch<'a> {
         batch_builder.build()
     }
 }
+
+/// Represents the options that can be set when creating an `EventDataBatch`.
+/// The options include the maximum size of the batch, the partition key, and the partition ID.
+///
+/// # Examples
+///
+/// ```
+/// use azure_messaging_eventhubs::producer::batch::EventDataBatchOptions;
+///
+/// let options = EventDataBatchOptions::builder()
+///    .with_max_size_in_bytes(1024)
+///    .with_partition_key("pk")
+///    .with_partition_id("pid")
+///    .build();
+/// ```
+///
 pub struct EventDataBatchOptions {
-    pub(crate) max_size_in_bytes: Option<u64>,
-    pub(crate) partition_key: Option<String>,
-    pub(crate) partition_id: Option<String>,
+    max_size_in_bytes: Option<u64>,
+    partition_key: Option<String>,
+    partition_id: Option<String>,
 }
 
 impl EventDataBatchOptions {
+    /// Creates a new `EventDataBatchOptionsBuilder` to build an `EventDataBatchOptions`.
+    ///
+    /// # Returns
+    ///
+    /// An `EventDataBatchOptionsBuilder`.
+    ///
     pub fn builder() -> builders::EventDataBatchOptionsBuilder {
         builders::EventDataBatchOptionsBuilder::new()
     }
@@ -268,21 +385,30 @@ mod builders {
             }
         }
 
+        /// Sets the maximum size of the batch in bytes.
         pub fn with_max_size_in_bytes(mut self, max_size_in_bytes: u64) -> Self {
             self.options.max_size_in_bytes = Some(max_size_in_bytes);
             self
         }
 
+        /// Sets the target partition key for the batch.
         pub fn with_partition_key(mut self, partition_key: impl Into<String>) -> Self {
             self.options.partition_key = Some(partition_key.into());
             self
         }
 
+        /// Sets the target partition ID for the batch.
         pub fn with_partition_id(mut self, partition_id: impl Into<String>) -> Self {
             self.options.partition_id = Some(partition_id.into());
             self
         }
 
+        /// Builds the `EventDataBatchOptions`.
+        ///
+        /// # Returns
+        ///
+        /// An `EventDataBatchOptions`.
+        ///
         pub fn build(self) -> EventDataBatchOptions {
             self.options
         }

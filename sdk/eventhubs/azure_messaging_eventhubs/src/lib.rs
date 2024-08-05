@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
-// cspell: words amqp eventhub eventhubs eventdata
 
 #![recursion_limit = "128"]
 #![warn(missing_docs)]
+// cspell: words amqp eventhub eventhubs eventdata
+
+//! #[doc = include_str!("../README.md")]
 
 /// This module contains the implementation of the Azure Messaging Event Hubs SDK for Rust.
 ///
@@ -25,10 +27,9 @@
 /// let consumer_client = ConsumerClient::new("fully_qualified_domain", "eventhub_name", None, my_credentials, None);
 /// let partition_properties = consumer_client.get_partition_properties("0").await?;
 /// # Ok(())
-/// # }
+/// }
 /// ```
 ///
-/// ```
 pub(crate) mod common;
 
 /// Types to consume events from an Event Hub
@@ -42,10 +43,19 @@ pub mod producer;
 
 /// Model types sent to and received from an Event Hub.
 pub mod models {
+    /// An AMQP Message sent to the eventhubs service.
     pub type AmqpMessage = azure_core_amqp::messaging::AmqpMessage;
+
+    /// The body of an AMQP message.
     pub type AmqpMessageBody = azure_core_amqp::messaging::AmqpMessageBody;
+
+    /// The unique identifier of an AMQP message.
     pub type AmqpMessageId = azure_core_amqp::messaging::AmqpMessageId;
+
+    /// The properties of an AMQP message.
     pub type AmqpMessageProperties = azure_core_amqp::messaging::AmqpMessageProperties;
+
+    /// An AMQP Value.
     pub type AmqpValue = azure_core_amqp::value::AmqpValue;
 
     use azure_core_amqp::messaging::AmqpAnnotationKey;
@@ -55,10 +65,44 @@ pub mod models {
     };
     use tracing::warn;
 
+    /// Represents the properties of an Event Hub.
+    ///
+    /// This struct provides detailed information about an Event Hub, including its name, creation time, and the unique identifiers of its partitions.
+    ///
+    /// # Fields
+    ///
+    /// - `name`: A `String` representing the name of the Event Hub.
+    /// - `created_on`: A `std::time::SystemTime` representing the UTC time when the Event Hub was created.
+    /// - `partition_ids`: A `Vec<String>` containing the unique identifiers of the partitions in the Event Hub.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```no_run
+    /// # use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    /// let consumer_client = azure_messaging_eventhubs::consumer::ConsumerClient::new("fully_qualified_domain", "eventhub_name", None, my_credentials, None);
+    ///
+    /// let eventhub_properties = consumer_client.get_eventhub_properties().await?;
+    ///
+    /// for partition_id in eventhub_properties.partition_ids {
+    ///    println!("Partition ID: {}", partition_id);
+    /// }
+    /// # Ok(()) }
+    /// ```
+    ///
     #[derive(Debug)]
     pub struct EventHubProperties {
+        /// The name of the Event Hub.
         pub name: String,
+
+        /// The time when the Event Hub was created.
         pub created_on: std::time::SystemTime,
+
+        /// The unique identifiers of the partitions in the Event Hub.
         pub partition_ids: Vec<String>,
     }
 
@@ -93,12 +137,25 @@ pub mod models {
     ///
     #[derive(Debug)]
     pub struct EventHubPartitionProperties {
+        /// The unique identifier of the partition.
         pub id: String,
+
+        /// The name of the Event Hub this partition belongs to.
         pub eventhub: String,
+
+        /// The sequence number of the earliest event that can be received from this partition.
         pub beginning_sequence_number: i64,
+
+        /// The sequence number of the latest event that has been enqueued in this partition.
         pub last_enqueued_sequence_number: i64,
+
+        /// The offset of the latest event that has been enqueued in this partition.
         pub last_enqueued_offset: String,
+
+        /// The UTC time when the last event was enqueued in this partition.
         pub last_enqueued_time_utc: std::time::SystemTime,
+
+        /// Indicates whether the partition is empty.
         pub is_empty: bool,
     }
 
@@ -110,9 +167,16 @@ pub mod models {
     ///
     #[derive(Debug, PartialEq, Clone)]
     pub enum MessageId {
+        /// A binary representation of the message identifier.
         Binary(Vec<u8>),
+
+        /// A string representation of the message identifier.
         String(String),
+
+        /// A 64-bit unsigned integer representation of the message identifier.
         Ulong(u64),
+
+        /// A UUID representation of the message identifier.
         Uuid(uuid::Uuid),
     }
 
@@ -205,7 +269,7 @@ pub mod models {
     }
 
     #[derive(Debug, Default, PartialEq, Clone)]
-    pub enum StartLocation {
+    pub(crate) enum StartLocation {
         Offset(String),
         SequenceNumber(i64),
         EnqueuedTime(std::time::SystemTime),
@@ -218,6 +282,73 @@ pub mod models {
     const OFFSET_ANNOTATION: &str = "amqp.annotation.x-opt-offset";
     const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number";
 
+    /// Represents the starting position of a consumer when receiving events from an Event Hub.
+    ///
+    /// This enum provides different ways to specify the starting position of a consumer when receiving events from an Event Hub.
+    /// The starting position can be specified using an offset, a sequence number, an enqueued time, or the earliest or latest event in the partition.
+    ///
+    /// The default starting position is the latest event in the partition (always receive new events).
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::models::StartPosition;
+    ///
+    /// let start_position = StartPosition::builder()
+    ///    .with_sequence_number(12345)
+    ///    .build();
+    /// ```
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::models::StartPosition;
+    ///
+    /// let start_position = StartPosition::builder()
+    ///   .with_sequence_number(12345)
+    ///   .inclusive()
+    ///   .build();
+    /// ```
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::models::StartPosition;
+    ///
+    /// let start_position = StartPosition::builder()
+    ///  .with_enqueued_time(std::time::SystemTime::now())
+    ///  .build();
+    /// ```
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::models::StartPosition;
+    ///
+    /// let start_position = StartPosition::builder()
+    ///  .with_offset("12345".to_string())
+    ///  .build();
+    /// ```
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::models::StartPosition;
+    ///
+    /// let start_position = StartPosition::builder()
+    ///   .with_earliest_location()
+    ///   .build();
+    /// ```
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::models::StartPosition;
+    ///
+    /// let start_position = StartPosition::builder()
+    ///   .with_latest_location()
+    ///   .build();
+    /// ```
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::models::StartPosition;
+    ///
+    /// let start_position = StartPosition::builder()
+    ///   .build();
+    /// ```
+    ///
     #[derive(Debug, PartialEq, Clone)]
     pub struct StartPosition {
         location: StartLocation,
@@ -225,10 +356,17 @@ pub mod models {
     }
 
     impl StartPosition {
+        /// Creates a new builder to build a `StartPosition`.
+        ///
+        /// # Returns
+        ///
+        /// A builder which can be used to create a StartPosition.
+        ///
         pub fn builder() -> builders::StartPositionBuilder {
             builders::StartPositionBuilder::new()
         }
-        pub fn start_expression(position: &Option<StartPosition>) -> String {
+
+        pub(crate) fn start_expression(position: &Option<StartPosition>) -> String {
             if let Some(position) = position {
                 let mut greater_than: &str = ">";
                 if position.inclusive {
@@ -263,6 +401,28 @@ pub mod models {
         }
     }
 
+    /// The EventData struct represents the data associated with an event in an Event Hub.
+    ///
+    /// This struct provides the body, content type, correlation identifier, message identifier, and properties of an event.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use azure_messaging_eventhubs::models::EventData;
+    ///
+    /// let event_data = EventData::builder()
+    ///    .with_body(b"Hello, world!")
+    ///    .with_content_type("text/plain")
+    ///    .with_correlation_id("correlation_id")
+    ///    .with_message_id("message_id")
+    ///    .add_property("key", "value")
+    ///    .build();
+    ///
+    /// println!("{:?}", event_data);
+    /// ```
+    ///
     #[derive(Default, PartialEq, Clone)]
     pub struct EventData {
         body: Option<Vec<u8>>,
@@ -273,26 +433,32 @@ pub mod models {
     }
 
     impl EventData {
+        /// Creates a new builder to build an `EventData`.
         pub fn builder() -> builders::EventDataBuilder {
             builders::EventDataBuilder::new()
         }
 
+        /// The properties of the event.
         pub fn properties(&self) -> Option<&HashMap<String, AmqpValue>> {
             self.properties.as_ref()
         }
 
+        /// The body of the event.
         pub fn body(&self) -> Option<&[u8]> {
             self.body.as_deref()
         }
 
+        /// The content type of the event, if one was specified.
         pub fn content_type(&self) -> Option<&str> {
             self.content_type.as_deref()
         }
 
+        /// The correlation identifier of the event, if one was specified.
         pub fn correlation_id(&self) -> Option<&MessageId> {
             self.correlation_id.as_ref()
         }
 
+        /// The message identifier of the event, if one was specified.
         pub fn message_id(&self) -> Option<&MessageId> {
             self.message_id.as_ref()
         }
@@ -373,6 +539,9 @@ pub mod models {
         }
     }
 
+    /// Represents the data associated with an event received from an Event Hub.
+    /// This struct provides the event data, enqueued time, offset, sequence number, partition key, and system properties of the event.
+    ///
     pub struct ReceivedEventData {
         message: AmqpMessage,
         event_data: EventData,
@@ -398,30 +567,37 @@ pub mod models {
     }
 
     impl ReceivedEventData {
+        /// The raw AMQP message received from the Event Hubs Service.
         pub fn raw_amqp_message(&self) -> &AmqpMessage {
             &self.message
         }
 
+        /// The Event Data contained within the received event.
         pub fn event_data(&self) -> &EventData {
             &self.event_data
         }
 
+        /// The time when the event was sent to the the Event Hub.
         pub fn enqueued_time(&self) -> std::time::SystemTime {
             self.enqueued_time
         }
 
+        /// The offset of the event in the Event Hub partition.
         pub fn offset(&self) -> &str {
             &self.offset
         }
 
+        /// The sequence number of the event in the Event Hub partition.
         pub fn sequence_number(&self) -> i64 {
             self.sequence_number
         }
 
+        /// The partition key of the event.
         pub fn partition_key(&self) -> &str {
             &self.partition_key
         }
 
+        /// The system properties of the event.
         pub fn system_properties(&self) -> &HashMap<String, AmqpValue> {
             &self.system_properties
         }
@@ -512,16 +688,18 @@ pub mod models {
         }
     }
 
+    /// Represents builders for types in the EventHubs Model module.
     pub mod builders {
         use super::*;
 
+        /// A builder for the `EventData` struct.
         #[derive(Default)]
         pub struct EventDataBuilder {
             event_data: EventData,
         }
 
         impl EventDataBuilder {
-            pub fn new() -> Self {
+            pub(super) fn new() -> Self {
                 Self {
                     event_data: EventData {
                         body: None,
@@ -533,6 +711,16 @@ pub mod models {
                 }
             }
 
+            /// Sets the body of the event.
+            ///
+            /// # Parameters
+            ///
+            /// - `body`: The body of the event.
+            ///
+            /// # Returns
+            ///
+            /// A reference to the updated builder.
+            ///
             pub fn with_body<T>(mut self, body: T) -> Self
             where
                 T: Into<Vec<u8>>,
@@ -541,21 +729,62 @@ pub mod models {
                 self
             }
 
+            /// Sets the content type of the event.
+            ///
+            /// # Parameters
+            ///
+            /// - `content_type`: The content type of the event.
+            ///
+            /// # Returns
+            ///
+            /// A reference to the updated builder.
+            ///
             pub fn with_content_type(mut self, content_type: impl Into<String>) -> Self {
                 self.event_data.content_type = Some(content_type.into());
                 self
             }
 
+            /// Sets the correlation identifier of the event.
+            ///
+            /// # Parameters
+            ///
+            /// - `correlation_id`: The correlation identifier of the event.
+            ///
+            /// # Returns
+            ///
+            /// A reference to the updated builder.
+            ///
             pub fn with_correlation_id(mut self, correlation_id: impl Into<MessageId>) -> Self {
                 self.event_data.correlation_id = Some(correlation_id.into());
                 self
             }
 
+            /// Sets the message identifier of the event.
+            ///
+            /// # Parameters
+            ///
+            /// - `message_id`: The message identifier of the event.
+            ///
+            /// # Returns
+            ///
+            /// A reference to the updated builder.
+            ///
             pub fn with_message_id(mut self, message_id: impl Into<MessageId>) -> Self {
                 self.event_data.message_id = Some(message_id.into());
                 self
             }
 
+            /// Adds a property to the event.
+            ///
+            /// # Parameters
+            ///
+            /// - `key`: The key of the property.
+            /// - `value`: The value of the property.
+            ///
+            /// # Returns
+            ///
+            /// A reference to the updated builder.
+            ///
             pub fn add_property(
                 mut self,
                 key: impl Into<String>,
@@ -572,11 +801,18 @@ pub mod models {
                 self
             }
 
+            /// Builds the `EventData`.
+            ///
+            /// # Returns
+            ///
+            /// The built `EventData`.
+            ///
             pub fn build(self) -> EventData {
                 self.event_data
             }
         }
 
+        /// A builder for the `StartPosition` struct.
         pub struct StartPositionBuilder {
             position: StartPosition,
         }
@@ -591,36 +827,109 @@ pub mod models {
                 }
             }
 
+            /// Sets the starting position to the earliest event in the partition.
+            ///
+            /// # Returns
+            ///
+            /// A reference to the updated builder.
+            ///
             pub fn with_earliest_location(mut self) -> Self {
                 self.position.location = StartLocation::Earliest;
                 self
             }
 
+            /// Sets the starting position to the latest event in the partition.
+            ///
+            /// # Returns
+            ///
+            /// A reference to the updated builder.
+            ///
             pub fn with_latest_location(mut self) -> Self {
                 self.position.location = StartLocation::Latest;
                 self
             }
 
+            /// Sets the starting position to the event with the specified sequence number.
+            ///
+            /// # Parameters
+            ///
+            /// - `sequence_number`: The sequence number to start receiving events.
+            ///
+            /// # Returns
+            ///
+            /// A reference to the updated builder.
+            ///
+            /// # Remarks:
+            ///
+            /// If the "inclusive" method is not called, the starting position will be greater than the specified sequence number.
+            /// If the "inclusive" method is called, the message at the starting sequence number will be included.
+            ///
             pub fn with_sequence_number(mut self, sequence_number: i64) -> Self {
                 self.position.location = StartLocation::SequenceNumber(sequence_number);
                 self
             }
 
+            /// Sets the starting position to the event enqueued at the specified time.
+            ///
+            /// # Parameters
+            ///
+            /// - `enqueued_time`: The time when the event was enqueued.
+            ///
+            /// # Returns
+            ///
+            /// A reference to the updated builder.
+            ///
+            /// # Remarks
+            ///
+            /// If the "inclusive" method is not called, the starting position will be greater than the specified enqueued time.
+            /// If the "inclusive" method is called, the message enqueued at the specified time will be included.
+            ///
             pub fn with_enqueued_time(mut self, enqueued_time: std::time::SystemTime) -> Self {
                 self.position.location = StartLocation::EnqueuedTime(enqueued_time);
                 self
             }
 
+            /// Sets the starting position to the event with the specified offset.
+            ///
+            /// # Parameters
+            ///
+            /// - `offset`: The offset of the event.
+            ///
+            /// # Returns
+            ///
+            /// A reference to the updated builder.
+            ///
+            /// # Remarks
+            ///
+            /// If the "inclusive" method is not called, the starting position will be greater than the specified offset.
+            /// If the "inclusive" method is called, the message at the specified offset will be included.
+            ///
             pub fn with_offset(mut self, offset: String) -> Self {
                 self.position.location = StartLocation::Offset(offset);
                 self
             }
 
+            /// Sets the starting position to be inclusive.
+            ///
+            /// # Returns
+            ///
+            /// A reference to the updated builder.
+            ///
+            /// # Remarks
+            ///
+            /// If this method is called, the message at the starting position will be included.
+            ///
             pub fn inclusive(mut self) -> Self {
                 self.position.inclusive = true;
                 self
             }
 
+            /// Builds the `StartPosition`.
+            ///
+            /// # Returns
+            ///
+            /// The built `StartPosition`.
+            ///
             pub fn build(self) -> StartPosition {
                 self.position
             }

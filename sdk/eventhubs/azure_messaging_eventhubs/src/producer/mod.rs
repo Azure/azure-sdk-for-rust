@@ -123,16 +123,57 @@ impl ProducerClient {
         }
     }
 
+    /// Opens the connection to the Event Hub.
+    ///
+    /// This method must be called before any other operation.
+    ///
     pub async fn open(&self) -> Result<()> {
         self.ensure_connection(&self.url).await?;
         Ok(())
     }
 
+    /// Closes the connection to the Event Hub.
+    ///
+    /// This method should be called when the client is no longer needed, it will terminate all outstanding operations on the connection.
+    ///
+    /// Note that dropping the ProducerClient will also close the connection.
     pub async fn close(self) -> Result<()> {
         self.connection.get().unwrap().close().await?;
         Ok(())
     }
     const BATCH_MESSAGE_FORMAT: u32 = 0x80013700;
+
+    /// Creates a new batch of events to send to the Event Hub.
+    /// # Arguments
+    ///
+    /// * `batch_options` - The options to use when creating the batch.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the new `EventDataBatch`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use std::error::Error;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
+    ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
+    ///   let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///   let options = ProducerClientOptions::builder()
+    ///     .with_application_id("your_application_id")
+    ///     .build();
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, options);
+    ///   producer.open().await?;
+    ///   let mut batch = producer.create_batch(None).await?;
+    ///   Ok(())
+    /// }
+    /// ```
+    ///
     pub async fn create_batch(
         &self,
         batch_options: Option<EventDataBatchOptions>,
@@ -143,6 +184,40 @@ impl ProducerClient {
         Ok(batch)
     }
 
+    /// Submits a batch of events to the Event Hub.
+    ///
+    /// # Arguments
+    ///
+    /// * `batch` - The batch of events to submit.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating success or failure.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use std::error::Error;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
+    ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
+    ///   let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///   let options = ProducerClientOptions::builder()
+    ///    .with_application_id("your_application_id")
+    ///    .build();
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, options);
+    ///   producer.open().await?;
+    ///   let mut batch = producer.create_batch(None).await?;
+    ///   batch.try_add_event_data("Hello, World!", None)?;
+    ///   producer.submit_batch(&batch).await?;
+    ///   Ok(())
+    /// }
+    /// ```
+    ///
     pub async fn submit_batch<'a>(&self, batch: &EventDataBatch<'a>) -> Result<()> {
         let sender = self.ensure_sender(batch.get_batch_path()).await?;
         let messages = batch.get_messages();
@@ -160,6 +235,29 @@ impl ProducerClient {
         Ok(())
     }
 
+    /// Gets the properties of the Event Hub.
+    /// # Returns
+    /// A `Result` containing the properties of the Event Hub.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use std::error::Error;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
+    ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
+    ///   let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, ProducerClientOptions::builder().build());
+    ///   producer.open().await?;
+    ///   let properties = producer.get_eventhub_properties().await?;
+    ///   println!("Event Hub: {:?}", properties);
+    ///   Ok(())
+    /// }
+    /// ```
     pub async fn get_eventhub_properties(&self) -> Result<EventHubProperties> {
         self.ensure_management_client().await?;
 
@@ -172,6 +270,32 @@ impl ProducerClient {
             .await
     }
 
+    /// Gets the properties of a partition of the Event Hub.
+    /// # Arguments
+    /// * `partition_id` - The id of the partition.
+    /// # Returns
+    /// A `Result` containing the properties of the partition.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use std::error::Error;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    ///  let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
+    ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
+    ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
+    ///     let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, ProducerClientOptions::builder().build());
+    ///     producer.open().await?;
+    ///     let partition_properties = producer.get_partition_properties("0").await?;
+    ///     println!("Event Hub: {:?}", partition_properties);
+    ///     Ok(())
+    /// }
+    /// ```
     pub async fn get_partition_properties(
         &self,
         partition_id: impl Into<String>,
