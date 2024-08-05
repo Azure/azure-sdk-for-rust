@@ -9,7 +9,7 @@ readme = "README.md"
 authors = ["Microsoft Corp."]
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
-homepage = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust/sdk/core/azure_core_amqp"
 documentation = "https://docs.rs/azure_core_amqp"
 
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
@@ -19,22 +19,18 @@ edition = "2021"
 
 [dependencies]
 async-std = { workspace = true }
-azure_core = { path = "../../core/azure_core" }
+azure_core = { workspace = true }
 time = { workspace = true }
 tracing = { workspace = true }
 url = { workspace = true }
 uuid = { workspace = true }
-fe2o3-amqp = { version = "0.11", features = [
-  "native-tls",
-  "tracing",
-  "uuid",
-], optional = true }
-fe2o3-amqp-ext = { version = "0.11", features = [], optional = true }
-fe2o3-amqp-management = { version = "0.11", optional = true }
-fe2o3-amqp-cbs = { version = "0.11", optional = true }
-fe2o3-amqp-types = { version = "0.11", optional = true }
-serde_amqp = { version = "0.11", optional = true, features = ["uuid"] }
-serde_bytes = { version = "0.11", optional = true }
+fe2o3-amqp = { workspace = true, optional = true }
+fe2o3-amqp-ext = { workspace = true, optional = true }
+fe2o3-amqp-management = { workspace = true, optional = true }
+fe2o3-amqp-cbs = { workspace = true, optional = true }
+fe2o3-amqp-types = { workspace = true, optional = true }
+serde_amqp = { workspace = true, optional = true }
+serde_bytes = { workspace = true, optional = true }
 
 [build-dependencies]
 rustc_version = "0.4"
@@ -43,8 +39,8 @@ rustc_version = "0.4"
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
-default = ["enable-fe2o3-amqp"]
-enable-fe2o3-amqp = [
+default = ["iron-oxide-amqp"]
+iron-oxide-amqp = [
   "fe2o3-amqp",
   "fe2o3-amqp-types",
   "fe2o3-amqp-ext",
@@ -56,4 +52,4 @@ enable-fe2o3-amqp = [
 test_e2e = []
 
 [package.metadata.docs.rs]
-features = ["enable-fe2o3-amqp"]
+features = ["iron-oxide-amqp"]

@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 // cspell: words amqp sasl
-#[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "iron-oxide-amqp", not(target_arch = "wasm32")))]
 mod fe2o3;
 
-#[cfg(any(not(feature = "enable-fe2o3-amqp"), target_arch = "wasm32"))]
+#[cfg(any(not(feature = "iron-oxide-amqp"), target_arch = "wasm32"))]
 mod noop;
 
 pub mod cbs;

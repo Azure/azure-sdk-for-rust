@@ -440,7 +440,7 @@ impl AmqpMessage {
 
     #[allow(unused_variables)]
     pub fn serialize(message: AmqpMessage) -> Result<Vec<u8>> {
-        #[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
+        #[cfg(all(feature = "iron-oxide-amqp", not(target_arch = "wasm32")))]
         {
             let amqp_message = Into::<
                 fe2o3_amqp_types::messaging::Message<
@@ -453,7 +453,7 @@ impl AmqpMessage {
             .map_err(crate::fe2o3::error::AmqpSerialization::from)?;
             Ok(res)
         }
-        #[cfg(any(not(feature = "enable-fe2o3-amqp"), target_arch = "wasm32"))]
+        #[cfg(any(not(feature = "iron-oxide-amqp"), target_arch = "wasm32"))]
         {
             unimplemented!();
         }
@@ -1072,10 +1072,10 @@ mod tests {
             let message = AmqpMessage::builder().build();
             let serialized = AmqpMessage::serialize(message).unwrap();
             assert_eq!(serialized, vec![0, 0x53, 0x77, 0x40]);
-            #[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
+            #[cfg(all(feature = "iron-oxide-amqp", not(target_arch = "wasm32")))]
             {
                 // Verify that the serialization of an AmqpMessage with no body matches
-                // the fe2o3-amqp serialization.
+                // the iron-oxide-amqp serialization.
                 let body_type: fe2o3_amqp_types::messaging::Body<()> =
                     fe2o3_amqp_types::messaging::Body::Empty;
                 let amqp_message = fe2o3_amqp_types::messaging::message::Builder::new()

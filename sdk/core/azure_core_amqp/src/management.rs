@@ -36,10 +36,10 @@ where
     }
 }
 
-#[cfg(all(feature = "enable-fe2o3-amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "iron-oxide-amqp", not(target_arch = "wasm32")))]
 type ManagementImplementation = super::fe2o3::management::Fe2o3AmqpManagement;
 
-#[cfg(any(not(feature = "enable-fe2o3-amqp"), target_arch = "wasm32"))]
+#[cfg(any(not(feature = "iron-oxide-amqp"), target_arch = "wasm32"))]
 type ManagementImplementation = super::noop::NoopAmqpManagement;
 
 #[derive(Debug)]
