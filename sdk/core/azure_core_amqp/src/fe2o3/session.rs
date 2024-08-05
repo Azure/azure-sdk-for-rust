@@ -1,4 +1,5 @@
-// Copyright (c) Microsoft Corp. All Rights Reserved.
+// Copyright (c) Microsoft Corporation. All Rights reservedserved
+// Licensed under the MIT license.
 // cspell: words amqp mgmt
 
 use super::error::AmqpBegin;

@@ -1,6 +1,5 @@
-// Copyright (c) Microsoft Corp. All Rights Reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
+// Copyright (c) Microsoft Corporation. All Rights reserved
+// Licensed under the MIT license.
 // cspell: words thiserror eventhubs amqp
 
 macro_rules! impl_from_external_error {
@@ -110,7 +109,6 @@ impl From<AmqpNotAccepted> for Fe2o3AmqpError {
 }
 
 pub enum ErrorKind {
-    AmqpReceiverAlreadyAttached,
     AmqpSerialization { source: AmqpSerialization },
     AmqpDeliveryRejected { source: AmqpDeliveryRejected },
     NotAccepted { source: AmqpNotAccepted },
@@ -141,6 +139,24 @@ impl From<ErrorKind> for Fe2o3AmqpError {
 
 impl std::error::Error for Fe2o3AmqpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self.kind {
+            ErrorKind::AmqpSerialization { source } => source.0.source(),
+            ErrorKind::AmqpDeliveryRejected { source: _ } => None,
+            ErrorKind::NotAccepted { source: _ } => None,
+            ErrorKind::TimeError { source } => source.0.source(),
+            ErrorKind::AmqpOpen { source } => source.0.source(),
+            ErrorKind::AmqpManagementAttach { source } => source.0.source(),
+            ErrorKind::AmqpBegin { source } => source.0.source(),
+            ErrorKind::AmqpManagement { source } => source.0.source(),
+            ErrorKind::AmqpConnection { source } => source.0.source(),
+            ErrorKind::AmqpLinkDetach { source } => source.0.source(),
+            ErrorKind::AmqpSession { source } => source.0.source(),
+            ErrorKind::AmqpSenderAttach { source } => source.0.source(),
+            ErrorKind::AmqpSenderSend { source } => source.0.source(),
+            ErrorKind::AmqpReceiverAttach { source } => source.0.source(),
+            ErrorKind::AmqpReceiver { source } => source.0.source(),
+            ErrorKind::AmqpIllegalLinkState { source } => source.0.source(),
+        };
         None
     }
 }
@@ -148,9 +164,6 @@ impl std::error::Error for Fe2o3AmqpError {
 impl std::fmt::Display for Fe2o3AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            ErrorKind::AmqpReceiverAlreadyAttached => {
-                write!(f, "Receiver already attached")
-            }
             ErrorKind::TimeError { source } => {
                 write!(f, "Time Component Range Error {:?}", source.0)
             }

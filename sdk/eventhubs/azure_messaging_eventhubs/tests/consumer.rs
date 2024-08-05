@@ -1,4 +1,6 @@
-// Copyright (c) Microsoft Corp. All Rights Reserved.
+// Copyright (c) Microsoft Corporation. All Rights reserved
+// Licensed under the MIT license.
+
 //cspell: words eventhubs eventhub eventdata
 
 #![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`

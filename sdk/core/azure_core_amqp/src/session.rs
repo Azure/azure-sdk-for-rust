@@ -1,4 +1,5 @@
-// Copyright (c) Microsoft Corp. All Rights Reserved.
+// Copyright (c) Microsoft Corporation. All Rights reserved
+// Licensed under the MIT license.
 // cspell: words amqp sasl
 
 use super::{

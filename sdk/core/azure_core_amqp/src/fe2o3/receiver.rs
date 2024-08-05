@@ -1,15 +1,13 @@
-// Copyright (c) Microsoft Corp. All Rights Reserved.
+// Copyright (c) Microsoft Corporation. All Rights reserved
+// Licensed under the MIT license.
 //cspell: words amqp
 
-use super::error::{
-    AmqpIllegalLinkState, AmqpReceiver, AmqpReceiverAttach, ErrorKind, Fe2o3AmqpError,
-};
-use crate::error::AmqpError;
+use super::error::{AmqpIllegalLinkState, AmqpReceiver, AmqpReceiverAttach};
 use crate::messaging::{AmqpMessage, AmqpSource};
 use crate::receiver::{AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode};
 use crate::session::AmqpSession;
 use async_std::sync::Mutex;
-use azure_core::error::{Error, Result};
+use azure_core::error::Result;
 use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};
 use tracing::trace;
@@ -39,12 +37,10 @@ impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
         options: Option<AmqpReceiverOptions>,
     ) -> Result<()> {
         if self.receiver.get().is_some() {
-            return Err(Error::new(
-                azure_core::error::ErrorKind::Other,
-                Box::new(AmqpError::new_iron_oxide_error(Fe2o3AmqpError::from(
-                    ErrorKind::AmqpReceiverAlreadyAttached,
-                ))),
-            ));
+            return Err(crate::error::Error::new(
+                crate::error::ErrorKind::AmqpReceiverAlreadyAttached,
+            )
+            .into());
         }
         let options = options.unwrap_or_default();
         let name = options.name().clone().unwrap_or_default();

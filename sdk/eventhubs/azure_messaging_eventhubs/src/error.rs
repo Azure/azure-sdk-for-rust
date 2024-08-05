@@ -1,7 +1,8 @@
-// Copyright (c) Microsoft Corp. All Rights Reserved.
+// Copyright (c) Microsoft Corporation. All Rights Reserved.
+// Licensed under the MIT License.
 
 // cspell: words amqp eventhubs
-use azure_core_amqp::error::AmqpError;
+use azure_core_amqp::error::Error;
 
 /// Represents the different kinds of errors that can occur in the Eventhubs module.
 pub enum ErrorKind {
@@ -29,7 +30,7 @@ pub enum ErrorKind {
     /// Represents the source of the AMQP error.
     /// This is used to wrap an AMQP error in an Eventhubs error.
     ///
-    AmqpError(AmqpError),
+    AmqpError(Error),
 }
 
 /// Represents an error that can occur in the Eventhubs module.
@@ -39,7 +40,10 @@ pub struct EventhubsError {
 
 impl std::error::Error for EventhubsError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
+        match &self.kind {
+            ErrorKind::AmqpError(source) => Some(source),
+            _ => None,
+        }
     }
 }
 
