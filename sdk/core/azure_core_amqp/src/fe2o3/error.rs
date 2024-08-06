@@ -3,69 +3,68 @@
 // cspell: words thiserror eventhubs amqp
 
 macro_rules! impl_from_external_error {
-    ($amqp_error:ident, $foreign_error:ty) => {
-    pub struct $amqp_error(pub $foreign_error);
+    $(($amqp_error:ident, $foreign_error:ty)),*) => {
+    $(
+        pub struct $amqp_error(pub $foreign_error);
 
-    impl From<$foreign_error> for $amqp_error {
-        fn from(e: $foreign_error) -> Self {
-            $amqp_error(e)
-        }
-    }
-
-    impl From<$amqp_error> for Fe2o3AmqpError {
-        fn from(e: $amqp_error) -> Self {
-            Fe2o3AmqpError {
-                kind: ErrorKind::$amqp_error { source: e },
+        impl From<$foreign_error> for $amqp_error {
+            fn from(e: $foreign_error) -> Self {
+                $amqp_error(e)
             }
         }
-    }
 
-    impl From<$foreign_error> for Fe2o3AmqpError {
-        fn from(e: $foreign_error) -> Self {
-            Fe2o3AmqpError {
-                kind: ErrorKind::$amqp_error {
-                    source: $amqp_error(e),
-                },
+        impl From<$amqp_error> for Fe2o3AmqpError {
+            fn from(e: $amqp_error) -> Self {
+                Fe2o3AmqpError {
+                    kind: ErrorKind::$amqp_error { source: e },
+                }
             }
         }
-    }
 
-    impl From<$amqp_error> for azure_core::Error {
-        fn from(e: $amqp_error) -> Self {
-            Self::new(
-                azure_core::error::ErrorKind::Other,
-                Box::new(Fe2o3AmqpError::from(e)),
-            )
+        impl From<$foreign_error> for Fe2o3AmqpError {
+            fn from(e: $foreign_error) -> Self {
+                Fe2o3AmqpError {
+                    kind: ErrorKind::$amqp_error {
+                        source: $amqp_error(e),
+                    },
+                }
+            }
         }
-    }
 
-    impl std::fmt::Debug for $amqp_error {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "{:?}", self.0)
+        impl From<$amqp_error> for azure_core::Error {
+            fn from(e: $amqp_error) -> Self {
+                Self::new(
+                    azure_core::error::ErrorKind::Other,
+                    Box::new(Fe2o3AmqpError::from(e)),
+                )
+            }
         }
-    }
-};
 
-    ($($amqp_error:ident, $foreign_error:ty),*) => {
-        $(impl_from_external_error!($amqp_error, $foreign_error);)*
-    }
+        impl std::fmt::Debug for $amqp_error {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{:?}", self.0)
+            }
+        }
+    )*
+    };
 }
+
 impl_from_external_error! {
-    AmqpSerialization, serde_amqp::error::Error,
-    TimeError, time::error::ComponentRange,
-    AmqpSession, fe2o3_amqp::session::Error,
-    AmqpLinkDetach, fe2o3_amqp::link::DetachError,
-    AmqpOpen, fe2o3_amqp::connection::OpenError,
-    AmqpConnection, fe2o3_amqp::connection::Error,
-    AmqpManagementAttach, fe2o3_amqp_management::error::AttachError,
-    AmqpManagement, fe2o3_amqp_management::error::Error,
-    AmqpBegin, fe2o3_amqp::session::BeginError,
-    AmqpSenderAttach, fe2o3_amqp::link::SenderAttachError,
-    AmqpReceiverAttach, fe2o3_amqp::link::ReceiverAttachError,
-    AmqpReceiver, fe2o3_amqp::link::RecvError,
-    AmqpIllegalLinkState, fe2o3_amqp::link::IllegalLinkStateError,
-    AmqpSenderSend, fe2o3_amqp::link::SendError,
-    AmqpDeliveryRejected, fe2o3_amqp::types::messaging::Rejected
+    (AmqpSerialization, serde_amqp::error::Error),
+    (TimeError, time::error::ComponentRange),
+    (AmqpSession, fe2o3_amqp::session::Error),
+    (AmqpLinkDetach, fe2o3_amqp::link::DetachError),
+    (AmqpOpen, fe2o3_amqp::connection::OpenError),
+    (AmqpConnection, fe2o3_amqp::connection::Error),
+    (AmqpManagementAttach, fe2o3_amqp_management::error::AttachError),
+    (AmqpManagement, fe2o3_amqp_management::error::Error),
+    (AmqpBegin, fe2o3_amqp::session::BeginError),
+    (AmqpSenderAttach, fe2o3_amqp::link::SenderAttachError),
+    (AmqpReceiverAttach, fe2o3_amqp::link::ReceiverAttachError),
+    (AmqpReceiver, fe2o3_amqp::link::RecvError),
+    (AmqpIllegalLinkState, fe2o3_amqp::link::IllegalLinkStateError),
+    (AmqpSenderSend, fe2o3_amqp::link::SendError),
+    (AmqpDeliveryRejected, fe2o3_amqp::types::messaging::Rejected)
 }
 
 #[derive(Debug)]

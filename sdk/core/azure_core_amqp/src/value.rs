@@ -186,7 +186,7 @@ where
 }
 
 macro_rules! conversions_for_amqp_types {
-    ($($t:ty, $field:ident),*) => {
+    ($(($t:ty, $field:ident)),*) => {
         $(
             impl From<$t> for AmqpValue {
                 fn from(v: $t) -> Self {
@@ -224,43 +224,28 @@ macro_rules! conversions_for_amqp_types {
 }
 
 conversions_for_amqp_types!(
-    bool,
-    Boolean,
-    u8,
-    UByte,
-    u16,
-    UShort,
-    u32,
-    UInt,
-    u64,
-    ULong,
-    i8,
-    Byte,
-    i16,
-    Short,
-    i32,
-    Int,
-    i64,
-    Long,
-    f32,
-    Float,
-    f64,
-    Double,
-    char,
-    Char,
-    uuid::Uuid,
-    Uuid,
-    Vec<u8>,
-    Binary,
-    std::string::String,
-    String,
-    AmqpSymbol,Symbol,
-    AmqpList,List,
-    Vec<AmqpValue>,Array,
-    AmqpOrderedMap<AmqpValue, AmqpValue>, Map,
-    Box<AmqpDescribed>, Described
+    (bool, Boolean),
+    (u8, UByte),
+    (u16, UShort),
+    (u32, UInt),
+    (u64, ULong),
+    (i8, Byte),
+    (i16, Short),
+    (i32, Int),
+    (i64, Long),
+    (f32, Float),
+    (f64, Double),
+    (char, Char),
+    (uuid::Uuid, Uuid),
+    (Vec<u8>, Binary),
+    (std::string::String, String),
+    (AmqpSymbol, Symbol),
+    (AmqpList, List),
+    (Vec<AmqpValue>, Array),
+    (AmqpOrderedMap<AmqpValue, AmqpValue>, Map),
+    (AmqpTimestamp, TimeStamp),
+    (Box<AmqpDescribed>, Described)
 );
-conversions_for_amqp_types!(AmqpTimestamp, TimeStamp);
 
 impl From<()> for AmqpValue {
     fn from(_: ()) -> Self {
