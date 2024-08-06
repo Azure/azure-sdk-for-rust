@@ -1,4 +1,4 @@
-<!-- cspell:words eventhubs  -->
+<!-- cspell:words eventhubs pwsh yourgroup westus eventhub servicebus checkpointing  -->
 
 # Azure Event Hubs Client Package for Rust
 
@@ -296,7 +296,7 @@ Azure SDK for C++ is licensed under the [MIT](https://github.com/Azure/azure-sdk
 [source]: https://github.com/Azure/azure-sdk-for-rust/tree/feature/track2/sdk/eventhubs/azure_messaging_eventhubs
 [azure_identity_pkg]: https://docs.rs/azure_identity/latest/azure_identity/
 [default_azure_credential]: https://docs.rs/azure_identity/latest/azure_identity/struct.DefaultAzureCredential.html
-[cppdoc]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs
-[cppdoc_examples]: https://github.com/Azure/azure-sdk-for-cpp/tree/main/sdk/eventhubs/azure-messaging-eventhubs/samples
+[rustdoc]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs
+[rustdoc_examples]: https://github.com/Azure/azure-sdk-for-cpp/tree/main/sdk/eventhubs/azure-messaging-eventhubs/samples
 
 ![Impressions](https://azure-sdk-impressions.azurewebsites.net/api/impressions/azure-sdk-for-cpp%2Fsdk%2Feventhubs%2FREADME.png)
