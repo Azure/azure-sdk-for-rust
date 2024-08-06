@@ -32,6 +32,7 @@
 ///
 pub(crate) mod common;
 
+/// Types related to consuming events from an Event Hub.
 #[doc = include_str!("../docs/eh_consumer.md")]
 pub mod consumer;
 
