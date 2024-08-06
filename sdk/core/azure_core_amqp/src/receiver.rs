@@ -93,10 +93,10 @@ where
     }
 }
 
-#[cfg(all(feature = "iron-oxide-amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
 type ReceiverImplementation = super::fe2o3::receiver::Fe2o3AmqpReceiver;
 
-#[cfg(any(not(feature = "iron-oxide-amqp"), target_arch = "wasm32"))]
+#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
 type ReceiverImplementation = super::noop::NoopAmqpReceiver;
 
 #[derive(Debug, Default)]

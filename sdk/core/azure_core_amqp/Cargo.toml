@@ -39,9 +39,9 @@ rustc_version = "0.4"
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
-default = ["iron-oxide-amqp"]
-iron-oxide-amqp = [
-  "fe2o3-amqp",
+default = ["fe2o3-amqp"]
+fe2o3-amqp = [
+  "dep:fe2o3-amqp",
   "fe2o3-amqp-types",
   "fe2o3-amqp-ext",
   "fe2o3-amqp-management",
@@ -52,4 +52,4 @@ iron-oxide-amqp = [
 test_e2e = []
 
 [package.metadata.docs.rs]
-features = ["iron-oxide-amqp"]
+features = ["fe2o3-amqp"]

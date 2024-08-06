@@ -37,10 +37,10 @@ pub trait AmqpConnectionTrait {
     fn close(&self) -> impl std::future::Future<Output = Result<()>>;
 }
 
-#[cfg(all(feature = "iron-oxide-amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
 type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
 
-#[cfg(any(not(feature = "iron-oxide-amqp"), target_arch = "wasm32"))]
+#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
 type ConnectionImplementation = super::noop::NoopAmqpConnection;
 
 #[derive(Debug, Default)]

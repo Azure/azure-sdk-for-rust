@@ -7,10 +7,10 @@ use std::fmt::Debug;
 
 use super::session::AmqpSession;
 
-#[cfg(all(feature = "iron-oxide-amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
 type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
 
-#[cfg(any(not(any(feature = "iron-oxide-amqp")), target_arch = "wasm32"))]
+#[cfg(any(not(any(feature = "fe2o3-amqp")), target_arch = "wasm32"))]
 type CbsImplementation = super::noop::NoopAmqpClaimsBasedSecurity;
 
 pub trait AmqpClaimsBasedSecurityTrait {

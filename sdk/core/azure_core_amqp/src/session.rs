@@ -49,10 +49,10 @@ where
     }
 }
 
-#[cfg(all(feature = "iron-oxide-amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
 type SessionImplementation = super::fe2o3::session::Fe2o3AmqpSession;
 
-#[cfg(any(not(feature = "iron-oxide-amqp"), target_arch = "wasm32"))]
+#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
 type SessionImplementation = super::noop::NoopAmqpSession;
 
 #[derive(Debug, Clone, Default)]
