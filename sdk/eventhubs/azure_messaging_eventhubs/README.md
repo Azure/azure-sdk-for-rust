@@ -4,8 +4,6 @@
 
 Azure Event Hubs crate for the Microsoft Azure SDK for Rust.
 
-License: MIT
-
 [Azure Event Hubs](https://azure.microsoft.com/services/event-hubs/) is a big data streaming platform and event ingestion service from Microsoft. For more information about Event Hubs see: [link](https://docs.microsoft.com/azure/event-hubs/event-hubs-about).
 
 Use the client library `` in your application to:
@@ -165,16 +163,17 @@ Examples for various scenarios can be found on in the samples directory in our G
 The following example shows how to send events to an event hub:
 
 ```rust
-    let host = env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+async fn send_events() {
+    let host = std::env::var("EVENTHUBS_HOST").unwrap();
+    let eventhub = std::env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let credential = azure_identity::DefaultAzureCredential::create(azure_identity::TokenCredentialOptions::default()).unwrap();
 
-    let client = ProducerClient::new(
+    let client = azure_messaging_eventhubs::producer::ProducerClient::new(
         host,
         eventhub.clone(),
         credential,
-        ProducerClientOptions::builder()
+        azure_messaging_eventhubs::producer::ProducerClientOptions::builder()
             .with_application_id("test_create_batch")
             .build(),
     );
@@ -187,6 +186,7 @@ The following example shows how to send events to an event hub:
         let res = client.submit_batch(&batch).await;
         assert!(res.is_ok());
     }
+}
 ```
 
 ## Receive events
@@ -194,36 +194,34 @@ The following example shows how to send events to an event hub:
 The following example shows how to receive events from partition 1 on an event hub:
 
 ```rust no_run
-    let host = env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+async fn receive_events() {
+    use futures::pin_mut;
+    use async_std::stream::StreamExt;
 
-    info!("Establishing credentials.");
+    let host = std::env::var("EVENTHUBS_HOST").unwrap();
+    let eventhub = std::env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
-
-    info!("Creating client.");
-    let client = ConsumerClient::new(
+    let credential = azure_identity::DefaultAzureCredential::create(azure_identity::TokenCredentialOptions::default()).unwrap();
+    let client = azure_messaging_eventhubs::consumer::ConsumerClient::new(
         host,
         eventhub,
         None,
         credential,
         Some(
-            ConsumerClientOptions::builder()
+            azure_messaging_eventhubs::consumer::ConsumerClientOptions::builder()
                 .with_application_id("receive_lots_of_events")
                 .build(),
         ),
     );
 
-    info!("Opening client.");
     client.open().await.unwrap();
 
-    info!("Creating event receive stream.");
     let event_stream = client
         .receive_events_on_partition(
             "0",
             Some(
-                ReceiveOptions::builder()
-                    .with_start_position(StartPosition::builder().with_earliest_location().build())
+                azure_messaging_eventhubs::consumer::ReceiveOptions::builder()
+                    .with_start_position(azure_messaging_eventhubs::consumer::StartPosition::builder().with_earliest_location().build())
                     .build(),
             ),
         )
@@ -242,6 +240,7 @@ The following example shows how to receive events from partition 1 on an event h
             }
         }
     }
+}
 ```
 
 # Troubleshooting

@@ -7,9 +7,8 @@
 
 use async_std::future::timeout;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
-use azure_messaging_eventhubs::{
-    consumer::{ConsumerClient, ConsumerClientOptions, ReceiveOptions},
-    models::StartPosition,
+use azure_messaging_eventhubs::consumer::{
+    ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition,
 };
 use futures::{pin_mut, StreamExt};
 use std::{env, time::Duration};

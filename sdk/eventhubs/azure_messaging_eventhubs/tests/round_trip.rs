@@ -12,8 +12,8 @@ use azure_core_amqp::{
 };
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 use azure_messaging_eventhubs::{
-    consumer::{ConsumerClient, ConsumerClientOptions, ReceiveOptions},
-    models::{EventData, MessageId, StartPosition},
+    consumer::{ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition},
+    models::{EventData, MessageId},
     producer::{batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions},
 };
 use futures::pin_mut;
