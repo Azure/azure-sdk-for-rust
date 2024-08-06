@@ -3,7 +3,7 @@
 
 #![recursion_limit = "128"]
 #![warn(missing_docs)]
-// cspell: words amqp eventhub eventhubs eventdata
+// cspell: words amqp eventdata
 #![doc = include_str!("../README.md")]
 
 /// This module contains the implementation of the Azure Messaging Event Hubs SDK for Rust.

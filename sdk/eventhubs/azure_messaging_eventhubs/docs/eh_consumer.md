@@ -1,4 +1,4 @@
-<!-- cspell: words eventhub eventhubs -->
+<!-- cspell: words -->
 
 This module contains the `ConsumerClient` struct and related types, which are used for receiving events from an Event Hub.
 

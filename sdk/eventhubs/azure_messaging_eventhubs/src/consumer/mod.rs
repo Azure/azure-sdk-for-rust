@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words amqp eventhub eventhubs mgmt amqps
+//cspell: words amqp mgmt amqps
 
 use super::{
     common::{

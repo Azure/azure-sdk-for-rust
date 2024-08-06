@@ -1,4 +1,4 @@
-<!-- cspell:words eventhubs pwsh yourgroup westus eventhub servicebus checkpointing  -->
+<!-- cspell:words pwsh yourgroup westus servicebus checkpointing  -->
 
 # Azure Event Hubs Client Package for Rust
 
@@ -6,7 +6,7 @@ Azure Event Hubs crate for the Microsoft Azure SDK for Rust.
 
 [Azure Event Hubs](https://azure.microsoft.com/services/event-hubs/) is a big data streaming platform and event ingestion service from Microsoft. For more information about Event Hubs see: [link](https://docs.microsoft.com/azure/event-hubs/event-hubs-about).
 
-Use the client library `` in your application to:
+Use the client library `azure_messaging_eventhubs` in your application to:
 
 -   Send events to an event hub.
 -   Consume events from an event hub.
@@ -24,9 +24,8 @@ Key links:
 
 Add the Azure Event Hubs client package for rust to your `cargo.toml` file:
 
-```toml
-[dependencies]
-azure_messaging_eventhubs = { version="*" }
+```bash
+cargo add azure_messaging_eventhubs
 ```
 
 ### Prerequisites
@@ -66,7 +65,7 @@ This should output something like:
 }
 ```
 
-Create an EventHubs namespace:
+Create an Event Hubs namespace:
 
 ```pwsh
  az eventhubs namespace create --resource-group <your group name> --name <your namespace name> --sku Standard  --subscription <your subscription>
@@ -156,7 +155,7 @@ More information about Event Hubs features and terminology can be found here: [l
 # Examples
 
 Examples for various scenarios can be found on in the samples directory in our GitHub repo for
-[EventHubs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure-messaging-eventhubs/samples).
+[Event Hubs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure-messaging-eventhubs/samples).
 
 ## Send events
 
@@ -247,7 +246,7 @@ async fn receive_events() {
 
 ## Logging
 
-The EventHubs SDK client uses the [tracing](https://docs.rs/tracing/latest/tracing/) package to
+The Event Hubs SDK client uses the [tracing](https://docs.rs/tracing/latest/tracing/) package to
 enable diagnostics.
 
 ## Contributing

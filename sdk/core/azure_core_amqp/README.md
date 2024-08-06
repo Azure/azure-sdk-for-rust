@@ -1,4 +1,4 @@
-<!-- cspell: words EVENTHUB eventhubs -->
+<!-- cspell: words  -->
 
 # azure_core_amqp
 
