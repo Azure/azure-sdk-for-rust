@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words amqp eventhub amqps servicebus eventhubs mgmt
+//cspell: words amqp amqps servicebus mgmt
 
 use azure_core_amqp::{
     cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis},

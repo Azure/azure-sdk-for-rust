@@ -1,120 +1,15 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words amqp eventhub eventhubs mgmt amqps
+//cspell: words amqp mgmt amqps
 
-/// This module contains the `ConsumerClient` struct and related types, which are used for receiving events from an Event Hub.
-///
-/// The `ConsumerClient` provides functionality to establish a connection to an Event Hub, receive events from a specific partition,
-/// and manage the lifecycle of the consumer client.
-///
-/// # Examples
-///
-/// Creating a new `ConsumerClient` instance:
-///
-/// ``` no_run
-/// use azure_messaging_eventhubs::consumer::ConsumerClient;
-/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
-///
-/// let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
-/// let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
-/// ```
-///
-/// Opening a connection to the Event Hub:
-///
-/// ``` no_run
-/// use azure_messaging_eventhubs::consumer::ConsumerClient;
-/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
-///
-/// #[tokio::main]
-/// async fn main() {
-///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
-///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
-///
-///     let result = consumer.open().await;
-///
-///     match result {
-///         Ok(()) => {
-///             // Connection opened successfully
-///             println!("Connection opened successfully");
-///         }
-///         Err(err) => {
-///             // Handle the error
-///             eprintln!("Error opening connection: {:?}", err);
-///         }
-///     }
-/// }
-/// ```
-///
-/// Closing the connection to the Event Hub:
-///
-/// ``` no_run
-/// use azure_messaging_eventhubs::consumer::ConsumerClient;
-/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
-///
-/// #[tokio::main]
-/// async fn main() {
-///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
-///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
-///
-///     consumer.open().await.unwrap();
-///
-///     let result = consumer.close().await;
-///
-///     match result {
-///         Ok(()) => {
-///             // Connection closed successfully
-///             println!("Connection closed successfully");
-///         }
-///         Err(err) => {
-///             // Handle the error
-///             eprintln!("Error closing connection: {:?}", err);
-///         }
-///     }
-/// }
-/// ```
-///
-/// Receiving events from a specific partition of the Event Hub:
-///
-/// ``` no_run
-/// use azure_messaging_eventhubs::consumer::ConsumerClient;
-/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
-/// use async_std::stream::StreamExt;
-///
-/// #[tokio::main]
-/// async fn main() {
-///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
-///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
-///     let partition_id = "0";
-///     let options = None;
-///
-///     consumer.open().await.unwrap();
-///
-///     let event_stream = consumer.receive_events_on_partition(partition_id, options).await;
-///
-///     tokio::pin!(event_stream);
-///     while let Some(event_result) = event_stream.next().await {
-///         match event_result {
-///             Ok(event) => {
-///                 // Process the received event
-///                 println!("Received event: {:?}", event);
-///             }
-///             Err(err) => {
-///                 // Handle the error
-///                 eprintln!("Error receiving event: {:?}", err);
-///             }
-///         }
-///     }
-/// }
-/// ```
-///
 use super::{
     common::{
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
         ManagementInstance,
     },
     error::ErrorKind,
-    models::{EventHubPartitionProperties, EventHubProperties, ReceivedEventData, StartPosition},
+    models::{EventHubPartitionProperties, EventHubProperties, ReceivedEventData},
 };
 
 use async_std::sync::Mutex;
@@ -648,6 +543,139 @@ impl ReceiveOptions {
     }
 }
 
+#[derive(Debug, Default, PartialEq, Clone)]
+pub(crate) enum StartLocation {
+    Offset(String),
+    SequenceNumber(i64),
+    EnqueuedTime(std::time::SystemTime),
+    Earliest,
+    #[default]
+    Latest,
+}
+
+const ENQUEUED_TIME_ANNOTATION: &str = "amqp.annotation.x-opt-enqueued-time";
+const OFFSET_ANNOTATION: &str = "amqp.annotation.x-opt-offset";
+const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number";
+
+/// Represents the starting position of a consumer when receiving events from an Event Hub.
+///
+/// This enum provides different ways to specify the starting position of a consumer when receiving events from an Event Hub.
+/// The starting position can be specified using an offset, a sequence number, an enqueued time, or the earliest or latest event in the partition.
+///
+/// The default starting position is the latest event in the partition (always receive new events).
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```no_run
+/// use azure_messaging_eventhubs::consumer::StartPosition;
+///
+/// let start_position = StartPosition::builder()
+///    .with_sequence_number(12345)
+///    .build();
+/// ```
+///
+/// ```no_run
+/// use azure_messaging_eventhubs::consumer::StartPosition;
+///
+/// let start_position = StartPosition::builder()
+///   .with_sequence_number(12345)
+///   .inclusive()
+///   .build();
+/// ```
+///
+/// ```no_run
+/// use azure_messaging_eventhubs::consumer::StartPosition;
+///
+/// let start_position = StartPosition::builder()
+///  .with_enqueued_time(std::time::SystemTime::now())
+///  .build();
+/// ```
+///
+/// ```no_run
+/// use azure_messaging_eventhubs::consumer::StartPosition;
+///
+/// let start_position = StartPosition::builder()
+///  .with_offset("12345".to_string())
+///  .build();
+/// ```
+///
+/// ```no_run
+/// use azure_messaging_eventhubs::consumer::StartPosition;
+///
+/// let start_position = StartPosition::builder()
+///   .with_earliest_location()
+///   .build();
+/// ```
+///
+/// ```no_run
+/// use azure_messaging_eventhubs::consumer::StartPosition;
+///
+/// let start_position = StartPosition::builder()
+///   .with_latest_location()
+///   .build();
+/// ```
+///
+/// ```no_run
+/// use azure_messaging_eventhubs::consumer::StartPosition;
+///
+/// let start_position = StartPosition::builder()
+///   .build();
+/// ```
+///
+#[derive(Debug, PartialEq, Clone, Default)]
+pub struct StartPosition {
+    location: StartLocation,
+    inclusive: bool,
+}
+
+impl StartPosition {
+    /// Creates a new builder to build a `StartPosition`.
+    ///
+    /// # Returns
+    ///
+    /// A builder which can be used to create a StartPosition.
+    ///
+    pub fn builder() -> builders::StartPositionBuilder {
+        builders::StartPositionBuilder::new()
+    }
+
+    pub(crate) fn start_expression(position: &Option<StartPosition>) -> String {
+        if let Some(position) = position {
+            let mut greater_than: &str = ">";
+            if position.inclusive {
+                greater_than = ">=";
+            }
+            match &position.location {
+                StartLocation::Offset(offset) => {
+                    format!("{} {}'{}'", OFFSET_ANNOTATION, greater_than, offset)
+                }
+                StartLocation::SequenceNumber(sequence_number) => {
+                    format!(
+                        "{} {}'{}'",
+                        SEQUENCE_NUMBER_ANNOTATION, greater_than, sequence_number
+                    )
+                }
+                StartLocation::EnqueuedTime(enqueued_time) => {
+                    let enqueued_time = enqueued_time
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .expect("Time went backwards")
+                        .as_millis();
+                    format!(
+                        "{} {}'{}'",
+                        ENQUEUED_TIME_ANNOTATION, greater_than, enqueued_time
+                    )
+                }
+                StartLocation::Earliest => "amqp.annotation.x-opt-offset > '-1'".to_string(),
+                StartLocation::Latest => "amqp.annotation.x-opt-offset > '@latest'".to_string(),
+            }
+        } else {
+            "amqp.annotation.x-opt-offset > '@latest'".to_string()
+        }
+    }
+}
+
 mod builders {
     use super::*;
 
@@ -757,11 +785,143 @@ mod builders {
             self.options
         }
     }
+
+    /// A builder for the `StartPosition` struct.
+    pub struct StartPositionBuilder {
+        position: StartPosition,
+    }
+
+    impl StartPositionBuilder {
+        pub(super) fn new() -> Self {
+            Self {
+                position: Default::default(),
+            }
+        }
+
+        /// Sets the starting position to the earliest event in the partition.
+        ///
+        /// # Returns
+        ///
+        /// A reference to the updated builder.
+        ///
+        pub fn with_earliest_location(mut self) -> Self {
+            self.position.location = StartLocation::Earliest;
+            self
+        }
+
+        /// Sets the starting position to the latest event in the partition.
+        ///
+        /// # Returns
+        ///
+        /// A reference to the updated builder.
+        ///
+        pub fn with_latest_location(mut self) -> Self {
+            self.position.location = StartLocation::Latest;
+            self
+        }
+
+        /// Sets the starting position to the event with the specified sequence number.
+        ///
+        /// # Parameters
+        ///
+        /// - `sequence_number`: The sequence number to start receiving events.
+        ///
+        /// # Returns
+        ///
+        /// A reference to the updated builder.
+        ///
+        /// # Remarks:
+        ///
+        /// If the "inclusive" method is not called, the starting position will be greater than the specified sequence number.
+        /// If the "inclusive" method is called, the message at the starting sequence number will be included.
+        ///
+        pub fn with_sequence_number(mut self, sequence_number: i64) -> Self {
+            self.position.location = StartLocation::SequenceNumber(sequence_number);
+            self
+        }
+
+        /// Sets the starting position to the event enqueued at the specified time.
+        ///
+        /// # Parameters
+        ///
+        /// - `enqueued_time`: The time when the event was enqueued.
+        ///
+        /// # Returns
+        ///
+        /// A reference to the updated builder.
+        ///
+        /// # Remarks
+        ///
+        /// If the "inclusive" method is not called, the starting position will be greater than the specified enqueued time.
+        /// If the "inclusive" method is called, the message enqueued at the specified time will be included.
+        ///
+        pub fn with_enqueued_time(mut self, enqueued_time: std::time::SystemTime) -> Self {
+            self.position.location = StartLocation::EnqueuedTime(enqueued_time);
+            self
+        }
+
+        /// Sets the starting position to the event with the specified offset.
+        ///
+        /// # Parameters
+        ///
+        /// - `offset`: The offset of the event.
+        ///
+        /// # Returns
+        ///
+        /// A reference to the updated builder.
+        ///
+        /// # Remarks
+        ///
+        /// If the "inclusive" method is not called, the starting position will be greater than the specified offset.
+        /// If the "inclusive" method is called, the message at the specified offset will be included.
+        ///
+        pub fn with_offset(mut self, offset: String) -> Self {
+            self.position.location = StartLocation::Offset(offset);
+            self
+        }
+
+        /// Sets the starting position to be inclusive.
+        ///
+        /// # Returns
+        ///
+        /// A reference to the updated builder.
+        ///
+        /// # Remarks
+        ///
+        /// If this method is called, the message at the starting position will be included.
+        ///
+        pub fn inclusive(mut self) -> Self {
+            self.position.inclusive = true;
+            self
+        }
+
+        /// Builds the `StartPosition`.
+        ///
+        /// # Returns
+        ///
+        /// The built `StartPosition`.
+        ///
+        pub fn build(self) -> StartPosition {
+            self.position
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tracing::info;
+
+    static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
+
+    #[test]
+    fn setup() {
+        INIT_LOGGING.call_once(|| {
+            println!("Setting up test logger...");
+
+            tracing_subscriber::fmt::init();
+        });
+    }
 
     #[test]
     fn test_default_consumer_options() {
@@ -791,5 +951,113 @@ mod tests {
         assert_eq!(options.application_id, Some("test_app_id".to_string()));
         assert_eq!(options.instance_id, Some("test_instance_id".to_string()));
         assert!(options.retry_options.is_some());
+    }
+    #[test]
+    fn test_start_position_builder_with_sequence_number() {
+        setup();
+        let sequence_number = 12345i64;
+        let start_position = StartPosition::builder()
+            .with_sequence_number(sequence_number)
+            .build();
+        assert_eq!(
+            start_position.location,
+            StartLocation::SequenceNumber(sequence_number)
+        );
+        assert_eq!(
+            StartPosition::start_expression(&Some(start_position)),
+            "amqp.annotation.x-opt-sequence-number >'12345'"
+        );
+
+        let start_position = StartPosition::builder()
+            .with_sequence_number(sequence_number)
+            .inclusive()
+            .build();
+        assert_eq!(
+            StartPosition::start_expression(&Some(start_position)),
+            "amqp.annotation.x-opt-sequence-number >='12345'"
+        );
+    }
+
+    #[test]
+    fn test_start_position_builder_with_enqueued_time() {
+        setup();
+        let enqueued_time = std::time::SystemTime::now();
+        let start_position = StartPosition::builder()
+            .with_enqueued_time(enqueued_time)
+            .build();
+        info!("enqueued_time: {:?}", enqueued_time);
+        info!(
+            "enqueued_time: {:?}",
+            enqueued_time.duration_since(std::time::UNIX_EPOCH)
+        );
+        info!(
+            "enqueued_time: {:?}",
+            enqueued_time
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+        );
+        assert_eq!(
+            start_position.location,
+            StartLocation::EnqueuedTime(enqueued_time)
+        );
+        assert_eq!(
+            StartPosition::start_expression(&Some(start_position)),
+            format!(
+                "amqp.annotation.x-opt-enqueued-time >'{}'",
+                enqueued_time
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis()
+            )
+        );
+
+        let start_position = StartPosition::builder()
+            .with_enqueued_time(enqueued_time)
+            .inclusive()
+            .build();
+        assert_eq!(
+            StartPosition::start_expression(&Some(start_position)),
+            format!(
+                "amqp.annotation.x-opt-enqueued-time >='{}'",
+                enqueued_time
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis()
+            )
+        );
+    }
+
+    #[test]
+    fn test_start_position_builder_with_offset() {
+        setup();
+        let offset = "12345".to_string();
+        let start_position = StartPosition::builder().with_offset(offset.clone()).build();
+        assert_eq!(
+            start_position.location,
+            StartLocation::Offset(offset.clone())
+        );
+        assert_eq!(
+            "amqp.annotation.x-opt-offset >'12345'",
+            StartPosition::start_expression(&Some(start_position)),
+        );
+
+        let start_position = StartPosition::builder()
+            .with_offset(offset.clone())
+            .inclusive()
+            .build();
+        assert_eq!(
+            "amqp.annotation.x-opt-offset >='12345'",
+            StartPosition::start_expression(&Some(start_position)),
+        );
+    }
+
+    #[test]
+    fn test_start_position_builder_inclusive() {
+        setup();
+        let start_position = StartPosition::builder().inclusive().build();
+        assert!(start_position.inclusive);
+        let start_position = StartPosition::builder().build();
+        assert!(!start_position.inclusive);
     }
 }

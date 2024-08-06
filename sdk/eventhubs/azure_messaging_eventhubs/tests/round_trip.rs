@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words eventhubs eventhub eventdata amqp
+//cspell: words eventdata amqp
 
 #![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
 
@@ -12,8 +12,8 @@ use azure_core_amqp::{
 };
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 use azure_messaging_eventhubs::{
-    consumer::{ConsumerClient, ConsumerClientOptions, ReceiveOptions},
-    models::{EventData, MessageId, StartPosition},
+    consumer::{ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition},
+    models::{EventData, MessageId},
     producer::{batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions},
 };
 use futures::pin_mut;

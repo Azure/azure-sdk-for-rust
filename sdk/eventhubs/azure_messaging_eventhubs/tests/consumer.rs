@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words eventhubs eventhub eventdata
+//cspell: words eventdata
 
 #![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
 
 use async_std::future::timeout;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
-use azure_messaging_eventhubs::{
-    consumer::{ConsumerClient, ConsumerClientOptions, ReceiveOptions},
-    models::StartPosition,
+use azure_messaging_eventhubs::consumer::{
+    ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition,
 };
 use futures::{pin_mut, StreamExt};
 use std::{env, time::Duration};

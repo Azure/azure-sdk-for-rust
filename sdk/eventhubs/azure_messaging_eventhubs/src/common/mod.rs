@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-// cspell: words eventhub eventhubs amqp
+// cspell: words amqp
 use crate::{
     error::ErrorKind,
     models::{EventHubPartitionProperties, EventHubProperties},

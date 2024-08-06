@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-// cspell: words amqp widnow eventhubs sasl
+// cspell: words amqp sasl
 
 use crate::connection::{AmqpConnectionApis, AmqpConnectionOptions};
 
