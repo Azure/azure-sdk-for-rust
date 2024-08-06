@@ -6,7 +6,7 @@
 use super::error::AmqpBegin;
 use crate::{
     connection::AmqpConnection,
-    session::{AmqpSessionOptions, AmqpSessionTrait},
+    session::{AmqpSessionApis, AmqpSessionOptions},
 };
 use async_std::sync::Mutex;
 use azure_core::Result;
@@ -40,13 +40,13 @@ impl Fe2o3AmqpSession {
     }
 }
 
-impl AmqpSessionTrait for Fe2o3AmqpSession {
+impl AmqpSessionApis for Fe2o3AmqpSession {
     async fn begin(
         &self,
         connection: &AmqpConnection,
         options: Option<AmqpSessionOptions>,
     ) -> Result<()> {
-        let mut connection = connection.0 .0.get().get().unwrap().lock().await;
+        let mut connection = connection.implementation.get().get().unwrap().lock().await;
 
         let mut session_builder = fe2o3_amqp::session::Session::builder();
         if options.is_some() {

@@ -13,7 +13,7 @@ type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
 #[cfg(any(not(any(feature = "fe2o3-amqp")), target_arch = "wasm32"))]
 type CbsImplementation = super::noop::NoopAmqpClaimsBasedSecurity;
 
-pub trait AmqpClaimsBasedSecurityTrait {
+pub trait AmqpClaimsBasedSecurityApis {
     /// Asynchronously attaches the Claims-Based Security (CBS) node to the AMQP session.
     ///
     /// This method is responsible for setting up the necessary AMQP links for CBS operations.
@@ -52,39 +52,31 @@ pub trait AmqpClaimsBasedSecurityTrait {
 }
 
 #[derive(Debug)]
-struct AmqpClaimsBasedSecurityImpl<T>(T);
-
-impl<T> AmqpClaimsBasedSecurityImpl<T>
-where
-    T: AmqpClaimsBasedSecurityTrait,
-{
-    pub(crate) fn new(cbs: T) -> Self {
-        Self(cbs)
-    }
+pub struct AmqpClaimsBasedSecurity {
+    implementation: CbsImplementation,
 }
 
-#[derive(Debug)]
-pub struct AmqpClaimsBasedSecurity(AmqpClaimsBasedSecurityImpl<CbsImplementation>);
-
-impl AmqpClaimsBasedSecurityTrait for AmqpClaimsBasedSecurity {
+impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity {
     async fn authorize_path(
         &self,
         path: impl Into<String> + Debug,
         secret: impl Into<String>,
         expires_on: time::OffsetDateTime,
     ) -> Result<()> {
-        self.0 .0.authorize_path(path, secret, expires_on).await
+        self.implementation
+            .authorize_path(path, secret, expires_on)
+            .await
     }
 
     async fn attach(&self) -> Result<()> {
-        self.0 .0.attach().await
+        self.implementation.attach().await
     }
 }
 
 impl AmqpClaimsBasedSecurity {
     pub fn new(session: AmqpSession) -> Self {
-        let session = CbsImplementation::new(session.0 .0);
-
-        Self(AmqpClaimsBasedSecurityImpl::new(session))
+        Self {
+            implementation: CbsImplementation::new(session),
+        }
     }
 }

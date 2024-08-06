@@ -8,6 +8,12 @@ use std::fmt::Debug;
 use time::Duration;
 use url::Url;
 
+#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
+
+#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+type ConnectionImplementation = super::noop::NoopAmqpConnection;
+
 #[derive(Debug, Default)]
 pub struct AmqpConnectionOptions {
     pub(crate) max_frame_size: Option<u32>,
@@ -27,7 +33,7 @@ impl AmqpConnectionOptions {
     }
 }
 
-pub trait AmqpConnectionTrait {
+pub trait AmqpConnectionApis {
     fn open(
         &self,
         name: impl Into<String>,
@@ -37,46 +43,30 @@ pub trait AmqpConnectionTrait {
     fn close(&self) -> impl std::future::Future<Output = Result<()>>;
 }
 
-#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
-type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
-
-#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
-type ConnectionImplementation = super::noop::NoopAmqpConnection;
-
 #[derive(Debug, Default)]
-pub(crate) struct AmqpConnectionImpl<T>(pub(crate) T);
-
-impl<T> AmqpConnectionImpl<T>
-where
-    T: AmqpConnectionTrait,
-{
-    pub fn new(connection: T) -> Self {
-        Self(connection)
-    }
+pub struct AmqpConnection {
+    pub(crate) implementation: ConnectionImplementation,
 }
 
-#[derive(Debug, Default)]
-pub struct AmqpConnection(pub(crate) AmqpConnectionImpl<ConnectionImplementation>);
-
-impl AmqpConnectionTrait for AmqpConnection {
+impl AmqpConnectionApis for AmqpConnection {
     fn open(
         &self,
         name: impl Into<String>,
         url: Url,
         options: Option<AmqpConnectionOptions>,
     ) -> impl std::future::Future<Output = Result<()>> {
-        self.0 .0.open(name, url, options)
+        self.implementation.open(name, url, options)
     }
     fn close(&self) -> impl std::future::Future<Output = Result<()>> {
-        self.0 .0.close()
+        self.implementation.close()
     }
 }
 
 impl AmqpConnection {
     pub fn new() -> Self {
-        let connection = ConnectionImplementation::new();
-
-        Self(AmqpConnectionImpl::new(connection))
+        Self {
+            implementation: ConnectionImplementation::new(),
+        }
     }
 }
 

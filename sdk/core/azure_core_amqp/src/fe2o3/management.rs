@@ -5,7 +5,8 @@
 use std::borrow::BorrowMut;
 
 use crate::{
-    management::AmqpManagementTrait,
+    management::AmqpManagementApis,
+    session::AmqpSession,
     value::{AmqpOrderedMap, AmqpValue},
 };
 
@@ -16,10 +17,7 @@ use fe2o3_amqp_types::{messaging::ApplicationProperties, primitives::SimpleValue
 use std::sync::{Arc, OnceLock};
 use tracing::debug;
 
-use super::{
-    error::{AmqpManagement, AmqpManagementAttach},
-    session::Fe2o3AmqpSession,
-};
+use super::error::{AmqpManagement, AmqpManagementAttach};
 
 #[derive(Debug)]
 pub(crate) struct Fe2o3AmqpManagement {
@@ -37,12 +35,12 @@ impl Drop for Fe2o3AmqpManagement {
 
 impl Fe2o3AmqpManagement {
     pub fn new(
-        session: Fe2o3AmqpSession,
+        session: AmqpSession,
         client_node_name: impl Into<String>,
         access_token: AccessToken,
     ) -> Self {
         // Session::get() returns a clone of the underlying session handle.
-        let session = session.get();
+        let session = session.implementation.get();
 
         Self {
             access_token,
@@ -53,7 +51,7 @@ impl Fe2o3AmqpManagement {
     }
 }
 
-impl AmqpManagementTrait for Fe2o3AmqpManagement {
+impl AmqpManagementApis for Fe2o3AmqpManagement {
     async fn attach(&self) -> Result<()> {
         let management = fe2o3_amqp_management::client::MgmtClient::builder()
             .client_node_addr(&self.client_node_name)

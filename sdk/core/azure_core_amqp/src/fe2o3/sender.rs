@@ -3,7 +3,7 @@
 //cspell: words amqp
 
 use crate::messaging::{AmqpMessage, AmqpTarget};
-use crate::sender::{AmqpSendOptions, AmqpSenderOptions, AmqpSenderTrait};
+use crate::sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions};
 use crate::session::AmqpSession;
 use async_std::sync::Mutex;
 use azure_core::error::Result;
@@ -19,7 +19,7 @@ pub(crate) struct Fe2o3AmqpSender {
     sender: OnceLock<Arc<Mutex<fe2o3_amqp::Sender>>>,
 }
 
-impl AmqpSenderTrait for Fe2o3AmqpSender {
+impl AmqpSenderApis for Fe2o3AmqpSender {
     async fn attach(
         &self,
         session: &AmqpSession,
@@ -64,7 +64,7 @@ impl AmqpSenderTrait for Fe2o3AmqpSender {
         let sender = session_builder
             .name(name.into())
             .target(target.into())
-            .attach(session.0 .0.get().lock().await.borrow_mut())
+            .attach(session.implementation.get().lock().await.borrow_mut())
             .await
             .map_err(AmqpSenderAttach::from)?;
         self.sender.set(Arc::new(Mutex::new(sender))).unwrap();
@@ -76,7 +76,12 @@ impl AmqpSenderTrait for Fe2o3AmqpSender {
     }
 
     #[tracing::instrument]
-    async fn send(&self, message: AmqpMessage, options: Option<AmqpSendOptions>) -> Result<()> {
+    async fn send(
+        &self,
+        message: impl Into<AmqpMessage> + std::fmt::Debug,
+        options: Option<AmqpSendOptions>,
+    ) -> Result<()> {
+        let message: AmqpMessage = message.into();
         let message: fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
         > = message.into();

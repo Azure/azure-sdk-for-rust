@@ -8,7 +8,7 @@ use crate::{
 };
 use azure_core::error::Result;
 use azure_core_amqp::{
-    management::{AmqpManagement, AmqpManagementTrait},
+    management::{AmqpManagement, AmqpManagementApis},
     value::{AmqpOrderedMap, AmqpTimestamp, AmqpValue},
 };
 use std::time::SystemTime;

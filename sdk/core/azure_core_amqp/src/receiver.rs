@@ -8,6 +8,12 @@ use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use super::ReceiverSettleMode;
 use azure_core::error::Result;
 
+#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+type ReceiverImplementation = super::fe2o3::receiver::Fe2o3AmqpReceiver;
+
+#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+type ReceiverImplementation = super::noop::NoopAmqpReceiver;
+
 /// Represents the mode of issuing credit to the sender in an AMQP receiver.
 ///
 /// Credit can be issued automatically or manually, controlling the flow of messages from the sender to the receiver.
@@ -70,7 +76,7 @@ impl AmqpReceiverOptions {
 }
 
 #[allow(unused_variables)]
-pub trait AmqpReceiverTrait {
+pub trait AmqpReceiverApis {
     fn attach(
         &self,
         session: &AmqpSession,
@@ -82,46 +88,32 @@ pub trait AmqpReceiverTrait {
 }
 
 #[derive(Debug, Default)]
-struct AmqpReceiverImpl<T>(T);
-
-impl<T> AmqpReceiverImpl<T>
-where
-    T: AmqpReceiverTrait,
-{
-    pub fn new(session: T) -> Self {
-        Self(session)
-    }
+pub struct AmqpReceiver {
+    implementation: ReceiverImplementation,
 }
 
-#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
-type ReceiverImplementation = super::fe2o3::receiver::Fe2o3AmqpReceiver;
-
-#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
-type ReceiverImplementation = super::noop::NoopAmqpReceiver;
-
-#[derive(Debug, Default)]
-pub struct AmqpReceiver(AmqpReceiverImpl<ReceiverImplementation>);
-
-impl AmqpReceiverTrait for AmqpReceiver {
+impl AmqpReceiverApis for AmqpReceiver {
     async fn attach(
         &self,
         session: &AmqpSession,
         source: impl Into<AmqpSource>,
         options: Option<AmqpReceiverOptions>,
     ) -> Result<()> {
-        self.0 .0.attach(session, source, options).await
+        self.implementation.attach(session, source, options).await
     }
     async fn max_message_size(&self) -> Option<u64> {
-        self.0 .0.max_message_size().await
+        self.implementation.max_message_size().await
     }
     async fn receive(&self) -> Result<AmqpMessage> {
-        self.0 .0.receive().await
+        self.implementation.receive().await
     }
 }
 
 impl AmqpReceiver {
     pub fn new() -> Self {
-        Self(AmqpReceiverImpl::new(ReceiverImplementation::new()))
+        Self {
+            implementation: ReceiverImplementation::new(),
+        }
     }
 }
 

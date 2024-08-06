@@ -9,6 +9,12 @@ use super::{
 use azure_core::error::Result;
 use std::fmt::Debug;
 
+#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+type SessionImplementation = super::fe2o3::session::Fe2o3AmqpSession;
+
+#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+type SessionImplementation = super::noop::NoopAmqpSession;
+
 #[derive(Debug, Default)]
 pub struct AmqpSessionOptions {
     pub(crate) next_outgoing_id: Option<u32>,
@@ -28,7 +34,7 @@ impl AmqpSessionOptions {
 }
 
 #[allow(unused_variables)]
-pub trait AmqpSessionTrait {
+pub trait AmqpSessionApis {
     fn begin(
         &self,
         connection: &AmqpConnection,
@@ -38,43 +44,29 @@ pub trait AmqpSessionTrait {
 }
 
 #[derive(Debug, Clone, Default)]
-pub(crate) struct AmqpSessionImpl<T>(pub(crate) T);
-
-impl<T> AmqpSessionImpl<T>
-where
-    T: AmqpSessionTrait + Clone,
-{
-    pub fn new(session: T) -> Self {
-        Self(session)
-    }
+pub struct AmqpSession {
+    pub(crate) implementation: SessionImplementation,
 }
 
-#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
-type SessionImplementation = super::fe2o3::session::Fe2o3AmqpSession;
-
-#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
-type SessionImplementation = super::noop::NoopAmqpSession;
-
-#[derive(Debug, Clone, Default)]
-pub struct AmqpSession(pub(crate) AmqpSessionImpl<SessionImplementation>);
-
-impl AmqpSessionTrait for AmqpSession {
+impl AmqpSessionApis for AmqpSession {
     async fn begin(
         &self,
         connection: &AmqpConnection,
         options: Option<AmqpSessionOptions>,
     ) -> Result<()> {
-        self.0 .0.begin(connection, options).await
+        self.implementation.begin(connection, options).await
     }
 
     async fn end(&self) -> Result<()> {
-        self.0 .0.end().await
+        self.implementation.end().await
     }
 }
 
 impl AmqpSession {
     pub fn new() -> Self {
-        Self(AmqpSessionImpl::new(SessionImplementation::new()))
+        Self {
+            implementation: SessionImplementation::new(),
+        }
     }
 }
 

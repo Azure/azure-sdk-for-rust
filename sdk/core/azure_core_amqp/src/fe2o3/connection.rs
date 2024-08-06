@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 // cspell: words amqp widnow eventhubs sasl
 
-use crate::connection::{AmqpConnectionOptions, AmqpConnectionTrait};
+use crate::connection::{AmqpConnectionApis, AmqpConnectionOptions};
 
 use async_std::sync::Mutex;
 use azure_core::Result;
@@ -36,7 +36,7 @@ impl Drop for Fe2o3AmqpConnection {
     }
 }
 
-impl AmqpConnectionTrait for Fe2o3AmqpConnection {
+impl AmqpConnectionApis for Fe2o3AmqpConnection {
     async fn open(
         &self,
         id: impl Into<String>,

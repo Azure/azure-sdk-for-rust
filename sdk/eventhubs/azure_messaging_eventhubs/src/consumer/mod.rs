@@ -117,6 +117,7 @@ use super::{
     models::{EventHubPartitionProperties, EventHubProperties, ReceivedEventData, StartPosition},
 };
 
+use async_std::sync::Mutex;
 use async_stream::try_stream;
 use azure_core::{
     auth::{AccessToken, TokenCredential},
@@ -124,16 +125,14 @@ use azure_core::{
     RetryOptions,
 };
 use azure_core_amqp::{
-    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityTrait},
-    connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
-    management::{AmqpManagement, AmqpManagementTrait},
+    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis},
+    connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
+    management::{AmqpManagement, AmqpManagementApis},
     messaging::{AmqpSource, AmqpSourceFilter},
-    receiver::{AmqpReceiver, AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode},
-    session::{AmqpSession, AmqpSessionTrait},
+    receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
+    session::{AmqpSession, AmqpSessionApis},
     value::AmqpDescribed,
 };
-
-use async_std::sync::Mutex;
 use futures::stream::Stream;
 use std::{
     collections::HashMap,

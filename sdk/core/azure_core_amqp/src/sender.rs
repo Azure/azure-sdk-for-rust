@@ -8,6 +8,12 @@ use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use super::{ReceiverSettleMode, SenderSettleMode};
 use azure_core::error::Result;
 
+#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+type SenderImplementation = super::fe2o3::sender::Fe2o3AmqpSender;
+
+#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+type SenderImplementation = super::noop::NoopAmqpSender;
+
 #[derive(Debug, Default)]
 pub struct AmqpSenderOptions {
     pub(super) sender_settle_mode: Option<SenderSettleMode>,
@@ -26,7 +32,7 @@ impl AmqpSenderOptions {
 }
 
 #[allow(unused_variables)]
-pub trait AmqpSenderTrait {
+pub trait AmqpSenderApis {
     fn attach(
         &self,
         session: &AmqpSession,
@@ -37,33 +43,17 @@ pub trait AmqpSenderTrait {
     fn max_message_size(&self) -> impl std::future::Future<Output = Option<u64>>;
     fn send(
         &self,
-        message: AmqpMessage,
+        message: impl Into<AmqpMessage> + std::fmt::Debug,
         options: Option<AmqpSendOptions>,
     ) -> impl std::future::Future<Output = Result<()>>;
 }
 
 #[derive(Debug, Default)]
-struct AmqpSenderImpl<T>(T);
-
-impl<T> AmqpSenderImpl<T>
-where
-    T: AmqpSenderTrait,
-{
-    pub fn new(session: T) -> Self {
-        Self(session)
-    }
+pub struct AmqpSender {
+    implementation: SenderImplementation,
 }
 
-#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
-type SenderImplementation = super::fe2o3::sender::Fe2o3AmqpSender;
-
-#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
-type SenderImplementation = super::noop::NoopAmqpSender;
-
-#[derive(Debug, Default)]
-pub struct AmqpSender(AmqpSenderImpl<SenderImplementation>);
-
-impl AmqpSenderTrait for AmqpSender {
+impl AmqpSenderApis for AmqpSender {
     async fn attach(
         &self,
         session: &AmqpSession,
@@ -71,19 +61,27 @@ impl AmqpSenderTrait for AmqpSender {
         target: impl Into<AmqpTarget>,
         options: Option<AmqpSenderOptions>,
     ) -> Result<()> {
-        self.0 .0.attach(session, name, target, options).await
+        self.implementation
+            .attach(session, name, target, options)
+            .await
     }
     async fn max_message_size(&self) -> Option<u64> {
-        self.0 .0.max_message_size().await
+        self.implementation.max_message_size().await
     }
-    async fn send(&self, message: AmqpMessage, options: Option<AmqpSendOptions>) -> Result<()> {
-        self.0 .0.send(message, options).await
+    async fn send(
+        &self,
+        message: impl Into<AmqpMessage> + std::fmt::Debug,
+        options: Option<AmqpSendOptions>,
+    ) -> Result<()> {
+        self.implementation.send(message, options).await
     }
 }
 
 impl AmqpSender {
     pub fn new() -> Self {
-        Self(AmqpSenderImpl::new(SenderImplementation::new()))
+        Self {
+            implementation: SenderImplementation::new(),
+        }
     }
 }
 

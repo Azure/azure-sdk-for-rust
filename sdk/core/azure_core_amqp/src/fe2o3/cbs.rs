@@ -2,11 +2,8 @@
 // Licensed under the MIT license.
 // cspell:: words amqp servicebus sastoken
 
-use super::{
-    error::{AmqpManagement, AmqpManagementAttach},
-    session::Fe2o3AmqpSession,
-};
-use crate::cbs::AmqpClaimsBasedSecurityTrait;
+use super::error::{AmqpManagement, AmqpManagementAttach};
+use crate::{cbs::AmqpClaimsBasedSecurityApis, session::AmqpSession};
 use async_std::sync::Mutex;
 use azure_core::error::Result;
 use fe2o3_amqp_cbs::token::CbsToken;
@@ -25,10 +22,10 @@ pub(crate) struct Fe2o3ClaimsBasedSecurity {
 }
 
 impl Fe2o3ClaimsBasedSecurity {
-    pub fn new(session: Fe2o3AmqpSession) -> Self {
+    pub fn new(session: AmqpSession) -> Self {
         Self {
             cbs: OnceLock::new(),
-            session: session.get(),
+            session: session.implementation.get(),
         }
     }
 }
@@ -41,7 +38,7 @@ impl Drop for Fe2o3ClaimsBasedSecurity {
     }
 }
 
-impl AmqpClaimsBasedSecurityTrait for Fe2o3ClaimsBasedSecurity {
+impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
     async fn attach(&self) -> Result<()> {
         let mut session = self.session.lock().await;
         let cbs_client = fe2o3_amqp_cbs::client::CbsClient::builder()

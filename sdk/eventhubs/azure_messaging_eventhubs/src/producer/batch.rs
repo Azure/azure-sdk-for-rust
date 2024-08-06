@@ -11,7 +11,7 @@ use crate::models::EventData;
 use azure_core::error::Result;
 use azure_core_amqp::{
     messaging::{AmqpAnnotations, AmqpMessage, AmqpMessageBody, AmqpMessageProperties},
-    sender::AmqpSenderTrait,
+    sender::AmqpSenderApis,
     value::{AmqpSymbol, AmqpValue},
 };
 use tracing::debug;

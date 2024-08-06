@@ -4,7 +4,7 @@
 
 use super::error::{AmqpIllegalLinkState, AmqpReceiver, AmqpReceiverAttach};
 use crate::messaging::{AmqpMessage, AmqpSource};
-use crate::receiver::{AmqpReceiverOptions, AmqpReceiverTrait, ReceiverCreditMode};
+use crate::receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode};
 use crate::session::AmqpSession;
 use async_std::sync::Mutex;
 use azure_core::error::Result;
@@ -28,8 +28,7 @@ impl From<ReceiverCreditMode> for fe2o3_amqp::link::receiver::CreditMode {
     }
 }
 
-impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
-    #[allow(unused_variables)]
+impl AmqpReceiverApis for Fe2o3AmqpReceiver {
     async fn attach(
         &self,
         session: &AmqpSession,
@@ -56,7 +55,7 @@ impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
             .auto_accept(auto_accept)
             .properties(properties.into())
             .name(name)
-            .attach(session.0 .0.get().lock().await.borrow_mut())
+            .attach(session.implementation.get().lock().await.borrow_mut())
             .await
             .map_err(AmqpReceiverAttach::from)?;
         self.receiver.set(Arc::new(Mutex::new(receiver))).unwrap();

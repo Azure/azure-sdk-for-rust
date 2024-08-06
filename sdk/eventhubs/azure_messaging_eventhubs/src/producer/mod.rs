@@ -4,11 +4,11 @@
 //cspell: words amqp eventhub amqps servicebus eventhubs mgmt
 
 use azure_core_amqp::{
-    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityTrait},
-    connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
-    management::{AmqpManagement, AmqpManagementTrait},
-    sender::{AmqpSendOptions, AmqpSender, AmqpSenderOptions, AmqpSenderTrait},
-    session::{AmqpSession, AmqpSessionOptions, AmqpSessionTrait},
+    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis},
+    connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
+    management::{AmqpManagement, AmqpManagementApis},
+    sender::{AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSenderOptions},
+    session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
 };
 
 use crate::{
