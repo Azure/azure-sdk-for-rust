@@ -130,11 +130,13 @@ pub mod builders {
             self.options.desired_capabilities = Some(desired_capabilities);
             self
         }
-        pub fn with_properties(
-            mut self,
-            properties: Vec<(impl Into<AmqpSymbol>, impl Into<AmqpValue>)>,
-        ) -> Self {
-            let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = properties
+        pub fn with_properties<K, V>(mut self, properties: impl Into<AmqpOrderedMap<K, V>>) -> Self
+        where
+            K: Into<AmqpSymbol> + Debug + Default + PartialEq,
+            V: Into<AmqpValue> + Debug + Default,
+        {
+            let properties_map: AmqpOrderedMap<K, V> = properties.into();
+            let properties_map = properties_map
                 .into_iter()
                 .map(|(k, v)| (k.into(), v.into()))
                 .collect();
