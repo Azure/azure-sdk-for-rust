@@ -25,9 +25,7 @@ pub trait AmqpClaimsBasedSecurityTrait {
     /// - `Ok(())` on successful attachment of the CBS node.
     /// - `Err(e)` where `e` is an error from the `azure_core::error::Result` indicating the failure reason.
     ///
-    fn attach(&self) -> impl std::future::Future<Output = Result<()>> {
-        async { unimplemented!() }
-    }
+    fn attach(&self) -> impl std::future::Future<Output = Result<()>>;
 
     /// Asynchronously authorizes an AMQP path using the provided secret.
     ///
@@ -45,15 +43,12 @@ pub trait AmqpClaimsBasedSecurityTrait {
     /// - `Ok(())` on successful authorization of the AMQP path.
     /// - `Err(e)` where `e` is an error from the `azure_core::error::Result` indicating the failure reason.
     ///
-    #[allow(unused_variables)]
     fn authorize_path(
         &self,
         path: impl Into<String> + Debug,
         secret: impl Into<String>,
         expires_on: time::OffsetDateTime,
-    ) -> impl std::future::Future<Output = Result<()>> {
-        async { unimplemented!() }
-    }
+    ) -> impl std::future::Future<Output = Result<()>>;
 }
 
 #[derive(Debug)]

@@ -661,11 +661,7 @@ mod builders {
         /// Creates a new `ConsumerClientOptionsBuilder` with default options.
         pub(super) fn new() -> Self {
             Self {
-                options: ConsumerClientOptions {
-                    application_id: None,
-                    retry_options: None,
-                    instance_id: None,
-                },
+                options: Default::default(),
             }
         }
 
@@ -739,11 +735,7 @@ mod builders {
     impl ReceiveOptionsBuilder {
         pub(super) fn new() -> Self {
             Self {
-                options: ReceiveOptions {
-                    owner_level: None,
-                    prefetch: None,
-                    start_position: None,
-                },
+                options: Default::default(),
             }
         }
 

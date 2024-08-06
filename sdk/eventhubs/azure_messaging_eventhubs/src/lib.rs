@@ -350,7 +350,7 @@ pub mod models {
     ///   .build();
     /// ```
     ///
-    #[derive(Debug, PartialEq, Clone)]
+    #[derive(Debug, PartialEq, Clone, Default)]
     pub struct StartPosition {
         location: StartLocation,
         inclusive: bool,
@@ -702,13 +702,7 @@ pub mod models {
         impl EventDataBuilder {
             pub(super) fn new() -> Self {
                 Self {
-                    event_data: EventData {
-                        body: None,
-                        content_type: None,
-                        correlation_id: None,
-                        message_id: None,
-                        properties: None,
-                    },
+                    event_data: Default::default(),
                 }
             }
 
@@ -821,10 +815,7 @@ pub mod models {
         impl StartPositionBuilder {
             pub(super) fn new() -> Self {
                 Self {
-                    position: StartPosition {
-                        location: StartLocation::Latest,
-                        inclusive: false,
-                    },
+                    position: Default::default(),
                 }
             }
 

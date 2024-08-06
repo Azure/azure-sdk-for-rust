@@ -10,18 +10,14 @@ use azure_core::{auth::AccessToken, error::Result};
 use std::fmt::Debug;
 
 pub trait AmqpManagementTrait {
-    fn attach(&self) -> impl std::future::Future<Output = Result<()>> {
-        async { unimplemented!() }
-    }
+    fn attach(&self) -> impl std::future::Future<Output = Result<()>>;
 
     #[allow(unused_variables)]
     fn call(
         &self,
         operation_type: impl Into<String>,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
-    ) -> impl std::future::Future<Output = Result<AmqpOrderedMap<String, AmqpValue>>> {
-        async { unimplemented!() }
-    }
+    ) -> impl std::future::Future<Output = Result<AmqpOrderedMap<String, AmqpValue>>>;
 }
 
 #[derive(Debug)]
@@ -31,7 +27,7 @@ impl<T> AmqpManagementImpl<T>
 where
     T: AmqpManagementTrait,
 {
-    pub(crate) fn new(manager: T) -> Self {
+    pub fn new(manager: T) -> Self {
         Self(manager)
     }
 }

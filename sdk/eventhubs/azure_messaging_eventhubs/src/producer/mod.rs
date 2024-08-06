@@ -35,6 +35,7 @@ use url::Url;
 pub mod batch;
 
 /// Options used when creating an Event Hubs ProducerClient.
+#[derive(Default)]
 pub struct ProducerClientOptions {
     application_id: Option<String>,
     retry_options: Option<RetryOptions>,
@@ -468,11 +469,7 @@ mod builders {
     impl ProducerClientOptionsBuilder {
         pub(super) fn new() -> Self {
             Self {
-                options: ProducerClientOptions {
-                    application_id: None,
-                    retry_options: None,
-                    max_message_size: None,
-                },
+                options: Default::default(),
             }
         }
 

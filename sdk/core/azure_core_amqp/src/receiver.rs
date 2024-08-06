@@ -76,25 +76,19 @@ pub trait AmqpReceiverTrait {
         session: &AmqpSession,
         source: impl Into<AmqpSource>,
         options: Option<AmqpReceiverOptions>,
-    ) -> impl std::future::Future<Output = Result<()>> {
-        async { unimplemented!() }
-    }
-    fn max_message_size(&self) -> impl std::future::Future<Output = Option<u64>> {
-        async { unimplemented!() }
-    }
-    fn receive(&self) -> impl std::future::Future<Output = Result<AmqpMessage>> {
-        async { unimplemented!() }
-    }
+    ) -> impl std::future::Future<Output = Result<()>>;
+    fn max_message_size(&self) -> impl std::future::Future<Output = Option<u64>>;
+    fn receive(&self) -> impl std::future::Future<Output = Result<AmqpMessage>>;
 }
 
 #[derive(Debug, Default)]
-pub(crate) struct AmqpReceiverImpl<T>(pub(crate) T);
+struct AmqpReceiverImpl<T>(T);
 
 impl<T> AmqpReceiverImpl<T>
 where
     T: AmqpReceiverTrait,
 {
-    pub(crate) fn new(session: T) -> Self {
+    pub fn new(session: T) -> Self {
         Self(session)
     }
 }
@@ -106,7 +100,7 @@ type ReceiverImplementation = super::fe2o3::receiver::Fe2o3AmqpReceiver;
 type ReceiverImplementation = super::noop::NoopAmqpReceiver;
 
 #[derive(Debug, Default)]
-pub struct AmqpReceiver(pub(crate) AmqpReceiverImpl<ReceiverImplementation>);
+pub struct AmqpReceiver(AmqpReceiverImpl<ReceiverImplementation>);
 
 impl AmqpReceiverTrait for AmqpReceiver {
     async fn attach(
@@ -141,14 +135,7 @@ pub mod builders {
     impl AmqpReceiverOptionsBuilder {
         pub(super) fn new() -> Self {
             AmqpReceiverOptionsBuilder {
-                options: AmqpReceiverOptions {
-                    receiver_settle_mode: None,
-                    target: None,
-                    properties: None,
-                    name: None,
-                    credit_mode: None,
-                    auto_accept: false,
-                },
+                options: Default::default(),
             }
         }
         #[allow(dead_code)]

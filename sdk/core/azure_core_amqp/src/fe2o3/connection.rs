@@ -19,13 +19,13 @@ pub(crate) struct Fe2o3AmqpConnection {
 }
 
 impl Fe2o3AmqpConnection {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             connection: OnceLock::new(),
         }
     }
 
-    pub(crate) fn get(&self) -> &OnceLock<Mutex<ConnectionHandle<()>>> {
+    pub fn get(&self) -> &OnceLock<Mutex<ConnectionHandle<()>>> {
         &self.connection
     }
 }

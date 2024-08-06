@@ -73,7 +73,7 @@ impl From<u64> for AmqpMessageId {
 }
 
 /// A target node in an AMQP message
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct AmqpTarget {
     pub address: Option<String>,
     pub durable: Option<TerminusDurability>,
@@ -110,6 +110,7 @@ impl From<String> for AmqpTarget {
     }
 }
 
+#[derive(Debug, Default)]
 pub struct AmqpSourceFilter {
     descriptor: &'static str,
     code: u64,
@@ -133,7 +134,7 @@ impl AmqpSourceFilter {
 }
 
 /// A source node in an AMQP message
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct AmqpSource {
     pub address: Option<String>,
     pub durable: Option<TerminusDurability>,
@@ -154,7 +155,7 @@ impl AmqpSource {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct AmqpMessageHeader {
     durable: Option<bool>,
     priority: Option<u8>,
@@ -268,11 +269,12 @@ impl AmqpMessageProperties {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum AmqpMessageBody {
     Binary(Vec<Vec<u8>>),
     Sequence(Vec<AmqpList>),
     Value(AmqpValue),
+    #[default]
     Empty,
 }
 
@@ -383,7 +385,7 @@ impl AmqpApplicationProperties {
 /// as defined in the AMQP specification
 /// <https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html>
 ///
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct AmqpMessage {
     body: AmqpMessageBody,
     header: Option<AmqpMessageHeader>,
@@ -513,19 +515,7 @@ pub mod builders {
     impl AmqpSourceBuilder {
         pub(super) fn new() -> AmqpSourceBuilder {
             AmqpSourceBuilder {
-                source: AmqpSource {
-                    address: None,
-                    durable: None,
-                    expiry_policy: None,
-                    timeout: None,
-                    dynamic: None,
-                    dynamic_node_properties: None,
-                    distribution_mode: None,
-                    filter: None,
-                    default_outcome: None,
-                    outcomes: None,
-                    capabilities: None,
-                },
+                source: Default::default(),
             }
         }
         pub fn with_address(mut self, address: impl Into<String>) -> Self {
@@ -607,15 +597,7 @@ pub mod builders {
         }
         pub(super) fn new() -> AmqpTargetBuilder {
             AmqpTargetBuilder {
-                target: AmqpTarget {
-                    address: None,
-                    durable: None,
-                    expiry_policy: None,
-                    timeout: None,
-                    dynamic: None,
-                    dynamic_node_properties: None,
-                    capabilities: None,
-                },
+                target: Default::default(),
             }
         }
         pub fn with_address(mut self, address: impl Into<String>) -> Self {
@@ -661,13 +643,7 @@ pub mod builders {
         }
         pub(super) fn new() -> AmqpMessageHeaderBuilder {
             AmqpMessageHeaderBuilder {
-                header: AmqpMessageHeader {
-                    durable: None,
-                    priority: None,
-                    time_to_live: None,
-                    first_acquirer: None,
-                    delivery_count: None,
-                },
+                header: Default::default(),
             }
         }
         pub fn with_durable(mut self, durable: bool) -> Self {
@@ -702,21 +678,7 @@ pub mod builders {
         }
         pub(super) fn new() -> AmqpMessagePropertiesBuilder {
             AmqpMessagePropertiesBuilder {
-                properties: AmqpMessageProperties {
-                    message_id: None,
-                    user_id: None,
-                    to: None,
-                    subject: None,
-                    reply_to: None,
-                    correlation_id: None,
-                    content_type: None,
-                    content_encoding: None,
-                    absolute_expiry_time: None,
-                    creation_time: None,
-                    group_id: None,
-                    group_sequence: None,
-                    reply_to_group_id: None,
-                },
+                properties: Default::default(),
             }
         }
         pub fn with_message_id(mut self, message_id: impl Into<AmqpMessageId>) -> Self {
@@ -784,17 +746,9 @@ pub mod builders {
         pub fn build(self) -> AmqpMessage {
             self.message
         }
-        pub(crate) fn new() -> AmqpMessageBuilder {
+        pub(super) fn new() -> AmqpMessageBuilder {
             AmqpMessageBuilder {
-                message: AmqpMessage {
-                    body: AmqpMessageBody::Empty,
-                    header: None,
-                    application_properties: None,
-                    message_annotations: None,
-                    delivery_annotations: None,
-                    properties: None,
-                    footer: None,
-                },
+                message: Default::default(),
             }
         }
         pub fn with_body(mut self, body: impl Into<AmqpMessageBody>) -> Self {

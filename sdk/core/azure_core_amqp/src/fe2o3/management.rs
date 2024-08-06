@@ -36,7 +36,7 @@ impl Drop for Fe2o3AmqpManagement {
 }
 
 impl Fe2o3AmqpManagement {
-    pub(crate) fn new(
+    pub fn new(
         session: Fe2o3AmqpSession,
         client_node_name: impl Into<String>,
         access_token: AccessToken,

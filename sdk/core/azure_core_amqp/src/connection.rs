@@ -8,6 +8,7 @@ use std::fmt::Debug;
 use time::Duration;
 use url::Url;
 
+#[derive(Debug, Default)]
 pub struct AmqpConnectionOptions {
     pub(crate) max_frame_size: Option<u32>,
     pub(crate) channel_max: Option<u16>,
@@ -27,22 +28,13 @@ impl AmqpConnectionOptions {
 }
 
 pub trait AmqpConnectionTrait {
-    #[allow(unused_variables)]
     fn open(
         &self,
         name: impl Into<String>,
         url: Url,
         options: Option<AmqpConnectionOptions>,
-    ) -> impl std::future::Future<Output = Result<()>> {
-        async {
-            unimplemented!();
-        }
-    }
-    fn close(&self) -> impl std::future::Future<Output = Result<()>> {
-        async {
-            unimplemented!();
-        }
-    }
+    ) -> impl std::future::Future<Output = Result<()>>;
+    fn close(&self) -> impl std::future::Future<Output = Result<()>>;
 }
 
 #[cfg(all(feature = "iron-oxide-amqp", not(target_arch = "wasm32")))]
@@ -58,7 +50,7 @@ impl<T> AmqpConnectionImpl<T>
 where
     T: AmqpConnectionTrait,
 {
-    pub(crate) fn new(connection: T) -> Self {
+    pub fn new(connection: T) -> Self {
         Self(connection)
     }
 }
@@ -97,17 +89,7 @@ pub mod builders {
     impl AmqpConnectionOptionsBuilder {
         pub(super) fn new() -> Self {
             Self {
-                options: AmqpConnectionOptions {
-                    max_frame_size: None,
-                    channel_max: None,
-                    idle_timeout: None,
-                    outgoing_locales: None,
-                    incoming_locales: None,
-                    offered_capabilities: None,
-                    desired_capabilities: None,
-                    properties: None,
-                    buffer_size: None,
-                },
+                options: Default::default(),
             }
         }
         pub fn build(self) -> AmqpConnectionOptions {

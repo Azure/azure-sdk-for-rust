@@ -25,7 +25,7 @@ pub(crate) struct Fe2o3ClaimsBasedSecurity {
 }
 
 impl Fe2o3ClaimsBasedSecurity {
-    pub(crate) fn new(session: Fe2o3AmqpSession) -> Self {
+    pub fn new(session: Fe2o3AmqpSession) -> Self {
         Self {
             cbs: OnceLock::new(),
             session: session.get(),

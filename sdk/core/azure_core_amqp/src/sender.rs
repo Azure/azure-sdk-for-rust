@@ -8,7 +8,7 @@ use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use super::{ReceiverSettleMode, SenderSettleMode};
 use azure_core::error::Result;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AmqpSenderOptions {
     pub(super) sender_settle_mode: Option<SenderSettleMode>,
     pub(super) receiver_settle_mode: Option<ReceiverSettleMode>,
@@ -33,29 +33,23 @@ pub trait AmqpSenderTrait {
         name: impl Into<String>,
         target: impl Into<AmqpTarget>,
         options: Option<AmqpSenderOptions>,
-    ) -> impl std::future::Future<Output = Result<()>> {
-        async { unimplemented!() }
-    }
-    fn max_message_size(&self) -> impl std::future::Future<Output = Option<u64>> {
-        async { unimplemented!() }
-    }
+    ) -> impl std::future::Future<Output = Result<()>>;
+    fn max_message_size(&self) -> impl std::future::Future<Output = Option<u64>>;
     fn send(
         &self,
         message: AmqpMessage,
         options: Option<AmqpSendOptions>,
-    ) -> impl std::future::Future<Output = Result<()>> {
-        async { unimplemented!() }
-    }
+    ) -> impl std::future::Future<Output = Result<()>>;
 }
 
 #[derive(Debug, Default)]
-pub(crate) struct AmqpSenderImpl<T>(pub(crate) T);
+struct AmqpSenderImpl<T>(T);
 
 impl<T> AmqpSenderImpl<T>
 where
     T: AmqpSenderTrait,
 {
-    pub(crate) fn new(session: T) -> Self {
+    pub fn new(session: T) -> Self {
         Self(session)
     }
 }
@@ -67,7 +61,7 @@ type SenderImplementation = super::fe2o3::sender::Fe2o3AmqpSender;
 type SenderImplementation = super::noop::NoopAmqpSender;
 
 #[derive(Debug, Default)]
-pub struct AmqpSender(pub(crate) AmqpSenderImpl<SenderImplementation>);
+pub struct AmqpSender(AmqpSenderImpl<SenderImplementation>);
 
 impl AmqpSenderTrait for AmqpSender {
     async fn attach(
@@ -94,7 +88,7 @@ impl AmqpSender {
 }
 
 /// Options for sending an AMQP message.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AmqpSendOptions {
     /// The message format.
     pub(crate) message_format: Option<u32>,
@@ -119,10 +113,7 @@ pub mod builders {
     impl AmqpSendOptionsBuilder {
         pub(super) fn new() -> Self {
             AmqpSendOptionsBuilder {
-                options: AmqpSendOptions {
-                    message_format: None,
-                    settled: None,
-                },
+                options: Default::default(),
             }
         }
         #[allow(dead_code)]
@@ -147,16 +138,7 @@ pub mod builders {
     impl AmqpSenderOptionsBuilder {
         pub(super) fn new() -> Self {
             AmqpSenderOptionsBuilder {
-                options: AmqpSenderOptions {
-                    sender_settle_mode: None,
-                    receiver_settle_mode: None,
-                    source: None,
-                    offered_capabilities: None,
-                    desired_capabilities: None,
-                    properties: None,
-                    initial_delivery_count: None,
-                    max_message_size: None,
-                },
+                options: Default::default(),
             }
         }
         #[allow(dead_code)]

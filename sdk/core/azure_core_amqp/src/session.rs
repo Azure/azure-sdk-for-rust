@@ -9,7 +9,7 @@ use super::{
 use azure_core::error::Result;
 use std::fmt::Debug;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AmqpSessionOptions {
     pub(crate) next_outgoing_id: Option<u32>,
     pub(crate) incoming_window: Option<u32>,
@@ -33,12 +33,8 @@ pub trait AmqpSessionTrait {
         &self,
         connection: &AmqpConnection,
         options: Option<AmqpSessionOptions>,
-    ) -> impl std::future::Future<Output = Result<()>> {
-        async { unimplemented!() }
-    }
-    fn end(&self) -> impl std::future::Future<Output = Result<()>> {
-        async { unimplemented!() }
-    }
+    ) -> impl std::future::Future<Output = Result<()>>;
+    fn end(&self) -> impl std::future::Future<Output = Result<()>>;
 }
 
 #[derive(Debug, Clone, Default)]
@@ -48,7 +44,7 @@ impl<T> AmqpSessionImpl<T>
 where
     T: AmqpSessionTrait + Clone,
 {
-    pub(crate) fn new(session: T) -> Self {
+    pub fn new(session: T) -> Self {
         Self(session)
     }
 }
@@ -92,16 +88,7 @@ pub mod builders {
     impl AmqpSessionOptionsBuilder {
         pub(super) fn new() -> Self {
             Self {
-                options: AmqpSessionOptions {
-                    next_outgoing_id: None,
-                    incoming_window: None,
-                    outgoing_window: None,
-                    handle_max: None,
-                    offered_capabilities: None,
-                    desired_capabilities: None,
-                    properties: None,
-                    buffer_size: None,
-                },
+                options: Default::default(),
             }
         }
         pub fn build(self) -> AmqpSessionOptions {

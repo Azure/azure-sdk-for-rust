@@ -113,7 +113,7 @@ impl AmqpSenderTrait for Fe2o3AmqpSender {
 }
 
 impl Fe2o3AmqpSender {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             sender: OnceLock::new(),
         }

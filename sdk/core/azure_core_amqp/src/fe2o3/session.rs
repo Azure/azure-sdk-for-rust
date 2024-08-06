@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft Corporation. All Rights reservedserved
+// Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
+
 // cspell: words amqp mgmt
 
 use super::error::AmqpBegin;
@@ -27,14 +28,14 @@ impl Drop for Fe2o3AmqpSession {
 }
 
 impl Fe2o3AmqpSession {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             session: OnceLock::new(),
         }
     }
 
     /// Returns a reference to the session handle
-    pub(crate) fn get(&self) -> Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>> {
+    pub fn get(&self) -> Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>> {
         self.session.get().unwrap().clone()
     }
 }

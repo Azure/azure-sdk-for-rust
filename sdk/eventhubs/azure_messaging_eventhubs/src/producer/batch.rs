@@ -350,6 +350,7 @@ impl<'a> EventDataBatch<'a> {
 ///    .build();
 /// ```
 ///
+#[derive(Default)]
 pub struct EventDataBatchOptions {
     max_size_in_bytes: Option<u64>,
     partition_key: Option<String>,
@@ -378,11 +379,7 @@ mod builders {
     impl EventDataBatchOptionsBuilder {
         pub(super) fn new() -> Self {
             Self {
-                options: EventDataBatchOptions {
-                    max_size_in_bytes: None,
-                    partition_key: None,
-                    partition_id: None,
-                },
+                options: Default::default(),
             }
         }
 

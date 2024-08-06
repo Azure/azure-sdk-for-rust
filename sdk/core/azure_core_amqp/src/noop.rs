@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 // cspell: words amqp
+#![allow(unused_variables)]
 
 use super::{
     cbs::AmqpClaimsBasedSecurityTrait,
-    connection::{AmqpConnection, AmqpConnectionTrait},
+    connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
     management::AmqpManagementTrait,
     messaging::{AmqpMessage, AmqpSource, AmqpTarget},
     receiver::{AmqpReceiverOptions, AmqpReceiverTrait},
@@ -33,24 +34,31 @@ pub(crate) struct NoopAmqpSession {}
 pub(crate) struct NoopAmqpClaimsBasedSecurity {}
 
 impl NoopAmqpConnection {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }
 impl AmqpConnectionTrait for NoopAmqpConnection {
+    async fn open(
+        &self,
+        name: impl Into<String>,
+        url: url::Url,
+        options: Option<AmqpConnectionOptions>,
+    ) -> Result<()> {
+        unimplemented!()
+    }
     async fn close(&self) -> Result<()> {
         unimplemented!()
     }
 }
 
 impl NoopAmqpSession {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }
 
 impl AmqpSessionTrait for NoopAmqpSession {
-    #[allow(unused_variables)]
     async fn begin(
         &self,
         connection: &AmqpConnection,
@@ -65,8 +73,7 @@ impl AmqpSessionTrait for NoopAmqpSession {
 }
 
 impl NoopAmqpClaimsBasedSecurity {
-    #[allow(unused_variables)]
-    pub(crate) fn new(session: NoopAmqpSession) -> Self {
+    pub fn new(session: NoopAmqpSession) -> Self {
         Self {}
     }
 }
@@ -75,11 +82,18 @@ impl AmqpClaimsBasedSecurityTrait for NoopAmqpClaimsBasedSecurity {
     async fn attach(&self) -> Result<()> {
         unimplemented!();
     }
+    async fn authorize_path(
+        &self,
+        path: impl Into<String> + std::fmt::Debug,
+        secret: impl Into<String>,
+        expires_on: time::OffsetDateTime,
+    ) -> Result<()> {
+        unimplemented!()
+    }
 }
 
 impl NoopAmqpManagement {
-    #[allow(unused_variables)]
-    pub(crate) fn new(
+    pub fn new(
         session: NoopAmqpSession,
         name: impl Into<String>,
         access_token: AccessToken,
@@ -92,7 +106,6 @@ impl AmqpManagementTrait for NoopAmqpManagement {
         unimplemented!();
     }
 
-    #[allow(unused_variables)]
     async fn call(
         &self,
         operation_type: impl Into<String>,
@@ -103,13 +116,12 @@ impl AmqpManagementTrait for NoopAmqpManagement {
 }
 
 impl NoopAmqpSender {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }
 
 impl AmqpSenderTrait for NoopAmqpSender {
-    #[allow(unused_variables)]
     async fn attach(
         &self,
         session: &AmqpSession,
@@ -124,20 +136,18 @@ impl AmqpSenderTrait for NoopAmqpSender {
         unimplemented!();
     }
 
-    #[allow(unused_variables)]
     async fn send(&self, message: AmqpMessage, options: Option<AmqpSendOptions>) -> Result<()> {
         unimplemented!();
     }
 }
 
 impl NoopAmqpReceiver {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }
 
 impl AmqpReceiverTrait for NoopAmqpReceiver {
-    #[allow(unused_variables)]
     async fn attach(
         &self,
         session: &AmqpSession,

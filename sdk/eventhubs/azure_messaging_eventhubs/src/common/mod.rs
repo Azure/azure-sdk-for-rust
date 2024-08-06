@@ -17,15 +17,15 @@ pub(crate) mod user_agent;
 
 #[derive(Debug)]
 pub(crate) struct ManagementInstance {
-    pub(crate) management: AmqpManagement,
+    pub management: AmqpManagement,
 }
 
 impl ManagementInstance {
-    pub(crate) fn new(management: AmqpManagement) -> Self {
+    pub fn new(management: AmqpManagement) -> Self {
         Self { management }
     }
 
-    pub(crate) async fn get_eventhub_properties(
+    pub async fn get_eventhub_properties(
         &self,
         eventhub: impl Into<String>,
     ) -> Result<EventHubProperties> {
@@ -69,7 +69,7 @@ impl ManagementInstance {
         })
     }
 
-    pub(crate) async fn get_eventhub_partition_properties(
+    pub async fn get_eventhub_partition_properties(
         &self,
         eventhub: impl Into<String>,
         partition_id: impl Into<String>,

@@ -90,7 +90,7 @@ impl AmqpReceiverTrait for Fe2o3AmqpReceiver {
 }
 
 impl Fe2o3AmqpReceiver {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             receiver: OnceLock::new(),
         }
