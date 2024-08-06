@@ -4,13 +4,13 @@
 #![allow(unused_variables)]
 
 use super::{
-    cbs::AmqpClaimsBasedSecurityTrait,
-    connection::{AmqpConnection, AmqpConnectionOptions, AmqpConnectionTrait},
-    management::AmqpManagementTrait,
+    cbs::AmqpClaimsBasedSecurityApis,
+    connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
+    management::AmqpManagementApis,
     messaging::{AmqpMessage, AmqpSource, AmqpTarget},
-    receiver::{AmqpReceiverOptions, AmqpReceiverTrait},
-    sender::{AmqpSendOptions, AmqpSenderOptions, AmqpSenderTrait},
-    session::{AmqpSession, AmqpSessionOptions, AmqpSessionTrait},
+    receiver::{AmqpReceiverApis, AmqpReceiverOptions},
+    sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions},
+    session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
     value::{AmqpOrderedMap, AmqpValue},
 };
 use azure_core::{auth::AccessToken, error::Result};
@@ -38,7 +38,7 @@ impl NoopAmqpConnection {
         Self {}
     }
 }
-impl AmqpConnectionTrait for NoopAmqpConnection {
+impl AmqpConnectionApis for NoopAmqpConnection {
     async fn open(
         &self,
         name: impl Into<String>,
@@ -58,7 +58,7 @@ impl NoopAmqpSession {
     }
 }
 
-impl AmqpSessionTrait for NoopAmqpSession {
+impl AmqpSessionApis for NoopAmqpSession {
     async fn begin(
         &self,
         connection: &AmqpConnection,
@@ -73,12 +73,12 @@ impl AmqpSessionTrait for NoopAmqpSession {
 }
 
 impl NoopAmqpClaimsBasedSecurity {
-    pub fn new(session: NoopAmqpSession) -> Self {
+    pub fn new(session: AmqpSession) -> Self {
         Self {}
     }
 }
 
-impl AmqpClaimsBasedSecurityTrait for NoopAmqpClaimsBasedSecurity {
+impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity {
     async fn attach(&self) -> Result<()> {
         unimplemented!();
     }
@@ -93,15 +93,11 @@ impl AmqpClaimsBasedSecurityTrait for NoopAmqpClaimsBasedSecurity {
 }
 
 impl NoopAmqpManagement {
-    pub fn new(
-        session: NoopAmqpSession,
-        name: impl Into<String>,
-        access_token: AccessToken,
-    ) -> Self {
+    pub fn new(session: AmqpSession, name: impl Into<String>, access_token: AccessToken) -> Self {
         Self {}
     }
 }
-impl AmqpManagementTrait for NoopAmqpManagement {
+impl AmqpManagementApis for NoopAmqpManagement {
     async fn attach(&self) -> Result<()> {
         unimplemented!();
     }
@@ -121,7 +117,7 @@ impl NoopAmqpSender {
     }
 }
 
-impl AmqpSenderTrait for NoopAmqpSender {
+impl AmqpSenderApis for NoopAmqpSender {
     async fn attach(
         &self,
         session: &AmqpSession,
@@ -136,7 +132,11 @@ impl AmqpSenderTrait for NoopAmqpSender {
         unimplemented!();
     }
 
-    async fn send(&self, message: AmqpMessage, options: Option<AmqpSendOptions>) -> Result<()> {
+    async fn send(
+        &self,
+        message: impl Into<AmqpMessage>,
+        options: Option<AmqpSendOptions>,
+    ) -> Result<()> {
         unimplemented!();
     }
 }
@@ -147,7 +147,7 @@ impl NoopAmqpReceiver {
     }
 }
 
-impl AmqpReceiverTrait for NoopAmqpReceiver {
+impl AmqpReceiverApis for NoopAmqpReceiver {
     async fn attach(
         &self,
         session: &AmqpSession,
