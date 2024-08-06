@@ -1,5 +1,7 @@
 <!-- cspell: words -->
 
+# consumer Module Overview
+
 This module contains the `ConsumerClient` struct and related types, which are used for receiving events from an Event Hub.
 
 The `ConsumerClient` provides functionality to establish a connection to an Event Hub, receive events from a specific partition,
@@ -7,7 +9,7 @@ and manage the lifecycle of the consumer client.
 
 ## Examples
 
-#### Creating a new `ConsumerClient` instance:
+### Creating a new `ConsumerClient` instance
 
 ```rust no_run
 use azure_messaging_eventhubs::consumer::ConsumerClient;
@@ -17,7 +19,7 @@ let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::defau
 let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
 ```
 
-#### Opening a connection to the Event Hub
+### Opening a connection to the Event Hub
 
 ```rust no_run
 use azure_messaging_eventhubs::consumer::ConsumerClient;
@@ -43,7 +45,7 @@ async fn main() {
 }
 ```
 
-#### Closing the connection to the Event Hub
+### Closing the connection to the Event Hub
 
 ```rust no_run
 use azure_messaging_eventhubs::consumer::ConsumerClient;
@@ -71,7 +73,7 @@ async fn main() {
 }
 ```
 
-#### Receiving events from a specific partition of the Event Hub
+### Receiving events from a specific partition of the Event Hub
 
 ```rust no_run
 use azure_messaging_eventhubs::consumer::ConsumerClient;
