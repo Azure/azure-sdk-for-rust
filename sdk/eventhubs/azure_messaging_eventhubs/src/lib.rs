@@ -33,7 +33,6 @@
 pub(crate) mod common;
 
 /// Types related to consuming events from an Event Hub.
-#[doc = include_str!("consumer/README.md")]
 pub mod consumer;
 
 /// Types related to errors processing events.
