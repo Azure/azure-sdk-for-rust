@@ -33,6 +33,7 @@ impl<'de> Deserialize<'de> for LoginResponse {
         Ok(LoginResponse::from_base_response(resp))
     }
 }
+
 azure_core::json_serializable!(LoginResponse);
 
 impl LoginResponse {

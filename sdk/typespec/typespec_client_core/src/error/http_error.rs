@@ -5,7 +5,7 @@
 use crate::json::from_json;
 use crate::{
     error::ErrorKind,
-    http::{headers, RawResponse, StatusCode},
+    http::{headers, Response, StatusCode},
     Error,
 };
 use bytes::Bytes;
@@ -25,7 +25,7 @@ impl HttpError {
     /// Create an error from an HTTP response.
     ///
     /// This does not check whether the response was successful and should only be used with unsuccessful responses.
-    pub async fn new(response: Response) -> Self {
+    pub async fn new(response: Response<()>) -> Self {
         let status = response.status();
         let headers: HashMap<String, String> = response
             .headers()
