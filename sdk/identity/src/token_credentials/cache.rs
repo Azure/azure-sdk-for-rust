@@ -1,7 +1,7 @@
 use async_lock::RwLock;
 use azure_core::auth::AccessToken;
 use futures::Future;
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, ops::Deref, time::Duration};
 use time::OffsetDateTime;
 use tracing::trace;
 
@@ -12,13 +12,21 @@ fn is_expired(token: &AccessToken) -> bool {
 #[derive(Debug)]
 pub(crate) struct TokenCache(RwLock<HashMap<Vec<String>, AccessToken>>);
 
+impl Deref for TokenCache {
+    type Target = RwLock<HashMap<Vec<String>, AccessToken>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl TokenCache {
     pub(crate) fn new() -> Self {
         Self(RwLock::new(HashMap::new()))
     }
 
     pub(crate) async fn clear(&self) -> azure_core::Result<()> {
-        let mut token_cache = self.0.write().await;
+        let mut token_cache = self.write().await;
         token_cache.clear();
         Ok(())
     }
@@ -29,7 +37,7 @@ impl TokenCache {
         callback: impl Future<Output = azure_core::Result<AccessToken>>,
     ) -> azure_core::Result<AccessToken> {
         // if the current cached token for this resource is good, return it.
-        let token_cache = self.0.read().await;
+        let token_cache = self.read().await;
         let scopes = scopes.iter().map(ToString::to_string).collect::<Vec<_>>();
         if let Some(token) = token_cache.get(&scopes) {
             if !is_expired(token) {
@@ -40,7 +48,7 @@ impl TokenCache {
 
         // otherwise, drop the read lock and get a write lock to refresh the token
         drop(token_cache);
-        let mut token_cache = self.0.write().await;
+        let mut token_cache = self.write().await;
 
         // check again in case another thread refreshed the token while we were
         // waiting on the write lock

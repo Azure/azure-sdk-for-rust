@@ -5,17 +5,22 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     HttpClient, Request,
 };
-use std::{collections::HashMap, str::FromStr, sync::Arc};
+use std::{collections::HashMap, ops::Deref, str::FromStr, sync::Arc};
 use tracing::warn;
 
-pub(crate) struct Oauth2HttpClient {
-    http_client: Arc<dyn HttpClient>,
+pub(crate) struct Oauth2HttpClient(Arc<dyn HttpClient>);
+impl Deref for Oauth2HttpClient {
+    type Target = Arc<dyn HttpClient>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl Oauth2HttpClient {
     /// Create a new `Oauth2HttpClient`
     pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
-        Self { http_client }
+        Self(http_client)
     }
 
     pub(crate) async fn request(
@@ -28,7 +33,7 @@ impl Oauth2HttpClient {
             request.insert_header(name, value);
         }
         request.set_body(oauth2_request.body);
-        let response = self.http_client.execute_request(&request).await?;
+        let response = self.execute_request(&request).await?;
         let status_code = try_from_status(response.status())?;
         let headers = try_from_headers(response.headers())?;
         let body = response.into_body().collect().await?.to_vec();

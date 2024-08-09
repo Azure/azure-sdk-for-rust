@@ -2,7 +2,7 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     Error,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Deref};
 
 #[derive(Debug, Clone)]
 pub(crate) enum Env {
@@ -51,13 +51,19 @@ impl ProcessEnv {
 
 /// An environment that stores and gets variables in memory.
 #[derive(Debug, Clone, Default)]
-pub(crate) struct MemEnv {
-    vars: HashMap<String, String>,
+pub(crate) struct MemEnv(HashMap<String, String>);
+
+impl Deref for MemEnv {
+    type Target = HashMap<String, String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl MemEnv {
     fn var(&self, key: &str) -> azure_core::Result<String> {
-        self.vars.get(key).cloned().ok_or_else(|| {
+        self.get(key).cloned().ok_or_else(|| {
             Error::message(
                 ErrorKind::Io,
                 format!("environment variable {} not set", key),
@@ -72,7 +78,7 @@ impl From<&[(&str, &str)]> for Env {
         for (k, v) in pairs {
             vars.insert(k.to_string(), v.to_string());
         }
-        Self::Mem(MemEnv { vars })
+        Self::Mem(MemEnv(vars))
     }
 }
 
