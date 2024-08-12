@@ -1,11 +1,6 @@
 parameters:
-- name: ScanPath
+- name: PackagePropertiesFolder
   type: string
-  default: ''
-  # Where ScanPath takes a single path, ScanPaths takes a comma separated list of paths to scan
-- name: ScanPaths
-  type: string
-  default: ''
 - name: RepoRoot
   type: string
   default: $(Build.SourcesDirectory)
@@ -20,6 +15,21 @@ parameters:
   default: succeeded()
 
 steps:
+- pwsh: |
+    $packageProperties = Get-ChildItem -Recurse "${{ parameters.PackagePropertiesFolder }}" *.json
+
+    $paths = @()
+
+    foreach($propertiesFile in $packageProperties) {
+      $PackageProp = Get-Content -Path $propertiesFile | ConvertFrom-Json
+
+      $paths += (Join-Path "$(Build.SourcesDirectory)" $PackageProp.DirectoryPath)
+    }
+
+    $scanPaths = $paths -join ","
+    Write-Host "##vso[task.setvariable variable=ScanPathArgument;]$scanPaths"
+  displayName: Populate Scan Paths
+
 - task: PowerShell@2
   displayName: "Verify Readmes"
   condition: ${{ parameters.Condition }}
@@ -27,7 +37,7 @@ steps:
     filePath: "eng/common/scripts/Verify-Readme.ps1"
     arguments: >
       -DocWardenVersion '${{ parameters.DocWardenVersion }}'
-      -ScanPaths '${{ coalesce(parameters.ScanPath, parameters.ScanPaths) }}'
+      -ScanPaths '$(ScanPathArgument)'
       -RepoRoot ${{ parameters.RepoRoot }}
       -SettingsPath ${{ parameters.SettingsPath }}
     pwsh: true
