@@ -7,10 +7,14 @@ pub use self::{
 };
 use crate::utils::{craft_peek_lock_url, get_head_url};
 use azure_core::{
-    auth::Secret, error::Error, from_json, headers, hmac::hmac_sha256, CollectedResponse,
-    HttpClient, Method, Request, StatusCode, Url,
+    auth::Secret,
+    error::Error,
+    from_json,
+    headers::{self, HeaderName, HeaderValue, CONTENT_TYPE},
+    hmac::hmac_sha256,
+    CollectedResponse, HttpClient, Method, Request, StatusCode, Url,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     str::FromStr,
     time::Duration,
@@ -21,6 +25,7 @@ use url::form_urlencoded::{self, Serializer};
 
 /// Default duration for the SAS token in days — We might want to make this configurable at some point
 const DEFAULT_SAS_DURATION: u64 = 3_600; // seconds = 1 hour
+const BROKER_PROPERTIES: HeaderName = HeaderName::from_static("brokerproperties");
 
 /// Prepares an HTTP request
 fn finalize_request(
@@ -89,16 +94,19 @@ async fn send_message(
     policy_name: &str,
     signing_key: &Secret,
     msg: &str,
+    send_message_options: Option<SendMessageOptions>,
 ) -> azure_core::Result<()> {
     let url = format!("https://{namespace}.servicebus.windows.net/{queue_or_topic}/messages");
 
-    let req = finalize_request(
+    let mut req = finalize_request(
         &url,
         Method::Post,
         Some(msg.to_string()),
         policy_name,
         signing_key,
     )?;
+
+    req.insert_headers(&send_message_options);
 
     http_client
         .as_ref()
@@ -284,7 +292,7 @@ impl PeekLockResponse {
 pub struct BrokerProperties {
     pub delivery_count: i32,
     pub enqueued_sequence_number: Option<i32>,
-    #[serde(deserialize_with = "BrokerProperties::option_rfc2822")]
+    #[serde(with = "time::serde::rfc2822::option")]
     pub enqueued_time_utc: Option<OffsetDateTime>,
     pub lock_token: String,
     #[serde(with = "time::serde::rfc2822")]
@@ -295,19 +303,105 @@ pub struct BrokerProperties {
     pub time_to_live: f64,
 }
 
-impl BrokerProperties {
-    fn option_rfc2822<'de, D>(value: D) -> Result<Option<OffsetDateTime>, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        Ok(Some(time::serde::rfc2822::deserialize(value)?))
-    }
-}
-
 impl FromStr for BrokerProperties {
     type Err = azure_core::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         from_json(s)
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct SendMessageOptions {
+    pub content_type: Option<String>,
+    pub broker_properties: Option<SettableBrokerProperties>,
+}
+
+impl headers::AsHeaders for SendMessageOptions {
+    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
+
+    fn as_headers(&self) -> Self::Iter {
+        let mut headers: Vec<(HeaderName, HeaderValue)> = vec![];
+
+        if let Some(content_type) = &self.content_type {
+            headers.push((CONTENT_TYPE, content_type.into()));
+        }
+
+        if let Some(broker_properties) = &self.broker_properties {
+            headers.push((
+                BROKER_PROPERTIES,
+                serde_json::to_string(broker_properties).unwrap().into(),
+            ));
+        }
+
+        headers.into_iter()
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Default)]
+#[serde(rename_all = "PascalCase")]
+pub struct SettableBrokerProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub correlation_id: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reply_to: Option<String>,
+
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "duration_to_seconds_f64"
+    )]
+    pub time_to_live: Option<Duration>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to: Option<String>,
+
+    #[serde(
+        with = "time::serde::rfc2822::option",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub scheduled_enqueue_time_utc: Option<OffsetDateTime>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reply_to_session_id: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub partition_key: Option<String>,
+}
+
+fn duration_to_seconds_f64<S>(duration: &Option<Duration>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    if let Some(duration) = duration {
+        serializer.serialize_f64(duration.as_secs_f64())
+    } else {
+        serializer.serialize_none()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use crate::service_bus::SettableBrokerProperties;
+
+    #[test]
+    fn test_duration_serialize() {
+        let dur = SettableBrokerProperties {
+            time_to_live: Some(Duration::from_millis(4444)),
+            ..Default::default()
+        };
+        let dur_str = serde_json::to_string(&dur).unwrap();
+        assert_eq!(dur_str, r#"{"TimeToLive":4.444}"#);
     }
 }

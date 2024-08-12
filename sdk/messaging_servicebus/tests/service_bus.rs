@@ -1,13 +1,51 @@
 #![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
 
-use azure_messaging_servicebus::service_bus::QueueClient;
+use azure_messaging_servicebus::service_bus::{
+    QueueClient, SendMessageOptions, SettableBrokerProperties,
+};
 use std::time::Duration;
+use time::OffsetDateTime;
 
 #[tokio::test]
 async fn send_message_test() {
     let client = create_client().unwrap();
     client
-        .send_message("hello, world!")
+        .send_message("hello, world!", None)
+        .await
+        .expect("Failed to send message");
+}
+
+#[tokio::test]
+async fn send_message_delayed_test() {
+    let client = create_client().unwrap();
+    client
+        .send_message(
+            "hello, world!",
+            Some(SendMessageOptions {
+                broker_properties: Some(SettableBrokerProperties {
+                    scheduled_enqueue_time_utc: Some(
+                        OffsetDateTime::now_utc() + Duration::from_secs(60),
+                    ),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+        )
+        .await
+        .expect("Failed to send message");
+}
+
+#[tokio::test]
+async fn send_message_with_content_type() {
+    let client = create_client().unwrap();
+    client
+        .send_message(
+            r#"{"message": "content"}"#,
+            Some(SendMessageOptions {
+                content_type: Some("application/json".into()),
+                ..Default::default()
+            }),
+        )
         .await
         .expect("Failed to send message");
 }
