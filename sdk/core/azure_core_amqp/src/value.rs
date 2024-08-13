@@ -36,6 +36,18 @@ impl AmqpList {
         Self(Vec::new())
     }
 
+    pub fn with_capacity(size: usize) -> Self {
+        Self(Vec::with_capacity(size))
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     pub fn push(&mut self, value: AmqpValue) {
         self.0.push(value);
     }
@@ -103,6 +115,37 @@ impl AmqpDescribed {
             value: value.into(),
         }
     }
+
+    pub fn descriptor(&self) -> &AmqpDescriptor {
+        &self.descriptor
+    }
+
+    pub fn value(&self) -> &AmqpValue {
+        &self.value
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct AmqpComposite {
+    pub descriptor: AmqpDescriptor,
+    pub value: AmqpList,
+}
+
+impl AmqpComposite {
+    pub fn new(descriptor: impl Into<AmqpDescriptor>, value: impl Into<AmqpList>) -> Self {
+        Self {
+            descriptor: descriptor.into(),
+            value: value.into(),
+        }
+    }
+
+    pub fn descriptor(&self) -> &AmqpDescriptor {
+        &self.descriptor
+    }
+
+    pub fn value(&self) -> &AmqpList {
+        &self.value
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Default)]
@@ -129,6 +172,7 @@ pub enum AmqpValue {
     List(AmqpList),
     Map(AmqpOrderedMap<AmqpValue, AmqpValue>),
     Array(Vec<AmqpValue>),
+    Composite(Box<AmqpComposite>),
     Described(Box<AmqpDescribed>),
     Unknown,
 }
@@ -156,6 +200,14 @@ where
                 None
             }
         })
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
     }
 
     pub fn remove(&mut self, key: &K) -> Option<V> {

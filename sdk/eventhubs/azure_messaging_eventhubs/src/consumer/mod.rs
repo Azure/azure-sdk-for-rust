@@ -3,7 +3,7 @@
 
 //cspell: words amqp mgmt amqps
 
-#![doc = include_str!("./README.md")]
+#![doc = include_str!("README.md")]
 use super::{
     common::{
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
