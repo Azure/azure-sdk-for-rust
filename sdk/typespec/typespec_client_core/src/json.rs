@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+///! JSON serialization functions.
 use bytes::Bytes;
 use serde::{de::DeserializeOwned, Serialize};
 use typespec::error::Result;

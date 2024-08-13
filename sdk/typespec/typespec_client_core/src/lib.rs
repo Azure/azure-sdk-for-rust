@@ -3,6 +3,7 @@
 
 #![doc = include_str!("../README.md")]
 
+pub mod date;
 pub mod error;
 #[cfg(feature = "http")]
 pub mod http;

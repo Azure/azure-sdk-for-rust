@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+///! XML serialization functions.
 use bytes::Bytes;
 pub use quick_xml::serde_helpers::text_content;
 use quick_xml::{
