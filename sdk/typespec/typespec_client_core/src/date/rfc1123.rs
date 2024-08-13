@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-///! RFC 1123 date and time parsing and formatting functions.
+//! RFC 1123 date and time parsing and formatting functions.
 use crate::date::{parse_rfc1123, to_rfc1123};
 use serde::{de, Deserialize, Deserializer, Serializer};
 use time::OffsetDateTime;
