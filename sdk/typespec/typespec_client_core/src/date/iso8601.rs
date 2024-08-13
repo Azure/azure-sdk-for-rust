@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-///! ISO 8601 date and time parsing and formatting functions.
+//! ISO 8601 date and time parsing and formatting functions.
 use serde::{de, Deserialize, Deserializer, Serializer};
 use time::{
     format_description::well_known::{
