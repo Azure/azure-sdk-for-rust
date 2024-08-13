@@ -144,7 +144,6 @@ impl AmqpComposite {
     }
 }
 
-
 #[derive(Debug, PartialEq, Clone, Default)]
 pub enum AmqpValue {
     #[default]
