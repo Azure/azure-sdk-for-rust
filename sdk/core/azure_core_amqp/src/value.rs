@@ -44,6 +44,10 @@ impl AmqpList {
         self.0.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     pub fn push(&mut self, value: AmqpValue) {
         self.0.push(value);
     }
@@ -200,6 +204,10 @@ where
 
     pub fn len(&self) -> usize {
         self.inner.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     pub fn remove(&mut self, key: &K) -> Option<V> {
