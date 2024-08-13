@@ -207,7 +207,7 @@ where
     }
 
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        self.inner.is_empty()
     }
 
     pub fn remove(&mut self, key: &K) -> Option<V> {
