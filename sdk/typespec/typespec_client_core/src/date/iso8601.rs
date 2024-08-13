@@ -1,4 +1,7 @@
-use crate::error::{ErrorKind, ResultExt};
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+///! ISO 8601 date and time parsing and formatting functions.
 use serde::{de, Deserialize, Deserializer, Serializer};
 use time::{
     format_description::well_known::{
@@ -7,6 +10,7 @@ use time::{
     },
     OffsetDateTime, UtcOffset,
 };
+use typespec::error::{ErrorKind, ResultExt};
 
 const SERDE_CONFIG: EncodedConfig = Config::DEFAULT
     .set_year_is_six_digits(false)
@@ -15,6 +19,7 @@ const SERDE_CONFIG: EncodedConfig = Config::DEFAULT
     })
     .encode();
 
+/// Parse an ISO 8601 date and time string into an [`OffsetDateTime`].
 pub fn parse_iso8601(s: &str) -> crate::Result<OffsetDateTime> {
     OffsetDateTime::parse(s, &Iso8601::<SERDE_CONFIG>)
         .with_context(ErrorKind::DataConversion, || {
@@ -22,6 +27,7 @@ pub fn parse_iso8601(s: &str) -> crate::Result<OffsetDateTime> {
         })
 }
 
+/// Convert an [`OffsetDateTime`] to an ISO 8601 string.
 pub fn to_iso8601(date: &OffsetDateTime) -> crate::Result<String> {
     date.format(&Iso8601::<SERDE_CONFIG>)
         .with_context(ErrorKind::DataConversion, || {
@@ -29,6 +35,7 @@ pub fn to_iso8601(date: &OffsetDateTime) -> crate::Result<String> {
         })
 }
 
+/// Deserialize an ISO 8601 date and time string into an [`OffsetDateTime`].
 pub fn deserialize<'de, D>(deserializer: D) -> Result<OffsetDateTime, D::Error>
 where
     D: Deserializer<'de>,
@@ -37,6 +44,7 @@ where
     parse_iso8601(&s).map_err(de::Error::custom)
 }
 
+/// Serialize an [`OffsetDateTime`] to an ISO 8601 date and time string.
 pub fn serialize<S>(date: &OffsetDateTime, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -46,11 +54,13 @@ where
     serializer.serialize_str(&as_str)
 }
 
+/// ISO 8601 date and time parsing and formatting functions for optional values.
 pub mod option {
     use crate::date::iso8601::{parse_iso8601, to_iso8601};
     use serde::{Deserialize, Deserializer, Serializer};
     use time::OffsetDateTime;
 
+    /// Deserialize an ISO 8601 date and time string into an optional [`OffsetDateTime`].
     pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
     where
         D: Deserializer<'de>,
@@ -60,6 +70,7 @@ pub mod option {
             .transpose()
     }
 
+    /// Serialize an optional [`OffsetDateTime`] to an ISO 8601 date and time string.
     pub fn serialize<S>(date: &Option<OffsetDateTime>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

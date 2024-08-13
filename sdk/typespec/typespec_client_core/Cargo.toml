@@ -18,6 +18,7 @@ pin-project = { workspace = true }
 quick-xml = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+time = { workspace = true }
 typespec = { workspace = true, default-features = false }
 
 [features]
