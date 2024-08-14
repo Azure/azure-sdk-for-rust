@@ -13,7 +13,7 @@ pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send +
 #[cfg(target_arch = "wasm32")]
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
-/// An HTTP response.
+/// An HTTP response containing a stream of bytes.
 pub struct RawResponse {
     status: StatusCode,
     headers: Headers,
@@ -87,6 +87,7 @@ impl<T> From<RawResponse> for Response<T> {
     }
 }
 
+/// An HTTP response to deserialize a stream of bytes into a model of type `T`.
 pub struct Response<T> {
     response: RawResponse,
     phantom: PhantomData<T>,

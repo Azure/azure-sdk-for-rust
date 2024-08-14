@@ -1,13 +1,14 @@
-use futures::stream::unfold;
-use futures::Stream;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
-/// Helper macro for unwrapping `Result`s into the right types
-/// that `futures::stream::unfold` expects.
+use futures::{stream::unfold, Stream};
+
+/// Helper macro for unwrapping `Result`s into the right types that `futures::stream::unfold` expects.
 macro_rules! r#try {
     ($expr:expr $(,)?) => {
         match $expr {
-            Result::Ok(val) => val,
-            Result::Err(err) => {
+            ::std::result::Result::Ok(val) => val,
+            ::std::result::Result::Err(err) => {
                 return Some((Err(err.into()), State::Done));
             }
         }
@@ -24,7 +25,7 @@ macro_rules! declare {
         // the `Pageable` type.
         mod pageable {
             #![allow(dead_code)]
-            use super::*;
+
             /// A pageable stream that yields items of type `T`
             ///
             /// Internally uses the Azure specific continuation header to
@@ -33,7 +34,7 @@ macro_rules! declare {
             // This is to suppress the unused `project_ref` warning
             pub struct Pageable<T, E> {
                 #[pin]
-                pub(crate) stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, E>> $($extra)*>>,
+                pub(crate) stream: ::std::pin::Pin<Box<dyn ::futures::Stream<Item = ::std::result::Result<T, E>> $($extra)*>>,
             }
         }
         pub use pageable::Pageable;
@@ -46,7 +47,7 @@ macro_rules! declare {
                 make_request: impl Fn(Option<T::Continuation>) -> F + Clone $($extra)* + 'static,
             ) -> Self
             where
-                F: std::future::Future<Output = Result<T, E>> $($extra)* + 'static,
+                F: ::std::future::Future<Output = Result<T, E>> $($extra)* + 'static,
             {
                 let stream = unfold(State::Init, move |state: State<T::Continuation>| {
                     let make_request = make_request.clone();

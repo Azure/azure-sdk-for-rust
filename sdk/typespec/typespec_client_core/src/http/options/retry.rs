@@ -1,5 +1,9 @@
-use crate::policies::{ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy};
-use crate::RetryPolicy;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use crate::http::policies::{
+    ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy, RetryPolicy,
+};
 use std::fmt::Debug;
 use std::sync::Arc;
 use std::time::Duration;
@@ -106,7 +110,8 @@ impl RetryOptions {
 ///
 /// Configuring retry to be exponential with 10 retries max and an initial delay of 1 second.
 /// ```
-/// # use core::time::Duration; use azure_core::RetryOptions; use azure_core::ExponentialRetryOptions;
+/// # use core::time::Duration;
+/// # use typespec_client_core::http::{ExponentialRetryOptions, RetryOptions};
 /// RetryOptions::exponential(
 ///    ExponentialRetryOptions::default()
 ///        .max_retries(10u32)
@@ -162,7 +167,7 @@ impl Default for ExponentialRetryOptions {
 ///
 /// Configuring retry to be fixed with 10 retries max.
 /// ```
-/// # use azure_core::RetryOptions; use azure_core::FixedRetryOptions;
+/// # use typespec_client_core::http::{FixedRetryOptions, RetryOptions};
 /// RetryOptions::fixed(
 ///    FixedRetryOptions::default()
 ///        .max_retries(10u32)

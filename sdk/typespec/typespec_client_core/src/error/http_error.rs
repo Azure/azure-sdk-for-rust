@@ -4,8 +4,9 @@
 #[cfg(feature = "json")]
 use crate::json::from_json;
 use crate::{
+    error::ErrorKind,
     http::{headers, RawResponse, StatusCode},
-    Error, ErrorKind,
+    Error,
 };
 use bytes::Bytes;
 use serde::Deserialize;

@@ -1,9 +1,13 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #![allow(unused_mut, unused_variables)]
 
-use super::{RetryOptions, TelemetryOptions, TransportOptions};
+//! Client options and client method options builders.
+
 #[cfg(doc)]
-use crate::{ClientMethodOptions, ClientOptions};
-use crate::{Context, Policy};
+use crate::http::{ClientMethodOptions, ClientOptions};
+use crate::http::{Context, Policy, RetryOptions, TransportOptions};
 use std::sync::Arc;
 
 /// Methods to set general client options for client-specific [`ClientOptions`].
@@ -37,14 +41,14 @@ pub trait ClientOptionsBuilder {
         unimplemented!()
     }
 
-    /// Set [`TelemetryOptions`] used by the client.
-    fn with_telemetry<P>(mut self, telemetry: P) -> Self
-    where
-        P: Into<TelemetryOptions>,
-        Self: Sized,
-    {
-        unimplemented!()
-    }
+    // /// Set [`TelemetryOptions`] used by the client.
+    // fn with_telemetry<P>(mut self, telemetry: P) -> Self
+    // where
+    //     P: Into<TelemetryOptions>,
+    //     Self: Sized,
+    // {
+    //     unimplemented!()
+    // }
 
     /// Set the [`TransportOptions`] used by the client.
     fn with_transport<P>(mut self, transport: P) -> Self

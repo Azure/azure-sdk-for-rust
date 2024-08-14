@@ -1,4 +1,7 @@
-use crate::{
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use crate::http::{
     headers::Headers,
     policies::{Policy, PolicyResult},
     Context, Request,
@@ -6,6 +9,7 @@ use crate::{
 use std::sync::Arc;
 use tracing::trace;
 
+/// Custom headers to add to a request.
 #[derive(Debug, Clone)]
 pub struct CustomHeaders(Headers);
 
@@ -15,6 +19,7 @@ impl From<Headers> for CustomHeaders {
     }
 }
 
+/// [`Policy`] to add [`CustomHeaders`] to a request.
 #[derive(Clone, Debug, Default)]
 pub struct CustomHeadersPolicy {}
 

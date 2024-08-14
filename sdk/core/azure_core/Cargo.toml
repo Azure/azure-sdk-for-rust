@@ -17,21 +17,16 @@ rust-version.workspace = true
 typespec = { workspace = true, features = ["http", "json"] }
 typespec_client_core = { workspace = true, features = ["http", "json"] }
 async-trait = { workspace = true }
-base64 = { workspace = true }
 bytes = { workspace = true }
-dyn-clone = { workspace = true }
 futures = { workspace = true }
 http-types = { workspace = true }
 tracing = { workspace = true }
 rand = { workspace = true }
-reqwest = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-url = { workspace = true }
 uuid = { workspace = true }
 pin-project = { workspace = true }
 paste = { workspace = true }
-time = { workspace = true }
 tokio = { workspace = true, optional = true }
 hmac = { workspace = true, optional = true }
 sha2 = { workspace = true, optional = true }
@@ -47,15 +42,16 @@ getrandom = { workspace = true }
 rustc_version = { workspace = true }
 
 [dev-dependencies]
+time = { workspace = true }
 tracing-subscriber = { workspace = true }
 tokio = { workspace = true }
 thiserror = { workspace = true }
 
 [features]
 default = []
-enable_reqwest = ["reqwest/default-tls"]
-enable_reqwest_gzip = ["reqwest/gzip"]
-enable_reqwest_rustls = ["reqwest/rustls-tls"]
+enable_reqwest = ["typespec_client_core/reqwest"]
+enable_reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
+enable_reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
 hmac_rust = ["dep:sha2", "dep:hmac"]
 hmac_openssl = ["dep:openssl"]
 test_e2e = []

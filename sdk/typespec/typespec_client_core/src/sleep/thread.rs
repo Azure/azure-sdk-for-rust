@@ -1,10 +1,17 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use futures::Future;
-use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::task::{Context, Poll};
-use std::thread;
-use std::time::Duration;
+use std::{
+    pin::Pin,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    task::{Context, Poll},
+    thread,
+    time::Duration,
+};
 
 /// Creates a future that resolves after a specified duration of time.
 /// Uses a simple thread based implementation for sleep. A more efficient

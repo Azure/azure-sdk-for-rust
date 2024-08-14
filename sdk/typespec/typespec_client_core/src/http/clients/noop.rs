@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use async_trait::async_trait;
 
 #[derive(Debug)]
@@ -7,9 +10,7 @@ pub(crate) fn new_noop_client() -> std::sync::Arc<dyn crate::HttpClient> {
     std::sync::Arc::new(NoopClient)
 }
 
-// TODO: we probably don't want to limit this to wasm32
-// as there will be wasm environments with threads.
-// This should instead be a feature flag
+// TODO: We probably don't want to limit this to wasm32 since there will be wasm environments with threads. This should be a feature flag.
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl crate::HttpClient for NoopClient {
