@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// Re-export headers to flatten out this module with typespec_client_core.
 pub use typespec_client_core::http::headers::*;
 
 // HTTP headers are case-insensitive.
@@ -68,6 +69,7 @@ pub const REQUEST_ID: HeaderName = HeaderName::from_static("x-ms-request-id");
 pub const REQUEST_SERVER_ENCRYPTED: HeaderName =
     HeaderName::from_static("x-ms-request-server-encrypted");
 pub const REQUIRES_SYNC: HeaderName = HeaderName::from_static("x-ms-requires-sync");
+pub const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
 pub const SERVER_ENCRYPTED: HeaderName = HeaderName::from_static("x-ms-server-encrypted");
 pub const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 pub const SKU_NAME: HeaderName = HeaderName::from_static("x-ms-sku-name");

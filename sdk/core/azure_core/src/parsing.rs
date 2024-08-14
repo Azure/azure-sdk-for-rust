@@ -1,7 +1,7 @@
 //! Parser helper utilities.
 
-use crate::date;
 use crate::error::{Error, ErrorKind, ResultExt};
+use typespec_client_core::date;
 
 pub trait FromStringOptional<T> {
     fn from_str_optional(s: &str) -> crate::Result<T>;
@@ -31,8 +31,8 @@ impl FromStringOptional<bool> for bool {
     }
 }
 
-impl FromStringOptional<time::OffsetDateTime> for time::OffsetDateTime {
-    fn from_str_optional(s: &str) -> crate::Result<time::OffsetDateTime> {
+impl FromStringOptional<date::OffsetDateTime> for date::OffsetDateTime {
+    fn from_str_optional(s: &str) -> crate::Result<date::OffsetDateTime> {
         from_azure_time(s).with_context(ErrorKind::DataConversion, || {
             format!("error parsing date time '{s}'")
         })
@@ -40,17 +40,17 @@ impl FromStringOptional<time::OffsetDateTime> for time::OffsetDateTime {
 }
 
 #[cfg(not(feature = "azurite_workaround"))]
-pub fn from_azure_time(s: &str) -> crate::Result<time::OffsetDateTime> {
+pub fn from_azure_time(s: &str) -> crate::Result<date::OffsetDateTime> {
     date::parse_rfc1123(s)
 }
 
 #[cfg(feature = "azurite_workaround")]
-pub fn from_azure_time(s: &str) -> crate::Result<time::OffsetDateTime> {
+pub fn from_azure_time(s: &str) -> crate::Result<date::OffsetDateTime> {
     if let Ok(dt) = date::parse_rfc1123(s) {
         Ok(dt)
     } else {
         tracing::warn!("Received an invalid date: {}, returning now()", s);
-        Ok(time::OffsetDateTime::now_utc())
+        Ok(date::OffsetDateTime::now_utc())
     }
 }
 

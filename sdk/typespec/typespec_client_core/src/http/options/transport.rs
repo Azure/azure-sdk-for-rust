@@ -1,5 +1,9 @@
-use crate::{http_client, HttpClient, Policy};
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use crate::http::{clients, Context, HttpClient, Policy, RawResponse, Request};
 use std::sync::Arc;
+use typespec::error::Result;
 
 /// Transport options.
 #[derive(Clone, Debug)]
@@ -32,11 +36,7 @@ impl TransportOptions {
     }
 
     /// Use these options to send a request.
-    pub async fn send(
-        &self,
-        ctx: &crate::Context<'_>,
-        request: &mut crate::Request,
-    ) -> crate::Result<crate::RawResponse> {
+    pub async fn send(&self, ctx: &Context<'_>, request: &mut Request) -> Result<RawResponse> {
         use TransportOptionsImpl as I;
         match &self.inner {
             I::Http { http_client } => http_client.execute_request(request).await,
@@ -48,6 +48,6 @@ impl TransportOptions {
 impl Default for TransportOptions {
     /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
     fn default() -> Self {
-        Self::new(http_client::new_http_client())
+        Self::new(clients::new_http_client())
     }
 }

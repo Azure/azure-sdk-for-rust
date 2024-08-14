@@ -1,7 +1,9 @@
-use crate::policies::TransportPolicy;
-use crate::policies::{CustomHeadersPolicy, Policy, TelemetryPolicy};
-use crate::{ClientOptions, Context, Request, Response, RetryOptions};
-use std::sync::Arc;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use crate::{TelemetryOptions, TelemetryPolicy};
+use std::{ops::Deref, sync::Arc};
+use typespec_client_core::http::{self, Policy};
 
 /// Execution pipeline.
 ///
@@ -25,15 +27,8 @@ use std::sync::Arc;
 /// policy of fail and return to the calling policy. Arbitrary policy "skip" must be avoided (but
 /// cannot be enforced by code). All policies except Transport policy can assume there is another following policy (so
 /// `self.pipeline[0]` is always valid).
-///
-/// The `C` generic contains the pipeline-specific context. Different crates can pass
-/// different contexts using this generic. This way each crate can have its own specific pipeline
-/// context. For example, in `CosmosDB`, the generic carries the operation-specific information used by
-/// the authorization policy.
 #[derive(Debug, Clone)]
-pub struct Pipeline {
-    pipeline: Vec<Arc<dyn Policy>>,
-}
+pub struct Pipeline(http::Pipeline);
 
 impl Pipeline {
     /// Creates a new pipeline given the client library crate name and version,
@@ -44,123 +39,32 @@ impl Pipeline {
     pub fn new(
         crate_name: Option<&'static str>,
         crate_version: Option<&'static str>,
-        options: ClientOptions,
+        options: http::ClientOptions,
         per_call_policies: Vec<Arc<dyn Policy>>,
         per_retry_policies: Vec<Arc<dyn Policy>>,
     ) -> Self {
-        let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
-            options.per_call_policies.len()
-                + per_call_policies.len()
-                + options.per_try_policies.len()
-                + per_retry_policies.len()
-                + 3,
-        );
-
-        pipeline.extend_from_slice(&per_call_policies);
-        pipeline.extend_from_slice(&options.per_call_policies);
+        let mut per_call_policies = per_call_policies.clone();
 
         let telemetry_policy = TelemetryPolicy::new(
             crate_name,
             crate_version,
-            &options.telemetry.unwrap_or_default(),
+            // TODO: &options.telemetry.unwrap_or_default(),
+            &TelemetryOptions::default(),
         );
-        pipeline.push(Arc::new(telemetry_policy));
+        per_call_policies.insert(0, Arc::new(telemetry_policy));
 
-        pipeline.push(Arc::new(CustomHeadersPolicy::default()));
-
-        // TODO: Consider whether this should be initially customizable as we onboard more services.
-        let retry_policy = RetryOptions::default().to_policy();
-        pipeline.push(retry_policy);
-
-        pipeline.extend_from_slice(&per_retry_policies);
-        pipeline.extend_from_slice(&options.per_try_policies);
-
-        let transport: Arc<dyn Policy> =
-            Arc::new(TransportPolicy::new(options.transport.unwrap_or_default()));
-
-        pipeline.push(transport);
-
-        Self { pipeline }
-    }
-
-    pub fn replace_policy(&mut self, policy: Arc<dyn Policy>, position: usize) -> Arc<dyn Policy> {
-        std::mem::replace(&mut self.pipeline[position], policy)
-    }
-
-    pub fn policies(&self) -> &[Arc<dyn Policy>] {
-        &self.pipeline
-    }
-
-    pub async fn send<T>(
-        &self,
-        ctx: &Context<'_>,
-        request: &mut Request,
-    ) -> crate::Result<Response<T>> {
-        self.pipeline[0]
-            .send(ctx, request, &self.pipeline[1..])
-            .await
-            .map(|resp| resp.into())
+        Self(http::Pipeline::new(
+            options,
+            per_call_policies,
+            per_retry_policies,
+        ))
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use bytes::Bytes;
-    use serde::Deserialize;
-
-    use super::*;
-    use crate::{
-        headers::Headers, BytesStream, Method, PolicyResult, RawResponse, StatusCode,
-        TransportOptions,
-    };
-
-    #[tokio::test]
-    async fn deserializes_response() {
-        #[derive(Debug)]
-        struct Responder {}
-
-        #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-        #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-        impl Policy for Responder {
-            async fn send(
-                &self,
-                _ctx: &Context,
-                _request: &mut Request,
-                _next: &[Arc<dyn Policy>],
-            ) -> PolicyResult {
-                let buffer = Bytes::from_static(br#"{"foo":1,"bar":"baz"}"#);
-                let stream: BytesStream = buffer.into();
-                let response = RawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
-                Ok(std::future::ready(response).await)
-            }
-        }
-
-        #[derive(Debug, Deserialize)]
-        struct Model {
-            foo: i32,
-            bar: String,
-        }
-
-        let options =
-            ClientOptions::new(TransportOptions::new_custom_policy(Arc::new(Responder {})));
-        let pipeline = Pipeline::new(
-            Some("deserializes_response"),
-            Some("0.1.0"),
-            options,
-            Vec::new(),
-            Vec::new(),
-        );
-
-        let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
-        let model: Model = pipeline
-            .send(&Context::default(), &mut request)
-            .await
-            .unwrap()
-            .json()
-            .await
-            .unwrap();
-
-        assert_eq!(1, model.foo);
-        assert_eq!("baz", &model.bar);
+// TODO: Should we instead use the newtype pattern?
+impl Deref for Pipeline {
+    type Target = http::Pipeline;
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }

@@ -39,10 +39,11 @@ mod login_response;
 
 use azure_core::{
     content_type,
-    error::{ErrorKind, ResultExt},
-    headers, HttpClient, Request, Url,
+    error::{http_response_from_body, ErrorKind, ResultExt},
+    headers,
+    json::from_json,
+    HttpClient, Method, Request, Url,
 };
-use azure_core::{error::http_response_from_body, json::from_json, Method};
 use login_response::LoginResponse;
 use std::sync::Arc;
 use url::form_urlencoded;

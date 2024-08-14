@@ -2,7 +2,7 @@ use crate::{
     date,
     headers::{self, Header, HeaderName},
 };
-use time::OffsetDateTime;
+use typespec_client_core::date::OffsetDateTime;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IfModifiedSinceCondition {

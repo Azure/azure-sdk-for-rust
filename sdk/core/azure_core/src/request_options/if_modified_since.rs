@@ -2,7 +2,7 @@ use crate::{
     date,
     headers::{self, Header},
 };
-use time::OffsetDateTime;
+use typespec_client_core::date::OffsetDateTime;
 
 #[derive(Debug, Clone, Copy)]
 pub struct IfModifiedSince(OffsetDateTime);

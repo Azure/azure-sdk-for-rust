@@ -1,15 +1,28 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+mod exponential;
+mod fixed;
+mod none;
+
+pub use exponential::*;
+pub use fixed::*;
+pub use none::*;
+
 use crate::{
-    date,
-    error::{Error, ErrorKind, HttpError, ResultExt},
-    headers::{Headers, RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
-    policies::{Policy, PolicyResult, Request},
+    date::{self, OffsetDateTime},
+    error::HttpError,
+    http::{
+        headers::{Headers, RETRY_AFTER},
+        policies::{Policy, PolicyResult},
+        Context, Request, StatusCode,
+    },
     sleep::sleep,
-    Context, StatusCode,
 };
 use async_trait::async_trait;
 use std::{sync::Arc, time::Duration};
-use time::OffsetDateTime;
 use tracing::{debug, trace};
+use typespec::error::{Error, ErrorKind, ResultExt};
 
 /// Attempts to parse the supplied string as an HTTP date, of the form defined by RFC 1123 (e.g. `Fri, 01 Jan 2021 00:00:00 GMT`).
 /// Returns `None` if the string is not a valid HTTP date.
@@ -22,36 +35,35 @@ type DateTimeFn = fn() -> OffsetDateTime;
 
 /// Get the duration to delay between retry attempts, provided by the headers from the response.
 ///
-/// This function checks for retry-after headers in the following order, following the
-/// JS Azure SDK implementation: <https://github.com/Azure/azure-sdk-for-js/blob/17de1a2b7f3ad61f34ff62876eced7d077c10d4b/sdk/core/core-rest-pipeline/src/retryStrategies/throttlingRetryStrategy.ts#L35>
-/// * `retry-after-ms`
-/// * `x-ms-retry-after-ms`
-/// * `Retry-After`
+/// This function checks for retry-after headers in the following order:
 ///
-/// If no header is provided, None is returned.
-pub(crate) fn get_retry_after(headers: &Headers, datetime_now: DateTimeFn) -> Option<Duration> {
-    [RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER]
-        .iter()
-        .find_map(|header| {
-            headers.get_str(header).ok().and_then(|v| {
-                if header == &RETRY_AFTER {
-                    // RETRY_AFTER values are either in seconds or a HTTP date
-                    v.parse::<u64>().ok().map(Duration::from_secs).or_else(|| {
-                        try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
-                            let now = datetime_now();
-                            if retry_after_datetime < now {
-                                Duration::from_secs(0)
-                            } else {
-                                date::diff(retry_after_datetime, now)
-                            }
-                        })
+/// 1. (TODO) `retry-after-ms`
+/// 2. (TODO) `x-ms-retry-after-ms`
+/// 3. `Retry-After`
+///
+/// If no header is provided, `None` is returned.
+pub fn get_retry_after(headers: &Headers, now: DateTimeFn) -> Option<Duration> {
+    // TODO: Need to figure out a way to pass these in - perhaps in `RetryOptions`?
+    [RETRY_AFTER].iter().find_map(|header| {
+        headers.get_str(header).ok().and_then(|v| {
+            if header == &RETRY_AFTER {
+                // RETRY_AFTER values are either in seconds or a HTTP date
+                v.parse::<u64>().ok().map(Duration::from_secs).or_else(|| {
+                    try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
+                        let now = now();
+                        if retry_after_datetime < now {
+                            Duration::from_secs(0)
+                        } else {
+                            date::diff(retry_after_datetime, now)
+                        }
                     })
-                } else {
-                    // RETRY_AFTER_MS or X_MS_RETRY_AFTER_MS values are in milliseconds
-                    v.parse::<u64>().ok().map(Duration::from_millis)
-                }
-            })
+                })
+            } else {
+                // RETRY_AFTER_MS or X_MS_RETRY_AFTER_MS values are in milliseconds
+                v.parse::<u64>().ok().map(Duration::from_millis)
+            }
         })
+    })
 }
 
 /// A retry policy.
@@ -262,44 +274,5 @@ mod test {
         headers.insert(RETRY_AFTER, "123");
         let retry_after = get_retry_after(&headers, datetime_now);
         assert_eq!(retry_after, Some(Duration::from_secs(123)));
-
-        // Test `RETRY_AFTER_MS` parsing an integer value
-        let mut headers = Headers::new();
-        headers.insert(RETRY_AFTER_MS, "123");
-        let retry_after = get_retry_after(&headers, datetime_now);
-        assert_eq!(retry_after, Some(Duration::from_millis(123)));
-
-        // Test `RETRY_AFTER_MS` parsing an integer value
-        let mut headers = Headers::new();
-        headers.insert(RETRY_AFTER_MS, "123");
-        let retry_after = get_retry_after(&headers, datetime_now);
-        assert_eq!(retry_after, Some(Duration::from_millis(123)));
-
-        // Test `X_MS_RETRY_AFTER_MS` parsing an integer value
-        let mut headers = Headers::new();
-        headers.insert(X_MS_RETRY_AFTER_MS, "123");
-        let retry_after = get_retry_after(&headers, datetime_now);
-        assert_eq!(retry_after, Some(Duration::from_millis(123)));
-
-        // Test that when both `RETRY_AFTER_MS` and `RETRY_AFTER` are present, `RETRY_AFTER_MS` is used
-        let mut headers = Headers::new();
-        headers.insert(RETRY_AFTER_MS, "123");
-        headers.insert(RETRY_AFTER, "456");
-        let retry_after = get_retry_after(&headers, datetime_now);
-        assert_eq!(retry_after, Some(Duration::from_millis(123)));
-
-        // Test that when both `X_MS_RETRY_AFTER_MS` and `RETRY_AFTER` are present, `X_MS_RETRY_AFTER_MS` is used
-        let mut headers = Headers::new();
-        headers.insert(X_MS_RETRY_AFTER_MS, "123");
-        headers.insert(RETRY_AFTER, "456");
-        let retry_after = get_retry_after(&headers, datetime_now);
-        assert_eq!(retry_after, Some(Duration::from_millis(123)));
-
-        // Test that when both `X_MS_RETRY_AFTER_MS` and `RETRY_AFTER_MS` are present, `RETRY_AFTER_MS` is used
-        let mut headers = Headers::new();
-        headers.insert(X_MS_RETRY_AFTER_MS, "123");
-        headers.insert(RETRY_AFTER_MS, "456");
-        let retry_after = get_retry_after(&headers, datetime_now);
-        assert_eq!(retry_after, Some(Duration::from_millis(456)));
     }
 }

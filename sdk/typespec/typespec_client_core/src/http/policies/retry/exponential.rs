@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use super::RetryPolicy;
 use std::time::Duration;
 
@@ -48,10 +51,11 @@ impl RetryPolicy for ExponentialRetryPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::http::ExponentialRetryOptions;
 
     #[test]
     fn exponentially_increases_correctly() {
-        let options = crate::options::ExponentialRetryOptions::default();
+        let options = ExponentialRetryOptions::default();
         let policy = ExponentialRetryPolicy::new(
             options.initial_delay,
             options.max_retries,

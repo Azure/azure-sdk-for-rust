@@ -32,7 +32,6 @@ pub const LOCATION: HeaderName = HeaderName::from_static("location");
 pub const OPERATION_LOCATION: HeaderName = HeaderName::from_static("operation-location");
 pub const PREFER: HeaderName = HeaderName::from_static("prefer");
 pub const RANGE: HeaderName = HeaderName::from_static("range");
-pub const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
 pub const RETRY_AFTER: HeaderName = HeaderName::from_static("retry-after");
 pub const SERVER: HeaderName = HeaderName::from_static("server");
 pub const USER_AGENT: HeaderName = HeaderName::from_static("user-agent");

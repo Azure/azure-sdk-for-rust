@@ -1,6 +1,6 @@
 use crate::headers::Headers;
 use std::time::Duration;
-use time::OffsetDateTime;
+use typespec_client_core::date::OffsetDateTime;
 
 /// Default retry time for long running operations if no retry-after header is present
 ///

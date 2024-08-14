@@ -1,4 +1,7 @@
-use crate::SeekableStream;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use super::SeekableStream;
 use bytes::Bytes;
 use futures::io::AsyncRead;
 use futures::stream::Stream;

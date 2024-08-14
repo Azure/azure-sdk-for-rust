@@ -2,11 +2,13 @@
 // Licensed under the MIT License.
 
 #[cfg(not(target_arch = "wasm32"))]
-use crate::SeekableStream;
+use crate::stream::SeekableStream;
 use crate::{
-    headers::{AsHeaders, Headers},
+    http::{
+        headers::{AsHeaders, Header, HeaderName, HeaderValue, Headers},
+        Method, Url,
+    },
     json::to_json,
-    Method, Url,
 };
 use bytes::Bytes;
 use serde::Serialize;
@@ -41,7 +43,7 @@ impl Body {
         self.len() == 0
     }
 
-    pub(crate) async fn reset(&mut self) -> crate::Result<()> {
+    pub async fn reset(&mut self) -> crate::Result<()> {
         match self {
             Body::Bytes(_) => Ok(()),
             #[cfg(not(target_arch = "wasm32"))]
@@ -150,19 +152,19 @@ impl Request {
 
     pub fn insert_header<K, V>(&mut self, key: K, value: V)
     where
-        K: Into<crate::headers::HeaderName>,
-        V: Into<crate::headers::HeaderValue>,
+        K: Into<HeaderName>,
+        V: Into<HeaderValue>,
     {
         self.headers.insert(key, value);
     }
 
-    pub fn add_optional_header<T: crate::Header>(&mut self, item: &Option<T>) {
+    pub fn add_optional_header<T: Header>(&mut self, item: &Option<T>) {
         if let Some(item) = item {
             self.insert_header(item.name(), item.value());
         }
     }
 
-    pub fn add_mandatory_header<T: crate::Header>(&mut self, item: &T) {
+    pub fn add_mandatory_header<T: Header>(&mut self, item: &T) {
         self.insert_header(item.name(), item.value());
     }
 }

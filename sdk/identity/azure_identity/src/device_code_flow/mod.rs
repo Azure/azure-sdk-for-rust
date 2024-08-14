@@ -10,7 +10,8 @@ use azure_core::{
     error::{http_response_from_body, Error, ErrorKind},
     headers,
     json::from_json,
-    sleep, HttpClient, Method, RawResponse, Request, Url,
+    sleep::sleep,
+    HttpClient, Method, RawResponse, Request, Url,
 };
 pub use device_code_responses::*;
 use futures::stream::unfold;
