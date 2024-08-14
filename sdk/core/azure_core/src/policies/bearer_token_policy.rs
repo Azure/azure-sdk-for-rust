@@ -2,7 +2,7 @@ use crate::{
     auth::{AccessToken, TokenCredential},
     headers::AUTHORIZATION,
     policies::{Policy, PolicyResult},
-    Context, Request,
+    Context, Request, Result,
 };
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -40,10 +40,10 @@ impl BearerTokenCredentialPolicy {
             .collect::<Vec<&str>>()
     }
 
-    async fn need_new_token(&mut self) {
+    async fn refresh(&mut self) -> Result<AccessToken> {
         self.last_refresh_time = OffsetDateTime::now_utc().unix_timestamp();
-        let access_token = self.credential.get_token(&self.scopes()).await;
-        self.access_token = Some(access_token.unwrap());
+        let access_token = self.credential.get_token(&self.scopes()).await?;
+        Ok(access_token)
     }
 }
 
@@ -59,7 +59,7 @@ impl Policy for BearerTokenCredentialPolicy {
         if OffsetDateTime::now_utc().unix_timestamp() - self.last_refresh_time
             > DEFAULT_REFRESH_TIME
         {
-            self.need_new_token().await;
+            self.refresh().await;
         }
         let token = self.access_token.clone().unwrap();
         let token = token.token;
