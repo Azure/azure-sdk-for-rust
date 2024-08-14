@@ -1,7 +1,7 @@
 //! Azure authentication and authorization.
 
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, fmt::Debug};
+use std::{borrow::Cow, fmt::Debug, time::Duration};
 use time::OffsetDateTime;
 
 pub static DEFAULT_SCOPE_SUFFIX: &str = "/.default";
@@ -77,6 +77,14 @@ impl AccessToken {
             token: token.into(),
             expires_on,
         }
+    }
+
+    /// Check if the token is expired
+    ///
+    /// This checks if the token is expiring within the next 30 seconds to
+    /// address clock skew
+    pub fn is_expired(&self) -> bool {
+        self.expires_on < OffsetDateTime::now_utc() + Duration::from_secs(30)
     }
 }
 
