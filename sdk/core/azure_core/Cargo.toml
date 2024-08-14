@@ -21,7 +21,6 @@ bytes = { workspace = true }
 futures = { workspace = true }
 http-types = { workspace = true }
 tracing = { workspace = true }
-rand = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }
@@ -32,11 +31,6 @@ hmac = { workspace = true, optional = true }
 sha2 = { workspace = true, optional = true }
 openssl = { workspace = true, optional = true }
 once_cell = { workspace = true }
-
-# When target is `wasm32`, include `getrandom` and enable `wasm-bindgen` feature in `time`.
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-time = { workspace = true }
-getrandom = { workspace = true }
 
 [build-dependencies]
 rustc_version = { workspace = true }
@@ -58,7 +52,7 @@ test_e2e = []
 azurite_workaround = []
 xml = ["typespec_client_core/xml"]
 tokio-fs = ["tokio/fs", "tokio/sync", "tokio/io-util"]
-tokio-sleep = ["tokio"]
+tokio-sleep = ["typespec_client_core/tokio_sleep"]
 
 [package.metadata.docs.rs]
 features = [

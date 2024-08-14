@@ -3,13 +3,13 @@
 
 //! Sleep functions.
 
-#[cfg(not(feature = "tokio_sleep"))]
+#[cfg(any(not(feature = "tokio_sleep"), target_arch = "wasm32"))]
 mod thread;
 
-#[cfg(not(feature = "tokio_sleep"))]
+#[cfg(any(not(feature = "tokio_sleep"), target_arch = "wasm32"))]
 pub use self::thread::{sleep, Sleep};
 
-#[cfg(feature = "tokio_sleep")]
+#[cfg(all(feature = "tokio_sleep", not(target_arch = "wasm32")))]
 pub use tokio::time::{sleep, Sleep};
 
 // Unit tests
@@ -19,7 +19,7 @@ mod tests {
     // Basic test that launches 10k futures and waits for them to complete:
     // it has a high chance of failing if there is a race condition in the sleep method;
     // otherwise, it runs quickly.
-    #[cfg(not(feature = "tokio+sleep"))]
+    #[cfg(not(feature = "tokio_sleep"))]
     #[tokio::test]
     async fn test_timeout() {
         use super::*;
