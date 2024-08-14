@@ -62,7 +62,8 @@ impl TokenCache {
 mod tests {
     use super::*;
     use azure_core::auth::Secret;
-    use std::sync::Mutex;
+    use std::{sync::Mutex, time::Duration};
+    use time::OffsetDateTime;
 
     #[derive(Debug)]
     struct MockCredential {
