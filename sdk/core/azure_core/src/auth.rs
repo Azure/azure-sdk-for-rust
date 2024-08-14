@@ -83,7 +83,7 @@ impl AccessToken {
     ///
     /// If no duration is provided, then the default duration of 30 seconds is used.
     pub fn is_expired(&self, window: Option<Duration>) -> bool {
-        self.expires_on < OffsetDateTime::now_utc() + skew.unwrap_or(Duration::from_secs(30))
+        self.expires_on < OffsetDateTime::now_utc() + window.unwrap_or(Duration::from_secs(30))
     }
 }
 
