@@ -1,8 +1,7 @@
 use async_lock::RwLock;
 use azure_core::auth::AccessToken;
 use futures::Future;
-use std::{collections::HashMap, time::Duration};
-use time::OffsetDateTime;
+use std::collections::HashMap;
 use tracing::trace;
 
 #[derive(Debug)]
