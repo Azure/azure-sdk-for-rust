@@ -79,12 +79,11 @@ impl AccessToken {
         }
     }
 
-    /// Check if the token is expired
+    /// Check if the token is expired within a given duration.
     ///
-    /// This checks if the token is expiring within the next 30 seconds to
-    /// address clock skew
-    pub fn is_expired(&self) -> bool {
-        self.expires_on < OffsetDateTime::now_utc() + Duration::from_secs(30)
+    /// If no duration is provided, then the default duration of 30 seconds is used.
+    pub fn is_expired(&self, window: Option<Duration>) -> bool {
+        self.expires_on < OffsetDateTime::now_utc() + skew.unwrap_or(Duration::from_secs(30))
     }
 }
 
