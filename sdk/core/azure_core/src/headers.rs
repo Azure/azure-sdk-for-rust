@@ -69,7 +69,6 @@ pub const REQUEST_ID: HeaderName = HeaderName::from_static("x-ms-request-id");
 pub const REQUEST_SERVER_ENCRYPTED: HeaderName =
     HeaderName::from_static("x-ms-request-server-encrypted");
 pub const REQUIRES_SYNC: HeaderName = HeaderName::from_static("x-ms-requires-sync");
-pub const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
 pub const SERVER_ENCRYPTED: HeaderName = HeaderName::from_static("x-ms-server-encrypted");
 pub const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 pub const SKU_NAME: HeaderName = HeaderName::from_static("x-ms-sku-name");
@@ -84,4 +83,3 @@ pub const SOURCE_RANGE: HeaderName = HeaderName::from_static("x-ms-source-range"
 pub const TAGS: HeaderName = HeaderName::from_static("x-ms-tags");
 pub const USER: HeaderName = HeaderName::from_static("x-ms-user");
 pub const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
-pub const X_MS_RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");

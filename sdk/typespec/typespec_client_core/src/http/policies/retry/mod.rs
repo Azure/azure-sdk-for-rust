@@ -13,7 +13,7 @@ use crate::{
     date::{self, OffsetDateTime},
     error::HttpError,
     http::{
-        headers::{Headers, RETRY_AFTER},
+        headers::{Headers, RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
         policies::{Policy, PolicyResult},
         Context, Request, StatusCode,
     },
@@ -37,33 +37,35 @@ type DateTimeFn = fn() -> OffsetDateTime;
 ///
 /// This function checks for retry-after headers in the following order:
 ///
-/// 1. (TODO) `retry-after-ms`
-/// 2. (TODO) `x-ms-retry-after-ms`
-/// 3. `Retry-After`
+/// 1. `retry-after-ms`
+/// 2. `x-ms-retry-after-ms`
+/// 3. `retry-after`
 ///
 /// If no header is provided, `None` is returned.
 pub fn get_retry_after(headers: &Headers, now: DateTimeFn) -> Option<Duration> {
-    // TODO: Need to figure out a way to pass these in - perhaps in `RetryOptions`?
-    [RETRY_AFTER].iter().find_map(|header| {
-        headers.get_str(header).ok().and_then(|v| {
-            if header == &RETRY_AFTER {
-                // RETRY_AFTER values are either in seconds or a HTTP date
-                v.parse::<u64>().ok().map(Duration::from_secs).or_else(|| {
-                    try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
-                        let now = now();
-                        if retry_after_datetime < now {
-                            Duration::from_secs(0)
-                        } else {
-                            date::diff(retry_after_datetime, now)
-                        }
+    // TODO: Only check Microsoft headers when constructed from azure_core (https://github.com/Azure/azure-sdk-for-rust/issues/1753)
+    [RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER]
+        .iter()
+        .find_map(|header| {
+            headers.get_str(header).ok().and_then(|v| {
+                if header == &RETRY_AFTER {
+                    // RETRY_AFTER values are either in seconds or a HTTP date
+                    v.parse::<u64>().ok().map(Duration::from_secs).or_else(|| {
+                        try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
+                            let now = now();
+                            if retry_after_datetime < now {
+                                Duration::from_secs(0)
+                            } else {
+                                date::diff(retry_after_datetime, now)
+                            }
+                        })
                     })
-                })
-            } else {
-                // RETRY_AFTER_MS or X_MS_RETRY_AFTER_MS values are in milliseconds
-                v.parse::<u64>().ok().map(Duration::from_millis)
-            }
+                } else {
+                    // RETRY_AFTER_MS or X_MS_RETRY_AFTER_MS values are in milliseconds
+                    v.parse::<u64>().ok().map(Duration::from_millis)
+                }
+            })
         })
-    })
 }
 
 /// A retry policy.
