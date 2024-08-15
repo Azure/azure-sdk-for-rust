@@ -5,7 +5,7 @@
 use crate::json::from_json;
 use crate::{
     error::ErrorKind,
-    http::{headers, RawResponse, StatusCode},
+    http::{RawResponse, StatusCode},
     Error,
 };
 use bytes::Bytes;
@@ -123,8 +123,20 @@ impl ErrorDetails {
 /// Gets the error code if it's present in the headers.
 ///
 /// For more info, see [guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
+#[allow(unused_variables)]
 fn get_error_code_from_header(headers: &HashMap<String, String>) -> Option<String> {
-    headers.get(headers::ERROR_CODE.as_str()).cloned()
+    // Cannot use cfg!() because `headers::ERROR_CODE` won't be defined.
+    #[cfg(feature = "microsoft")]
+    {
+        headers
+            .get(crate::http::headers::ERROR_CODE.as_str())
+            .cloned()
+    }
+
+    #[cfg(not(feature = "microsoft"))]
+    {
+        None
+    }
 }
 
 #[derive(Deserialize)]

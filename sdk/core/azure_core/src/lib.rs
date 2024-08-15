@@ -26,6 +26,7 @@ mod pipeline;
 mod policies;
 
 pub mod auth;
+pub mod error;
 pub mod headers;
 pub mod lro;
 pub mod parsing;
@@ -48,10 +49,6 @@ pub use typespec_client_core::http::{
 
 // Re-export typespec types that are not specific to Azure.
 pub use typespec::{Error, Result};
-pub mod error {
-    pub use typespec::error::*;
-    pub use typespec_client_core::error::*;
-}
 #[cfg(feature = "xml")]
 pub use typespec_client_core::xml;
 pub use typespec_client_core::{

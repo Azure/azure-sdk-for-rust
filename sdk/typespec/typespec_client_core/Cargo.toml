@@ -50,6 +50,7 @@ default = [
 ]
 http = ["dep:http-types", "typespec/http"]
 json = ["typespec/json"]
+microsoft = []
 reqwest = ["dep:reqwest", "reqwest/default-tls"]
 reqwest_gzip = ["reqwest/gzip"]
 reqwest_rustls = ["reqwest/rustls-tls"]

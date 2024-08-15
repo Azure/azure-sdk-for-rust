@@ -4,9 +4,11 @@
 //! HTTP headers.
 
 mod common;
+#[cfg(feature = "microsoft")]
 mod microsoft;
 
 pub use common::*;
+#[cfg(feature = "microsoft")]
 pub use microsoft::*;
 
 use std::{borrow::Cow, fmt::Debug, str::FromStr};
