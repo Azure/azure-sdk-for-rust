@@ -25,6 +25,7 @@ async-trait = { workspace = true }
 openssl = { workspace = true, optional = true }
 uuid = { workspace = true, features = ["v4"] }
 pin-project = { workspace = true }
+typespec_client_core = { workspace = true, features = ["derive"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 async-process = { workspace = true }
@@ -59,12 +60,12 @@ old_azure_cli = ["time/local-offset", "tz-rs"]
 
 [package.metadata.docs.rs]
 features = [
-  "enable_reqwest",
-  "enable_reqwest_rustls",
-  "development",
-  "client_certificate",
-  "azureauth_cli",
-  "old_azure_cli",
+    "enable_reqwest",
+    "enable_reqwest_rustls",
+    "development",
+    "client_certificate",
+    "azureauth_cli",
+    "old_azure_cli",
 ]
 
 [[example]]

@@ -1,0 +1,18 @@
+[package]
+name = "typespec_client_macros"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+description = "Macros used by TypeSpec-generated libraries."
+homepage = "https://typespec.io"
+repository.workspace = true
+license.workspace = true
+categories = ["compilers", "development-tools"]
+keywords = ["typespec"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn.workspace = true
+quote.workspace = true

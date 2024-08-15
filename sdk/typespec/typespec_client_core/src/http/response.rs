@@ -25,29 +25,6 @@ pub trait Model: Sized {
     fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>>;
 }
 
-#[macro_export]
-macro_rules! json_model {
-    ($type:ty) => {
-        impl $crate::http::Model for $type {
-            async fn from_response_body(body: $crate::http::ResponseBody) -> $crate::Result<Self> {
-                body.json().await
-            }
-        }
-    };
-}
-
-#[macro_export]
-#[cfg(feature = "xml")]
-macro_rules! xml_model {
-    ($type:ty) => {
-        impl $crate::http::Model for $type {
-            async fn from_response_body(body: $crate::http::ResponseBody) -> $crate::Result<Self> {
-                body.xml().await
-            }
-        }
-    };
-}
-
 /// An HTTP response.
 ///
 /// The type parameter `T` is a marker type that indicates what the caller should expect to be able to deserialize the body into.
@@ -118,11 +95,10 @@ impl<T> Response<T> {
     /// use serde::Deserialize;
     /// use bytes::Bytes;
     ///
-    /// #[derive(Deserialize)]
+    /// #[derive(Model, Deserialize)]
     /// struct MySecretResponse {
     ///    value: String,
     /// }
-    /// typespec_client_core::json_model!(MySecretResponse); // Mark the type as deserializable from JSON.
     ///
     /// async fn parse_response(response: Response<GetSecretResponse>) {
     ///   // Calling `map` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
@@ -156,12 +132,11 @@ impl<T: Model> Response<T> {
     ///
     /// # Example
     /// ```rust
-    /// # #[derive(serde::Deserialize)]
+    /// # #[derive(Model, serde::Deserialize)]
     /// # pub struct GetSecretResponse {
     /// #   name: String,
     /// #   value: String,
     /// # }
-    /// # typespec_client_core::json_model!(GetSecretResponse);
     /// # pub struct SecretClient { }
     /// # impl SecretClient {
     /// #   pub async fn get_secret(&self) -> typespec_client_core::http::Response<GetSecretResponse> {
@@ -310,17 +285,17 @@ mod tests {
 
     mod json {
         use crate::http::headers::Headers;
-        use crate::http::Response;
+        use crate::http::{Model, Response};
         use http_types::StatusCode;
         use serde::Deserialize;
 
         /// An example JSON-serialized response type.
-        #[derive(Deserialize)]
+        #[derive(Model, Deserialize)]
+        #[typespec(crate = "crate")]
         struct GetSecretResponse {
             name: String,
             value: String,
         }
-        json_model!(GetSecretResponse);
 
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse> {
@@ -341,14 +316,14 @@ mod tests {
 
         #[tokio::test]
         pub async fn deserialize_alternate_type() {
-            #[derive(Deserialize)]
+            #[derive(Model, Deserialize)]
+            #[typespec(crate = "crate")]
             struct MySecretResponse {
                 #[serde(rename = "name")]
                 yon_name: String,
                 #[serde(rename = "value")]
                 yon_value: String,
             }
-            json_model!(MySecretResponse);
 
             let response = get_secret();
             let secret: MySecretResponse = response.deserialize_body_into().await.unwrap();
@@ -360,17 +335,18 @@ mod tests {
     #[cfg(feature = "xml")]
     mod xml {
         use crate::http::headers::Headers;
-        use crate::http::Response;
+        use crate::http::{Model, Response};
         use http_types::StatusCode;
         use serde::Deserialize;
 
         /// An example XML-serialized response type.
-        #[derive(Deserialize)]
+        #[derive(Model, Deserialize)]
+        #[typespec(crate = "crate")]
+        #[typespec(format = "xml")]
         struct GetSecretResponse {
             name: String,
             value: String,
         }
-        xml_model!(GetSecretResponse);
 
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse> {
@@ -391,14 +367,15 @@ mod tests {
 
         #[tokio::test]
         pub async fn deserialize_alternate_type() {
-            #[derive(Deserialize)]
+            #[derive(Model, Deserialize)]
+            #[typespec(crate = "crate")]
+            #[typespec(format = "xml")]
             struct MySecretResponse {
                 #[serde(rename = "name")]
                 yon_name: String,
                 #[serde(rename = "value")]
                 yon_value: String,
             }
-            xml_model!(MySecretResponse);
 
             let response = get_secret();
             let secret: MySecretResponse = response.deserialize_body_into().await.unwrap();

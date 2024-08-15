@@ -11,6 +11,7 @@ use azure_core::{
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;
+use typespec_client_core::Model;
 use url::form_urlencoded;
 
 /// Exchange a refresh token for a new access token and refresh token
@@ -61,7 +62,7 @@ pub async fn exchange(
 }
 
 /// A refresh token
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Model, Debug, Clone, Deserialize)]
 pub struct RefreshTokenResponse {
     token_type: String,
     #[serde(rename = "scope", deserialize_with = "deserialize::split")]
@@ -71,7 +72,6 @@ pub struct RefreshTokenResponse {
     access_token: Secret,
     refresh_token: Secret,
 }
-azure_core::json_model!(RefreshTokenResponse);
 
 impl RefreshTokenResponse {
     /// Returns the `token_type`. Always `Bearer` for Azure AD.
