@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::any::{Any, TypeId};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
@@ -36,7 +39,7 @@ impl<'a> Context<'a> {
     /// ## Examples
     ///
     /// ```
-    /// use azure_core::Context;
+    /// use typespec_client_core::http::Context;
     ///
     /// let context = Context::new()
     ///     .with_value(1)
@@ -60,7 +63,7 @@ impl<'a> Context<'a> {
     /// # Examples
     ///
     /// ```
-    /// use azure_core::Context;
+    /// use typespec_client_core::http::Context;
     /// use std::sync::Arc;
     ///
     /// let mut context = Context::new().with_value("a".to_string());

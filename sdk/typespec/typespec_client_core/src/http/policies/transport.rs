@@ -1,6 +1,10 @@
-use crate::{
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use crate::http::{
+    options::TransportOptions,
     policies::{Policy, PolicyResult},
-    Context, Request, TransportOptions,
+    Context, Request,
 };
 use async_trait::async_trait;
 use std::sync::Arc;

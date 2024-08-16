@@ -3,10 +3,11 @@
 use azure_core::{
     auth::Secret,
     content_type,
-    error::{Error, ErrorKind, ResultExt},
-    headers, HttpClient, Request, Url,
+    error::{http_response_from_body, Error, ErrorKind, ResultExt},
+    headers,
+    json::from_json,
+    HttpClient, Method, Request, Url,
 };
-use azure_core::{error::http_response_from_body, json::from_json, Method};
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;

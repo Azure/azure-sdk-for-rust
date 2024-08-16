@@ -1,3 +1,8 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! Base64 encoding and decoding functions.
+
 use base64::{
     alphabet,
     engine::{

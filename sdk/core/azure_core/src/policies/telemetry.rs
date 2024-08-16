@@ -1,9 +1,12 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::headers::{HeaderValue, USER_AGENT};
 use crate::options::TelemetryOptions;
-use crate::policies::{Policy, PolicyResult};
 use crate::{Context, Request};
 use std::env::consts::{ARCH, OS};
 use std::sync::Arc;
+use typespec_client_core::http::policies::{Policy, PolicyResult};
 
 #[derive(Clone, Debug)]
 pub struct TelemetryPolicy {

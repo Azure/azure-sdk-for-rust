@@ -1,3 +1,5 @@
+use typespec_client_core::setters;
+
 /// Telemetry options.
 #[derive(Clone, Debug, Default)]
 pub struct TelemetryOptions {

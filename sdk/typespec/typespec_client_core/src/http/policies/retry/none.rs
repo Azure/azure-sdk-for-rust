@@ -1,7 +1,15 @@
-use crate::error::{Error, ErrorKind, HttpError};
-use crate::policies::{Policy, PolicyResult, Request};
-use crate::Context;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use crate::{
+    error::HttpError,
+    http::{
+        policies::{Policy, PolicyResult},
+        Context, Request,
+    },
+};
 use std::sync::Arc;
+use typespec::error::{Error, ErrorKind};
 
 /// Retry policy that does not retry.
 ///

@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt::Debug, time::Duration};
-use time::OffsetDateTime;
+use typespec_client_core::date::OffsetDateTime;
 
 pub static DEFAULT_SCOPE_SUFFIX: &str = "/.default";
 

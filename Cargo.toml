@@ -85,7 +85,6 @@ time = { version = "0.3.10", features = [
   "wasm-bindgen",
 ] }
 tokio = { version = "1.0", default-features = false, features = [
-  "rt-multi-thread",
   "macros",
   "time",
 ] }
