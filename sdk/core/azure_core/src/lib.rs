@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Core types and traits for the Rust Azure SDK.
 //!
 //! This crate is part of the unofficial Azure SDK effort in Rust. For more
@@ -15,61 +18,51 @@
 #[macro_use]
 mod macros;
 
-mod bytes_stream;
 mod constants;
-mod context;
-pub mod date;
-pub mod error;
 pub mod hmac;
-mod http_client;
 mod models;
 mod options;
-mod pageable;
 mod pipeline;
 mod policies;
-mod request;
-mod response;
-mod seekable_stream;
 
 pub mod auth;
 pub mod headers;
 pub mod lro;
 pub mod parsing;
-pub mod prelude;
 pub mod request_options;
-pub mod sleep;
 pub mod util;
 
 use uuid::Uuid;
 
-pub mod json;
-#[cfg(feature = "xml")]
-pub mod xml;
-
 pub mod tokio;
 
-pub mod base64;
-pub use bytes_stream::*;
 pub use constants::*;
-pub use context::Context;
-pub use error::{Error, Result};
 #[doc(inline)]
-pub use headers::Header;
-pub use http_client::{new_http_client, HttpClient};
 pub use models::*;
 pub use options::*;
-pub use pageable::*;
-pub use pipeline::Pipeline;
+pub use pipeline::*;
 pub use policies::*;
-pub use request::*;
-pub use response::*;
-pub use seekable_stream::*;
-pub use sleep::sleep;
+pub use typespec_client_core::http::{
+    CollectedResponse, PinnedStream, RawResponse, Response, ResponseBody,
+};
 
-// re-export important types at crate level
-pub use http_types::Method;
-pub use http_types::StatusCode;
-pub use url::Url;
+// Re-export typespec types that are not specific to Azure.
+pub use typespec::{Error, Result};
+pub mod error {
+    pub use typespec::error::*;
+    pub use typespec_client_core::error::*;
+}
+#[cfg(feature = "xml")]
+pub use typespec_client_core::xml;
+pub use typespec_client_core::{
+    base64, date,
+    http::{
+        headers::*, new_http_client, Body, Context, HttpClient, Method, Pageable, Request,
+        StatusCode, Url,
+    },
+    json, sleep,
+    stream::{BytesStream, SeekableStream},
+};
 
 /// A unique identifier for a request.
 // NOTE: only used for Storage?

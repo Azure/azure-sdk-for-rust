@@ -1,4 +1,5 @@
 {
-    "editor.formatOnSave": true,
-    "rust-analyzer.cargo.features": "all"
+  "cSpell.enabled": true,
+  "editor.formatOnSave": true,
+  "rust-analyzer.cargo.features": "all"
 }

@@ -2,8 +2,11 @@
 resolver = "2"
 members = [
   "sdk/typespec",
+  "sdk/typespec/typespec_client_core",
   "sdk/core/azure_core",
+  "sdk/core/azure_core_amqp",
   "sdk/identity/azure_identity",
+  "sdk/eventhubs/azure_messaging_eventhubs",
   "eng/test/mock_transport",
   "sdk/storage",
   "sdk/storage/azure_storage_blob",
@@ -16,12 +19,22 @@ license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
 rust-version = "1.76"
 
+[workspace.dependencies.typespec]
+path = "sdk/typespec"
+default-features = false
+
+[workspace.dependencies.typespec_client_core]
+path = "sdk/typespec/typespec_client_core"
+default-features = false
+
 [workspace.dependencies.azure_core]
-version = "0.19.0"
 path = "sdk/core/azure_core"
 
+[workspace.dependencies.azure_core_amqp]
+path = "sdk/core/azure_core_amqp"
+
+
 [workspace.dependencies.azure_identity]
-version = "0.19.0"
 path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_common]
@@ -31,11 +44,17 @@ path = "sdk/storage"
 [workspace.dependencies]
 async-lock = "3.0"
 async-process = "2.0"
+async-std = { version = "1.12", features = ["attributes"] }
 async-trait = "0.1"
 base64 = "0.22"
 bytes = "1.0"
 clap = { version = "4.4.16", features = ["derive"] }
 dyn-clone = "1.0"
+fe2o3-amqp = { version = "0.11", features = ["native-tls", "tracing", "uuid"] }
+fe2o3-amqp-ext = { version = "0.11", features = [] }
+fe2o3-amqp-management = { version = "0.11" }
+fe2o3-amqp-cbs = { version = "0.11" }
+fe2o3-amqp-types = { version = "0.11" }
 futures = "0.3"
 getrandom = { version = "0.2", features = ["js"] }
 hmac = { version = "0.12" }
@@ -53,6 +72,8 @@ reqwest = { version = "0.12", features = [
 ], default-features = false }
 rustc_version = "0.4"
 serde = { version = "1.0", features = ["derive"] }
+serde_amqp = { version = "0.11", features = ["uuid"] }
+serde_bytes = { version = "0.11" }
 serde_json = "1.0"
 serde_test = "1"
 serial_test = "3.0"
@@ -63,7 +84,10 @@ time = { version = "0.3.10", features = [
   "macros",
   "wasm-bindgen",
 ] }
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread", "time"] }
+tokio = { version = "1.0", default-features = false, features = [
+  "macros",
+  "time",
+] }
 tracing = "0.1.40"
 tracing-subscriber = "0.3"
 tz-rs = { version = "0.6" }

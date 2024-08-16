@@ -20,6 +20,7 @@ mod az_cli_date_format {
     use time::UtcOffset;
     use time::{OffsetDateTime, PrimitiveDateTime};
 
+    // cspell:ignore subsecond
     const FORMAT: &[FormatItem] =
         format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6]");
 
@@ -39,8 +40,8 @@ mod az_cli_date_format {
     pub(crate) fn assume_local(date: &PrimitiveDateTime) -> OffsetDateTime {
         let as_utc = date.assume_utc();
 
-        // try parsing the timezone from `TZ` enviornment variable.  If that
-        // fails, or the enviornment variable doesn't exist, try using
+        // try parsing the timezone from `TZ` environment variable.  If that
+        // fails, or the environment variable doesn't exist, try using
         // `TimeZone::local`.  If that fails, then just return the UTC date.
         let Some(tz) = std::env::var("TZ")
             .ok()
@@ -283,7 +284,7 @@ mod tests {
     ///
     /// To validate the timezone conversion works as expected, this test
     /// temporarily sets the timezone to PST, performs the check, then resets
-    /// the TZ enviornment variable.
+    /// the TZ environment variable.
     fn check_timezone() -> azure_core::Result<()> {
         let before = std::env::var("TZ").ok();
         std::env::set_var("TZ", "US/Pacific");

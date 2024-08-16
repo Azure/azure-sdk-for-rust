@@ -3,10 +3,11 @@
 use azure_core::{
     auth::Secret,
     content_type,
-    error::{Error, ErrorKind, ResultExt},
-    headers, HttpClient, Request, Url,
+    error::{http_response_from_body, Error, ErrorKind, ResultExt},
+    headers,
+    json::from_json,
+    HttpClient, Method, Request, Url,
 };
-use azure_core::{json::from_json, Method};
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;
@@ -51,8 +52,8 @@ pub async fn exchange(
         rsp.json().await.map_kind(ErrorKind::Credential)
     } else {
         let rsp_body = rsp.into_body().collect().await?;
-        let token_error: RefreshTokenError = from_json(&rsp_body)
-            .map_err(|_| ErrorKind::http_response_from_body(rsp_status, &rsp_body))?;
+        let token_error: RefreshTokenError =
+            from_json(&rsp_body).map_err(|_| http_response_from_body(rsp_status, &rsp_body))?;
         Err(Error::new(ErrorKind::Credential, token_error))
     }
 }
@@ -106,6 +107,8 @@ mod deserialize {
         Ok(string.split(' ').map(ToOwned::to_owned).collect())
     }
 }
+
+// cspell:ignore suberror
 
 /// An error response body when there is an error requesting a token
 #[derive(Debug, Clone, Deserialize)]

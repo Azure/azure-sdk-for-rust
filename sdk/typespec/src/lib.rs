@@ -3,5 +3,6 @@
 
 #![doc = include_str!("../README.md")]
 
-pub const HOMEPAGE: &str = env!("CARGO_PKG_HOMEPAGE");
-pub const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
+pub mod error;
+
+pub use error::{Error, Result};

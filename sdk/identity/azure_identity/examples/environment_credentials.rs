@@ -6,8 +6,8 @@ use url::Url;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let sub_id = var("AZURE_SUBSCRIPTION_ID")?;
-    let creds = EnvironmentCredential::create(TokenCredentialOptions::default())?;
-    let res = creds
+    let credentials = EnvironmentCredential::create(TokenCredentialOptions::default())?;
+    let res = credentials
         .get_token(&["https://management.azure.com/.default"])
         .await?;
     eprintln!("Azure cli response == {res:?}");

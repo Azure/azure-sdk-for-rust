@@ -1,13 +1,8 @@
 use async_lock::RwLock;
 use azure_core::auth::AccessToken;
 use futures::Future;
-use std::{collections::HashMap, time::Duration};
-use time::OffsetDateTime;
+use std::collections::HashMap;
 use tracing::trace;
-
-fn is_expired(token: &AccessToken) -> bool {
-    token.expires_on < OffsetDateTime::now_utc() + Duration::from_secs(20)
-}
 
 #[derive(Debug)]
 pub(crate) struct TokenCache(RwLock<HashMap<Vec<String>, AccessToken>>);
@@ -32,7 +27,7 @@ impl TokenCache {
         let token_cache = self.0.read().await;
         let scopes = scopes.iter().map(ToString::to_string).collect::<Vec<_>>();
         if let Some(token) = token_cache.get(&scopes) {
-            if !is_expired(token) {
+            if !token.is_expired(None) {
                 trace!("returning cached token");
                 return Ok(token.clone());
             }
@@ -45,7 +40,7 @@ impl TokenCache {
         // check again in case another thread refreshed the token while we were
         // waiting on the write lock
         if let Some(token) = token_cache.get(&scopes) {
-            if !is_expired(token) {
+            if !token.is_expired(None) {
                 trace!("returning token that was updated while waiting on write lock");
                 return Ok(token.clone());
             }
@@ -67,7 +62,8 @@ impl TokenCache {
 mod tests {
     use super::*;
     use azure_core::auth::Secret;
-    use std::sync::Mutex;
+    use std::{sync::Mutex, time::Duration};
+    use time::OffsetDateTime;
 
     #[derive(Debug)]
     struct MockCredential {

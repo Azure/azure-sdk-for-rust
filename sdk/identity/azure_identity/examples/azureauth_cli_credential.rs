@@ -16,8 +16,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         client_id,
     } = Args::parse();
 
-    let creds = AzureauthCliCredential::new(tenant_id, client_id);
-    let res = creds
+    let credentials = AzureauthCliCredential::new(tenant_id, client_id);
+    let res = credentials
         // Get an access token for Azure Devops
         .get_token(&["499b84ac-1321-427f-aa17-267ca6975798/.default"])
         .await?;
