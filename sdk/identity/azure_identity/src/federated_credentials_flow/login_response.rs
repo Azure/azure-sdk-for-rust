@@ -1,7 +1,6 @@
-use azure_core::auth::Secret;
+use azure_core::{auth::Secret, Model};
 use serde::{Deserialize, Deserializer};
 use time::OffsetDateTime;
-use typespec_client_core::Model;
 
 #[derive(Debug, Clone, Deserialize)]
 struct RawLoginResponse {

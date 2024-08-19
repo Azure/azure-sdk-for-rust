@@ -132,7 +132,10 @@ impl<T: Model> Response<T> {
     ///
     /// # Example
     /// ```rust
-    /// # #[derive(Model, serde::Deserialize)]
+    /// # use serde::Deserialize;
+    /// # use typespec_client_core::http::Model;
+    /// # use typespec_derive::http::Model;
+    /// # #[derive(Model, Deserialize)]
     /// # pub struct GetSecretResponse {
     /// #   name: String,
     /// #   value: String,
@@ -285,9 +288,10 @@ mod tests {
 
     mod json {
         use crate::http::headers::Headers;
-        use crate::http::{Model, Response};
+        use crate::http::Response;
         use http_types::StatusCode;
         use serde::Deserialize;
+        use typespec_derive::Model;
 
         /// An example JSON-serialized response type.
         #[derive(Model, Deserialize)]

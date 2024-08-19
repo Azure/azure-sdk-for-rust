@@ -15,6 +15,7 @@ rust-version.workspace = true
 
 [dependencies]
 typespec = { workspace = true, features = ["http", "json"] }
+typespec_derive = { workspace = true, optional = true }
 typespec_client_core = { workspace = true, features = ["http", "json"] }
 async-trait = { workspace = true }
 bytes = { workspace = true }
@@ -43,6 +44,7 @@ thiserror = { workspace = true }
 
 [features]
 default = []
+derive = ["typespec_derive"]
 enable_reqwest = ["typespec_client_core/reqwest"]
 enable_reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
 enable_reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
