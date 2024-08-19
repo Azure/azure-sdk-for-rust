@@ -95,7 +95,7 @@ mod tests {
     use super::*;
     use crate::{
         http::{headers::Headers, Method, PolicyResult, StatusCode, TransportOptions},
-        json_serializable,
+        json_model,
         stream::BytesStream,
     };
     use bytes::Bytes;
@@ -127,7 +127,7 @@ mod tests {
             foo: i32,
             bar: String,
         }
-        json_serializable!(Model);
+        json_model!(Model);
 
         let options =
             ClientOptions::new(TransportOptions::new_custom_policy(Arc::new(Responder {})));

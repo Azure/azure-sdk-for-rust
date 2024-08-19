@@ -15,7 +15,7 @@ pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send +
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
 /// Trait that represents types that can be deserialized from an HTTP response body.
-pub trait FromResponseBody: Sized {
+pub trait Model: Sized {
     /// Deserialize the response body into type `Self`.
     ///
     /// A [`ResponseBody`] represents a stream of bytes coming from the server.
@@ -26,9 +26,9 @@ pub trait FromResponseBody: Sized {
 }
 
 #[macro_export]
-macro_rules! json_serializable {
+macro_rules! json_model {
     ($type:ty) => {
-        impl $crate::http::FromResponseBody for $type {
+        impl $crate::http::Model for $type {
             async fn from_response_body(body: $crate::http::ResponseBody) -> $crate::Result<Self> {
                 body.json().await
             }
@@ -38,9 +38,9 @@ macro_rules! json_serializable {
 
 #[macro_export]
 #[cfg(feature = "xml")]
-macro_rules! xml_serializable {
+macro_rules! xml_model {
     ($type:ty) => {
-        impl $crate::http::FromResponseBody for $type {
+        impl $crate::http::Model for $type {
             async fn from_response_body(body: $crate::http::ResponseBody) -> $crate::Result<Self> {
                 body.xml().await
             }
@@ -122,7 +122,7 @@ impl<T> Response<T> {
     /// struct MySecretResponse {
     ///    value: String,
     /// }
-    /// typespec_client_core::json_serializable!(MySecretResponse); // Mark the type as deserializable from JSON.
+    /// typespec_client_core::json_model!(MySecretResponse); // Mark the type as deserializable from JSON.
     ///
     /// async fn parse_response(response: Response<GetSecretResponse>) {
     ///   // Calling `map` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
@@ -130,7 +130,7 @@ impl<T> Response<T> {
     ///   println!("value: {}", my_struct.value);
     /// }
     /// ```
-    pub async fn deserialize_body_into<U: FromResponseBody>(self) -> crate::Result<U> {
+    pub async fn deserialize_body_into<U: Model>(self) -> crate::Result<U> {
         U::from_response_body(self.body).await
     }
 }
@@ -149,7 +149,7 @@ impl Response<()> {
     }
 }
 
-impl<T: FromResponseBody> Response<T> {
+impl<T: Model> Response<T> {
     /// Fetches the entire body and tries to convert it into type `T`.
     ///
     /// This is the preferred method for parsing the body of a service response into it's default model type.
@@ -161,7 +161,7 @@ impl<T: FromResponseBody> Response<T> {
     /// #   name: String,
     /// #   value: String,
     /// # }
-    /// # typespec_client_core::json_serializable!(GetSecretResponse);
+    /// # typespec_client_core::json_model!(GetSecretResponse);
     /// # pub struct SecretClient { }
     /// # impl SecretClient {
     /// #   pub async fn get_secret(&self) -> typespec_client_core::http::Response<GetSecretResponse> {
@@ -280,13 +280,13 @@ impl fmt::Debug for ResponseBody {
 #[cfg(test)]
 mod tests {
     use crate::http::headers::Headers;
-    use crate::http::{FromResponseBody, Response, ResponseBody};
+    use crate::http::{Model, Response, ResponseBody};
     use typespec::error::ErrorKind;
 
     #[tokio::test]
     pub async fn body_type_controls_consumption_of_response_body() {
         pub struct LazyBody;
-        impl FromResponseBody for LazyBody {
+        impl Model for LazyBody {
             async fn from_response_body(_body: ResponseBody) -> crate::Result<Self> {
                 // Don't actually consume the body
                 Ok(LazyBody)
@@ -319,7 +319,7 @@ mod tests {
             name: String,
             value: String,
         }
-        json_serializable!(GetSecretResponse);
+        json_model!(GetSecretResponse);
 
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse> {
@@ -347,7 +347,7 @@ mod tests {
                 #[serde(rename = "value")]
                 yon_value: String,
             }
-            json_serializable!(MySecretResponse);
+            json_model!(MySecretResponse);
 
             let response = get_secret();
             let secret: MySecretResponse = response.deserialize_body_into().await.unwrap();
@@ -369,7 +369,7 @@ mod tests {
             name: String,
             value: String,
         }
-        xml_serializable!(GetSecretResponse);
+        xml_model!(GetSecretResponse);
 
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse> {
@@ -397,7 +397,7 @@ mod tests {
                 #[serde(rename = "value")]
                 yon_value: String,
             }
-            xml_serializable!(MySecretResponse);
+            xml_model!(MySecretResponse);
 
             let response = get_secret();
             let secret: MySecretResponse = response.deserialize_body_into().await.unwrap();
