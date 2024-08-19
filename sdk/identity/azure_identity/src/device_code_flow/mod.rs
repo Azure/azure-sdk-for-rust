@@ -5,7 +5,14 @@
 //! You can learn more about this authorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code).
 mod device_code_responses;
 
-use azure_core::{content_type, error::{http_response_from_body, Error, ErrorKind}, headers, json::from_json, sleep::sleep, HttpClient, Method, Request, Response, Url};
+use azure_core::{
+    content_type,
+    error::{http_response_from_body, Error, ErrorKind},
+    headers,
+    json::from_json,
+    sleep::sleep,
+    HttpClient, Method, Request, Response, Url,
+};
 pub use device_code_responses::*;
 use futures::stream::unfold;
 use serde::Deserialize;

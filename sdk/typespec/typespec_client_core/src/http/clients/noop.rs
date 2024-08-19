@@ -3,7 +3,7 @@
 
 use crate::{
     error::Result,
-    http::{RawResponse, Request},
+    http::{Request, Response},
 };
 use async_trait::async_trait;
 
