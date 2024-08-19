@@ -16,9 +16,7 @@ use azure_core::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    str::FromStr,
-    time::Duration,
-    {ops::Add, sync::Arc},
+    collections::HashMap, ops::Add, str::FromStr, sync::Arc, time::Duration
 };
 use time::OffsetDateTime;
 use url::form_urlencoded::{self, Serializer};
@@ -315,6 +313,7 @@ impl FromStr for BrokerProperties {
 pub struct SendMessageOptions {
     pub content_type: Option<String>,
     pub broker_properties: Option<SettableBrokerProperties>,
+    pub custom_properties: Option<HashMap<String, String>>,
 }
 
 impl headers::AsHeaders for SendMessageOptions {
@@ -332,6 +331,10 @@ impl headers::AsHeaders for SendMessageOptions {
                 BROKER_PROPERTIES,
                 serde_json::to_string(broker_properties).unwrap().into(),
             ));
+        }
+        
+        if let Some(custom_properties) = &self.custom_properties {
+            headers.extend(custom_properties.iter().map(|(k, v)| (k.to_owned().into(), v.into())));
         }
 
         headers.into_iter()
