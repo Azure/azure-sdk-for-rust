@@ -43,12 +43,12 @@ tokio-test.workspace = true
 
 [features]
 default = [
-    "http",
-    "json",
-    "reqwest",
-    "reqwest_gzip",
-    "reqwest_rustls",
-    "tokio_sleep",
+  "http",
+  "json",
+  "reqwest",
+  "reqwest_gzip",
+  "reqwest_rustls",
+  "tokio_sleep",
 ]
 http = ["dep:http-types", "typespec/http"]
 json = ["typespec/json"]
