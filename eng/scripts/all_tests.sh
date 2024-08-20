@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -eux -o pipefail
 cd $(dirname ${BASH_SOURCE[0]})/../../

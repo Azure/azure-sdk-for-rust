@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # avoid running out of disk space on GitHub Runners
 

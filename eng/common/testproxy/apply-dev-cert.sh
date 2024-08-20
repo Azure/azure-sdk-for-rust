@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 TMP_PATH=$CERT_FOLDER
 PFXFILE=$CERT_FOLDER/dotnet-devcert.pfx
 CRTFILE=$CERT_FOLDER/dotnet-devcert.crt
