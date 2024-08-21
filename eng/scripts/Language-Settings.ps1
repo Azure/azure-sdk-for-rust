@@ -58,6 +58,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
         if (!$dependantPackages) {
             $dependantPackages = @()
         }
+
         foreach ($dependency in $manifest.DependentPackages) {
             if ($dependantPackages.Contains($dependency)) {
                 continue
@@ -70,16 +71,11 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
     }
 
     foreach ($manifest in $packageManifests.Values) {
-        $ServiceDirectoryName = $manifest.ServiceDirectoryName
-        $packageName = $manifest.name
-        $packageVersion = $manifest.version
-        $pkgDirectoryPath = Split-Path $manifest.manifest_path -Parent
-
-        $pkgProp = [PackageProps]::new($packageName, $packageVersion, $pkgDirectoryPath, $serviceDirectoryName)
+        $pkgProp = [PackageProps]::new($manifest.name, $manifest.version, $manifest.RelativePath, $manifest.ServiceDirectoryName)
         $pkgProp.IsNewSdk = $true
-        $pkgProp.ArtifactName = $packageName
+        $pkgProp.ArtifactName = $manifest.name
 
-        if ($packageName -match "mgmt") {
+        if ($manifest.name -match "mgmt") {
             $pkgProp.SdkType = "mgmt"
         }
         else {
