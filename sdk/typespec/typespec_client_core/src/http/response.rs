@@ -139,7 +139,7 @@ impl Response<()> {
     /// Changes the type of the response body.
     ///
     /// Used to set the "type" of an untyped `Response<()>`, transforming it into a `Response<T>`.
-    pub fn map_body<T>(self) -> Response<T> {
+    pub(crate) fn set_default_deserialize_type<T>(self) -> Response<T> {
         Response {
             status: self.status,
             headers: self.headers,
@@ -176,14 +176,15 @@ impl<T: Model> Response<T> {
     /// #   SecretClient { }
     /// # }
     ///
-    /// # tokio_test::block_on(async {
+    /// # #[tokio::main]
+    /// # async fn main() {
     /// let secret_client = create_secret_client();
     /// let response = secret_client.get_secret().await;
     /// assert_eq!(response.status(), http_types::StatusCode::Ok);
     /// let model = response.deserialize_body().await.unwrap();
     /// assert_eq!(model.name, "database_password");
     /// assert_eq!(model.value, "hunter2");
-    /// # });
+    /// # }
     /// ```
     pub async fn deserialize_body(self) -> crate::Result<T> {
         T::from_response_body(self.body).await

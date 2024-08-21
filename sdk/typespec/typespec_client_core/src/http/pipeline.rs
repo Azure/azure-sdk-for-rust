@@ -86,7 +86,7 @@ impl Pipeline {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
-            .map(|resp| resp.map_body())
+            .map(|resp| resp.set_default_deserialize_type())
     }
 }
 

@@ -77,11 +77,11 @@ pub async fn perform(
         content_type::APPLICATION_X_WWW_FORM_URLENCODED,
     );
     req.set_body(encoded);
-    let rsp: Response<LoginResponse> = http_client.execute_request(&req).await?.map_body();
+    let rsp: Response = http_client.execute_request(&req).await?;
     let rsp_status = rsp.status();
     debug!("rsp_status == {:?}", rsp_status);
     if rsp_status.is_success() {
-        rsp.deserialize_body().await
+        rsp.deserialize_body_into().await
     } else {
         let rsp_body = rsp.into_body().collect().await?;
         let text = std::str::from_utf8(&rsp_body)?;

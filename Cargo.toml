@@ -1,15 +1,15 @@
 [workspace]
 resolver = "2"
 members = [
-  "sdk/typespec",
-  "sdk/typespec/typespec_client_core",
-  "sdk/core/azure_core",
-  "sdk/core/azure_core_amqp",
-  "sdk/identity/azure_identity",
-  "sdk/eventhubs/azure_messaging_eventhubs",
-  "eng/test/mock_transport",
-  "sdk/storage",
-  "sdk/storage/azure_storage_blob",
+    "sdk/typespec",
+    "sdk/typespec/typespec_client_core",
+    "sdk/core/azure_core",
+    "sdk/core/azure_core_amqp",
+    "sdk/identity/azure_identity",
+    "sdk/eventhubs/azure_messaging_eventhubs",
+    "eng/test/mock_transport",
+    "sdk/storage",
+    "sdk/storage/azure_storage_blob",
 ]
 
 [workspace.package]
@@ -67,8 +67,8 @@ pin-project = "1.0"
 quick-xml = { version = "0.31", features = ["serialize", "serde-types"] }
 rand = "0.8"
 reqwest = { version = "0.12", features = [
-  "json",
-  "stream",
+    "json",
+    "stream",
 ], default-features = false }
 rustc_version = "0.4"
 serde = { version = "1.0", features = ["derive"] }
@@ -80,15 +80,14 @@ serial_test = "3.0"
 sha2 = { version = "0.10" }
 thiserror = "1.0"
 time = { version = "0.3.10", features = [
-  "serde-well-known",
-  "macros",
-  "wasm-bindgen",
+    "serde-well-known",
+    "macros",
+    "wasm-bindgen",
 ] }
 tokio = { version = "1.0", default-features = false, features = [
-  "macros",
-  "time",
+    "macros",
+    "time",
 ] }
-tokio-test = "0.4.4"
 tracing = "0.1.40"
 tracing-subscriber = "0.3"
 tz-rs = { version = "0.6" }
