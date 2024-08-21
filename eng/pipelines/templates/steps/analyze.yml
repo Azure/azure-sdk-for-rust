@@ -1,0 +1,22 @@
+parameters:
+  - name: RustChannel
+    type: string
+    default: stable
+
+steps:
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      RustChannel: ${{ parameters.RustChannel }}
+
+  - pwsh: |
+      . ./eng/common/scripts/Helpers/CommandInvocation-Helpers.ps1
+      Set-Alias -Name invoke -Value Invoke-LoggedCommand
+
+      $env:RUSTDOCFLAGS = "-D warnings"
+      $env:RUSTFLAGS = "-Dwarnings"
+
+      invoke "cargo +$(RustToolchain) install cargo-readme"
+      invoke "cargo +$(RustToolchain) fmt --all -- --check"
+      invoke "cargo +$(RustToolchain) clippy --all"
+      invoke "cargo +$(RustToolchain) doc --all --no-deps"
+    displayName: "Run source analysis"

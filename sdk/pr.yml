@@ -1,0 +1,19 @@
+trigger: none
+
+pr:
+  branches:
+    include:
+      - pipelinev3
+
+parameters:
+  - name: Service
+    type: string
+    default: auto
+
+extends:
+  template: ../eng/pipelines/templates/stages/archetype-sdk-client.yml
+  parameters:
+    ServiceDirectory: ${{ parameters.Service }}
+    BuildTargetingString: "*"
+    TestProxy: true
+    TestTimeOutInMinutes: 120

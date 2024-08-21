@@ -1,0 +1,38 @@
+parameters:
+  - name: RustChannel
+    type: string
+    default: stable
+  - name: ArtifactSuffix
+    type: string
+    default: "linux"
+  - name: BuildTargetingString
+    type: string
+    default: "*"
+
+steps:
+  # Run tests
+  #./eng/scripts/sdk_tests.sh ${BUILD}
+  - pwsh: |
+      . ./eng/common/scripts/Helpers/CommandInvocation-Helpers.ps1
+      Set-Alias -Name invoke  -Value Invoke-LoggedCommand
+
+      $env:RUSTFLAGS = "-Dwarnings"
+
+      invoke "cargo +$(RustToolchain) check -p azure_core --no-default-features"
+      invoke "cargo +$(RustToolchain) test --all --features hmac_rust"
+    displayName: "SDK Tests"
+
+  #./eng/scripts/e2e_tests.sh ${BUILD}
+  - pwsh: |
+      . ./eng/common/scripts/Helpers/CommandInvocation-Helpers.ps1
+      Set-Alias -Name invoke  -Value Invoke-LoggedCommand
+
+      $env:RUSTFLAGS = "-Dwarnings"
+      $projects = 'core/azure_core', 'identity/azure_identity', 'eventhubs/azure_messaging_eventhubs'
+
+      foreach ($proj in $projects) {
+        invoke "cargo +$(RustToolchain) check --tests --features test_e2e --manifest-path sdk/$proj/Cargo.toml"
+      }
+    displayName: "E2E Tests"
+
+  # TODO: Publish test results

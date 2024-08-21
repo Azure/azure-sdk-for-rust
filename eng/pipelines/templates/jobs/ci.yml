@@ -1,0 +1,125 @@
+parameters:
+  - name: ServiceDirectory
+    type: string
+    default: ""
+  - name: Artifacts
+    type: object
+    default: []
+  - name: TestPipeline
+    type: boolean
+    default: false
+  - name: BeforePublishSteps
+    type: object
+    default: []
+  - name: TestMarkArgument
+    type: string
+    default: ""
+  - name: BeforeTestSteps
+    type: object
+    default: []
+  - name: AfterTestSteps
+    type: object
+    default: []
+  - name: BuildTargetingString
+    type: string
+    default: "azure-*"
+  - name: TestTimeoutInMinutes
+    type: number
+    default: 60
+  - name: BuildDocs
+    type: boolean
+    default: true
+  - name: TestProxy
+    type: boolean
+    default: false
+  - name: GenerateApiReviewForManualOnly
+    type: boolean
+    default: false
+  - name: BuildMatrix
+    type: object
+    default:
+      - pool:
+          os: linux
+          name: $(LINUXPOOL)
+          image: $(LINUXVMIMAGE)
+        rustChannels: [stable, msrv, nightly]
+      - pool:
+          os: windows
+          name: $(WINDOWSPOOL)
+          image: $(WINDOWSVMIMAGE)
+        rustChannels: [stable, msrv, nightly]
+      - pool:
+          os: macOS
+          name: $(MACPOOL)
+          vmImage: $(MACVMIMAGE)
+        rustChannels: [stable, msrv, nightly]
+  - name: AnalyzeChannels
+    type: object
+    default: [stable]
+
+jobs:
+  - ${{ each matrix in parameters.BuildMatrix }}:
+      - ${{ each rustChannel in matrix.rustChannels }}:
+          - job: Build_${{ matrix.pool.os }}_${{ rustChannel }}
+            timeoutInMinutes: 90
+
+            pool: ${{ matrix.pool }}
+
+            steps:
+              - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+                parameters:
+                  Paths: [/*]
+
+              - template: /eng/pipelines/templates/steps/build-package-artifacts.yml
+                parameters:
+                  RustChannel: ${{ rustChannel }}
+                  ServiceDirectory: ${{ parameters.ServiceDirectory }}
+                  BuildTargetingString: ${{ parameters.BuildTargetingString }}
+                  Artifacts: ${{ parameters.Artifacts }}
+                  ArtifactSuffix: ${{ matrix.pool.os }}_${{ rustChannel }}
+
+              - ${{ if eq(rustChannel, 'stable') }}:
+                  - template: /eng/pipelines/templates/steps/test-packages.yml
+                    parameters:
+                      RustChannel: ${{ rustChannel }}
+                      BuildTargetingString: ${{ parameters.BuildTargetingString }}
+
+  - ${{ each rustChannel in parameters.AnalyzeChannels }}:
+      - job: "Analyze_${{ rustChannel }}"
+        condition: and(succeededOrFailed(), ne(variables['Skip.Analyze'], 'true'))
+        timeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+
+        pool:
+          os: linux
+          name: $(LINUXPOOL)
+          image: $(LINUXVMIMAGE)
+
+        steps:
+          - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+            parameters:
+              Paths: [/*]
+
+          - template: /eng/pipelines/templates/steps/resolve-package-targeting.yml
+            parameters:
+              BuildTargetingString: ${{ parameters.BuildTargetingString }}
+              PackagePropertiesFolder: $(Build.ArtifactStagingDirectory)/PackageInfo
+
+          - template: /eng/pipelines/templates/steps/analyze.yml
+            parameters:
+              RustChannel: ${{ rustChannel }}
+
+          - template: /eng/common/pipelines/templates/steps/check-spelling.yml
+            parameters:
+              ContinueOnError: false
+
+          - template: /eng/common/pipelines/templates/steps/verify-links.yml
+            parameters:
+              ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+                Directory: ""
+                Urls: (eng/common/scripts/get-markdown-files-from-changed-files.ps1)
+              ${{ elseif eq(parameters.ServiceDirectory, 'auto') }}:
+                Directory: ""
+              ${{ else }}:
+                Directory: sdk/${{ parameters.ServiceDirectory }}
+              CheckLinkGuidance: $true
+              Condition: succeededOrFailed()
