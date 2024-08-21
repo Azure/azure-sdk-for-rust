@@ -58,7 +58,7 @@ pub use typespec_client_core::{
     base64, date,
     http::{
         headers::*, new_http_client, Body, Context, HttpClient, Method, Pageable, Request,
-        StatusCode, Url,
+        RequestContent, StatusCode, Url,
     },
     json, sleep,
     stream::{BytesStream, SeekableStream},
