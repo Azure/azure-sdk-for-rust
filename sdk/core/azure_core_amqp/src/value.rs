@@ -578,7 +578,7 @@ mod tests {
         assert_eq!(bool_value, AmqpValue::Boolean(true));
         assert_eq!(AmqpValue::Boolean(true), bool_value);
         let bool_val: bool = bool_value.into();
-        assert_eq!(bool_val, true);
+        assert!(bool_val);
 
         // Test AmqpValue::UByte
         let ubyte_value: AmqpValue = AmqpValue::UByte(255);

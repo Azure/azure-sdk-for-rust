@@ -659,7 +659,7 @@ mod tests {
             >::new(
                 seq.into_iter()
                     .map(|x| {
-                        let iter = x.into_iter().map(|y| y.into());
+                        let iter = x.into_iter().map(|y| y);
                         iter.collect::<fe2o3_amqp_types::primitives::List<fe2o3_amqp_types::primitives::Value>>().into()
                     })
                     .collect::<Vec<
