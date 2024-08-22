@@ -2,6 +2,8 @@
 // Licensed under the MIT license.
 //cspell: words amqp SMALLUINT SMALLULONG
 
+use crate::value::AmqpComposite;
+
 use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 use azure_core::error::Result;
 
@@ -188,6 +190,121 @@ impl AmqpMessageHeader {
     pub fn delivery_count(&self) -> Option<&u32> {
         self.delivery_count.as_ref()
     }
+
+    pub fn set_durable(&mut self, durable: bool) {
+        self.durable = Some(durable);
+    }
+
+    pub fn set_priority(&mut self, priority: u8) {
+        self.priority = Some(priority);
+    }
+
+    pub fn set_time_to_live(&mut self, time_to_live: std::time::Duration) {
+        self.time_to_live = Some(time_to_live);
+    }
+
+    pub fn set_first_acquirer(&mut self, first_acquirer: bool) {
+        self.first_acquirer = Some(first_acquirer);
+    }
+
+    pub fn set_delivery_count(&mut self, delivery_count: u32) {
+        self.delivery_count = Some(delivery_count);
+    }
+}
+
+impl From<&Box<AmqpComposite>> for AmqpMessageHeader {
+    fn from(composite: &Box<AmqpComposite>) -> Self {
+        composite.value().clone().into()
+    }
+}
+
+impl From<AmqpList> for AmqpMessageHeader {
+    fn from(list: AmqpList) -> Self {
+        let mut builder = AmqpMessageHeader::builder();
+        let field_count = list.len();
+        if field_count >= 1 {
+            match list.0[0] {
+                AmqpValue::Boolean(durable) => {
+                    builder = builder.with_durable(durable);
+                }
+                _ => {}
+            }
+        }
+        if field_count >= 2 {
+            match list.0[1] {
+                AmqpValue::UByte(priority) => {
+                    builder = builder.with_priority(priority);
+                }
+                _ => {}
+            }
+        }
+        if field_count >= 3 {
+            match list.0[2] {
+                AmqpValue::UInt(time_to_live) => {
+                    builder = builder
+                        .with_time_to_live(std::time::Duration::from_millis(time_to_live.into()));
+                }
+                _ => {}
+            }
+        }
+        if field_count >= 4 {
+            match list.0[3] {
+                AmqpValue::Boolean(first_acquirer) => {
+                    builder = builder.with_first_acquirer(first_acquirer);
+                }
+                _ => {}
+            }
+        }
+        if field_count >= 5 {
+            match list.0[4] {
+                AmqpValue::UInt(delivery_count) => {
+                    builder = builder.with_delivery_count(delivery_count);
+                }
+                _ => {}
+            }
+        }
+        builder.build()
+    }
+}
+
+impl From<AmqpMessageHeader> for AmqpList {
+    fn from(header: AmqpMessageHeader) -> AmqpList {
+        let mut list = Vec::new();
+
+        // Serialize the current value, if it exists. Otherwise serialize a null
+        // value if there are other values to serialize.
+        if let Some(durable) = header.durable {
+            list.push(AmqpValue::Boolean(durable));
+        } else if header.priority.is_some()
+            || header.time_to_live.is_some()
+            || header.first_acquirer.is_some()
+            || header.delivery_count.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(priority) = header.priority {
+            list.push(AmqpValue::UByte(priority));
+        } else if header.time_to_live.is_some()
+            || header.first_acquirer.is_some()
+            || header.delivery_count.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(time_to_live) = header.time_to_live {
+            list.push(AmqpValue::UInt(time_to_live.as_millis() as u32));
+        } else if header.first_acquirer.is_some() || header.delivery_count.is_some() {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(first_acquirer) = header.first_acquirer {
+            list.push(AmqpValue::Boolean(first_acquirer));
+        } else if header.delivery_count.is_some() {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(delivery_count) = header.delivery_count {
+            list.push(AmqpValue::UInt(delivery_count));
+        }
+        AmqpList::from(list)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -267,6 +384,379 @@ impl AmqpMessageProperties {
     pub fn set_message_id(&mut self, message_id: impl Into<AmqpMessageId>) {
         self.message_id = Some(message_id.into());
     }
+
+    pub fn set_correlation_id(&mut self, correlation_id: impl Into<AmqpMessageId>) {
+        self.correlation_id = Some(correlation_id.into());
+    }
+
+    pub fn set_user_id(&mut self, user_id: Vec<u8>) {
+        self.user_id = Some(user_id);
+    }
+
+    pub fn set_to(&mut self, to: String) {
+        self.to = Some(to);
+    }
+
+    pub fn set_subject(&mut self, subject: String) {
+        self.subject = Some(subject);
+    }
+
+    pub fn set_reply_to(&mut self, reply_to: String) {
+        self.reply_to = Some(reply_to);
+    }
+
+    pub fn set_content_type(&mut self, content_type: AmqpSymbol) {
+        self.content_type = Some(content_type);
+    }
+
+    pub fn set_content_encoding(&mut self, content_encoding: AmqpSymbol) {
+        self.content_encoding = Some(content_encoding);
+    }
+
+    pub fn set_absolute_expiry_time(&mut self, absolute_expiry_time: AmqpTimestamp) {
+        self.absolute_expiry_time = Some(absolute_expiry_time);
+    }
+
+    pub fn set_creation_time(&mut self, creation_time: AmqpTimestamp) {
+        self.creation_time = Some(creation_time);
+    }
+
+    pub fn set_group_id(&mut self, group_id: String) {
+        self.group_id = Some(group_id);
+    }
+
+    pub fn set_group_sequence(&mut self, group_sequence: u32) {
+        self.group_sequence = Some(group_sequence);
+    }
+
+    pub fn set_reply_to_group_id(&mut self, reply_to_group_id: String) {
+        self.reply_to_group_id = Some(reply_to_group_id);
+    }
+}
+
+impl From<&Box<AmqpComposite>> for AmqpMessageProperties {
+    fn from(composite: &Box<AmqpComposite>) -> Self {
+        composite.value().clone().into()
+    }
+}
+
+impl From<AmqpList> for AmqpMessageProperties {
+    fn from(list: AmqpList) -> Self {
+        let mut builder = AmqpMessageProperties::builder();
+        let field_count = list.len();
+        if field_count >= 1 {
+            builder = match &list.0[0] {
+                AmqpValue::ULong(message_id) => {
+                    builder.with_message_id(AmqpMessageId::Ulong(*message_id))
+                }
+                AmqpValue::Uuid(message_id) => {
+                    builder.with_message_id(AmqpMessageId::Uuid(*message_id))
+                }
+                AmqpValue::Binary(message_id) => {
+                    builder.with_message_id(AmqpMessageId::Binary(message_id.clone()))
+                }
+                AmqpValue::String(message_id) => {
+                    builder.with_message_id(AmqpMessageId::String(message_id.clone()))
+                }
+                _ => builder,
+            }
+        }
+        if field_count >= 2 {
+            match &list.0[1] {
+                AmqpValue::Binary(binary) => {
+                    builder = builder.with_user_id(binary.clone());
+                }
+                _ => {}
+            }
+        }
+        if field_count >= 3 {
+            builder = match &list.0[2] {
+                AmqpValue::String(to) => builder.with_to(to.clone()),
+                _ => builder,
+            }
+        }
+        if field_count >= 4 {
+            builder = match &list.0[3] {
+                AmqpValue::String(subject) => builder.with_subject(subject),
+                _ => builder,
+            }
+        }
+        if field_count >= 5 {
+            builder = match &list.0[4] {
+                AmqpValue::String(reply_to) => builder.with_reply_to(reply_to),
+                _ => builder,
+            }
+        }
+        if field_count >= 6 {
+            builder = match &list.0[5] {
+                AmqpValue::ULong(correlation_id) => {
+                    builder.with_correlation_id(AmqpMessageId::Ulong(*correlation_id))
+                }
+                AmqpValue::Uuid(correlation_id) => {
+                    builder.with_correlation_id(AmqpMessageId::Uuid(*correlation_id))
+                }
+                AmqpValue::Binary(correlation_id) => {
+                    builder.with_correlation_id(AmqpMessageId::Binary(correlation_id.clone()))
+                }
+                AmqpValue::String(correlation_id) => {
+                    builder.with_correlation_id(AmqpMessageId::String(correlation_id.clone()))
+                }
+                _ => builder,
+            }
+        }
+        if field_count >= 7 {
+            match &list.0[6] {
+                AmqpValue::Symbol(content_type) => {
+                    builder = builder.with_content_type(content_type.clone());
+                }
+                _ => {}
+            }
+        }
+        if field_count >= 8 {
+            match &list.0[7] {
+                AmqpValue::Symbol(content_encoding) => {
+                    builder = builder.with_content_encoding(content_encoding.clone());
+                }
+                _ => {}
+            }
+        }
+        if field_count >= 9 {
+            match &list.0[8] {
+                AmqpValue::TimeStamp(absolute_expiry_time) => {
+                    builder = builder.with_absolute_expiry_time(absolute_expiry_time.clone());
+                }
+                _ => {}
+            }
+        }
+        if field_count >= 10 {
+            match &list.0[9] {
+                AmqpValue::TimeStamp(creation_time) => {
+                    builder = builder.with_creation_time(creation_time.clone());
+                }
+                _ => {}
+            }
+        }
+        if field_count >= 11 {
+            match &list.0[10] {
+                AmqpValue::String(group_id) => {
+                    builder = builder.with_group_id(group_id);
+                }
+                _ => {}
+            }
+        }
+        if field_count >= 12 {
+            match &list.0[11] {
+                AmqpValue::UInt(group_sequence) => {
+                    builder = builder.with_group_sequence(*group_sequence);
+                }
+                _ => {}
+            }
+        }
+        if field_count >= 13 {
+            match &list.0[12] {
+                AmqpValue::String(reply_to_group_id) => {
+                    builder = builder.with_reply_to_group_id(reply_to_group_id.clone());
+                }
+                _ => {}
+            }
+        }
+
+        builder.build()
+    }
+}
+
+impl From<AmqpMessageProperties> for AmqpList {
+    fn from(properties: AmqpMessageProperties) -> AmqpList {
+        let mut list = Vec::new();
+
+        // Serialize the current value, if it exists. Otherwise serialize a null
+        // value if there are other values to serialize.
+        if let Some(message_id) = properties.message_id {
+            match message_id {
+                AmqpMessageId::String(message_id) => {
+                    list.push(AmqpValue::String(message_id));
+                }
+                AmqpMessageId::Uuid(message_id) => {
+                    list.push(AmqpValue::Uuid(message_id));
+                }
+                AmqpMessageId::Binary(message_id) => {
+                    list.push(AmqpValue::Binary(message_id));
+                }
+                AmqpMessageId::Ulong(message_id) => {
+                    list.push(AmqpValue::ULong(message_id));
+                }
+            }
+        } else if properties.user_id.is_some()
+            || properties.to.is_some()
+            || properties.subject.is_some()
+            || properties.reply_to.is_some()
+            || properties.correlation_id.is_some()
+            || properties.content_type.is_some()
+            || properties.content_encoding.is_some()
+            || properties.absolute_expiry_time.is_some()
+            || properties.creation_time.is_some()
+            || properties.group_id.is_some()
+            || properties.group_sequence.is_some()
+            || properties.reply_to_group_id.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(user_id) = properties.user_id {
+            list.push(AmqpValue::Binary(user_id));
+        } else if properties.to.is_some()
+            || properties.subject.is_some()
+            || properties.reply_to.is_some()
+            || properties.correlation_id.is_some()
+            || properties.content_type.is_some()
+            || properties.content_encoding.is_some()
+            || properties.absolute_expiry_time.is_some()
+            || properties.creation_time.is_some()
+            || properties.group_id.is_some()
+            || properties.group_sequence.is_some()
+            || properties.reply_to_group_id.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(to) = properties.to {
+            list.push(AmqpValue::String(to));
+        } else if properties.subject.is_some()
+            || properties.reply_to.is_some()
+            || properties.correlation_id.is_some()
+            || properties.content_type.is_some()
+            || properties.content_encoding.is_some()
+            || properties.absolute_expiry_time.is_some()
+            || properties.creation_time.is_some()
+            || properties.group_id.is_some()
+            || properties.group_sequence.is_some()
+            || properties.reply_to_group_id.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(subject) = properties.subject {
+            list.push(AmqpValue::String(subject));
+        } else if properties.reply_to.is_some()
+            || properties.correlation_id.is_some()
+            || properties.content_type.is_some()
+            || properties.content_encoding.is_some()
+            || properties.absolute_expiry_time.is_some()
+            || properties.creation_time.is_some()
+            || properties.group_id.is_some()
+            || properties.group_sequence.is_some()
+            || properties.reply_to_group_id.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(reply_to) = properties.reply_to {
+            list.push(AmqpValue::String(reply_to));
+        } else if properties.correlation_id.is_some()
+            || properties.content_type.is_some()
+            || properties.content_encoding.is_some()
+            || properties.absolute_expiry_time.is_some()
+            || properties.creation_time.is_some()
+            || properties.group_id.is_some()
+            || properties.group_sequence.is_some()
+            || properties.reply_to_group_id.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(correlation_id) = properties.correlation_id {
+            match correlation_id {
+                AmqpMessageId::String(correlation_id) => {
+                    list.push(AmqpValue::String(correlation_id));
+                }
+                AmqpMessageId::Uuid(correlation_id) => {
+                    list.push(AmqpValue::Uuid(correlation_id));
+                }
+                AmqpMessageId::Binary(correlation_id) => {
+                    list.push(AmqpValue::Binary(correlation_id));
+                }
+                AmqpMessageId::Ulong(correlation_id) => {
+                    list.push(AmqpValue::ULong(correlation_id));
+                }
+            }
+        } else if properties.content_type.is_some()
+            || properties.content_encoding.is_some()
+            || properties.absolute_expiry_time.is_some()
+            || properties.creation_time.is_some()
+            || properties.group_id.is_some()
+            || properties.group_sequence.is_some()
+            || properties.reply_to_group_id.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(content_type) = properties.content_type {
+            list.push(AmqpValue::Symbol(content_type));
+        } else if properties.content_encoding.is_some()
+            || properties.absolute_expiry_time.is_some()
+            || properties.creation_time.is_some()
+            || properties.group_id.is_some()
+            || properties.group_sequence.is_some()
+            || properties.reply_to_group_id.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(content_encoding) = properties.content_encoding {
+            list.push(AmqpValue::Symbol(content_encoding));
+        } else if properties.absolute_expiry_time.is_some()
+            || properties.creation_time.is_some()
+            || properties.group_id.is_some()
+            || properties.group_sequence.is_some()
+            || properties.reply_to_group_id.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(absolute_expiry_time) = properties.absolute_expiry_time {
+            list.push(AmqpValue::TimeStamp(absolute_expiry_time));
+        } else if properties.creation_time.is_some()
+            || properties.group_id.is_some()
+            || properties.group_sequence.is_some()
+            || properties.reply_to_group_id.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(creation_time) = properties.creation_time {
+            list.push(AmqpValue::TimeStamp(creation_time));
+        } else if properties.group_id.is_some()
+            || properties.group_sequence.is_some()
+            || properties.reply_to_group_id.is_some()
+        {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(group_id) = properties.group_id {
+            list.push(AmqpValue::String(group_id));
+        } else if properties.group_sequence.is_some() || properties.reply_to_group_id.is_some() {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(group_sequence) = properties.group_sequence {
+            list.push(AmqpValue::UInt(group_sequence));
+        } else if properties.reply_to_group_id.is_some() {
+            list.push(AmqpValue::Null);
+        }
+        if let Some(reply_to_group_id) = properties.reply_to_group_id {
+            list.push(AmqpValue::String(reply_to_group_id));
+        }
+        AmqpList::from(list)
+    }
+}
+
+#[test]
+fn test_size_of_serialized_timestamp() {
+    let timestamp = fe2o3_amqp_types::primitives::Timestamp::from_milliseconds(12345);
+    let mut list = fe2o3_amqp_types::primitives::List::new();
+    list.push(fe2o3_amqp_types::primitives::Value::Timestamp(timestamp));
+
+    let described = serde_amqp::described::Described {
+        descriptor: serde_amqp::descriptor::Descriptor::Code(0x73),
+        value: fe2o3_amqp_types::primitives::Value::List(list),
+    };
+
+    let value = fe2o3_amqp_types::primitives::Value::Described(Box::new(described));
+
+    let vec_result = serde_amqp::ser::to_vec(&value);
+    assert!(vec_result.is_ok());
+
+    let size_result = serde_amqp::size_ser::serialized_size(&value);
+    assert!(size_result.is_ok());
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -429,6 +919,10 @@ impl AmqpMessage {
         self.footer.as_ref()
     }
 
+    pub fn set_header(&mut self, header: AmqpMessageHeader) {
+        self.header = Some(header);
+    }
+
     pub fn set_properties(&mut self, properties: AmqpMessageProperties) {
         self.properties = Some(properties);
     }
@@ -441,7 +935,50 @@ impl AmqpMessage {
         self.body = body.into();
     }
 
-    #[allow(unused_variables)]
+    pub fn set_application_properties(
+        &mut self,
+        application_properties: impl Into<AmqpApplicationProperties>,
+    ) {
+        self.application_properties = Some(application_properties.into());
+    }
+
+    pub fn set_delivery_annotations(&mut self, delivery_annotations: impl Into<AmqpAnnotations>) {
+        self.delivery_annotations = Some(delivery_annotations.into());
+    }
+
+    pub fn set_footer(&mut self, footer: impl Into<AmqpAnnotations>) {
+        self.footer = Some(footer.into());
+    }
+
+    pub fn add_message_body_binary(&mut self, body: &Vec<u8>) {
+        match &mut self.body {
+            AmqpMessageBody::Binary(bodies) => {
+                bodies.push(body.clone());
+            }
+            AmqpMessageBody::Empty => {
+                self.body = AmqpMessageBody::Binary(vec![body.clone()]);
+            }
+            _ => {
+                panic!("Cannot add binary body to non-binary body");
+            }
+        }
+    }
+
+    pub fn add_message_body_sequence(&mut self, body: AmqpList) {
+        match &mut self.body {
+            AmqpMessageBody::Sequence(bodies) => {
+                bodies.push(body);
+            }
+            AmqpMessageBody::Empty => {
+                self.body = AmqpMessageBody::Sequence(vec![body]);
+            }
+            _ => {
+                panic!("Cannot add sequence body to non-sequence body");
+            }
+        }
+    }
+
+    //    #[allow(unused_variables)]
     pub fn serialize(message: AmqpMessage) -> Result<Vec<u8>> {
         #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
         {
