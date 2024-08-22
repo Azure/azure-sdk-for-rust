@@ -2,9 +2,6 @@ parameters:
   - name: ServiceDirectory
     type: string
     default: not-specified
-  - name: Artifacts
-    type: object
-    default: []
   - name: BuildTargetingString
     type: string
     default: azure-*
@@ -17,12 +14,6 @@ parameters:
   - name: TestProxy
     type: boolean
     default: true
-  - name: TargetDocRepoOwner
-    type: string
-    default: MicrosoftDocs
-  - name: TargetDocRepoName
-    type: string
-    default: azure-docs-sdk-rust
   - name: GenerateApiReviewForManualOnly
     type: boolean
     default: false
@@ -42,7 +33,6 @@ extends:
           - template: /eng/pipelines/templates/jobs/ci.yml
             parameters:
               ServiceDirectory: ${{ parameters.ServiceDirectory }}
-              Artifacts: ${{ parameters.Artifacts }}
               ${{ if eq(parameters.ServiceDirectory, 'template') }}:
                 TestPipeline: true
               BuildTargetingString: ${{ parameters.BuildTargetingString }}

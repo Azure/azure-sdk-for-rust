@@ -71,7 +71,8 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
     }
 
     foreach ($manifest in $packageManifests.Values) {
-        $pkgProp = [PackageProps]::new($manifest.name, $manifest.version, $manifest.RelativePath, $manifest.ServiceDirectoryName)
+        $absolutePath = Split-Path $manifest.manifest_path -Parent -Resolve
+        $pkgProp = [PackageProps]::new($manifest.name, $manifest.version, $absolutePath, $manifest.ServiceDirectoryName)
         $pkgProp.IsNewSdk = $true
         $pkgProp.ArtifactName = $manifest.name
 

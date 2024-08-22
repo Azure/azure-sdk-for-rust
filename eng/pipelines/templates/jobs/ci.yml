@@ -2,27 +2,15 @@ parameters:
   - name: ServiceDirectory
     type: string
     default: ""
-  - name: Artifacts
-    type: object
-    default: []
-  - name: TestPipeline
-    type: boolean
-    default: false
-  - name: BeforePublishSteps
-    type: object
-    default: []
-  - name: TestMarkArgument
+  - name: BuildTargetingString
     type: string
-    default: ""
+    default: "azure-*"
   - name: BeforeTestSteps
     type: object
     default: []
   - name: AfterTestSteps
     type: object
     default: []
-  - name: BuildTargetingString
-    type: string
-    default: "azure-*"
   - name: TestTimeoutInMinutes
     type: number
     default: 60
@@ -30,6 +18,9 @@ parameters:
     type: boolean
     default: true
   - name: TestProxy
+    type: boolean
+    default: false
+  - name: TestPipeline
     type: boolean
     default: false
   - name: GenerateApiReviewForManualOnly
@@ -42,25 +33,25 @@ parameters:
           os: linux
           name: $(LINUXPOOL)
           image: $(LINUXVMIMAGE)
-        rustChannels: [stable, msrv, nightly]
+        RustToolchains: [stable, msrv, nightly]
       - pool:
           os: windows
           name: $(WINDOWSPOOL)
           image: $(WINDOWSVMIMAGE)
-        rustChannels: [stable, msrv, nightly]
+        RustToolchains: [stable, msrv, nightly]
       - pool:
           os: macOS
           name: $(MACPOOL)
           vmImage: $(MACVMIMAGE)
-        rustChannels: [stable, msrv, nightly]
-  - name: AnalyzeChannels
+        RustToolchains: [stable, msrv, nightly]
+  - name: AnalyzeToolchains
     type: object
     default: [stable]
 
 jobs:
   - ${{ each matrix in parameters.BuildMatrix }}:
-      - ${{ each rustChannel in matrix.rustChannels }}:
-          - job: Build_${{ matrix.pool.os }}_${{ rustChannel }}
+      - ${{ each RustToolchain in matrix.RustToolchains }}:
+          - job: Build_${{ matrix.pool.os }}_${{ RustToolchain }}
             timeoutInMinutes: 90
 
             pool: ${{ matrix.pool }}
@@ -70,22 +61,18 @@ jobs:
                 parameters:
                   Paths: [/*]
 
-              - template: /eng/pipelines/templates/steps/build-package-artifacts.yml
+              - template: /eng/pipelines/templates/steps/test-packages.yml
                 parameters:
-                  RustChannel: ${{ rustChannel }}
                   ServiceDirectory: ${{ parameters.ServiceDirectory }}
                   BuildTargetingString: ${{ parameters.BuildTargetingString }}
-                  Artifacts: ${{ parameters.Artifacts }}
-                  ArtifactSuffix: ${{ matrix.pool.os }}_${{ rustChannel }}
+                  RustToolchain: ${{ RustToolchain }}
+                  ArtifactSuffix: ${{ matrix.pool.os }}_${{ RustToolchain }}
+                  PublishArtifacts: ${{ and(eq(matrix.pool.os, 'linux'), eq(RustToolchain, 'stable')) }}
+                  UnitTests: true
+                  FunctionalTests: ${{ ne(variables['Build.Reason'], 'PullRequest') }}
 
-              - ${{ if eq(rustChannel, 'stable') }}:
-                  - template: /eng/pipelines/templates/steps/test-packages.yml
-                    parameters:
-                      RustChannel: ${{ rustChannel }}
-                      BuildTargetingString: ${{ parameters.BuildTargetingString }}
-
-  - ${{ each rustChannel in parameters.AnalyzeChannels }}:
-      - job: "Analyze_${{ rustChannel }}"
+  - ${{ each RustToolchain in parameters.AnalyzeToolchains }}:
+      - job: "Analyze_${{ RustToolchain }}"
         condition: and(succeededOrFailed(), ne(variables['Skip.Analyze'], 'true'))
         timeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
 
@@ -106,7 +93,7 @@ jobs:
 
           - template: /eng/pipelines/templates/steps/analyze.yml
             parameters:
-              RustChannel: ${{ rustChannel }}
+              RustToolchain: ${{ RustToolchain }}
 
           - template: /eng/common/pipelines/templates/steps/check-spelling.yml
             parameters:
