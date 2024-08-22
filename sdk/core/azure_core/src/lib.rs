@@ -57,10 +57,11 @@ pub use typespec_client_core::xml;
 pub use typespec_client_core::{
     base64, date,
     http::{
-        headers::*, new_http_client, Body, Context, HttpClient, Method, Pageable, Request,
-        RequestContent, StatusCode, Url,
+        headers::Header, new_http_client, Body, Context, Continuable, HttpClient, Method, Pageable,
+        Request, RequestContent, StatusCode, Url,
     },
-    json, sleep,
+    json,
+    sleep::{self, sleep},
     stream::{BytesStream, SeekableStream},
 };
 
