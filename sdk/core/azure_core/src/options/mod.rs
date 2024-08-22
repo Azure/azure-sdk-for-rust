@@ -4,4 +4,7 @@
 mod telemetry;
 pub use telemetry::*;
 
-pub use typespec_client_core::http::{builders, RetryOptions, TransportOptions};
+pub use typespec_client_core::http::{
+    builders, AsClientMethodOptions, AsClientOptions, ClientMethodOptions, ClientOptions,
+    ExponentialRetryOptions, FixedRetryOptions, RetryOptions, TransportOptions,
+};
