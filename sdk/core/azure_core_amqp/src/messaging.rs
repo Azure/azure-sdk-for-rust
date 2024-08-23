@@ -190,6 +190,14 @@ impl AmqpMessageHeader {
     }
 }
 
+/// Extract an AmqpMessageHeader from an AmqpList.
+///
+/// This function will attempt to extract an AmqpMessageHeader from an AmqpList.
+///
+/// It is intended to be used when deserializing an AmqpMessageHeader from an AMQP composite type.
+/// See also [Amqp Header](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-header) for more information
+///
+///
 impl From<AmqpList> for AmqpMessageHeader {
     fn from(list: AmqpList) -> Self {
         let mut builder = AmqpMessageHeader::builder();
@@ -355,6 +363,14 @@ impl AmqpMessageProperties {
     }
 }
 
+/// Extract an AmqpMessageProperties from an AmqpList.
+///
+/// This function will attempt to extract an AmqpMessageProperties from an AmqpList.
+///
+/// It is intended to be used when deserializing an AmqpMessageProperties from an AMQP composite type.
+/// See also [Amqp Header](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-properties) for more information
+///
+///
 impl From<AmqpList> for AmqpMessageProperties {
     fn from(list: AmqpList) -> Self {
         let mut builder = AmqpMessageProperties::builder();
