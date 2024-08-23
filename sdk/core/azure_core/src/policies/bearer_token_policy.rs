@@ -7,7 +7,6 @@ use crate::{
 use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct BearerTokenCredentialPolicy {
@@ -17,7 +16,7 @@ pub struct BearerTokenCredentialPolicy {
 }
 
 /// Default timeout in seconds before refreshing a new token.
-const DEFAULT_REFRESH_TIME: Duration = Duration::from_secs(10);
+const DEFAULT_REFRESH_TIME: Duration = Duration::from_secs(120);
 
 impl BearerTokenCredentialPolicy {
     pub fn new<A, B>(credential: Arc<dyn TokenCredential>, scopes: A) -> Self
