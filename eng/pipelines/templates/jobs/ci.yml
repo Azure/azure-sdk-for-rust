@@ -99,14 +99,15 @@ jobs:
             parameters:
               ContinueOnError: false
 
-          - template: /eng/common/pipelines/templates/steps/verify-links.yml
-            parameters:
-              ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-                Directory: ""
-                Urls: (eng/common/scripts/get-markdown-files-from-changed-files.ps1)
-              ${{ elseif eq(parameters.ServiceDirectory, 'auto') }}:
-                Directory: ""
-              ${{ else }}:
-                Directory: sdk/${{ parameters.ServiceDirectory }}
-              CheckLinkGuidance: $true
-              Condition: succeededOrFailed()
+          # Disabled until we fix crates.io link checking
+          # - template: /eng/common/pipelines/templates/steps/verify-links.yml
+          #   parameters:
+          #     ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+          #       Directory: ""
+          #       Urls: (eng/common/scripts/get-markdown-files-from-changed-files.ps1)
+          #     ${{ elseif eq(parameters.ServiceDirectory, 'auto') }}:
+          #       Directory: ""
+          #     ${{ else }}:
+          #       Directory: sdk/${{ parameters.ServiceDirectory }}
+          #     CheckLinkGuidance: $true
+          #     Condition: succeededOrFailed()
