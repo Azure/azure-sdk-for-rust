@@ -92,6 +92,7 @@ steps:
 
   - task: Powershell@2
     displayName: "Test Packages"
+    condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
     timeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
     env:
       CIBW_BUILD_VERBOSITY: 3
@@ -110,3 +111,4 @@ steps:
         parameters:
           ArtifactPath: "$(Build.ArtifactStagingDirectory)"
           ArtifactName: "packages_${{ parameters.ArtifactSuffix }}"
+          CustomCondition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
