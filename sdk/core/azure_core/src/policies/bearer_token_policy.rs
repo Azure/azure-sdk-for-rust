@@ -6,6 +6,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
@@ -13,11 +14,10 @@ pub struct BearerTokenCredentialPolicy {
     credential: Arc<dyn TokenCredential>,
     scopes: Vec<String>,
     access_token: Arc<Mutex<Option<AccessToken>>>,
-    last_refresh_time: Arc<Mutex<Option<i64>>>,
 }
 
 /// Default timeout in seconds before refreshing a new token.
-const DEFAULT_REFRESH_TIME: i64 = 120;
+const DEFAULT_REFRESH_TIME: Duration = Duration::from_secs(10);
 
 impl BearerTokenCredentialPolicy {
     pub fn new<A, B>(credential: Arc<dyn TokenCredential>, scopes: A) -> Self
@@ -29,7 +29,6 @@ impl BearerTokenCredentialPolicy {
             credential,
             scopes: scopes.into_iter().map(|s| s.into()).collect(),
             access_token: Arc::new(Mutex::new(None)),
-            last_refresh_time: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -40,19 +39,15 @@ impl BearerTokenCredentialPolicy {
             .collect::<Vec<&str>>()
     }
 
-    fn update_token(&self, new_access_token: &AccessToken) {
+    fn refresh_token(&self, new_access_token: &AccessToken) {
         let mut access_token = self.access_token.lock().unwrap();
         *access_token = Some(new_access_token.clone());
-        let mut last_refresh_time = self.last_refresh_time.lock().unwrap();
-        *last_refresh_time = Some(OffsetDateTime::now_utc().unix_timestamp());
     }
 
     fn is_token_expired(&self) -> bool {
-        let last_refresh_time = self.last_refresh_time.lock().unwrap();
-        match *last_refresh_time {
-            Some(refresh_time) => {
-                OffsetDateTime::now_utc().unix_timestamp() - refresh_time > DEFAULT_REFRESH_TIME
-            }
+        let access_token = self.access_token.lock().unwrap().clone();
+        match access_token {
+            Some(access_token) => access_token.is_expired(Some(DEFAULT_REFRESH_TIME)),
             None => true,
         }
     }
@@ -61,11 +56,8 @@ impl BearerTokenCredentialPolicy {
         let access_token = self.access_token.lock().unwrap().clone();
         match access_token {
             Some(access_token) => Ok(String::from(access_token.token.secret())),
-            None => Err("access_token was unexpectedly None."),
+            None => Err("access_token is None."),
         }
-        // let my_access_token = (*self.access_token.lock().unwrap())
-        //     .expect("AccessToken was unexpectedly None when returning.");
-        // String::from(my_access_token.token.secret())
     }
 }
 
@@ -80,11 +72,8 @@ impl Policy for BearerTokenCredentialPolicy {
     ) -> PolicyResult {
         if self.is_token_expired() {
             let access_token = self.credential.get_token(&self.scopes()).await?;
-            self.update_token(&access_token);
-            // let token = access_token.token.secret();
-            // self.update_token(token)
+            self.refresh_token(&access_token);
         }
-        // let token = String::from(self.access_token());
         request.insert_header(
             AUTHORIZATION,
             format!(
