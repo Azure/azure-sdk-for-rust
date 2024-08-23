@@ -11,7 +11,7 @@ parameters:
     default: auto
 
 extends:
-  template: ../eng/pipelines/templates/stages/archetype-sdk-client.yml
+  template: ./templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: ${{ parameters.Service }}
     BuildTargetingString: "*"
