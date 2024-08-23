@@ -5,14 +5,14 @@ use crate::{
     Context, Request,
 };
 use async_trait::async_trait;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct BearerTokenCredentialPolicy {
     credential: Arc<dyn TokenCredential>,
     scopes: Vec<String>,
-    access_token: Arc<Mutex<Option<AccessToken>>>,
+    access_token: Arc<RwLock<Option<AccessToken>>>,
 }
 
 /// Default timeout in seconds before refreshing a new token.
@@ -27,7 +27,7 @@ impl BearerTokenCredentialPolicy {
         Self {
             credential,
             scopes: scopes.into_iter().map(|s| s.into()).collect(),
-            access_token: Arc::new(Mutex::new(None)),
+            access_token: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -39,12 +39,12 @@ impl BearerTokenCredentialPolicy {
     }
 
     fn refresh_token(&self, new_access_token: &AccessToken) {
-        let mut access_token = self.access_token.lock().unwrap();
+        let mut access_token = self.access_token.write().unwrap();
         *access_token = Some(new_access_token.clone());
     }
 
     fn is_token_expired(&self) -> bool {
-        let access_token = self.access_token.lock().unwrap().clone();
+        let access_token = self.access_token.read().unwrap().clone();
         match access_token {
             Some(access_token) => access_token.is_expired(Some(DEFAULT_REFRESH_TIME)),
             None => true,
@@ -52,7 +52,7 @@ impl BearerTokenCredentialPolicy {
     }
 
     fn access_token(&self) -> Result<String, &'static str> {
-        let access_token = self.access_token.lock().unwrap().clone();
+        let access_token = self.access_token.read().unwrap().clone();
         match access_token {
             Some(access_token) => Ok(String::from(access_token.token.secret())),
             None => Err("access_token is None."),
