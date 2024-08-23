@@ -521,77 +521,27 @@ impl From<AmqpMessageProperties> for AmqpList {
                     list.push(AmqpValue::ULong(message_id));
                 }
             }
-        } else if properties.user_id.is_some()
-            || properties.to.is_some()
-            || properties.subject.is_some()
-            || properties.reply_to.is_some()
-            || properties.correlation_id.is_some()
-            || properties.content_type.is_some()
-            || properties.content_encoding.is_some()
-            || properties.absolute_expiry_time.is_some()
-            || properties.creation_time.is_some()
-            || properties.group_id.is_some()
-            || properties.group_sequence.is_some()
-            || properties.reply_to_group_id.is_some()
-        {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(user_id) = properties.user_id {
             list.push(AmqpValue::Binary(user_id));
-        } else if properties.to.is_some()
-            || properties.subject.is_some()
-            || properties.reply_to.is_some()
-            || properties.correlation_id.is_some()
-            || properties.content_type.is_some()
-            || properties.content_encoding.is_some()
-            || properties.absolute_expiry_time.is_some()
-            || properties.creation_time.is_some()
-            || properties.group_id.is_some()
-            || properties.group_sequence.is_some()
-            || properties.reply_to_group_id.is_some()
-        {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(to) = properties.to {
             list.push(AmqpValue::String(to));
-        } else if properties.subject.is_some()
-            || properties.reply_to.is_some()
-            || properties.correlation_id.is_some()
-            || properties.content_type.is_some()
-            || properties.content_encoding.is_some()
-            || properties.absolute_expiry_time.is_some()
-            || properties.creation_time.is_some()
-            || properties.group_id.is_some()
-            || properties.group_sequence.is_some()
-            || properties.reply_to_group_id.is_some()
-        {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(subject) = properties.subject {
             list.push(AmqpValue::String(subject));
-        } else if properties.reply_to.is_some()
-            || properties.correlation_id.is_some()
-            || properties.content_type.is_some()
-            || properties.content_encoding.is_some()
-            || properties.absolute_expiry_time.is_some()
-            || properties.creation_time.is_some()
-            || properties.group_id.is_some()
-            || properties.group_sequence.is_some()
-            || properties.reply_to_group_id.is_some()
-        {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(reply_to) = properties.reply_to {
             list.push(AmqpValue::String(reply_to));
-        } else if properties.correlation_id.is_some()
-            || properties.content_type.is_some()
-            || properties.content_encoding.is_some()
-            || properties.absolute_expiry_time.is_some()
-            || properties.creation_time.is_some()
-            || properties.group_id.is_some()
-            || properties.group_sequence.is_some()
-            || properties.reply_to_group_id.is_some()
-        {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(correlation_id) = properties.correlation_id {
@@ -609,67 +559,52 @@ impl From<AmqpMessageProperties> for AmqpList {
                     list.push(AmqpValue::ULong(correlation_id));
                 }
             }
-        } else if properties.content_type.is_some()
-            || properties.content_encoding.is_some()
-            || properties.absolute_expiry_time.is_some()
-            || properties.creation_time.is_some()
-            || properties.group_id.is_some()
-            || properties.group_sequence.is_some()
-            || properties.reply_to_group_id.is_some()
-        {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(content_type) = properties.content_type {
             list.push(AmqpValue::Symbol(content_type));
-        } else if properties.content_encoding.is_some()
-            || properties.absolute_expiry_time.is_some()
-            || properties.creation_time.is_some()
-            || properties.group_id.is_some()
-            || properties.group_sequence.is_some()
-            || properties.reply_to_group_id.is_some()
-        {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(content_encoding) = properties.content_encoding {
             list.push(AmqpValue::Symbol(content_encoding));
-        } else if properties.absolute_expiry_time.is_some()
-            || properties.creation_time.is_some()
-            || properties.group_id.is_some()
-            || properties.group_sequence.is_some()
-            || properties.reply_to_group_id.is_some()
-        {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(absolute_expiry_time) = properties.absolute_expiry_time {
             list.push(AmqpValue::TimeStamp(absolute_expiry_time));
-        } else if properties.creation_time.is_some()
-            || properties.group_id.is_some()
-            || properties.group_sequence.is_some()
-            || properties.reply_to_group_id.is_some()
-        {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(creation_time) = properties.creation_time {
             list.push(AmqpValue::TimeStamp(creation_time));
-        } else if properties.group_id.is_some()
-            || properties.group_sequence.is_some()
-            || properties.reply_to_group_id.is_some()
-        {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(group_id) = properties.group_id {
             list.push(AmqpValue::String(group_id));
-        } else if properties.group_sequence.is_some() || properties.reply_to_group_id.is_some() {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(group_sequence) = properties.group_sequence {
             list.push(AmqpValue::UInt(group_sequence));
-        } else if properties.reply_to_group_id.is_some() {
+        } else {
             list.push(AmqpValue::Null);
         }
         if let Some(reply_to_group_id) = properties.reply_to_group_id {
             list.push(AmqpValue::String(reply_to_group_id));
         }
+
+        let mut trailing_nulls = 0;
+        for val in list.iter().rev() {
+            if *val != AmqpValue::Null {
+                break;
+            }
+            trailing_nulls += 1;
+        }
+        list.truncate(list.len() - trailing_nulls);
+
         AmqpList::from(list)
     }
 }
