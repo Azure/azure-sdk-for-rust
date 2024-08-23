@@ -43,7 +43,7 @@ impl TransportOptions {
             I::Custom(s) => s.send(ctx, request, &[]).await,
         };
 
-        raw_response.map(|r| r.set_default_deserialize_type())
+        raw_response.map(|r| r.with_default_deserialize_type())
     }
 }
 

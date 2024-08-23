@@ -139,7 +139,7 @@ impl Response<()> {
     /// Changes the type of the response body.
     ///
     /// Used to set the "type" of an untyped `Response<()>`, transforming it into a `Response<T>`.
-    pub(crate) fn set_default_deserialize_type<T>(self) -> Response<T> {
+    pub(crate) fn with_default_deserialize_type<T>(self) -> Response<T> {
         Response {
             status: self.status,
             headers: self.headers,
