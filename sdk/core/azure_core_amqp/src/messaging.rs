@@ -2,8 +2,6 @@
 // Licensed under the MIT license.
 //cspell: words amqp SMALLUINT SMALLULONG
 
-use crate::value::AmqpComposite;
-
 use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 use azure_core::error::Result;
 
@@ -192,12 +190,6 @@ impl AmqpMessageHeader {
     }
 }
 
-impl From<&Box<AmqpComposite>> for AmqpMessageHeader {
-    fn from(composite: &Box<AmqpComposite>) -> Self {
-        composite.value().clone().into()
-    }
-}
-
 impl From<AmqpList> for AmqpMessageHeader {
     fn from(list: AmqpList) -> Self {
         let mut builder = AmqpMessageHeader::builder();
@@ -363,12 +355,6 @@ impl AmqpMessageProperties {
     }
 }
 
-impl From<&Box<AmqpComposite>> for AmqpMessageProperties {
-    fn from(composite: &Box<AmqpComposite>) -> Self {
-        composite.value().clone().into()
-    }
-}
-
 impl From<AmqpList> for AmqpMessageProperties {
     fn from(list: AmqpList) -> Self {
         let mut builder = AmqpMessageProperties::builder();
@@ -505,7 +491,6 @@ impl From<AmqpMessageProperties> for AmqpList {
         let mut list = Vec::new();
 
         // Serialize the current value, if it exists. Otherwise serialize a null
-        // value if there are other values to serialize.
         if let Some(message_id) = properties.message_id {
             match message_id {
                 AmqpMessageId::String(message_id) => {
@@ -596,6 +581,11 @@ impl From<AmqpMessageProperties> for AmqpList {
             list.push(AmqpValue::String(reply_to_group_id));
         }
 
+        // We will potentially have a set of trailing Null values in the list at this point,
+        // we don't ever want the trailing null values to appear in the list so we remove them.
+
+        // This behavior is described by the [AMQP spec, section 1.4](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-types-v1.0-os.html#section-composite-type-representation)
+        // "When the trailing elements of the list representation are null, they MAY be omitted".
         let mut trailing_nulls = 0;
         for val in list.iter().rev() {
             if *val != AmqpValue::Null {
