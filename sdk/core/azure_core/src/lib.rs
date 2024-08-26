@@ -42,9 +42,10 @@ pub use models::*;
 pub use options::*;
 pub use pipeline::*;
 pub use policies::*;
-pub use typespec_client_core::http::{
-    CollectedResponse, PinnedStream, RawResponse, Response, ResponseBody,
-};
+pub use typespec_client_core::http::{Model, PinnedStream, Response, ResponseBody};
+pub use typespec_client_core::json_model;
+#[cfg(feature = "xml")]
+pub use typespec_client_core::xml_model;
 
 // Re-export typespec types that are not specific to Azure.
 pub use typespec::{Error, Result};

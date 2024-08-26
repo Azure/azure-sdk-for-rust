@@ -34,6 +34,8 @@ impl<'de> Deserialize<'de> for LoginResponse {
     }
 }
 
+azure_core::json_model!(LoginResponse);
+
 impl LoginResponse {
     pub fn access_token(&self) -> &Secret {
         &self.access_token

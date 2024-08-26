@@ -86,7 +86,7 @@ impl Pipeline {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
-            .map(|resp| resp.into())
+            .map(|resp| resp.with_default_deserialize_type())
     }
 }
 
@@ -94,7 +94,8 @@ impl Pipeline {
 mod tests {
     use super::*;
     use crate::{
-        http::{headers::Headers, Method, PolicyResult, RawResponse, StatusCode, TransportOptions},
+        http::{headers::Headers, Method, PolicyResult, StatusCode, TransportOptions},
+        json_model,
         stream::BytesStream,
     };
     use bytes::Bytes;
@@ -116,7 +117,7 @@ mod tests {
             ) -> PolicyResult {
                 let buffer = Bytes::from_static(br#"{"foo":1,"bar":"baz"}"#);
                 let stream: BytesStream = buffer.into();
-                let response = RawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
+                let response = Response::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
                 Ok(std::future::ready(response).await)
             }
         }
@@ -126,6 +127,7 @@ mod tests {
             foo: i32,
             bar: String,
         }
+        json_model!(Model);
 
         let options =
             ClientOptions::new(TransportOptions::new_custom_policy(Arc::new(Responder {})));
@@ -136,7 +138,7 @@ mod tests {
             .send(&Context::default(), &mut request)
             .await
             .unwrap()
-            .json()
+            .deserialize_body()
             .await
             .unwrap();
 
