@@ -1,10 +1,7 @@
 parameters:
   - name: ServiceDirectory
     type: string
-    default: ""
-  - name: BuildTargetingString
-    type: string
-    default: "*"
+    default: auto
   - name: BeforeTestSteps
     type: object
     default: []
@@ -74,10 +71,9 @@ jobs:
               - template: /eng/pipelines/templates/steps/test-packages.yml
                 parameters:
                   ServiceDirectory: ${{ parameters.ServiceDirectory }}
-                  BuildTargetingString: ${{ parameters.BuildTargetingString }}
                   Toolchain: ${{ toolchain.name }}
                   ArtifactSuffix: ${{ matrix.pool.os }}_${{ toolchain.name }}
-                  PublishArtifacts: ${{ toolchain.publish }}
+                  PublishArtifacts: ${{ eq(toolchain.publish, 'true') }}
                   UnitTests: true
                   FunctionalTests: ${{ ne(variables['Build.Reason'], 'PullRequest') }}
 
@@ -95,11 +91,6 @@ jobs:
           - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
             parameters:
               Paths: [/*]
-
-          - template: /eng/pipelines/templates/steps/resolve-package-targeting.yml
-            parameters:
-              BuildTargetingString: ${{ parameters.BuildTargetingString }}
-              PackagePropertiesFolder: $(Build.ArtifactStagingDirectory)/PackageInfo
 
           - template: /eng/pipelines/templates/steps/analyze.yml
             parameters:

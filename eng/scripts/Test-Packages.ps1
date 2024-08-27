@@ -1,10 +1,10 @@
 #Requires -Version 7.0
 
 param(
-    [string]$TargetingString,
     [string]$Toolchain = 'stable',
     [bool]$UnitTests = $true,
-    [bool]$FunctionalTests = $true
+    [bool]$FunctionalTests = $true,
+    [string]$PackageInfoPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,20 +14,22 @@ Set-StrictMode -Version 2.0
 . (Join-Path $EngCommonScriptsDir "Helpers" CommandInvocation-Helpers.ps1)
 
 Write-Host "Testing packages with
-  TargetingString: '$TargetingString'
-  Toolchain: '$Toolchain'"
+    Toolchain: '$Toolchain'
+    UnitTests: '$UnitTests'
+    FunctionalTests: '$FunctionalTests'
+    PackageInfoPath: '$PackageInfoPath'"
 
-$allPackages = Get-AllPackageInfoFromRepo
+if ($PackageInfoPath) {
+    if (!(Test-Path $PackageInfoPath)) {
+        Write-Error "Package info path '$PackageInfoPath' does not exist."
+        exit 1
+    }
 
-if (!$TargetingString) {
-    $pacakgesToTest = $allPackages
+    $pacakgesToTest = Get-ChildItem $PackageInfoPath -Filter "*.json" -Recurse
+    | ConvertFrom-Json
 }
 else {
-    $targetPattern = [Regex]::Escape($TargetingString.Trim())
-    $targetPattern = $targetPattern.Replace('\*', '.*').Replace(",", "|")
-    $targetPattern = "^($targetPattern)$"
-
-    $pacakgesToTest = $allPackages | Where-Object { $_.Name -match $targetPattern }
+    $pacakgesToTest = Get-AllPackagesInRepo
 }
 
 Write-Host "Testing packages:"
@@ -35,8 +37,6 @@ foreach ($package in $pacakgesToTest) {
     Write-Host "  '$($package.Name)'"
 }
 
-#TODO: filter packages to those that match the targeting string
-# the targeting string is built by comparing the PR diff to the list of packages
 Write-Host "Setting RUSTFLAGS to '-Dwarnings'"
 $env:RUSTFLAGS = "-Dwarnings"
 

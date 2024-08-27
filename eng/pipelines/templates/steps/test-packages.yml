@@ -1,10 +1,7 @@
 parameters:
   - name: ServiceDirectory
     type: string
-    default: ""
-  - name: BuildTargetingString
-    type: string
-    default: "*"
+    default: auto
   - name: Toolchain
     type: string
     default: stable
@@ -85,11 +82,6 @@ steps:
             -OutDirectory $(Build.ArtifactStagingDirectory)/PackageInfo
           pwsh: true
 
-  - template: /eng/pipelines/templates/steps/resolve-package-targeting.yml
-    parameters:
-      BuildTargetingString: ${{ parameters.BuildTargetingString }}
-      PackagePropertiesFolder: $(Build.ArtifactStagingDirectory)/PackageInfo
-
   - task: Powershell@2
     displayName: "Test Packages"
     condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
@@ -100,8 +92,7 @@ steps:
       pwsh: true
       filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
       arguments: >
-        -ServiceDirectory '${{ parameters.ServiceDirectory }}'
-        -TargetingString '$(TargetingString)'
+        -PackageInfoPath '(Build.ArtifactStagingDirectory)/PackageInfo'
         -Toolchain '$(Toolchain)'
         -UnitTests $${{ parameters.UnitTests }}
         -FunctionalTests $${{ parameters.FunctionalTests }}

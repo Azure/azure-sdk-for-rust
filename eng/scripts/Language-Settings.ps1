@@ -10,7 +10,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
     $allPackageProps = @()
     Push-Location $RepoRoot
     try {
-        $sdkPath = Join-Path $RepoRoot 'sdk' -Resolve
+        $searchPath = Join-Path $RepoRoot 'sdk' -Resolve
 
         if ($ServiceDirectory -and $ServiceDirectory -ne 'auto') {
             $searchPath = Join-Path 'sdk' $ServiceDirectory
@@ -19,7 +19,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
         $packages = cargo metadata --format-version 1
         | ConvertFrom-Json -AsHashtable
         | Select-Object -ExpandProperty packages
-        | Where-Object { $_.manifest_path.StartsWith($sdkPath) }
+        | Where-Object { $_.manifest_path.StartsWith($searchPath) }
 
         $packageManifests = @{}
         foreach ($package in $packages) {
