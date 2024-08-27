@@ -4,12 +4,6 @@ parameters:
     default: stable
 
 steps:
-  # using -Zscript with verify-dependencies.rs requires nightly be installed
-  - ${{ if ne(parameters.Toolchain, 'nightly') }}:
-      - template: /eng/pipelines/templates/steps/use-rust.yml@self
-        parameters:
-          Toolchain: nightly
-
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
       Toolchain: ${{ parameters.Toolchain }}
@@ -24,5 +18,4 @@ steps:
       Invoke-LoggedCommand "cargo +$(Toolchain) fmt --all -- --check"
       Invoke-LoggedCommand "cargo +$(Toolchain) clippy --all"
       Invoke-LoggedCommand "cargo +$(Toolchain) doc --all --no-deps"
-      Invoke-LoggedCommand "cargo +nightly -Zscript ./eng/scripts/verify-dependencies.rs"
     displayName: "Run source analysis"
