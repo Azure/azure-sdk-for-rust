@@ -15,9 +15,7 @@ use azure_core::{
     CollectedResponse, HttpClient, Method, Request, StatusCode, Url,
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap, ops::Add, str::FromStr, sync::Arc, time::Duration
-};
+use std::{collections::HashMap, ops::Add, str::FromStr, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 use url::form_urlencoded::{self, Serializer};
 
@@ -332,9 +330,13 @@ impl headers::AsHeaders for SendMessageOptions {
                 serde_json::to_string(broker_properties).unwrap().into(),
             ));
         }
-        
+
         if let Some(custom_properties) = &self.custom_properties {
-            headers.extend(custom_properties.iter().map(|(k, v)| (k.to_owned().into(), v.into())));
+            headers.extend(
+                custom_properties
+                    .iter()
+                    .map(|(k, v)| (k.to_owned().into(), v.into())),
+            );
         }
 
         headers.into_iter()

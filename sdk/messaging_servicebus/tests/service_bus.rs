@@ -57,11 +57,13 @@ async fn send_message_with_custom_property_test() {
         .send_message(
             "hello, world!",
             Some(SendMessageOptions {
-                custom_properties: Some(std::collections::HashMap::from([(
-                    "custom_property_key".into(),
-                    "custom_property_value".into(),
-                )])
-                .into()),
+                custom_properties: Some(
+                    std::collections::HashMap::from([(
+                        "custom_property_key".into(),
+                        "custom_property_value".into(),
+                    )])
+                    .into(),
+                ),
                 ..Default::default()
             }),
         )
