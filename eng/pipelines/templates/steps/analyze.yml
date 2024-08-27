@@ -1,12 +1,12 @@
 parameters:
-  - name: RustToolchain
+  - name: Toolchain
     type: string
     default: stable
 
 steps:
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
-      Toolchain: ${{ parameters.RustToolchain }}
+      Toolchain: ${{ parameters.Toolchain }}
 
   - pwsh: |
       . ./eng/common/scripts/Helpers/CommandInvocation-Helpers.ps1
@@ -14,9 +14,9 @@ steps:
       $env:RUSTDOCFLAGS = "-D warnings"
       $env:RUSTFLAGS = "-Dwarnings"
 
-      Invoke-LoggedCommand "cargo +$(RustToolchain) check -p azure_core --no-default-features"
-      Invoke-LoggedCommand "cargo +$(RustToolchain) install cargo-readme"
-      Invoke-LoggedCommand "cargo +$(RustToolchain) fmt --all -- --check"
-      Invoke-LoggedCommand "cargo +$(RustToolchain) clippy --all"
-      Invoke-LoggedCommand "cargo +$(RustToolchain) doc --all --no-deps"
+      Invoke-LoggedCommand "cargo +$(Toolchain) check -p azure_core --no-default-features"
+      Invoke-LoggedCommand "cargo +$(Toolchain) fmt --all -- --check"
+      Invoke-LoggedCommand "cargo +$(Toolchain) clippy --all"
+      Invoke-LoggedCommand "cargo +$(Toolchain) doc --all --no-deps"
+      Invoke-LoggedCommand "cargo +nightly -Zscript ./eng/scripts/verify-dependencies.rs"
     displayName: "Run source analysis"

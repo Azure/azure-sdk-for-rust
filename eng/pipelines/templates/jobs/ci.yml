@@ -4,7 +4,7 @@ parameters:
     default: ""
   - name: BuildTargetingString
     type: string
-    default: "azure-*"
+    default: "*"
   - name: BeforeTestSteps
     type: object
     default: []
@@ -33,25 +33,35 @@ parameters:
           os: linux
           name: $(LINUXPOOL)
           image: $(LINUXVMIMAGE)
-        RustToolchains: [stable, msrv, nightly]
+        Toolchains:
+          - name: stable
+            publish: true
+          - name: msrv
+          - name: nightly
       - pool:
           os: windows
           name: $(WINDOWSPOOL)
           image: $(WINDOWSVMIMAGE)
-        RustToolchains: [stable, msrv, nightly]
+        Toolchains:
+          - name: stable
+          - name: msrv
+          - name: nightly
       - pool:
           os: macOS
           name: $(MACPOOL)
           vmImage: $(MACVMIMAGE)
-        RustToolchains: [stable, msrv, nightly]
+        Toolchains:
+          - name: stable
+          - name: msrv
+          - name: nightly
   - name: AnalyzeToolchains
     type: object
     default: [stable]
 
 jobs:
   - ${{ each matrix in parameters.BuildMatrix }}:
-      - ${{ each RustToolchain in matrix.RustToolchains }}:
-          - job: Build_${{ matrix.pool.os }}_${{ RustToolchain }}
+      - ${{ each toolchain in matrix.Toolchains }}:
+          - job: Build_${{ matrix.pool.os }}_${{ toolchain.name }}
             timeoutInMinutes: 90
 
             pool: ${{ matrix.pool }}
@@ -65,14 +75,14 @@ jobs:
                 parameters:
                   ServiceDirectory: ${{ parameters.ServiceDirectory }}
                   BuildTargetingString: ${{ parameters.BuildTargetingString }}
-                  RustToolchain: ${{ RustToolchain }}
-                  ArtifactSuffix: ${{ matrix.pool.os }}_${{ RustToolchain }}
-                  PublishArtifacts: ${{ and(eq(matrix.pool.os, 'linux'), eq(RustToolchain, 'stable')) }}
+                  Toolchain: ${{ toolchain.name }}
+                  ArtifactSuffix: ${{ matrix.pool.os }}_${{ toolchain.name }}
+                  PublishArtifacts: ${{ toolchain.publish }}
                   UnitTests: true
                   FunctionalTests: ${{ ne(variables['Build.Reason'], 'PullRequest') }}
 
-  - ${{ each RustToolchain in parameters.AnalyzeToolchains }}:
-      - job: "Analyze_${{ RustToolchain }}"
+  - ${{ each toolchain in parameters.AnalyzeToolchains }}:
+      - job: "Analyze_${{ toolchain }}"
         condition: and(succeededOrFailed(), ne(variables['Skip.Analyze'], 'true'))
         timeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
 
@@ -93,7 +103,7 @@ jobs:
 
           - template: /eng/pipelines/templates/steps/analyze.yml
             parameters:
-              RustToolchain: ${{ RustToolchain }}
+              Toolchain: ${{ toolchain }}
 
           - template: /eng/common/pipelines/templates/steps/check-spelling.yml
             parameters:

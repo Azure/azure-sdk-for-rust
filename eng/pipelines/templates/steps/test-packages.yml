@@ -5,7 +5,7 @@ parameters:
   - name: BuildTargetingString
     type: string
     default: "*"
-  - name: RustToolchain
+  - name: Toolchain
     type: string
     default: stable
   - name: ArtifactSuffix
@@ -27,7 +27,7 @@ parameters:
 steps:
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
-      Toolchain: ${{ parameters.RustToolchain }}
+      Toolchain: ${{ parameters.Toolchain }}
 
   - template: /eng/common/pipelines/templates/steps/set-default-branch.yml@self
 
@@ -102,7 +102,7 @@ steps:
       arguments: >
         -ServiceDirectory '${{ parameters.ServiceDirectory }}'
         -TargetingString '$(TargetingString)'
-        -Toolchain '$(RustToolchain)'
+        -Toolchain '$(Toolchain)'
         -UnitTests $${{ parameters.UnitTests }}
         -FunctionalTests $${{ parameters.FunctionalTests }}
 
