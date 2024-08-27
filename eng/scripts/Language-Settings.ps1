@@ -6,7 +6,8 @@ $MetadataUri = "https://raw.githubusercontent.com/Azure/azure-sdk/main/_data/rel
 $GithubUri = "https://github.com/Azure/azure-sdk-for-rust"
 $PackageRepositoryUri = "https://crates.io/crates"
 
-function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
+function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) 
+{
     $allPackageProps = @()
     Push-Location $RepoRoot
     try {
