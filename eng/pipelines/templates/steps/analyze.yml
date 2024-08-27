@@ -8,6 +8,12 @@ steps:
     parameters:
       Toolchain: ${{ parameters.Toolchain }}
 
+  # using -Zscript with verify-dependencies.rs requires nightly be installed
+  - ${{ if ne(parameters.Toolchain, 'nightly') }}:
+      - template: /eng/pipelines/templates/steps/use-rust.yml@self
+        parameters:
+          Toolchain: ${{ parameters.Toolchain }}
+
   - pwsh: |
       . ./eng/common/scripts/Helpers/CommandInvocation-Helpers.ps1
 
