@@ -2,7 +2,7 @@ use azure_core::ClientOptions;
 
 #[derive(Clone, Debug, Default)]
 pub struct CosmosClientOptions {
-    pub(crate) client_options: ClientOptions
+    pub(crate) client_options: ClientOptions,
 }
 
 impl CosmosClientOptions {
@@ -12,19 +12,12 @@ impl CosmosClientOptions {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct ReadDatabaseOptions {
-    pub(crate) if_match: Option<azure_core::Etag>,
-    pub(crate) if_none_match: Option<azure_core::Etag>,
-}
+pub struct ReadDatabaseOptions {}
 
-impl ReadDatabaseOptions {
-    pub fn builder() -> builders::ReadDatabaseOptionsBuilder {
-        builders::ReadDatabaseOptionsBuilder::default()
-    }
-}
+impl ReadDatabaseOptions {}
 
 pub mod builders {
-    use crate::{ReadDatabaseOptions, CosmosClientOptions};
+    use crate::{CosmosClientOptions, ReadDatabaseOptions};
 
     #[derive(Default)]
     pub struct CosmosClientOptionsBuilder(CosmosClientOptions);
@@ -41,16 +34,6 @@ pub mod builders {
     impl ReadDatabaseOptionsBuilder {
         pub fn build(&self) -> ReadDatabaseOptions {
             self.0.clone()
-        }
-
-        pub fn if_match(&mut self, if_match: azure_core::Etag) -> &mut Self {
-            self.0.if_match = Some(if_match);
-            self
-        }
-
-        pub fn if_none_match(&mut self, if_none_match: azure_core::Etag) -> &mut Self {
-            self.0.if_none_match = Some(if_none_match);
-            self
         }
     }
 }

@@ -1,5 +1,3 @@
-// REVIEW: Don't merge this file. It's just for adhoc testing purposes.
-
 use azure_data_cosmos::{CosmosClient, CosmosClientMethods, DatabaseClientMethods};
 use clap::Parser;
 

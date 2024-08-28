@@ -9,8 +9,8 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
-documentation = "https://docs.rs/azure_identity"
-keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+documentation = "https://docs.rs/azure_data_cosmos"
+keywords = ["sdk", "azure", "rest", "cloud", "cosmosdb", "database"]
 categories = ["api-bindings"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

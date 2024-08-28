@@ -17,12 +17,17 @@ pub struct CosmosClient {
     options: CosmosClientOptions,
 }
 
+/// Defines the methods provided by a [`CosmosClient`]
+///
+/// This trait is intended to allow you to mock out the `CosmosClient` when testing your application.
+/// Rather than depending on `CosmosClient`, you can depend on a generic parameter constrained by this trait, or an `impl CosmosClientMethods` type.
 pub trait CosmosClientMethods {
+    /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
     fn database(&self, name: impl Into<String>) -> DatabaseClient;
 }
 
 impl CosmosClient {
-    /// Creates a new CosmosClient from the specified [TokenCredential] and [CosmosClientOptions].
+    /// Creates a new CosmosClient, using Entra ID authentication.
     pub fn new(
         endpoint: impl AsRef<str>,
         credential: Arc<dyn TokenCredential>,
@@ -39,6 +44,7 @@ impl CosmosClient {
         })
     }
 
+    /// Creates a new CosmosClient, using shared key authentication.
     #[cfg(feature = "key-auth")]
     pub fn with_shared_key(
         endpoint: impl AsRef<str>,
@@ -56,12 +62,14 @@ impl CosmosClient {
         })
     }
 
+    /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
     }
 }
 
 impl CosmosClientMethods for CosmosClient {
+    /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
     fn database(&self, id: impl Into<String>) -> DatabaseClient {
         DatabaseClient::new(self.clone(), id.into())
     }
