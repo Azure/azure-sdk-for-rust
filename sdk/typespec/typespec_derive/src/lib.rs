@@ -72,8 +72,7 @@ fn generate_body(ast: DeriveInput) -> TokenStream {
         let errs = context.errors();
         return quote::quote! {
             #(#errs)*
-        }
-        .into();
+        };
     }
 
     let format = attrs.format.unwrap_or(Format::Json);
@@ -126,8 +125,8 @@ impl Context {
     }
 
     pub fn emit_error(&mut self, span: Span, message: &str) {
-        let token_stream = quote::quote_spanned!(span.into()=> compile_error!(#message));
-        self.errors.push(token_stream.into());
+        let token_stream = quote::quote_spanned!(span=> compile_error!(#message));
+        self.errors.push(token_stream);
     }
 
     pub fn errors(&self) -> &[TokenStream] {
