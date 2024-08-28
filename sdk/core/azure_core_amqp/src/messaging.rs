@@ -12,6 +12,16 @@ pub enum TerminusDurability {
     UnsettledState,
 }
 
+impl From<TerminusDurability> for AmqpSymbol {
+    fn from(durability: TerminusDurability) -> Self {
+        match durability {
+            TerminusDurability::None => "none".into(),
+            TerminusDurability::Configuration => "configuration".into(),
+            TerminusDurability::UnsettledState => "unsettled-state".into(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum TerminusExpiryPolicy {
     LinkDetach,
@@ -20,10 +30,30 @@ pub enum TerminusExpiryPolicy {
     Never,
 }
 
+impl From<TerminusExpiryPolicy> for AmqpSymbol {
+    fn from(policy: TerminusExpiryPolicy) -> Self {
+        match policy {
+            TerminusExpiryPolicy::LinkDetach => "link-detach".into(),
+            TerminusExpiryPolicy::SessionEnd => "session-end".into(),
+            TerminusExpiryPolicy::ConnectionClose => "connection-close".into(),
+            TerminusExpiryPolicy::Never => "never".into(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum DistributionMode {
     Move,
     Copy,
+}
+
+impl From<DistributionMode> for AmqpSymbol {
+    fn from(mode: DistributionMode) -> Self {
+        match mode {
+            DistributionMode::Move => "move".into(),
+            DistributionMode::Copy => "copy".into(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -92,6 +122,17 @@ impl From<Vec<u8>> for AmqpMessageId {
 impl From<u64> for AmqpMessageId {
     fn from(ulong: u64) -> Self {
         AmqpMessageId::Ulong(ulong)
+    }
+}
+
+impl From<AmqpMessageId> for AmqpValue {
+    fn from(message_id: AmqpMessageId) -> Self {
+        match message_id {
+            AmqpMessageId::String(string) => AmqpValue::String(string),
+            AmqpMessageId::Uuid(uuid) => AmqpValue::Uuid(uuid),
+            AmqpMessageId::Binary(binary) => AmqpValue::Binary(binary),
+            AmqpMessageId::Ulong(ulong) => AmqpValue::ULong(ulong),
+        }
     }
 }
 
@@ -180,88 +221,45 @@ impl AmqpSource {
 
 impl From<AmqpSource> for AmqpList {
     fn from(source: AmqpSource) -> AmqpList {
-        let mut list = Vec::new();
-        if let Some(address) = source.address {
-            list.push(AmqpValue::String(address));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(durable) = source.durable {
-            list.push(AmqpValue::UByte(durable as u8));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(expiry_policy) = source.expiry_policy {
-            match expiry_policy {
-                TerminusExpiryPolicy::LinkDetach => {
-                    list.push(AmqpValue::Symbol("link-detach".into()))
-                }
-                TerminusExpiryPolicy::SessionEnd => {
-                    list.push(AmqpValue::Symbol("session-end".into()))
-                }
-                TerminusExpiryPolicy::ConnectionClose => {
-                    list.push(AmqpValue::Symbol("connection-close".into()))
-                }
-                TerminusExpiryPolicy::Never => list.push(AmqpValue::Symbol("never".into())),
-            }
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(timeout) = source.timeout {
-            list.push(AmqpValue::UInt(timeout));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(dynamic) = source.dynamic {
-            list.push(AmqpValue::Boolean(dynamic));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(dynamic_node_properties) = source.dynamic_node_properties {
-            let map: AmqpOrderedMap<AmqpValue, AmqpValue> = dynamic_node_properties
-                .into_iter()
-                .map(|(k, v)| (AmqpValue::String(k.into()), v))
-                .collect();
-            list.push(AmqpValue::Map(map));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(distribution_mode) = source.distribution_mode {
-            match distribution_mode {
-                DistributionMode::Move => list.push(AmqpValue::Symbol("move".into())),
-                DistributionMode::Copy => list.push(AmqpValue::Symbol("copy".into())),
-            }
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(filter) = source.filter {
-            let map: AmqpOrderedMap<AmqpValue, AmqpValue> = filter
-                .into_iter()
-                .map(|(k, v)| (AmqpValue::Symbol(k), v))
-                .collect();
-            list.push(AmqpValue::Map(map));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(default_outcome) = source.default_outcome {
-            list.push(AmqpValue::Symbol(default_outcome.into()));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(outcomes) = source.outcomes {
-            list.push(AmqpValue::Array(
-                outcomes.into_iter().map(AmqpValue::Symbol).collect(),
-            ));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(capabilities) = source.capabilities {
-            list.push(AmqpValue::Array(
-                capabilities.into_iter().map(AmqpValue::Symbol).collect(),
-            ));
-        } else {
-            list.push(AmqpValue::Null);
-        }
+        let mut list = vec![AmqpValue::Null; 11];
+
+        // Serialize the current value, if it exists. Otherwise serialize a null
+        list[0] = source.address.map_or(AmqpValue::Null, AmqpValue::String);
+        list[1] = source
+            .durable
+            .map_or(AmqpValue::Null, |v| AmqpValue::UByte(v as u8));
+        list[2] = source
+            .expiry_policy
+            .map_or(AmqpValue::Null, |v| AmqpValue::Symbol(v.into()));
+        list[3] = source.timeout.map_or(AmqpValue::Null, AmqpValue::UInt);
+        list[4] = source.dynamic.map_or(AmqpValue::Null, AmqpValue::Boolean);
+        list[5] = source.dynamic_node_properties.map_or(AmqpValue::Null, |v| {
+            AmqpValue::Map(
+                v.into_iter()
+                    .map(|(k, v)| (AmqpValue::Symbol(k), v))
+                    .collect(),
+            )
+        });
+        list[6] = source
+            .distribution_mode
+            .map_or(AmqpValue::Null, |v| AmqpValue::Symbol(v.into()));
+        list[7] = source.filter.map_or(AmqpValue::Null, |v| {
+            AmqpValue::Map(
+                v.into_iter()
+                    .map(|(k, v)| (AmqpValue::Symbol(k), v))
+                    .collect(),
+            )
+        });
+        list[8] = source
+            .default_outcome
+            .map_or(AmqpValue::Null, |v| AmqpValue::Symbol(v.into()));
+        list[9] = source.outcomes.map_or(AmqpValue::Null, |v| {
+            AmqpValue::Array(v.into_iter().map(AmqpValue::Symbol).collect())
+        });
+        list[10] = source.capabilities.map_or(AmqpValue::Null, |v| {
+            AmqpValue::Array(v.into_iter().map(AmqpValue::Symbol).collect())
+        });
+
         let mut trailing_nulls = 0;
         for val in list.iter().rev() {
             if *val != AmqpValue::Null {
@@ -353,33 +351,23 @@ impl From<AmqpList> for AmqpMessageHeader {
 
 impl From<AmqpMessageHeader> for AmqpList {
     fn from(header: AmqpMessageHeader) -> AmqpList {
-        let mut list = Vec::new();
+        let mut list = vec![AmqpValue::Null; 5];
 
         // Serialize the current value, if it exists. Otherwise serialize a null
         // value if there are other values to serialize.
-        if let Some(durable) = header.durable {
-            list.push(AmqpValue::Boolean(durable));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(priority) = header.priority {
-            list.push(AmqpValue::UByte(priority));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(time_to_live) = header.time_to_live {
-            list.push(AmqpValue::UInt(time_to_live.as_millis() as u32));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(first_acquirer) = header.first_acquirer {
-            list.push(AmqpValue::Boolean(first_acquirer));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(delivery_count) = header.delivery_count {
-            list.push(AmqpValue::UInt(delivery_count));
-        }
+
+        list[0] = header.durable.map_or(AmqpValue::Null, AmqpValue::Boolean);
+        list[1] = header.priority.map_or(AmqpValue::Null, AmqpValue::UByte);
+        list[2] = header.time_to_live.map_or(AmqpValue::Null, |ttl| {
+            AmqpValue::UInt(ttl.as_millis() as u32)
+        });
+        list[3] = header
+            .first_acquirer
+            .map_or(AmqpValue::Null, AmqpValue::Boolean);
+        list[4] = header
+            .delivery_count
+            .map_or(AmqpValue::Null, AmqpValue::UInt);
+
         let mut trailing_nulls = 0;
         for val in list.iter().rev() {
             if *val != AmqpValue::Null {
@@ -579,98 +567,46 @@ impl From<AmqpList> for AmqpMessageProperties {
 
 impl From<AmqpMessageProperties> for AmqpList {
     fn from(properties: AmqpMessageProperties) -> AmqpList {
-        let mut list = Vec::new();
+        let mut list = vec![AmqpValue::Null; 13];
 
         // Serialize the current value, if it exists. Otherwise serialize a null
-        if let Some(message_id) = properties.message_id {
-            match message_id {
-                AmqpMessageId::String(message_id) => {
-                    list.push(AmqpValue::String(message_id));
-                }
-                AmqpMessageId::Uuid(message_id) => {
-                    list.push(AmqpValue::Uuid(message_id));
-                }
-                AmqpMessageId::Binary(message_id) => {
-                    list.push(AmqpValue::Binary(message_id));
-                }
-                AmqpMessageId::Ulong(message_id) => {
-                    list.push(AmqpValue::ULong(message_id));
-                }
-            }
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(user_id) = properties.user_id {
-            list.push(AmqpValue::Binary(user_id));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(to) = properties.to {
-            list.push(AmqpValue::String(to));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(subject) = properties.subject {
-            list.push(AmqpValue::String(subject));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(reply_to) = properties.reply_to {
-            list.push(AmqpValue::String(reply_to));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(correlation_id) = properties.correlation_id {
-            match correlation_id {
-                AmqpMessageId::String(correlation_id) => {
-                    list.push(AmqpValue::String(correlation_id));
-                }
-                AmqpMessageId::Uuid(correlation_id) => {
-                    list.push(AmqpValue::Uuid(correlation_id));
-                }
-                AmqpMessageId::Binary(correlation_id) => {
-                    list.push(AmqpValue::Binary(correlation_id));
-                }
-                AmqpMessageId::Ulong(correlation_id) => {
-                    list.push(AmqpValue::ULong(correlation_id));
-                }
-            }
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(content_type) = properties.content_type {
-            list.push(AmqpValue::Symbol(content_type));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(content_encoding) = properties.content_encoding {
-            list.push(AmqpValue::Symbol(content_encoding));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(absolute_expiry_time) = properties.absolute_expiry_time {
-            list.push(AmqpValue::TimeStamp(absolute_expiry_time));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(creation_time) = properties.creation_time {
-            list.push(AmqpValue::TimeStamp(creation_time));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(group_id) = properties.group_id {
-            list.push(AmqpValue::String(group_id));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(group_sequence) = properties.group_sequence {
-            list.push(AmqpValue::UInt(group_sequence));
-        } else {
-            list.push(AmqpValue::Null);
-        }
-        if let Some(reply_to_group_id) = properties.reply_to_group_id {
-            list.push(AmqpValue::String(reply_to_group_id));
-        }
+        list[0] = properties
+            .message_id
+            .map_or(AmqpValue::Null, AmqpValue::from);
+        list[1] = properties
+            .user_id
+            .map_or(AmqpValue::Null, AmqpValue::Binary);
+        list[2] = properties.to.map_or(AmqpValue::Null, AmqpValue::String);
+        list[3] = properties
+            .subject
+            .map_or(AmqpValue::Null, AmqpValue::String);
+        list[4] = properties
+            .reply_to
+            .map_or(AmqpValue::Null, AmqpValue::String);
+        list[5] = properties
+            .correlation_id
+            .map_or(AmqpValue::Null, AmqpValue::from);
+        list[6] = properties
+            .content_type
+            .map_or(AmqpValue::Null, AmqpValue::Symbol);
+        list[7] = properties
+            .content_encoding
+            .map_or(AmqpValue::Null, AmqpValue::Symbol);
+        list[8] = properties
+            .absolute_expiry_time
+            .map_or(AmqpValue::Null, AmqpValue::TimeStamp);
+        list[9] = properties
+            .creation_time
+            .map_or(AmqpValue::Null, AmqpValue::TimeStamp);
+        list[10] = properties
+            .group_id
+            .map_or(AmqpValue::Null, AmqpValue::String);
+        list[11] = properties
+            .group_sequence
+            .map_or(AmqpValue::Null, AmqpValue::UInt);
+        list[12] = properties
+            .reply_to_group_id
+            .map_or(AmqpValue::Null, AmqpValue::String);
 
         // We will potentially have a set of trailing Null values in the list at this point,
         // we don't ever want the trailing null values to appear in the list so we remove them.
