@@ -321,7 +321,7 @@ impl From<AmqpList> for AmqpMessageHeader {
         let mut builder = AmqpMessageHeader::builder();
         let field_count = list.len();
         if field_count >= 1 {
-            if let Some(AmqpValue::Boolean(durable)) = list.0.get(0) {
+            if let Some(AmqpValue::Boolean(durable)) = list.0.first() {
                 builder.with_durable(*durable);
             }
         }
@@ -865,7 +865,7 @@ impl AmqpMessage {
         }
     }
 
-    //    #[allow(unused_variables)]
+    #[allow(unused_variables)]
     pub fn serialize(message: AmqpMessage) -> Result<Vec<u8>> {
         #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
         {

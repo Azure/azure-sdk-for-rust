@@ -194,6 +194,7 @@ impl Serializable for AmqpValue {
         }
     }
 
+    #[allow(unused_variables)]
     fn serialize(&self, buffer: &mut [u8]) -> Result<()> {
         #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
         {
@@ -213,6 +214,7 @@ impl Serializable for AmqpValue {
 }
 
 impl Deserializable<AmqpValue> for AmqpValue {
+    #[allow(unused_variables)]
     fn decode(data: &[u8]) -> azure_core::Result<AmqpValue> {
         #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
         {
