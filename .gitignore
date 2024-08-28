@@ -12,3 +12,6 @@ Cargo.lock
 *.swo
 *.swp
 *.vim
+
+# Ignore .direnv, which is where the direnv environment is built, if a user is using direnv.
+.direnv/
