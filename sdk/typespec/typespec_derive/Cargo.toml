@@ -17,3 +17,7 @@ proc-macro = true
 syn.workspace = true
 quote.workspace = true
 proc-macro2.workspace = true
+
+[dev-dependencies]
+serde.workspace = true
+typespec_client_core = { workspace = true, features = ["http", "json", "xml"] }

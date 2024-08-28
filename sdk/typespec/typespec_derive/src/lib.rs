@@ -18,12 +18,14 @@ use syn::{Attribute, DeriveInput, LitStr, Meta, Path};
 /// The 'crate' attribute specifies an alternate module path, other than the default of `typespec_client_core`, to reference the typespec client crate.
 ///
 /// ```rust
-/// use typespec_client_core as my_typespec;
+/// # use typespec_derive::Model;
+/// # use serde::Deserialize;
+/// extern crate typespec_client_core as my_typespec;
 ///
 /// #[derive(Model, Deserialize)]
 /// #[typespec(crate = "my_typespec")]
 /// struct MyModel {
-///    // ...
+///   value: String
 /// }
 /// ```
 ///
@@ -33,10 +35,12 @@ use syn::{Attribute, DeriveInput, LitStr, Meta, Path};
 /// If compiling with the `xml` feature, the value `xml` is also supported.
 ///
 /// ```rust
+/// # use typespec_derive::Model;
+/// # use serde::Deserialize;
 /// #[derive(Model, Deserialize)]
 /// #[typespec(format = "xml")]
 /// struct MyModel {
-///   // ...
+///   value: String
 /// }
 /// ```
 ///

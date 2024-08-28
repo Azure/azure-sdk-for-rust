@@ -91,6 +91,7 @@ impl<T> Response<T> {
     /// # Example
     /// ```rust
     /// # pub struct GetSecretResponse { }
+    /// use typespec_derive::Model;
     /// use typespec_client_core::http::Response;
     /// use serde::Deserialize;
     /// use bytes::Bytes;
@@ -101,10 +102,20 @@ impl<T> Response<T> {
     /// }
     ///
     /// async fn parse_response(response: Response<GetSecretResponse>) {
-    ///   // Calling `map` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
+    ///   // Calling `deserialize_body_into` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
     ///   let my_struct: MySecretResponse = response.deserialize_body_into().await.unwrap();
-    ///   println!("value: {}", my_struct.value);
+    ///   assert_eq!("hunter2", my_struct.value);
     /// }
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() {
+    /// #    let r: Response<GetSecretResponse> = typespec_client_core::http::Response::from_bytes(
+    /// #      http_types::StatusCode::Ok,
+    /// #      typespec_client_core::http::headers::Headers::new(),
+    /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
+    /// #    );
+    /// #    parse_response(r).await;
+    /// # }
     /// ```
     pub async fn deserialize_body_into<U: Model>(self) -> crate::Result<U> {
         U::from_response_body(self.body).await
@@ -134,7 +145,7 @@ impl<T: Model> Response<T> {
     /// ```rust
     /// # use serde::Deserialize;
     /// # use typespec_client_core::http::Model;
-    /// # use typespec_derive::http::Model;
+    /// # use typespec_derive::Model;
     /// # #[derive(Model, Deserialize)]
     /// # pub struct GetSecretResponse {
     /// #   name: String,
@@ -339,9 +350,10 @@ mod tests {
     #[cfg(feature = "xml")]
     mod xml {
         use crate::http::headers::Headers;
-        use crate::http::{Model, Response};
+        use crate::http::Response;
         use http_types::StatusCode;
         use serde::Deserialize;
+        use typespec_derive::Model;
 
         /// An example XML-serialized response type.
         #[derive(Model, Deserialize)]
