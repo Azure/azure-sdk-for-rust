@@ -5,7 +5,5 @@
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell",
   },
-  // the yaml formatter will use complex key notation to wrap long lines
-  // allow really long lines to prevent that.
   "yaml.format.printWidth": 240
 }
