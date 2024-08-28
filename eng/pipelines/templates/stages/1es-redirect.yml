@@ -10,15 +10,15 @@ resources:
       ref: refs/tags/canary
 
 parameters:
-- name: stages
-  type: stageList
-  default: []
-- name: Use1ESOfficial
-  type: boolean
-  default: true
-- name: oneESTemplateTag
-  type: string
-  default: release
+  - name: stages
+    type: stageList
+    default: []
+  - name: Use1ESOfficial
+    type: boolean
+    default: true
+  - name: oneESTemplateTag
+    type: string
+    default: release
 
 extends:
   ${{ if and(parameters.Use1ESOfficial, eq(parameters.oneESTemplateTag, 'canary')) }}:
@@ -43,18 +43,19 @@ extends:
         os: windows
       eslint:
         enabled: false
-        justificationForDisabling: "ESLint injected task has failures because it uses an old version of mkdirp. We should not fail for tools not controlled by the repo. See: https://dev.azure.com/azur     19 e-sdk/internal/_build/results?buildId=3556850"
+        justificationForDisabling: "ESLint injected task has failures because it uses an old version of mkdirp. We should not fail for tools not controlled by the repo. See: https://dev.azure.com/azure-sdk/internal/_build/results?buildId=3556850"
       codeql:
         compiled:
           enabled: false
           justificationForDisabling: "CodeQL times our pipelines out by running for 2+ hours before being force canceled."
       credscan:
-        suppressionsFile: '$(Build.SourcesDirectory)/eng/CredScanSuppression.json'
-        toolVersion: '2.3.12.23'
+        suppressionsFile: $(Build.SourcesDirectory)/eng/CredScanSuppression.json
+        toolVersion: "2.3.12.23"
         baselineFiles: $(Build.SourcesDirectory)/eng/python.gdnbaselines
       psscriptanalyzer:
         compiled: true
         break: true
       policy: M365
-
+      # Turn off the build warnings caused by disabling some sdl checks
+      createAdoIssuesForJustificationsForDisablement: false
     stages: ${{ parameters.stages }}
