@@ -95,11 +95,11 @@ mod tests {
     use super::*;
     use crate::{
         http::{headers::Headers, Method, PolicyResult, StatusCode, TransportOptions},
-        json_model,
         stream::BytesStream,
     };
     use bytes::Bytes;
     use serde::Deserialize;
+    use typespec_derive::Model;
 
     #[tokio::test]
     async fn deserializes_response() {
@@ -122,12 +122,12 @@ mod tests {
             }
         }
 
-        #[derive(Debug, Deserialize)]
+        #[derive(Model, Debug, Deserialize)]
+        #[typespec(crate = "crate")]
         struct Model {
             foo: i32,
             bar: String,
         }
-        json_model!(Model);
 
         let options =
             ClientOptions::new(TransportOptions::new_custom_policy(Arc::new(Responder {})));
