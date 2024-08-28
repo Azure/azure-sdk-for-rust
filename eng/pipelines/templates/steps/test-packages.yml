@@ -22,12 +22,6 @@ parameters:
     default: 60
 
 steps:
-  # using -Zscript with verify-dependencies.rs requires nightly be installed
-  - ${{ if ne(parameters.Toolchain, 'nightly') }}:
-      - template: /eng/pipelines/templates/steps/use-rust.yml@self
-        parameters:
-          Toolchain: nightly
-
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
       Toolchain: ${{ parameters.Toolchain }}

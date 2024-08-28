@@ -52,8 +52,11 @@ foreach ($package in $pacakgesToTest) {
     Invoke-LoggedCommand "cargo +$Toolchain test --lib --no-fail-fast"
     Write-Host "`n`n"
     Invoke-LoggedCommand "cargo +$Toolchain test --doc --no-fail-fast"
-    Write-Host "`n`n"
-    Invoke-LoggedCommand "cargo +nightly -Zscript $verifyDependenciesScript"
+
+    if ($Toolchain -eq 'nightly') {
+      Write-Host "`n`n"
+      Invoke-LoggedCommand "cargo +nightly -Zscript $verifyDependenciesScript"
+    }
   }
   finally {
     Pop-Location
