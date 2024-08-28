@@ -31,6 +31,12 @@
 # PRLabel: %Storage
 /sdk/storage/           @heaths @RickWinter @JeffreyRichter
 
+# AzureSDKOwners: @heaths
+# ServiceOwner: @Pilchie
+# ServiceLabel: %Cosmos
+# PRLabel: %Cosmos
+/sdk/cosmosdb/          @heaths @RickWinter @analogrelay @Pilchie
+
 ###########
 # Eng Sys
 ###########
