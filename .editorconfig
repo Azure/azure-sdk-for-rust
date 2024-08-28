@@ -10,6 +10,9 @@ trim_trailing_whitespace = true
 [*.json]
 indent_size = 2
 
+[*.ps1]
+indent_size = 2
+
 [*.rs]
 end_of_line = lf
 
