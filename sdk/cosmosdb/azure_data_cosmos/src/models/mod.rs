@@ -33,4 +33,4 @@ pub struct DatabaseProperties {
     #[serde(flatten)]
     pub system_properties: SystemProperties,
 }
-azure_core::json_serializable!(DatabaseProperties);
+azure_core::json_model!(DatabaseProperties);

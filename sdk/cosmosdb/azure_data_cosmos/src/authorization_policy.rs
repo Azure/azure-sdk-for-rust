@@ -53,6 +53,23 @@ struct SignatureTarget<'a> {
     time_nonce: OffsetDateTime,
 }
 
+#[cfg(feature = "key-auth")]
+impl<'a> SignatureTarget<'a> {
+    pub fn new(
+        http_method: &'a azure_core::Method,
+        resource_type: &'a ResourceType,
+        resource_link: &'a str,
+        time_nonce: OffsetDateTime,
+    ) -> Self {
+        SignatureTarget {
+            http_method,
+            resource_type,
+            resource_link,
+            time_nonce,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct AuthorizationPolicy {
     credential: Credential,
@@ -270,12 +287,12 @@ mod tests {
     fn string_to_sign_00() {
         let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
 
-        let ret = string_to_sign(
+        let ret = string_to_sign(SignatureTarget::new(
             &azure_core::Method::Get,
             &ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             time,
-        );
+        ));
         assert_eq!(
             ret,
             "get
@@ -301,11 +318,13 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &auth_token,
-            &azure_core::Method::Get,
             &url,
-            &ResourceType::Databases,
-            "dbs/MyDatabase/colls/MyCollection",
-            time,
+            SignatureTarget::new(
+                &azure_core::Method::Get,
+                &ResourceType::Databases,
+                "dbs/MyDatabase/colls/MyCollection",
+                time,
+            ),
         )
         .await
         .unwrap();
@@ -330,11 +349,13 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &auth_token,
-            &azure_core::Method::Get,
             &url,
-            &ResourceType::Databases,
-            "dbs/ToDoList",
-            time,
+            SignatureTarget::new(
+                &azure_core::Method::Get,
+                &ResourceType::Databases,
+                "dbs/ToDoList",
+                time,
+            ),
         )
         .await
         .unwrap();
