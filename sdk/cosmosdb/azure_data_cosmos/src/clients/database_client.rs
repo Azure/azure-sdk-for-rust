@@ -1,21 +1,19 @@
 use crate::authorization_policy::ResourceType;
 use crate::models::DatabaseProperties;
 use crate::{CosmosClient, ReadDatabaseOptions};
-use azure_core::{Context, Request, Response};
-use serde::Deserialize;
-use time::OffsetDateTime;
+use azure_core::{Context, Request};
 use url::Url;
 
 pub trait DatabaseClientMethods {
-    // TODO:
-    async fn read(
+    fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
-    ) -> azure_core::Result<azure_core::Response<DatabaseProperties>>;
+    ) -> impl std::future::Future<
+        Output = azure_core::Result<azure_core::Response<DatabaseProperties>>,
+    > + Send;
 }
 
 pub struct DatabaseClient {
-    database_id: String,
     base_url: Url,
     root_client: CosmosClient,
 }
@@ -35,7 +33,6 @@ impl DatabaseClient {
         };
 
         Self {
-            database_id,
             base_url,
             root_client,
         }
@@ -45,7 +42,7 @@ impl DatabaseClient {
 impl DatabaseClientMethods for DatabaseClient {
     async fn read(
         &self,
-        options: Option<ReadDatabaseOptions>,
+        _options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<azure_core::Response<DatabaseProperties>> {
         let mut req = Request::new(self.base_url.clone(), azure_core::Method::Get);
         let ctx = Context::new().with_value(ResourceType::Databases);

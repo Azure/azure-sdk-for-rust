@@ -22,6 +22,7 @@ const AZURE_VERSION: &str = "2018-12-31";
 const VERSION_NUMBER: &str = "1.0";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)] // For the variants. Can be removed when we have them all implemented.
 pub(crate) enum ResourceType {
     Databases,
     Collections,
@@ -310,7 +311,7 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
 
         let auth_token = Credential::SigningKey(
-            "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
+            "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==".into(),
         )
             .unwrap();
 
@@ -341,7 +342,7 @@ mon, 01 jan 1900 01:00:00 gmt
         let time = date::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
 
         let auth_token = Credential::SigningKey(
-            "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
+            "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".into(),
         )
         .unwrap();
 
