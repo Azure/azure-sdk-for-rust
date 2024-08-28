@@ -51,6 +51,27 @@ async fn send_message_with_content_type() {
 }
 
 #[tokio::test]
+async fn send_message_with_custom_property_test() {
+    let client = create_client().unwrap();
+    client
+        .send_message(
+            "hello, world!",
+            Some(SendMessageOptions {
+                custom_properties: Some(
+                    std::collections::HashMap::from([(
+                        "custom_property_key".into(),
+                        "custom_property_value".into(),
+                    )])
+                    .into(),
+                ),
+                ..Default::default()
+            }),
+        )
+        .await
+        .expect("Failed to send message");
+}
+
+#[tokio::test]
 async fn receive_and_delete_message_test() {
     let client = create_client().unwrap();
     send_message_test(); // send message to ensure we can receive something
