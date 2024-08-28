@@ -2,7 +2,7 @@ $Language = "rust"
 $LanguageDisplayName = "Rust"
 $PackageRepository = "crates.io"
 $packagePattern = "Cargo.toml"
-$MetadataUri = "https://raw.githubusercontent.com/Azure/azure-sdk/main/_data/releases/latest/rust-packages.csv"
+#$MetadataUri = "https://raw.githubusercontent.com/Azure/azure-sdk/main/_data/releases/latest/rust-packages.csv"
 $GithubUri = "https://github.com/Azure/azure-sdk-for-rust"
 $PackageRepositoryUri = "https://crates.io/crates"
 

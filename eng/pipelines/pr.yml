@@ -3,10 +3,10 @@ trigger: none
 pr:
   branches:
     include:
-      - feature/track2
+      - main
+      - feature/*
+      - hotfix/*
+      - release/*
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
-  parameters:
-    TestProxy: true
-    TestTimeOutInMinutes: 120
