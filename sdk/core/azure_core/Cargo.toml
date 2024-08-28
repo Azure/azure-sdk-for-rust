@@ -15,7 +15,6 @@ rust-version.workspace = true
 
 [dependencies]
 typespec = { workspace = true, features = ["http", "json"] }
-typespec_derive = { workspace = true, optional = true }
 typespec_client_core = { workspace = true, features = ["http", "json"] }
 async-trait = { workspace = true }
 bytes = { workspace = true }
@@ -44,7 +43,6 @@ thiserror = { workspace = true }
 
 [features]
 default = []
-derive = ["typespec_derive"]
 enable_reqwest = ["typespec_client_core/reqwest"]
 enable_reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
 enable_reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
@@ -58,12 +56,12 @@ tokio-sleep = ["typespec_client_core/tokio_sleep"]
 
 [package.metadata.docs.rs]
 features = [
-    "xml",
-    "tokio-fs",
-    "enable_reqwest",
-    "enable_reqwest_gzip",
-    "enable_reqwest_rustls",
-    "hmac_rust",
-    "hmac_openssl",
-    "xml",
+  "xml",
+  "tokio-fs",
+  "enable_reqwest",
+  "enable_reqwest_gzip",
+  "enable_reqwest_rustls",
+  "hmac_rust",
+  "hmac_openssl",
+  "xml",
 ]

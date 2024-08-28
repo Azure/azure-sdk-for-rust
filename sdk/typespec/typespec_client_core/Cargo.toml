@@ -27,6 +27,7 @@ time = { workspace = true }
 tokio = { workspace = true, optional = true }
 tracing = { workspace = true }
 typespec = { workspace = true, default-features = false }
+typespec_derive = { workspace = true, optional = true }
 url = { workspace = true }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
@@ -50,6 +51,7 @@ default = [
   "reqwest_rustls",
   "tokio_sleep",
 ]
+derive = ["typespec_derive"]
 http = ["dep:http-types", "typespec/http"]
 json = ["typespec/json"]
 reqwest = ["dep:reqwest", "reqwest/default-tls"]

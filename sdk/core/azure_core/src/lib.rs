@@ -44,9 +44,6 @@ pub use pipeline::*;
 pub use policies::*;
 pub use typespec_client_core::http::{Model, PinnedStream, Response, ResponseBody};
 
-#[cfg(feature = "derive")]
-pub use typespec_derive::Model;
-
 // Re-export typespec types that are not specific to Azure.
 pub use typespec::{Error, Result};
 pub mod error {
