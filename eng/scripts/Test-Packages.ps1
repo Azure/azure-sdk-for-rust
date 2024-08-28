@@ -26,6 +26,7 @@ if ($PackageInfoPath) {
   }
 
   $pacakgesToTest = Get-ChildItem $PackageInfoPath -Filter "*.json" -Recurse
+  | Get-Content -Raw
   | ConvertFrom-Json
 }
 else {
@@ -43,7 +44,7 @@ $env:RUSTFLAGS = "-Dwarnings"
 $verifyDependenciesScript = Join-Path $RepoRoot '/eng/scripts/verify-dependencies.rs' -Resolve
 
 foreach ($package in $pacakgesToTest) {
-  Push-Location $package.DirectoryPath
+  Push-Location (Join-Path $RepoRoot $package.DirectoryPath)
   try {
     Write-Host "`n`nTesting package: '$($package.Name)' in directory: '$($package.DirectoryPath)'`n"
 
