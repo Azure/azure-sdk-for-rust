@@ -3,10 +3,14 @@
   "language": "en",
   "useGitignore": true,
   "ignorePaths": [
+    "**/test-resources.json",
+    "**/test-resources.bicep",
+    "NOTICE.txt",
     "eng/",
-    "NOTICE.txt"
+    "rust-toolchain.toml"
   ],
   "words": [
+    "amqp",
     "asyncoperation",
     "azsdk",
     "azurecli",
