@@ -84,7 +84,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
       $pkgProp.SdkType = "client"
     }
 
-    $pkgProp.DependentPackages = GetDependentPackages $package | Select-Object -ExpandProperty RelativePath
+    $pkgProp.AdditionalValidationPackages = GetDependentPackages $package | Select-Object -ExpandProperty RelativePath
 
     $allPackageProps += $pkgProp
   }
