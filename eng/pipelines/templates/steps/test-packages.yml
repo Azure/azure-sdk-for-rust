@@ -37,13 +37,6 @@ steps:
     parameters:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
 
-  - ${{ if parameters.PublishArtifacts}}:
-      - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
-        parameters:
-          ArtifactPath: "$(Build.ArtifactStagingDirectory)"
-          ArtifactName: "packages_${{ parameters.ArtifactSuffix }}"
-          CustomCondition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
-
   - task: Powershell@2
     displayName: "Test Packages"
     condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
@@ -58,3 +51,10 @@ steps:
         -Toolchain '$(Toolchain)'
         -UnitTests $${{ parameters.UnitTests }}
         -FunctionalTests $${{ parameters.FunctionalTests }}
+
+  - ${{ if parameters.PublishArtifacts}}:
+      - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
+        parameters:
+          ArtifactPath: "$(Build.ArtifactStagingDirectory)"
+          ArtifactName: "packages_${{ parameters.ArtifactSuffix }}"
+          CustomCondition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'))

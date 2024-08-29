@@ -13,25 +13,22 @@ steps:
     parameters:
       Toolchain: ${{ parameters.Toolchain }}
 
+  - template: /eng/common/pipelines/tempaltes/steps/save-package-properties.yml
+
   - pwsh: |
       . ./eng/common/scripts/common.ps1
       . ./eng/common/scripts/Helpers/CommandInvocation-Helpers.ps1
 
       $verifyDependenciesScript = Join-Path $RepoRoot '/eng/scripts/verify-dependencies.rs' -Resolve
-
-      if ($PackageInfoPath) {
-        if (!(Test-Path $PackageInfoPath)) {
-          Write-Error "Package info path '$PackageInfoPath' does not exist."
-          exit 1
-        }
-
-        $pacakgesToTest = Get-ChildItem $PackageInfoPath -Filter "*.json" -Recurse
-        | Get-Content -Raw
-        | ConvertFrom-Json
+      $packageInfoPath = '$(Build.ArtifactStagingDirectory)/PackageInfo'
+      if (!(Test-Path $PackageInfoPath)) {
+        Write-Error "Package info path '$PackageInfoPath' does not exist."
+        exit 1
       }
-      else {
-        $pacakgesToTest = Get-AllPackagesInRepo
-      }
+
+      $pacakgesToTest = Get-ChildItem $packageInfoPath -Filter "*.json" -Recurse
+      | Get-Content -Raw
+      | ConvertFrom-Json
 
       $env:RUSTDOCFLAGS = "-D warnings"
       $env:RUSTFLAGS = "-Dwarnings"
