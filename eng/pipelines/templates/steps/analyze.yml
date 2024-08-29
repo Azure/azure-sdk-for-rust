@@ -13,7 +13,7 @@ steps:
     parameters:
       Toolchain: ${{ parameters.Toolchain }}
 
-  - template: /eng/common/pipelines/tempaltes/steps/save-package-properties.yml
+  - template: /eng/common/pipelines/templates/steps/save-package-properties.yml
 
   - pwsh: |
       . ./eng/common/scripts/common.ps1
