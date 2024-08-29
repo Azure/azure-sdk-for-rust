@@ -28,8 +28,8 @@ macro_rules! declare {
 
             /// A pageable stream that yields items of type `T`
             ///
-            /// Internally uses the Azure specific continuation header to
-            /// make repeated requests to Azure yielding a new page each time.
+            /// Internally uses a specific continuation header to
+            /// make repeated requests to the service yielding a new page each time.
             #[pin_project::pin_project]
             // This is to suppress the unused `project_ref` warning
             pub struct Pageable<T, E> {

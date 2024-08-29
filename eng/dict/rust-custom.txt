@@ -1,4 +1,5 @@
 bindgen
+newtype
 repr
 rustc
 rustls
