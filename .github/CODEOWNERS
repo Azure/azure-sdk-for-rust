@@ -35,7 +35,7 @@
 # ServiceOwner: @Pilchie
 # ServiceLabel: %Cosmos
 # PRLabel: %Cosmos
-/sdk/cosmosdb/          @heaths @RickWinter @analogrelay @Pilchie
+/sdk/cosmosdb/          @heaths @RickWinter @Azure/azure-cosmos-rust-sdk
 
 ###########
 # Eng Sys
