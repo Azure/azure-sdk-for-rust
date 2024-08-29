@@ -4,7 +4,7 @@ parameters:
     default: stable
 
 steps:
-  - ${{ if ne(parameters.Toolchail, 'nightly') }}:
+  - ${{ if ne(parameters.Toolchain, 'nightly') }}:
       - template: /eng/pipelines/templates/steps/use-rust.yml@self
         parameters:
           Toolchain: nightly
