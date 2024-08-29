@@ -3,8 +3,9 @@
   "language": "en",
   "useGitignore": true,
   "ignorePaths": [
-    "**/test-resources.json",
     "**/test-resources.bicep",
+    "**/test-resources.json",
+    ".vscode/cspell.json",
     "NOTICE.txt",
     "eng/",
     "rust-toolchain.toml"
