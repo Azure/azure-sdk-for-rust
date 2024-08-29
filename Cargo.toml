@@ -12,6 +12,7 @@ members = [
   "eng/test/mock_transport",
   "sdk/storage",
   "sdk/storage/azure_storage_blob",
+  "sdk/openai/inference",
 ]
 
 [workspace.package]
