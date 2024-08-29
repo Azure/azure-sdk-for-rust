@@ -32,9 +32,6 @@ fe2o3-amqp-types = { workspace = true, optional = true }
 serde_amqp = { workspace = true, optional = true }
 serde_bytes = { workspace = true, optional = true }
 
-[build-dependencies]
-rustc_version = "0.4"
-
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
