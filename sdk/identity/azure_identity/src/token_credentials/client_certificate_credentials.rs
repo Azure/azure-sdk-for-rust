@@ -264,7 +264,7 @@ impl ClientCertificateCredential {
             return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
         }
 
-        let response: AadTokenResponse = rsp.json().await?;
+        let response: AadTokenResponse = rsp.deserialize_body_into().await?;
         Ok(AccessToken::new(
             response.access_token,
             OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),
@@ -335,6 +335,8 @@ struct AadTokenResponse {
     ext_expires_in: u64,
     access_token: String,
 }
+
+azure_core::json_model!(AadTokenResponse);
 
 fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
     Ok(format!(
