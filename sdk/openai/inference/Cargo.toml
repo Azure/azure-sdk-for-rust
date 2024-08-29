@@ -15,7 +15,9 @@ categories = ["api-bindings"]
 workspace = true
 
 [dependencies]
+azure_core = { workspace = true }
 reqwest = { workspace = true, optional = true }
+tokio = { workspace = true }
 
 [features]
 default = [ "reqwest" ]
