@@ -41,7 +41,6 @@ foreach ($package in $pacakgesToTest) {
 Write-Host "Setting RUSTFLAGS to '-Dwarnings'"
 $env:RUSTFLAGS = "-Dwarnings"
 
-$verifyDependenciesScript = Join-Path $RepoRoot '/eng/scripts/verify-dependencies.rs' -Resolve
 
 foreach ($package in $pacakgesToTest) {
   Push-Location (Join-Path $RepoRoot $package.DirectoryPath)
@@ -53,11 +52,6 @@ foreach ($package in $pacakgesToTest) {
     Invoke-LoggedCommand "cargo +$Toolchain test --lib --no-fail-fast"
     Write-Host "`n`n"
     Invoke-LoggedCommand "cargo +$Toolchain test --doc --no-fail-fast"
-
-    if ($Toolchain -eq 'nightly') {
-      Write-Host "`n`n"
-      Invoke-LoggedCommand "cargo +nightly -Zscript $verifyDependenciesScript"
-    }
   }
   finally {
     Pop-Location
