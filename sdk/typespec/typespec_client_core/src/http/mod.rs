@@ -23,6 +23,10 @@ pub use policies::*;
 pub use request::*;
 pub use response::*;
 
+// Re-export derive macro for Model.
+#[cfg(feature = "derive")]
+pub use typespec_derive::Model;
+
 // Re-export important types.
 pub use http_types::{Method, StatusCode};
 pub use url::Url;

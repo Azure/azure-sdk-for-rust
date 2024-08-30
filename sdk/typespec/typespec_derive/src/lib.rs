@@ -1,4 +1,4 @@
-use syn::DeriveInput;
+use syn::{parse::ParseStream, DeriveInput, LitStr};
 
 extern crate proc_macro;
 
@@ -29,6 +29,7 @@ fn run_derive_macro(input: proc_macro::TokenStream, imp: DeriveImpl) -> proc_mac
     }
 }
 
+/// Parses a `syn::parse::ParseStream` that is expected to contain a string literal and extracts the `syn::LitStr`.
 fn parse_literal_string(value: ParseStream) -> Result<LitStr> {
     let expr: syn::Expr = value
         .parse()
@@ -36,9 +37,9 @@ fn parse_literal_string(value: ParseStream) -> Result<LitStr> {
     match expr {
         syn::Expr::Lit(lit) => match lit.lit {
             syn::Lit::Str(s) => Ok(s),
-            _ => Err(vec![Error::new(lit.span(), "Expected string literal")]),
+            _ => Err(vec![Error::new(value.span(), "Expected string literal")]),
         },
-        _ => Err(vec![Error::new(expr.span(), "Expected string literal")]),
+        _ => Err(vec![Error::new(value.span(), "Expected string literal")]),
     }
 }
 

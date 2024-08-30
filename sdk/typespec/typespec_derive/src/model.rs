@@ -1,7 +1,6 @@
 use proc_macro2::TokenStream;
-use syn::parse::ParseStream;
 use syn::spanned::Spanned;
-use syn::{Attribute, DeriveInput, LitStr, Meta, Path};
+use syn::{Attribute, DeriveInput, Meta, Path};
 
 use crate::{parse_literal_string, Error, Result};
 
@@ -88,7 +87,7 @@ impl Attrs {
                 };
                 match ident.to_string().as_str() {
                     "crate" => {
-                        let value = meta.value().map_err(|_|);
+                        let value = meta.value().unwrap();
                         let value = match parse_literal_string(value) {
                             Ok(v) => v,
                             Err(mut e) => {
