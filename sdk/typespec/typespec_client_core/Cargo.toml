@@ -51,7 +51,7 @@ default = [
   "reqwest_rustls",
   "tokio_sleep",
 ]
-derive = ["typespec_derive"]
+derive = ["dep:typespec_derive"]
 http = ["dep:http-types", "typespec/http"]
 json = ["typespec/json"]
 reqwest = ["dep:reqwest", "reqwest/default-tls"]
