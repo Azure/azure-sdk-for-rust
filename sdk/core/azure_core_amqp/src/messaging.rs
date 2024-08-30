@@ -15,9 +15,9 @@ pub enum TerminusDurability {
 impl From<TerminusDurability> for AmqpSymbol {
     fn from(durability: TerminusDurability) -> Self {
         match durability {
-            TerminusDurability::None => "none".into(),
-            TerminusDurability::Configuration => "configuration".into(),
-            TerminusDurability::UnsettledState => "unsettled-state".into(),
+            TerminusDurability::None => AmqpSymbol::from("none"),
+            TerminusDurability::Configuration => AmqpSymbol::from("configuration"),
+            TerminusDurability::UnsettledState => AmqpSymbol::from("unsettled-state"),
         }
     }
 }
@@ -33,10 +33,22 @@ pub enum TerminusExpiryPolicy {
 impl From<TerminusExpiryPolicy> for AmqpSymbol {
     fn from(policy: TerminusExpiryPolicy) -> Self {
         match policy {
-            TerminusExpiryPolicy::LinkDetach => "link-detach".into(),
-            TerminusExpiryPolicy::SessionEnd => "session-end".into(),
-            TerminusExpiryPolicy::ConnectionClose => "connection-close".into(),
-            TerminusExpiryPolicy::Never => "never".into(),
+            TerminusExpiryPolicy::LinkDetach => AmqpSymbol::from("link-detach"),
+            TerminusExpiryPolicy::SessionEnd => AmqpSymbol::from("session-end"),
+            TerminusExpiryPolicy::ConnectionClose => AmqpSymbol::from("connection-close"),
+            TerminusExpiryPolicy::Never => AmqpSymbol::from("never"),
+        }
+    }
+}
+
+impl From<AmqpSymbol> for TerminusExpiryPolicy {
+    fn from(symbol: AmqpSymbol) -> Self {
+        match symbol.0.as_str() {
+            "link-detach" => TerminusExpiryPolicy::LinkDetach,
+            "session-end" => TerminusExpiryPolicy::SessionEnd,
+            "connection-close" => TerminusExpiryPolicy::ConnectionClose,
+            "never" => TerminusExpiryPolicy::Never,
+            _ => panic!("Invalid symbol for TerminusExpiryPolicy"),
         }
     }
 }
@@ -50,8 +62,18 @@ pub enum DistributionMode {
 impl From<DistributionMode> for AmqpSymbol {
     fn from(mode: DistributionMode) -> Self {
         match mode {
-            DistributionMode::Move => "move".into(),
-            DistributionMode::Copy => "copy".into(),
+            DistributionMode::Move => AmqpSymbol::from("move"),
+            DistributionMode::Copy => AmqpSymbol::from("copy"),
+        }
+    }
+}
+
+impl From<AmqpSymbol> for DistributionMode {
+    fn from(symbol: AmqpSymbol) -> Self {
+        match symbol.0.as_str() {
+            "move" => DistributionMode::Move,
+            "copy" => DistributionMode::Copy,
+            _ => panic!("Invalid symbol for DistributionMode"),
         }
     }
 }
@@ -67,10 +89,10 @@ pub enum AmqpOutcome {
 impl From<AmqpOutcome> for AmqpSymbol {
     fn from(outcome: AmqpOutcome) -> Self {
         match outcome {
-            AmqpOutcome::Accepted => "amqp:accepted:list".into(),
-            AmqpOutcome::Rejected => "amqp:rejected:list".into(),
-            AmqpOutcome::Released => "amqp:released:list".into(),
-            AmqpOutcome::Modified => "amqp:modified:list".into(),
+            AmqpOutcome::Accepted => AmqpSymbol::from("amqp:accepted:list"),
+            AmqpOutcome::Rejected => AmqpSymbol::from("amqp:rejected:list"),
+            AmqpOutcome::Released => AmqpSymbol::from("amqp:released:list"),
+            AmqpOutcome::Modified => AmqpSymbol::from("amqp:modified:list"),
         }
     }
 }
@@ -139,18 +161,46 @@ impl From<AmqpMessageId> for AmqpValue {
 /// A target node in an AMQP message
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct AmqpTarget {
-    pub address: Option<String>,
-    pub durable: Option<TerminusDurability>,
-    pub expiry_policy: Option<TerminusExpiryPolicy>,
-    pub timeout: Option<u32>,
-    pub dynamic: Option<bool>,
-    pub dynamic_node_properties: Option<AmqpOrderedMap<String, AmqpValue>>,
-    pub capabilities: Option<Vec<AmqpValue>>,
+    address: Option<String>,
+    durable: Option<TerminusDurability>,
+    expiry_policy: Option<TerminusExpiryPolicy>,
+    timeout: Option<u32>,
+    dynamic: Option<bool>,
+    dynamic_node_properties: Option<AmqpOrderedMap<String, AmqpValue>>,
+    capabilities: Option<Vec<AmqpValue>>,
 }
 
 impl AmqpTarget {
     pub fn builder() -> builders::AmqpTargetBuilder {
         builders::AmqpTargetBuilder::new()
+    }
+
+    pub fn address(&self) -> Option<&String> {
+        self.address.as_ref()
+    }
+
+    pub fn durable(&self) -> Option<&TerminusDurability> {
+        self.durable.as_ref()
+    }
+
+    pub fn expiry_policy(&self) -> Option<&TerminusExpiryPolicy> {
+        self.expiry_policy.as_ref()
+    }
+
+    pub fn timeout(&self) -> Option<&u32> {
+        self.timeout.as_ref()
+    }
+
+    pub fn dynamic(&self) -> Option<&bool> {
+        self.dynamic.as_ref()
+    }
+
+    pub fn dynamic_node_properties(&self) -> Option<&AmqpOrderedMap<String, AmqpValue>> {
+        self.dynamic_node_properties.as_ref()
+    }
+
+    pub fn capabilities(&self) -> Option<&Vec<AmqpValue>> {
+        self.capabilities.as_ref()
     }
 }
 
@@ -171,6 +221,105 @@ impl From<String> for AmqpTarget {
             dynamic_node_properties: None,
             capabilities: None,
         }
+    }
+}
+
+impl From<AmqpList> for AmqpTarget {
+    fn from(list: AmqpList) -> Self {
+        let mut builder = AmqpTarget::builder();
+        let field_count = list.len();
+        if field_count >= 1 {
+            if let Some(AmqpValue::String(address)) = list.0.first() {
+                builder.with_address(address.clone());
+            }
+        }
+        if field_count >= 2 {
+            if let Some(AmqpValue::UByte(durable)) = list.0.get(1) {
+                match *durable {
+                    0 => {
+                        builder.with_durable(TerminusDurability::None);
+                    }
+                    1 => {
+                        builder.with_durable(TerminusDurability::Configuration);
+                    }
+                    2 => {
+                        builder.with_durable(TerminusDurability::UnsettledState);
+                    }
+                    _ => {
+                        panic!("Invalid durable value");
+                    }
+                }
+            }
+        }
+        if field_count >= 3 {
+            if let Some(AmqpValue::Symbol(expiry_policy)) = list.0.get(2) {
+                builder.with_expiry_policy(expiry_policy.clone().into());
+            }
+        }
+        if field_count >= 4 {
+            if let Some(AmqpValue::UInt(timeout)) = list.0.get(3) {
+                builder.with_timeout(*timeout);
+            }
+        }
+        if field_count >= 5 {
+            if let Some(AmqpValue::Boolean(dynamic)) = list.0.get(4) {
+                builder.with_dynamic(*dynamic);
+            }
+        }
+        if field_count >= 6 {
+            if let Some(AmqpValue::Map(dynamic_node_properties)) = list.0.get(5) {
+                let dynamic_node_properties: AmqpOrderedMap<String, AmqpValue> =
+                    dynamic_node_properties
+                        .iter()
+                        .map(|(k, v)| (k.clone().into(), v.clone()))
+                        .collect();
+                builder.with_dynamic_node_properties(dynamic_node_properties);
+            }
+        }
+        if field_count >= 7 {
+            if let Some(AmqpValue::Array(capabilities)) = list.0.get(6) {
+                builder.with_capabilities(capabilities.iter().map(|v| v.clone()).collect());
+            }
+        }
+        builder.build()
+    }
+}
+
+impl From<AmqpTarget> for AmqpList {
+    fn from(target: AmqpTarget) -> Self {
+        let mut list = vec![AmqpValue::Null; 7];
+
+        // Serialize the current value, if it exists. Otherwise serialize a null
+        list[0] = target.address.map_or(AmqpValue::Null, AmqpValue::String);
+        list[1] = target
+            .durable
+            .map_or(AmqpValue::Null, |v| AmqpValue::UByte(v as u8));
+        list[2] = target
+            .expiry_policy
+            .map_or(AmqpValue::Null, |v| AmqpValue::Symbol(v.into()));
+        list[3] = target.timeout.map_or(AmqpValue::Null, AmqpValue::UInt);
+        list[4] = target.dynamic.map_or(AmqpValue::Null, AmqpValue::Boolean);
+        list[5] = target.dynamic_node_properties.map_or(AmqpValue::Null, |v| {
+            AmqpValue::Map(
+                v.into_iter()
+                    .map(|(k, v)| (AmqpValue::String(k), v))
+                    .collect(),
+            )
+        });
+        list[6] = target.capabilities.map_or(AmqpValue::Null, |v| {
+            AmqpValue::Array(v.into_iter().collect())
+        });
+
+        let mut trailing_nulls = 0;
+        for val in list.iter().rev() {
+            if *val != AmqpValue::Null {
+                break;
+            }
+            trailing_nulls += 1;
+        }
+        list.truncate(list.len() - trailing_nulls);
+
+        AmqpList::from(list)
     }
 }
 
@@ -219,8 +368,93 @@ impl AmqpSource {
     }
 }
 
+impl From<AmqpList> for AmqpSource {
+    fn from(list: AmqpList) -> Self {
+        let mut builder = AmqpSource::builder();
+        let field_count = list.len();
+        if field_count >= 1 {
+            if let Some(AmqpValue::String(address)) = list.0.first() {
+                builder.with_address(address.clone());
+            }
+        }
+        if field_count >= 2 {
+            if let Some(AmqpValue::UByte(durable)) = list.0.get(1) {
+                match *durable {
+                    0 => {
+                        builder.with_durable(TerminusDurability::None);
+                    }
+                    1 => {
+                        builder.with_durable(TerminusDurability::Configuration);
+                    }
+                    2 => {
+                        builder.with_durable(TerminusDurability::UnsettledState);
+                    }
+                    _ => {
+                        panic!("Invalid durable value");
+                    }
+                }
+            }
+        }
+        if field_count >= 3 {
+            if let Some(AmqpValue::Symbol(expiry_policy)) = list.0.get(2) {
+                builder.with_expiry_policy(expiry_policy.clone().into());
+            }
+        }
+        if field_count >= 4 {
+            if let Some(AmqpValue::UInt(timeout)) = list.0.get(3) {
+                builder.with_timeout(*timeout);
+            }
+        }
+        if field_count >= 5 {
+            if let Some(AmqpValue::Boolean(dynamic)) = list.0.get(4) {
+                builder.with_dynamic(*dynamic);
+            }
+        }
+        if field_count >= 6 {
+            if let Some(AmqpValue::Map(dynamic_node_properties)) = list.0.get(5) {
+                let dynamic_node_properties: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
+                    dynamic_node_properties
+                        .iter()
+                        .map(|(k, v)| (k.clone().into(), v.clone()))
+                        .collect();
+                builder.with_dynamic_node_properties(dynamic_node_properties);
+            }
+        }
+        if field_count >= 7 {
+            if let Some(AmqpValue::Symbol(distribution_mode)) = list.0.get(6) {
+                builder.with_distribution_mode(distribution_mode.clone().into());
+            }
+        }
+        if field_count >= 8 {
+            if let Some(AmqpValue::Map(filter)) = list.0.get(7) {
+                let filter: AmqpOrderedMap<AmqpSymbol, AmqpValue> = filter
+                    .iter()
+                    .map(|(k, v)| (k.clone().into(), v.clone()))
+                    .collect();
+                builder.with_filter(filter);
+            }
+        }
+        if field_count >= 9 {
+            if let Some(AmqpValue::Symbol(default_outcome)) = list.0.get(8) {
+                builder.with_default_outcome(default_outcome.clone().into());
+            }
+        }
+        if field_count >= 10 {
+            if let Some(AmqpValue::Array(outcomes)) = list.0.get(9) {
+                builder.with_outcomes(outcomes.iter().map(|v| v.clone().into()).collect());
+            }
+        }
+        if field_count >= 11 {
+            if let Some(AmqpValue::Array(capabilities)) = list.0.get(10) {
+                builder.with_capabilities(capabilities.iter().map(|v| v.clone().into()).collect());
+            }
+        }
+        builder.build()
+    }
+}
+
 impl From<AmqpSource> for AmqpList {
-    fn from(source: AmqpSource) -> AmqpList {
+    fn from(source: AmqpSource) -> Self {
         let mut list = vec![AmqpValue::Null; 11];
 
         // Serialize the current value, if it exists. Otherwise serialize a null
@@ -1016,42 +1250,42 @@ pub mod builders {
     }
 
     impl AmqpTargetBuilder {
-        pub fn build(self) -> AmqpTarget {
-            self.target
+        pub fn build(&mut self) -> AmqpTarget {
+            self.target.clone()
         }
         pub(super) fn new() -> AmqpTargetBuilder {
             AmqpTargetBuilder {
                 target: Default::default(),
             }
         }
-        pub fn with_address(mut self, address: impl Into<String>) -> Self {
+        pub fn with_address(&mut self, address: impl Into<String>) -> &mut Self {
             self.target.address = Some(address.into());
             self
         }
-        pub fn with_durable(mut self, durable: TerminusDurability) -> Self {
+        pub fn with_durable(&mut self, durable: TerminusDurability) -> &mut Self {
             self.target.durable = Some(durable);
             self
         }
-        pub fn with_expiry_policy(mut self, expiry_policy: TerminusExpiryPolicy) -> Self {
+        pub fn with_expiry_policy(&mut self, expiry_policy: TerminusExpiryPolicy) -> &mut Self {
             self.target.expiry_policy = Some(expiry_policy);
             self
         }
-        pub fn with_timeout(mut self, timeout: u32) -> Self {
+        pub fn with_timeout(&mut self, timeout: u32) -> &mut Self {
             self.target.timeout = Some(timeout);
             self
         }
-        pub fn with_dynamic(mut self, dynamic: bool) -> Self {
+        pub fn with_dynamic(&mut self, dynamic: bool) -> &mut Self {
             self.target.dynamic = Some(dynamic);
             self
         }
         pub fn with_dynamic_node_properties(
-            mut self,
+            &mut self,
             dynamic_node_properties: impl Into<AmqpOrderedMap<String, AmqpValue>>,
-        ) -> Self {
+        ) -> &mut Self {
             self.target.dynamic_node_properties = Some(dynamic_node_properties.into());
             self
         }
-        pub fn with_capabilities(mut self, capabilities: Vec<AmqpValue>) -> Self {
+        pub fn with_capabilities(&mut self, capabilities: Vec<AmqpValue>) -> &mut Self {
             self.target.capabilities = Some(capabilities);
             self
         }
