@@ -278,7 +278,7 @@ impl From<AmqpList> for AmqpTarget {
         }
         if field_count >= 7 {
             if let Some(AmqpValue::Array(capabilities)) = list.0.get(6) {
-                builder.with_capabilities(capabilities.iter().map(|v| v.clone()).collect());
+                builder.with_capabilities(capabilities.iter().cloned().collect());
             }
         }
         builder.build()
