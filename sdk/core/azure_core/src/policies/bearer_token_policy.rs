@@ -61,7 +61,7 @@ impl Policy for BearerTokenCredentialPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        let access_token = self.access_token.as_ref().read().await;
+        let access_token = self.access_token.read().await;
 
         if let Some(token) = &(*access_token) {
             if token.is_expired(Some(DEFAULT_REFRESH_TIME)) {
