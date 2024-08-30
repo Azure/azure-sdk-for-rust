@@ -16,11 +16,17 @@ workspace = true
 
 [dependencies]
 azure_core = { workspace = true }
-reqwest = { workspace = true, optional = true }
+# reqwest = { workspace = true, optional = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
+[dev-dependencies]
+reqwest = { workspace = true }
+tokio = { workspace = true }
+
 [features]
-default = [ "reqwest" ]
-reqwest = [ "dep:reqwest" ]
+# default = [ "reqwest" ]
+# reqwest = [ "dep:reqwest" ]
+default = ["enable_reqwest"]
+enable_reqwest = ["azure_core/enable_reqwest"]

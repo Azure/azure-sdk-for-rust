@@ -16,6 +16,7 @@ pub struct AzureOpenAIClient {
 }
 
 impl AzureOpenAIClient {
+    // TODO: not sure if this should be named `with_key_credential` instead
     pub fn new(endpoint: impl AsRef<str>, secret: String) -> Result<Self> {
         let endpoint = Url::parse(endpoint.as_ref())?;
         let key_credential = AzureKeyCredential::new(secret);
@@ -50,7 +51,11 @@ impl AzureOpenAIClient {
             chat_completions_request,
         )?;
         let response = self.http_client.execute_request(&request).await?;
-        Ok(response.into_body().json().await?)
+        let (status_code , headers, body) = response.deconstruct();
+
+        println!("Status code: {:?}", status_code);
+        println!("Headers: {:?}", headers);
+        Ok(body.json().await?)
     }
 }
 
