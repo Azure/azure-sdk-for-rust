@@ -31,7 +31,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
         continue
       }
 
-      $package.RelativePath = (Split-Path $package.manifest_path -Parent).Replace($RepoRoot, "").SubString(1)
+      $package.DirectoryPath = Split-Path $package.manifest_path -Parent
       $package.DependentPackages = @()
       $packageManifests[$package.name] = $package
     }
@@ -72,8 +72,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
   }
 
   foreach ($package in $packageManifests.Values) {
-    $absolutePath = Split-Path $package.manifest_path -Parent -Resolve
-    $pkgProp = [PackageProps]::new($package.name, $package.version, $absolutePath, $package.ServiceDirectoryName)
+    $pkgProp = [PackageProps]::new($package.name, $package.version, $package.DirectoryPath, $package.ServiceDirectoryName)
     $pkgProp.IsNewSdk = $true
     $pkgProp.ArtifactName = $package.name
 
@@ -84,7 +83,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
       $pkgProp.SdkType = "client"
     }
 
-    $pkgProp.AdditionalValidationPackages = GetDependentPackages $package | Select-Object -ExpandProperty RelativePath
+    $pkgProp.AdditionalValidationPackages = GetDependentPackages $package | Select-Object -ExpandProperty DirectoryPath
 
     $allPackageProps += $pkgProp
   }

@@ -4,18 +4,23 @@ parameters:
     default: stable
 
 steps:
+  - ${{ if ne(parameters.Toolchain, 'nightly') }}:
+      - template: /eng/pipelines/templates/steps/use-rust.yml@self
+        parameters:
+          Toolchain: nightly
+
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
       Toolchain: ${{ parameters.Toolchain }}
 
-  - pwsh: |
-      . ./eng/common/scripts/Helpers/CommandInvocation-Helpers.ps1
+  - template: /eng/common/pipelines/templates/steps/save-package-properties.yml
 
-      $env:RUSTDOCFLAGS = "-D warnings"
-      $env:RUSTFLAGS = "-Dwarnings"
-
-      Invoke-LoggedCommand "cargo +$(Toolchain) check -p azure_core --no-default-features"
-      Invoke-LoggedCommand "cargo +$(Toolchain) fmt --all -- --check"
-      Invoke-LoggedCommand "cargo +$(Toolchain) clippy --all"
-      Invoke-LoggedCommand "cargo +$(Toolchain) doc --all --no-deps"
+  - task: Powershell@2
     displayName: "Run source analysis"
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/eng/scripts/Analyze-Code.ps1
+      arguments: >
+        -Toolchain '$(Toolchain)'
+        -PackageInfoPath '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        -SkipPackageAnalysis:$$(NoPackagesChanged)
