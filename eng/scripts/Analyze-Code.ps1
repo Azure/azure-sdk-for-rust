@@ -36,13 +36,13 @@ if (!$SkipPackageAnalysis) {
     exit 1
   }
 
-  $pacakgesToTest = Get-ChildItem $PackageInfoPath -Filter "*.json" -Recurse
+  $packagesToTest = Get-ChildItem $PackageInfoPath -Filter "*.json" -Recurse
   | Get-Content -Raw
   | ConvertFrom-Json
 
   Push-Location
   try {
-    foreach ($package in $pacakgesToTest) {
+    foreach ($package in $packagesToTest) {
       Set-Location (Join-Path $RepoRoot $package.DirectoryPath)
       Write-Host "Analyzing package: '$($package.Name)' in directory: '$($package.DirectoryPath)'`n"
       Invoke-LoggedCommand "cargo +nightly -Zscript $verifyDependenciesScript"

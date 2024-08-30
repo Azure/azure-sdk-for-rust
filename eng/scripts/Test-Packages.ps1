@@ -25,16 +25,16 @@ if ($PackageInfoPath) {
     exit 1
   }
 
-  $pacakgesToTest = Get-ChildItem $PackageInfoPath -Filter "*.json" -Recurse
+  $packagesToTest = Get-ChildItem $PackageInfoPath -Filter "*.json" -Recurse
   | Get-Content -Raw
   | ConvertFrom-Json
 }
 else {
-  $pacakgesToTest = Get-AllPackagesInRepo
+  $packagesToTest = Get-AllPackagesInRepo
 }
 
 Write-Host "Testing packages:"
-foreach ($package in $pacakgesToTest) {
+foreach ($package in $packagesToTest) {
   Write-Host "  '$($package.Name)'"
 }
 
@@ -42,7 +42,7 @@ Write-Host "Setting RUSTFLAGS to '-Dwarnings'"
 $env:RUSTFLAGS = "-Dwarnings"
 
 
-foreach ($package in $pacakgesToTest) {
+foreach ($package in $packagesToTest) {
   Push-Location (Join-Path $RepoRoot $package.DirectoryPath)
   try {
     Write-Host "`n`nTesting package: '$($package.Name)' in directory: '$($package.DirectoryPath)'`n"
