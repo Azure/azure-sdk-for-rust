@@ -16,6 +16,7 @@ rust-version.workspace = true
 [dependencies]
 typespec = { workspace = true, features = ["http", "json"] }
 typespec_client_core = { workspace = true, features = ["http", "json"] }
+async-lock = { workspace = true }
 async-trait = { workspace = true }
 bytes = { workspace = true }
 futures = { workspace = true }

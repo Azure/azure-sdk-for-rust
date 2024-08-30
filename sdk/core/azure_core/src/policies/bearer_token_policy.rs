@@ -1,11 +1,13 @@
 use crate::{
     auth::{AccessToken, TokenCredential},
+    error::{Error, ErrorKind, Result},
     headers::AUTHORIZATION,
     policies::{Policy, PolicyResult},
     Context, Request,
 };
+use async_lock::RwLock;
 use async_trait::async_trait;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
@@ -38,24 +40,14 @@ impl BearerTokenCredentialPolicy {
             .collect::<Vec<&str>>()
     }
 
-    fn refresh_token(&self, new_access_token: &AccessToken) {
-        let mut access_token = self.access_token.write().unwrap();
-        *access_token = Some(new_access_token.clone());
-    }
-
-    fn is_token_expired(&self) -> bool {
-        let access_token = self.access_token.read().unwrap().clone();
-        match access_token {
-            Some(access_token) => access_token.is_expired(Some(DEFAULT_REFRESH_TIME)),
-            None => true,
-        }
-    }
-
-    fn access_token(&self) -> Result<String, &'static str> {
-        let access_token = self.access_token.read().unwrap().clone();
-        match access_token {
-            Some(access_token) => Ok(String::from(access_token.token.secret())),
-            None => Err("access_token is None."),
+    async fn access_token(&self) -> Result<String> {
+        let access_token = self.access_token.as_ref().read().await;
+        if let Some(x) = &(*access_token) {
+            Ok(x.token.secret().to_string())
+        } else {
+            Err(Error::with_message(ErrorKind::Credential, || {
+                "Failed to get AccessToken credential."
+            }))
         }
     }
 }
@@ -69,17 +61,23 @@ impl Policy for BearerTokenCredentialPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        if self.is_token_expired() {
-            let access_token = self.credential.get_token(&self.scopes()).await?;
-            self.refresh_token(&access_token);
+        let access_token = self.access_token.as_ref().read().await;
+
+        if let Some(token) = &(*access_token) {
+            if token.is_expired(Some(DEFAULT_REFRESH_TIME)) {
+                drop(access_token);
+                let mut access_token = self.access_token.write().await;
+                *access_token = Some(self.credential.get_token(&self.scopes()).await?);
+            }
+        } else {
+            drop(access_token);
+            let mut access_token = self.access_token.write().await;
+            *access_token = Some(self.credential.get_token(&self.scopes()).await?);
         }
+
         request.insert_header(
             AUTHORIZATION,
-            format!(
-                "Bearer {}",
-                self.access_token()
-                    .expect("Fetching access_token unexpectedly failed.")
-            ),
+            format!("Bearer {}", self.access_token().await?),
         );
 
         next[0].send(ctx, request, &next[1..]).await
