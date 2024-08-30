@@ -18,6 +18,7 @@ use openssl::{
 use serde::Deserialize;
 use std::{str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
+use typespec_client_core::http::Model;
 use url::{form_urlencoded, Url};
 
 /// Refresh time to use in seconds
@@ -327,7 +328,7 @@ impl ClientCertificateCredential {
     }
 }
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Model, Deserialize, Debug, Default)]
 #[serde(default)]
 struct AadTokenResponse {
     token_type: String,
@@ -335,8 +336,6 @@ struct AadTokenResponse {
     ext_expires_in: u64,
     access_token: String,
 }
-
-azure_core::json_model!(AadTokenResponse);
 
 fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
     Ok(format!(
