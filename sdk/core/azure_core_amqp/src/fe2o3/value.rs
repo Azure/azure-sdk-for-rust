@@ -114,6 +114,29 @@ impl From<fe2o3_amqp_types::primitives::SimpleValue> for AmqpValue {
     }
 }
 
+impl From<fe2o3_amqp_types::primitives::Value> for AmqpList {
+    fn from(value: fe2o3_amqp_types::primitives::Value) -> Self {
+        match value {
+            fe2o3_amqp_types::primitives::Value::List(l) => {
+                AmqpList(l.into_iter().map(|v| v.into()).collect::<Vec<AmqpValue>>())
+            }
+            _ => panic!("Expected a list"),
+        }
+    }
+}
+
+impl From<AmqpList> for fe2o3_amqp_types::primitives::Value {
+    fn from(value: AmqpList) -> Self {
+        fe2o3_amqp_types::primitives::Value::List(
+            value
+                .0
+                .into_iter()
+                .map(|v| v.into())
+                .collect::<Vec<fe2o3_amqp_types::primitives::Value>>(),
+        )
+    }
+}
+
 impl From<AmqpDescriptor> for serde_amqp::descriptor::Descriptor {
     fn from(descriptor: AmqpDescriptor) -> Self {
         match descriptor {
@@ -162,7 +185,12 @@ impl From<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             AmqpValue::Array(a) => fe2o3_amqp_types::primitives::Value::Array(
                 a.into_iter().map(|v| v.into()).collect(),
             ),
-            AmqpValue::Composite(_) => panic!("Composite values are not supported in Fe2o3"),
+            AmqpValue::Composite(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
+                serde_amqp::described::Described {
+                    descriptor: d.descriptor.clone().into(),
+                    value: d.value.clone().into(),
+                },
+            )),
             AmqpValue::Described(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
                 serde_amqp::described::Described {
                     descriptor: d.descriptor.clone().into(),

@@ -42,3 +42,13 @@ pub enum ReceiverSettleMode {
     First = AMQP_RECEIVER_SETTLE_MODE_FIRST,
     Second = AMQP_RECEIVER_SETTLE_MODE_SECOND,
 }
+
+pub trait Serializable {
+    fn serialize(&self, buffer: &mut [u8]) -> azure_core::Result<()>;
+
+    fn encoded_size(&self) -> usize;
+}
+
+pub trait Deserializable<T> {
+    fn decode(data: &[u8]) -> azure_core::Result<T>;
+}
