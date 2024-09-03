@@ -1,15 +1,7 @@
-#!/usr/bin/env -S cargo +nightly -Zscript
----
-[package]
-edition = "2021"
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
-[dependencies]
-cargo-util-schemas = "0.1.0"
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.114"
-toml = "0.8.10"
----
-
+use crate::find_file;
 use cargo_util_schemas::manifest::{InheritableDependency, TomlDependency, TomlManifest};
 use serde::Deserialize;
 use std::{
@@ -18,9 +10,10 @@ use std::{
     process::{Command, Stdio},
 };
 
-fn main() {
-    let manifest_path = std::env::args()
-        .nth(1)
+pub fn run(args: impl Iterator<Item = String>) {
+    let manifest_path = args
+        .into_iter()
+        .next()
         .or_else(|| {
             find_file(
                 std::env::current_dir().expect("current directory"),
@@ -160,16 +153,6 @@ fn workspace_manifest_path(manifest_path: &str) -> PathBuf {
     }
 
     path
-}
-
-fn find_file(dir: impl AsRef<std::path::Path>, name: &str) -> Option<String> {
-    for dir in dir.as_ref().ancestors() {
-        let path = dir.join(name);
-        if path.exists() {
-            return Some(path.to_str().unwrap().into());
-        }
-    }
-    None
 }
 
 fn read_manifest(cmd: &mut std::process::Child) -> CargoManifest {
