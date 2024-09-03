@@ -51,7 +51,7 @@ impl AzureOpenAIClient {
             chat_completions_request,
         )?;
         let response = self.http_client.execute_request(&request).await?;
-        let (status_code , headers, body) = response.deconstruct();
+        let (status_code, headers, body) = response.deconstruct();
 
         println!("Status code: {:?}", status_code);
         println!("Headers: {:?}", headers);
