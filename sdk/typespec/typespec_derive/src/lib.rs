@@ -1,4 +1,4 @@
-use syn::{parse::ParseStream, parse_macro_input, DeriveInput, Error, LitStr};
+use syn::{parse::ParseStream, parse_macro_input, spanned::Spanned, DeriveInput, Error, LitStr};
 
 extern crate proc_macro;
 
@@ -29,9 +29,9 @@ fn parse_literal_string(value: ParseStream) -> Result<LitStr> {
     match expr {
         syn::Expr::Lit(lit) => match lit.lit {
             syn::Lit::Str(s) => Ok(s),
-            _ => Err(Error::new(value.span(), "expected string literal")),
+            _ => Err(Error::new(lit.span(), "expected string literal")),
         },
-        _ => Err(Error::new(value.span(), "expected string literal")),
+        _ => Err(Error::new(expr.span(), "expected string literal")),
     }
 }
 

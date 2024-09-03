@@ -1,12 +1,26 @@
 use std::{collections::HashMap, io::BufReader, path::PathBuf, process::Stdio};
 
-use cargo_metadata::{CompilerMessage, Message, PackageId};
+use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
 use serde::Serialize;
+
+#[derive(Serialize)]
+struct MessageExpectation {
+    pub level: DiagnosticLevel,
+    pub code: Option<String>,
+    pub message: Option<String>,
+    pub spans: Vec<MessageSpan>,
+}
+
+#[derive(Serialize)]
+struct MessageSpan {
+    pub file_name: String,
+    pub line: usize, // We only check the line number of the span because other properties (like highlight span) can vary by compiler version.
+}
 
 #[derive(Serialize)]
 #[serde(transparent)]
 struct FileResult {
-    pub messages: Vec<CompilerMessage>,
+    pub messages: Vec<MessageExpectation>,
 }
 
 #[test]
@@ -47,25 +61,13 @@ pub fn compilation_tests() {
         })
         // Group by primary_span's src path
         .fold(HashMap::new(), |mut map, msg| {
-            // Clone a new message that we'll update, to satisfy the borrow checker.
-            // If we don't do this, we have to do a lot of dancing around borrows, which is doable but this is easier.
-            let mut new_msg = msg.clone();
-
             let Some(primary_span) = msg.message.spans.iter().find(|s| s.is_primary) else {
                 // No primary span, don't add this to the map.
                 return map;
             };
 
-            // Relativize the src path
-            let relative_path = msg
-                .target
-                .src_path
-                .strip_prefix(&repo_root)
-                .expect("src_path is not relative to test_root");
-            new_msg.target.src_path = relative_path.into();
-
-            // Relativize the file_name in each span
-            new_msg.message.spans = msg
+            // Convert the spans
+            let spans: Vec<MessageSpan> = msg
                 .message
                 .spans
                 .iter()
@@ -83,35 +85,27 @@ pub fn compilation_tests() {
                             &span.file_name, &repo_root
                         ))
                         .to_path_buf();
-                    let mut new_span = span.clone();
-                    new_span.file_name = relative_span_path
-                        .to_str()
-                        .expect("failed to convert to string")
-                        .into();
 
-                    // Clear the label, it can be volatile from compiler version to compiler version
-                    new_span.label = None;
-
-                    // Clear the expansion property, it just contains references to the macro (and absolute paths)
-                    new_span.expansion = None;
-
-                    new_span
+                    MessageSpan {
+                        file_name: relative_span_path
+                            .to_str()
+                            .expect("failed to convert span path to string")
+                            .into(),
+                        line: span.line_start,
+                    }
                 })
                 .collect();
 
-            // Clear the 'children' property, it has absolute paths and doesn't need to be validated (it contains 'help' and 'note' messages).
-            new_msg.message.children.clear();
-
-            // If there's a 'code', the message comes from rustc (not our macro).
-            // In that case, clear the 'rendered' and 'message' properties, they can be volatile from compiler version to compiler version
-            if let Some(ref code) = new_msg.message.code {
-                new_msg.message.rendered = None;
-                new_msg.message.message = format!("<redacted message for err {}>", code.code);
-            }
-
-            // The package ID contains the absolute path. Just redact it.
-            new_msg.package_id = PackageId {
-                repr: "<redacted>".into(),
+            let expectation = MessageExpectation {
+                code: msg.message.code.clone().map(|c| c.code),
+                level: msg.message.level,
+                message: match msg.message.code {
+                    // If there's a 'code', the message comes from rustc (not our macro).
+                    // In that case, clear the 'rendered' and 'message' properties, they can be volatile from compiler version to compiler version
+                    Some(_) => None,
+                    None => Some(msg.message.message),
+                },
+                spans,
             };
 
             map.entry(primary_span.file_name.clone())
@@ -119,7 +113,7 @@ pub fn compilation_tests() {
                     messages: Vec::new(),
                 })
                 .messages
-                .push(new_msg);
+                .push(expectation);
             map
         });
 

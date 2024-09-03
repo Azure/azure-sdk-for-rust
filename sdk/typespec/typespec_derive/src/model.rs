@@ -103,7 +103,7 @@ fn parse_attr(attribute: &Attribute, attrs: &mut Attrs) -> Result<()> {
     meta_list.parse_nested_meta(|meta| {
         let ident = meta.path.get_ident().ok_or_else(|| {
             Error::new(
-                meta.path.span(),
+                attribute.span(),
                 "invalid typespec attribute, expected attribute in form #[typespec(key = value)]",
             )
         })?;
