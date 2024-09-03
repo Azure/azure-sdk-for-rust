@@ -91,6 +91,7 @@ impl<T> Response<T> {
     /// # Example
     /// ```rust
     /// # pub struct GetSecretResponse { }
+    /// # use typespec_derive::Model;
     /// use typespec_client_core::http::{Model, Response};
     /// use serde::Deserialize;
     /// use bytes::Bytes;
@@ -144,6 +145,7 @@ impl<T: Model> Response<T> {
     /// ```rust
     /// # use serde::Deserialize;
     /// # use typespec_client_core::http::Model;
+    /// # use typespec_derive::Model;
     /// # #[derive(Model, Deserialize)]
     /// # pub struct GetSecretResponse {
     /// #   name: String,
