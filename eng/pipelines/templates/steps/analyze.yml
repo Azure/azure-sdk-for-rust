@@ -23,4 +23,4 @@ steps:
       arguments: >
         -Toolchain '$(Toolchain)'
         -PackageInfoPath '$(Build.ArtifactStagingDirectory)/PackageInfo'
-        -SkipPackageAnalysis:$$(NoPackagesChanged)
+        -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
