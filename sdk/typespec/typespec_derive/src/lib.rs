@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use syn::{parse::ParseStream, parse_macro_input, spanned::Spanned, DeriveInput, Error, LitStr};
 
 extern crate proc_macro;

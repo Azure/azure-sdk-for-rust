@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::{collections::HashMap, io::BufReader, path::PathBuf, process::Stdio};
 
 use cargo_metadata::{diagnostic::DiagnosticLevel, Message};

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use proc_macro2::TokenStream;
 use syn::spanned::Spanned;
 use syn::{Attribute, DeriveInput, Error, Meta, Path};
