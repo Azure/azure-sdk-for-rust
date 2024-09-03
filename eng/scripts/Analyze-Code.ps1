@@ -30,7 +30,9 @@ Invoke-LoggedCommand "cargo +$Toolchain doc --workspace --no-deps"
 
 $verifyDependenciesScript = Join-Path $RepoRoot 'eng' 'scripts' 'verify-dependencies.rs' -Resolve
 
-if (!$SkipPackageAnalysis) {
+$skipPackages = $SkipPackageAnalysis -or $env:NoPackagesChanged
+
+if (!$skipPackages) {
   if (!(Test-Path $PackageInfoPath)) {
     Write-Error "Package info path '$PackageInfoPath' does not exist."
     exit 1
