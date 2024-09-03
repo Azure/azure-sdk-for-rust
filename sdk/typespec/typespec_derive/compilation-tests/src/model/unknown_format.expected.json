@@ -6,7 +6,7 @@
     "spans": [
       {
         "file_name": "sdk/typespec/typespec_derive/compilation-tests/src/model/unknown_format.rs",
-        "line": 5
+        "line": 8
       }
     ]
   }
