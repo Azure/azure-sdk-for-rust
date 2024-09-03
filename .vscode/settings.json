@@ -1,9 +1,10 @@
 {
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
+  "rust-analyzer.check.command": "clippy",
   "rust-analyzer.cargo.features": "all",
+  "yaml.format.printWidth": 240,
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell",
-  },
-  "yaml.format.printWidth": 240
+  }
 }

@@ -15,6 +15,8 @@
     "asyncoperation",
     "azsdk",
     "azurecli",
+    "buildable",
+    "codespaces",
     "datalake",
     "datetime",
     "devicecode",
@@ -36,7 +38,8 @@
     "servicebus",
     "stylesheet",
     "typespec",
-    "virtualmachine"
+    "virtualmachine",
+    "xtask"
   ],
   "dictionaryDefinitions": [
     {
