@@ -10,7 +10,7 @@
         "lib"
       ],
       "required-features": [],
-      "src_path": "src/lib.rs",
+      "src_path": "sdk/typespec/typespec_derive/compilation-tests/src/lib.rs",
       "edition": "2021",
       "doctest": true,
       "test": true,
@@ -25,7 +25,7 @@
       "level": "error",
       "spans": [
         {
-          "file_name": "src/model/not_derive_deserialize.rs",
+          "file_name": "sdk/typespec/typespec_derive/compilation-tests/src/model/not_derive_deserialize.rs",
           "byte_start": 49,
           "byte_end": 54,
           "line_start": 3,
@@ -43,122 +43,10 @@
           "label": "the trait `for<'de> Deserialize<'de>` is not implemented for `not_derive_deserialize::MyModel`",
           "suggested_replacement": null,
           "suggestion_applicability": null,
-          "expansion": {
-            "span": {
-              "file_name": "src/model/not_derive_deserialize.rs",
-              "byte_start": 49,
-              "byte_end": 54,
-              "line_start": 3,
-              "line_end": 3,
-              "column_start": 10,
-              "column_end": 15,
-              "is_primary": false,
-              "text": [
-                {
-                  "text": "#[derive(Model)]",
-                  "highlight_start": 10,
-                  "highlight_end": 15
-                }
-              ],
-              "label": null,
-              "suggested_replacement": null,
-              "suggestion_applicability": null,
-              "expansion": null
-            },
-            "macro_decl_name": "#[derive(Model)]",
-            "def_site_span": {
-              "file_name": "/home/ashleyst/code/Azure/azure-sdk-for-rust/model-and-derive/sdk/typespec/typespec_derive/src/lib.rs",
-              "byte_start": 2877,
-              "byte_end": 2955,
-              "line_start": 80,
-              "line_end": 80,
-              "column_start": 1,
-              "column_end": 79,
-              "is_primary": false,
-              "text": [
-                {
-                  "text": "pub fn derive_model(input: proc_macro::TokenStream) -> proc_macro::TokenStream {",
-                  "highlight_start": 1,
-                  "highlight_end": 79
-                }
-              ],
-              "label": null,
-              "suggested_replacement": null,
-              "suggestion_applicability": null,
-              "expansion": null
-            }
-          }
+          "expansion": null
         }
       ],
-      "children": [
-        {
-          "message": "the following other types implement trait `Deserialize<'de>`:\n  <bool as Deserialize<'de>>\n  <char as Deserialize<'de>>\n  <isize as Deserialize<'de>>\n  <i8 as Deserialize<'de>>\n  <i16 as Deserialize<'de>>\n  <i32 as Deserialize<'de>>\n  <i64 as Deserialize<'de>>\n  <i128 as Deserialize<'de>>\nand 189 others",
-          "code": null,
-          "level": "help",
-          "spans": [],
-          "children": [],
-          "rendered": null
-        },
-        {
-          "message": "required for `not_derive_deserialize::MyModel` to implement `DeserializeOwned`",
-          "code": null,
-          "level": "note",
-          "spans": [],
-          "children": [],
-          "rendered": null
-        },
-        {
-          "message": "required by a bound in `ResponseBody::json`",
-          "code": null,
-          "level": "note",
-          "spans": [
-            {
-              "file_name": "/home/ashleyst/code/Azure/azure-sdk-for-rust/model-and-derive/sdk/typespec/typespec_client_core/src/http/response.rs",
-              "byte_start": 8650,
-              "byte_end": 8654,
-              "line_start": 232,
-              "line_end": 232,
-              "column_start": 18,
-              "column_end": 22,
-              "is_primary": false,
-              "text": [
-                {
-                  "text": "    pub async fn json<T>(self) -> crate::Result<T>",
-                  "highlight_start": 18,
-                  "highlight_end": 22
-                }
-              ],
-              "label": "required by a bound in this associated function",
-              "suggested_replacement": null,
-              "suggestion_applicability": null,
-              "expansion": null
-            },
-            {
-              "file_name": "/home/ashleyst/code/Azure/azure-sdk-for-rust/model-and-derive/sdk/typespec/typespec_client_core/src/http/response.rs",
-              "byte_start": 8705,
-              "byte_end": 8721,
-              "line_start": 234,
-              "line_end": 234,
-              "column_start": 12,
-              "column_end": 28,
-              "is_primary": true,
-              "text": [
-                {
-                  "text": "        T: DeserializeOwned,",
-                  "highlight_start": 12,
-                  "highlight_end": 28
-                }
-              ],
-              "label": "required by this bound in `ResponseBody::json`",
-              "suggested_replacement": null,
-              "suggestion_applicability": null,
-              "expansion": null
-            }
-          ],
-          "children": [],
-          "rendered": null
-        }
-      ],
+      "children": [],
       "rendered": "error[E0277]: the trait bound `for<'de> not_derive_deserialize::MyModel: Deserialize<'de>` is not satisfied\n   --> src/model/not_derive_deserialize.rs:3:10\n    |\n3   | #[derive(Model)]\n    |          ^^^^^ the trait `for<'de> Deserialize<'de>` is not implemented for `not_derive_deserialize::MyModel`\n    |\n    = help: the following other types implement trait `Deserialize<'de>`:\n              <bool as Deserialize<'de>>\n              <char as Deserialize<'de>>\n              <isize as Deserialize<'de>>\n              <i8 as Deserialize<'de>>\n              <i16 as Deserialize<'de>>\n              <i32 as Deserialize<'de>>\n              <i64 as Deserialize<'de>>\n              <i128 as Deserialize<'de>>\n            and 189 others\n    = note: required for `not_derive_deserialize::MyModel` to implement `DeserializeOwned`\nnote: required by a bound in `ResponseBody::json`\n   --> /home/ashleyst/code/Azure/azure-sdk-for-rust/model-and-derive/sdk/typespec/typespec_client_core/src/http/response.rs:234:12\n    |\n232 |     pub async fn json<T>(self) -> crate::Result<T>\n    |                  ---- required by a bound in this associated function\n233 |     where\n234 |         T: DeserializeOwned,\n    |            ^^^^^^^^^^^^^^^^ required by this bound in `ResponseBody::json`\n    = note: this error originates in the derive macro `Model` (in Nightly builds, run with -Z macro-backtrace for more info)\n\n"
     }
   }

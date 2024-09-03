@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::BufReader, process::Stdio};
+use std::{collections::HashMap, io::BufReader, path::PathBuf, process::Stdio};
 
 use cargo_metadata::{CompilerMessage, Message, PackageId};
 use serde::Serialize;
@@ -15,6 +15,14 @@ pub fn compilation_tests() {
         let mut cwd = std::env::current_dir().expect("failed to get current directory");
         cwd.push("compilation-tests");
         cwd
+    };
+    let repo_root = {
+        let mut p = test_root.clone(); // [root]/sdk/typespec/typespec_derive/compilation-tests
+        p.pop(); // [root]/sdk/typespec/typespec_derive
+        p.pop(); // [root]/sdk/typespec
+        p.pop(); // [root]/sdk
+        p.pop(); // [root]
+        p
     };
 
     // TODO: Create an initial map of all the files in the project.
@@ -38,7 +46,11 @@ pub fn compilation_tests() {
             _ => None,
         })
         // Group by primary_span's src path
-        .fold(HashMap::new(), |mut map, mut msg| {
+        .fold(HashMap::new(), |mut map, msg| {
+            // Clone a new message that we'll update, to satisfy the borrow checker.
+            // If we don't do this, we have to do a lot of dancing around borrows, which is doable but this is easier.
+            let mut new_msg = msg.clone();
+
             let Some(primary_span) = msg.message.spans.iter().find(|s| s.is_primary) else {
                 // No primary span, don't add this to the map.
                 return map;
@@ -48,12 +60,47 @@ pub fn compilation_tests() {
             let relative_path = msg
                 .target
                 .src_path
-                .strip_prefix(&test_root)
+                .strip_prefix(&repo_root)
                 .expect("src_path is not relative to test_root");
-            msg.target.src_path = relative_path.into();
+            new_msg.target.src_path = relative_path.into();
+
+            // Relativize the file_name in each span
+            new_msg.message.spans = msg
+                .message
+                .spans
+                .iter()
+                .map(|span| {
+                    let mut span_file_name = PathBuf::from(&span.file_name);
+                    if span_file_name.is_relative() {
+                        span_file_name = test_root.join(span_file_name)
+                    }
+                    assert!(span_file_name.is_absolute());
+
+                    let relative_span_path = span_file_name
+                        .strip_prefix(&repo_root)
+                        .expect(&format!(
+                            "span path {} is not relative to test_root {:?}",
+                            &span.file_name, &repo_root
+                        ))
+                        .to_path_buf();
+                    let mut new_span = span.clone();
+                    new_span.file_name = relative_span_path
+                        .to_str()
+                        .expect("failed to convert to string")
+                        .into();
+
+                    // Clear the expansion property, it just contains references to the macro (and absolute paths)
+                    new_span.expansion = None;
+
+                    new_span
+                })
+                .collect();
+
+            // Clear the 'children' property, it has absolute paths and doesn't need to be validated (it contains 'help' and 'note' messages).
+            new_msg.message.children.clear();
 
             // The package ID contains the absolute path. Just redact it.
-            msg.package_id = PackageId {
+            new_msg.package_id = PackageId {
                 repr: "<redacted>".into(),
             };
 
@@ -62,7 +109,7 @@ pub fn compilation_tests() {
                     messages: Vec::new(),
                 })
                 .messages
-                .push(msg);
+                .push(new_msg);
             map
         });
 

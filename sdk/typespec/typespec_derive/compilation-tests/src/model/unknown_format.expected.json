@@ -10,7 +10,7 @@
         "lib"
       ],
       "required-features": [],
-      "src_path": "src/lib.rs",
+      "src_path": "sdk/typespec/typespec_derive/compilation-tests/src/lib.rs",
       "edition": "2021",
       "doctest": true,
       "test": true,
@@ -22,7 +22,7 @@
       "level": "error",
       "spans": [
         {
-          "file_name": "src/model/unknown_format.rs",
+          "file_name": "sdk/typespec/typespec_derive/compilation-tests/src/model/unknown_format.rs",
           "byte_start": 114,
           "byte_end": 121,
           "line_start": 5,
