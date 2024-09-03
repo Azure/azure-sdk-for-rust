@@ -176,8 +176,9 @@ pub enum AmqpValue {
     List(AmqpList),
     Map(AmqpOrderedMap<AmqpValue, AmqpValue>),
     Array(Vec<AmqpValue>),
-    Composite(Box<AmqpComposite>),
     Described(Box<AmqpDescribed>),
+    #[cfg(feature = "cplusplus")]
+    Composite(Box<AmqpComposite>),
     Unknown,
 }
 

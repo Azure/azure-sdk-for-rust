@@ -185,6 +185,7 @@ impl From<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             AmqpValue::Array(a) => fe2o3_amqp_types::primitives::Value::Array(
                 a.into_iter().map(|v| v.into()).collect(),
             ),
+            #[cfg(feature = "cplusplus")]
             AmqpValue::Composite(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
                 serde_amqp::described::Described {
                     descriptor: d.descriptor.clone().into(),
@@ -356,6 +357,7 @@ impl PartialEq<AmqpValue> for fe2o3_amqp_types::primitives::Value {
                 _ => false,
             },
 
+            #[cfg(feature = "cplusplus")]
             AmqpValue::Composite(_) => panic!("Composite values are not supported in Fe2o3"),
 
             AmqpValue::Unknown => todo!(),
