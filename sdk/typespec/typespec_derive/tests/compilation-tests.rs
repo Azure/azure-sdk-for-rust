@@ -109,8 +109,8 @@ pub fn compilation_tests() {
             if baseline != serialized {
                 let diff_command = format!("diff {:?} {:?}", baseline_path, actual_path);
                 errors.push_str(&format!(
-                    "{} does not match baseline\n    Run `{}` to compare.\n",
-                    src_path, diff_command
+                    "=== {} does not match baseline ===\nRun `{}` to compare.\n\nActual Payload:\n{}\n===\n",
+                    src_path, diff_command, serialized
                 ));
             }
         }
