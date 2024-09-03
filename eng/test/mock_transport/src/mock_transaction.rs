@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};

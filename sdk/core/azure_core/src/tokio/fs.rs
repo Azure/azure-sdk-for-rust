@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use futures::{task::Poll, Future};
 use std::{cmp::min, io::SeekFrom, pin::Pin, sync::Arc, task::Context};
 use tokio::{

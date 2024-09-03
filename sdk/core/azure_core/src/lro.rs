@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::headers::Headers;
 use std::time::Duration;
 use typespec_client_core::date::OffsetDateTime;

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_identity::client_credentials_flow;
 use std::{env::var, error::Error};
 use url::Url;

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::headers::{self, Header};
 
 /// The max number of items in the collection

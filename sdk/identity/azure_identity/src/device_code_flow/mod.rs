@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Authorize using the device authorization grant flow
 //!
 //! This flow allows users to sign in to input-constrained devices such as a smart TV, `IoT` device, or printer.

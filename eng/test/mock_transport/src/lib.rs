@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 mod mock_request;
 mod mock_response;
 mod mock_transaction;

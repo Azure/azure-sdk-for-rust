@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 /// Declare a `Future` with the given name
 ///
 /// `Future::Output` will be set to `azure_core::Result<$NAMEResponse>`.

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_core::{
     base64, error,
     headers::{HeaderName, HeaderValue, Headers},

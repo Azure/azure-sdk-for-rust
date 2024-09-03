@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Authorize using the authorization code flow
 //!
 //! You can learn more about the `OAuth2` authorization code flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::auth::Secret;
 #[cfg(any(feature = "hmac_rust", feature = "hmac_openssl"))]
 use crate::{

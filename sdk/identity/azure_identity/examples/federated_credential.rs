@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_core::authority_hosts::AZURE_PUBLIC_CLOUD;
 use azure_identity::federated_credentials_flow;
 use std::{

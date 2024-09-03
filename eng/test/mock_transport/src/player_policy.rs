@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::mock_request::RequestDeserializer;
 
 use super::mock_response::MockResponse;

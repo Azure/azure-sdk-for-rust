@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::{
     federated_credentials_flow, token_credentials::cache::TokenCache, TokenCredentialOptions,
 };

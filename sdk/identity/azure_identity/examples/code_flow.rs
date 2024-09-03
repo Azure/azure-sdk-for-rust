@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_core::new_http_client;
 use azure_identity::{authorization_code_flow, development::naive_redirect_server};
 use oauth2::{ClientId, ClientSecret, TokenResponse};

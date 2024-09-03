@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use super::options;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::AzureCliCredential;
