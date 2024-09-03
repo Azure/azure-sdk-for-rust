@@ -19,7 +19,7 @@ pub fn run(args: impl Iterator<Item = String>) {
 
     let mut missing_header = false;
     for path in args.filter(filter) {
-        let content = fs::read_to_string(&path).expect(&format!("read {}", &path));
+        let content = fs::read_to_string(&path).unwrap_or_else(|_| panic!("read {}", &path));
         if !content
             .replace("\r\n", "\n")
             .starts_with(&config.all.file_header_template)
@@ -34,8 +34,9 @@ pub fn run(args: impl Iterator<Item = String>) {
     }
 }
 
+#[allow(clippy::ptr_arg)]
 fn filter(value: &String) -> bool {
-    value.ends_with(".rs") && value.replace("\\", "/").contains("/generated/").not()
+    value.ends_with(".rs") && value.replace('\\', "/").contains("/generated/").not()
 }
 
 #[test]

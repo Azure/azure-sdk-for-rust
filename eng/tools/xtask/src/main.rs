@@ -4,11 +4,13 @@
 use std::{env, process::exit};
 
 mod check_editorconfig;
+#[cfg(not(target_arch = "wasm32"))]
 mod update_cratenames;
+#[cfg(not(target_arch = "wasm32"))]
 mod verify_dependencies;
 
 fn main() {
-    let mut args = env::args().into_iter();
+    let mut args = env::args();
     args.next().expect("expected executable");
 
     let Some(command) = args.next() else {
@@ -20,7 +22,9 @@ fn main() {
 
     match command.as_str() {
         "check-editorconfig" => check_editorconfig::run(args),
+        #[cfg(not(target_arch = "wasm32"))]
         "update-cratenames" => update_cratenames::run(),
+        #[cfg(not(target_arch = "wasm32"))]
         "verify-dependencies" => verify_dependencies::run(args),
         "--help" | "-h" => usage(),
         _ => {

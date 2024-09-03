@@ -19,7 +19,7 @@ pub fn run() {
         .expect("expected workspace")
         .dependencies
         .expect("expected workspace dependencies");
-    let crate_names: Vec<&str> = dependencies.iter().map(|(name, _)| name.as_str()).collect();
+    let crate_names: Vec<&str> = dependencies.keys().map(|name| name.as_str()).collect();
 
     let crate_names_path = workspace_root
         .join("eng/dict/crates.txt")

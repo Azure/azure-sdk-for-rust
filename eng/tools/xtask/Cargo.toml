@@ -12,7 +12,9 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
-cargo-util-schemas = "0.1.0"
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
 toml = "0.8.10"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+cargo-util-schemas = "0.1.0"

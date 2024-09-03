@@ -71,7 +71,7 @@ pub fn run(args: impl Iterator<Item = String>) {
             }
             None
         })
-        .flat_map(|v| std::iter::repeat(v.0).zip(v.1.into_iter()))
+        .flat_map(|v| std::iter::repeat(v.0).zip(v.1.iter()))
         .filter_map(|v| match v.1 .1 {
             InheritableDependency::Value(dep) => match dep {
                 TomlDependency::Simple(_) => Some(Package {
@@ -111,7 +111,7 @@ pub fn run(args: impl Iterator<Item = String>) {
 
 fn package_manifest_path(manifest_path: &str) -> PathBuf {
     let mut cmd = Command::new("cargo")
-        .args(&["read-manifest", "--manifest-path", manifest_path])
+        .args(["read-manifest", "--manifest-path", manifest_path])
         .stdout(Stdio::piped())
         .spawn()
         .expect("executing cargo read-manifest");
@@ -130,7 +130,7 @@ fn package_manifest_path(manifest_path: &str) -> PathBuf {
 
 fn workspace_manifest_path(manifest_path: &str) -> PathBuf {
     let mut cmd = Command::new("cargo")
-        .args(&[
+        .args([
             "metadata",
             "--format-version",
             "1",
