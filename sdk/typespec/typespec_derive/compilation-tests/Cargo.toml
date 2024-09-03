@@ -3,7 +3,7 @@
 # So we create a workspace node to tell cargo this is the root of a workspace
 
 [package]
-name = "compilation-tests"
+name = "compilation_tests"
 version = "0.1.0"
 edition = "2021"
 publish = false

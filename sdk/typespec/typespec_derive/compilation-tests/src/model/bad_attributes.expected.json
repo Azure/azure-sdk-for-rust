@@ -2,7 +2,7 @@
   {
     "package_id": "<redacted>",
     "target": {
-      "name": "compilation-tests",
+      "name": "compilation_tests",
       "kind": [
         "lib"
       ],
@@ -50,7 +50,7 @@
   {
     "package_id": "<redacted>",
     "target": {
-      "name": "compilation-tests",
+      "name": "compilation_tests",
       "kind": [
         "lib"
       ],
@@ -98,7 +98,7 @@
   {
     "package_id": "<redacted>",
     "target": {
-      "name": "compilation-tests",
+      "name": "compilation_tests",
       "kind": [
         "lib"
       ],
@@ -146,7 +146,7 @@
   {
     "package_id": "<redacted>",
     "target": {
-      "name": "compilation-tests",
+      "name": "compilation_tests",
       "kind": [
         "lib"
       ],
@@ -194,7 +194,7 @@
   {
     "package_id": "<redacted>",
     "target": {
-      "name": "compilation-tests",
+      "name": "compilation_tests",
       "kind": [
         "lib"
       ],
@@ -242,7 +242,7 @@
   {
     "package_id": "<redacted>",
     "target": {
-      "name": "compilation-tests",
+      "name": "compilation_tests",
       "kind": [
         "lib"
       ],
@@ -290,7 +290,7 @@
   {
     "package_id": "<redacted>",
     "target": {
-      "name": "compilation-tests",
+      "name": "compilation_tests",
       "kind": [
         "lib"
       ],
