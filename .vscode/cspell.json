@@ -16,6 +16,7 @@
     "azsdk",
     "azurecli",
     "datalake",
+    "datetime",
     "devicecode",
     "downcasted",
     "downcasting",
