@@ -5,10 +5,10 @@ use azure_core::{Context, Request};
 use url::Url;
 
 pub trait DatabaseClientMethods {
-    async fn read(
+    fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
-    ) -> azure_core::Result<azure_core::Response<DatabaseProperties>>;
+    ) -> impl std::future::Future<Output = azure_core::Result<azure_core::Response<DatabaseProperties>>>;
 }
 
 pub struct DatabaseClient {

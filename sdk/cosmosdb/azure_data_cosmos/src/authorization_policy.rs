@@ -43,7 +43,7 @@ enum Credential {
 
     /// The credential is a key to be used to sign the HTTP request (a shared key)
     #[cfg(feature = "key-auth")]
-    SigningKey(Secret),
+    PrimaryKey(Secret),
 }
 
 #[cfg(feature = "key-auth")]
@@ -86,7 +86,7 @@ impl AuthorizationPolicy {
     #[cfg(feature = "key-auth")]
     pub(crate) fn from_shared_key(key: Secret) -> Self {
         Self {
-            credential: Credential::SigningKey(key),
+            credential: Credential::PrimaryKey(key),
         }
     }
 }
@@ -188,16 +188,18 @@ fn generate_resource_link(request: &Request) -> String {
     }
 }
 
-/// The `CosmosDB` authorization can either be:
-/// - "primary": one of the two service-level tokens
-/// - "resource": e.g. a single database
-/// - "aad": Azure Active Directory token
+/// Generates the 'Authorization' header value based on the provided values.
+///
+/// The specific result format depends on the type of the auth token provided.
+///   - "primary": one of the two service-level tokens
+///   - "aad": Azure Active Directory token
+///
 /// In the "primary" case the signature must be constructed by signing the HTTP method,
 /// resource type, resource link (the relative URI) and the current time.
 ///
-/// In the "resource" case, the signature is just the resource key.
-///
 /// In the "aad" case, the signature is the AAD token.
+///
+/// NOTE: Resource tokens are not yet supported.
 async fn generate_authorization<'a>(
     auth_token: &Credential,
     url: &Url,
@@ -215,7 +217,7 @@ async fn generate_authorization<'a>(
         ),
 
         #[cfg(feature = "key-auth")]
-        Credential::SigningKey(key) => {
+        Credential::PrimaryKey(key) => {
             let string_to_sign = string_to_sign(signature_target);
             ("master", hmac_sha256(&string_to_sign, key)?)
         }
@@ -310,7 +312,7 @@ mon, 01 jan 1900 01:00:00 gmt
     async fn generate_authorization_00() {
         let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
 
-        let auth_token = Credential::SigningKey(
+        let auth_token = Credential::PrimaryKey(
             "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==".into(),
         )
             .unwrap();
@@ -341,7 +343,7 @@ mon, 01 jan 1900 01:00:00 gmt
     async fn generate_authorization_01() {
         let time = date::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
 
-        let auth_token = Credential::SigningKey(
+        let auth_token = Credential::PrimaryKey(
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".into(),
         )
         .unwrap();
