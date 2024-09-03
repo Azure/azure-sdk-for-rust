@@ -37,7 +37,8 @@
     "servicebus",
     "stylesheet",
     "typespec",
-    "virtualmachine"
+    "virtualmachine",
+    "xtask"
   ],
   "dictionaryDefinitions": [
     {
