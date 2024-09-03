@@ -14,7 +14,7 @@ pub fn derive_model_impl(ast: DeriveInput) -> Result<TokenStream> {
             #body
         };
     };
-    Ok(gen.into())
+    Ok(gen)
 }
 
 fn generate_body(ast: DeriveInput) -> Result<TokenStream> {
@@ -125,14 +125,14 @@ fn parse_attr(attribute: &Attribute, attrs: &mut Attrs) -> Result<()> {
                     "json" => Format::Json,
                     "xml" => Format::Xml,
                     x => {
-                        return Err(Error::new(lit.span(), &format!("Unknown format '{}'", x)));
+                        return Err(Error::new(lit.span(), format!("Unknown format '{}'", x)));
                     }
                 });
                 Ok(())
             }
             x => Err(Error::new(
                 meta.path.span(),
-                &format!("unknown typespec attribute '#[typespec({})'", x),
+                format!("unknown typespec attribute '#[typespec({})'", x),
             )),
         }
     })
