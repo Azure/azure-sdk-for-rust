@@ -17,7 +17,7 @@
       "doc": true
     },
     "message": {
-      "message": "the trait bound `for<'de> not_derive_deserialize::MyModel: Deserialize<'de>` is not satisfied",
+      "message": "<redacted message for err E0277>",
       "code": {
         "code": "E0277",
         "explanation": "You tried to use a type which doesn't implement some trait in a place which\nexpected that trait.\n\nErroneous code example:\n\n```compile_fail,E0277\n// here we declare the Foo trait with a bar method\ntrait Foo {\n    fn bar(&self);\n}\n\n// we now declare a function which takes an object implementing the Foo trait\nfn some_func<T: Foo>(foo: T) {\n    foo.bar();\n}\n\nfn main() {\n    // we now call the method with the i32 type, which doesn't implement\n    // the Foo trait\n    some_func(5i32); // error: the trait bound `i32 : Foo` is not satisfied\n}\n```\n\nIn order to fix this error, verify that the type you're using does implement\nthe trait. Example:\n\n```\ntrait Foo {\n    fn bar(&self);\n}\n\n// we implement the trait on the i32 type\nimpl Foo for i32 {\n    fn bar(&self) {}\n}\n\nfn some_func<T: Foo>(foo: T) {\n    foo.bar(); // we can now use this method since i32 implements the\n               // Foo trait\n}\n\nfn main() {\n    some_func(5i32); // ok!\n}\n```\n\nOr in a generic context, an erroneous code example would look like:\n\n```compile_fail,E0277\nfn some_func<T>(foo: T) {\n    println!(\"{:?}\", foo); // error: the trait `core::fmt::Debug` is not\n                           //        implemented for the type `T`\n}\n\nfn main() {\n    // We now call the method with the i32 type,\n    // which *does* implement the Debug trait.\n    some_func(5i32);\n}\n```\n\nNote that the error here is in the definition of the generic function. Although\nwe only call it with a parameter that does implement `Debug`, the compiler\nstill rejects the function. It must work with all possible input types. In\norder to make this example compile, we need to restrict the generic type we're\naccepting:\n\n```\nuse std::fmt;\n\n// Restrict the input type to types that implement Debug.\nfn some_func<T: fmt::Debug>(foo: T) {\n    println!(\"{:?}\", foo);\n}\n\nfn main() {\n    // Calling the method is still fine, as i32 implements Debug.\n    some_func(5i32);\n\n    // This would fail to compile now:\n    // struct WithoutDebug;\n    // some_func(WithoutDebug);\n}\n```\n\nRust only looks at the signature of the called function, as such it must\nalready specify all requirements that will be used for every type parameter.\n"
@@ -40,14 +40,14 @@
               "highlight_end": 15
             }
           ],
-          "label": "the trait `for<'de> Deserialize<'de>` is not implemented for `not_derive_deserialize::MyModel`",
+          "label": null,
           "suggested_replacement": null,
           "suggestion_applicability": null,
           "expansion": null
         }
       ],
       "children": [],
-      "rendered": "error[E0277]: the trait bound `for<'de> not_derive_deserialize::MyModel: Deserialize<'de>` is not satisfied\n   --> src/model/not_derive_deserialize.rs:3:10\n    |\n3   | #[derive(Model)]\n    |          ^^^^^ the trait `for<'de> Deserialize<'de>` is not implemented for `not_derive_deserialize::MyModel`\n    |\n    = help: the following other types implement trait `Deserialize<'de>`:\n              <bool as Deserialize<'de>>\n              <char as Deserialize<'de>>\n              <isize as Deserialize<'de>>\n              <i8 as Deserialize<'de>>\n              <i16 as Deserialize<'de>>\n              <i32 as Deserialize<'de>>\n              <i64 as Deserialize<'de>>\n              <i128 as Deserialize<'de>>\n            and 189 others\n    = note: required for `not_derive_deserialize::MyModel` to implement `DeserializeOwned`\nnote: required by a bound in `ResponseBody::json`\n   --> /home/ashleyst/code/Azure/azure-sdk-for-rust/model-and-derive/sdk/typespec/typespec_client_core/src/http/response.rs:234:12\n    |\n232 |     pub async fn json<T>(self) -> crate::Result<T>\n    |                  ---- required by a bound in this associated function\n233 |     where\n234 |         T: DeserializeOwned,\n    |            ^^^^^^^^^^^^^^^^ required by this bound in `ResponseBody::json`\n    = note: this error originates in the derive macro `Model` (in Nightly builds, run with -Z macro-backtrace for more info)\n\n"
+      "rendered": null
     }
   }
 ]

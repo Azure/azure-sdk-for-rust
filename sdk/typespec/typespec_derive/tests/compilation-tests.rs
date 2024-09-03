@@ -89,6 +89,9 @@ pub fn compilation_tests() {
                         .expect("failed to convert to string")
                         .into();
 
+                    // Clear the label, it can be volatile from compiler version to compiler version
+                    new_span.label = None;
+
                     // Clear the expansion property, it just contains references to the macro (and absolute paths)
                     new_span.expansion = None;
 
@@ -98,6 +101,13 @@ pub fn compilation_tests() {
 
             // Clear the 'children' property, it has absolute paths and doesn't need to be validated (it contains 'help' and 'note' messages).
             new_msg.message.children.clear();
+
+            // If there's a 'code', the message comes from rustc (not our macro).
+            // In that case, clear the 'rendered' and 'message' properties, they can be volatile from compiler version to compiler version
+            if let Some(ref code) = new_msg.message.code {
+                new_msg.message.rendered = None;
+                new_msg.message.message = format!("<redacted message for err {}>", code.code);
+            }
 
             // The package ID contains the absolute path. Just redact it.
             new_msg.package_id = PackageId {
