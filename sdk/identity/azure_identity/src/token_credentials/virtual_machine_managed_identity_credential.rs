@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::{ImdsId, ImdsManagedIdentityCredential, TokenCredentialOptions};
 use azure_core::{
     auth::{AccessToken, TokenCredential},

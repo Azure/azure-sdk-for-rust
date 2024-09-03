@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Parser helper utilities.
 
 use crate::error::{Error, ErrorKind, ResultExt};

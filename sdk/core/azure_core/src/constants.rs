@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 /// Endpoints for Azure Resource Manager in different Azure clouds
 pub mod resource_manager_endpoint {
     static_url!(

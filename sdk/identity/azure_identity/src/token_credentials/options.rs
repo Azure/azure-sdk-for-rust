@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::env::Env;
 use azure_core::error::{ErrorKind, ResultExt};
 use std::sync::Arc;

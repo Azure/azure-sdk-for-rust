@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::token_credentials::cache::TokenCache;
 use async_process::Command;
 use azure_core::{

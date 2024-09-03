@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Create and manage locks on Azure resources.
 
 create_enum!(LeaseStatus, (Locked, "locked"), (Unlocked, "unlocked"));

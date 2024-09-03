@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Authorize using the OAuth 2.0 client credentials flow with federated credentials.
 //!
 //! ```no_run
