@@ -1,0 +1,338 @@
+[
+  {
+    "package_id": "<redacted>",
+    "target": {
+      "name": "compilation-tests",
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "required-features": [],
+      "src_path": "src/lib.rs",
+      "edition": "2021",
+      "doctest": true,
+      "test": true,
+      "doc": true
+    },
+    "message": {
+      "message": "unknown typespec attribute '#[typespec(blork)'",
+      "code": null,
+      "level": "error",
+      "spans": [
+        {
+          "file_name": "src/model/bad_attributes.rs",
+          "byte_start": 105,
+          "byte_end": 110,
+          "line_start": 5,
+          "line_end": 5,
+          "column_start": 12,
+          "column_end": 17,
+          "is_primary": true,
+          "text": [
+            {
+              "text": "#[typespec(blork)]",
+              "highlight_start": 12,
+              "highlight_end": 17
+            }
+          ],
+          "label": null,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "expansion": null
+        }
+      ],
+      "children": [],
+      "rendered": "error: unknown typespec attribute '#[typespec(blork)'\n --> src/model/bad_attributes.rs:5:12\n  |\n5 | #[typespec(blork)]\n  |            ^^^^^\n\n"
+    }
+  },
+  {
+    "package_id": "<redacted>",
+    "target": {
+      "name": "compilation-tests",
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "required-features": [],
+      "src_path": "src/lib.rs",
+      "edition": "2021",
+      "doctest": true,
+      "test": true,
+      "doc": true
+    },
+    "message": {
+      "message": "expected string literal",
+      "code": null,
+      "level": "error",
+      "spans": [
+        {
+          "file_name": "src/model/bad_attributes.rs",
+          "byte_start": 198,
+          "byte_end": 199,
+          "line_start": 9,
+          "line_end": 9,
+          "column_start": 22,
+          "column_end": 23,
+          "is_primary": true,
+          "text": [
+            {
+              "text": "#[typespec(crate = 42)]",
+              "highlight_start": 22,
+              "highlight_end": 23
+            }
+          ],
+          "label": null,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "expansion": null
+        }
+      ],
+      "children": [],
+      "rendered": "error: expected string literal\n --> src/model/bad_attributes.rs:9:22\n  |\n9 | #[typespec(crate = 42)]\n  |                      ^\n\n"
+    }
+  },
+  {
+    "package_id": "<redacted>",
+    "target": {
+      "name": "compilation-tests",
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "required-features": [],
+      "src_path": "src/lib.rs",
+      "edition": "2021",
+      "doctest": true,
+      "test": true,
+      "doc": true
+    },
+    "message": {
+      "message": "expected string literal",
+      "code": null,
+      "level": "error",
+      "spans": [
+        {
+          "file_name": "src/model/bad_attributes.rs",
+          "byte_start": 294,
+          "byte_end": 295,
+          "line_start": 13,
+          "line_end": 13,
+          "column_start": 29,
+          "column_end": 30,
+          "is_primary": true,
+          "text": [
+            {
+              "text": "#[typespec(crate = \"a\" + \"b\")]",
+              "highlight_start": 29,
+              "highlight_end": 30
+            }
+          ],
+          "label": null,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "expansion": null
+        }
+      ],
+      "children": [],
+      "rendered": "error: expected string literal\n  --> src/model/bad_attributes.rs:13:29\n   |\n13 | #[typespec(crate = \"a\" + \"b\")]\n   |                             ^\n\n"
+    }
+  },
+  {
+    "package_id": "<redacted>",
+    "target": {
+      "name": "compilation-tests",
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "required-features": [],
+      "src_path": "src/lib.rs",
+      "edition": "2021",
+      "doctest": true,
+      "test": true,
+      "doc": true
+    },
+    "message": {
+      "message": "expected string literal",
+      "code": null,
+      "level": "error",
+      "spans": [
+        {
+          "file_name": "src/model/bad_attributes.rs",
+          "byte_start": 374,
+          "byte_end": 375,
+          "line_start": 17,
+          "line_end": 17,
+          "column_start": 20,
+          "column_end": 21,
+          "is_primary": true,
+          "text": [
+            {
+              "text": "#[typespec(crate = @)]",
+              "highlight_start": 20,
+              "highlight_end": 21
+            }
+          ],
+          "label": null,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "expansion": null
+        }
+      ],
+      "children": [],
+      "rendered": "error: expected string literal\n  --> src/model/bad_attributes.rs:17:20\n   |\n17 | #[typespec(crate = @)]\n   |                    ^\n\n"
+    }
+  },
+  {
+    "package_id": "<redacted>",
+    "target": {
+      "name": "compilation-tests",
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "required-features": [],
+      "src_path": "src/lib.rs",
+      "edition": "2021",
+      "doctest": true,
+      "test": true,
+      "doc": true
+    },
+    "message": {
+      "message": "invalid module path: a b c",
+      "code": null,
+      "level": "error",
+      "spans": [
+        {
+          "file_name": "src/model/bad_attributes.rs",
+          "byte_start": 463,
+          "byte_end": 470,
+          "line_start": 21,
+          "line_end": 21,
+          "column_start": 20,
+          "column_end": 27,
+          "is_primary": true,
+          "text": [
+            {
+              "text": "#[typespec(crate = \"a b c\")]",
+              "highlight_start": 20,
+              "highlight_end": 27
+            }
+          ],
+          "label": null,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "expansion": null
+        }
+      ],
+      "children": [],
+      "rendered": "error: invalid module path: a b c\n  --> src/model/bad_attributes.rs:21:20\n   |\n21 | #[typespec(crate = \"a b c\")]\n   |                    ^^^^^^^\n\n"
+    }
+  },
+  {
+    "package_id": "<redacted>",
+    "target": {
+      "name": "compilation-tests",
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "required-features": [],
+      "src_path": "src/lib.rs",
+      "edition": "2021",
+      "doctest": true,
+      "test": true,
+      "doc": true
+    },
+    "message": {
+      "message": "expected string literal",
+      "code": null,
+      "level": "error",
+      "spans": [
+        {
+          "file_name": "src/model/bad_attributes.rs",
+          "byte_start": 559,
+          "byte_end": 560,
+          "line_start": 25,
+          "line_end": 25,
+          "column_start": 23,
+          "column_end": 24,
+          "is_primary": true,
+          "text": [
+            {
+              "text": "#[typespec(format = 42)]",
+              "highlight_start": 23,
+              "highlight_end": 24
+            }
+          ],
+          "label": null,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "expansion": null
+        }
+      ],
+      "children": [],
+      "rendered": "error: expected string literal\n  --> src/model/bad_attributes.rs:25:23\n   |\n25 | #[typespec(format = 42)]\n   |                       ^\n\n"
+    }
+  },
+  {
+    "package_id": "<redacted>",
+    "target": {
+      "name": "compilation-tests",
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "required-features": [],
+      "src_path": "src/lib.rs",
+      "edition": "2021",
+      "doctest": true,
+      "test": true,
+      "doc": true
+    },
+    "message": {
+      "message": "invalid typespec attribute, expected attribute in form #[typespec(key = value)]",
+      "code": null,
+      "level": "error",
+      "spans": [
+        {
+          "file_name": "src/model/bad_attributes.rs",
+          "byte_start": 633,
+          "byte_end": 634,
+          "line_start": 29,
+          "line_end": 29,
+          "column_start": 1,
+          "column_end": 2,
+          "is_primary": true,
+          "text": [
+            {
+              "text": "#[typespec = \"whoop\"]",
+              "highlight_start": 1,
+              "highlight_end": 2
+            }
+          ],
+          "label": null,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "expansion": null
+        }
+      ],
+      "children": [],
+      "rendered": "error: invalid typespec attribute, expected attribute in form #[typespec(key = value)]\n  --> src/model/bad_attributes.rs:29:1\n   |\n29 | #[typespec = \"whoop\"]\n   | ^\n\n"
+    }
+  }
+]

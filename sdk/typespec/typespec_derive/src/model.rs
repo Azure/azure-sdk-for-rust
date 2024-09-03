@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use syn::spanned::Spanned;
-use syn::{Attribute, DeriveInput, Meta, Path};
+use syn::{Attribute, DeriveInput, Error, Meta, Path};
 
-use crate::{parse_literal_string, Error, Result};
+use crate::{parse_literal_string, Result};
 
 pub fn derive_model_impl(ast: DeriveInput) -> Result<TokenStream> {
     let body = generate_body(ast)?;
@@ -70,76 +70,70 @@ struct Attrs {
 }
 
 impl Attrs {
-    pub fn from_attrs(attrs: &[Attribute]) -> Result<Attrs> {
-        let mut typespec_path = None;
-        let mut format = None;
-        let mut errors = Vec::new();
-        for attr in attrs.iter().filter(|a| a.path().is_ident("typespec")) {
-            let Meta::List(meta_list) = &attr.meta else {
-                errors.push(Error::new(attr.span(), "Invalid typespec attribute, expected attribute in form #[typespec(key = value)]"));
-                continue;
+    pub fn from_attrs(attributes: &[Attribute]) -> Result<Attrs> {
+        let mut attrs = Attrs {
+            typespec_path: None,
+            format: None,
+        };
+
+        let mut result = Ok(());
+        for attribute in attributes.iter().filter(|a| a.path().is_ident("typespec")) {
+            result = match (result, parse_attr(attribute, &mut attrs)) {
+                (Ok(()), Err(e)) => Err(e),
+                (Err(mut e1), Err(e2)) => {
+                    e1.combine(e2);
+                    Err(e1)
+                }
+                (e, Ok(())) => e,
             };
-
-            meta_list.parse_nested_meta(|meta| {
-                let Some(ident) = meta.path.get_ident() else {
-                    errors.push(Error::new(meta.path.span(), "Invalid typespec attribute, expected attribute in form #[typespec(key = value)]"));
-                    return Ok(());
-                };
-                match ident.to_string().as_str() {
-                    "crate" => {
-                        let value = meta.value().unwrap();
-                        let value = match parse_literal_string(value) {
-                            Ok(v) => v,
-                            Err(mut e) => {
-                                errors.append(&mut e);
-
-                                // Returning from the _closure_.
-                                // We've already set an error that will cause the outer function to return Err
-                                return Ok(())
-                            }
-                        };
-                        let path = value.parse().unwrap();
-                        typespec_path = Some(path);
-                    }
-                    "format" => {
-                        let value = meta.value().unwrap();
-                        let lit = match parse_literal_string(value) {
-                            Ok(v) => v,
-                            Err(mut e) => {
-                                errors.append(&mut e);
-
-                                // Returning from the _closure_.
-                                // We've already set an error that will cause the outer function to return Err
-                                return Ok(())
-                            }
-                        };
-                        format = Some(match lit.value().as_str() {
-                            "json" => Format::Json,
-                            "xml" => Format::Xml,
-                            x => {
-                                errors.push(Error::new(lit.span(), &format!("Unknown format '{}'", x)));
-
-                                // Returning from the _closure_.
-                                // We've already set an error that will cause the outer function to return Err
-                                return Ok(())
-                            }
-                        });
-                    }
-                    x => {
-                        errors.push(Error::new(meta.path.span(), &format!("Unknown typespec attribute '#[typespec({})'", x)));
-                    }
-                };
-                Ok(())
-            }).unwrap();
         }
 
-        if errors.is_empty() {
-            Ok(Attrs {
-                typespec_path,
-                format,
-            })
-        } else {
-            Err(errors)
-        }
+        result.map(|_| attrs)
     }
+}
+
+fn parse_attr(attribute: &Attribute, attrs: &mut Attrs) -> Result<()> {
+    let Meta::List(meta_list) = &attribute.meta else {
+        return Err(Error::new(
+            attribute.span(),
+            "invalid typespec attribute, expected attribute in form #[typespec(key = value)]",
+        ));
+    };
+
+    meta_list.parse_nested_meta(|meta| {
+        let ident = meta.path.get_ident().ok_or_else(|| {
+            Error::new(
+                meta.path.span(),
+                "invalid typespec attribute, expected attribute in form #[typespec(key = value)]",
+            )
+        })?;
+
+        match ident.to_string().as_str() {
+            "crate" => {
+                let value = meta.value().unwrap();
+                let lit = parse_literal_string(value)?;
+                let path = lit.parse().map_err(|_| {
+                    Error::new(lit.span(), format!("invalid module path: {}", lit.value()))
+                })?;
+                attrs.typespec_path = Some(path);
+                Ok(())
+            }
+            "format" => {
+                let value = meta.value().unwrap();
+                let lit = parse_literal_string(value)?;
+                attrs.format = Some(match lit.value().as_str() {
+                    "json" => Format::Json,
+                    "xml" => Format::Xml,
+                    x => {
+                        return Err(Error::new(lit.span(), &format!("Unknown format '{}'", x)));
+                    }
+                });
+                Ok(())
+            }
+            x => Err(Error::new(
+                meta.path.span(),
+                &format!("unknown typespec attribute '#[typespec({})'", x),
+            )),
+        }
+    })
 }

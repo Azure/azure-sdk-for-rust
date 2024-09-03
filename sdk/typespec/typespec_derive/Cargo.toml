@@ -20,5 +20,7 @@ proc-macro2.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
+typespec_client_core = { workspace = true, features = [ "http", "json", "xml" ] }
 serde.workspace = true
-typespec_client_core = { workspace = true, features = ["http", "json", "xml"] }
+serde_json.workspace = true
+cargo_metadata = "0.18.1"

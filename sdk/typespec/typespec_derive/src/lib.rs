@@ -1,31 +1,23 @@
-use syn::{parse::ParseStream, DeriveInput, LitStr};
+use syn::{parse::ParseStream, parse_macro_input, DeriveInput, Error, LitStr};
 
 extern crate proc_macro;
 
-mod error;
 mod model;
 
-pub(crate) use error::{Error, Result};
+type Result<T> = ::std::result::Result<T, syn::Error>;
 
 // NOTE: Proc macros must appear in the root of the crate. Just re-exporting them with `pub use` is **not sufficient**.
 // So, all the top-level entry functions for the proc macros will appear here, but they just call inner "impl" functions in the modules.
 
 /// Defines the function signature expected by run_derive_macro
-type DeriveImpl = fn(DeriveInput) -> error::Result<proc_macro2::TokenStream>;
+type DeriveImpl = fn(DeriveInput) -> Result<proc_macro2::TokenStream>;
 
 /// Runs the provided derive macro implementation, automatically generating errors if it returns errors.
 fn run_derive_macro(input: proc_macro::TokenStream, imp: DeriveImpl) -> proc_macro::TokenStream {
-    let ast: DeriveInput = syn::parse(input.into()).unwrap();
+    let ast = parse_macro_input!(input as DeriveInput);
     match imp(ast) {
         Ok(tokens) => tokens.into(),
-        Err(mut errs) => {
-            let tokens: Vec<proc_macro2::TokenStream> = errs.drain(..).map(|e| e.into()).collect();
-
-            quote::quote! {
-                #(#tokens)*
-            }
-            .into()
-        }
+        Err(e) => e.to_compile_error().into(),
     }
 }
 
@@ -33,13 +25,13 @@ fn run_derive_macro(input: proc_macro::TokenStream, imp: DeriveImpl) -> proc_mac
 fn parse_literal_string(value: ParseStream) -> Result<LitStr> {
     let expr: syn::Expr = value
         .parse()
-        .map_err(|_| vec![Error::new(value.span(), "Expected string literal")])?;
+        .map_err(|_| Error::new(value.span(), "expected string literal"))?;
     match expr {
         syn::Expr::Lit(lit) => match lit.lit {
             syn::Lit::Str(s) => Ok(s),
-            _ => Err(vec![Error::new(value.span(), "Expected string literal")]),
+            _ => Err(Error::new(value.span(), "expected string literal")),
         },
-        _ => Err(vec![Error::new(value.span(), "Expected string literal")]),
+        _ => Err(Error::new(value.span(), "expected string literal")),
     }
 }
 
