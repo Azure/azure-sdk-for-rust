@@ -185,6 +185,13 @@ impl From<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             AmqpValue::Array(a) => fe2o3_amqp_types::primitives::Value::Array(
                 a.into_iter().map(|v| v.into()).collect(),
             ),
+
+            // An AMQP Composite type is essentially a Described type with a specific descriptor which
+            // indicates which AMQP performative it is.
+            //
+            // Iron Oxide does not directly support Composite types (they're handled via macros), so when a C++
+            // component attempts to convert an AMQP Composite type to Iron Oxide, we convert it to a Described type
+            #[cfg(feature = "cplusplus")]
             AmqpValue::Composite(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
                 serde_amqp::described::Described {
                     descriptor: d.descriptor.clone().into(),
@@ -356,7 +363,12 @@ impl PartialEq<AmqpValue> for fe2o3_amqp_types::primitives::Value {
                 _ => false,
             },
 
-            AmqpValue::Composite(_) => panic!("Composite values are not supported in Fe2o3"),
+            // An AMQP Composite type is essentially a Described type with a specific descriptor which
+            // indicates which AMQP performative it is.
+            //
+            // Iron Oxide does not directly support Composite types (they're handled via macros), so we always return false.
+            #[cfg(feature = "cplusplus")]
+            AmqpValue::Composite(_) => false,
 
             AmqpValue::Unknown => todo!(),
         }
