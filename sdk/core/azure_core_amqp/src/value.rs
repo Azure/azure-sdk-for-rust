@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 // cspell: words amqp
 
+#[cfg(feature = "cplusplus")]
 use azure_core::Result;
 
 #[cfg(feature = "cplusplus")]
