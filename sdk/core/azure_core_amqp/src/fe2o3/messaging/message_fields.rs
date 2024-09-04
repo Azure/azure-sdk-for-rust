@@ -134,38 +134,32 @@ impl From<fe2o3_amqp_types::messaging::ApplicationProperties>
 
 impl From<fe2o3_amqp_types::messaging::Header> for AmqpMessageHeader {
     fn from(header: fe2o3_amqp_types::messaging::Header) -> Self {
-        AmqpMessageHeader::builder()
+        println!("Source Header: {:?}", header);
+        let rv = AmqpMessageHeader::builder()
             .with_durable(header.durable)
             .with_priority(header.priority.into())
-            .with_time_to_live(std::time::Duration::from_millis(
-                header.ttl.unwrap_or(0) as u64
-            ))
+            .with_time_to_live(
+                header
+                    .ttl
+                    .map(|t| std::time::Duration::from_millis(t as u64)),
+            )
             .with_first_acquirer(header.first_acquirer)
             .with_delivery_count(header.delivery_count)
-            .build()
+            .build();
+        println!("Converted Header: {:?}", rv);
+        rv
     }
 }
 
 impl From<AmqpMessageHeader> for fe2o3_amqp_types::messaging::Header {
     fn from(header: AmqpMessageHeader) -> Self {
-        let mut builder = fe2o3_amqp_types::messaging::Header::builder();
-
-        if let Some(durable) = header.durable() {
-            builder = builder.durable(*durable);
-        }
-        if let Some(priority) = header.priority() {
-            builder = builder.priority(fe2o3_amqp_types::messaging::Priority(*priority));
-        }
-        if let Some(time_to_live) = header.time_to_live() {
-            builder = builder.ttl(Some(time_to_live.as_millis() as u32));
-        }
-        if let Some(first_acquirer) = header.first_acquirer() {
-            builder = builder.first_acquirer(*first_acquirer);
-        }
-        if let Some(delivery_count) = header.delivery_count() {
-            builder = builder.delivery_count(*delivery_count);
-        }
-        builder.build()
+        fe2o3_amqp_types::messaging::Header::builder()
+            .durable(header.durable())
+            .priority(fe2o3_amqp_types::messaging::Priority(header.priority()))
+            .ttl(header.time_to_live().map(|t| t.as_millis() as u32))
+            .first_acquirer(header.first_acquirer())
+            .delivery_count(header.delivery_count())
+            .build()
     }
 }
 

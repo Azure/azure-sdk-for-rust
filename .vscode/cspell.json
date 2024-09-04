@@ -15,6 +15,7 @@
     "asyncoperation",
     "azsdk",
     "azurecli",
+    "cplusplus",
     "datalake",
     "datetime",
     "devicecode",
