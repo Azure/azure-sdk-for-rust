@@ -310,25 +310,24 @@ impl<'a> EventDataBatch<'a> {
         let mut batch_builder = AmqpMessage::builder();
 
         if message.header().is_some() {
-            batch_builder = batch_builder.with_header(message.header().unwrap().clone());
+            batch_builder.with_header(message.header().unwrap().clone());
         }
         if message.properties().is_some() {
-            batch_builder = batch_builder.with_properties(message.properties().unwrap().clone());
+            batch_builder.with_properties(message.properties().unwrap().clone());
         }
         if message.application_properties().is_some() {
-            batch_builder = batch_builder
+            batch_builder
                 .with_application_properties(message.application_properties().unwrap().clone());
         }
         if message.delivery_annotations().is_some() {
-            batch_builder = batch_builder
+            batch_builder
                 .with_delivery_annotations(message.delivery_annotations().unwrap().clone());
         }
         if message.message_annotations().is_some() {
-            batch_builder = batch_builder
-                .with_message_annotations(message.message_annotations().unwrap().clone());
+            batch_builder.with_message_annotations(message.message_annotations().unwrap().clone());
         }
         if message.footer().is_some() {
-            batch_builder = batch_builder.with_footer(message.footer().unwrap().clone());
+            batch_builder.with_footer(message.footer().unwrap().clone());
         }
 
         batch_builder.build()
