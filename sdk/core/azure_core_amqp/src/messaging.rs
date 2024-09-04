@@ -3,8 +3,11 @@
 //cspell: words amqp SMALLUINT SMALLULONG
 
 use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
+#[cfg(feature = "cplusplus")]
+use crate::Deserializable;
+#[cfg(feature = "cplusplus")]
+use azure_core::error::ErrorKind;
 use azure_core::error::Result;
-use Deserializable;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TerminusDurability {
