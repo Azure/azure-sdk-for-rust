@@ -43,12 +43,14 @@ pub enum ReceiverSettleMode {
     Second = AMQP_RECEIVER_SETTLE_MODE_SECOND,
 }
 
+#[cfg(feature = "cplusplus")]
 pub trait Serializable {
     fn serialize(&self, buffer: &mut [u8]) -> azure_core::Result<()>;
 
     fn encoded_size(&self) -> usize;
 }
 
+#[cfg(feature = "cplusplus")]
 pub trait Deserializable<T> {
     fn decode(data: &[u8]) -> azure_core::Result<T>;
 }

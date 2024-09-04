@@ -2028,7 +2028,10 @@ mod tests {
             assert_eq!(amqp_message, value.0);
         }
 
-        let deserialized = AmqpMessage::decode(&serialized).unwrap();
-        assert_eq!(deserialized, message);
+        #[cfg(feature = "cplusplus")]
+        {
+            let deserialized = AmqpMessage::decode(&serialized).unwrap();
+            assert_eq!(deserialized, message);
+        }
     }
 }
