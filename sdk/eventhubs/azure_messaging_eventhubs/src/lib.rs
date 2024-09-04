@@ -387,17 +387,16 @@ pub mod models {
                 if let Some(message_id) = event_data.message_id {
                     message_properties_builder.with_message_id(message_id);
                 }
-                message_builder =
-                    message_builder.with_properties(message_properties_builder.build());
+
+                message_builder.with_properties(message_properties_builder.build());
             }
             if let Some(properties) = event_data.properties {
                 for (key, value) in properties {
-                    message_builder = message_builder.add_application_property(key, value);
+                    message_builder.add_application_property(key, value);
                 }
             }
             if let Some(event_body) = event_data.body {
-                message_builder =
-                    message_builder.with_body(AmqpMessageBody::Binary(vec![event_body.to_vec()]));
+                message_builder.with_body(AmqpMessageBody::Binary(vec![event_body.to_vec()]));
             }
             message_builder.build()
         }
