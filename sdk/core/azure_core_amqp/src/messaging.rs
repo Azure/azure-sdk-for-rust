@@ -2,10 +2,9 @@
 // Licensed under the MIT license.
 //cspell: words amqp SMALLUINT SMALLULONG
 
-use crate::Deserializable;
-
 use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
-use azure_core::error::{ErrorKind, Result};
+use azure_core::error::Result;
+use Deserializable;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TerminusDurability {
@@ -1361,7 +1360,7 @@ pub mod builders {
             &mut self,
             time_to_live: Option<std::time::Duration>,
         ) -> &mut Self {
-            self.header.time_to_live = time_to_live.into();
+            self.header.time_to_live = time_to_live;
             self
         }
         pub fn with_first_acquirer(&mut self, first_acquirer: bool) -> &mut Self {
