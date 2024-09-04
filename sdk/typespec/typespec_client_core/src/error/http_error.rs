@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+// Something
 
 #[cfg(feature = "json")]
 use crate::json::from_json;
