@@ -95,7 +95,7 @@ impl Attrs {
     }
 }
 
-const INVALID_TYPESPEC_ATTRIBUTE_MESSAGE: &'static str =
+const INVALID_TYPESPEC_ATTRIBUTE_MESSAGE: &str =
     "invalid typespec attribute, expected attribute in form #[typespec(key = value)]";
 
 fn parse_attr(attribute: &Attribute, attrs: &mut Attrs) -> Result<()> {
