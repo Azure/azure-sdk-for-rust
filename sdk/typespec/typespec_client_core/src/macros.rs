@@ -3,7 +3,7 @@
 
 /// The following macro invocation:
 /// ```
-/// # #[macro_use] extern crate azure_core;
+/// # #[macro_use] extern crate typespec_client_core;
 /// create_enum!(Words, (Chicken, "Chicken"), (White, "White"), (Yellow, "Yellow"));
 /// ```
 /// Turns into a struct where each variant can be turned into and construct from the corresponding string.
