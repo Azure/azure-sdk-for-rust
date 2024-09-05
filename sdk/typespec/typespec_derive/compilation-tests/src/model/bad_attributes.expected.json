@@ -2,7 +2,7 @@
   {
     "level": "error",
     "code": null,
-    "message": "unknown typespec attribute '#[typespec(blork)'",
+    "message": "unknown typespec attribute '#[typespec(foobar)'",
     "spans": [
       {
         "file_name": "sdk/typespec/typespec_derive/compilation-tests/src/model/bad_attributes.rs",

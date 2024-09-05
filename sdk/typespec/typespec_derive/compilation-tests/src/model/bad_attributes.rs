@@ -5,7 +5,7 @@ use serde::Deserialize;
 use typespec_client_core::http::Model;
 
 #[derive(Model, Deserialize)]
-#[typespec(blork)]
+#[typespec(foobar)]
 pub struct NotAValidAttribute {}
 
 #[derive(Model, Deserialize)]
