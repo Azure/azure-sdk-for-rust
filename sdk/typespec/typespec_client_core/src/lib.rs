@@ -12,6 +12,7 @@ pub mod error;
 pub mod http;
 #[cfg(feature = "json")]
 pub mod json;
+pub mod parsing;
 pub mod sleep;
 pub mod stream;
 #[cfg(feature = "xml")]

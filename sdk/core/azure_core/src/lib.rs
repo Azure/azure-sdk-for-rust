@@ -28,7 +28,6 @@ mod policies;
 pub mod auth;
 pub mod headers;
 pub mod lro;
-pub mod parsing;
 pub mod request_options;
 pub mod util;
 
@@ -61,7 +60,7 @@ pub use typespec_client_core::{
         headers::Header, new_http_client, Body, Context, Continuable, HttpClient, Method, Pageable,
         Request, RequestContent, StatusCode, Url,
     },
-    json,
+    json, parsing,
     sleep::{self, sleep},
     stream::{BytesStream, SeekableStream},
 };
