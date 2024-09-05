@@ -29,5 +29,9 @@ pub struct InvalidPathOnCrate {}
 pub struct NotAStringLiteralOnFormat {}
 
 #[derive(Model, Deserialize)]
+#[typespec(format("json"))]
+pub struct IncorrectAttributeFormat {}
+
+#[derive(Model, Deserialize)]
 #[typespec = "whoop"]
 pub struct NotAMetaListAttribute {}

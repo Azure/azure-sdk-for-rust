@@ -95,25 +95,28 @@ impl Attrs {
     }
 }
 
+const INVALID_TYPESPEC_ATTRIBUTE_MESSAGE: &'static str =
+    "invalid typespec attribute, expected attribute in form #[typespec(key = value)]";
+
 fn parse_attr(attribute: &Attribute, attrs: &mut Attrs) -> Result<()> {
     let Meta::List(meta_list) = &attribute.meta else {
         return Err(Error::new(
             attribute.span(),
-            "invalid typespec attribute, expected attribute in form #[typespec(key = value)]",
+            INVALID_TYPESPEC_ATTRIBUTE_MESSAGE,
         ));
     };
 
     meta_list.parse_nested_meta(|meta| {
-        let ident = meta.path.get_ident().ok_or_else(|| {
-            Error::new(
-                attribute.span(),
-                "invalid typespec attribute, expected attribute in form #[typespec(key = value)]",
-            )
-        })?;
+        let ident = meta
+            .path
+            .get_ident()
+            .ok_or_else(|| Error::new(attribute.span(), INVALID_TYPESPEC_ATTRIBUTE_MESSAGE))?;
+        let value = meta
+            .value()
+            .map_err(|_| Error::new(attribute.span(), INVALID_TYPESPEC_ATTRIBUTE_MESSAGE))?;
 
         match ident.to_string().as_str() {
             "crate" => {
-                let value = meta.value().unwrap();
                 let lit = parse_literal_string(value)?;
                 let path = lit.parse().map_err(|_| {
                     Error::new(lit.span(), format!("invalid module path: {}", lit.value()))
@@ -122,7 +125,6 @@ fn parse_attr(attribute: &Attribute, attrs: &mut Attrs) -> Result<()> {
                 Ok(())
             }
             "format" => {
-                let value = meta.value().unwrap();
                 let lit = parse_literal_string(value)?;
                 attrs.format = Some(match lit.value().as_str() {
                     "json" => Format::Json,
