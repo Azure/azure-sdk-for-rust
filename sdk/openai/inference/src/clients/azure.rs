@@ -31,10 +31,11 @@ impl AzureOpenAIClient <'_> {
 
         let context = Context::new();
 
-        let pipeline = Self::new_pipeline();
         let mut azure_openai_client_options = client_options.unwrap_or_default();
         let per_call_policies: Vec<Arc<dyn Policy>> = key_credential.clone().into();
-        azure_openai_client_options.client_options.set_per_call_policies(per_call_policies);
+
+        let pipeline = Self::new_pipeline(per_call_policies);
+        // azure_openai_client_options.client_options.set_per_call_policies(per_call_policies);
 
         Ok(AzureOpenAIClient {
             http_client: azure_core::new_http_client(),
@@ -46,11 +47,11 @@ impl AzureOpenAIClient <'_> {
         })
     }
 
-    fn new_pipeline() -> azure_core::Pipeline {
+    fn new_pipeline(per_call_policies: Vec<Arc<dyn Policy>>) -> azure_core::Pipeline {
         let crate_name = option_env!("CARGO_PKG_NAME");
         let crate_version = option_env!("CARGO_PKG_VERSION");
         let options = azure_core::ClientOptions::default();
-        let per_call_policies = Vec::new();
+        // let per_call_policies = Vec::new();
         let per_retry_policies = Vec::new();
 
         azure_core::Pipeline::new(
@@ -84,7 +85,7 @@ impl AzureOpenAIClient <'_> {
 
         let mut request = azure_core::Request::new(url, Method::Post);
         // adding the mandatory header shouldn't be necessary if the pipeline was setup correctly (?)
-        request.add_mandatory_header(&self.key_credential);
+        // request.add_mandatory_header(&self.key_credential);
 
         request.set_json(chat_completions_request)?;
 
