@@ -8,6 +8,7 @@
     ".vscode/cspell.json",
     "NOTICE.txt",
     "eng/",
+    "*.dict.txt",
     "rust-toolchain.toml"
   ],
   "words": [
@@ -19,8 +20,10 @@
     "datalake",
     "datetime",
     "devicecode",
+    "docsrs",
     "downcasted",
     "downcasting",
+    "entra",
     "etag",
     "eventhub",
     "eventhubs",
@@ -49,6 +52,11 @@
     {
       "name": "rust-custom",
       "path": "../eng/dict/rust-custom.txt",
+      "noSuggest": true
+    },
+    {
+      "name": "cosmosdb",
+      "path": "../sdk/cosmosdb/cosmosdb.dict.txt",
       "noSuggest": true
     }
   ],
@@ -91,6 +99,14 @@
       "flagWords": [
         "azure",
         "azurite"
+      ]
+    },
+    {
+      "filename": "sdk/cosmosdb/azure_data_cosmos/**",
+      "dictionaries": [
+        "crates",
+        "cosmosdb",
+        "rust-custom"
       ]
     }
   ]
