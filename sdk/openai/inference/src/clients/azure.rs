@@ -3,31 +3,38 @@ use std::sync::Arc;
 use crate::auth::AzureKeyCredential;
 use crate::models::CreateChatCompletionsRequest;
 use crate::CreateChatCompletionsResponse;
-use azure_core::{self, HttpClient, Method, Result};
+use azure_core::{self, ClientOptions, HttpClient, Method, Policy, Result};
 use azure_core::{Context, Url};
 
 // TODO: Implement using this instead
 // typespec_client_core::json_model!(CreateChatCompletionsResponse);
 
-pub struct AzureOpenAIClient<'a> {
+#[derive(Clone, Debug, Default)]
+pub struct AzureOpenAIClientOptions {
+    client_options: ClientOptions,
+}
+
+pub struct AzureOpenAIClient <'a> {
     http_client: Arc<dyn HttpClient>,
     endpoint: Url,
     key_credential: AzureKeyCredential,
     context: Context<'a>,
     pipeline: azure_core::Pipeline,
+    azure_openai_client_options: AzureOpenAIClientOptions
 }
 
-impl AzureOpenAIClient<'_> {
+impl AzureOpenAIClient <'_> {
     // TODO: not sure if this should be named `with_key_credential` instead
-    pub fn new(endpoint: impl AsRef<str>, secret: String) -> Result<Self> {
+    pub fn new(endpoint: impl AsRef<str>, secret: String, client_options: Option<AzureOpenAIClientOptions>) -> Result<Self> {
         let endpoint = Url::parse(endpoint.as_ref())?;
         let key_credential = AzureKeyCredential::new(secret);
-        // let auth_header_policy = CustomHeadersPolicy(key_credential.into());
 
-        let mut context = Context::new();
-        context.insert(key_credential.clone());
+        let context = Context::new();
 
         let pipeline = Self::new_pipeline();
+        let mut azure_openai_client_options = client_options.unwrap_or_default();
+        let per_call_policies: Vec<Arc<dyn Policy>> = key_credential.clone().into();
+        azure_openai_client_options.client_options.set_per_call_policies(per_call_policies);
 
         Ok(AzureOpenAIClient {
             http_client: azure_core::new_http_client(),
@@ -35,6 +42,7 @@ impl AzureOpenAIClient<'_> {
             key_credential,
             context,
             pipeline,
+            azure_openai_client_options
         })
     }
 
