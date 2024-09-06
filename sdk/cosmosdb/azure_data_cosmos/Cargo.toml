@@ -34,4 +34,10 @@ clap.workspace = true
 workspace = true
 
 [features]
+default = ["hmac_rust"]
+hmac_rust = ["azure_core/hmac_rust"]
+hmac_openssl = ["azure_core/hmac_openssl"]
 key-auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
+
+[package.metadata.docs.rs]
+features = ["key-auth"]

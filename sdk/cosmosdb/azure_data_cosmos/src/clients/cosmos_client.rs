@@ -28,6 +28,21 @@ pub trait CosmosClientMethods {
 
 impl CosmosClient {
     /// Creates a new CosmosClient, using Entra ID authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Cosmos DB account, for example `https://myaccount.documents.azure.com/`.
+    /// * `credential` - An implementation of [`TokenCredential`](azure_core::auth::TokenCredential) that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::CosmosClient;
+    ///
+    /// let credential = azure_identity::create_default_credential().unwrap();
+    /// let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
+    /// ```
     pub fn new(
         endpoint: impl AsRef<str>,
         credential: Arc<dyn TokenCredential>,
@@ -44,9 +59,21 @@ impl CosmosClient {
         })
     }
 
-    /// Creates a new CosmosClient, using shared key authentication.
+    /// Creates a new CosmosClient, using key authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Cosmos DB account, for example `https://myaccount.documents.azure.com/`.
+    /// * `key` - The key to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// let client = CosmosClient::with_shared_key("https://myaccount.documents.azure.com/", "my_key", None)?;
+    /// ```
     #[cfg(feature = "key-auth")]
-    pub fn with_shared_key(
+    pub fn with_key(
         endpoint: impl AsRef<str>,
         key: impl Into<Secret>,
         options: Option<CosmosClientOptions>,

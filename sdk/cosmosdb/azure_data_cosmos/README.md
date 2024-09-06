@@ -1,5 +1,5 @@
-# azure_data_cosmos
+# Azure Cosmos DB SDK for Rust.
 
-Azure Cosmos DB Rust SDK.
+## Introduction
 
-License: MIT
+This client library enables client applications to connect to [Azure Cosmos DB](https://azure.microsoft.com/en-us/products/cosmos-db) via the NoSQL API. Azure Cosmos DB is a globally distributed, multi-model database service.

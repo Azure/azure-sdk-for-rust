@@ -31,7 +31,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[cfg(feature = "key-auth")]
 fn create_client(args: &Args) -> CosmosClient {
     if let Some(key) = args.key.as_ref() {
-        CosmosClient::with_shared_key(&args.endpoint, key.clone(), None).unwrap()
+        CosmosClient::with_key(&args.endpoint, key.clone(), None).unwrap()
     } else {
         let cred = azure_identity::create_default_credential().unwrap();
         CosmosClient::new(&args.endpoint, cred, None).unwrap()
