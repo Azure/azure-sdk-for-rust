@@ -54,23 +54,6 @@ struct SignatureTarget<'a> {
     time_nonce: OffsetDateTime,
 }
 
-#[cfg(feature = "key-auth")]
-impl<'a> SignatureTarget<'a> {
-    pub fn new(
-        http_method: &'a azure_core::Method,
-        resource_type: &'a ResourceType,
-        resource_link: &'a str,
-        time_nonce: OffsetDateTime,
-    ) -> Self {
-        SignatureTarget {
-            http_method,
-            resource_type,
-            resource_link,
-            time_nonce,
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct AuthorizationPolicy {
     credential: Credential,
@@ -109,7 +92,7 @@ impl Policy for AuthorizationPolicy {
 
         let time_nonce = OffsetDateTime::now_utc();
 
-        let resource_link = generate_resource_link(request);
+        let resource_link = extract_resource_link(request);
         let resource_type: &ResourceType = ctx
             .value()
             .expect("ResourceType must be in the Context at this point");
@@ -142,12 +125,12 @@ impl Policy for AuthorizationPolicy {
 /// four steps (with eager return):
 /// 1. Strip leading slash from the uri of the passed request.
 /// 2. Find if the uri ends with a `ENDING_STRING`. If so, strip it and return. Every `ENDING_STRING`
-///    starts with a leading slash so this check will not match uri compsed **only** by the
+///    starts with a leading slash so this check will not match uri composed **only** of the
 ///    `ENDING_STRING`.
 /// 3. Find if the uri **is** the ending string (without the leading slash). If so return an empty
 ///    string. This covers the exception of the rule above.
 /// 4. Return the received uri unchanged.
-fn generate_resource_link(request: &Request) -> String {
+fn extract_resource_link(request: &Request) -> String {
     static ENDING_STRINGS: &[&str] = &[
         "/dbs",
         "/colls",
@@ -283,19 +266,41 @@ fn string_to_sign(signature_target: SignatureTarget) -> String {
 
 #[cfg(test)]
 mod tests {
+    use azure_core::auth::AccessToken;
+    use time::Duration;
+
     use super::*;
+
+    #[derive(Debug)]
+    struct TestTokenCredential(String);
+
+    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    impl TokenCredential for TestTokenCredential {
+        async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+            let token = format!("{}+{}", self.0, scopes.join(","));
+            Ok(AccessToken::new(
+                token,
+                OffsetDateTime::now_utc().saturating_add(Duration::minutes(5)),
+            ))
+        }
+
+        async fn clear_cache(&self) -> azure_core::Result<()> {
+            Ok(())
+        }
+    }
 
     #[test]
     #[cfg(feature = "key-auth")]
-    fn string_to_sign_00() {
-        let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+    fn string_to_sign_generates_expected_string_for_signing() {
+        let time_nonce = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
 
-        let ret = string_to_sign(SignatureTarget::new(
-            &azure_core::Method::Get,
-            &ResourceType::Databases,
-            "dbs/MyDatabase/colls/MyCollection",
-            time,
-        ));
+        let ret = string_to_sign(SignatureTarget {
+            http_method: &azure_core::Method::Get,
+            resource_type: &ResourceType::Databases,
+            resource_link: "dbs/MyDatabase/colls/MyCollection",
+            time_nonce,
+        });
         assert_eq!(
             ret,
             "get
@@ -309,111 +314,140 @@ mon, 01 jan 1900 01:00:00 gmt
 
     #[tokio::test]
     #[cfg(feature = "key-auth")]
-    async fn generate_authorization_00() {
-        let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+    async fn generate_authorization_for_token_credential() {
+        let time_nonce = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+        let cred = Arc::new(TestTokenCredential("test_token".to_string()));
+        let auth_token = Credential::Token(cred);
 
-        let auth_token = Credential::PrimaryKey(
-            "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==".into(),
-        )
-            .unwrap();
-
-        let url = Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
+        // Use a fake URL since the actual endpoint URL is not important for this test
+        let url = Url::parse("https://test_account.example.com/dbs/ToDoList").unwrap();
 
         let ret = generate_authorization(
             &auth_token,
             &url,
-            SignatureTarget::new(
-                &azure_core::Method::Get,
-                &ResourceType::Databases,
-                "dbs/MyDatabase/colls/MyCollection",
-                time,
-            ),
+            SignatureTarget {
+                http_method: &azure_core::Method::Get,
+                resource_type: &ResourceType::Databases,
+                resource_link: "dbs/MyDatabase/colls/MyCollection",
+                time_nonce,
+            },
         )
         .await
         .unwrap();
 
-        assert_eq!(
-            ret,
-            "type%3Dmaster%26ver%3D1.0%26sig%3DQkz%2Fr%2B1N2%2BPEnNijxGbGB%2FADvLsLBQmZ7uBBMuIwf4I%3D"
-        );
+        let expected: String = form_urlencoded::byte_serialize(
+            b"type=aad&ver=1.0&sig=test_token+https://test_account.example.com/.default",
+        )
+        .collect();
+
+        assert_eq!(ret, expected);
     }
 
     #[tokio::test]
     #[cfg(feature = "key-auth")]
-    async fn generate_authorization_01() {
-        let time = date::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
+    async fn generate_authorization_for_primary_key_0() {
+        let time_nonce = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
 
         let auth_token = Credential::PrimaryKey(
-            "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".into(),
-        )
-        .unwrap();
+            "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==".into(),
+        );
 
-        let url = Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
+        // Use a fake URL since the actual endpoint URL is not important for this test
+        let url = Url::parse("https://test_account.example.com/dbs/ToDoList").unwrap();
 
         let ret = generate_authorization(
             &auth_token,
             &url,
-            SignatureTarget::new(
-                &azure_core::Method::Get,
-                &ResourceType::Databases,
-                "dbs/ToDoList",
-                time,
-            ),
+            SignatureTarget {
+                http_method: &azure_core::Method::Get,
+                resource_type: &ResourceType::Databases,
+                resource_link: "dbs/MyDatabase/colls/MyCollection",
+                time_nonce,
+            },
         )
         .await
         .unwrap();
 
-        // This is the result shown in the MSDN page. It's clearly wrong :)
-        // below is the correct one.
-        //assert_eq!(ret,
-        //           "type%3dmaster%26ver%3d1.0%26sig%3dc09PEVJrgp2uQRkr934kFbTqhByc7TVr3O");
+        let expected: String = form_urlencoded::byte_serialize(
+            b"type=master&ver=1.0&sig=Qkz/r+1N2+PEnNijxGbGB/ADvLsLBQmZ7uBBMuIwf4I=",
+        )
+        .collect();
 
-        assert_eq!(
-            ret,
-            "type%3Dmaster%26ver%3D1.0%26sig%3DKvBM8vONofkv3yKm%2F8zD9MEGlbu6jjHDJBp4E9c2ZZI%3D"
+        assert_eq!(ret, expected);
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "key-auth")]
+    async fn generate_authorization_for_primary_key_1() {
+        let time_nonce = date::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
+
+        let auth_token = Credential::PrimaryKey(
+            "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".into(),
         );
+
+        // Use a fake URL since the actual endpoint URL is not important for this test
+        let url = Url::parse("https://test_account.example.com/dbs/ToDoList").unwrap();
+
+        let ret = generate_authorization(
+            &auth_token,
+            &url,
+            SignatureTarget {
+                http_method: &azure_core::Method::Get,
+                resource_type: &ResourceType::Databases,
+                resource_link: "dbs/ToDoList",
+                time_nonce,
+            },
+        )
+        .await
+        .unwrap();
+
+        let expected: String = form_urlencoded::byte_serialize(
+            b"type=master&ver=1.0&sig=KvBM8vONofkv3yKm/8zD9MEGlbu6jjHDJBp4E9c2ZZI=",
+        )
+        .collect();
+
+        assert_eq!(ret, expected);
     }
 
     #[test]
-    fn generate_resource_link_00() {
+    fn extract_resource_link_specific_db() {
         let request = Request::new(
-            Url::parse("https://.documents.azure.com/dbs/second").unwrap(),
+            Url::parse("https://example.com/dbs/second").unwrap(),
             azure_core::Method::Get,
         );
-        assert_eq!(&generate_resource_link(&request), "dbs/second");
+        assert_eq!(&extract_resource_link(&request), "dbs/second");
     }
 
     #[test]
-    fn generate_resource_link_01() {
+    fn extract_resource_link_dbs_root() {
         let request = Request::new(
-            Url::parse("https://.documents.azure.com/dbs").unwrap(),
+            Url::parse("https://example.com/dbs").unwrap(),
             azure_core::Method::Get,
         );
-        assert_eq!(&generate_resource_link(&request), "");
+        assert_eq!(&extract_resource_link(&request), "");
     }
 
     #[test]
-    fn generate_resource_link_02() {
+    fn extract_resource_link_collection_nested() {
         let request = Request::new(
-            Url::parse("https://.documents.azure.com/colls/second/third").unwrap(),
+            Url::parse("https://example.com/colls/second/third").unwrap(),
             azure_core::Method::Get,
         );
-        assert_eq!(&generate_resource_link(&request), "colls/second/third");
+        assert_eq!(&extract_resource_link(&request), "colls/second/third");
     }
 
     #[test]
-    fn generate_resource_link_03() {
+    fn extract_resource_link_collections_root() {
         let request = Request::new(
             Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap(),
             azure_core::Method::Get,
         );
-        assert_eq!(&generate_resource_link(&request), "dbs/test_db");
+        assert_eq!(&extract_resource_link(&request), "dbs/test_db");
     }
 
     #[test]
-    fn scope_from_url_01() {
-        let scope =
-            scope_from_url(&Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap());
-        assert_eq!(scope, "https://.documents.azure.com/.default");
+    fn scope_from_url_extracts_correct_scope() {
+        let scope = scope_from_url(&Url::parse("https://example.com/dbs/test_db/colls").unwrap());
+        assert_eq!(scope, "https://example.com/.default");
     }
 }
