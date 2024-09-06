@@ -92,6 +92,8 @@ impl<T> Response<T> {
     /// ```rust
     /// # pub struct GetSecretResponse { }
     /// use typespec_client_core::http::{Model, Response};
+    /// # #[cfg(not(feature = "derive"))]
+    /// # use typespec_derive::Model;
     /// use serde::Deserialize;
     /// use bytes::Bytes;
     ///
@@ -144,6 +146,8 @@ impl<T: Model> Response<T> {
     /// ```rust
     /// # use serde::Deserialize;
     /// # use typespec_client_core::http::Model;
+    /// # #[cfg(not(feature = "derive"))]
+    /// # use typespec_derive::Model;
     /// # #[derive(Model, Deserialize)]
     /// # pub struct GetSecretResponse {
     /// #   name: String,
