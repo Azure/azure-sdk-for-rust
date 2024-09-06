@@ -3,33 +3,88 @@ use std::sync::Arc;
 use crate::auth::AzureKeyCredential;
 use crate::models::CreateChatCompletionsRequest;
 use crate::CreateChatCompletionsResponse;
-use azure_core::Url;
 use azure_core::{self, HttpClient, Method, Result};
+use azure_core::{Context, Url};
 
 // TODO: Implement using this instead
 // typespec_client_core::json_model!(CreateChatCompletionsResponse);
 
-pub struct AzureOpenAIClient {
+pub struct AzureOpenAIClient<'a> {
     http_client: Arc<dyn HttpClient>,
     endpoint: Url,
     key_credential: AzureKeyCredential,
+    context: Context<'a>,
+    pipeline: azure_core::Pipeline,
 }
 
-impl AzureOpenAIClient {
+impl AzureOpenAIClient<'_> {
     // TODO: not sure if this should be named `with_key_credential` instead
     pub fn new(endpoint: impl AsRef<str>, secret: String) -> Result<Self> {
         let endpoint = Url::parse(endpoint.as_ref())?;
         let key_credential = AzureKeyCredential::new(secret);
+        // let auth_header_policy = CustomHeadersPolicy(key_credential.into());
+
+        let mut context = Context::new();
+        context.insert(key_credential.clone());
+
+        let pipeline = Self::new_pipeline();
 
         Ok(AzureOpenAIClient {
             http_client: azure_core::new_http_client(),
             endpoint,
             key_credential,
+            context,
+            pipeline,
         })
+    }
+
+    fn new_pipeline() -> azure_core::Pipeline {
+        let crate_name = option_env!("CARGO_PKG_NAME");
+        let crate_version = option_env!("CARGO_PKG_VERSION");
+        let options = azure_core::ClientOptions::default();
+        let per_call_policies = Vec::new();
+        let per_retry_policies = Vec::new();
+
+        azure_core::Pipeline::new(
+            crate_name,
+            crate_version,
+            options,
+            per_call_policies,
+            per_retry_policies,
+        )
     }
 
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
+    }
+
+    pub async fn create_chat_completions_through_pipeline(
+        &self,
+        deployment_name: &str,
+        api_version: impl Into<String>,
+        chat_completions_request: &CreateChatCompletionsRequest,
+        // Should I be using RequestContent ? All the new methods have signatures that would force me to mutate
+        // the request object into &static str, Vec<u8>, etc.
+        // chat_completions_request: RequestContent<CreateChatCompletionsRequest>,
+    ) -> Result<CreateChatCompletionsResponse> {
+        let url = Url::parse(&format!(
+            "{}/openai/deployments/{}/chat/completions?api-version={}",
+            &self.endpoint,
+            deployment_name,
+            api_version.into()
+        ))?;
+
+        let mut request = azure_core::Request::new(url, Method::Post);
+        // adding the mandatory header shouldn't be necessary if the pipeline was setup correctly (?)
+        request.add_mandatory_header(&self.key_credential);
+
+        request.set_json(chat_completions_request)?;
+
+        let response = self
+            .pipeline
+            .send::<CreateChatCompletionsResponse>(&self.context, &mut request)
+            .await?;
+        response.into_body().json().await
     }
 
     pub async fn create_chat_completions(

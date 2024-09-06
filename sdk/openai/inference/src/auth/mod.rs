@@ -4,6 +4,7 @@ use azure_core::{
     Header,
 };
 
+#[derive(Debug, Clone)]
 pub struct AzureKeyCredential(Secret);
 
 pub struct OpenAIKeyCredential(Secret);

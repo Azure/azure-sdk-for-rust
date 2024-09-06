@@ -17,7 +17,7 @@ pub async fn main() -> Result<()> {
     );
 
     let response = azure_openai_client
-        .create_chat_completions(
+        .create_chat_completions_through_pipeline(
             &chat_completions_request.model,
             AzureServiceVersion::V2023_12_01Preview,
             &chat_completions_request,
