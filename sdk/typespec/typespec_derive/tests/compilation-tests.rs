@@ -29,20 +29,19 @@ struct FileResult {
 #[test]
 pub fn compilation_tests() {
     let test_root = {
-        let mut cwd = std::env::current_dir().expect("failed to get current directory");
-        cwd.push("compilation-tests");
-        cwd
+        let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        p.push("tests");
+        p.push("data");
+        p.push("compilation-tests");
+        p
     };
     let repo_root = {
-        let mut p = test_root.clone(); // [root]/sdk/typespec/typespec_derive/compilation-tests
-        p.pop(); // [root]/sdk/typespec/typespec_derive
+        let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR")); // [root]/sdk/typespec/typespec_derive
         p.pop(); // [root]/sdk/typespec
         p.pop(); // [root]/sdk
         p.pop(); // [root]
         p
     };
-
-    // TODO: Create an initial map of all the files in the project.
 
     // Probably save to assume cargo is on the path, but if that's not the case, tests will start failing and we'll figure it out.
     let mut compilation = std::process::Command::new("cargo")
