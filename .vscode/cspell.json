@@ -6,6 +6,7 @@
     "**/test-resources.bicep",
     "**/test-resources.json",
     ".vscode/cspell.json",
+    ".github/CODEOWNERS",
     "NOTICE.txt",
     "eng/",
     "*.dict.txt",
