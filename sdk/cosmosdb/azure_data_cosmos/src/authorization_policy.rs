@@ -266,8 +266,8 @@ fn string_to_sign(signature_target: SignatureTarget) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "key-auth")]
     use azure_core::auth::AccessToken;
-    use time::Duration;
 
     use super::*;
 
@@ -283,7 +283,7 @@ mod tests {
             let token = format!("{}+{}", self.0, scopes.join(","));
             Ok(AccessToken::new(
                 token,
-                OffsetDateTime::now_utc().saturating_add(Duration::minutes(5)),
+                OffsetDateTime::now_utc().saturating_add(time::Duration::minutes(5)),
             ))
         }
 
