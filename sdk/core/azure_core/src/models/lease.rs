@@ -1,11 +1,17 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Create and manage locks on Azure resources.
-
-create_enum!(LeaseStatus, (Locked, "locked"), (Unlocked, "unlocked"));
+use typespec_client_core::create_enum;
 
 create_enum!(
+    #[doc = "Lease status of an Azure resource."]
+    LeaseStatus,
+    (Locked, "locked"),
+    (Unlocked, "unlocked")
+);
+
+create_enum!(
+    #[doc = "State of a lease of an Azure resource."]
     LeaseState,
     (Available, "available"),
     (Leased, "leased"),
@@ -14,9 +20,15 @@ create_enum!(
     (Broken, "broken")
 );
 
-create_enum!(LeaseDuration, (Infinite, "infinite"), (Fixed, "fixed"));
+create_enum!(
+    #[doc = "Lease duration of an Azure resource."]
+    LeaseDuration,
+    (Infinite, "infinite"),
+    (Fixed, "fixed")
+);
 
 create_enum!(
+    #[doc = "The lease action to perform on an Azure resource."]
     LeaseAction,
     (Acquire, "acquire"),
     (Renew, "renew "),

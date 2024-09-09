@@ -6,6 +6,7 @@
 mod clients;
 mod context;
 pub mod headers;
+mod models;
 mod options;
 mod pageable;
 mod pipeline;
@@ -16,6 +17,7 @@ mod response;
 pub use clients::*;
 pub use context::*;
 pub use headers::Header;
+pub use models::*;
 pub use options::*;
 pub use pageable::*;
 pub use pipeline::*;
