@@ -32,3 +32,28 @@ pub use typespec_derive::Model;
 // Re-export important types.
 pub use http_types::{Method, StatusCode};
 pub use url::Url;
+
+/// Add a new query pair into the target [`Url`]'s query string.
+pub trait AppendToUrlQuery {
+    fn append_to_url_query(&self, url: &mut Url);
+}
+
+impl<T> AppendToUrlQuery for &T
+where
+    T: AppendToUrlQuery,
+{
+    fn append_to_url_query(&self, url: &mut Url) {
+        (*self).append_to_url_query(url);
+    }
+}
+
+impl<T> AppendToUrlQuery for Option<T>
+where
+    T: AppendToUrlQuery,
+{
+    fn append_to_url_query(&self, url: &mut Url) {
+        if let Some(i) = self {
+            i.append_to_url_query(url);
+        }
+    }
+}
