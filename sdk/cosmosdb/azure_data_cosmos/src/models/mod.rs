@@ -1,7 +1,7 @@
+use azure_core::Model;
 use serde::{Deserialize, Serialize};
 use time::error::ComponentRange;
 use time::OffsetDateTime;
-use typespec_client_core::Model;
 
 #[cfg(doc)]
 use crate::DatabaseClientMethods;

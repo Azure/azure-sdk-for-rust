@@ -272,6 +272,7 @@ mod tests {
     use super::*;
 
     #[derive(Debug)]
+    #[cfg(feature = "key-auth")]
     struct TestTokenCredential(String);
 
     #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
