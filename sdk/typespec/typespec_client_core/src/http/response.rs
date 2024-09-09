@@ -272,7 +272,7 @@ impl fmt::Debug for ResponseBody {
 #[cfg(test)]
 mod tests {
     use crate::http::headers::Headers;
-    use crate::http::{Model, Response, ResponseBody};
+    use crate::http::{response::ResponseBody, Model, Response};
     use typespec::error::ErrorKind;
 
     #[tokio::test]

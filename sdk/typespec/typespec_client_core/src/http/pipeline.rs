@@ -94,7 +94,7 @@ impl Pipeline {
 mod tests {
     use super::*;
     use crate::{
-        http::{headers::Headers, Method, PolicyResult, StatusCode, TransportOptions},
+        http::{headers::Headers, policies::PolicyResult, Method, StatusCode, TransportOptions},
         stream::BytesStream,
     };
     use bytes::Bytes;

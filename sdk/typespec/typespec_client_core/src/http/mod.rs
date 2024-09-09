@@ -11,8 +11,8 @@ mod options;
 mod pageable;
 mod pipeline;
 pub mod policies;
-mod request;
-mod response;
+pub mod request;
+pub mod response;
 
 pub use clients::*;
 pub use context::*;
@@ -21,9 +21,8 @@ pub use models::*;
 pub use options::*;
 pub use pageable::*;
 pub use pipeline::*;
-pub use policies::*;
-pub use request::*;
-pub use response::*;
+pub use request::{Body, Request, RequestContent};
+pub use response::{Model, Response};
 
 // Re-export derive macro for Model.
 #[cfg(feature = "derive")]

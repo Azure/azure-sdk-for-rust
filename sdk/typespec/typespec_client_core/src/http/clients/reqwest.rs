@@ -3,7 +3,9 @@
 
 use crate::http::{
     headers::{HeaderName, HeaderValue, Headers},
-    Body, HttpClient, Method, PinnedStream, Request, Response, StatusCode,
+    request::{Body, Request},
+    response::PinnedStream,
+    HttpClient, Method, Response, StatusCode,
 };
 use async_trait::async_trait;
 use futures::TryStreamExt;
