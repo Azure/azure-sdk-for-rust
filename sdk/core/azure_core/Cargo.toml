@@ -23,7 +23,6 @@ http-types = { workspace = true }
 tracing = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-uuid = { workspace = true }
 pin-project = { workspace = true }
 paste = { workspace = true }
 tokio = { workspace = true, optional = true }
@@ -43,24 +42,24 @@ thiserror = { workspace = true }
 
 [features]
 default = []
-enable_reqwest = ["typespec_client_core/reqwest"]
-enable_reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
-enable_reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
+reqwest = ["typespec_client_core/reqwest"]
+reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
+reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
 hmac_rust = ["dep:sha2", "dep:hmac"]
 hmac_openssl = ["dep:openssl"]
 test_e2e = []
 azurite_workaround = []
 xml = ["typespec_client_core/xml"]
-tokio-fs = ["tokio/fs", "tokio/sync", "tokio/io-util"]
-tokio-sleep = ["typespec_client_core/tokio_sleep"]
+tokio_fs = ["tokio/fs", "tokio/sync", "tokio/io-util"]
+tokio_sleep = ["typespec_client_core/tokio_sleep"]
 
 [package.metadata.docs.rs]
 features = [
   "xml",
-  "tokio-fs",
-  "enable_reqwest",
-  "enable_reqwest_gzip",
-  "enable_reqwest_rustls",
+  "tokio_fs",
+  "reqwest",
+  "reqwest_gzip",
+  "reqwest_rustls",
   "hmac_rust",
   "hmac_openssl",
   "xml",

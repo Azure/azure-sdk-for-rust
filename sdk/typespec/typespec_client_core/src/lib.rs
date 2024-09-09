@@ -19,6 +19,7 @@ pub mod stream;
 pub mod xml;
 
 pub use crate::error::{Error, Result};
+pub use uuid::Uuid;
 
 #[cfg(feature = "derive")]
 pub use typespec_derive::Model;

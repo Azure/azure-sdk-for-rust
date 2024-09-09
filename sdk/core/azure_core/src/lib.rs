@@ -29,9 +29,6 @@ pub mod auth;
 pub mod headers;
 pub mod lro;
 pub mod request_options;
-pub mod util;
-
-use uuid::Uuid;
 
 pub mod tokio;
 
@@ -54,8 +51,8 @@ pub use typespec_client_core::xml;
 pub use typespec_client_core::{
     base64, date,
     http::{
-        headers::Header, new_http_client, Body, Context, Continuable, HttpClient, Method, Pageable,
-        Request, RequestContent, StatusCode, Url,
+        headers::Header, new_http_client, AppendToUrlQuery, Body, Context, Continuable, HttpClient,
+        Method, Pageable, Request, RequestContent, StatusCode, Url,
     },
     json, parsing,
     sleep::{self, sleep},
@@ -64,7 +61,7 @@ pub use typespec_client_core::{
 
 /// A unique identifier for a request.
 // NOTE: only used for Storage?
-pub type RequestId = Uuid;
+pub type RequestId = typespec_client_core::Uuid;
 
 /// A unique session token.
 // NOTE: only used for Cosmos?
@@ -73,31 +70,6 @@ pub type SessionToken = String;
 /// An empty HTTP body.
 #[allow(clippy::declare_interior_mutable_const)]
 pub const EMPTY_BODY: bytes::Bytes = bytes::Bytes::new();
-
-/// Add a new query pair into the target URL's query string.
-pub trait AppendToUrlQuery {
-    fn append_to_url_query(&self, url: &mut crate::Url);
-}
-
-impl<T> AppendToUrlQuery for &T
-where
-    T: AppendToUrlQuery,
-{
-    fn append_to_url_query(&self, url: &mut crate::Url) {
-        (*self).append_to_url_query(url);
-    }
-}
-
-impl<T> AppendToUrlQuery for Option<T>
-where
-    T: AppendToUrlQuery,
-{
-    fn append_to_url_query(&self, url: &mut crate::Url) {
-        if let Some(i) = self {
-            i.append_to_url_query(url);
-        }
-    }
-}
 
 #[doc(hidden)]
 /// Used by macros as an implementation detail

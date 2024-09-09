@@ -42,9 +42,9 @@ serial_test = { workspace = true }
 clap = { workspace = true }
 
 [features]
-default = ["development", "enable_reqwest", "old_azure_cli"]
-enable_reqwest = ["azure_core/enable_reqwest"]
-enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
+default = ["development", "reqwest", "old_azure_cli"]
+reqwest = ["azure_core/reqwest"]
+reqwest_rustls = ["azure_core/reqwest_rustls"]
 development = []
 test_e2e = []
 client_certificate = ["openssl"]
@@ -60,8 +60,8 @@ old_azure_cli = ["time/local-offset", "tz-rs"]
 
 [package.metadata.docs.rs]
 features = [
-  "enable_reqwest",
-  "enable_reqwest_rustls",
+  "reqwest",
+  "reqwest_rustls",
   "development",
   "client_certificate",
   "azureauth_cli",
