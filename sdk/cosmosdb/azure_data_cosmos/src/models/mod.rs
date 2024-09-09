@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use time::error::ComponentRange;
 use time::OffsetDateTime;
+use typespec_client_core::Model;
 
 #[cfg(doc)]
 use crate::DatabaseClientMethods;
@@ -25,7 +26,7 @@ impl TryInto<OffsetDateTime> for CosmosTimestamp {
 /// Properties of a Cosmos DB database.
 ///
 /// Returned by [`DatabaseClient::read()`](crate::DatabaseClient::read()).
-#[derive(Debug, Deserialize)]
+#[derive(Model, Debug, Deserialize)]
 pub struct DatabaseProperties {
     /// The ID of the database.
     pub id: String,
@@ -46,6 +47,3 @@ pub struct DatabaseProperties {
     #[serde(rename = "_ts")]
     pub last_modified: Option<CosmosTimestamp>,
 }
-
-// TODO: Migrate to derive macro once https://github.com/Azure/azure-sdk-for-rust/pull/1772 lands.
-azure_core::json_model!(DatabaseProperties);
