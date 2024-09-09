@@ -19,3 +19,6 @@ pub mod stream;
 pub mod xml;
 
 pub use crate::error::{Error, Result};
+
+#[cfg(feature = "derive")]
+pub use typespec_derive::Model;

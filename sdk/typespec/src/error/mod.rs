@@ -3,7 +3,9 @@
 
 //! Interfaces for working with errors.
 
+#[cfg(feature = "http")]
 use http_types::StatusCode;
+
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
 
@@ -51,6 +53,7 @@ impl ErrorKind {
 impl Display for ErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            #[cfg(feature = "http")]
             ErrorKind::HttpResponse { status, error_code } => {
                 write!(
                     f,
