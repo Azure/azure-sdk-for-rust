@@ -3,47 +3,51 @@ use std::sync::Arc;
 use crate::auth::AzureKeyCredential;
 use crate::models::CreateChatCompletionsRequest;
 use crate::CreateChatCompletionsResponse;
-use azure_core::{self, ClientOptions, HttpClient, Method, Policy, Result};
+use azure_core::{
+    self, builders::ClientOptionsBuilder, AppendToUrlQuery, ClientOptions, HttpClient, Method,
+    Policy, Result,
+};
 use azure_core::{Context, Url};
 
 // TODO: Implement using this instead
 // typespec_client_core::json_model!(CreateChatCompletionsResponse);
 
+// TODO: I was not  able to  find ClientOptions  as  a derive macros
 #[derive(Clone, Debug, Default)]
 pub struct AzureOpenAIClientOptions {
     client_options: ClientOptions,
+    api_service_version: AzureServiceVersion,
 }
 
-pub struct AzureOpenAIClient <'a> {
-    http_client: Arc<dyn HttpClient>,
+pub struct AzureOpenAIClient<'a> {
     endpoint: Url,
-    key_credential: AzureKeyCredential,
     context: Context<'a>,
     pipeline: azure_core::Pipeline,
-    azure_openai_client_options: AzureOpenAIClientOptions
+    options: AzureOpenAIClientOptions,
 }
 
-impl AzureOpenAIClient <'_> {
+impl AzureOpenAIClient<'_> {
     // TODO: not sure if this should be named `with_key_credential` instead
-    pub fn new(endpoint: impl AsRef<str>, secret: String, client_options: Option<AzureOpenAIClientOptions>) -> Result<Self> {
+    pub fn new(
+        endpoint: impl AsRef<str>,
+        secret: String,
+        client_options: Option<AzureOpenAIClientOptions>,
+    ) -> Result<Self> {
         let endpoint = Url::parse(endpoint.as_ref())?;
         let key_credential = AzureKeyCredential::new(secret);
 
         let context = Context::new();
 
-        let mut azure_openai_client_options = client_options.unwrap_or_default();
+        let options = client_options.unwrap_or_default();
         let per_call_policies: Vec<Arc<dyn Policy>> = key_credential.clone().into();
 
         let pipeline = Self::new_pipeline(per_call_policies);
-        // azure_openai_client_options.client_options.set_per_call_policies(per_call_policies);
 
         Ok(AzureOpenAIClient {
-            http_client: azure_core::new_http_client(),
             endpoint,
-            key_credential,
             context,
             pipeline,
-            azure_openai_client_options
+            options,
         })
     }
 
@@ -51,7 +55,6 @@ impl AzureOpenAIClient <'_> {
         let crate_name = option_env!("CARGO_PKG_NAME");
         let crate_version = option_env!("CARGO_PKG_VERSION");
         let options = azure_core::ClientOptions::default();
-        // let per_call_policies = Vec::new();
         let per_retry_policies = Vec::new();
 
         azure_core::Pipeline::new(
@@ -67,10 +70,9 @@ impl AzureOpenAIClient <'_> {
         &self.endpoint
     }
 
-    pub async fn create_chat_completions_through_pipeline(
+    pub async fn create_chat_completions(
         &self,
         deployment_name: &str,
-        api_version: impl Into<String>,
         chat_completions_request: &CreateChatCompletionsRequest,
         // Should I be using RequestContent ? All the new methods have signatures that would force me to mutate
         // the request object into &static str, Vec<u8>, etc.
@@ -80,7 +82,7 @@ impl AzureOpenAIClient <'_> {
             "{}/openai/deployments/{}/chat/completions?api-version={}",
             &self.endpoint,
             deployment_name,
-            api_version.into()
+            &self.options.api_service_version.to_string(),
         ))?;
 
         let mut request = azure_core::Request::new(url, Method::Post);
@@ -95,38 +97,54 @@ impl AzureOpenAIClient <'_> {
             .await?;
         response.into_body().json().await
     }
+}
 
-    pub async fn create_chat_completions(
-        &self,
-        deployment_name: &str,
-        api_version: impl Into<String>,
-        chat_completions_request: &CreateChatCompletionsRequest,
-    ) -> Result<CreateChatCompletionsResponse> {
-        let url = Url::parse(&format!(
-            "{}/openai/deployments/{}/chat/completions?api-version={}",
-            &self.endpoint,
-            deployment_name,
-            api_version.into()
-        ))?;
-        let request = super::build_request(
-            &self.key_credential,
-            url,
-            Method::Post,
-            chat_completions_request,
-        )?;
-        let response = self.http_client.execute_request(&request).await?;
-        let (status_code, headers, body) = response.deconstruct();
-
-        println!("Status code: {:?}", status_code);
-        println!("Headers: {:?}", headers);
-        Ok(body.json().await?)
+impl AzureOpenAIClientOptions {
+    pub fn builder() -> builders::AzureOpenAIClientOptionsBuilder {
+        builders::AzureOpenAIClientOptionsBuilder::new()
     }
 }
 
+pub mod builders {
+    use super::*;
+
+    #[derive(Clone, Debug, Default)]
+    pub struct AzureOpenAIClientOptionsBuilder {
+        options: AzureOpenAIClientOptions,
+    }
+
+    impl AzureOpenAIClientOptionsBuilder {
+        pub(super) fn new() -> Self {
+            Self::default()
+        }
+        pub fn with_api_version(mut self, api_service_version: AzureServiceVersion) -> Self {
+            self.options.api_service_version = api_service_version;
+            self
+        }
+
+        pub fn build(&self) -> AzureOpenAIClientOptions {
+            self.options.clone()
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum AzureServiceVersion {
     V2023_09_01Preview,
     V2023_12_01Preview,
     V2024_07_01Preview,
+}
+
+impl Default for AzureServiceVersion {
+    fn default() -> AzureServiceVersion {
+        AzureServiceVersion::get_latest()
+    }
+}
+
+impl AzureServiceVersion {
+    pub fn get_latest() -> AzureServiceVersion {
+        AzureServiceVersion::V2024_07_01Preview
+    }
 }
 
 impl From<AzureServiceVersion> for String {
@@ -137,5 +155,11 @@ impl From<AzureServiceVersion> for String {
             AzureServiceVersion::V2024_07_01Preview => "2024-07-01-preview",
         };
         return String::from(as_str);
+    }
+}
+
+impl ToString for AzureServiceVersion {
+    fn to_string(&self) -> String {
+        String::from(self.clone())
     }
 }

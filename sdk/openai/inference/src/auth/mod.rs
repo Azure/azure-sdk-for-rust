@@ -1,8 +1,10 @@
-use std::sync::Arc;
 use async_trait::async_trait;
+use std::sync::Arc;
 
 use azure_core::{
-    auth::Secret, headers::{HeaderName, HeaderValue, AUTHORIZATION}, Context, Header, Policy, PolicyResult, Request
+    auth::Secret,
+    headers::{HeaderName, HeaderValue, AUTHORIZATION},
+    Context, Header, Policy, PolicyResult, Request,
 };
 
 #[derive(Debug, Clone)]
@@ -36,7 +38,6 @@ impl Header for AzureKeyCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl Policy for AzureKeyCredential {
-
     async fn send(
         &self,
         ctx: &Context,
