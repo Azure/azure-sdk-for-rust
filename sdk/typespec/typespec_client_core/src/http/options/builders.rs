@@ -5,9 +5,9 @@
 
 //! Client options and client method options builders.
 
+use crate::http::{policies::Policy, Context, RetryOptions, TransportOptions};
 #[cfg(doc)]
 use crate::http::{ClientMethodOptions, ClientOptions};
-use crate::http::{Context, Policy, RetryOptions, TransportOptions};
 use std::sync::Arc;
 
 /// Methods to set general client options for client-specific [`ClientOptions`].

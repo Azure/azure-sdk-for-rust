@@ -55,7 +55,7 @@ fn generate_body(ast: DeriveInput) -> Result<TokenStream> {
 
         #[automatically_derived]
         impl #impl_generics _typespec_client_core::http::Model for #name #ty_generics #where_clause {
-            async fn from_response_body(body: _typespec_client_core::http::ResponseBody) -> _typespec_client_core::Result<Self> {
+            async fn from_response_body(body: _typespec_client_core::http::response::ResponseBody) -> _typespec_client_core::Result<Self> {
                 #deserialize_body
             }
         }

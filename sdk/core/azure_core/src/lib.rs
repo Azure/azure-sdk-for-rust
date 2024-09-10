@@ -38,7 +38,7 @@ pub use models::*;
 pub use options::*;
 pub use pipeline::*;
 pub use policies::*;
-pub use typespec_client_core::http::{Model, PinnedStream, Response, ResponseBody};
+pub use typespec_client_core::http::response::{Model, PinnedStream, Response, ResponseBody};
 
 // Re-export typespec types that are not specific to Azure.
 pub use typespec::{Error, Result};
