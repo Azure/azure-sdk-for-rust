@@ -3,10 +3,10 @@
 // cspell: words amqp
 
 #[cfg(feature = "cplusplus")]
-use azure_core::{Result, Uuid};
-
-#[cfg(feature = "cplusplus")]
 use crate::{Deserializable, Serializable};
+#[cfg(feature = "cplusplus")]
+use azure_core::Result;
+use azure_core::Uuid;
 
 #[derive(Debug, PartialEq, Clone, Default, Eq)]
 pub struct AmqpSymbol(pub String);
@@ -445,9 +445,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
-
     use super::*;
+    use std::vec;
+    use Uuid;
 
     #[test]
     fn test_value_create_specific() {
