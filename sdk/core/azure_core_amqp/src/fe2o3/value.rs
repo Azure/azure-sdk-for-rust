@@ -2,14 +2,12 @@
 // Licensed under the MIT license.
 // cspell: words amqp
 
-use serde_bytes::ByteBuf;
-use std::time::UNIX_EPOCH;
-
-use serde_amqp::primitives::Timestamp;
-
 use crate::value::{
     AmqpDescribed, AmqpDescriptor, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue,
 };
+use serde_amqp::primitives::Timestamp;
+use serde_bytes::ByteBuf;
+use std::time::UNIX_EPOCH;
 
 impl From<fe2o3_amqp_types::primitives::Symbol> for AmqpSymbol {
     fn from(s: fe2o3_amqp_types::primitives::Symbol) -> AmqpSymbol {
@@ -511,6 +509,7 @@ impl From<fe2o3_amqp_types::definitions::ReceiverSettleMode> for crate::Receiver
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_core::Uuid;
 
     #[test]
     fn test_from_fe2o3_amqp_types_primitives_symbol() {
@@ -677,7 +676,7 @@ mod tests {
         }
 
         {
-            let uuid = uuid::Uuid::new_v4();
+            let uuid = Uuid::new_v4();
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Uuid(uuid.into());
             let amqp: AmqpValue = fe2o3.clone().into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();

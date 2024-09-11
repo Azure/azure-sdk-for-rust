@@ -57,14 +57,15 @@ pub use typespec_client_core::{
     json, parsing,
     sleep::{self, sleep},
     stream::{BytesStream, SeekableStream},
+    Uuid,
 };
 
 /// A unique identifier for a request.
-// NOTE: only used for Storage?
-pub type RequestId = typespec_client_core::Uuid;
+// NOTE: Only used for Storage?
+pub type RequestId = Uuid;
 
 /// A unique session token.
-// NOTE: only used for Cosmos?
+// NOTE: Only used for Cosmos?
 pub type SessionToken = String;
 
 /// An empty HTTP body.

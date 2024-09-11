@@ -6,8 +6,10 @@ use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValu
 #[cfg(feature = "cplusplus")]
 use crate::Deserializable;
 #[cfg(feature = "cplusplus")]
-use azure_core::error::ErrorKind;
-use azure_core::error::Result;
+use azure_core::{
+    Uuid,
+    {error::ErrorKind, Result},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TerminusDurability {
@@ -116,13 +118,13 @@ impl From<AmqpSymbol> for AmqpOutcome {
 #[derive(Debug, Clone, PartialEq)]
 pub enum AmqpMessageId {
     String(String),
-    Uuid(uuid::Uuid),
+    Uuid(Uuid),
     Binary(Vec<u8>),
     Ulong(u64),
 }
 
-impl From<uuid::Uuid> for AmqpMessageId {
-    fn from(uuid: uuid::Uuid) -> Self {
+impl From<Uuid> for AmqpMessageId {
+    fn from(uuid: Uuid) -> Self {
         AmqpMessageId::Uuid(uuid)
     }
 }
@@ -1531,7 +1533,6 @@ mod tests {
     use super::*;
     use fe2o3_amqp_types::messaging::Priority;
     use std::time::SystemTime;
-    use uuid::Uuid;
 
     #[test]
     fn test_amqp_message_header_builder() {

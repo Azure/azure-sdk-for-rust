@@ -17,22 +17,22 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { workspace = true }
-azure_core_amqp = { workspace = true }
-time = { workspace = true }
-tracing = { workspace = true }
-url = { workspace = true }
-uuid = { workspace = true }
-futures = { workspace = true }
-async-std = { workspace = true }
-async-stream = { workspace = true }
+azure_core.workspace = true
+azure_core_amqp.workspace = true
+time.workspace = true
+tracing.workspace = true
+url.workspace = true
+uuid.workspace = true
+futures.workspace = true
+async-std.workspace = true
+async-stream.workspace = true
 
 [build-dependencies]
-rustc_version = { workspace = true }
+rustc_version.workspace = true
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
-azure_identity = { workspace = true }
+azure_identity.workspace = true
 tokio = { workspace = true, default-features = false, features = [
   "rt-multi-thread",
   "macros",
