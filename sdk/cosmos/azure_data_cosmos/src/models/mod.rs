@@ -1,15 +1,16 @@
-use azure_core::Model;
+use azure_core::{
+    date::{ComponentRange, OffsetDateTime},
+    Model,
+};
 use serde::{Deserialize, Serialize};
-use time::error::ComponentRange;
-use time::OffsetDateTime;
 
 #[cfg(doc)]
-use crate::DatabaseClientMethods;
+use crate::{clients::DatabaseClientMethods, CosmosClientMethods};
 
 /// Represents a timestamp in the format expected by Cosmos DB.
 ///
 /// Cosmos DB timestamps are represented as the number of seconds since the Unix epoch.
-/// Use [`CosmosTimestamp::try_into`] implementation to convert this into a [`time::OffsetDateTime`].
+/// Use [`CosmosTimestamp::try_into`] implementation to convert this into an [`OffsetDateTime`].
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CosmosTimestamp(i64);
 
@@ -25,7 +26,7 @@ impl TryInto<OffsetDateTime> for CosmosTimestamp {
 
 /// Properties of a Cosmos DB database.
 ///
-/// Returned by [`DatabaseClient::read()`](crate::DatabaseClient::read()).
+/// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[derive(Model, Debug, Deserialize)]
 pub struct DatabaseProperties {
     /// The ID of the database.

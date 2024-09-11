@@ -35,7 +35,7 @@
 # ServiceOwner: @Pilchie
 # ServiceLabel: %Cosmos
 # PRLabel: %Cosmos
-/sdk/cosmosdb/          @analogrelay @Pilchie
+/sdk/cosmos/          @analogrelay @Pilchie
 
 ###########
 # Eng Sys

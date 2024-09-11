@@ -1,10 +1,11 @@
 use crate::authorization_policy::AuthorizationPolicy;
-use crate::{CosmosClientOptions, DatabaseClient};
+use crate::clients::DatabaseClient;
+use crate::CosmosClientOptions;
 use azure_core::auth::TokenCredential;
 use azure_core::{Pipeline, Url};
 use std::sync::Arc;
 
-#[cfg(feature = "key-auth")]
+#[cfg(feature = "key_auth")]
 use azure_core::auth::Secret;
 
 /// Client for Azure Cosmos DB.
@@ -23,7 +24,10 @@ pub struct CosmosClient {
 /// Rather than depending on `CosmosClient`, you can depend on a generic parameter constrained by this trait, or an `impl CosmosClientMethods` type.
 pub trait CosmosClientMethods {
     /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
-    fn database(&self, name: impl Into<String>) -> DatabaseClient;
+    ///
+    /// # Arguments
+    /// * `id` - The ID of the database.
+    fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient;
 }
 
 impl CosmosClient {
@@ -72,7 +76,7 @@ impl CosmosClient {
     /// ```rust,no_run
     /// let client = CosmosClient::with_shared_key("https://myaccount.documents.azure.com/", "my_key", None)?;
     /// ```
-    #[cfg(feature = "key-auth")]
+    #[cfg(feature = "key_auth")]
     pub fn with_key(
         endpoint: impl AsRef<str>,
         key: impl Into<Secret>,
@@ -97,8 +101,11 @@ impl CosmosClient {
 
 impl CosmosClientMethods for CosmosClient {
     /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
-    fn database(&self, id: impl Into<String>) -> DatabaseClient {
-        DatabaseClient::new(self.clone(), id.into())
+    ///
+    /// # Arguments
+    /// * `id` - The ID of the database.
+    fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient {
+        DatabaseClient::new(self.clone(), id.as_ref())
     }
 }
 

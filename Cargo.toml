@@ -6,7 +6,7 @@ members = [
   "sdk/typespec/typespec_derive",
   "sdk/core/azure_core",
   "sdk/core/azure_core_amqp",
-  "sdk/cosmosdb/azure_data_cosmos",
+  "sdk/cosmos/azure_data_cosmos",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "eng/test/mock_transport",

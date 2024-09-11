@@ -8,11 +8,11 @@
 #![cfg_attr(docsrs, feature(doc_cfg_hide))]
 
 mod authorization_policy;
-mod clients;
+pub mod clients;
 mod options;
 
 /// Model types sent to and received from the Cosmos API.
 pub mod models;
 
-pub use clients::*;
+pub use clients::{CosmosClient, CosmosClientMethods};
 pub use options::*;

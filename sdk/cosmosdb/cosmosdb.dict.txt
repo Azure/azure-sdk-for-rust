@@ -1,4 +1,0 @@
-colls
-pkranges
-sprocs
-udfs

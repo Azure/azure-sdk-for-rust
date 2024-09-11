@@ -10,7 +10,7 @@ repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos"
-keywords = ["sdk", "azure", "rest", "cloud", "cosmosdb", "database"]
+keywords = ["sdk", "azure", "rest", "cloud", "cosmos", "database"]
 categories = ["api-bindings"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -19,7 +19,6 @@ categories = ["api-bindings"]
 async-trait.workspace = true
 azure_core.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
-time.workspace = true
 tracing.workspace = true
 url.workspace = true
 serde.workspace = true
@@ -37,7 +36,7 @@ workspace = true
 default = ["hmac_rust"]
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
-key-auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
+key_auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
 
 [package.metadata.docs.rs]
-features = ["key-auth"]
+features = ["key_auth"]

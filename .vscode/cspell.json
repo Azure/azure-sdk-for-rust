@@ -56,8 +56,8 @@
       "noSuggest": true
     },
     {
-      "name": "cosmosdb",
-      "path": "../sdk/cosmosdb/cosmosdb.dict.txt",
+      "name": "cosmos",
+      "path": "../sdk/cosmos/.dict.txt",
       "noSuggest": true
     }
   ],
@@ -103,11 +103,12 @@
       ]
     },
     {
-      "filename": "sdk/cosmosdb/azure_data_cosmos/**",
-      "dictionaries": [
-        "crates",
-        "cosmosdb",
-        "rust-custom"
+      "filename": "sdk/cosmos/**",
+      "words": [
+        "colls",
+        "pkranges",
+        "sprocs",
+        "udfs",
       ]
     }
   ]

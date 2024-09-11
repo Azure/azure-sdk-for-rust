@@ -22,33 +22,34 @@ pub trait DatabaseClientMethods {
     ///
     /// ```rust,no_run
     /// # async fn doc() {
-    /// use azure_data_cosmos::{CosmosClient, CosmosClientMethods, DatabaseClientMethods};
+    /// use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods};
     ///
     /// let credential = azure_identity::create_default_credential().unwrap();
     /// let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
-    /// let db_client = client.database("my_database");
+    /// let db_client = client.database_client("my_database");
     /// let response = db_client.read(None)
     ///     .await.unwrap()
     ///     .deserialize_body()
     ///     .await.unwrap();
     /// # }
     /// ```
-    fn read(
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
+    async fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
-    ) -> impl std::future::Future<Output = azure_core::Result<azure_core::Response<DatabaseProperties>>>;
+    ) -> azure_core::Result<azure_core::Response<DatabaseProperties>>;
 }
 
 /// A client for working with a specific database in a Cosmos account.
 ///
-/// You can get a `DatabaseClient` by calling [`CosmosClient::database()`](CosmosClient::database).
+/// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](CosmosClient::database_client()).
 pub struct DatabaseClient {
     base_url: Url,
     root_client: CosmosClient,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(root_client: CosmosClient, database_id: String) -> Self {
+    pub(crate) fn new(root_client: CosmosClient, database_id: &str) -> Self {
         let base_url = {
             let mut u = root_client.endpoint().clone();
             {
@@ -56,7 +57,7 @@ impl DatabaseClient {
                     .path_segments_mut()
                     .expect("The root client should have validated the format of the URL");
                 segments.push("dbs");
-                segments.push(&database_id);
+                segments.push(database_id);
             }
             u
         };
