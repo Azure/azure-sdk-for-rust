@@ -5,6 +5,8 @@
   "ignorePaths": [
     "**/test-resources.bicep",
     "**/test-resources.json",
+    ".devcontainer/devcontainer.json",
+    ".github/dependabot.yml",
     ".vscode/cspell.json",
     "NOTICE.txt",
     "eng/",

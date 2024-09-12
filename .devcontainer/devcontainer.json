@@ -5,22 +5,16 @@
   "image": "mcr.microsoft.com/devcontainers/rust:1-1-bullseye",
   "onCreateCommand": ".devcontainer/oncreate",
   "features": {
-    "ghcr.io/devcontainers/features/azure-cli:1": {
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/github-cli:1": {
-      "installDirectlyFromGitHubRelease": true,
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/sshd:1": {
-      "version": "latest"
-    }
+    "ghcr.io/devcontainers/features/azure-cli:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {}
   },
   "customizations": {
     "vscode": {
       "extensions": [
         "rust-lang.rust-analyzer",
-        "EditorConfig.EditorConfig"
+        "EditorConfig.EditorConfig",
+        "streetsidesoftware.code-spell-checker"
       ]
     }
   }
