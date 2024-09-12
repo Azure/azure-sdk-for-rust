@@ -5,11 +5,10 @@
 use crate::connection::{AmqpConnectionApis, AmqpConnectionOptions};
 
 use async_std::sync::Mutex;
-use azure_core::Result;
+use azure_core::{Result, Url};
 use fe2o3_amqp::connection::ConnectionHandle;
 use std::{borrow::BorrowMut, sync::OnceLock};
 use tracing::debug;
-use url::Url;
 
 use super::error::{AmqpConnection, AmqpOpen};
 

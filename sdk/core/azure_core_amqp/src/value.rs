@@ -3,10 +3,10 @@
 // cspell: words amqp
 
 #[cfg(feature = "cplusplus")]
-use azure_core::Result;
-
-#[cfg(feature = "cplusplus")]
 use crate::{Deserializable, Serializable};
+#[cfg(feature = "cplusplus")]
+use azure_core::Result;
+use azure_core::Uuid;
 
 #[derive(Debug, PartialEq, Clone, Default, Eq)]
 pub struct AmqpSymbol(pub String);
@@ -171,7 +171,7 @@ pub enum AmqpValue {
     Double(f64),
     Char(char),
     TimeStamp(AmqpTimestamp),
-    Uuid(uuid::Uuid),
+    Uuid(Uuid),
     Binary(Vec<u8>),
     String(String),
     Symbol(AmqpSymbol),
@@ -345,7 +345,7 @@ conversions_for_amqp_types!(
     (f32, Float),
     (f64, Double),
     (char, Char),
-    (uuid::Uuid, Uuid),
+    (Uuid, Uuid),
     (Vec<u8>, Binary),
     (std::string::String, String),
     (AmqpSymbol, Symbol),
@@ -445,13 +445,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
-
     use super::*;
+    use std::vec;
+    use Uuid;
 
     #[test]
     fn test_value_create_specific() {
-        let uuid = uuid::Uuid::new_v4();
+        let uuid = Uuid::new_v4();
         let timestamp = std::time::SystemTime::now();
         let v1 = AmqpValue::Boolean(true);
         let v2 = AmqpValue::UByte(1);
@@ -561,7 +561,7 @@ mod tests {
             TimeStamp,
             AmqpTimestamp(std::time::SystemTime::now())
         );
-        test_conversion!(uuid::Uuid, Uuid, uuid::Uuid::new_v4());
+        test_conversion!(Uuid, Uuid, Uuid::new_v4());
         test_conversion!(Vec<u8>, Binary, vec![1, 2, 3]);
         test_conversion!(String, String, "hello".to_string());
         test_conversion!(AmqpSymbol, Symbol, AmqpSymbol("hello".to_string()));
@@ -729,11 +729,11 @@ mod tests {
         assert_eq!(timestamp_val, AmqpTimestamp(timestamp));
 
         // Test AmqpValue::Uuid
-        let uuid = uuid::Uuid::new_v4();
+        let uuid = Uuid::new_v4();
         let uuid_value: AmqpValue = AmqpValue::Uuid(uuid);
         assert_eq!(uuid_value, AmqpValue::Uuid(uuid));
         assert_eq!(AmqpValue::Uuid(uuid), uuid_value);
-        let uuid_val: uuid::Uuid = uuid_value.into();
+        let uuid_val: Uuid = uuid_value.into();
         assert_eq!(uuid_val, uuid);
 
         // Test AmqpValue::Binary

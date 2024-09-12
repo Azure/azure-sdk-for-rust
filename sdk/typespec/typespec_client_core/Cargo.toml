@@ -11,35 +11,35 @@ categories = ["compilers", "development-tools"]
 keywords = ["typespec"]
 
 [dependencies]
-async-trait = { workspace = true }
-base64 = { workspace = true }
-bytes = { workspace = true }
-dyn-clone = { workspace = true }
-futures = { workspace = true }
+async-trait.workspace = true
+base64.workspace = true
+bytes.workspace = true
+dyn-clone.workspace = true
+futures.workspace = true
 http-types = { workspace = true, optional = true }
-pin-project = { workspace = true }
+pin-project.workspace = true
 quick-xml = { workspace = true, optional = true }
-rand = { workspace = true }
+rand.workspace = true
 reqwest = { workspace = true, optional = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-time = { workspace = true }
+serde.workspace = true
+serde_json.workspace = true
+time.workspace = true
 tokio = { workspace = true, optional = true }
-tracing = { workspace = true }
+tracing.workspace = true
 typespec = { workspace = true, default-features = false }
 typespec_derive = { workspace = true, optional = true }
-uuid = { workspace = true }
-url = { workspace = true }
+uuid.workspace = true
+url.workspace = true
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-getrandom = { workspace = true }
+getrandom.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
 
 [dev-dependencies]
-once_cell = { workspace = true }
+once_cell.workspace = true
 tokio.workspace = true
 typespec_derive.workspace = true
 

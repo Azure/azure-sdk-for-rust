@@ -50,7 +50,7 @@ impl From<AmqpMessageId> for fe2o3_amqp_types::messaging::MessageId {
 
 #[test]
 fn test_message_id_conversion() {
-    use uuid::Uuid;
+    use azure_core::Uuid;
     {
         let message_id = fe2o3_amqp_types::messaging::MessageId::String("test".into());
         let amqp_message_id: AmqpMessageId = message_id.clone().into();

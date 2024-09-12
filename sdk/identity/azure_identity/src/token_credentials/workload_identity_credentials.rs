@@ -7,11 +7,10 @@ use crate::{
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     error::{ErrorKind, ResultExt},
-    Error, HttpClient,
+    Error, HttpClient, Url,
 };
 use std::{str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
-use url::Url;
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
 const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";

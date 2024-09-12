@@ -3,10 +3,9 @@
 // cspell: words amqp sasl
 
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
-use azure_core::error::Result;
+use azure_core::{error::Result, Url};
 use std::fmt::Debug;
 use time::Duration;
-use url::Url;
 
 #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
 type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
