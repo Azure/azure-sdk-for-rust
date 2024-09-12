@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use crate::auth::AzureKeyCredential;
-use crate::models::CreateChatCompletionsRequest;
+
 use crate::options::AzureOpenAIClientOptions;
-use crate::CreateChatCompletionsResponse;
+use crate::request::CreateChatCompletionsRequest;
+use crate::response::CreateChatCompletionsResponse;
 use azure_core::{self, Method, Policy, Result};
 use azure_core::{Context, Url};
 

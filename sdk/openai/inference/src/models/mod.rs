@@ -1,5 +1,3 @@
-mod request;
-mod response;
+mod chat_completions;
 
-pub use request::*;
-pub use response::*;
+pub use chat_completions::*;

@@ -1,6 +1,7 @@
 use azure_core::Result;
 use azure_openai_inference::{
-    AzureOpenAIClient, AzureOpenAIClientOptions, AzureServiceVersion, CreateChatCompletionsRequest,
+    request::CreateChatCompletionsRequest, AzureOpenAIClient, AzureOpenAIClientOptions,
+    AzureServiceVersion,
 };
 
 #[tokio::main]
