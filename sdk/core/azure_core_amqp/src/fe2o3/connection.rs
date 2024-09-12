@@ -3,6 +3,7 @@
 // cspell: words amqp sasl
 
 use crate::connection::{AmqpConnectionApis, AmqpConnectionOptions};
+use crate::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 
 use async_std::sync::Mutex;
 use azure_core::{Result, Url};
@@ -113,6 +114,26 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
         connection
             .borrow_mut()
             .close()
+            .await
+            .map_err(AmqpConnection::from)?;
+        Ok(())
+    }
+    async fn close_with_error(
+        &self,
+        condition: impl Into<AmqpSymbol>,
+        description: Option<String>,
+        info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    ) -> Result<()> {
+        let mut connection = self.connection.get().unwrap().lock().await;
+        connection
+            .borrow_mut()
+            .close_with_error(fe2o3_amqp::types::definitions::Error::new(
+                fe2o3_amqp::types::definitions::ErrorCondition::Custom(
+                    fe2o3_amqp_types::primitives::Symbol::from(condition.into()),
+                ),
+                description,
+                info.map(|i| i.into()),
+            ))
             .await
             .map_err(AmqpConnection::from)?;
         Ok(())

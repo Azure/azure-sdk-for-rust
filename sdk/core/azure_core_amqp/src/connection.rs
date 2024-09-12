@@ -13,7 +13,7 @@ type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
 #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
 type ConnectionImplementation = super::noop::NoopAmqpConnection;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct AmqpConnectionOptions {
     pub(crate) max_frame_size: Option<u32>,
     pub(crate) channel_max: Option<u16>,
@@ -30,6 +30,34 @@ impl AmqpConnectionOptions {
     pub fn builder() -> builders::AmqpConnectionOptionsBuilder {
         builders::AmqpConnectionOptionsBuilder::new()
     }
+
+    pub fn max_frame_size(&self) -> Option<u32> {
+        self.max_frame_size
+    }
+    pub fn channel_max(&self) -> Option<u16> {
+        self.channel_max
+    }
+    pub fn idle_timeout(&self) -> Option<Duration> {
+        self.idle_timeout
+    }
+    pub fn outgoing_locales(&self) -> Option<Vec<String>> {
+        self.outgoing_locales.clone()
+    }
+    pub fn incoming_locales(&self) -> Option<Vec<String>> {
+        self.incoming_locales.clone()
+    }
+    pub fn offered_capabilities(&self) -> Option<Vec<AmqpSymbol>> {
+        self.offered_capabilities.clone()
+    }
+    pub fn desired_capabilities(&self) -> Option<Vec<AmqpSymbol>> {
+        self.desired_capabilities.clone()
+    }
+    pub fn properties(&self) -> Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>> {
+        self.properties.clone()
+    }
+    pub fn buffer_size(&self) -> Option<usize> {
+        self.buffer_size
+    }
 }
 
 pub trait AmqpConnectionApis {
@@ -40,6 +68,12 @@ pub trait AmqpConnectionApis {
         options: Option<AmqpConnectionOptions>,
     ) -> impl std::future::Future<Output = Result<()>>;
     fn close(&self) -> impl std::future::Future<Output = Result<()>>;
+    fn close_with_error(
+        &self,
+        condition: impl Into<AmqpSymbol>,
+        description: Option<String>,
+        info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    ) -> impl std::future::Future<Output = Result<()>>;
 }
 
 #[derive(Debug, Default)]
@@ -58,6 +92,15 @@ impl AmqpConnectionApis for AmqpConnection {
     }
     fn close(&self) -> impl std::future::Future<Output = Result<()>> {
         self.implementation.close()
+    }
+    fn close_with_error(
+        &self,
+        condition: impl Into<AmqpSymbol>,
+        description: Option<String>,
+        info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    ) -> impl std::future::Future<Output = Result<()>> {
+        self.implementation
+            .close_with_error(condition, description, info)
     }
 }
 
@@ -81,45 +124,54 @@ pub mod builders {
                 options: Default::default(),
             }
         }
-        pub fn build(self) -> AmqpConnectionOptions {
-            self.options
+        pub fn build(&mut self) -> AmqpConnectionOptions {
+            self.options.clone()
         }
         #[allow(dead_code)]
-        pub fn with_max_frame_size(mut self, max_frame_size: u32) -> Self {
+        pub fn with_max_frame_size(&mut self, max_frame_size: u32) -> &mut Self {
             self.options.max_frame_size = Some(max_frame_size);
             self
         }
         #[allow(dead_code)]
-        pub fn with_channel_max(mut self, channel_max: u16) -> Self {
+        pub fn with_channel_max(&mut self, channel_max: u16) -> &mut Self {
             self.options.channel_max = Some(channel_max);
             self
         }
         #[allow(dead_code)]
-        pub fn with_idle_timeout(mut self, idle_timeout: Duration) -> Self {
+        pub fn with_idle_timeout(&mut self, idle_timeout: Duration) -> &mut Self {
             self.options.idle_timeout = Some(idle_timeout);
             self
         }
         #[allow(dead_code)]
-        pub fn with_outgoing_locales(mut self, outgoing_locales: Vec<String>) -> Self {
+        pub fn with_outgoing_locales(&mut self, outgoing_locales: Vec<String>) -> &mut Self {
             self.options.outgoing_locales = Some(outgoing_locales);
             self
         }
         #[allow(dead_code)]
-        pub fn with_incoming_locales(mut self, incoming_locales: Vec<String>) -> Self {
+        pub fn with_incoming_locales(&mut self, incoming_locales: Vec<String>) -> &mut Self {
             self.options.incoming_locales = Some(incoming_locales);
             self
         }
         #[allow(dead_code)]
-        pub fn with_offered_capabilities(mut self, offered_capabilities: Vec<AmqpSymbol>) -> Self {
+        pub fn with_offered_capabilities(
+            &mut self,
+            offered_capabilities: Vec<AmqpSymbol>,
+        ) -> &mut Self {
             self.options.offered_capabilities = Some(offered_capabilities);
             self
         }
         #[allow(dead_code)]
-        pub fn with_desired_capabilities(mut self, desired_capabilities: Vec<AmqpSymbol>) -> Self {
+        pub fn with_desired_capabilities(
+            &mut self,
+            desired_capabilities: Vec<AmqpSymbol>,
+        ) -> &mut Self {
             self.options.desired_capabilities = Some(desired_capabilities);
             self
         }
-        pub fn with_properties<K, V>(mut self, properties: impl Into<AmqpOrderedMap<K, V>>) -> Self
+        pub fn with_properties<K, V>(
+            &mut self,
+            properties: impl Into<AmqpOrderedMap<K, V>>,
+        ) -> &mut Self
         where
             K: Into<AmqpSymbol> + Debug + Default + PartialEq,
             V: Into<AmqpValue> + Debug + Default,
@@ -133,7 +185,7 @@ pub mod builders {
             self
         }
         #[allow(dead_code)]
-        pub fn with_buffer_size(mut self, buffer_size: usize) -> Self {
+        pub fn with_buffer_size(&mut self, buffer_size: usize) -> &mut Self {
             self.options.buffer_size = Some(buffer_size);
             self
         }
