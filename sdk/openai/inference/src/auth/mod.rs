@@ -49,9 +49,9 @@ impl Policy for AzureKeyCredential {
     }
 }
 
-impl Into<Vec<Arc<dyn Policy>>> for AzureKeyCredential {
-    fn into(self) -> Vec<Arc<dyn Policy>> {
-        vec![Arc::new(self)]
+impl Into<Arc<dyn Policy>> for AzureKeyCredential {
+    fn into(self) -> Arc<dyn Policy> {
+        Arc::new(self)
     }
 }
 

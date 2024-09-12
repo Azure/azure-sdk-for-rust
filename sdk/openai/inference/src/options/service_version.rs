@@ -1,3 +1,8 @@
+use std::sync::Arc;
+use async_trait::async_trait;
+
+use azure_core::{Context, Policy, PolicyResult, Request};
+
 #[derive(Debug, Clone)]
 pub enum AzureServiceVersion {
     V2023_09_01Preview,
@@ -31,5 +36,27 @@ impl From<AzureServiceVersion> for String {
 impl ToString for AzureServiceVersion {
     fn to_string(&self) -> String {
         String::from(self.clone())
+    }
+}
+
+// Not entirely sure this is a good idea
+// code lifted from BearerTokenCredentialPolicy
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+impl Policy for AzureServiceVersion {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        request.url_mut().query_pairs_mut().append_pair("api-version", &self.to_string());
+        next[0].send(ctx, request, &next[1..]).await
+    }
+}
+
+impl Into<Arc<dyn Policy>> for AzureServiceVersion {
+    fn into(self) -> Arc<dyn Policy> {
+        Arc::new(self)
     }
 }

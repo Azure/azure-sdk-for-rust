@@ -24,7 +24,9 @@ impl AzureOpenAIClient {
         let key_credential = AzureKeyCredential::new(secret.into());
 
         let options = client_options.unwrap_or_default();
-        let per_call_policies: Vec<Arc<dyn Policy>> = key_credential.clone().into();
+        let auth_policy: Arc<dyn Policy> = key_credential.clone().into();
+        let version_policy: Arc<dyn Policy> = options.api_service_version.clone().into();
+        let per_call_policies: Vec<Arc<dyn Policy>> = vec![auth_policy, version_policy];
 
         let pipeline = Self::new_pipeline(per_call_policies, options.client_options.clone());
 
@@ -65,10 +67,9 @@ impl AzureOpenAIClient {
         // chat_completions_request: RequestContent<CreateChatCompletionsRequest>,
     ) -> Result<CreateChatCompletionsResponse> {
         let url = Url::parse(&format!(
-            "{}/openai/deployments/{}/chat/completions?api-version={}",
+            "{}/openai/deployments/{}/chat/completions",
             &self.endpoint,
-            deployment_name,
-            &self.options.api_service_version.to_string(),
+            deployment_name
         ))?;
 
         let context = Context::new();
