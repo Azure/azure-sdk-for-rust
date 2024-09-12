@@ -7,7 +7,7 @@
 // <https://ijmacd.github.io/rfc3339-iso8601/>
 
 use std::time::Duration;
-pub use time::OffsetDateTime;
+pub use time::{error::ComponentRange, OffsetDateTime};
 use time::{
     format_description::{well_known::Rfc3339, FormatItem},
     macros::format_description,
