@@ -40,7 +40,7 @@ pub trait DatabaseClientMethods {
     ) -> azure_core::Result<azure_core::Response<DatabaseProperties>>;
 }
 
-/// A client for working with a specific database in a Cosmos account.
+/// A client for working with a specific database in a Cosmos DB account.
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](CosmosClient::database_client()).
 pub struct DatabaseClient {

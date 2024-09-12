@@ -1,10 +1,10 @@
 use azure_data_cosmos::{clients::DatabaseClientMethods, CosmosClient, CosmosClientMethods};
 use clap::Parser;
 
-/// A simple example to show connecting to a Cosmos Account and retrieving the properties of a database.
+/// A simple example to show connecting to a Cosmos DB Account and retrieving the properties of a database.
 #[derive(Parser)]
 pub struct Args {
-    /// The Cosmos endpoint to connect to.
+    /// The Cosmos DB endpoint to connect to.
     endpoint: String,
 
     /// The database to fetch information for.

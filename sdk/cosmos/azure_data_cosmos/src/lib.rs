@@ -11,7 +11,7 @@ mod authorization_policy;
 pub mod clients;
 mod options;
 
-/// Model types sent to and received from the Cosmos API.
+/// Model types sent to and received from the Cosmos DB API.
 pub mod models;
 
 pub use clients::{CosmosClient, CosmosClientMethods};

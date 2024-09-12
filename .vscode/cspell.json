@@ -104,11 +104,10 @@
     },
     {
       "filename": "sdk/cosmos/**",
-      "words": [
-        "colls",
-        "pkranges",
-        "sprocs",
-        "udfs",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "cosmos"
       ]
     }
   ]
