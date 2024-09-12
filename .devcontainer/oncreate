@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "Running Azure SDK for Rust devcontainer post create script..."
+
+echo "Updating toolchains..."
+rustup show

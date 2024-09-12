@@ -5,8 +5,12 @@
   "ignorePaths": [
     "**/test-resources.bicep",
     "**/test-resources.json",
-    ".vscode/cspell.json",
+    ".devcontainer/devcontainer.json",
+    ".devcontainer/oncreate",
     ".github/CODEOWNERS",
+    ".github/dependabot.yml",
+    ".vscode/cspell.json",
+    ".vscode/extensions.json",
     "NOTICE.txt",
     "eng/",
     "*.dict.txt",

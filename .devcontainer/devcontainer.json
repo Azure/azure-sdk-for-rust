@@ -1,0 +1,23 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/rust
+{
+  "name": "Azure SDK for Rust",
+  "image": "mcr.microsoft.com/devcontainers/rust:1-1-bullseye",
+  "onCreateCommand": ".devcontainer/oncreate",
+  "features": {
+    "ghcr.io/devcontainers/features/azure-cli:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "tamasfe.even-better-toml",
+        "editorconfig.editorconfig",
+        "rust-lang.rust-analyzer",
+        "streetsidesoftware.code-spell-checker",
+        "vadimcn.vscode-lldb"
+      ]
+    }
+  }
+}
