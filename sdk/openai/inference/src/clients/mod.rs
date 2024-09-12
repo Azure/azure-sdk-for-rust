@@ -4,9 +4,9 @@
 // };
 // use serde::Serialize;
 
-pub mod azure;
+pub mod azure_openai_client;
 pub mod chat_completions_client;
-pub mod non_azure;
+pub mod openai_client;
 
 // pub(crate) fn build_request<T>(
 //     key_credential: &impl Header,
