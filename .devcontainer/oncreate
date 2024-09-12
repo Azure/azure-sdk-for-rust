@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "Running Azure SDK for Rust devcontainer post create script..."
+
+MSRV=$(cargo metadata --format-version=1 --no-deps  | jq '.packages[] | select(.name == "azure_core").rust_version' -r)
+
+echo "Updating toolchains..."
+rustup toolchain update \
+    $MSRV \
+    stable \
+    nightly \
+    --component "rustc" \
+    --component "rustfmt" \
+    --component "rust-std" \
+    --component "cargo" \
+    --component "clippy" \
+    --component "rust-analyzer"
+
+echo "Performing an initial build to cache dependencies"
+
+for toolchain in "stable" "nightly" "$MSRV"; do
+    echo "Building for Rust $toolchain ..."
+    # It's not possible to tell cargo to build _only_ dependencies, so we just build the repo and ignore failures.
+    # When building the codespace against main (such as in prebuilds) the repo _should_ build successfully, but we don't care if this build fails.
+    # It's just to prime dependencies and make user compiles faster.
+    if ! cargo +$toolchain build --all; then
+        echo "Warning: Toolchain $toolchain failed to build. Continuing precreate script"
+    fi
+done
