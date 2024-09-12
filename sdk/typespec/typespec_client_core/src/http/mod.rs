@@ -24,10 +24,6 @@ pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
 pub use response::{Model, Response};
 
-// Re-export derive macro for Model.
-#[cfg(feature = "derive")]
-pub use typespec_derive::Model;
-
 // Re-export important types.
 pub use http_types::{Method, StatusCode};
 pub use url::Url;

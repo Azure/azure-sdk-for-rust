@@ -9,6 +9,9 @@ use std::future::Future;
 use std::{fmt, marker::PhantomData, pin::Pin};
 use typespec::error::{ErrorKind, ResultExt};
 
+#[cfg(feature = "derive")]
+pub use typespec_derive::Model;
+
 #[cfg(not(target_arch = "wasm32"))]
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
 #[cfg(target_arch = "wasm32")]
