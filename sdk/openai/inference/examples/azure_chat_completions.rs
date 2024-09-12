@@ -1,7 +1,6 @@
 use azure_core::Result;
 use azure_openai_inference::{
-    builders::AzureOpenAIClientOptionsBuilder, AzureOpenAIClient, AzureOpenAIClientOptions,
-    AzureServiceVersion, CreateChatCompletionsRequest,
+    AzureOpenAIClient, AzureOpenAIClientOptions, AzureServiceVersion, CreateChatCompletionsRequest,
 };
 
 #[tokio::main]
@@ -13,9 +12,11 @@ pub async fn main() -> Result<()> {
     let azure_openai_client = AzureOpenAIClient::new(
         endpoint,
         secret,
-        Some(AzureOpenAIClientOptions::builder()
-            .with_api_version(AzureServiceVersion::V2023_12_01Preview)
-            .build()),
+        Some(
+            AzureOpenAIClientOptions::builder()
+                .with_api_version(AzureServiceVersion::V2023_12_01Preview)
+                .build(),
+        ),
     )?;
 
     let chat_completions_request = CreateChatCompletionsRequest::new_with_user_message(
@@ -24,10 +25,7 @@ pub async fn main() -> Result<()> {
     );
 
     let response = azure_openai_client
-        .create_chat_completions(
-            &chat_completions_request.model,
-            &chat_completions_request,
-        )
+        .create_chat_completions(&chat_completions_request.model, &chat_completions_request)
         .await;
 
     match response {
