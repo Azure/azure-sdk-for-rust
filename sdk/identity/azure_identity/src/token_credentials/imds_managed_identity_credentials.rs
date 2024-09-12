@@ -17,7 +17,7 @@ use std::{str, sync::Arc};
 use time::OffsetDateTime;
 
 #[derive(Debug)]
-pub(crate) enum ImdsId {
+pub enum ImdsId {
     SystemAssigned,
     #[allow(dead_code)]
     ClientId(String),
@@ -33,7 +33,7 @@ pub(crate) enum ImdsId {
 ///
 /// Built up from docs at [https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
 #[derive(Debug)]
-pub(crate) struct ImdsManagedIdentityCredential {
+pub struct ImdsManagedIdentityCredential {
     http_client: Arc<dyn HttpClient>,
     endpoint: Url,
     api_version: String,
