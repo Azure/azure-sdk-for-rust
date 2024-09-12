@@ -5,7 +5,7 @@
 use crate::AzureCliCredential;
 use crate::{
     timeout::TimeoutExt, token_credentials::cache::TokenCache, AppServiceManagedIdentityCredential,
-    EnvironmentCredential, TokenCredentialOptions, VirtualMachineManagedIdentityCredential,
+    EnvironmentCredential, ImdsId, TokenCredentialOptions, VirtualMachineManagedIdentityCredential,
 };
 use azure_core::{
     auth::{AccessToken, TokenCredential},
@@ -132,7 +132,10 @@ impl DefaultAzureCredentialBuilder {
                 }
                 DefaultAzureCredentialType::VirtualMachine => {
                     sources.push(DefaultAzureCredentialKind::VirtualMachine(
-                        VirtualMachineManagedIdentityCredential::new(self.options.clone()),
+                        VirtualMachineManagedIdentityCredential::new(
+                            ImdsId::SystemAssigned,
+                            self.options.clone(),
+                        ),
                     ));
                 }
                 #[cfg(not(target_arch = "wasm32"))]
