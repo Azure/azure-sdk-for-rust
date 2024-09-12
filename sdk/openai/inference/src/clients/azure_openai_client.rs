@@ -75,6 +75,7 @@ impl AzureOpenAIClient {
         let context = Context::new();
 
         let mut request = azure_core::Request::new(url, Method::Post);
+        // this was replaced by the AzureServiceVersion policy, not sure what is the right approach
         // adding the mandatory header shouldn't be necessary if the pipeline was setup correctly (?)
         // request.add_mandatory_header(&self.key_credential);
 
