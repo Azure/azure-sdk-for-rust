@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/rust
 {
-  "name": "Rust",
+  "name": "Azure SDK for Rust",
   "image": "mcr.microsoft.com/devcontainers/rust:1-1-bullseye",
   "onCreateCommand": ".devcontainer/oncreate",
   "features": {
@@ -12,9 +12,11 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "tamasfe.even-better-toml",
+        "editorconfig.editorconfig",
         "rust-lang.rust-analyzer",
-        "EditorConfig.EditorConfig",
-        "streetsidesoftware.code-spell-checker"
+        "streetsidesoftware.code-spell-checker",
+        "vadimcn.vscode-lldb"
       ]
     }
   }

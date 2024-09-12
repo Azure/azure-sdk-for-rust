@@ -2,6 +2,8 @@
   "recommendations": [
     "tamasfe.even-better-toml",
     "editorconfig.editorconfig",
-    "rust-lang.rust-analyzer"
+    "rust-lang.rust-analyzer",
+    "streetsidesoftware.code-spell-checker",
+    "vadimcn.vscode-lldb"
   ]
 }
