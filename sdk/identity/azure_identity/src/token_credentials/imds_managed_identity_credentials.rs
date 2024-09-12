@@ -17,9 +17,10 @@ use std::{str, sync::Arc};
 use time::OffsetDateTime;
 
 /// An identifier for the Azure Instance Metadata Service (IMDS).
-/// IMDS provides information about currently running virtual machine instances.
-/// https://learn.microsoft.com/azure/virtual-machines/instance-metadata-service
-/// https://learn.microsoft.com/azure/app-service/overview-managed-identity?tabs=portal%2Chttp#rest-endpoint-reference
+///
+/// IMDS provides information about currently running virtual machine instances. For more information, see:
+/// * https://learn.microsoft.com/azure/virtual-machines/instance-metadata-service
+/// * https://learn.microsoft.com/azure/app-service/overview-managed-identity#rest-endpoint-reference
 #[derive(Debug)]
 pub enum ImdsId {
     SystemAssigned,
