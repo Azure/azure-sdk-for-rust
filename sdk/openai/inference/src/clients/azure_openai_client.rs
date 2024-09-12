@@ -43,6 +43,7 @@ impl AzureOpenAIClient {
     ) -> azure_core::Pipeline {
         let crate_name = option_env!("CARGO_PKG_NAME");
         let crate_version = option_env!("CARGO_PKG_VERSION");
+        // should I be using per_call_policies here too or are they used by default on retries too?
         let per_retry_policies = Vec::new();
 
         azure_core::Pipeline::new(
