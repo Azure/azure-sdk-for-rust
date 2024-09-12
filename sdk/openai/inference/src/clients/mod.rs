@@ -5,6 +5,7 @@
 // use serde::Serialize;
 
 pub mod azure;
+pub mod chat_completions_client;
 pub mod non_azure;
 
 // pub(crate) fn build_request<T>(

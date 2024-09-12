@@ -8,24 +8,20 @@ use crate::response::CreateChatCompletionsResponse;
 use azure_core::{self, Method, Policy, Result};
 use azure_core::{Context, Url};
 
-pub struct AzureOpenAIClient<'a> {
+pub struct AzureOpenAIClient {
     endpoint: Url,
-    context: Context<'a>,
     pipeline: azure_core::Pipeline,
     options: AzureOpenAIClientOptions,
 }
 
-impl AzureOpenAIClient<'_> {
-    // TODO: not sure if this should be named `with_key_credential` instead
-    pub fn new(
+impl AzureOpenAIClient {
+    pub fn with_key(
         endpoint: impl AsRef<str>,
-        secret: String,
+        secret: impl Into<String>,
         client_options: Option<AzureOpenAIClientOptions>,
     ) -> Result<Self> {
         let endpoint = Url::parse(endpoint.as_ref())?;
-        let key_credential = AzureKeyCredential::new(secret);
-
-        let context = Context::new();
+        let key_credential = AzureKeyCredential::new(secret.into());
 
         let options = client_options.unwrap_or_default();
         let per_call_policies: Vec<Arc<dyn Policy>> = key_credential.clone().into();
@@ -34,7 +30,6 @@ impl AzureOpenAIClient<'_> {
 
         Ok(AzureOpenAIClient {
             endpoint,
-            context,
             pipeline,
             options,
         })
@@ -76,6 +71,8 @@ impl AzureOpenAIClient<'_> {
             &self.options.api_service_version.to_string(),
         ))?;
 
+        let context = Context::new();
+
         let mut request = azure_core::Request::new(url, Method::Post);
         // adding the mandatory header shouldn't be necessary if the pipeline was setup correctly (?)
         // request.add_mandatory_header(&self.key_credential);
@@ -84,7 +81,7 @@ impl AzureOpenAIClient<'_> {
 
         let response = self
             .pipeline
-            .send::<CreateChatCompletionsResponse>(&self.context, &mut request)
+            .send::<CreateChatCompletionsResponse>(&context, &mut request)
             .await?;
         response.into_body().json().await
     }

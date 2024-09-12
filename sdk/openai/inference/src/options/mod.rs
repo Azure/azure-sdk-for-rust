@@ -4,7 +4,7 @@ use azure_core::ClientOptions;
 
 pub use service_version::AzureServiceVersion;
 
-// TODO: I was not  able to  find ClientOptions  as  a derive macros
+// TODO: I was not  able to  find ClientOptions as a derive macros
 #[derive(Clone, Debug, Default)]
 pub struct AzureOpenAIClientOptions {
     pub(crate) client_options: ClientOptions,
