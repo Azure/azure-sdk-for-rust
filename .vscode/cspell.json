@@ -9,6 +9,7 @@
     ".devcontainer/oncreate",
     ".github/dependabot.yml",
     ".vscode/cspell.json",
+    ".vscode/extensions.json",
     "NOTICE.txt",
     "eng/",
     "rust-toolchain.toml"
