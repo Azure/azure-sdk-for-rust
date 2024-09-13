@@ -24,7 +24,7 @@ impl AzureOpenAIClient {
 
         let options = client_options.unwrap_or_default();
 
-        let auth_policy: Arc<dyn Policy> = AzureKeyCredential::new(secret.into()).into();
+        let auth_policy: Arc<dyn Policy> = AzureKeyCredential::new(secret).into();
         let version_policy: Arc<dyn Policy> = options.api_service_version.clone().into();
         let per_call_policies: Vec<Arc<dyn Policy>> = vec![auth_policy, version_policy];
 
