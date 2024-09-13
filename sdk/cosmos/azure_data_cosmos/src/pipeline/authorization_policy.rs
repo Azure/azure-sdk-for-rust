@@ -25,8 +25,8 @@ const VERSION_NUMBER: &str = "1.0";
 #[allow(dead_code)] // For the variants. Can be removed when we have them all implemented.
 pub(crate) enum ResourceType {
     Databases,
-    Collections,
-    Documents,
+    Containers,
+    Items,
     StoredProcedures,
     Users,
     Permissions,
@@ -249,8 +249,8 @@ fn string_to_sign(signature_target: SignatureTarget) -> String {
         },
         match signature_target.resource_type {
             ResourceType::Databases => "dbs",
-            ResourceType::Collections => "colls",
-            ResourceType::Documents => "docs",
+            ResourceType::Containers => "colls", // The rest API uses the old term "colls" (referring to 'collections') to refer to containers
+            ResourceType::Items => "docs", // The rest API uses the old term "docs" (referring to 'documents') to refer to items
             ResourceType::StoredProcedures => "sprocs",
             ResourceType::Users => "users",
             ResourceType::Permissions => "permissions",

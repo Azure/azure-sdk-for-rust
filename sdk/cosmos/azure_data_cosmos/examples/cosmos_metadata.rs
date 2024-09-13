@@ -1,4 +1,7 @@
-use azure_data_cosmos::{clients::DatabaseClientMethods, CosmosClient, CosmosClientMethods};
+use azure_data_cosmos::{
+    clients::{ContainerClientMethods, DatabaseClientMethods},
+    CosmosClient, CosmosClientMethods,
+};
 use clap::Parser;
 use std::sync::Arc;
 
@@ -10,6 +13,10 @@ pub struct Args {
 
     /// The database to fetch information for.
     database: String,
+
+    /// Optionally, the container to fetch information for.
+    #[clap(long, short)]
+    container: Option<String>,
 
     /// An authentication key to use when connecting to the Cosmos DB account. If omitted, the connection will use Entra ID.
     #[clap(long)]
@@ -24,8 +31,19 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = create_client(&args);
 
     let db_client = client.database_client(&args.database);
-    let response = db_client.read(None).await?.deserialize_body().await?;
-    println!("{:?}", response);
+    if let Some(container_name) = args.container {
+        let container_client = db_client.container_client(container_name);
+        let response = container_client
+            .read(None)
+            .await?
+            .deserialize_body()
+            .await?;
+        println!("{:?}", response);
+        return Ok(());
+    } else {
+        let response = db_client.read(None).await?.deserialize_body().await?;
+        println!("{:?}", response);
+    }
     Ok(())
 }
 

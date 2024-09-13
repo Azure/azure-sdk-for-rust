@@ -42,11 +42,31 @@ impl ReadDatabaseOptions {
     }
 }
 
+/// Options to be passed to [`ContainerClientMethods::read()`](crate::clients::ContainerClientMethods::read()).
+///
+/// NOTE: There are currently no options to set on this type.
+/// It exists to enable future extensibility.
+#[derive(Clone, Debug, Default)]
+pub struct ReadContainerOptions {}
+
+impl ReadContainerOptions {
+    /// Creates a new [`ReadContainerOptionsBuilder`](builders::ReadContainerOptionsBuilder) that can be used to construct a [`ReadContainerOptions`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let options = azure_data_cosmos::ReadContainerOptions::builder().build();
+    /// ```
+    pub fn builder() -> builders::ReadContainerOptionsBuilder {
+        builders::ReadContainerOptionsBuilder::default()
+    }
+}
+
 /// Builders for Cosmos-related options structs.
 pub mod builders {
     use azure_core::builders::ClientOptionsBuilder;
 
-    use crate::{CosmosClientOptions, ReadDatabaseOptions};
+    use crate::{CosmosClientOptions, ReadContainerOptions, ReadDatabaseOptions};
 
     /// Builder used to construct a [`CosmosClientOptions`].
     #[derive(Default)]
@@ -110,6 +130,19 @@ pub mod builders {
         ///
         /// This does not consume the builder, and can be called multiple times.
         pub fn build(&self) -> ReadDatabaseOptions {
+            self.0.clone()
+        }
+    }
+
+    /// Builder used to construct a [`ReadContainerOptions`].
+    #[derive(Default)]
+    pub struct ReadContainerOptionsBuilder(ReadContainerOptions);
+
+    impl ReadContainerOptionsBuilder {
+        /// Builds a [`CosmosClientOptions`] object from the builder.
+        ///
+        /// This does not consume the builder, and can be called multiple times.
+        pub fn build(&self) -> ReadContainerOptions {
             self.0.clone()
         }
     }

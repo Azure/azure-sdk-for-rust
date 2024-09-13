@@ -7,9 +7,9 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![cfg_attr(docsrs, feature(doc_cfg_hide))]
 
-mod authorization_policy;
 pub mod clients;
 mod options;
+pub(crate) mod pipeline;
 
 /// Model types sent to and received from the Cosmos DB API.
 pub mod models;

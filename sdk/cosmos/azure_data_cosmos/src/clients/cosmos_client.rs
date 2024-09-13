@@ -1,8 +1,8 @@
-use crate::authorization_policy::AuthorizationPolicy;
 use crate::clients::DatabaseClient;
+use crate::pipeline::{AuthorizationPolicy, CosmosPipeline};
 use crate::CosmosClientOptions;
 use azure_core::credentials::TokenCredential;
-use azure_core::{Pipeline, Url};
+use azure_core::Url;
 use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
@@ -12,7 +12,7 @@ use azure_core::credentials::Secret;
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
     endpoint: Url,
-    pub(crate) pipeline: Pipeline,
+    pub(crate) pipeline: CosmosPipeline,
 
     #[allow(dead_code)]
     options: CosmosClientOptions,
@@ -56,7 +56,7 @@ impl CosmosClient {
         let options = options.unwrap_or_default();
         Ok(Self {
             endpoint: endpoint.as_ref().parse()?,
-            pipeline: create_pipeline(
+            pipeline: CosmosPipeline::new(
                 AuthorizationPolicy::from_token_credential(credential),
                 options.client_options.clone(),
             ),
@@ -88,7 +88,7 @@ impl CosmosClient {
         let options = options.unwrap_or_default();
         Ok(Self {
             endpoint: endpoint.as_ref().parse()?,
-            pipeline: create_pipeline(
+            pipeline: CosmosPipeline::new(
                 AuthorizationPolicy::from_shared_key(key.into()),
                 options.client_options.clone(),
             ),
@@ -110,17 +110,4 @@ impl CosmosClientMethods for CosmosClient {
     fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient {
         DatabaseClient::new(self.clone(), id.as_ref())
     }
-}
-
-fn create_pipeline(
-    auth_policy: AuthorizationPolicy,
-    client_options: azure_core::ClientOptions,
-) -> Pipeline {
-    Pipeline::new(
-        option_env!("CARGO_PKG_NAME"),
-        option_env!("CARGO_PKG_VERSION"),
-        client_options,
-        Vec::new(),
-        vec![Arc::new(auth_policy)],
-    )
 }

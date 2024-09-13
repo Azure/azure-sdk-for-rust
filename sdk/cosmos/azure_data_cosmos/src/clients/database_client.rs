@@ -1,6 +1,8 @@
-use crate::authorization_policy::ResourceType;
+use crate::clients::ContainerClient;
 use crate::models::DatabaseProperties;
+use crate::pipeline::ResourceType;
 use crate::{CosmosClient, ReadDatabaseOptions};
+
 use azure_core::{Context, Request};
 use url::Url;
 
@@ -39,6 +41,12 @@ pub trait DatabaseClientMethods {
         &self,
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<azure_core::Response<DatabaseProperties>>;
+
+    /// Gets a [`CollectionClient`] that can be used to access the collection with the specified name.
+    ///
+    /// # Arguments
+    /// * `name` - The name of the container.
+    fn container_client(&self, name: impl AsRef<str>) -> ContainerClient;
 }
 
 /// A client for working with a specific database in a Cosmos DB account.
@@ -79,7 +87,13 @@ impl DatabaseClientMethods for DatabaseClient {
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<azure_core::Response<DatabaseProperties>> {
         let mut req = Request::new(self.base_url.clone(), azure_core::Method::Get);
-        let ctx = Context::new().with_value(ResourceType::Databases);
-        self.root_client.pipeline.send(&ctx, &mut req).await
+        self.root_client
+            .pipeline
+            .send(Context::new(), &mut req, ResourceType::Databases)
+            .await
+    }
+
+    fn container_client(&self, name: impl AsRef<str>) -> ContainerClient {
+        ContainerClient::new(self.root_client.clone(), &self.base_url, name.as_ref())
     }
 }
