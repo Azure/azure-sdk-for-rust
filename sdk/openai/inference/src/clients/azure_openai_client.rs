@@ -27,6 +27,7 @@ pub trait AzureOpenAIClientMethods: BaseOpenAIClientMethods {
 pub struct AzureOpenAIClient {
     endpoint: Url,
     pipeline: azure_core::Pipeline,
+    #[allow(dead_code)]
     options: AzureOpenAIClientOptions,
 }
 
@@ -44,7 +45,7 @@ impl AzureOpenAIClientMethods for AzureOpenAIClient {
         let version_policy: Arc<dyn Policy> = options.api_service_version.clone().into();
         let per_call_policies: Vec<Arc<dyn Policy>> = vec![auth_policy, version_policy];
 
-        let pipeline = new_pipeline(per_call_policies, options.client_options.clone());
+        let pipeline = super::new_pipeline(per_call_policies, options.client_options.clone());
 
         Ok(AzureOpenAIClient {
             endpoint,
@@ -64,36 +65,18 @@ impl AzureOpenAIClientMethods for AzureOpenAIClient {
 
 impl BaseOpenAIClientMethods for AzureOpenAIClient {
     fn base_url(&self, deployment_name: Option<&str>) -> azure_core::Result<Url> {
-        // TODO gracefully handle this
+        // TODO gracefully handle this, if it makes sense. A panic seems appropriate IMO.
         Ok(self
             .endpoint()
             .join("openai/")?
             .join("deployments/")?
             .join(&format!(
                 "{}/",
-                deployment_name.expect("Deployment name is required")
+                deployment_name.expect("Deployment name is required.")
             ))?)
     }
 
     fn pipeline(&self) -> &azure_core::Pipeline {
         &self.pipeline
     }
-}
-
-fn new_pipeline(
-    per_call_policies: Vec<Arc<dyn Policy>>,
-    options: azure_core::ClientOptions,
-) -> azure_core::Pipeline {
-    let crate_name = option_env!("CARGO_PKG_NAME");
-    let crate_version = option_env!("CARGO_PKG_VERSION");
-    // should I be using per_call_policies here too or are they used by default on retries too?
-    let per_retry_policies = Vec::new();
-
-    azure_core::Pipeline::new(
-        crate_name,
-        crate_version,
-        options,
-        per_call_policies,
-        per_retry_policies,
-    )
 }
