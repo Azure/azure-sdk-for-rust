@@ -50,6 +50,15 @@ impl AmqpConnectionApis for NoopAmqpConnection {
     async fn close(&self) -> Result<()> {
         unimplemented!()
     }
+
+    async fn close_with_error(
+        &self,
+        condition: impl Into<AmqpSymbol>,
+        description: Option<String>,
+        info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    ) -> impl std::future::Future<Output = Result<()>> {
+        unimplemented!()
+    }
 }
 
 impl NoopAmqpSession {

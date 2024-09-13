@@ -6,6 +6,11 @@
 use crate::{Deserializable, Serializable};
 #[cfg(feature = "cplusplus")]
 use azure_core::Result;
+
+#[cfg(feature = "cpp-repo")]
+use uuid::Uuid;
+
+#[cfg(not(feature = "cpp-repo"))]
 use azure_core::Uuid;
 
 #[derive(Debug, PartialEq, Clone, Default, Eq)]

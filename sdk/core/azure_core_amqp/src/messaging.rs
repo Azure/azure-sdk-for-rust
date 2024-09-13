@@ -8,6 +8,10 @@ use crate::Deserializable;
 #[cfg(feature = "cplusplus")]
 use azure_core::error::ErrorKind;
 use azure_core::Result;
+#[cfg(not(feature = "cpp-repo"))]
+use azure_core::Uuid;
+#[cfg(feature = "cpp-repo")]
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TerminusDurability {
@@ -116,13 +120,13 @@ impl From<AmqpSymbol> for AmqpOutcome {
 #[derive(Debug, Clone, PartialEq)]
 pub enum AmqpMessageId {
     String(String),
-    Uuid(azure_core::Uuid),
+    Uuid(Uuid),
     Binary(Vec<u8>),
     Ulong(u64),
 }
 
-impl From<azure_core::Uuid> for AmqpMessageId {
-    fn from(uuid: azure_core::Uuid) -> Self {
+impl From<Uuid> for AmqpMessageId {
+    fn from(uuid: Uuid) -> Self {
         AmqpMessageId::Uuid(uuid)
     }
 }
@@ -1529,7 +1533,6 @@ pub mod builders {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::Uuid;
     use fe2o3_amqp_types::messaging::Priority;
     use std::time::SystemTime;
 

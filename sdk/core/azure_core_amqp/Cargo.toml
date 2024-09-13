@@ -29,6 +29,7 @@ fe2o3-amqp-cbs = { workspace = true, optional = true }
 fe2o3-amqp-types = { workspace = true, optional = true }
 serde_amqp = { workspace = true, optional = true }
 serde_bytes = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
@@ -46,6 +47,7 @@ fe2o3-amqp = [
 ]
 cplusplus = []
 test_e2e = []
+cpp-repo = ["uuid"]
 
 [package.metadata.docs.rs]
 features = ["fe2o3-amqp"]
