@@ -7,8 +7,7 @@ use crate::{
     response::{CreateChatCompletionsResponse, CreateChatCompletionsStreamResponse},
 };
 use azure_core::{
-    headers::{ACCEPT, CONTENT_TYPE},
-    Context, Method, Response, Result,
+    headers::{ACCEPT, CONTENT_TYPE}, Context, Error, Method, Response, Result
 };
 use futures::{Stream, TryStreamExt};
 
@@ -75,9 +74,6 @@ impl ChatCompletionsClientMethods for ChatCompletionsClient {
 
         let context = Context::new();
 
-        let mut chat_completions_request = chat_completions_request;
-        chat_completions_request.stream = Some(true);
-
         let mut request = azure_core::Request::new(request_url, Method::Post);
         // this was replaced by the AzureServiceVersion policy, not sure what is the right approach
         // adding the mandatory header shouldn't be necessary if the pipeline was setup correctly (?)
@@ -88,16 +84,16 @@ impl ChatCompletionsClientMethods for ChatCompletionsClient {
         request.insert_header(ACCEPT, "application/json");
         request.set_json(chat_completions_request)?;
 
-        let response = self.base_client
+        let response_body = self.base_client
             .pipeline()
-            .send(&context, &mut request)
+            .send::<()>(&context, &mut request)
             .await?
             .into_body();
 
         let stream_handler = ChatCompletionsStreamHandler::new("\n\n");
 
-        let stream = stream_handler.event_stream(response).await;
-        Ok(stream)
+        let stream = stream_handler.event_stream(response_body);
+        return Ok(stream);
     }
 
 }
@@ -115,17 +111,16 @@ impl ChatCompletionsStreamHandler {
     }
 }
 
-impl EventStreamer<Result<CreateChatCompletionsStreamResponse>> for ChatCompletionsStreamHandler {
+impl EventStreamer<CreateChatCompletionsStreamResponse> for ChatCompletionsStreamHandler {
     fn delimiter(&self) -> impl AsRef<str> {
         self.stream_event_delimiter.as_str()
     }
 
-    async fn event_stream(
+    fn event_stream(
         &self,
         response_body: azure_core::ResponseBody,
-    ) -> Pin<Box<impl Stream<Item = Result<CreateChatCompletionsStreamResponse>>>> {
-        let response_body = response_body;
-
+    ) -> impl Stream<Item = Result<CreateChatCompletionsStreamResponse>> {
+        // TODO: is there something like try_map_ok?
         let stream =
             string_chunks(response_body, self.stream_event_delimiter.as_str()).map_ok(|event| {
                 // println!("EVENT AS A STRING: {:?}", &event);
@@ -133,6 +128,6 @@ impl EventStreamer<Result<CreateChatCompletionsStreamResponse>> for ChatCompleti
                     .expect("Deserialization failed")
                 // CreateChatCompletionsStreamResponse { choices: vec![] }
             });
-        Box::pin(stream)
+        stream
     }
 }

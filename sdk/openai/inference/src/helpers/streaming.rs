@@ -3,16 +3,13 @@ use std::pin::Pin;
 use azure_core::{Error, Result};
 use futures::{Stream, StreamExt};
 
-pub trait EventStreamer<T> {
+pub trait EventStreamer<T> where T: serde::de::DeserializeOwned {
     fn delimiter(&self) -> impl AsRef<str>;
 
-    #[allow(async_fn_in_trait)]
-    async fn event_stream(
+    fn event_stream(
         &self,
         response_body: azure_core::ResponseBody,
-    ) -> Pin<Box<impl Stream<Item = T>>>
-    where
-        T: serde::de::DeserializeOwned;
+    ) -> impl Stream<Item = Result<T>>;
 }
 
 pub(crate) fn string_chunks(
