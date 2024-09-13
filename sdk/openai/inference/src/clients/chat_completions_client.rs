@@ -1,13 +1,12 @@
-use std::pin::Pin;
-
 use super::BaseOpenAIClientMethods;
 use crate::{
-    helpers::streaming::{string_chunks, EventStreamer},
+    helpers::streaming::string_chunks,
     request::CreateChatCompletionsRequest,
     response::{CreateChatCompletionsResponse, CreateChatCompletionsStreamResponse},
 };
 use azure_core::{
-    headers::{ACCEPT, CONTENT_TYPE}, Context, Error, Method, Response, Result
+    headers::{ACCEPT, CONTENT_TYPE},
+    Context, Method, Response, Result,
 };
 use futures::{Stream, TryStreamExt};
 
@@ -84,50 +83,56 @@ impl ChatCompletionsClientMethods for ChatCompletionsClient {
         request.insert_header(ACCEPT, "application/json");
         request.set_json(chat_completions_request)?;
 
-        let response_body = self.base_client
+        let response_body = self
+            .base_client
             .pipeline()
             .send::<()>(&context, &mut request)
             .await?
             .into_body();
 
-        let stream_handler = ChatCompletionsStreamHandler::new("\n\n");
+        // let stream_handler = ChatCompletionsStreamHandler::new("\n\n");
 
-        let stream = stream_handler.event_stream(response_body);
+        // let stream = stream_handler.event_stream(response_body);
+
+        let stream = string_chunks(response_body, "\n\n").map_ok(|event| {
+            // println!("EVENT AS A STRING: {:?}", &event);
+            serde_json::from_str::<CreateChatCompletionsStreamResponse>(&event)
+                .expect("Deserialization failed")
+            // CreateChatCompletionsStreamResponse { choices: vec![] }
+        });
         return Ok(stream);
     }
-
 }
 
-struct ChatCompletionsStreamHandler {
-    stream_event_delimiter: String,
-}
+// struct ChatCompletionsStreamHandler {
+//     stream_event_delimiter: String,
+// }
+// impl ChatCompletionsStreamHandler {
+//     pub fn new(stream_event_delimiter: impl Into<String>) -> Self {
+//         let stream_event_delimiter = stream_event_delimiter.into();
+//         Self {
+//             stream_event_delimiter,
+//         }
+//     }
+// }
 
-impl ChatCompletionsStreamHandler {
-    pub fn new(stream_event_delimiter: impl Into<String>) -> Self {
-        let stream_event_delimiter = stream_event_delimiter.into();
-        Self {
-            stream_event_delimiter,
-        }
-    }
-}
+// impl EventStreamer<CreateChatCompletionsStreamResponse> for ChatCompletionsStreamHandler {
+//     fn delimiter(&self) -> impl AsRef<str> {
+//         self.stream_event_delimiter.as_str()
+//     }
 
-impl EventStreamer<CreateChatCompletionsStreamResponse> for ChatCompletionsStreamHandler {
-    fn delimiter(&self) -> impl AsRef<str> {
-        self.stream_event_delimiter.as_str()
-    }
-
-    fn event_stream(
-        &self,
-        response_body: azure_core::ResponseBody,
-    ) -> impl Stream<Item = Result<CreateChatCompletionsStreamResponse>> {
-        // TODO: is there something like try_map_ok?
-        let stream =
-            string_chunks(response_body, self.stream_event_delimiter.as_str()).map_ok(|event| {
-                // println!("EVENT AS A STRING: {:?}", &event);
-                serde_json::from_str::<CreateChatCompletionsStreamResponse>(&event)
-                    .expect("Deserialization failed")
-                // CreateChatCompletionsStreamResponse { choices: vec![] }
-            });
-        stream
-    }
-}
+//     fn event_stream(
+//         &self,
+//         response_body: azure_core::ResponseBody,
+//     ) -> impl Stream<Item = Result<CreateChatCompletionsStreamResponse>> {
+//         // TODO: is there something like try_map_ok?
+//         let stream =
+//             string_chunks(response_body, self.stream_event_delimiter.as_str()).map_ok(|event| {
+//                 // println!("EVENT AS A STRING: {:?}", &event);
+//                 serde_json::from_str::<CreateChatCompletionsStreamResponse>(&event)
+//                     .expect("Deserialization failed")
+//                 // CreateChatCompletionsStreamResponse { choices: vec![] }
+//             });
+//         stream
+//     }
+// }

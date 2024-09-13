@@ -1,9 +1,10 @@
-use std::pin::Pin;
-
 use azure_core::{Error, Result};
 use futures::{Stream, StreamExt};
 
-pub trait EventStreamer<T> where T: serde::de::DeserializeOwned {
+pub trait EventStreamer<T>
+where
+    T: serde::de::DeserializeOwned,
+{
     fn delimiter(&self) -> impl AsRef<str>;
 
     fn event_stream(
