@@ -21,38 +21,20 @@ impl AzureOpenAIClient {
         client_options: Option<AzureOpenAIClientOptions>,
     ) -> Result<Self> {
         let endpoint = Url::parse(endpoint.as_ref())?;
-        let key_credential = AzureKeyCredential::new(secret.into());
 
         let options = client_options.unwrap_or_default();
-        let auth_policy: Arc<dyn Policy> = key_credential.clone().into();
+
+        let auth_policy: Arc<dyn Policy> = AzureKeyCredential::new(secret.into()).into();
         let version_policy: Arc<dyn Policy> = options.api_service_version.clone().into();
         let per_call_policies: Vec<Arc<dyn Policy>> = vec![auth_policy, version_policy];
 
-        let pipeline = Self::new_pipeline(per_call_policies, options.client_options.clone());
+        let pipeline = new_pipeline(per_call_policies, options.client_options.clone());
 
         Ok(AzureOpenAIClient {
             endpoint,
             pipeline,
             options,
         })
-    }
-
-    fn new_pipeline(
-        per_call_policies: Vec<Arc<dyn Policy>>,
-        options: azure_core::ClientOptions,
-    ) -> azure_core::Pipeline {
-        let crate_name = option_env!("CARGO_PKG_NAME");
-        let crate_version = option_env!("CARGO_PKG_VERSION");
-        // should I be using per_call_policies here too or are they used by default on retries too?
-        let per_retry_policies = Vec::new();
-
-        azure_core::Pipeline::new(
-            crate_name,
-            crate_version,
-            options,
-            per_call_policies,
-            per_retry_policies,
-        )
     }
 
     pub fn endpoint(&self) -> &Url {
@@ -69,8 +51,7 @@ impl AzureOpenAIClient {
     ) -> Result<CreateChatCompletionsResponse> {
         let url = Url::parse(&format!(
             "{}/openai/deployments/{}/chat/completions",
-            &self.endpoint,
-            deployment_name
+            &self.endpoint, deployment_name
         ))?;
 
         let context = Context::new();
@@ -88,4 +69,22 @@ impl AzureOpenAIClient {
             .await?;
         response.into_body().json().await
     }
+}
+
+fn new_pipeline(
+    per_call_policies: Vec<Arc<dyn Policy>>,
+    options: azure_core::ClientOptions,
+) -> azure_core::Pipeline {
+    let crate_name = option_env!("CARGO_PKG_NAME");
+    let crate_version = option_env!("CARGO_PKG_VERSION");
+    // should I be using per_call_policies here too or are they used by default on retries too?
+    let per_retry_policies = Vec::new();
+
+    azure_core::Pipeline::new(
+        crate_name,
+        crate_version,
+        options,
+        per_call_policies,
+        per_retry_policies,
+    )
 }

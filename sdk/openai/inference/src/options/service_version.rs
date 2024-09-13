@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use async_trait::async_trait;
+use std::sync::Arc;
 
 use azure_core::{Context, Policy, PolicyResult, Request};
 
@@ -50,7 +50,10 @@ impl Policy for AzureServiceVersion {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        request.url_mut().query_pairs_mut().append_pair("api-version", &self.to_string());
+        request
+            .url_mut()
+            .query_pairs_mut()
+            .append_pair("api-version", &self.to_string());
         next[0].send(ctx, request, &next[1..]).await
     }
 }

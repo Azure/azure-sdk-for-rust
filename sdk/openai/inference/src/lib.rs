@@ -1,4 +1,4 @@
-pub mod auth;
+mod auth;
 mod clients;
 mod models;
 mod options;
