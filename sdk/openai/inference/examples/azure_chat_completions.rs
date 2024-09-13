@@ -2,7 +2,6 @@ use azure_core::Result;
 use azure_openai_inference::{
     clients::{AzureOpenAIClient, AzureOpenAIClientMethods, ChatCompletionsClientMethods},
     request::CreateChatCompletionsRequest,
-    response::CreateChatCompletionsResponse,
     AzureOpenAIClientOptions, AzureServiceVersion,
 };
 
@@ -33,10 +32,9 @@ pub async fn main() -> Result<()> {
         .await;
 
     match response {
-        // TODO: I don't understand why the Response<T> generic type gets erased when calling `deserialize_body_into`
         Ok(chat_completions_response) => {
             let chat_completions = chat_completions_response
-                .deserialize_body_into::<CreateChatCompletionsResponse>()
+                .deserialize_body()
                 .await?;
             println!("{:#?}", &chat_completions);
         }
