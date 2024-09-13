@@ -8,6 +8,7 @@ pub struct AzureOpenAIClientOptions {
     pub(crate) client_options: ClientOptions,
     pub(crate) api_service_version: AzureServiceVersion,
 }
+
 impl AzureOpenAIClientOptions {
     pub fn builder() -> builders::AzureOpenAIClientOptionsBuilder {
         builders::AzureOpenAIClientOptionsBuilder::new()

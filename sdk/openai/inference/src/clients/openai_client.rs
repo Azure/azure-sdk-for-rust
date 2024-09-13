@@ -30,7 +30,7 @@ impl OpenAIClientMethods for OpenAIClient {
         secret: impl Into<String>,
         client_options: Option<OpenAIClientOptions>,
     ) -> Result<Self> {
-        let base_url = Url::parse("https://api.openai.com/v1")?;
+        let base_url = Url::parse("https://api.openai.com/v1/")?;
         let options = client_options.unwrap_or_default();
         let auth_policy: Arc<dyn Policy> = OpenAIKeyCredential::new(secret).into();
 

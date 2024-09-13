@@ -1,6 +1,9 @@
 use super::BaseOpenAIClientMethods;
 use crate::{request::CreateChatCompletionsRequest, response::CreateChatCompletionsResponse};
-use azure_core::{Context, Method, Response, Result};
+use azure_core::{
+    headers::{ACCEPT, CONTENT_TYPE},
+    Context, Method, Response, Result,
+};
 
 pub trait ChatCompletionsClientMethods {
     #[allow(async_fn_in_trait)]
@@ -37,6 +40,9 @@ impl ChatCompletionsClientMethods for ChatCompletionsClient {
         // adding the mandatory header shouldn't be necessary if the pipeline was setup correctly (?)
         // request.add_mandatory_header(&self.key_credential);
 
+        // For some reason non-Azure OpenAI's API is strict about these headers being present
+        request.insert_header(CONTENT_TYPE, "application/json");
+        request.insert_header(ACCEPT, "application/json");
         request.set_json(chat_completions_request)?;
 
         self.base_client
