@@ -67,7 +67,9 @@ impl BaseOpenAIClientMethods for AzureOpenAIClient {
         // TODO gracefully handle this
         Ok(self
             .endpoint()
-            .join(deployment_name.expect("deployment_name should be provided"))?)
+            .join("openai/")?
+            .join("deployments/")?
+            .join(&format!("{}/", deployment_name.expect("Deployment name is required")))?)
     }
 
     fn pipeline(&self) -> &azure_core::Pipeline {
