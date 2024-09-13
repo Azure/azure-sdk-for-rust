@@ -3,19 +3,35 @@ use std::sync::Arc;
 use crate::auth::AzureKeyCredential;
 
 use crate::options::AzureOpenAIClientOptions;
-use crate::request::CreateChatCompletionsRequest;
-use crate::response::CreateChatCompletionsResponse;
-use azure_core::{self, Method, Policy, Result};
-use azure_core::{Context, Url};
+use azure_core::Url;
+use azure_core::{self, Policy, Result};
 
+use super::chat_completions_client::ChatCompletionsClient;
+use super::BaseOpenAIClientMethods;
+
+pub trait AzureOpenAIClientMethods: BaseOpenAIClientMethods {
+    fn with_key(
+        endpoint: impl AsRef<str>,
+        secret: impl Into<String>,
+        client_options: Option<AzureOpenAIClientOptions>,
+    ) -> Result<Self>
+    where
+        Self: Sized;
+
+    fn endpoint(&self) -> &Url;
+
+    fn chat_completions_client(&self) -> ChatCompletionsClient;
+}
+
+#[derive(Debug, Clone)]
 pub struct AzureOpenAIClient {
     endpoint: Url,
     pipeline: azure_core::Pipeline,
     options: AzureOpenAIClientOptions,
 }
 
-impl AzureOpenAIClient {
-    pub fn with_key(
+impl AzureOpenAIClientMethods for AzureOpenAIClient {
+    fn with_key(
         endpoint: impl AsRef<str>,
         secret: impl Into<String>,
         client_options: Option<AzureOpenAIClientOptions>,
@@ -37,37 +53,25 @@ impl AzureOpenAIClient {
         })
     }
 
-    pub fn endpoint(&self) -> &Url {
+    fn endpoint(&self) -> &Url {
         &self.endpoint
     }
 
-    pub async fn create_chat_completions(
-        &self,
-        deployment_name: &str,
-        chat_completions_request: &CreateChatCompletionsRequest,
-        // Should I be using RequestContent ? All the new methods have signatures that would force me to mutate
-        // the request object into &static str, Vec<u8>, etc.
-        // chat_completions_request: RequestContent<CreateChatCompletionsRequest>,
-    ) -> Result<CreateChatCompletionsResponse> {
-        let url = Url::parse(&format!(
-            "{}/openai/deployments/{}/chat/completions",
-            &self.endpoint, deployment_name
-        ))?;
+    fn chat_completions_client(&self) -> ChatCompletionsClient {
+        ChatCompletionsClient::new(Box::new(self.clone()))
+    }
+}
 
-        let context = Context::new();
+impl BaseOpenAIClientMethods for AzureOpenAIClient {
+    fn base_url(&self, deployment_name: Option<&str>) -> azure_core::Result<Url> {
+        // TODO gracefully handle this
+        Ok(self
+            .endpoint()
+            .join(deployment_name.expect("deployment_name should be provided"))?)
+    }
 
-        let mut request = azure_core::Request::new(url, Method::Post);
-        // this was replaced by the AzureServiceVersion policy, not sure what is the right approach
-        // adding the mandatory header shouldn't be necessary if the pipeline was setup correctly (?)
-        // request.add_mandatory_header(&self.key_credential);
-
-        request.set_json(chat_completions_request)?;
-
-        let response = self
-            .pipeline
-            .send::<CreateChatCompletionsResponse>(&context, &mut request)
-            .await?;
-        response.into_body().json().await
+    fn pipeline(&self) -> &azure_core::Pipeline {
+        &self.pipeline
     }
 }
 
