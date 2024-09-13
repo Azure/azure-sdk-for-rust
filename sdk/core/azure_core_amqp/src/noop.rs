@@ -11,7 +11,7 @@ use super::{
     receiver::{AmqpReceiverApis, AmqpReceiverOptions},
     sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions},
     session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
-    value::{AmqpOrderedMap, AmqpValue},
+    value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
 use azure_core::{auth::AccessToken, error::Result};
 
