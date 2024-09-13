@@ -74,7 +74,9 @@ impl CosmosClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// let client = CosmosClient::with_shared_key("https://myaccount.documents.azure.com/", "my_key", None)?;
+    /// use azure_data_cosmos::CosmosClient;
+    ///
+    /// let client = CosmosClient::with_key("https://myaccount.documents.azure.com/", "my_key", None).unwrap();
     /// ```
     #[cfg(feature = "key_auth")]
     pub fn with_key(
