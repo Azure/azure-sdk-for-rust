@@ -1,6 +1,6 @@
 use super::BaseOpenAIClientMethods;
 use crate::{request::CreateChatCompletionsRequest, response::CreateChatCompletionsResponse};
-use azure_core::{Context, Method, Result};
+use azure_core::{Context, Method, Response, Result};
 
 pub trait ChatCompletionsClientMethods {
     #[allow(async_fn_in_trait)]
@@ -8,7 +8,7 @@ pub trait ChatCompletionsClientMethods {
         &self,
         deployment_name: impl AsRef<str>,
         chat_completions_request: &CreateChatCompletionsRequest,
-    ) -> Result<CreateChatCompletionsResponse>;
+    ) -> Result<Response<CreateChatCompletionsResponse>>;
 }
 
 pub struct ChatCompletionsClient {
@@ -26,7 +26,7 @@ impl ChatCompletionsClientMethods for ChatCompletionsClient {
         &self,
         deployment_name: impl AsRef<str>,
         chat_completions_request: &CreateChatCompletionsRequest,
-    ) -> Result<CreateChatCompletionsResponse> {
+    ) -> Result<Response<CreateChatCompletionsResponse>> {
         let base_url = self.base_client.base_url(Some(deployment_name.as_ref()))?;
         let request_url = base_url.join("chat/completions")?;
 
@@ -39,13 +39,9 @@ impl ChatCompletionsClientMethods for ChatCompletionsClient {
 
         request.set_json(chat_completions_request)?;
 
-        let response = self
-            .base_client
+        self.base_client
             .pipeline()
             .send::<CreateChatCompletionsResponse>(&context, &mut request)
-            .await?;
-        response.into_body().json().await
-
-        // todo!()
+            .await
     }
 }

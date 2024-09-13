@@ -70,9 +70,10 @@ pub mod request {
 
 pub mod response {
 
+    use azure_core::Model;
     use serde::Deserialize;
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Deserialize, Model)]
     pub struct CreateChatCompletionsResponse {
         pub choices: Vec<ChatCompletionChoice>,
     }

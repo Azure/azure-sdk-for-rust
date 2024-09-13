@@ -2,6 +2,7 @@ use azure_core::Result;
 use azure_openai_inference::{
     clients::{AzureOpenAIClient, AzureOpenAIClientMethods, ChatCompletionsClientMethods},
     request::CreateChatCompletionsRequest,
+    response::CreateChatCompletionsResponse,
     AzureOpenAIClientOptions, AzureServiceVersion,
 };
 
@@ -32,7 +33,10 @@ pub async fn main() -> Result<()> {
         .await;
 
     match response {
-        Ok(chat_completions) => {
+        Ok(chat_completions_response) => {
+            let chat_completions = chat_completions_response
+                .deserialize_body_into::<CreateChatCompletionsResponse>()
+                .await?;
             println!("{:#?}", &chat_completions);
         }
         Err(e) => {

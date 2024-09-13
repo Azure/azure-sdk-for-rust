@@ -20,6 +20,7 @@ tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 async-trait = { workspace = true }
+typespec_client_core = { workspace = true, features = ["derive"] }
 
 [dev-dependencies]
 azure_core = { workspace = true, features = ["reqwest"] }
