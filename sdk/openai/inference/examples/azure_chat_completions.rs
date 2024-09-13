@@ -33,6 +33,7 @@ pub async fn main() -> Result<()> {
         .await;
 
     match response {
+        // TODO: I don't understand why the Response<T> generic type gets erased when calling `deserialize_body_into`
         Ok(chat_completions_response) => {
             let chat_completions = chat_completions_response
                 .deserialize_body_into::<CreateChatCompletionsResponse>()
