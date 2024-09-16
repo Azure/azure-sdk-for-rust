@@ -127,32 +127,26 @@ pub mod builders {
         pub fn build(&mut self) -> AmqpConnectionOptions {
             self.options.clone()
         }
-        #[allow(dead_code)]
         pub fn with_max_frame_size(&mut self, max_frame_size: u32) -> &mut Self {
             self.options.max_frame_size = Some(max_frame_size);
             self
         }
-        #[allow(dead_code)]
         pub fn with_channel_max(&mut self, channel_max: u16) -> &mut Self {
             self.options.channel_max = Some(channel_max);
             self
         }
-        #[allow(dead_code)]
         pub fn with_idle_timeout(&mut self, idle_timeout: Duration) -> &mut Self {
             self.options.idle_timeout = Some(idle_timeout);
             self
         }
-        #[allow(dead_code)]
         pub fn with_outgoing_locales(&mut self, outgoing_locales: Vec<String>) -> &mut Self {
             self.options.outgoing_locales = Some(outgoing_locales);
             self
         }
-        #[allow(dead_code)]
         pub fn with_incoming_locales(&mut self, incoming_locales: Vec<String>) -> &mut Self {
             self.options.incoming_locales = Some(incoming_locales);
             self
         }
-        #[allow(dead_code)]
         pub fn with_offered_capabilities(
             &mut self,
             offered_capabilities: Vec<AmqpSymbol>,
@@ -160,7 +154,6 @@ pub mod builders {
             self.options.offered_capabilities = Some(offered_capabilities);
             self
         }
-        #[allow(dead_code)]
         pub fn with_desired_capabilities(
             &mut self,
             desired_capabilities: Vec<AmqpSymbol>,
@@ -184,7 +177,6 @@ pub mod builders {
             self.options.properties = Some(properties_map);
             self
         }
-        #[allow(dead_code)]
         pub fn with_buffer_size(&mut self, buffer_size: usize) -> &mut Self {
             self.options.buffer_size = Some(buffer_size);
             self

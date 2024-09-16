@@ -47,7 +47,7 @@ fe2o3-amqp = [
 ]
 cplusplus = []
 test_e2e = []
-cpp-repo = ["uuid"]
+cpp_repo = ["dep:uuid"]
 
 [package.metadata.docs.rs]
 features = ["fe2o3-amqp"]

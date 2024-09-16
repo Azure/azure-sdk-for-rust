@@ -50,9 +50,9 @@ impl From<AmqpMessageId> for fe2o3_amqp_types::messaging::MessageId {
 
 #[test]
 fn test_message_id_conversion() {
-    #[cfg(not(feature = "cpp-repo"))]
+    #[cfg(not(feature = "cpp_repo"))]
     use azure_core::Uuid;
-    #[cfg(feature = "cpp-repo")]
+    #[cfg(feature = "cpp_repo")]
     use uuid::Uuid;
 
     {

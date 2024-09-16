@@ -8,9 +8,9 @@ use crate::Deserializable;
 #[cfg(feature = "cplusplus")]
 use azure_core::error::ErrorKind;
 use azure_core::Result;
-#[cfg(not(feature = "cpp-repo"))]
+#[cfg(not(feature = "cpp_repo"))]
 use azure_core::Uuid;
-#[cfg(feature = "cpp-repo")]
+#[cfg(feature = "cpp_repo")]
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]

@@ -509,9 +509,9 @@ impl From<fe2o3_amqp_types::definitions::ReceiverSettleMode> for crate::Receiver
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(not(feature = "cpp-repo"))]
+    #[cfg(not(feature = "cpp_repo"))]
     use azure_core::Uuid;
-    #[cfg(feature = "cpp-repo")]
+    #[cfg(feature = "cpp_repo")]
     use uuid::Uuid;
 
     #[test]
