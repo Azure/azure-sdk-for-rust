@@ -56,7 +56,7 @@ impl AmqpConnectionApis for NoopAmqpConnection {
         condition: impl Into<AmqpSymbol>,
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-    ) -> impl std::future::Future<Output = Result<()>> {
+    ) -> impl Result<()> {
         unimplemented!()
     }
 }
