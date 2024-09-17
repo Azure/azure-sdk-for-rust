@@ -509,10 +509,7 @@ impl From<fe2o3_amqp_types::definitions::ReceiverSettleMode> for crate::Receiver
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(not(feature = "cpp_repo"))]
-    use azure_core::Uuid;
-    #[cfg(feature = "cpp_repo")]
-    use uuid::Uuid;
+    use crate::Uuid;
 
     #[test]
     fn test_from_fe2o3_amqp_types_primitives_symbol() {

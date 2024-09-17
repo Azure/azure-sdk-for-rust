@@ -2,14 +2,11 @@
 // Licensed under the MIT license.
 // cspell: words amqp
 
+use crate::Uuid;
 #[cfg(feature = "cplusplus")]
 use crate::{Deserializable, Serializable};
 #[cfg(feature = "cplusplus")]
 use azure_core::Result;
-#[cfg(not(feature = "cpp_repo"))]
-use azure_core::Uuid;
-#[cfg(feature = "cpp_repo")]
-use uuid::Uuid;
 
 #[derive(Debug, PartialEq, Clone, Default, Eq)]
 pub struct AmqpSymbol(pub String);

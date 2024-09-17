@@ -8,10 +8,8 @@ use crate::Deserializable;
 #[cfg(feature = "cplusplus")]
 use azure_core::error::ErrorKind;
 use azure_core::Result;
-#[cfg(not(feature = "cpp_repo"))]
-use azure_core::Uuid;
-#[cfg(feature = "cpp_repo")]
-use uuid::Uuid;
+
+use crate::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TerminusDurability {
@@ -125,7 +123,7 @@ pub enum AmqpMessageId {
     Ulong(u64),
 }
 
-impl From<Uuid> for AmqpMessageId {
+impl From<crate::Uuid> for AmqpMessageId {
     fn from(uuid: Uuid) -> Self {
         AmqpMessageId::Uuid(uuid)
     }
