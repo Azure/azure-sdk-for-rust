@@ -18,7 +18,8 @@ use std::sync::Arc;
 ///
 /// The values for `client_id`, `client_secret`, `tenant_id`, and `redirect_url` can all be found
 /// inside of the Azure portal.
-pub fn start(
+#[allow(dead_code)]
+pub fn authorize(
     client_id: ClientId,
     client_secret: Option<ClientSecret>,
     tenant_id: &str,
@@ -79,6 +80,7 @@ pub struct AuthorizationCodeFlow {
     pub pkce_code_verifier: oauth2::PkceCodeVerifier,
 }
 
+#[allow(dead_code)]
 impl AuthorizationCodeFlow {
     /// Exchange an authorization code for a token.
     pub async fn exchange(

@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::token_credentials::cache::TokenCache;
+use crate::credentials::cache::TokenCache;
 use crate::{oauth2_http_client::Oauth2HttpClient, TokenCredentialOptions};
 use azure_core::Error;
 use azure_core::{
-    auth::{AccessToken, Secret, TokenCredential},
+    authentication::{AccessToken, Secret, TokenCredential},
     error::{ErrorKind, ResultExt},
     HttpClient, Url,
 };

@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Refresh token utilities
+//! Refresh tokens.
 
 use azure_core::{
-    auth::Secret,
+    authentication::Secret,
     content_type,
     error::{http_response_from_body, Error, ErrorKind, ResultExt},
     headers,
@@ -17,7 +17,8 @@ use std::sync::Arc;
 use typespec_client_core::Model;
 use url::form_urlencoded;
 
-/// Exchange a refresh token for a new access token and refresh token
+/// Exchange a refresh token for a new access token and refresh token.
+#[allow(dead_code)]
 pub async fn exchange(
     http_client: Arc<dyn HttpClient>,
     tenant_id: &str,
@@ -65,6 +66,7 @@ pub async fn exchange(
 }
 
 /// A refresh token
+#[allow(dead_code)]
 #[derive(Model, Debug, Clone, Deserialize)]
 pub struct RefreshTokenResponse {
     token_type: String,
@@ -76,6 +78,7 @@ pub struct RefreshTokenResponse {
     refresh_token: Secret,
 }
 
+#[allow(dead_code)]
 impl RefreshTokenResponse {
     /// Returns the `token_type`. Always `Bearer` for Azure AD.
     pub fn token_type(&self) -> &str {

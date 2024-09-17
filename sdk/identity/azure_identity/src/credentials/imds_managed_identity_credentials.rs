@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{token_credentials::cache::TokenCache, TokenCredentialOptions};
+use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
-    auth::{AccessToken, Secret, TokenCredential},
+    authentication::{AccessToken, Secret, TokenCredential},
     error::{http_response_from_body, Error, ErrorKind},
     headers::HeaderName,
     json::from_json,

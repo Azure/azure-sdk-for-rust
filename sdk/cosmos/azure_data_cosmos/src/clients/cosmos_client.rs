@@ -1,7 +1,7 @@
 use crate::authorization_policy::AuthorizationPolicy;
 use crate::clients::DatabaseClient;
 use crate::CosmosClientOptions;
-use azure_core::auth::TokenCredential;
+use azure_core::authentication::TokenCredential;
 use azure_core::{Pipeline, Url};
 use std::sync::Arc;
 

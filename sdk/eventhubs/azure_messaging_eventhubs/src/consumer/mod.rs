@@ -16,7 +16,7 @@ use super::{
 use async_std::sync::Mutex;
 use async_stream::try_stream;
 use azure_core::{
-    auth::{AccessToken, TokenCredential},
+    authentication::{AccessToken, TokenCredential},
     error::{Error, Result},
     RetryOptions,
 };
@@ -45,7 +45,7 @@ pub struct ConsumerClient {
     session_instances: Mutex<HashMap<String, Arc<AmqpSession>>>,
     mgmt_client: Mutex<OnceLock<ManagementInstance>>,
     connection: OnceLock<AmqpConnection>,
-    credential: Box<dyn azure_core::auth::TokenCredential>,
+    credential: Box<dyn azure_core::authentication::TokenCredential>,
     eventhub: String,
     url: String,
     authorization_scopes: Mutex<HashMap<String, AccessToken>>,

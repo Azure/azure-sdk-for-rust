@@ -4,7 +4,7 @@
 //! Instead, it uses a custom header format, as defined in the [official documentation](https://docs.microsoft.com/en-us/rest/api/cosmos-db/access-control-on-cosmosdb-resources).
 //! We implement that policy here, because we can't use any standard Azure SDK authentication policy.
 
-use azure_core::auth::TokenCredential;
+use azure_core::authentication::TokenCredential;
 use azure_core::date::OffsetDateTime;
 use azure_core::{
     date,

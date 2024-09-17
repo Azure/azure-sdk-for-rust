@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::token_credentials::cache::TokenCache;
+use crate::credentials::cache::TokenCache;
 use async_process::Command;
 use azure_core::{
-    auth::{AccessToken, Secret, TokenCredential},
+    authentication::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
     json::from_json,
 };

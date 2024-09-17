@@ -7,12 +7,14 @@ use azure_core::{
 };
 use std::collections::HashMap;
 
+/// Read environment variables.
 #[derive(Debug, Clone)]
 pub(crate) enum Env {
     Process(ProcessEnv),
     Mem(MemEnv),
 }
 
+/// Reads environment variables from the current process.
 impl Default for Env {
     fn default() -> Self {
         Self::Process(ProcessEnv)
@@ -40,7 +42,7 @@ impl From<MemEnv> for Env {
     }
 }
 
-/// The standard environment that gets variables from the process.
+/// An environment that gets variables from the process.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct ProcessEnv;
 
@@ -52,7 +54,7 @@ impl ProcessEnv {
     }
 }
 
-/// An environment that stores and gets variables in memory.
+/// An environment that gets variables in memory.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct MemEnv {
     vars: HashMap<String, String>,

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::auth::Secret;
+use azure_core::authentication::Secret;
 use serde::{Deserialize, Deserializer};
 use time::OffsetDateTime;
 use typespec_client_core::Model;

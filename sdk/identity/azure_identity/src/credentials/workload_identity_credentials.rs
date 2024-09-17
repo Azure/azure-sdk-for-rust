@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    federated_credentials_flow, token_credentials::cache::TokenCache, TokenCredentialOptions,
-};
+use crate::{credentials::cache::TokenCache, federated_credentials_flow, TokenCredentialOptions};
 use azure_core::{
-    auth::{AccessToken, Secret, TokenCredential},
+    authentication::{AccessToken, Secret, TokenCredential},
     error::{ErrorKind, ResultExt},
     Error, HttpClient, Url,
 };
@@ -119,7 +117,7 @@ impl WorkloadIdentityCredential {
     }
 
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        let res: AccessToken = federated_credentials_flow::perform(
+        let res: AccessToken = federated_credentials_flow::authorize(
             self.http_client.clone(),
             &self.client_id,
             self.token.secret(),
