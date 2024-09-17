@@ -43,15 +43,9 @@ impl BearerTokenCredentialPolicy {
             .collect::<Vec<&str>>()
     }
 
-    async fn access_token(&self) -> Result<String> {
-        let access_token = self.access_token.as_ref().read().await;
-        if let Some(x) = &(*access_token) {
-            Ok(x.token.secret().to_string())
-        } else {
-            Err(Error::with_message(ErrorKind::Credential, || {
-                "Failed to get AccessToken credential."
-            }))
-        }
+    async fn access_token(&self) -> Option<String> {
+        let access_token = self.access_token.read().await;
+        access_token.as_ref().map(|s| s.token.secret().to_string())
     }
 }
 
@@ -78,7 +72,7 @@ impl Policy for BearerTokenCredentialPolicy {
 
         request.insert_header(
             AUTHORIZATION,
-            format!("Bearer {}", self.access_token().await?),
+            format!("Bearer {}", self.access_token().await.unwrap()),
         );
 
         next[0].send(ctx, request, &next[1..]).await
