@@ -18,13 +18,13 @@ Write-Host "Analyzing code with
 $env:RUSTDOCFLAGS = "-D warnings"
 $env:RUSTFLAGS = "-Dwarnings"
 
-Invoke-LoggedCommand "cargo +$Toolchain check -p azure_core --no-default-features"
+Invoke-LoggedCommand "cargo +$Toolchain check -p azure_core --no-default-features --keep-going"
 
 Invoke-LoggedCommand "cargo +$Toolchain fmt --all -- --check"
 
-Invoke-LoggedCommand "cargo +$Toolchain clippy --all"
+Invoke-LoggedCommand "cargo +$Toolchain clippy --workspace --keep-going --no-deps"
 
-Invoke-LoggedCommand "cargo +$Toolchain doc --all --no-deps"
+Invoke-LoggedCommand "cargo +$Toolchain doc --workspace --no-deps"
 
 # Verify package dependencies
 
