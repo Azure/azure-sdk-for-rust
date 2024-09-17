@@ -6,7 +6,7 @@ use azure_core::{Pipeline, Url};
 use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
-use azure_core::auth::Secret;
+use azure_core::authentication::Secret;
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]

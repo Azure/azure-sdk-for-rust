@@ -16,7 +16,7 @@ use tracing::trace;
 use url::form_urlencoded;
 
 #[cfg(feature = "key_auth")]
-use azure_core::{auth::Secret, hmac::hmac_sha256};
+use azure_core::{authentication::Secret, hmac::hmac_sha256};
 
 const AZURE_VERSION: &str = "2018-12-31";
 const VERSION_NUMBER: &str = "1.0";

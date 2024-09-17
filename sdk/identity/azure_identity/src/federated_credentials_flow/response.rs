@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#![allow(dead_code)]
+
 use azure_core::authentication::Secret;
 use serde::{Deserialize, Deserializer};
 use time::OffsetDateTime;
