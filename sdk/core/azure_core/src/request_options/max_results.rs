@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::{AppendToUrlQuery, Url};
 use std::num::NonZeroU32;
 

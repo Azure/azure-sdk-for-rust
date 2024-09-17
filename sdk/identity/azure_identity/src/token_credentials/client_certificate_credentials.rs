@@ -1,9 +1,12 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::{token_credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     base64, content_type,
     error::{http_response_from_body, Error, ErrorKind, ResultExt},
-    headers, HttpClient, Method, Request,
+    headers, HttpClient, Method, Request, Url, Uuid,
 };
 
 // cspell:ignore pkey
@@ -18,7 +21,8 @@ use openssl::{
 use serde::Deserialize;
 use std::{str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
-use url::{form_urlencoded, Url};
+use typespec_client_core::http::Model;
+use url::form_urlencoded;
 
 /// Refresh time to use in seconds
 const DEFAULT_REFRESH_TIME: i64 = 300;
@@ -196,7 +200,7 @@ impl ClientCertificateCredential {
         let thumbprint =
             ClientCertificateCredential::get_thumbprint(cert).map_err(openssl_error)?;
 
-        let uuid = uuid::Uuid::new_v4();
+        let uuid = Uuid::new_v4();
         let current_time = OffsetDateTime::now_utc().unix_timestamp();
         let expiry_time = current_time + DEFAULT_REFRESH_TIME;
         let x5t = base64::encode(thumbprint);
@@ -264,7 +268,7 @@ impl ClientCertificateCredential {
             return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
         }
 
-        let response: AadTokenResponse = rsp.json().await?;
+        let response: AadTokenResponse = rsp.deserialize_body_into().await?;
         Ok(AccessToken::new(
             response.access_token,
             OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),
@@ -327,7 +331,7 @@ impl ClientCertificateCredential {
     }
 }
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Model, Deserialize, Debug, Default)]
 #[serde(default)]
 struct AadTokenResponse {
     token_type: String,

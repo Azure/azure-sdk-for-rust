@@ -1,7 +1,12 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::env::Env;
-use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{
+    error::{ErrorKind, ResultExt},
+    Url,
+};
 use std::sync::Arc;
-use url::Url;
 
 const AZURE_AUTHORITY_HOST_ENV_KEY: &str = "AZURE_AUTHORITY_HOST";
 const AZURE_PUBLIC_CLOUD: &str = "https://login.microsoftonline.com";

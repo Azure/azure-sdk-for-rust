@@ -1,0 +1,13 @@
+[
+  {
+    "level": "error",
+    "code": "E0277",
+    "message": null,
+    "spans": [
+      {
+        "file_name": "sdk/typespec/typespec_derive/compilation-tests/src/model/not_derive_deserialize.rs",
+        "line": 6
+      }
+    ]
+  }
+]

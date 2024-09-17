@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::error::{Error, ErrorKind, ResultExt};
 use crate::headers::{self, AsHeaders, HeaderName, HeaderValue};
 use std::fmt;

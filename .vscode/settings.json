@@ -1,5 +1,9 @@
 {
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
-  "rust-analyzer.cargo.features": "all"
+  "rust-analyzer.cargo.features": "all",
+  "[powershell]": {
+    "editor.defaultFormatter": "ms-vscode.powershell",
+  },
+  "yaml.format.printWidth": 240
 }

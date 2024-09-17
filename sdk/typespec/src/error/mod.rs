@@ -3,7 +3,9 @@
 
 //! Interfaces for working with errors.
 
+#[cfg(feature = "http")]
 use http_types::StatusCode;
+
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
 
@@ -37,7 +39,7 @@ impl ErrorKind {
     /// Consumes the `ErrorKind` and converts to an [`Error`].
     pub fn into_error(self) -> Error {
         Error {
-            context: Context::Simple(self),
+            context: ErrorContext::Simple(self),
         }
     }
 
@@ -51,6 +53,7 @@ impl ErrorKind {
 impl Display for ErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            #[cfg(feature = "http")]
             ErrorKind::HttpResponse { status, error_code } => {
                 write!(
                     f,
@@ -71,7 +74,7 @@ impl Display for ErrorKind {
 /// An error encountered when communicating with the service.
 #[derive(Debug)]
 pub struct Error {
-    context: Context,
+    context: ErrorContext,
 }
 
 impl Error {
@@ -81,7 +84,7 @@ impl Error {
         E: Into<Box<dyn std::error::Error + Send + Sync>>,
     {
         Self {
-            context: Context::Custom(Custom {
+            context: ErrorContext::Custom(Custom {
                 kind,
                 error: error.into(),
             }),
@@ -97,7 +100,7 @@ impl Error {
         C: Into<Cow<'static, str>>,
     {
         Self {
-            context: Context::Full(
+            context: ErrorContext::Full(
                 Custom {
                     kind,
                     error: error.into(),
@@ -114,7 +117,7 @@ impl Error {
         C: Into<Cow<'static, str>>,
     {
         Self {
-            context: Context::Message {
+            context: ErrorContext::Message {
                 kind,
                 message: message.into(),
             },
@@ -130,7 +133,7 @@ impl Error {
         C: Into<Cow<'static, str>>,
     {
         Self {
-            context: Context::Message {
+            context: ErrorContext::Message {
                 kind,
                 message: message().into(),
             },
@@ -159,19 +162,18 @@ impl Error {
     /// Get the [`ErrorKind`] of this `Error`.
     pub fn kind(&self) -> &ErrorKind {
         match &self.context {
-            Context::Simple(kind)
-            | Context::Message { kind, .. }
-            | Context::Custom(Custom { kind, .. })
-            | Context::Full(Custom { kind, .. }, _) => kind,
+            ErrorContext::Simple(kind)
+            | ErrorContext::Message { kind, .. }
+            | ErrorContext::Custom(Custom { kind, .. })
+            | ErrorContext::Full(Custom { kind, .. }, _) => kind,
         }
     }
 
     /// Consumes the `Error`, returning its inner error, if any.
     pub fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self> {
         match self.context {
-            Context::Custom(Custom { error, .. }) | Context::Full(Custom { error, .. }, _) => {
-                Ok(error)
-            }
+            ErrorContext::Custom(Custom { error, .. })
+            | ErrorContext::Full(Custom { error, .. }, _) => Ok(error),
             _ => Err(self),
         }
     }
@@ -193,9 +195,8 @@ impl Error {
     /// Returns a reference to the inner error wrapped by this error, if any.
     pub fn get_ref(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
         match &self.context {
-            Context::Custom(Custom { error, .. }) | Context::Full(Custom { error, .. }, _) => {
-                Some(error.as_ref())
-            }
+            ErrorContext::Custom(Custom { error, .. })
+            | ErrorContext::Full(Custom { error, .. }, _) => Some(error.as_ref()),
             _ => None,
         }
     }
@@ -208,9 +209,8 @@ impl Error {
     /// Returns a mutable reference to the inner error wrapped by this error, if any.
     pub fn get_mut(&mut self) -> Option<&mut (dyn std::error::Error + Send + Sync + 'static)> {
         match &mut self.context {
-            Context::Custom(Custom { error, .. }) | Context::Full(Custom { error, .. }, _) => {
-                Some(error.as_mut())
-            }
+            ErrorContext::Custom(Custom { error, .. })
+            | ErrorContext::Full(Custom { error, .. }, _) => Some(error.as_mut()),
             _ => None,
         }
     }
@@ -224,9 +224,8 @@ impl Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.context {
-            Context::Custom(Custom { error, .. }) | Context::Full(Custom { error, .. }, _) => {
-                Some(&**error)
-            }
+            ErrorContext::Custom(Custom { error, .. })
+            | ErrorContext::Full(Custom { error, .. }, _) => Some(&**error),
             _ => None,
         }
     }
@@ -235,7 +234,7 @@ impl std::error::Error for Error {
 impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
-            context: Context::Simple(kind),
+            context: ErrorContext::Simple(kind),
         }
     }
 }
@@ -280,10 +279,10 @@ impl From<url::ParseError> for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.context {
-            Context::Simple(kind) => write!(f, "{kind}"),
-            Context::Message { message, .. } => write!(f, "{message}"),
-            Context::Custom(Custom { error, .. }) => write!(f, "{error}"),
-            Context::Full(_, message) => {
+            ErrorContext::Simple(kind) => write!(f, "{kind}"),
+            ErrorContext::Message { message, .. } => write!(f, "{message}"),
+            ErrorContext::Custom(Custom { error, .. }) => write!(f, "{error}"),
+            ErrorContext::Full(_, message) => {
                 write!(f, "{message}")
             }
         }
@@ -336,7 +335,7 @@ where
         C: Into<Cow<'static, str>>,
     {
         self.map_err(|e| Error {
-            context: Context::Full(
+            context: ErrorContext::Full(
                 Custom {
                     error: Box::new(e),
                     kind,
@@ -357,7 +356,7 @@ where
 }
 
 #[derive(Debug)]
-enum Context {
+enum ErrorContext {
     Simple(ErrorKind),
     Message {
         kind: ErrorKind,

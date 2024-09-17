@@ -223,7 +223,7 @@ mod tests {
 
         assert!(receiver_options.target.is_some());
         assert_eq!(
-            receiver_options.target.unwrap().address.unwrap(),
+            receiver_options.target.unwrap().address().unwrap().clone(),
             "test_address".to_string()
         );
     }
@@ -283,7 +283,7 @@ mod tests {
         );
         assert!(receiver_options.target.is_some());
         assert_eq!(
-            receiver_options.target.unwrap().address.unwrap(),
+            receiver_options.target.unwrap().address().unwrap().clone(),
             "combo_address".to_string()
         );
         assert_eq!(receiver_options.name.unwrap(), "combo_name".to_string());

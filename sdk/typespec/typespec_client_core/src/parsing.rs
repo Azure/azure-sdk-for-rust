@@ -1,7 +1,10 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Parser helper utilities.
 
-use crate::error::{Error, ErrorKind, ResultExt};
-use typespec_client_core::date;
+use crate::date;
+use typespec::error::{Error, ErrorKind, ResultExt};
 
 pub trait FromStringOptional<T> {
     fn from_str_optional(s: &str) -> crate::Result<T>;
@@ -33,37 +36,8 @@ impl FromStringOptional<bool> for bool {
 
 impl FromStringOptional<date::OffsetDateTime> for date::OffsetDateTime {
     fn from_str_optional(s: &str) -> crate::Result<date::OffsetDateTime> {
-        from_azure_time(s).with_context(ErrorKind::DataConversion, || {
+        date::parse_rfc1123(s).with_context(ErrorKind::DataConversion, || {
             format!("error parsing date time '{s}'")
         })
-    }
-}
-
-#[cfg(not(feature = "azurite_workaround"))]
-pub fn from_azure_time(s: &str) -> crate::Result<date::OffsetDateTime> {
-    date::parse_rfc1123(s)
-}
-
-#[cfg(feature = "azurite_workaround")]
-pub fn from_azure_time(s: &str) -> crate::Result<date::OffsetDateTime> {
-    if let Ok(dt) = date::parse_rfc1123(s) {
-        Ok(dt)
-    } else {
-        tracing::warn!("Received an invalid date: {}, returning now()", s);
-        Ok(date::OffsetDateTime::now_utc())
-    }
-}
-
-#[cfg(test)]
-mod test {
-
-    #[test]
-    fn test_from_azure_time() {
-        let t = super::from_azure_time("Sun, 27 Sep 2009 17:26:40 GMT").unwrap();
-
-        assert_eq!(t.day(), 27);
-        assert_eq!(t.month(), time::Month::September);
-        assert_eq!(t.hour(), 17);
-        assert_eq!(t.second(), 40);
     }
 }

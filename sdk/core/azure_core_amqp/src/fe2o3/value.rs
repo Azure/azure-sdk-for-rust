@@ -2,14 +2,12 @@
 // Licensed under the MIT license.
 // cspell: words amqp
 
-use serde_bytes::ByteBuf;
-use std::time::UNIX_EPOCH;
-
-use serde_amqp::primitives::Timestamp;
-
 use crate::value::{
     AmqpDescribed, AmqpDescriptor, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue,
 };
+use serde_amqp::primitives::Timestamp;
+use serde_bytes::ByteBuf;
+use std::time::UNIX_EPOCH;
 
 impl From<fe2o3_amqp_types::primitives::Symbol> for AmqpSymbol {
     fn from(s: fe2o3_amqp_types::primitives::Symbol) -> AmqpSymbol {
@@ -114,6 +112,29 @@ impl From<fe2o3_amqp_types::primitives::SimpleValue> for AmqpValue {
     }
 }
 
+impl From<fe2o3_amqp_types::primitives::Value> for AmqpList {
+    fn from(value: fe2o3_amqp_types::primitives::Value) -> Self {
+        match value {
+            fe2o3_amqp_types::primitives::Value::List(l) => {
+                AmqpList(l.into_iter().map(|v| v.into()).collect::<Vec<AmqpValue>>())
+            }
+            _ => panic!("Expected a list"),
+        }
+    }
+}
+
+impl From<AmqpList> for fe2o3_amqp_types::primitives::Value {
+    fn from(value: AmqpList) -> Self {
+        fe2o3_amqp_types::primitives::Value::List(
+            value
+                .0
+                .into_iter()
+                .map(|v| v.into())
+                .collect::<Vec<fe2o3_amqp_types::primitives::Value>>(),
+        )
+    }
+}
+
 impl From<AmqpDescriptor> for serde_amqp::descriptor::Descriptor {
     fn from(descriptor: AmqpDescriptor) -> Self {
         match descriptor {
@@ -162,7 +183,19 @@ impl From<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             AmqpValue::Array(a) => fe2o3_amqp_types::primitives::Value::Array(
                 a.into_iter().map(|v| v.into()).collect(),
             ),
-            AmqpValue::Composite(_) => panic!("Composite values are not supported in Fe2o3"),
+
+            // An AMQP Composite type is essentially a Described type with a specific descriptor which
+            // indicates which AMQP performative it is.
+            //
+            // Iron Oxide does not directly support Composite types (they're handled via macros), so when a C++
+            // component attempts to convert an AMQP Composite type to Iron Oxide, we convert it to a Described type
+            #[cfg(feature = "cplusplus")]
+            AmqpValue::Composite(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
+                serde_amqp::described::Described {
+                    descriptor: d.descriptor.clone().into(),
+                    value: d.value.clone().into(),
+                },
+            )),
             AmqpValue::Described(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
                 serde_amqp::described::Described {
                     descriptor: d.descriptor.clone().into(),
@@ -328,7 +361,12 @@ impl PartialEq<AmqpValue> for fe2o3_amqp_types::primitives::Value {
                 _ => false,
             },
 
-            AmqpValue::Composite(_) => panic!("Composite values are not supported in Fe2o3"),
+            // An AMQP Composite type is essentially a Described type with a specific descriptor which
+            // indicates which AMQP performative it is.
+            //
+            // Iron Oxide does not directly support Composite types (they're handled via macros), so we always return false.
+            #[cfg(feature = "cplusplus")]
+            AmqpValue::Composite(_) => false,
 
             AmqpValue::Unknown => todo!(),
         }
@@ -471,6 +509,7 @@ impl From<fe2o3_amqp_types::definitions::ReceiverSettleMode> for crate::Receiver
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Uuid;
 
     #[test]
     fn test_from_fe2o3_amqp_types_primitives_symbol() {
@@ -637,7 +676,7 @@ mod tests {
         }
 
         {
-            let uuid = uuid::Uuid::new_v4();
+            let uuid = Uuid::new_v4();
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Uuid(uuid.into());
             let amqp: AmqpValue = fe2o3.clone().into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();

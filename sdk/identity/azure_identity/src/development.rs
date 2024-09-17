@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Utilities for aiding in development
 //!
 //! These utilities should not be used in production

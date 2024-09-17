@@ -28,11 +28,7 @@ mod policies;
 pub mod auth;
 pub mod headers;
 pub mod lro;
-pub mod parsing;
 pub mod request_options;
-pub mod util;
-
-use uuid::Uuid;
 
 pub mod tokio;
 
@@ -42,9 +38,7 @@ pub use models::*;
 pub use options::*;
 pub use pipeline::*;
 pub use policies::*;
-pub use typespec_client_core::http::{
-    CollectedResponse, PinnedStream, RawResponse, Response, ResponseBody,
-};
+pub use typespec_client_core::http::response::{Model, PinnedStream, Response, ResponseBody};
 
 // Re-export typespec types that are not specific to Azure.
 pub use typespec::{Error, Result};
@@ -57,49 +51,26 @@ pub use typespec_client_core::xml;
 pub use typespec_client_core::{
     base64, date,
     http::{
-        headers::*, new_http_client, Body, Context, HttpClient, Method, Pageable, Request,
-        StatusCode, Url,
+        headers::Header, new_http_client, AppendToUrlQuery, Body, Context, Continuable, HttpClient,
+        Method, Pageable, Request, RequestContent, StatusCode, Url,
     },
-    json, sleep,
+    json, parsing,
+    sleep::{self, sleep},
     stream::{BytesStream, SeekableStream},
+    Uuid,
 };
 
 /// A unique identifier for a request.
-// NOTE: only used for Storage?
+// NOTE: Only used for Storage?
 pub type RequestId = Uuid;
 
 /// A unique session token.
-// NOTE: only used for Cosmos?
+// NOTE: Only used for Cosmos?
 pub type SessionToken = String;
 
 /// An empty HTTP body.
 #[allow(clippy::declare_interior_mutable_const)]
 pub const EMPTY_BODY: bytes::Bytes = bytes::Bytes::new();
-
-/// Add a new query pair into the target URL's query string.
-pub trait AppendToUrlQuery {
-    fn append_to_url_query(&self, url: &mut crate::Url);
-}
-
-impl<T> AppendToUrlQuery for &T
-where
-    T: AppendToUrlQuery,
-{
-    fn append_to_url_query(&self, url: &mut crate::Url) {
-        (*self).append_to_url_query(url);
-    }
-}
-
-impl<T> AppendToUrlQuery for Option<T>
-where
-    T: AppendToUrlQuery,
-{
-    fn append_to_url_query(&self, url: &mut crate::Url) {
-        if let Some(i) = self {
-            i.append_to_url_query(url);
-        }
-    }
-}
 
 #[doc(hidden)]
 /// Used by macros as an implementation detail

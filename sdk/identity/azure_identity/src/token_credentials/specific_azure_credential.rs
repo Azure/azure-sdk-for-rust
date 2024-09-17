@@ -1,10 +1,13 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use super::options;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::AzureCliCredential;
 #[cfg(feature = "client_certificate")]
 use crate::ClientCertificateCredential;
 use crate::{
-    AppServiceManagedIdentityCredential, ClientSecretCredential, EnvironmentCredential,
+    AppServiceManagedIdentityCredential, ClientSecretCredential, EnvironmentCredential, ImdsId,
     TokenCredentialOptions, VirtualMachineManagedIdentityCredential, WorkloadIdentityCredential,
 };
 use azure_core::{
@@ -151,7 +154,7 @@ impl SpecificAzureCredential {
                 }
                 azure_credential_kinds::VIRTUAL_MACHINE => {
                     SpecificAzureCredentialKind::VirtualMachine(
-                        VirtualMachineManagedIdentityCredential::new(options),
+                        VirtualMachineManagedIdentityCredential::new(ImdsId::SystemAssigned, options),
                     )
                 }
                 #[cfg(not(target_arch = "wasm32"))]

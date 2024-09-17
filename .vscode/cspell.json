@@ -3,17 +3,32 @@
   "language": "en",
   "useGitignore": true,
   "ignorePaths": [
+    "**/test-resources.bicep",
+    "**/test-resources.json",
+    ".devcontainer/devcontainer.json",
+    ".devcontainer/oncreate",
+    ".github/CODEOWNERS",
+    ".github/dependabot.yml",
+    ".vscode/cspell.json",
+    ".vscode/extensions.json",
+    "NOTICE.txt",
     "eng/",
-    "NOTICE.txt"
+    "*.dict.txt",
+    "rust-toolchain.toml"
   ],
   "words": [
+    "amqp",
     "asyncoperation",
     "azsdk",
     "azurecli",
+    "cplusplus",
     "datalake",
+    "datetime",
     "devicecode",
+    "docsrs",
     "downcasted",
     "downcasting",
+    "entra",
     "etag",
     "eventhub",
     "eventhubs",
@@ -42,6 +57,11 @@
     {
       "name": "rust-custom",
       "path": "../eng/dict/rust-custom.txt",
+      "noSuggest": true
+    },
+    {
+      "name": "cosmos",
+      "path": "../sdk/cosmos/.dict.txt",
       "noSuggest": true
     }
   ],
@@ -84,6 +104,14 @@
       "flagWords": [
         "azure",
         "azurite"
+      ]
+    },
+    {
+      "filename": "sdk/cosmos/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "cosmos"
       ]
     }
   ]

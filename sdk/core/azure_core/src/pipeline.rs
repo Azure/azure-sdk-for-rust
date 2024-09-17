@@ -3,7 +3,7 @@
 
 use crate::{TelemetryOptions, TelemetryPolicy};
 use std::{ops::Deref, sync::Arc};
-use typespec_client_core::http::{self, Policy};
+use typespec_client_core::http::{self, policies::Policy};
 
 /// Execution pipeline.
 ///

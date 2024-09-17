@@ -10,7 +10,7 @@ mod transport;
 pub use retry::*;
 pub use transport::*;
 
-use crate::http::{Context, Policy};
+use crate::http::{policies::Policy, Context};
 use std::fmt::Debug;
 use std::sync::Arc;
 

@@ -2,6 +2,12 @@
 // Licensed under the MIT license.
 // cspell: words amqp
 
+use crate::Uuid;
+#[cfg(feature = "cplusplus")]
+use crate::{Deserializable, Serializable};
+#[cfg(feature = "cplusplus")]
+use azure_core::Result;
+
 #[derive(Debug, PartialEq, Clone, Default, Eq)]
 pub struct AmqpSymbol(pub String);
 
@@ -165,19 +171,70 @@ pub enum AmqpValue {
     Double(f64),
     Char(char),
     TimeStamp(AmqpTimestamp),
-    Uuid(uuid::Uuid),
+    Uuid(Uuid),
     Binary(Vec<u8>),
     String(String),
     Symbol(AmqpSymbol),
     List(AmqpList),
     Map(AmqpOrderedMap<AmqpValue, AmqpValue>),
     Array(Vec<AmqpValue>),
-    Composite(Box<AmqpComposite>),
     Described(Box<AmqpDescribed>),
+    #[cfg(feature = "cplusplus")]
+    Composite(Box<AmqpComposite>),
     Unknown,
 }
 
-impl AmqpValue {}
+#[cfg(feature = "cplusplus")]
+impl Serializable for AmqpValue {
+    fn encoded_size(&self) -> usize {
+        #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+        {
+            let fe2o3_value = fe2o3_amqp_types::primitives::Value::from(self.clone());
+            serde_amqp::serialized_size(&fe2o3_value).unwrap()
+        }
+        #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+        {
+            unimplemented!("Serialization of AMQP values is not supported")
+        }
+    }
+
+    #[allow(unused_variables)]
+    fn serialize(&self, buffer: &mut [u8]) -> Result<()> {
+        #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+        {
+            let fe2o3_value = fe2o3_amqp_types::primitives::Value::from(self.clone());
+            let vec = serde_amqp::to_vec(&fe2o3_value).map_err(|e| {
+                azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
+            })?;
+            let bytes = vec.as_slice();
+            buffer.copy_from_slice(bytes);
+            Ok(())
+        }
+        #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+        {
+            unimplemented!("Serialization of AMQP values is not supported")
+        }
+    }
+}
+
+#[cfg(feature = "cplusplus")]
+impl Deserializable<AmqpValue> for AmqpValue {
+    #[allow(unused_variables)]
+    fn decode(data: &[u8]) -> azure_core::Result<AmqpValue> {
+        #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+        {
+            let fe2o3_value: fe2o3_amqp_types::primitives::Value = serde_amqp::from_slice(data)
+                .map_err(|e| {
+                    azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
+                })?;
+            Ok(fe2o3_value.into())
+        }
+        #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+        {
+            unimplemented!("Deserialization of AMQP values is not supported")
+        }
+    }
+}
 
 impl<K, V> AmqpOrderedMap<K, V>
 where
@@ -288,7 +345,7 @@ conversions_for_amqp_types!(
     (f32, Float),
     (f64, Double),
     (char, Char),
-    (uuid::Uuid, Uuid),
+    (Uuid, Uuid),
     (Vec<u8>, Binary),
     (std::string::String, String),
     (AmqpSymbol, Symbol),
@@ -388,13 +445,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
-
     use super::*;
+    use std::vec;
+    use Uuid;
 
     #[test]
     fn test_value_create_specific() {
-        let uuid = uuid::Uuid::new_v4();
+        let uuid = Uuid::new_v4();
         let timestamp = std::time::SystemTime::now();
         let v1 = AmqpValue::Boolean(true);
         let v2 = AmqpValue::UByte(1);
@@ -504,7 +561,7 @@ mod tests {
             TimeStamp,
             AmqpTimestamp(std::time::SystemTime::now())
         );
-        test_conversion!(uuid::Uuid, Uuid, uuid::Uuid::new_v4());
+        test_conversion!(Uuid, Uuid, Uuid::new_v4());
         test_conversion!(Vec<u8>, Binary, vec![1, 2, 3]);
         test_conversion!(String, String, "hello".to_string());
         test_conversion!(AmqpSymbol, Symbol, AmqpSymbol("hello".to_string()));
@@ -672,11 +729,11 @@ mod tests {
         assert_eq!(timestamp_val, AmqpTimestamp(timestamp));
 
         // Test AmqpValue::Uuid
-        let uuid = uuid::Uuid::new_v4();
+        let uuid = Uuid::new_v4();
         let uuid_value: AmqpValue = AmqpValue::Uuid(uuid);
         assert_eq!(uuid_value, AmqpValue::Uuid(uuid));
         assert_eq!(AmqpValue::Uuid(uuid), uuid_value);
-        let uuid_val: uuid::Uuid = uuid_value.into();
+        let uuid_val: Uuid = uuid_value.into();
         assert_eq!(uuid_val, uuid);
 
         // Test AmqpValue::Binary

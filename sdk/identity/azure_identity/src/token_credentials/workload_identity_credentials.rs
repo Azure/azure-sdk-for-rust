@@ -1,14 +1,16 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::{
     federated_credentials_flow, token_credentials::cache::TokenCache, TokenCredentialOptions,
 };
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     error::{ErrorKind, ResultExt},
-    Error, HttpClient,
+    Error, HttpClient, Url,
 };
 use std::{str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
-use url::Url;
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
 const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";

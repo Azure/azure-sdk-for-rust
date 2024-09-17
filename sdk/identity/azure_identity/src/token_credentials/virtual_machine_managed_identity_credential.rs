@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::{ImdsId, ImdsManagedIdentityCredential, TokenCredentialOptions};
 use azure_core::{
     auth::{AccessToken, TokenCredential},
@@ -16,7 +19,7 @@ pub struct VirtualMachineManagedIdentityCredential {
 }
 
 impl VirtualMachineManagedIdentityCredential {
-    pub fn new(options: impl Into<TokenCredentialOptions>) -> Self {
+    pub fn new(id: ImdsId, options: impl Into<TokenCredentialOptions>) -> Self {
         let endpoint = Url::parse(ENDPOINT).unwrap(); // valid url constant
         Self {
             credential: ImdsManagedIdentityCredential::new(
@@ -25,7 +28,7 @@ impl VirtualMachineManagedIdentityCredential {
                 API_VERSION,
                 SECRET_HEADER,
                 SECRET_ENV,
-                ImdsId::SystemAssigned,
+                id,
             ),
         }
     }

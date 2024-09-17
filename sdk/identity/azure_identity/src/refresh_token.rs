@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Refresh token utilities
 
 use azure_core::{
@@ -11,6 +14,7 @@ use azure_core::{
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;
+use typespec_client_core::Model;
 use url::form_urlencoded;
 
 /// Exchange a refresh token for a new access token and refresh token
@@ -49,7 +53,9 @@ pub async fn exchange(
     let rsp_status = rsp.status();
 
     if rsp_status.is_success() {
-        rsp.json().await.map_kind(ErrorKind::Credential)
+        rsp.deserialize_body_into()
+            .await
+            .map_kind(ErrorKind::Credential)
     } else {
         let rsp_body = rsp.into_body().collect().await?;
         let token_error: RefreshTokenError =
@@ -59,7 +65,7 @@ pub async fn exchange(
 }
 
 /// A refresh token
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Model, Debug, Clone, Deserialize)]
 pub struct RefreshTokenResponse {
     token_type: String,
     #[serde(rename = "scope", deserialize_with = "deserialize::split")]

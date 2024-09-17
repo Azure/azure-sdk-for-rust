@@ -13,37 +13,37 @@ categories = ["api-bindings"]
 edition.workspace = true
 
 [dependencies]
-azure_core = { workspace = true }
-async-lock = { workspace = true }
-oauth2 = { workspace = true }
-url = { workspace = true }
-futures = { workspace = true }
-serde = { workspace = true }
-time = { workspace = true }
-tracing = { workspace = true }
-async-trait = { workspace = true }
+azure_core.workspace = true
+async-lock.workspace = true
+oauth2.workspace = true
+url.workspace = true
+futures.workspace = true
+serde.workspace = true
+time.workspace = true
+tracing.workspace = true
+async-trait.workspace = true
 openssl = { workspace = true, optional = true }
-uuid = { workspace = true, features = ["v4"] }
-pin-project = { workspace = true }
+pin-project.workspace = true
+typespec_client_core = { workspace = true, features = ["derive"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-async-process = { workspace = true }
+async-process.workspace = true
 
 [target.'cfg(unix)'.dependencies]
 tz-rs = { workspace = true, optional = true }
 
 [dev-dependencies]
-reqwest = { workspace = true }
-tokio = { workspace = true }
-tracing-subscriber = { workspace = true }
-serde_test = { workspace = true }
-serial_test = { workspace = true }
-clap = { workspace = true }
+reqwest.workspace = true
+tokio.workspace = true
+tracing-subscriber.workspace = true
+serde_test.workspace = true
+serial_test.workspace = true
+clap.workspace = true
 
 [features]
-default = ["development", "enable_reqwest", "old_azure_cli"]
-enable_reqwest = ["azure_core/enable_reqwest"]
-enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
+default = ["development", "reqwest", "old_azure_cli"]
+reqwest = ["azure_core/reqwest"]
+reqwest_rustls = ["azure_core/reqwest_rustls"]
 development = []
 test_e2e = []
 client_certificate = ["openssl"]
@@ -59,8 +59,8 @@ old_azure_cli = ["time/local-offset", "tz-rs"]
 
 [package.metadata.docs.rs]
 features = [
-  "enable_reqwest",
-  "enable_reqwest_rustls",
+  "reqwest",
+  "reqwest_rustls",
   "development",
   "client_certificate",
   "azureauth_cli",

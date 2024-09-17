@@ -86,7 +86,7 @@ impl Pipeline {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
-            .map(|resp| resp.into())
+            .map(|resp| resp.with_default_deserialize_type())
     }
 }
 
@@ -94,11 +94,12 @@ impl Pipeline {
 mod tests {
     use super::*;
     use crate::{
-        http::{headers::Headers, Method, PolicyResult, RawResponse, StatusCode, TransportOptions},
+        http::{headers::Headers, policies::PolicyResult, Method, StatusCode, TransportOptions},
         stream::BytesStream,
     };
     use bytes::Bytes;
     use serde::Deserialize;
+    use typespec_derive::Model;
 
     #[tokio::test]
     async fn deserializes_response() {
@@ -116,12 +117,13 @@ mod tests {
             ) -> PolicyResult {
                 let buffer = Bytes::from_static(br#"{"foo":1,"bar":"baz"}"#);
                 let stream: BytesStream = buffer.into();
-                let response = RawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
+                let response = Response::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
                 Ok(std::future::ready(response).await)
             }
         }
 
-        #[derive(Debug, Deserialize)]
+        #[derive(Model, Debug, Deserialize)]
+        #[typespec(crate = "crate")]
         struct Model {
             foo: i32,
             bar: String,
@@ -136,7 +138,7 @@ mod tests {
             .send(&Context::default(), &mut request)
             .await
             .unwrap()
-            .json()
+            .deserialize_body()
             .await
             .unwrap();
 

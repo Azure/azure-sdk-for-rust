@@ -1,6 +1,10 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_core::auth::Secret;
 use serde::{Deserialize, Deserializer};
 use time::OffsetDateTime;
+use typespec_client_core::Model;
 
 #[derive(Debug, Clone, Deserialize)]
 struct RawLoginResponse {
@@ -13,7 +17,7 @@ struct RawLoginResponse {
     access_token: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Model, Debug, Clone)]
 pub struct LoginResponse {
     pub token_type: String,
     pub expires_in: u64,

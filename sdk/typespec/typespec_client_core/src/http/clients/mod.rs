@@ -13,7 +13,7 @@ use self::noop::new_noop_client;
 #[cfg(any(feature = "reqwest", feature = "reqwest_rustls"))]
 use self::reqwest::new_reqwest_client;
 
-use crate::http::{RawResponse, Request};
+use crate::http::{Request, Response};
 use async_trait::async_trait;
 use std::sync::Arc;
 use typespec::error::Result;
@@ -34,9 +34,9 @@ pub fn new_http_client() -> Arc<dyn HttpClient> {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait HttpClient: Send + Sync + std::fmt::Debug {
-    /// Send out a request using `azure_core`'s types.
+    /// Send a request to the service.
     ///
     /// It does not consume the request. Implementors are expected to clone the necessary parts
     /// of the request and pass them to the underlying transport.
-    async fn execute_request(&self, request: &Request) -> Result<RawResponse>;
+    async fn execute_request(&self, request: &Request) -> Result<Response>;
 }

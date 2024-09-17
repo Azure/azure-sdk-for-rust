@@ -15,7 +15,7 @@ use std::{
 
 /// Creates a future that resolves after a specified duration of time.
 /// Uses a simple thread based implementation for sleep. A more efficient
-/// implementation is available by using the `tokio-sleep` crate feature.
+/// implementation is available by using the `tokio_sleep` crate feature.
 pub fn sleep(duration: Duration) -> Sleep {
     Sleep {
         signal: None,

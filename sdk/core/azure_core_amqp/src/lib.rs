@@ -16,6 +16,8 @@ pub mod sender;
 pub mod session;
 pub mod value;
 
+pub use uuid::Uuid;
+
 use std::fmt::Debug;
 
 // AMQP Settle mode:
@@ -41,4 +43,16 @@ const AMQP_RECEIVER_SETTLE_MODE_SECOND: isize = 1;
 pub enum ReceiverSettleMode {
     First = AMQP_RECEIVER_SETTLE_MODE_FIRST,
     Second = AMQP_RECEIVER_SETTLE_MODE_SECOND,
+}
+
+#[cfg(feature = "cplusplus")]
+pub trait Serializable {
+    fn serialize(&self, buffer: &mut [u8]) -> azure_core::Result<()>;
+
+    fn encoded_size(&self) -> usize;
+}
+
+#[cfg(feature = "cplusplus")]
+pub trait Deserializable<T> {
+    fn decode(data: &[u8]) -> azure_core::Result<T>;
 }

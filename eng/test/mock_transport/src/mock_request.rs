@@ -1,10 +1,12 @@
-use azure_core::{base64, Body, Method, Request};
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use azure_core::{base64, Body, Method, Request, Url};
 use serde::de::Visitor;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::str::FromStr;
-use url::Url;
 
 const FIELDS: &[&str] = &["uri", "method", "headers", "body"];
 

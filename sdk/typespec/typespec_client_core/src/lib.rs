@@ -12,9 +12,14 @@ pub mod error;
 pub mod http;
 #[cfg(feature = "json")]
 pub mod json;
+pub mod parsing;
 pub mod sleep;
 pub mod stream;
 #[cfg(feature = "xml")]
 pub mod xml;
 
 pub use crate::error::{Error, Result};
+pub use uuid::Uuid;
+
+#[cfg(feature = "derive")]
+pub use typespec_derive::Model;

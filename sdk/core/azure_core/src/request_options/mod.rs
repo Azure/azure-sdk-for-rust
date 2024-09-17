@@ -1,8 +1,7 @@
-mod content_length;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 mod content_range;
-mod if_match_condition;
-mod if_modified_since;
-mod if_modified_since_condition;
 mod if_sequence_number;
 mod if_source_match_condition;
 mod if_source_modified_since_condition;
@@ -19,11 +18,11 @@ mod sequence_number;
 mod source_lease_id;
 mod timeout;
 
-pub use content_length::ContentLength;
+use crate::headers::{
+    ACTIVITY_ID, APP, CLIENT_REQUEST_ID, CLIENT_VERSION, CONTENT_DISPOSITION, CONTINUATION,
+    IF_TAGS, USER, VERSION,
+};
 pub use content_range::ContentRange;
-pub use if_match_condition::IfMatchCondition;
-pub use if_modified_since::IfModifiedSince;
-pub use if_modified_since_condition::IfModifiedSinceCondition;
 pub use if_sequence_number::IfSequenceNumber;
 pub use if_source_match_condition::IfSourceMatchCondition;
 pub use if_source_modified_since_condition::IfSourceModifiedSinceCondition;
@@ -39,49 +38,13 @@ pub use range::Range;
 pub use sequence_number::SequenceNumber;
 pub use source_lease_id::SourceLeaseId;
 pub use timeout::Timeout;
-
-request_header!(
-    /// Advertises which content encoding the client is able to understand.
-    ///
-    /// The Accept-Encoding request HTTP header advertises which content
-    /// encoding, usually a compression algorithm, the client is able to
-    /// understand. Using content negotiation, the server selects one of the
-    /// proposals, uses it and informs the client of its choice with the
-    /// Content-Encoding response header.
-    ///
-    /// Even if both the client and the server supports the same compression
-    /// algorithms, the server may choose not to compress the body of a
-    /// response, if the identity value is also acceptable.
-    AcceptEncoding,
-    ACCEPT_ENCODING,
-);
+pub use typespec_client_core::http::request::options::*;
+use typespec_client_core::{request_header, request_query};
 
 request_header!(
     /// The (friendly) version identifier for the client making the request
     ClientVersion,
     CLIENT_VERSION
-);
-
-request_header!(
-    /// The Content Type indicates the media type of the request body
-    ContentType,
-    CONTENT_TYPE,
-    (APPLICATION_JSON, "application/json")
-);
-
-request_header!(
-    /// Advertises which content types the client is able to understand.
-    ///
-    /// The Accept request HTTP header advertises which content types, expressed
-    /// as MIME types, the client is able to understand. Using content
-    /// negotiation, the server then selects one of the proposals, uses it and
-    /// informs the client of its choice with the Content-Type response header.
-    /// Browsers set adequate values for this header depending of the context
-    /// where the request is done: when fetching a CSS stylesheet a different
-    /// value is set for the request than when fetching an image, video or a
-    /// script.
-    Accept,
-    ACCEPT
 );
 
 request_header!(
@@ -91,14 +54,11 @@ request_header!(
 );
 
 request_header!(ActivityId, ACTIVITY_ID);
-request_header!(App, APP,);
+request_header!(App, APP);
 request_header!(ClientRequestId, CLIENT_REQUEST_ID);
 request_header!(ContentDisposition, CONTENT_DISPOSITION);
-request_header!(ContentEncoding, CONTENT_ENCODING);
-request_header!(ContentLanguage, CONTENT_LANGUAGE);
 request_header!(Continuation, CONTINUATION);
 request_header!(IfTags, IF_TAGS);
-request_header!(UserAgent, USER_AGENT);
 request_header!(Version, VERSION);
 
 request_query!(

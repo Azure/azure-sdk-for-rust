@@ -1,7 +1,10 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_core::{
     base64, error,
     headers::{HeaderName, HeaderValue, Headers},
-    BytesStream, RawResponse, StatusCode,
+    BytesStream, Response, StatusCode,
 };
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
@@ -14,7 +17,7 @@ pub(crate) struct MockResponse {
     body: Bytes,
 }
 
-impl From<MockResponse> for RawResponse {
+impl From<MockResponse> for Response {
     fn from(mock_response: MockResponse) -> Self {
         let bytes_stream: azure_core::BytesStream = mock_response.body.into();
 
@@ -35,7 +38,7 @@ impl MockResponse {
         }
     }
 
-    pub(crate) async fn duplicate(response: RawResponse) -> error::Result<(RawResponse, Self)> {
+    pub(crate) async fn duplicate(response: Response) -> error::Result<(Response, Self)> {
         use error::ResultExt;
         let (status_code, header_map, body) = response.deconstruct();
         let response_bytes = body.collect().await.context(
@@ -43,7 +46,7 @@ impl MockResponse {
             "an error occurred fetching the next part of the byte stream",
         )?;
 
-        let response = RawResponse::new(
+        let response = Response::new(
             status_code,
             header_map.clone(),
             Box::pin(BytesStream::new(response_bytes.clone())),

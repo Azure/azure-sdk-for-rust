@@ -1,6 +1,9 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::headers::{self, Header};
 use std::str::FromStr;
-use uuid::Uuid;
+use typespec_client_core::Uuid;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SourceLeaseId(Uuid);
@@ -15,7 +18,7 @@ impl std::str::FromStr for SourceLeaseId {
     type Err = <Uuid as FromStr>::Err;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(uuid::Uuid::from_str(s)?))
+        Ok(Self(Uuid::from_str(s)?))
     }
 }
 
