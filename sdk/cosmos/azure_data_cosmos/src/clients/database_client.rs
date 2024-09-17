@@ -1,6 +1,7 @@
 use crate::clients::ContainerClient;
 use crate::models::DatabaseProperties;
 use crate::pipeline::ResourceType;
+use crate::utils::WithAddedPathSegments;
 use crate::{CosmosClient, ReadDatabaseOptions};
 
 use azure_core::{Context, Request};
@@ -59,17 +60,9 @@ pub struct DatabaseClient {
 
 impl DatabaseClient {
     pub(crate) fn new(root_client: CosmosClient, database_id: &str) -> Self {
-        let base_url = {
-            let mut u = root_client.endpoint().clone();
-            {
-                let mut segments = u
-                    .path_segments_mut()
-                    .expect("The root client should have validated the format of the URL");
-                segments.push("dbs");
-                segments.push(database_id);
-            }
-            u
-        };
+        let base_url = root_client
+            .endpoint()
+            .with_added_path_segments(vec!["dbs", database_id]);
 
         Self {
             base_url,

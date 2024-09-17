@@ -1,6 +1,6 @@
 use azure_core::{
     date::{ComponentRange, OffsetDateTime},
-    Model,
+    Continuable, Model,
 };
 use serde::{Deserialize, Serialize};
 
@@ -24,6 +24,23 @@ impl TryInto<OffsetDateTime> for CosmosTimestamp {
     /// Attempts to convert this [`CosmosTimestamp`] into a [`OffsetDateTime`].
     fn try_into(self) -> Result<OffsetDateTime, Self::Error> {
         OffsetDateTime::from_unix_timestamp(self.0)
+    }
+}
+
+/// A page of query results, where each item is a document of type `T`.
+#[derive(Debug)]
+pub struct QueryResults<T> {
+    pub items: Vec<T>,
+    pub query_metrics: Option<String>,
+    pub index_metrics: Option<String>,
+    pub continuation_token: Option<String>,
+}
+
+impl<T> Continuable for QueryResults<T> {
+    type Continuation = String;
+
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation_token.clone()
     }
 }
 

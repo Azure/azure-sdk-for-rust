@@ -8,11 +8,17 @@
 #![cfg_attr(docsrs, feature(doc_cfg_hide))]
 
 pub mod clients;
+pub(crate) mod constants;
 mod options;
+mod partition_key;
 pub(crate) mod pipeline;
+mod query;
+pub(crate) mod utils;
 
 /// Model types sent to and received from the Cosmos DB API.
 pub mod models;
 
 pub use clients::{CosmosClient, CosmosClientMethods};
 pub use options::*;
+pub use partition_key::*;
+pub use query::*;

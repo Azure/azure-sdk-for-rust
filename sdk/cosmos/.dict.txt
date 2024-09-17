@@ -1,4 +1,5 @@
 colls
+documentdb
 pkranges
 sprocs
 udfs

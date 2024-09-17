@@ -62,11 +62,33 @@ impl ReadContainerOptions {
     }
 }
 
+/// Options to be passed to [`ContainerClientMethods::query_items()`](crate::clients::ContainerClientMethods::query_items()).
+///
+/// NOTE: There are currently no options to set on this type.
+/// It exists to enable future extensibility.
+#[derive(Clone, Debug, Default)]
+pub struct QueryItemsOptions {}
+
+impl QueryItemsOptions {
+    /// Creates a new [`QueryItemsOptionsBuilder`](builders::QueryItemsOptionsBuilder) that can be used to construct a [`QueryItemsOptions`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let options = azure_data_cosmos::QueryItemsOptions::builder().build();
+    /// ```
+    pub fn builder() -> builders::QueryItemsOptionsBuilder {
+        builders::QueryItemsOptionsBuilder::default()
+    }
+}
+
 /// Builders for Cosmos-related options structs.
 pub mod builders {
     use azure_core::builders::ClientOptionsBuilder;
 
-    use crate::{CosmosClientOptions, ReadContainerOptions, ReadDatabaseOptions};
+    use crate::{
+        CosmosClientOptions, QueryItemsOptions, ReadContainerOptions, ReadDatabaseOptions,
+    };
 
     /// Builder used to construct a [`CosmosClientOptions`].
     #[derive(Default)]
@@ -139,10 +161,23 @@ pub mod builders {
     pub struct ReadContainerOptionsBuilder(ReadContainerOptions);
 
     impl ReadContainerOptionsBuilder {
-        /// Builds a [`CosmosClientOptions`] object from the builder.
+        /// Builds a [`ReadContainerOptions`] object from the builder.
         ///
         /// This does not consume the builder, and can be called multiple times.
         pub fn build(&self) -> ReadContainerOptions {
+            self.0.clone()
+        }
+    }
+
+    /// Builder used to construct a [`QueryItemsOptions`].
+    #[derive(Default)]
+    pub struct QueryItemsOptionsBuilder(QueryItemsOptions);
+
+    impl QueryItemsOptionsBuilder {
+        /// Builds a [`QueryItemsOptions`] object from the builder.
+        ///
+        /// This does not consume the builder, and can be called multiple times.
+        pub fn build(&self) -> QueryItemsOptions {
             self.0.clone()
         }
     }

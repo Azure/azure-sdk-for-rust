@@ -25,7 +25,7 @@ pub trait Model: Sized {
     /// The server may still be sending data, so it's up to implementors whether they want to wait for the entire body to be received or not.
     /// For example, a type representing a simple REST API response will want to wait for the entire body to be received and then parse the body.
     /// However, a type representing the download of a large file, may not want to do that and instead prepare to stream the body to a file or other destination.
-    fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>>;
+    fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>> + Send;
 }
 
 /// An HTTP response.
