@@ -13,16 +13,15 @@ where
     ) -> impl Stream<Item = Result<T>>;
 }
 
-pub(crate) fn string_chunks(
-    response_body: (impl Stream<Item = Result<bytes::Bytes>> + Unpin),
-    _stream_event_delimiter: &str, // figure out how to use it in the move
-) -> impl Stream<Item = Result<String>> {
+pub(crate) fn string_chunks<'a>(
+    response_body: (impl Stream<Item = Result<bytes::Bytes>> + Unpin + 'a),
+    stream_event_delimiter: &'a str, // figure out how to use it in the move
+) -> impl Stream<Item = Result<String>> + 'a {
     let chunk_buffer = Vec::new();
     let stream = futures::stream::unfold(
         (response_body, chunk_buffer),
-        |(mut response_body, mut chunk_buffer)| async move {
-            // Need to figure out a way how I can move the _stream_event_delimiter into this closure
-            let delimiter = b"\n\n";
+        move |(mut response_body, mut chunk_buffer)| async move {
+            let delimiter = stream_event_delimiter.as_bytes();
             let delimiter_len = delimiter.len();
 
             if let Some(Ok(bytes)) = response_body.next().await {
