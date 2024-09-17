@@ -16,7 +16,7 @@ pub mod sender;
 pub mod session;
 pub mod value;
 
-pub type Uuid = uuid::Uuid;
+pub use uuid::Uuid;
 
 use std::fmt::Debug;
 
