@@ -5,6 +5,8 @@
 //!
 //! You can learn more about the `OAuth2` authorization code flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).
 
+#![allow(dead_code)]
+
 use crate::oauth2_http_client::Oauth2HttpClient;
 use azure_core::{
     error::{ErrorKind, ResultExt},
