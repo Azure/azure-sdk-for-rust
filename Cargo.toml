@@ -1,6 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
+  "doc/azure",
+  "doc/microsoft",
   "sdk/typespec",
   "sdk/typespec/typespec_client_core",
   "sdk/typespec/typespec_derive",

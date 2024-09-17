@@ -1,0 +1,12 @@
+[package]
+name = "azure"
+version = "0.38.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Project root for all Azure SDK-related crates."
+homepage = "https://azure.github.io/azure-sdk"
+repository.workspace = true
+license.workspace = true
+categories = ["compilers", "development-tools"]
+keywords = ["azure", "sdk"]

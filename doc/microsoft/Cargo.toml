@@ -1,0 +1,12 @@
+[package]
+name = "microsoft"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Project root for all Microsoft-related crates."
+homepage = "https://www.microsoft.com"
+repository.workspace = true
+license.workspace = true
+categories = ["development-tools"]
+keywords = ["microsoft"]
