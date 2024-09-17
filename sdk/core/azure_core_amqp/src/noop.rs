@@ -11,7 +11,7 @@ use super::{
     receiver::{AmqpReceiverApis, AmqpReceiverOptions},
     sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions},
     session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
-    value::{AmqpOrderedMap, AmqpValue},
+    value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
 use azure_core::{auth::AccessToken, error::Result};
 
@@ -48,6 +48,15 @@ impl AmqpConnectionApis for NoopAmqpConnection {
         unimplemented!()
     }
     async fn close(&self) -> Result<()> {
+        unimplemented!()
+    }
+
+    async fn close_with_error(
+        &self,
+        condition: impl Into<AmqpSymbol>,
+        description: Option<String>,
+        info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    ) -> Result<()> {
         unimplemented!()
     }
 }
