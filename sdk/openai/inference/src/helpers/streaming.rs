@@ -87,3 +87,127 @@ pub(crate) fn string_chunks<'a>(
     // Specifically the Error::with_messagge(ErrorKind::DataConversion, || "Incomplete chunk")
     return stream.filter(|it| std::future::ready(it.is_ok()));
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use futures::pin_mut;
+
+    #[tokio::test]
+    async fn clean_chunks() {
+        let mut source_stream = futures::stream::iter(vec![
+            Ok(bytes::Bytes::from_static(b"data: piece 1\n\n")),
+            Ok(bytes::Bytes::from_static(b"data: piece 2\n\n")),
+            Ok(bytes::Bytes::from_static(b"data: [DONE]\n\n")),
+        ]);
+
+        let actual = string_chunks(&mut source_stream, "\n\n");
+        pin_mut!(actual);
+        let actual: Vec<Result<String>> = actual.collect().await;
+
+        let expected: Vec<Result<String>> =
+            vec![Ok("piece 1".to_string()), Ok("piece 2".to_string())];
+        assert_result_vectors(expected, actual);
+    }
+
+    #[tokio::test]
+    async fn multiple_message_in_one_chunk() {
+        let mut source_stream = futures::stream::iter(vec![
+            Ok(bytes::Bytes::from_static(
+                b"data: piece 1\n\ndata: piece 2\n\n",
+            )),
+            Ok(bytes::Bytes::from_static(
+                b"data: piece 3\n\ndata: [DONE]\n\n",
+            )),
+        ]);
+
+        let mut actual = Vec::new();
+
+        let actual_stream = string_chunks(&mut source_stream, "\n\n");
+        pin_mut!(actual_stream);
+
+        while let Some(event) = actual_stream.next().await {
+            actual.push(event);
+        }
+
+        let expected: Vec<Result<String>> = vec![
+            Ok("piece 1".to_string()),
+            Ok("piece 2".to_string()),
+            Ok("piece 3".to_string()),
+        ];
+        assert_result_vectors(expected, actual);
+    }
+
+    #[tokio::test]
+    async fn data_marker_in_previous_chunk() {
+        let mut source_stream = futures::stream::iter(vec![
+            Ok(bytes::Bytes::from_static(
+                b"data: piece 1\n\ndata: piece 2\n\ndata:",
+            )),
+            Ok(bytes::Bytes::from_static(b" piece 3\n\ndata: [DONE]\n\n")),
+        ]);
+
+        let mut actual = Vec::new();
+
+        let actual_stream = string_chunks(&mut source_stream, "\n\n");
+        pin_mut!(actual_stream);
+
+        while let Some(event) = actual_stream.next().await {
+            actual.push(event);
+        }
+
+        let expected: Vec<Result<String>> = vec![
+            Ok("piece 1".to_string()),
+            Ok("piece 2".to_string()),
+            Ok("piece 3".to_string()),
+        ];
+        assert_result_vectors(expected, actual);
+    }
+
+    #[tokio::test]
+    async fn event_delimeter_split_across_chunks() {
+        let mut source_stream = futures::stream::iter(vec![
+            Ok(bytes::Bytes::from_static(b"data: piece 1\n")),
+            Ok(bytes::Bytes::from_static(b"\ndata: [DONE]")),
+        ]);
+
+        let actual = string_chunks(&mut source_stream, "\n\n");
+        pin_mut!(actual);
+        let actual: Vec<Result<String>> = actual.collect().await;
+
+        let expected: Vec<Result<String>> = vec![Ok("piece 1".to_string())];
+        assert_result_vectors(expected, actual);
+    }
+
+    #[tokio::test]
+    async fn event_delimiter_at_start_of_next_chunk() {
+        let mut source_stream = futures::stream::iter(vec![
+            Ok(bytes::Bytes::from_static(b"data: piece 1")),
+            Ok(bytes::Bytes::from_static(b"\n\ndata: [DONE]")),
+        ]);
+
+        let actual = string_chunks(&mut source_stream, "\n\n");
+        pin_mut!(actual);
+        let actual: Vec<Result<String>> = actual.collect().await;
+
+        let expected: Vec<Result<String>> = vec![Ok("piece 1".to_string())];
+        assert_result_vectors(expected, actual);
+    }
+
+    fn assert_result_vectors<T>(expected: Vec<Result<T>>, actual: Vec<Result<T>>)
+    where
+        T: std::fmt::Debug + PartialEq,
+    {
+        assert_eq!(expected.len(), actual.len());
+        for (expected, actual) in expected.iter().zip(actual.iter()) {
+            if let Ok(actual) = actual {
+                assert_eq!(actual, expected.as_ref().unwrap());
+            } else {
+                let actual_err = actual.as_ref().unwrap_err();
+                let expected_err = expected.as_ref().unwrap_err();
+                assert_eq!(actual_err.kind(), expected_err.kind());
+                assert_eq!(actual_err.to_string(), expected_err.to_string());
+            }
+        }
+    }
+}
