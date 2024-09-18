@@ -1,4 +1,84 @@
+use crate::NullValue;
+
 /// Specifies a partition key value, usually used when querying a specific partition.
+///
+/// # Specifying a partition key
+///
+/// Most APIs that require a partition key will accept `impl Into<PartitionKey>`, giving you a few options on how to specify your partition key.
+///
+/// A single, non-hierarchical, partition key can be specified using the underlying type itself:
+///
+/// ```rust,no_run
+/// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
+/// # let credential = azure_identity::create_default_credential().unwrap();
+/// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
+/// # let db_client = client.database_client("my_database");
+/// # let container_client = db_client.container_client("my_container");
+/// container_client.query_items(
+///     "SELECT * FROM c",
+///     "a single string partition key",
+///     None).unwrap();
+/// container_client.query_items(
+///     "SELECT * FROM c",
+///     42, // A numeric partition key
+///     None).unwrap();
+/// ```
+///
+/// Hierarchical partition keys can be specified using tuples:
+///
+/// ```rust,no_run
+/// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
+/// # let credential = azure_identity::create_default_credential().unwrap();
+/// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
+/// # let db_client = client.database_client("my_database");
+/// # let container_client = db_client.container_client("my_container");
+/// container_client.query_items(
+///     "SELECT * FROM c",
+///     ("parent", "child")
+///     None).unwrap();
+/// ```
+///
+/// Null values can be represented in one of two ways.
+/// First, you can use [`NullValue`] anywhere a `PartitionKey` is expected:
+///
+/// ```rust,no_run
+/// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods, NullValue};
+/// # let credential = azure_identity::create_default_credential().unwrap();
+/// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
+/// # let db_client = client.database_client("my_database");
+/// # let container_client = db_client.container_client("my_container");
+/// container_client.query_items(
+///     "SELECT * FROM c",
+///     NullValue, // A null value in a single-level partition key.
+///     None).unwrap();
+/// container_client.query_items(
+///     "SELECT * FROM c",
+///     ("a", NullValue, "b"), // A null value within a hierarchical partition key.
+///     None).unwrap();
+/// ```
+///
+/// Or, if you have an [`Option<T>`], for some `T` that is valid as a partition key, it will automatically be serialized as `null` if it has the value [`Option::None`]:
+///
+/// ```rust,no_run
+/// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
+/// # let credential = azure_identity::create_default_credential().unwrap();
+/// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
+/// # let db_client = client.database_client("my_database");
+/// # let container_client = db_client.container_client("my_container");
+/// let my_partition_key: Option<String> = None;
+/// container_client.query_items(
+///     "SELECT * FROM c",
+///     my_partition_key,
+///     None).unwrap();
+/// ```
+///
+/// If you want to create your [`PartitionKey`] and store it in a variable, use [`PartitionKey::from()`]
+///
+/// ```rust
+/// # use azure_data_cosmos::PartitionKey;
+/// let partition_key_1 = PartitionKey::from("simple_string");
+/// let partition_key_2 = PartitionKey::from(("parent", "child", 42));
+/// ```
 #[derive(Debug, Clone)]
 pub struct PartitionKey(Vec<PartitionKeyValue>);
 
@@ -54,13 +134,10 @@ impl PartitionKey {
 }
 
 /// Represents a value for a single partition key.
+///
+/// You shouldn't need to construct this type directly. The various implementations of [`Into<PartitionKey>`] will handle it for you.
 #[derive(Debug, Clone)]
 pub struct PartitionKeyValue(InnerPartitionKeyValue);
-
-impl PartitionKeyValue {
-    /// A value that represents a 'null' partition key.
-    pub const NULL: PartitionKeyValue = PartitionKeyValue(InnerPartitionKeyValue::Null);
-}
 
 // We don't want to expose the implementation details of PartitionKeyValue (specifically the use of serde_json::Number), so we use this inner private enum to store the data.
 #[derive(Debug, Clone)]
@@ -73,6 +150,12 @@ enum InnerPartitionKeyValue {
 impl From<InnerPartitionKeyValue> for PartitionKeyValue {
     fn from(value: InnerPartitionKeyValue) -> Self {
         PartitionKeyValue(value)
+    }
+}
+
+impl From<NullValue> for PartitionKeyValue {
+    fn from(_: NullValue) -> Self {
+        InnerPartitionKeyValue::Null.into()
     }
 }
 
@@ -155,12 +238,6 @@ impl<T: Into<PartitionKeyValue>> From<T> for PartitionKey {
     }
 }
 
-impl<T: Into<PartitionKeyValue>> From<Vec<T>> for PartitionKey {
-    fn from(value: Vec<T>) -> Self {
-        PartitionKey(value.into_iter().map(Into::into).collect())
-    }
-}
-
 macro_rules! impl_from_tuple {
     ($($n:tt $name:ident)*) => {
         impl<$($name: Into<PartitionKeyValue>),*> From<($($name,)*)> for PartitionKey {
@@ -173,18 +250,14 @@ macro_rules! impl_from_tuple {
     };
 }
 
-impl_from_tuple!(0 A);
+// CosmosDB hierarchical partition keys are up to 3 levels:
+// https://learn.microsoft.com/en-us/azure/cosmos-db/hierarchical-partition-keys
 impl_from_tuple!(0 A 1 B);
 impl_from_tuple!(0 A 1 B 2 C);
-impl_from_tuple!(0 A 1 B 2 C 3 D);
-impl_from_tuple!(0 A 1 B 2 C 3 D 4 E);
-impl_from_tuple!(0 A 1 B 2 C 3 D 4 E 5 F);
-impl_from_tuple!(0 A 1 B 2 C 3 D 4 E 5 F 6 G);
-impl_from_tuple!(0 A 1 B 2 C 3 D 4 E 5 F 6 G 7 H);
 
 #[cfg(test)]
 mod tests {
-    use crate::{PartitionKey, PartitionKeyValue};
+    use crate::{NullValue, PartitionKey};
 
     fn key_to_string(v: impl Into<PartitionKey>) -> String {
         v.into().into_header_value().unwrap()
@@ -227,7 +300,7 @@ mod tests {
 
     #[test]
     pub fn null_value() {
-        assert_eq!(key_to_string(PartitionKeyValue::NULL), r#"[null]"#);
+        assert_eq!(key_to_string(NullValue), r#"[null]"#);
     }
 
     #[test]
@@ -242,8 +315,8 @@ mod tests {
     #[test]
     pub fn tuple() {
         assert_eq!(
-            key_to_string((42u8, "my_partition_key", 4.2f64, PartitionKeyValue::NULL)),
-            r#"[42,"my_partition_key",4.2,null]"#
+            key_to_string((42u8, "my_partition_key", NullValue)),
+            r#"[42,"my_partition_key",null]"#
         );
     }
 }

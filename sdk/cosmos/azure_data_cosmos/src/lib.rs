@@ -21,3 +21,21 @@ pub use clients::{CosmosClient, CosmosClientMethods};
 pub use options::*;
 pub use partition_key::*;
 pub use query::*;
+use serde::Serialize;
+
+/// A zero-sized marker type that indicates a null value.
+///
+/// Used when specifying `null` for [`PartitionKey`] or [`Query`] parameter, when [`Option`] is not appropriate (for example, if you never intend to pass a non-null value).
+pub struct NullValue;
+
+impl Serialize for NullValue {
+    /// Serializes the [`NullValue`].
+    ///
+    /// This will always produce the value `null` (or equivalent in whatever format the type is being serialized to).
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_none()
+    }
+}

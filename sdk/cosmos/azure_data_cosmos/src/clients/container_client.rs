@@ -29,12 +29,11 @@ pub trait ContainerClientMethods {
     ///
     /// ```rust,no_run
     /// # async fn doc() {
-    /// use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
-    ///
-    /// let credential = azure_identity::create_default_credential().unwrap();
-    /// let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
-    /// let db_client = client.database_client("my_database");
-    /// let container_client = db_client.container_client("my_container");
+    /// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
+    /// # let credential = azure_identity::create_default_credential().unwrap();
+    /// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
+    /// # let db_client = client.database_client("my_database");
+    /// # let container_client = db_client.container_client("my_container");
     /// let response = container_client.read(None)
     ///     .await.unwrap()
     ///     .deserialize_body()
@@ -49,11 +48,62 @@ pub trait ContainerClientMethods {
 
     /// Executes a single-partition query against items in the container.
     ///
+    /// The resulting document will be deserialized into the type provided as `T`.
+    /// If you want to deserialize the document to a direct representation of the JSON returned, use [`serde_json::Value`] as the target type.
+    ///
+    /// We recommend using "turbofish" syntax (`query_items::<SomeTargetType>(...)`) to specify the target type, as it makes type inference easier.
+    ///
     /// # Arguments
     ///
     /// * `query` - The query to execute.
     /// * `partition_key` - The partition key to scope the query on.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// The `query` and `partition_key` parameters accept anything that can be transformed [`Into`] their relevant types.
+    /// This allows simple queries without parameters to be expressed easily:
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() {
+    /// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
+    /// # let credential = azure_identity::create_default_credential().unwrap();
+    /// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
+    /// # let db_client = client.database_client("my_database");
+    /// # let container_client = db_client.container_client("my_container");
+    /// #[derive(serde::Deserialize)]
+    /// struct Customer {
+    ///     id: u64,
+    ///     name: String,
+    /// }
+    /// let items = container_client.query_items::<Customer>(
+    ///     "SELECT * FROM c",
+    ///     "some_partition_key",
+    ///     None).unwrap();
+    /// # }
+    /// ```
+    ///
+    /// You can specify parameters by using [`Query::from()`] and [`Query::with_parameter()`]:
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() {
+    /// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods, Query};
+    /// # let credential = azure_identity::create_default_credential().unwrap();
+    /// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
+    /// # let db_client = client.database_client("my_database");
+    /// # let container_client = db_client.container_client("my_container");
+    /// #[derive(serde::Deserialize)]
+    /// struct Customer {
+    ///     id: u64,
+    ///     name: String,
+    /// }
+    /// let query = Query::from("SELECT COUNT(*) FROM c WHERE c.customer_id = @customer_id")
+    ///     .with_parameter("@customer_id", 42).unwrap();
+    /// let items = container_client.query_items::<Customer>(query, "some_partition_key", None).unwrap();
+    /// # }
+    /// ```
+    ///
+    /// See [`PartitionKey`] for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
     fn query_items<T: DeserializeOwned + Send>(
         &self,
         query: impl Into<Query>,
