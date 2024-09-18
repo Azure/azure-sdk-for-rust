@@ -19,7 +19,7 @@ pub trait AzureOpenAIClientMethods: BaseOpenAIClientMethods {
     where
         Self: Sized;
 
-    fn with_key(
+    fn with_key_credential(
         endpoint: impl AsRef<str>,
         secret: impl Into<String>,
         client_options: Option<AzureOpenAIClientOptions>,
@@ -63,7 +63,7 @@ impl AzureOpenAIClientMethods for AzureOpenAIClient {
         })
     }
 
-    fn with_key(
+    fn with_key_credential(
         endpoint: impl AsRef<str>,
         secret: impl Into<String>,
         client_options: Option<AzureOpenAIClientOptions>,

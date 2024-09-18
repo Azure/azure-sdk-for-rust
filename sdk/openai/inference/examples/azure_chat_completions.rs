@@ -11,7 +11,7 @@ pub async fn main() -> Result<()> {
         std::env::var("AZURE_OPENAI_ENDPOINT").expect("Set AZURE_OPENAI_ENDPOINT env variable");
     let secret = std::env::var("AZURE_OPENAI_KEY").expect("Set AZURE_OPENAI_KEY env variable");
 
-    let chat_completions_client = AzureOpenAIClient::with_key(
+    let chat_completions_client = AzureOpenAIClient::with_key_credential(
         endpoint,
         secret,
         Some(

@@ -10,7 +10,8 @@ use std::io::{self, Write};
 async fn main() -> Result<()> {
     let secret = std::env::var("OPENAI_KEY").expect("Set OPENAI_KEY env variable");
 
-    let chat_completions_client = OpenAIClient::with_key(secret, None)?.chat_completions_client();
+    let chat_completions_client =
+        OpenAIClient::with_key_credential(secret, None)?.chat_completions_client();
 
     let chat_completions_request = CreateChatCompletionsRequest::new_stream_with_user_message(
         "gpt-3.5-turbo-1106",

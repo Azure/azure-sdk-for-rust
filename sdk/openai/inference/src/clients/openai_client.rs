@@ -7,7 +7,7 @@ use crate::{auth::OpenAIKeyCredential, OpenAIClientOptions};
 use super::{BaseOpenAIClientMethods, ChatCompletionsClient};
 
 pub trait OpenAIClientMethods {
-    fn with_key(
+    fn with_key_credential(
         secret: impl Into<String>,
         client_options: Option<OpenAIClientOptions>,
     ) -> Result<Self>
@@ -26,7 +26,7 @@ pub struct OpenAIClient {
 }
 
 impl OpenAIClientMethods for OpenAIClient {
-    fn with_key(
+    fn with_key_credential(
         secret: impl Into<String>,
         client_options: Option<OpenAIClientOptions>,
     ) -> Result<Self> {
