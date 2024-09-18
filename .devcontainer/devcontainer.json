@@ -2,7 +2,9 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/rust
 {
   "name": "Azure SDK for Rust",
-  "image": "mcr.microsoft.com/devcontainers/rust:1-1-bullseye",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
   "onCreateCommand": ".devcontainer/oncreate",
   "features": {
     "ghcr.io/devcontainers/features/azure-cli:1": {},
