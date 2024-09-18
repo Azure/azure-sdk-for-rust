@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use crate::auth::AzureKeyCredential;
+use crate::auth::{AzureKeyCredential, DEFAULT_SCOPE};
 
 use crate::options::AzureOpenAIClientOptions;
-use azure_core::auth::{self, TokenCredential, DEFAULT_SCOPE_SUFFIX};
+use azure_core::auth::TokenCredential;
 use azure_core::{self, Policy, Result};
 use azure_core::{BearerTokenCredentialPolicy, Url};
 
@@ -50,10 +50,7 @@ impl AzureOpenAIClientMethods for AzureOpenAIClient {
 
         let options = client_options.unwrap_or_default();
 
-        let auth_policy = Arc::new(BearerTokenCredentialPolicy::new(
-            credential,
-            crate::auth::DEFAULT_SCOPE,
-        ));
+        let auth_policy = Arc::new(BearerTokenCredentialPolicy::new(credential, DEFAULT_SCOPE));
         let version_policy: Arc<dyn Policy> = options.api_service_version.clone().into();
         let per_call_policies: Vec<Arc<dyn Policy>> = vec![auth_policy, version_policy];
 
