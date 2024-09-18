@@ -3,13 +3,22 @@ use std::sync::Arc;
 use crate::auth::AzureKeyCredential;
 
 use crate::options::AzureOpenAIClientOptions;
-use azure_core::Url;
+use azure_core::auth::{self, TokenCredential, DEFAULT_SCOPE_SUFFIX};
 use azure_core::{self, Policy, Result};
+use azure_core::{BearerTokenCredentialPolicy, Url};
 
 use super::chat_completions_client::ChatCompletionsClient;
 use super::BaseOpenAIClientMethods;
 
 pub trait AzureOpenAIClientMethods: BaseOpenAIClientMethods {
+    fn new(
+        endpoint: impl AsRef<str>,
+        credentials: Arc<dyn TokenCredential>,
+        client_options: Option<AzureOpenAIClientOptions>,
+    ) -> Result<Self>
+    where
+        Self: Sized;
+
     fn with_key(
         endpoint: impl AsRef<str>,
         secret: impl Into<String>,
@@ -32,6 +41,31 @@ pub struct AzureOpenAIClient {
 }
 
 impl AzureOpenAIClientMethods for AzureOpenAIClient {
+    fn new(
+        endpoint: impl AsRef<str>,
+        credential: Arc<dyn TokenCredential>,
+        client_options: Option<AzureOpenAIClientOptions>,
+    ) -> Result<Self> {
+        let endpoint = Url::parse(endpoint.as_ref())?;
+
+        let options = client_options.unwrap_or_default();
+
+        let auth_policy = Arc::new(BearerTokenCredentialPolicy::new(
+            credential,
+            crate::auth::DEFAULT_SCOPE,
+        ));
+        let version_policy: Arc<dyn Policy> = options.api_service_version.clone().into();
+        let per_call_policies: Vec<Arc<dyn Policy>> = vec![auth_policy, version_policy];
+
+        let pipeline = super::new_pipeline(per_call_policies, options.client_options.clone());
+
+        Ok(AzureOpenAIClient {
+            endpoint,
+            pipeline,
+            options,
+        })
+    }
+
     fn with_key(
         endpoint: impl AsRef<str>,
         secret: impl Into<String>,

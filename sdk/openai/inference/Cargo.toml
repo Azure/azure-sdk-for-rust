@@ -26,5 +26,6 @@ typespec_client_core = { workspace = true, features = ["derive"] }
 
 [dev-dependencies]
 azure_core = { workspace = true, features = ["reqwest"] }
+azure_identity = { workspace = true }
 reqwest = { workspace = true }
 tokio = { workspace = true }

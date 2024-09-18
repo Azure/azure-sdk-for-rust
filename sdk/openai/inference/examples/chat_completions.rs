@@ -20,9 +20,7 @@ pub async fn main() -> azure_core::Result<()> {
 
     match response {
         Ok(chat_completions_response) => {
-            let chat_completions = chat_completions_response
-                .deserialize_body()
-                .await?;
+            let chat_completions = chat_completions_response.deserialize_body().await?;
             println!("{:#?}", &chat_completions);
         }
         Err(e) => {

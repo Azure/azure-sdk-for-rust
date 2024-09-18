@@ -15,7 +15,7 @@ where
 
 pub(crate) fn string_chunks<'a>(
     response_body: (impl Stream<Item = Result<bytes::Bytes>> + Unpin + 'a),
-    stream_event_delimiter: &'a str, // figure out how to use it in the move
+    stream_event_delimiter: &'a str,
 ) -> impl Stream<Item = Result<String>> + 'a {
     let chunk_buffer = Vec::new();
     let stream = futures::stream::unfold(

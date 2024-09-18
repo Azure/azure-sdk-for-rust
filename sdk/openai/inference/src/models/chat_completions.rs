@@ -3,6 +3,7 @@ pub mod request {
     use serde::Serialize;
 
     #[derive(Serialize, Debug, Clone, Default)]
+    #[non_exhaustive]
     pub struct CreateChatCompletionsRequest {
         pub messages: Vec<ChatCompletionRequestMessage>,
         pub model: String,
@@ -15,6 +16,7 @@ pub mod request {
     }
 
     #[derive(Serialize, Debug, Clone, Default)]
+    #[non_exhaustive]
     pub struct ChatCompletionRequestMessageBase {
         #[serde(skip)]
         pub name: Option<String>,
@@ -22,6 +24,7 @@ pub mod request {
     }
 
     #[derive(Serialize, Debug, Clone)]
+    #[non_exhaustive]
     #[serde(tag = "role")]
     pub enum ChatCompletionRequestMessage {
         #[serde(rename = "system")]
@@ -74,16 +77,19 @@ pub mod response {
     use serde::Deserialize;
 
     #[derive(Debug, Clone, Deserialize, Model)]
+    #[non_exhaustive]
     pub struct CreateChatCompletionsResponse {
         pub choices: Vec<ChatCompletionChoice>,
     }
 
     #[derive(Debug, Clone, Deserialize)]
+    #[non_exhaustive]
     pub struct ChatCompletionChoice {
         pub message: ChatCompletionResponseMessage,
     }
 
     #[derive(Debug, Clone, Deserialize)]
+    #[non_exhaustive]
     pub struct ChatCompletionResponseMessage {
         pub content: Option<String>,
         pub role: String,
@@ -91,16 +97,19 @@ pub mod response {
 
     // region: --- Streaming
     #[derive(Debug, Clone, Deserialize)]
+    #[non_exhaustive]
     pub struct CreateChatCompletionsStreamResponse {
         pub choices: Vec<ChatCompletionStreamChoice>,
     }
 
     #[derive(Debug, Clone, Deserialize)]
+    #[non_exhaustive]
     pub struct ChatCompletionStreamChoice {
         pub delta: Option<ChatCompletionStreamResponseMessage>,
     }
 
     #[derive(Debug, Clone, Deserialize)]
+    #[non_exhaustive]
     pub struct ChatCompletionStreamResponseMessage {
         pub content: Option<String>,
         pub role: Option<String>,

@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use azure_core::Result;
+use azure_identity::DefaultAzureCredentialBuilder;
 use azure_openai_inference::{
     clients::{AzureOpenAIClient, AzureOpenAIClientMethods, ChatCompletionsClientMethods},
     request::CreateChatCompletionsRequest,
@@ -6,14 +9,13 @@ use azure_openai_inference::{
 };
 
 #[tokio::main]
-pub async fn main() -> Result<()> {
+async fn main() -> Result<()> {
     let endpoint =
         std::env::var("AZURE_OPENAI_ENDPOINT").expect("Set AZURE_OPENAI_ENDPOINT env variable");
-    let secret = std::env::var("AZURE_OPENAI_KEY").expect("Set AZURE_OPENAI_KEY env variable");
 
-    let chat_completions_client = AzureOpenAIClient::with_key(
+    let chat_completions_client = AzureOpenAIClient::new(
         endpoint,
-        secret,
+        Arc::new(DefaultAzureCredentialBuilder::new().build()?),
         Some(
             AzureOpenAIClientOptions::builder()
                 .with_api_version(AzureServiceVersion::V2023_12_01Preview)
@@ -40,5 +42,6 @@ pub async fn main() -> Result<()> {
             println!("Error: {}", e);
         }
     };
+
     Ok(())
 }
