@@ -10,7 +10,7 @@ use azure_core::{BearerTokenCredentialPolicy, Url};
 use super::chat_completions_client::ChatCompletionsClient;
 use super::BaseOpenAIClientMethods;
 
-pub trait AzureOpenAIClientMethods: BaseOpenAIClientMethods {
+pub trait AzureOpenAIClientMethods {
     fn new(
         endpoint: impl AsRef<str>,
         credentials: Arc<dyn TokenCredential>,
