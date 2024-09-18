@@ -8,7 +8,7 @@ use azure_core::{
     headers::{ACCEPT, CONTENT_TYPE},
     Context, Method, Response, Result,
 };
-use futures::{Stream, TryStreamExt};
+use futures::{Stream, StreamExt};
 
 pub trait ChatCompletionsClientMethods {
     #[allow(async_fn_in_trait)]
@@ -101,11 +101,11 @@ impl EventStreamer<CreateChatCompletionsStreamResponse> for ChatCompletionsStrea
         response_body: azure_core::ResponseBody,
     ) -> impl Stream<Item = Result<CreateChatCompletionsStreamResponse>> {
         let stream_event_delimiter = "\n\n";
-        // TODO: is there something like try_map_ok?
-        let stream = string_chunks(response_body, stream_event_delimiter).map_ok(|event| {
-            serde_json::from_str::<CreateChatCompletionsStreamResponse>(&event)
-                .expect("Deserialization failed")
-        });
-        stream
+
+        string_chunks(response_body, stream_event_delimiter).map(|event| match event {
+            Ok(event) => serde_json::from_str::<CreateChatCompletionsStreamResponse>(&event)
+                .map_err(|e| e.into()),
+            Err(e) => Err(e),
+        })
     }
 }
