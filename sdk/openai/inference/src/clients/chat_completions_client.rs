@@ -1,6 +1,6 @@
 use super::BaseOpenAIClientMethods;
 use crate::{
-    helpers::streaming::string_chunks,
+    helpers::streaming::{string_chunks, EventStreamer},
     request::CreateChatCompletionsRequest,
     response::{CreateChatCompletionsResponse, CreateChatCompletionsStreamResponse},
 };
@@ -90,49 +90,22 @@ impl ChatCompletionsClientMethods for ChatCompletionsClient {
             .await?
             .into_body();
 
-        // let stream_handler = ChatCompletionsStreamHandler::new("\n\n");
-
-        // let stream = stream_handler.event_stream(response_body);
-
-        let stream = string_chunks(response_body, "\n\n").map_ok(|event| {
-            // println!("EVENT AS A STRING: {:?}", &event);
-            serde_json::from_str::<CreateChatCompletionsStreamResponse>(&event)
-                .expect("Deserialization failed")
-            // CreateChatCompletionsStreamResponse { choices: vec![] }
-        });
-        return Ok(stream);
+        Ok(ChatCompletionsStreamHandler::event_stream(response_body))
     }
 }
 
-// struct ChatCompletionsStreamHandler {
-//     stream_event_delimiter: String,
-// }
-// impl ChatCompletionsStreamHandler {
-//     pub fn new(stream_event_delimiter: impl Into<String>) -> Self {
-//         let stream_event_delimiter = stream_event_delimiter.into();
-//         Self {
-//             stream_event_delimiter,
-//         }
-//     }
-// }
+struct ChatCompletionsStreamHandler;
 
-// impl EventStreamer<CreateChatCompletionsStreamResponse> for ChatCompletionsStreamHandler {
-//     fn delimiter(&self) -> impl AsRef<str> {
-//         self.stream_event_delimiter.as_str()
-//     }
-
-//     fn event_stream(
-//         &self,
-//         response_body: azure_core::ResponseBody,
-//     ) -> impl Stream<Item = Result<CreateChatCompletionsStreamResponse>> {
-//         // TODO: is there something like try_map_ok?
-//         let stream =
-//             string_chunks(response_body, self.stream_event_delimiter.as_str()).map_ok(|event| {
-//                 // println!("EVENT AS A STRING: {:?}", &event);
-//                 serde_json::from_str::<CreateChatCompletionsStreamResponse>(&event)
-//                     .expect("Deserialization failed")
-//                 // CreateChatCompletionsStreamResponse { choices: vec![] }
-//             });
-//         stream
-//     }
-// }
+impl EventStreamer<CreateChatCompletionsStreamResponse> for ChatCompletionsStreamHandler {
+    fn event_stream(
+        response_body: azure_core::ResponseBody,
+    ) -> impl Stream<Item = Result<CreateChatCompletionsStreamResponse>> {
+        let stream_event_delimiter = "\n\n";
+        // TODO: is there something like try_map_ok?
+        let stream = string_chunks(response_body, stream_event_delimiter).map_ok(|event| {
+            serde_json::from_str::<CreateChatCompletionsStreamResponse>(&event)
+                .expect("Deserialization failed")
+        });
+        stream
+    }
+}

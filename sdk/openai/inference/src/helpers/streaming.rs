@@ -5,12 +5,7 @@ pub trait EventStreamer<T>
 where
     T: serde::de::DeserializeOwned,
 {
-    fn delimiter(&self) -> impl AsRef<str>;
-
-    fn event_stream(
-        &self,
-        response_body: azure_core::ResponseBody,
-    ) -> impl Stream<Item = Result<T>>;
+    fn event_stream(response_body: azure_core::ResponseBody) -> impl Stream<Item = Result<T>>;
 }
 
 pub(crate) fn string_chunks<'a>(
@@ -26,8 +21,6 @@ pub(crate) fn string_chunks<'a>(
 
             if let Some(Ok(bytes)) = response_body.next().await {
                 chunk_buffer.extend_from_slice(&bytes);
-                // Looking for the next occurence of the event delimiter
-                // it's + 4 because the \n\n are escaped and represented as [92, 110, 92, 110]
                 if let Some(pos) = chunk_buffer
                     .windows(delimiter_len)
                     .position(|window| window == delimiter)
@@ -63,8 +56,6 @@ pub(crate) fn string_chunks<'a>(
             // We drain the buffer of any messages that may be left over.
             // The block above will be skipped, since response_body.next() will be None every time
             } else if !chunk_buffer.is_empty() {
-                // we need to verify if there are any event left in the buffer and emit them individually
-                // it's + 4 because the \n\n are escaped and represented as [92, 110, 92, 110]
                 if let Some(pos) = chunk_buffer
                     .windows(delimiter_len)
                     .position(|window| window == delimiter)
