@@ -1,6 +1,6 @@
 use azure_data_cosmos::{
     clients::{ContainerClientMethods, DatabaseClientMethods},
-    CosmosClient, CosmosClientMethods, PartitionKey, PartitionKeyValue,
+    CosmosClient, CosmosClientMethods,
 };
 use clap::Parser;
 use futures::StreamExt;

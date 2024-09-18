@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+/// Represents a Cosmos DB Query, with optional parameters.
 #[derive(Debug, Serialize)]
 pub struct Query {
     query: String,
@@ -7,7 +8,21 @@ pub struct Query {
 }
 
 impl Query {
-    pub fn with_parameter(self, name: impl Into<String>, value: impl Into<String>) -> Self {
+    /// Creates a new [`Query`] with the same text, and parameters, but with the specified parameter added.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use azure_data_cosmos::Query;
+    ///
+    /// let query = Query::from("SELECT * FROM c WHERE c.id = @customer_id")
+    ///     .with_parameter("customer_id", 42);
+    /// ```
+    pub fn with_parameter(
+        self,
+        name: impl Into<String>,
+        value: impl Into<serde_json::Value>,
+    ) -> Self {
         let parameter = QueryParameter {
             name: name.into(),
             value: value.into(),
@@ -31,7 +46,7 @@ impl<T: Into<String>> From<T> for Query {
 #[derive(Debug, Serialize)]
 pub struct QueryParameter {
     name: String,
-    value: String, // TODO: A parameter can be any JSON value. Should we use serde_json::Value or define a custom enum?
+    value: serde_json::Value,
 }
 
 #[cfg(test)]

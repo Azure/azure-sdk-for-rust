@@ -15,7 +15,6 @@ pub(crate) mod pipeline;
 mod query;
 pub(crate) mod utils;
 
-/// Model types sent to and received from the Cosmos DB API.
 pub mod models;
 
 pub use clients::{CosmosClient, CosmosClientMethods};

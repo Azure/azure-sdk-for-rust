@@ -1,3 +1,5 @@
+//! Model types sent to and received from the Cosmos DB API.
+
 use azure_core::{
     date::{ComponentRange, OffsetDateTime},
     Continuable, Model,
@@ -6,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(doc)]
 use crate::{
-    clients::{ContainerClient, DatabaseClientMethods},
+    clients::{ContainerClient, ContainerClientMethods, DatabaseClientMethods},
     CosmosClientMethods,
 };
 

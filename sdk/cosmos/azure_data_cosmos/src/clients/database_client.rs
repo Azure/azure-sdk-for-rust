@@ -1,8 +1,9 @@
 use crate::clients::ContainerClient;
 use crate::models::DatabaseProperties;
+use crate::options::ReadDatabaseOptions;
 use crate::pipeline::ResourceType;
 use crate::utils::WithAddedPathSegments;
-use crate::{CosmosClient, ReadDatabaseOptions};
+use crate::CosmosClient;
 
 use azure_core::{Context, Request};
 use url::Url;
@@ -43,7 +44,7 @@ pub trait DatabaseClientMethods {
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<azure_core::Response<DatabaseProperties>>;
 
-    /// Gets a [`CollectionClient`] that can be used to access the collection with the specified name.
+    /// Gets a [`ContainerClient`] that can be used to access the collection with the specified name.
     ///
     /// # Arguments
     /// * `name` - The name of the container.

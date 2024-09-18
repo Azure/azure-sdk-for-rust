@@ -1,18 +1,21 @@
+/// Specifies a partition key value, usually used when querying a specific partition.
 #[derive(Debug, Clone)]
-pub struct PartitionKey(Vec<PartitionKeyValue>); // TODO: A partition key can be any JSON value. Should we use serde_json::Value or define a custom enum?
+pub struct PartitionKey(Vec<PartitionKeyValue>);
 
 impl PartitionKey {
     pub(crate) fn into_header_value(self) -> azure_core::Result<String> {
-        // We're going to write our JSON manually, because we need to escape non-ASCII characters in strings, because we're putting this value in an HTTP header.
+        // We have to do some manual JSON serialization here.
+        // The partition key is sent in an HTTP header, when used to set the partition key for a query.
+        // It's not safe to use non-ASCII characters in HTTP headers, and serde_json will not escape non-ASCII characters if they are otherwise valid as UTF-8.
+        // So, we do some conversion by hand, with the help of Rust's own `encode_utf16` method which gives us the necessary code points for non-ASCII values, and produces surrogate pairs as needed.
+
         let mut json = String::new();
         let mut utf_buf = [0; 2]; // A buffer for encoding UTF-16 characters.
         json.push('[');
         for key in self.0 {
             match key.0 {
-                serde_json::Value::String(string_key) => {
-                    // We have to manually escape the string to ensure non-ASCII characters are escaped.
-                    // Rust's escape_default function escapes characters as \u{XXXXX} (allowing a full Unicode code point in the "{}").
-                    // However, JSON doesn't support that and requires encoding the UTF-16 code units separately using `\uXXXX`.
+                InnerPartitionKeyValue::Null => json.push_str("null"),
+                InnerPartitionKeyValue::String(string_key) => {
                     json.push('"');
                     for char in string_key.chars() {
                         match char {
@@ -34,8 +37,8 @@ impl PartitionKey {
                     }
                     json.push('"');
                 }
-                x => {
-                    json.push_str(serde_json::to_string(&x)?.as_str());
+                InnerPartitionKeyValue::Number(num) => {
+                    json.push_str(serde_json::to_string(&serde_json::Value::Number(num))?.as_str());
                 }
             }
 
@@ -50,53 +53,98 @@ impl PartitionKey {
     }
 }
 
+/// Represents a value for a single partition key.
 #[derive(Debug, Clone)]
-pub struct PartitionKeyValue(serde_json::Value);
+pub struct PartitionKeyValue(InnerPartitionKeyValue);
 
 impl PartitionKeyValue {
-    pub const NULL: PartitionKeyValue = PartitionKeyValue(serde_json::Value::Null);
+    /// A value that represents a 'null' partition key.
+    pub const NULL: PartitionKeyValue = PartitionKeyValue(InnerPartitionKeyValue::Null);
 }
 
-pub struct NullPartitionKey;
+// We don't want to expose the implementation details of PartitionKeyValue (specifically the use of serde_json::Number), so we use this inner private enum to store the data.
+#[derive(Debug, Clone)]
+enum InnerPartitionKeyValue {
+    Null,
+    String(String),
+    Number(serde_json::Number), // serde_json::Number has special integer handling, so we'll use that.
+}
 
-impl From<NullPartitionKey> for PartitionKeyValue {
-    fn from(_: NullPartitionKey) -> Self {
-        PartitionKeyValue(serde_json::Value::Null)
+impl From<InnerPartitionKeyValue> for PartitionKeyValue {
+    fn from(value: InnerPartitionKeyValue) -> Self {
+        PartitionKeyValue(value)
     }
 }
 
-macro_rules! impl_from_json {
+impl From<&str> for PartitionKeyValue {
+    fn from(value: &str) -> Self {
+        InnerPartitionKeyValue::String(value.into()).into()
+    }
+}
+
+impl From<String> for PartitionKeyValue {
+    fn from(value: String) -> Self {
+        InnerPartitionKeyValue::String(value).into()
+    }
+}
+
+macro_rules! impl_from_number {
     ($source_type: ty) => {
         impl From<$source_type> for PartitionKeyValue {
             fn from(value: $source_type) -> Self {
-                PartitionKeyValue(serde_json::Value::from(value))
+                InnerPartitionKeyValue::Number(serde_json::Number::from(value)).into()
             }
         }
     };
 }
 
-impl_from_json!(&str);
-impl_from_json!(String);
-impl_from_json!(bool);
-impl_from_json!(f32);
-impl_from_json!(f64);
-impl_from_json!(i16);
-impl_from_json!(i32);
-impl_from_json!(i64);
-impl_from_json!(i8);
-impl_from_json!(isize);
-impl_from_json!(u16);
-impl_from_json!(u32);
-impl_from_json!(u64);
-impl_from_json!(u8);
-impl_from_json!(usize);
-impl_from_json!(serde_json::Value);
+impl_from_number!(i16);
+impl_from_number!(i32);
+impl_from_number!(i64);
+impl_from_number!(i8);
+impl_from_number!(isize);
+impl_from_number!(u16);
+impl_from_number!(u32);
+impl_from_number!(u64);
+impl_from_number!(u8);
+impl_from_number!(usize);
+
+impl From<f32> for PartitionKeyValue {
+    /// Creates a [`PartitionKeyValue`] from an `f32`.
+    ///
+    /// WARNING: This extends the precision of the value from `f32` to `f64`.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if given an Infinite or NaN value.
+    fn from(value: f32) -> Self {
+        InnerPartitionKeyValue::Number(
+            serde_json::Number::from_f64(value as f64)
+                .expect("value should be a non-infinite number"),
+        )
+        .into()
+    }
+}
+
+impl From<f64> for PartitionKeyValue {
+    /// Creates a [`PartitionKeyValue`] from an `f64`.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if given an Infinite or NaN value.
+    fn from(value: f64) -> Self {
+        InnerPartitionKeyValue::Number(
+            serde_json::Number::from_f64(value).expect("value should be a non-infinite number"),
+        )
+        .into()
+    }
+}
 
 impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
     fn from(value: Option<T>) -> Self {
         match value {
             Some(t) => t.into(),
-            None => PartitionKeyValue(serde_json::Value::Null),
+            None => InnerPartitionKeyValue::Null.into(),
         }
     }
 }
@@ -136,7 +184,7 @@ impl_from_tuple!(0 A 1 B 2 C 3 D 4 E 5 F 6 G 7 H);
 
 #[cfg(test)]
 mod tests {
-    use crate::{NullPartitionKey, PartitionKey, PartitionKeyValue};
+    use crate::{PartitionKey, PartitionKeyValue};
 
     fn key_to_string(v: impl Into<PartitionKey>) -> String {
         v.into().into_header_value().unwrap()
@@ -178,24 +226,8 @@ mod tests {
     }
 
     #[test]
-    pub fn serde_json_values() {
-        assert_eq!(
-            key_to_string(serde_json::Value::String("my_partition_key".into())),
-            r#"["my_partition_key"]"#
-        );
-        assert_eq!(
-            key_to_string(serde_json::Value::Number(
-                serde_json::Number::from_f64(4.2).unwrap()
-            )),
-            r#"[4.2]"#
-        );
-        assert_eq!(key_to_string(serde_json::Value::Null), r#"[null]"#);
-    }
-
-    #[test]
     pub fn null_value() {
         assert_eq!(key_to_string(PartitionKeyValue::NULL), r#"[null]"#);
-        assert_eq!(key_to_string(NullPartitionKey), r#"[null]"#);
     }
 
     #[test]

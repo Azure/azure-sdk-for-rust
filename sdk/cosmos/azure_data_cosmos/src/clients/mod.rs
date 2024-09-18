@@ -1,3 +1,5 @@
+//! Clients used to communicate with Azure Cosmos DB
+
 mod container_client;
 mod cosmos_client;
 mod database_client;

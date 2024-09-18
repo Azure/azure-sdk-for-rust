@@ -1,9 +1,10 @@
 use crate::{
     constants,
     models::{ContainerProperties, QueryResults},
+    options::{QueryOptions, ReadContainerOptions},
     pipeline::ResourceType,
     utils::WithAddedPathSegments,
-    CosmosClient, PartitionKey, Query, QueryItemsOptions, ReadContainerOptions,
+    CosmosClient, PartitionKey, Query,
 };
 
 use azure_core::{headers::HeaderValue, Context, Request};
@@ -57,13 +58,13 @@ pub trait ContainerClientMethods {
         &self,
         query: impl Into<Query>,
         partition_key: impl Into<PartitionKey>,
-        options: Option<QueryItemsOptions>,
+        options: Option<QueryOptions>,
     ) -> azure_core::Result<azure_core::Pageable<QueryResults<T>, azure_core::Error>>;
 }
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
-/// You can get a `Container` by calling [`DatabaseClient::container_client()`](DatabaseClient::container_client()).
+/// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 pub struct ContainerClient {
     base_url: Url,
     root_client: CosmosClient,
@@ -102,7 +103,7 @@ impl ContainerClientMethods for ContainerClient {
 
         #[allow(unused_variables)]
         // This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<QueryItemsOptions>,
+        options: Option<QueryOptions>,
     ) -> azure_core::Result<azure_core::Pageable<QueryResults<T>, azure_core::Error>> {
         // Represents the raw response model from the server.
         // We'll use this to deserialize the response body and then convert it to a more user-friendly model.
