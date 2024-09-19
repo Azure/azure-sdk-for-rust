@@ -14,11 +14,11 @@ use crate::NullValue;
 /// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
 /// # let db_client = client.database_client("my_database");
 /// # let container_client = db_client.container_client("my_container");
-/// container_client.query_items(
+/// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
 ///     "a single string partition key",
 ///     None).unwrap();
-/// container_client.query_items(
+/// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
 ///     42, // A numeric partition key
 ///     None).unwrap();
@@ -32,9 +32,9 @@ use crate::NullValue;
 /// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
 /// # let db_client = client.database_client("my_database");
 /// # let container_client = db_client.container_client("my_container");
-/// container_client.query_items(
+/// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
-///     ("parent", "child")
+///     ("parent", "child"),
 ///     None).unwrap();
 /// ```
 ///
@@ -47,11 +47,11 @@ use crate::NullValue;
 /// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
 /// # let db_client = client.database_client("my_database");
 /// # let container_client = db_client.container_client("my_container");
-/// container_client.query_items(
+/// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
 ///     NullValue, // A null value in a single-level partition key.
 ///     None).unwrap();
-/// container_client.query_items(
+/// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
 ///     ("a", NullValue, "b"), // A null value within a hierarchical partition key.
 ///     None).unwrap();
@@ -66,7 +66,7 @@ use crate::NullValue;
 /// # let db_client = client.database_client("my_database");
 /// # let container_client = db_client.container_client("my_container");
 /// let my_partition_key: Option<String> = None;
-/// container_client.query_items(
+/// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
 ///     my_partition_key,
 ///     None).unwrap();
