@@ -13,7 +13,7 @@ use super::{
     session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
-use azure_core::{authentication::AccessToken, error::Result};
+use azure_core::{credentials::AccessToken, error::Result};
 
 #[derive(Debug, Default)]
 pub(crate) struct NoopAmqpConnection {}
