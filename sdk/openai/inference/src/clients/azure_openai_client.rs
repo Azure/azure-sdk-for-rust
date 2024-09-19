@@ -10,38 +10,53 @@ use azure_core::{BearerTokenCredentialPolicy, Url};
 use super::chat_completions_client::ChatCompletionsClient;
 use super::BaseOpenAIClientMethods;
 
+/// Defines the methods provided by a [`AzureOpenAIClient`] and can be used for mocking.
 pub trait AzureOpenAIClientMethods {
-    fn new(
-        endpoint: impl AsRef<str>,
-        credentials: Arc<dyn TokenCredential>,
-        client_options: Option<AzureOpenAIClientOptions>,
-    ) -> Result<Self>
-    where
-        Self: Sized;
-
-    fn with_key_credential(
-        endpoint: impl AsRef<str>,
-        secret: impl Into<String>,
-        client_options: Option<AzureOpenAIClientOptions>,
-    ) -> Result<Self>
-    where
-        Self: Sized;
-
+    /// Returns the endpoint [`Url`] of the client.
     fn endpoint(&self) -> &Url;
 
+    /// Returns a new instance of the [`ChatCompletionsClient`].
     fn chat_completions_client(&self) -> ChatCompletionsClient;
 }
 
+/// An Azure OpenAI client.
 #[derive(Debug, Clone)]
 pub struct AzureOpenAIClient {
+    /// The Azure resource endpoint
     endpoint: Url,
+
+    /// The pipeline for sending requests to the service.
     pipeline: azure_core::Pipeline,
+
+    /// The options for the client.
     #[allow(dead_code)]
     options: AzureOpenAIClientOptions,
 }
 
-impl AzureOpenAIClientMethods for AzureOpenAIClient {
-    fn new(
+impl AzureOpenAIClient {
+    /// Creates a new [`AzureOpenAIClient`] using a [`TokenCredential`].
+    /// See the following example for Azure Active Directory authentication:
+    ///
+    /// # Parameters
+    /// * `endpoint` - The full URL of the Azure OpenAI resource endpoint.
+    /// * `credential` - An implementation of [`TokenCredential`] used for authentication.
+    /// * `client_options` - Optional configuration for the client. The [`AzureServiceVersion`](crate::options::AzureServiceVersion) can be provided here.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_openai_inference::clients::{AzureOpenAIClient, AzureOpenAIClientMethods};
+    /// use azure_identity::DefaultAzureCredentialBuilder;
+    /// use std::sync::Arc;
+    ///
+    /// let endpoint = std::env::var("AZURE_OPENAI_ENDPOINT").expect("Set AZURE_OPENAI_ENDPOINT environment variable");
+    /// let client = AzureOpenAIClient::new(
+    ///     endpoint,
+    ///     Arc::new(DefaultAzureCredentialBuilder::new().build().unwrap()),
+    ///     None,
+    /// ).unwrap();
+    /// ```
+    pub fn new(
         endpoint: impl AsRef<str>,
         credential: Arc<dyn TokenCredential>,
         client_options: Option<AzureOpenAIClientOptions>,
@@ -63,7 +78,26 @@ impl AzureOpenAIClientMethods for AzureOpenAIClient {
         })
     }
 
-    fn with_key_credential(
+    /// Creates a new [`AzureOpenAIClient`] using a key credential
+    ///
+    /// # Parameters
+    /// * `endpoint` - The full URL of the Azure OpenAI resource endpoint.
+    /// * `secret` - The key creadential used for authentication. Passed as header parameter in the request.
+    /// * `client_options` - Optional configuration for the client. The [`AzureServiceVersion`](crate::options::AzureServiceVersion) can be provided here.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use azure_openai_inference::clients::{AzureOpenAIClient, AzureOpenAIClientMethods};
+    ///
+    /// let endpoint = std::env::var("AZURE_OPENAI_ENDPOINT").expect("Set AZURE_OPENAI_ENDPOINT environment variable");
+    /// let secret = std::env::var("AZURE_OPENAI_KEY").expect("Set AZURE_OPENAI_KEY environment variable");
+    /// let client = AzureOpenAIClient::with_key_credential(
+    ///     endpoint,
+    ///     secret,
+    ///     None,
+    /// ).unwrap();
+    /// ```
+    pub fn with_key_credential(
         endpoint: impl AsRef<str>,
         secret: impl Into<String>,
         client_options: Option<AzureOpenAIClientOptions>,
@@ -84,11 +118,16 @@ impl AzureOpenAIClientMethods for AzureOpenAIClient {
             options,
         })
     }
+}
 
+impl AzureOpenAIClientMethods for AzureOpenAIClient {
+
+    /// Returns the endpoint [`Url`] of the client.
     fn endpoint(&self) -> &Url {
         &self.endpoint
     }
 
+    /// Returns a new instance of the [`ChatCompletionsClient`] using an [`AzureOpenAIClient`] underneath.
     fn chat_completions_client(&self) -> ChatCompletionsClient {
         ChatCompletionsClient::new(Box::new(self.clone()))
     }

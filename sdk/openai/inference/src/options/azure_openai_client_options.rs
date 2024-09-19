@@ -6,6 +6,7 @@ use crate::AzureServiceVersion;
 // TODO: I was not  able to  find ClientOptions as a derive macros
 #[derive(Clone, Debug, Default)]
 pub struct AzureOpenAIClientOptions {
+    #[allow(dead_code)]
     pub(crate) client_options: ClientOptions,
     pub(crate) api_service_version: AzureServiceVersion,
 }
