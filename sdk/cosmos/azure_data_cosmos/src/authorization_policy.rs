@@ -267,7 +267,7 @@ fn string_to_sign(signature_target: SignatureTarget) -> String {
 #[cfg(test)]
 mod tests {
     #[cfg(feature = "key_auth")]
-    use azure_core::auth::AccessToken;
+    use azure_core::authentication::AccessToken;
 
     use super::*;
 
