@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Defines Cosmos DB's unique Authentication Policy.
 //!
 //! The Cosmos DB data plane doesn't use a standard `Authorization: Bearer` header for authentication.

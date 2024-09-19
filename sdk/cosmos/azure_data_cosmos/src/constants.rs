@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 // Don't spell-check header names (which should start with 'x-').
 // cSpell:ignoreRegExp /x-[^\s]+/
 

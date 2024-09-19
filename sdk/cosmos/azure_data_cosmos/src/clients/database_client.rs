@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use crate::clients::ContainerClient;
 use crate::models::DatabaseProperties;
 use crate::options::ReadDatabaseOptions;

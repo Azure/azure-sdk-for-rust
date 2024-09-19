@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //! Model types sent to and received from the Cosmos DB API.
 
 use azure_core::{

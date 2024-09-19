@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_core::{builders::ClientOptionsBuilder, ClientOptions};
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).

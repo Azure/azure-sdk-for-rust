@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #![doc = include_str!("../README.md")]
 // Docs.rs build is done with the nightly compiler, so we can enable nightly features in that build.
 // In this case we enable two features:

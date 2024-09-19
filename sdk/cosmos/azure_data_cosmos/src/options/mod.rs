@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 mod cosmos_client_options;
 mod query_items_options;
 mod read_container_options;

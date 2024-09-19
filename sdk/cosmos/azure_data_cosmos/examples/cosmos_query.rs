@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_data_cosmos::{
     clients::{ContainerClientMethods, DatabaseClientMethods},
     CosmosClient, CosmosClientMethods,
