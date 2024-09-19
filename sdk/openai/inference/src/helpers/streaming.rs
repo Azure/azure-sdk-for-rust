@@ -83,8 +83,8 @@ pub(crate) fn string_chunks<'a>(
         },
     );
 
-    // We filter errors, we should specifically target the error type yielded when we are not able to find an event in a chunk
-    // Specifically the Error::with_messagge(ErrorKind::DataConversion, || "Incomplete chunk")
+    // We specifically allow the Error::with_messagge(ErrorKind::DataConversion, || "Incomplete chunk")
+    // So that we are able to continue pushing bytes to the buffer until we find the next delimiter
     return stream.filter(|it| {
         std::future::ready(
             it.is_ok()
