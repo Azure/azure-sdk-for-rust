@@ -6,18 +6,12 @@ use crate::{auth::OpenAIKeyCredential, OpenAIClientOptions};
 
 use super::{BaseOpenAIClientMethods, ChatCompletionsClient};
 
+/// Defines the methods provided by a [`OpenAIClient`] and can be used for mocking.
 pub trait OpenAIClientMethods {
-    fn with_key_credential(
-        secret: impl Into<String>,
-        client_options: Option<OpenAIClientOptions>,
-    ) -> Result<Self>
-    where
-        Self: Sized;
-
     fn chat_completions_client(&self) -> ChatCompletionsClient;
 }
 
-/// A client that can be used to interact with the OpenAI API.
+/// An OpenAI client.
 #[derive(Debug, Clone)]
 pub struct OpenAIClient {
     base_url: Url,
@@ -26,8 +20,21 @@ pub struct OpenAIClient {
     options: OpenAIClientOptions,
 }
 
-impl OpenAIClientMethods for OpenAIClient {
-    fn with_key_credential(
+impl OpenAIClient {
+    /// Creates a new [`OpenAIClient`] using a secret key.
+    ///
+    /// # Parameters
+    /// * `secret` - The key credential used for authentication.
+    /// * `client_options` - Optional configuration for the client. Reserved for future used, currently can always be `None`.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use azure_openai_inference::clients::{OpenAIClient, OpenAIClientMethods};
+    ///
+    /// let secret = std::env::var("OPENAI_KEY").expect("Set OPENAI_KEY env variable");
+    /// let client = OpenAIClient::with_key_credential(secret, None).unwrap();
+    /// ```
+    pub fn with_key_credential(
         secret: impl Into<String>,
         client_options: Option<OpenAIClientOptions>,
     ) -> Result<Self> {
@@ -43,7 +50,9 @@ impl OpenAIClientMethods for OpenAIClient {
             options,
         })
     }
+}
 
+impl OpenAIClientMethods for OpenAIClient {
     fn chat_completions_client(&self) -> ChatCompletionsClient {
         ChatCompletionsClient::new(Box::new(self.clone()))
     }

@@ -8,9 +8,16 @@ pub use azure_openai_client::{AzureOpenAIClient, AzureOpenAIClientMethods};
 pub use chat_completions_client::{ChatCompletionsClient, ChatCompletionsClientMethods};
 pub use openai_client::{OpenAIClient, OpenAIClientMethods};
 
+/// A trait that defines the common behaviour expected from an [`OpenAIClient`] and an [`AzureOpenAIClient`].
+/// This trait will be used as a boxed types for any clients such as [`ChatCompletionsClient`] so they issue HTTP requests.
 trait BaseOpenAIClientMethods {
+    /// Returns the base [`Url`] of the underlying client.
+    ///
+    /// # Arguments
+    /// * `deployment_name` - The name of the deployment in Azure. In an [`OpenAIClient`] this parameter is ignored.
     fn base_url(&self, deployment_name: Option<&str>) -> azure_core::Result<azure_core::Url>;
 
+    /// Returns the [`azure_core::Pipeline`] of the underlying client.
     fn pipeline(&self) -> &azure_core::Pipeline;
 }
 
