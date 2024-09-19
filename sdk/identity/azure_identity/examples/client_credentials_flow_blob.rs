@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{authentication::TokenCredential, date, new_http_client, Url};
+use azure_core::{credentials::TokenCredential, date, new_http_client, Url};
 use azure_identity::ClientSecretCredential;
 use std::{
     env::{args, var},

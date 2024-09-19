@@ -1,12 +1,12 @@
 use crate::authorization_policy::AuthorizationPolicy;
 use crate::clients::DatabaseClient;
 use crate::CosmosClientOptions;
-use azure_core::authentication::TokenCredential;
+use azure_core::credentials::TokenCredential;
 use azure_core::{Pipeline, Url};
 use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
-use azure_core::authentication::Secret;
+use azure_core::credentials::Secret;
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]

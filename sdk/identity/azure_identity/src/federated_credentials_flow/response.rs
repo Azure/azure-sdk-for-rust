@@ -3,7 +3,7 @@
 
 #![allow(dead_code)]
 
-use azure_core::authentication::Secret;
+use azure_core::credentials::Secret;
 use serde::{Deserialize, Deserializer};
 use time::OffsetDateTime;
 use typespec_client_core::Model;

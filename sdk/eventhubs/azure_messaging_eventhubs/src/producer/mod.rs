@@ -22,7 +22,7 @@ use crate::{
 use async_std::sync::Mutex;
 use azure_core::RetryOptions;
 use azure_core::{
-    authentication::AccessToken,
+    credentials::AccessToken,
     error::{Error, Result},
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
@@ -86,7 +86,7 @@ pub struct ProducerClient {
     sender_instances: Mutex<HashMap<String, SenderInstance>>,
     mgmt_client: Mutex<OnceLock<ManagementInstance>>,
     connection: OnceLock<AmqpConnection>,
-    credential: Box<dyn azure_core::authentication::TokenCredential>,
+    credential: Box<dyn azure_core::credentials::TokenCredential>,
     eventhub: String,
     url: String,
     authorization_scopes: Mutex<HashMap<String, AccessToken>>,
@@ -108,7 +108,7 @@ impl ProducerClient {
     pub fn new(
         fully_qualified_namespace: impl Into<String>,
         eventhub: impl Into<String>,
-        credential: impl azure_core::authentication::TokenCredential + 'static,
+        credential: impl azure_core::credentials::TokenCredential + 'static,
         options: ProducerClientOptions,
     ) -> Self {
         let eventhub: String = eventhub.into();

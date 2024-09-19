@@ -3,7 +3,7 @@
 
 use crate::{credentials::cache::TokenCache, federated_credentials_flow, TokenCredentialOptions};
 use azure_core::{
-    authentication::{AccessToken, Secret, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential},
     error::{ErrorKind, ResultExt},
     Error, HttpClient, Url,
 };

@@ -11,7 +11,7 @@ use crate::{
     TokenCredentialOptions, VirtualMachineManagedIdentityCredential, WorkloadIdentityCredential,
 };
 use azure_core::{
-    authentication::{AccessToken, TokenCredential},
+    credentials::{AccessToken, TokenCredential},
     error::{ErrorKind, ResultExt},
     Error,
 };

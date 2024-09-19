@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::authentication::TokenCredential;
+use azure_core::credentials::TokenCredential;
 use azure_identity::*;
 use std::{env::var, error::Error};
 use url::Url;

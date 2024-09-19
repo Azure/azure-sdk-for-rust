@@ -4,7 +4,7 @@
 //! Instead, it uses a custom header format, as defined in the [official documentation](https://docs.microsoft.com/en-us/rest/api/cosmos-db/access-control-on-cosmosdb-resources).
 //! We implement that policy here, because we can't use any standard Azure SDK authentication policy.
 
-use azure_core::authentication::TokenCredential;
+use azure_core::credentials::TokenCredential;
 use azure_core::date::OffsetDateTime;
 use azure_core::{
     date,
@@ -16,7 +16,7 @@ use tracing::trace;
 use url::form_urlencoded;
 
 #[cfg(feature = "key_auth")]
-use azure_core::{authentication::Secret, hmac::hmac_sha256};
+use azure_core::{credentials::Secret, hmac::hmac_sha256};
 
 const AZURE_VERSION: &str = "2018-12-31";
 const VERSION_NUMBER: &str = "1.0";
@@ -267,7 +267,7 @@ fn string_to_sign(signature_target: SignatureTarget) -> String {
 #[cfg(test)]
 mod tests {
     #[cfg(feature = "key_auth")]
-    use azure_core::authentication::AccessToken;
+    use azure_core::credentials::AccessToken;
 
     use super::*;
 

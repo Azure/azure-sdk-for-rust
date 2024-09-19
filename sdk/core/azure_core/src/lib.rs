@@ -25,7 +25,7 @@ mod options;
 mod pipeline;
 mod policies;
 
-pub mod authentication;
+pub mod credentials;
 pub mod headers;
 pub mod lro;
 pub mod request_options;

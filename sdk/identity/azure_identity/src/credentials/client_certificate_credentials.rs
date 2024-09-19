@@ -3,8 +3,8 @@
 
 use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
-    authentication::{AccessToken, Secret, TokenCredential},
     base64, content_type,
+    credentials::{AccessToken, Secret, TokenCredential},
     error::{http_response_from_body, Error, ErrorKind, ResultExt},
     headers, HttpClient, Method, Request, Url, Uuid,
 };

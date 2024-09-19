@@ -7,7 +7,7 @@ use crate::credentials::{
     ClientSecretCredential, TokenCredentialOptions, WorkloadIdentityCredential,
 };
 use azure_core::{
-    authentication::{AccessToken, TokenCredential},
+    credentials::{AccessToken, TokenCredential},
     error::{Error, ErrorKind},
 };
 

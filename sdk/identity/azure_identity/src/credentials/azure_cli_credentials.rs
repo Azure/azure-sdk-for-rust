@@ -4,7 +4,7 @@
 use crate::credentials::cache::TokenCache;
 use async_process::Command;
 use azure_core::{
-    authentication::{AccessToken, Secret, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
     json::from_json,
 };

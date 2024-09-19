@@ -8,7 +8,7 @@ use crate::{
     EnvironmentCredential, ImdsId, TokenCredentialOptions, VirtualMachineManagedIdentityCredential,
 };
 use azure_core::{
-    authentication::{AccessToken, TokenCredential},
+    credentials::{AccessToken, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
 };
 use std::{sync::Arc, time::Duration};

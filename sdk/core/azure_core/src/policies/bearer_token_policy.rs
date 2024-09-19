@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    authentication::TokenCredential,
+    credentials::TokenCredential,
     headers::AUTHORIZATION,
     policies::{Policy, PolicyResult},
     Context, Request,

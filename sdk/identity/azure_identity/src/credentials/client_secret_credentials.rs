@@ -5,7 +5,7 @@ use crate::credentials::cache::TokenCache;
 use crate::{oauth2_http_client::Oauth2HttpClient, TokenCredentialOptions};
 use azure_core::Error;
 use azure_core::{
-    authentication::{AccessToken, Secret, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential},
     error::{ErrorKind, ResultExt},
     HttpClient, Url,
 };
