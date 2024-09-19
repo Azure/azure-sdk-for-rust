@@ -17,6 +17,7 @@ pub trait OpenAIClientMethods {
     fn chat_completions_client(&self) -> ChatCompletionsClient;
 }
 
+/// A client that can be used to interact with the OpenAI API.
 #[derive(Debug, Clone)]
 pub struct OpenAIClient {
     base_url: Url,

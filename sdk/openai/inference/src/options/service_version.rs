@@ -3,6 +3,10 @@ use std::sync::Arc;
 
 use azure_core::{Context, Policy, PolicyResult, Request};
 
+/// The version of the Azure service to use.
+/// This enum is passed to the [`AzureOpenAIClientOptionsBuilder`](crate::builders::AzureOpenAIClientOptionsBuilder) to configure an [`AzureOpenAIClient`](crate::clients::AzureOpenAIClient) to specify the version of the service to use.
+///
+/// If no version is specified, the latest version will be used. See [`AzureServiceVersion::get_latest()`](AzureServiceVersion::get_latest).
 #[derive(Debug, Clone)]
 pub enum AzureServiceVersion {
     V2023_09_01Preview,
@@ -17,6 +21,7 @@ impl Default for AzureServiceVersion {
 }
 
 impl AzureServiceVersion {
+    /// Returns the latest supported version of the Azure OpenAI service.
     pub fn get_latest() -> AzureServiceVersion {
         AzureServiceVersion::V2024_07_01Preview
     }
