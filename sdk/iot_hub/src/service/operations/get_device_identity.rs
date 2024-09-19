@@ -17,7 +17,7 @@ impl DeviceIdentityBuilder {
                 self.client.iot_hub_name, self.device_id, API_VERSION
             );
 
-            let mut request = self.client.finalize_request(&url, Method::Get)?;
+            let mut request = self.client.finalize_request(&url, Method::GET)?;
             request.set_body(azure_core::EMPTY_BODY);
 
             self.client

@@ -52,7 +52,7 @@ impl QueryDocumentsBuilder {
                         this.client.database_client().database_name(),
                         this.client.collection_name()
                     ),
-                    Method::Post,
+                    Method::POST,
                 );
 
                 // signal that this is a query

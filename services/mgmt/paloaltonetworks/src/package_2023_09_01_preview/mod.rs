@@ -397,7 +397,7 @@ pub mod global_rulestack {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -412,7 +412,7 @@ pub mod global_rulestack {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -421,7 +421,7 @@ pub mod global_rulestack {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -510,7 +510,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -610,7 +610,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -662,7 +662,7 @@ pub mod global_rulestack {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -678,7 +678,7 @@ pub mod global_rulestack {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -767,7 +767,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PATCH);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -862,7 +862,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -944,7 +944,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -1033,7 +1033,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -1145,7 +1145,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(skip) = &this.skip {
@@ -1274,7 +1274,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(app_id_version) = &this.app_id_version {
@@ -1397,7 +1397,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(skip) = &this.skip {
@@ -1504,7 +1504,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -1615,7 +1615,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(skip) = &this.skip {
@@ -1733,7 +1733,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(skip) = &this.skip {
@@ -1837,7 +1837,7 @@ pub mod global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -1991,7 +1991,7 @@ pub mod certificate_object_global_rulestack {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -2006,7 +2006,7 @@ pub mod certificate_object_global_rulestack {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -2015,7 +2015,7 @@ pub mod certificate_object_global_rulestack {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -2106,7 +2106,7 @@ pub mod certificate_object_global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -2208,7 +2208,7 @@ pub mod certificate_object_global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -2261,7 +2261,7 @@ pub mod certificate_object_global_rulestack {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -2277,7 +2277,7 @@ pub mod certificate_object_global_rulestack {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -2360,7 +2360,7 @@ pub mod certificate_object_global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -2512,7 +2512,7 @@ pub mod fqdn_list_global_rulestack {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -2527,7 +2527,7 @@ pub mod fqdn_list_global_rulestack {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -2536,7 +2536,7 @@ pub mod fqdn_list_global_rulestack {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -2627,7 +2627,7 @@ pub mod fqdn_list_global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -2729,7 +2729,7 @@ pub mod fqdn_list_global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -2782,7 +2782,7 @@ pub mod fqdn_list_global_rulestack {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -2798,7 +2798,7 @@ pub mod fqdn_list_global_rulestack {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -2881,7 +2881,7 @@ pub mod fqdn_list_global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -3080,7 +3080,7 @@ pub mod post_rules {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -3095,7 +3095,7 @@ pub mod post_rules {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -3104,7 +3104,7 @@ pub mod post_rules {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -3195,7 +3195,7 @@ pub mod post_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -3297,7 +3297,7 @@ pub mod post_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -3350,7 +3350,7 @@ pub mod post_rules {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -3366,7 +3366,7 @@ pub mod post_rules {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -3449,7 +3449,7 @@ pub mod post_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -3544,7 +3544,7 @@ pub mod post_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(firewall_name) = &this.firewall_name {
@@ -3650,7 +3650,7 @@ pub mod post_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(firewall_name) = &this.firewall_name {
@@ -3749,7 +3749,7 @@ pub mod post_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(firewall_name) = &this.firewall_name {
@@ -3919,7 +3919,7 @@ pub mod prefix_list_global_rulestack {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -3934,7 +3934,7 @@ pub mod prefix_list_global_rulestack {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -3943,7 +3943,7 @@ pub mod prefix_list_global_rulestack {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -4034,7 +4034,7 @@ pub mod prefix_list_global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -4136,7 +4136,7 @@ pub mod prefix_list_global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -4189,7 +4189,7 @@ pub mod prefix_list_global_rulestack {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -4205,7 +4205,7 @@ pub mod prefix_list_global_rulestack {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -4288,7 +4288,7 @@ pub mod prefix_list_global_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -4487,7 +4487,7 @@ pub mod pre_rules {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -4502,7 +4502,7 @@ pub mod pre_rules {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -4511,7 +4511,7 @@ pub mod pre_rules {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -4602,7 +4602,7 @@ pub mod pre_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -4704,7 +4704,7 @@ pub mod pre_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -4757,7 +4757,7 @@ pub mod pre_rules {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -4773,7 +4773,7 @@ pub mod pre_rules {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -4856,7 +4856,7 @@ pub mod pre_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -4951,7 +4951,7 @@ pub mod pre_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(firewall_name) = &this.firewall_name {
@@ -5057,7 +5057,7 @@ pub mod pre_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(firewall_name) = &this.firewall_name {
@@ -5156,7 +5156,7 @@ pub mod pre_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(firewall_name) = &this.firewall_name {
@@ -5274,7 +5274,7 @@ pub mod operations {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -5289,7 +5289,7 @@ pub mod operations {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -5298,7 +5298,7 @@ pub mod operations {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -5583,7 +5583,7 @@ pub mod firewalls {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -5598,7 +5598,7 @@ pub mod firewalls {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -5607,7 +5607,7 @@ pub mod firewalls {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -5698,7 +5698,7 @@ pub mod firewalls {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -5713,7 +5713,7 @@ pub mod firewalls {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -5722,7 +5722,7 @@ pub mod firewalls {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -5815,7 +5815,7 @@ pub mod firewalls {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -5919,7 +5919,7 @@ pub mod firewalls {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -5973,7 +5973,7 @@ pub mod firewalls {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -5989,7 +5989,7 @@ pub mod firewalls {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -6080,7 +6080,7 @@ pub mod firewalls {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PATCH);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -6179,7 +6179,7 @@ pub mod firewalls {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -6271,7 +6271,7 @@ pub mod firewalls {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -6376,7 +6376,7 @@ pub mod firewalls {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -6487,7 +6487,7 @@ pub mod firewalls {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(email) = &this.email {
@@ -6595,7 +6595,7 @@ pub mod firewalls {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = if let Some(log_settings) = &this.log_settings {
@@ -7015,7 +7015,7 @@ pub mod local_rulestacks {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -7030,7 +7030,7 @@ pub mod local_rulestacks {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -7039,7 +7039,7 @@ pub mod local_rulestacks {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -7130,7 +7130,7 @@ pub mod local_rulestacks {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -7145,7 +7145,7 @@ pub mod local_rulestacks {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -7154,7 +7154,7 @@ pub mod local_rulestacks {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -7247,7 +7247,7 @@ pub mod local_rulestacks {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -7351,7 +7351,7 @@ pub mod local_rulestacks {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -7405,7 +7405,7 @@ pub mod local_rulestacks {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -7421,7 +7421,7 @@ pub mod local_rulestacks {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -7512,7 +7512,7 @@ pub mod local_rulestacks {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PATCH);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -7611,7 +7611,7 @@ pub mod local_rulestacks {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -7697,7 +7697,7 @@ pub mod local_rulestacks {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -7790,7 +7790,7 @@ pub mod local_rulestacks {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -7901,7 +7901,7 @@ pub mod local_rulestacks {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(email) = &this.email {
@@ -8020,7 +8020,7 @@ pub mod local_rulestacks {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(skip) = &this.skip {
@@ -8147,7 +8147,7 @@ pub mod local_rulestacks {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -8162,7 +8162,7 @@ pub mod local_rulestacks {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 if let Some(app_id_version) = &this.app_id_version {
@@ -8184,7 +8184,7 @@ pub mod local_rulestacks {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -8288,7 +8288,7 @@ pub mod local_rulestacks {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -8303,7 +8303,7 @@ pub mod local_rulestacks {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 if let Some(skip) = &this.skip {
@@ -8319,7 +8319,7 @@ pub mod local_rulestacks {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -8413,7 +8413,7 @@ pub mod local_rulestacks {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -8528,7 +8528,7 @@ pub mod local_rulestacks {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -8543,7 +8543,7 @@ pub mod local_rulestacks {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 if let Some(skip) = &this.skip {
@@ -8559,7 +8559,7 @@ pub mod local_rulestacks {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -8658,7 +8658,7 @@ pub mod local_rulestacks {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(skip) = &this.skip {
@@ -8766,7 +8766,7 @@ pub mod local_rulestacks {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -8907,7 +8907,7 @@ pub mod firewall_status {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -8922,7 +8922,7 @@ pub mod firewall_status {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -8931,7 +8931,7 @@ pub mod firewall_status {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -9025,7 +9025,7 @@ pub mod firewall_status {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -9229,7 +9229,7 @@ pub mod certificate_object_local_rulestack {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -9244,7 +9244,7 @@ pub mod certificate_object_local_rulestack {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -9253,7 +9253,7 @@ pub mod certificate_object_local_rulestack {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -9348,7 +9348,7 @@ pub mod certificate_object_local_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -9454,7 +9454,7 @@ pub mod certificate_object_local_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -9509,7 +9509,7 @@ pub mod certificate_object_local_rulestack {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -9525,7 +9525,7 @@ pub mod certificate_object_local_rulestack {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -9610,7 +9610,7 @@ pub mod certificate_object_local_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -9801,7 +9801,7 @@ pub mod fqdn_list_local_rulestack {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -9816,7 +9816,7 @@ pub mod fqdn_list_local_rulestack {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -9825,7 +9825,7 @@ pub mod fqdn_list_local_rulestack {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -9920,7 +9920,7 @@ pub mod fqdn_list_local_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -10026,7 +10026,7 @@ pub mod fqdn_list_local_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -10081,7 +10081,7 @@ pub mod fqdn_list_local_rulestack {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -10097,7 +10097,7 @@ pub mod fqdn_list_local_rulestack {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -10182,7 +10182,7 @@ pub mod fqdn_list_local_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -10442,7 +10442,7 @@ pub mod local_rules {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -10457,7 +10457,7 @@ pub mod local_rules {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -10466,7 +10466,7 @@ pub mod local_rules {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -10561,7 +10561,7 @@ pub mod local_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -10667,7 +10667,7 @@ pub mod local_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -10722,7 +10722,7 @@ pub mod local_rules {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -10738,7 +10738,7 @@ pub mod local_rules {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -10823,7 +10823,7 @@ pub mod local_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -10922,7 +10922,7 @@ pub mod local_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(firewall_name) = &this.firewall_name {
@@ -11025,7 +11025,7 @@ pub mod local_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(firewall_name) = &this.firewall_name {
@@ -11121,7 +11121,7 @@ pub mod local_rules {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::POST);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(firewall_name) = &this.firewall_name {
@@ -11321,7 +11321,7 @@ pub mod prefix_list_local_rulestack {
                             Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
@@ -11336,7 +11336,7 @@ pub mod prefix_list_local_rulestack {
                                 this.client.send(&mut req).await?
                             }
                             None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
@@ -11345,7 +11345,7 @@ pub mod prefix_list_local_rulestack {
                             }
                         };
                         let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::OK => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -11440,7 +11440,7 @@ pub mod prefix_list_local_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
@@ -11546,7 +11546,7 @@ pub mod prefix_list_local_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::PUT);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
@@ -11601,7 +11601,7 @@ pub mod prefix_list_local_rulestack {
                     let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
-                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                             let bearer_token = self.client.bearer_token().await?;
                             req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
@@ -11617,7 +11617,7 @@ pub mod prefix_list_local_rulestack {
                             log::trace!("current provisioning_state: {provisioning_state:?}");
                             match provisioning_state {
                                 LroStatus::Succeeded => {
-                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                     let bearer_token = self.client.bearer_token().await?;
                                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
@@ -11702,7 +11702,7 @@ pub mod prefix_list_local_rulestack {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::DELETE);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;

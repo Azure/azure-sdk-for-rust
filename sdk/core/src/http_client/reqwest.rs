@@ -4,7 +4,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use futures::TryStreamExt;
-use std::{collections::HashMap, str::FromStr, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use tracing::{debug, warn};
 
 /// Construct a new `HttpClient` with the `reqwest` backend.
@@ -36,7 +36,7 @@ impl HttpClient for ::reqwest::Client {
     async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response> {
         let url = request.url().clone();
         let method = request.method();
-        let mut req = self.request(try_from_method(*method)?, url.clone());
+        let mut req = self.request(method.clone(), url.clone());
         for (name, value) in request.headers().iter() {
             req = req.header(name.as_str(), value.as_str());
         }
@@ -71,11 +71,7 @@ impl HttpClient for ::reqwest::Client {
             )
         }));
 
-        Ok(crate::Response::new(
-            try_from_status(status)?,
-            headers,
-            body,
-        ))
+        Ok(crate::Response::new(status, headers, body))
     }
 }
 
@@ -96,28 +92,4 @@ fn to_headers(map: &::reqwest::header::HeaderMap) -> crate::headers::Headers {
         })
         .collect::<HashMap<_, _>>();
     crate::headers::Headers::from(map)
-}
-
-fn try_from_method(method: crate::Method) -> crate::Result<::reqwest::Method> {
-    match method {
-        crate::Method::Connect => Ok(::reqwest::Method::CONNECT),
-        crate::Method::Delete => Ok(::reqwest::Method::DELETE),
-        crate::Method::Get => Ok(::reqwest::Method::GET),
-        crate::Method::Head => Ok(::reqwest::Method::HEAD),
-        crate::Method::Options => Ok(::reqwest::Method::OPTIONS),
-        crate::Method::Patch => Ok(::reqwest::Method::PATCH),
-        crate::Method::Post => Ok(::reqwest::Method::POST),
-        crate::Method::Put => Ok(::reqwest::Method::PUT),
-        crate::Method::Trace => Ok(::reqwest::Method::TRACE),
-        _ => ::reqwest::Method::from_str(method.as_ref()).map_kind(ErrorKind::DataConversion),
-    }
-}
-
-fn try_from_status(status: ::reqwest::StatusCode) -> crate::Result<crate::StatusCode> {
-    let status = u16::from(status);
-    crate::StatusCode::try_from(status).map_err(|_| {
-        crate::error::Error::with_message(ErrorKind::DataConversion, || {
-            format!("invalid status code {status}")
-        })
-    })
 }

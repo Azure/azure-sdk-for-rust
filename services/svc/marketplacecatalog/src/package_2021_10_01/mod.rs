@@ -234,7 +234,7 @@ pub mod public_offers {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(language) = &this.language {
@@ -356,7 +356,7 @@ pub mod public_offers {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::GET);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(language) = &this.language {

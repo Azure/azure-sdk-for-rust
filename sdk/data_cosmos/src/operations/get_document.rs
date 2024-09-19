@@ -47,7 +47,7 @@ impl<T: DeserializeOwned + Send> GetDocumentBuilder<T> {
     /// generic associated types (GATs) stabilize, this will become possible.
     pub fn into_future(self) -> GetDocument<T> {
         Box::pin(async move {
-            let mut request = self.client.document_request(azure_core::Method::Get);
+            let mut request = self.client.document_request(azure_core::Method::GET);
 
             request.insert_headers(&self.if_match_condition);
             request.insert_headers(&self.if_modified_since);
@@ -105,7 +105,7 @@ where
         let body = body.collect().await?;
 
         let has_been_found =
-            status_code == StatusCode::Ok || status_code == StatusCode::NotModified;
+            status_code == StatusCode::OK || status_code == StatusCode::NOT_MODIFIED;
 
         if has_been_found {
             Ok(GetDocumentResponse::Found(FoundDocumentResponse::try_from(

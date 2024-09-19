@@ -85,7 +85,7 @@ async fn main() -> azure_core::Result<()> {
 
     // check all the events in the transaction completed successfully.
     assert!(response.operation_responses.iter().all(|r| {
-        [StatusCode::Ok, StatusCode::NoContent, StatusCode::Created].contains(&r.status_code)
+        [StatusCode::OK, StatusCode::NO_CONTENT, StatusCode::CREATED].contains(&r.status_code)
     }));
 
     let entity_client = partition_key_client.entity_client(&entity2.surname);

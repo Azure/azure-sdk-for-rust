@@ -13,7 +13,7 @@ operation! {
 impl DeleteCollectionBuilder {
     pub fn into_future(self) -> DeleteCollection {
         Box::pin(async move {
-            let mut request = self.client.collection_request(azure_core::Method::Delete);
+            let mut request = self.client.collection_request(azure_core::Method::DELETE);
 
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

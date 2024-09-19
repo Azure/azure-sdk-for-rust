@@ -485,18 +485,18 @@ mod tests {
     #[test]
     fn matching_against_http_error() {
         let kind =
-            ErrorKind::http_response_from_parts(StatusCode::ImATeapot, &Headers::new(), b"{}");
+            ErrorKind::http_response_from_parts(StatusCode::IM_A_TEAPOT, &Headers::new(), b"{}");
 
         assert!(matches!(
             kind,
             ErrorKind::HttpResponse {
-                status: StatusCode::ImATeapot,
+                status: StatusCode::IM_A_TEAPOT,
                 error_code: None
             }
         ));
 
         let kind = ErrorKind::http_response_from_parts(
-            StatusCode::ImATeapot,
+            StatusCode::IM_A_TEAPOT,
             &Headers::new(),
             br#"{"error": {"code":"teepot"}}"#,
         );
@@ -504,7 +504,7 @@ mod tests {
         assert!(matches!(
             kind,
             ErrorKind::HttpResponse {
-                status: StatusCode::ImATeapot,
+                status: StatusCode::IM_A_TEAPOT,
                 error_code
             }
             if error_code.as_deref() == Some("teepot")
@@ -512,12 +512,12 @@ mod tests {
 
         let mut headers = Headers::new();
         headers.insert(headers::ERROR_CODE, "teapot");
-        let kind = ErrorKind::http_response_from_parts(StatusCode::ImATeapot, &headers, br#"{}"#);
+        let kind = ErrorKind::http_response_from_parts(StatusCode::IM_A_TEAPOT, &headers, br#"{}"#);
 
         assert!(matches!(
             kind,
             ErrorKind::HttpResponse {
-                status: StatusCode::ImATeapot,
+                status: StatusCode::IM_A_TEAPOT,
                 error_code
             }
             if error_code.as_deref() == Some("teapot")

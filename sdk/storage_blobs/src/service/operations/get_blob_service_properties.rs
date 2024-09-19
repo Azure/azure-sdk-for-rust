@@ -18,7 +18,7 @@ impl GetBlobServicePropertiesBuilder {
                 .extend_pairs([("restype", "service"), ("comp", "properties")]);
 
             let mut request =
-                BlobServiceClient::finalize_request(url, Method::Get, Headers::new(), None)?;
+                BlobServiceClient::finalize_request(url, Method::GET, Headers::new(), None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

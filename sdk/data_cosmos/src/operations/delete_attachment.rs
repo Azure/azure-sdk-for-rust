@@ -18,7 +18,7 @@ operation! {
 impl DeleteAttachmentBuilder {
     pub fn into_future(self) -> DeleteAttachment {
         Box::pin(async move {
-            let mut request = self.client.attachment_request(azure_core::Method::Delete);
+            let mut request = self.client.attachment_request(azure_core::Method::DELETE);
 
             request.insert_headers(&self.if_match_condition);
             if let Some(cl) = &self.consistency_level {

@@ -44,7 +44,7 @@ where
             headers.add(ContentType::APPLICATION_JSON);
 
             let mut request =
-                TableClient::finalize_request(url, Method::Post, headers, Some(self.body))?;
+                TableClient::finalize_request(url, Method::POST, headers, Some(self.body))?;
 
             let response = self
                 .table_client

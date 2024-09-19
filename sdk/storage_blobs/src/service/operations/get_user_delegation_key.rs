@@ -34,7 +34,7 @@ impl GetUserDelegationKeyBuilder {
 
             let mut request = BlobServiceClient::finalize_request(
                 url,
-                Method::Post,
+                Method::POST,
                 Headers::new(),
                 Some(body.into()),
             )?;

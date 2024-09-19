@@ -22,7 +22,7 @@ impl SetQueueServicePropertiesBuilder {
 
             let mut request = QueueServiceClient::finalize_request(
                 url,
-                Method::Put,
+                Method::PUT,
                 Headers::new(),
                 Some(xml_body.into()),
             )?;

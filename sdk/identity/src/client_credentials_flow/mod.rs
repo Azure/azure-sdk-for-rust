@@ -69,7 +69,7 @@ pub async fn perform(
         format!("The supplied tenant id could not be url encoded: {tenant_id}")
     })?;
 
-    let mut req = Request::new(url, Method::Post);
+    let mut req = Request::new(url, Method::POST);
     req.insert_header(
         headers::CONTENT_TYPE,
         content_type::APPLICATION_X_WWW_FORM_URLENCODED,

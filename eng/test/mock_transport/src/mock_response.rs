@@ -84,7 +84,7 @@ impl Serialize for MockResponse {
         for (h, v) in self.headers.iter() {
             headers.insert(h.as_str().into(), v.as_str().into());
         }
-        let status = self.status as u16;
+        let status = self.status.as_u16();
         let body = base64::encode(&self.body);
         let s = SerializedMockResponse {
             status,

@@ -25,7 +25,7 @@ impl GetFileBuilder {
         Box::pin(async move {
             let url = this.client.url()?;
 
-            let mut request = Request::new(url, azure_core::Method::Get);
+            let mut request = Request::new(url, azure_core::Method::GET);
 
             let requested_range = self.range.unwrap_or_else(|| Range::new(0, u64::MAX));
             request.insert_headers(&requested_range);

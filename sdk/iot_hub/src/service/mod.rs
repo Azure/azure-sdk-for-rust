@@ -396,7 +396,7 @@ impl ServiceClient {
         S: Into<String>,
         T: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::Patch)
+        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::PATCH)
             .module_id(module_id.into())
     }
 
@@ -420,7 +420,7 @@ impl ServiceClient {
         S: Into<String>,
         T: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::Put)
+        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::PUT)
             .module_id(module_id.into())
     }
 
@@ -439,7 +439,7 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::Patch)
+        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::PATCH)
     }
 
     /// Replace the device twin of a given device
@@ -457,7 +457,7 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::Put)
+        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::PUT)
     }
 
     /// Get the identity of a given device

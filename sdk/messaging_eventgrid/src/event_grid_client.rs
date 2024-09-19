@@ -32,11 +32,11 @@ impl EventGridClient {
         T: Serialize,
     {
         let body = from_json(&events)?;
-        EventGridRequestBuilder::new(Method::Post, &self.events_url()?)
+        EventGridRequestBuilder::new(Method::POST, &self.events_url()?)
             .sas_key(&self.topic_key)
             .body(Some(&body), Some("application/json"))?
             .request(&self.client)
-            .expect(StatusCode::Ok)
+            .expect(StatusCode::OK)
             .await?;
 
         Ok(())

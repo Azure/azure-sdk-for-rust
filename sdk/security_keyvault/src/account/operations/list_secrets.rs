@@ -22,7 +22,7 @@ impl ListSecretsBuilder {
                 };
 
                 let headers = Headers::new();
-                let mut request = KeyvaultClient::finalize_request(url, Method::Get, headers, None);
+                let mut request = KeyvaultClient::finalize_request(url, Method::GET, headers, None);
 
                 this.client
                     .keyvault_client

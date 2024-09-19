@@ -28,7 +28,7 @@ impl PutMessageBuilder {
 
             let mut request = QueueClient::finalize_request(
                 url,
-                Method::Post,
+                Method::POST,
                 Headers::new(),
                 Some(message.into()),
             )?;

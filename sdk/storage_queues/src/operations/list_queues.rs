@@ -36,7 +36,7 @@ impl ListQueuesBuilder {
                 }
 
                 let mut request =
-                    QueueServiceClient::finalize_request(url, Method::Get, Headers::new(), None)?;
+                    QueueServiceClient::finalize_request(url, Method::GET, Headers::new(), None)?;
 
                 let response = this.client.send(&mut this.context, &mut request).await?;
 

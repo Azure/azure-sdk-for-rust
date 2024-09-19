@@ -3,8 +3,7 @@ use azure_core::headers::etag_from_headers;
 use azure_core::{
     headers::{date_from_headers, last_modified_from_headers, request_id_from_headers, Headers},
     prelude::*,
-    Method::Put,
-    RequestId,
+    Method, RequestId,
 };
 use time::OffsetDateTime;
 
@@ -36,7 +35,7 @@ impl SnapshotBlobBuilder {
                 }
             }
 
-            let mut request = BlobClient::finalize_request(url, Put, headers, None)?;
+            let mut request = BlobClient::finalize_request(url, Method::PUT, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
             response.headers().try_into()

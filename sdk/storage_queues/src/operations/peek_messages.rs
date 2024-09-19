@@ -19,7 +19,7 @@ impl PeekMessagesBuilder {
             self.number_of_messages.append_to_url_query(&mut url);
 
             let mut request =
-                QueueClient::finalize_request(url, Method::Get, Headers::new(), None)?;
+                QueueClient::finalize_request(url, Method::GET, Headers::new(), None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

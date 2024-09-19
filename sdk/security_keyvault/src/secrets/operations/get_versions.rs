@@ -22,7 +22,7 @@ impl GetSecretVersionsBuilder {
                 }
 
                 let headers = Headers::new();
-                let mut request = KeyvaultClient::finalize_request(uri, Method::Get, headers, None);
+                let mut request = KeyvaultClient::finalize_request(uri, Method::GET, headers, None);
 
                 this.client
                     .keyvault_client

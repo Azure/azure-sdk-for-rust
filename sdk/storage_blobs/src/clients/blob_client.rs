@@ -299,7 +299,7 @@ impl BlobClient {
             Err(err)
                 if err
                     .as_http_error()
-                    .map(|e| e.status() == StatusCode::NotFound)
+                    .map(|e| e.status() == StatusCode::NOT_FOUND)
                     .unwrap_or_default() =>
             {
                 Ok(false)

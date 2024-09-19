@@ -75,7 +75,7 @@ impl ListContainersBuilder {
                 this.max_results.append_to_url_query(&mut url);
 
                 let mut request =
-                    BlobServiceClient::finalize_request(url, Method::Get, Headers::new(), None)?;
+                    BlobServiceClient::finalize_request(url, Method::GET, Headers::new(), None)?;
 
                 let response = this.client.send(&mut ctx, &mut request).await?;
 
