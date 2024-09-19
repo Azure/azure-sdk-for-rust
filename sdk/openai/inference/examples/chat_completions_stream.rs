@@ -6,6 +6,7 @@ use azure_openai_inference::{
 use futures::stream::StreamExt;
 use std::io::{self, Write};
 
+/// This example illustrates how to use OpenAI to stream chat completions.
 #[tokio::main]
 async fn main() -> Result<()> {
     let secret = std::env::var("OPENAI_KEY").expect("Set OPENAI_KEY env variable");

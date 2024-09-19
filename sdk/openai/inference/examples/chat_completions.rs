@@ -3,6 +3,7 @@ use azure_openai_inference::{
     request::CreateChatCompletionsRequest,
 };
 
+/// This example illustrates how to use OpenAI to generate a chat completion.
 #[tokio::main]
 pub async fn main() -> azure_core::Result<()> {
     let secret = std::env::var("OPENAI_KEY").expect("Set OPENAI_KEY env variable");

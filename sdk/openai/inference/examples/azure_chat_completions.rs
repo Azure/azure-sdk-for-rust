@@ -5,6 +5,7 @@ use azure_openai_inference::{
     AzureOpenAIClientOptions, AzureServiceVersion,
 };
 
+// This example illustrates how to use Azure OpenAI with key credential authentication to generate a chat completion.
 #[tokio::main]
 pub async fn main() -> Result<()> {
     let endpoint =

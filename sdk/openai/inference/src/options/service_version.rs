@@ -39,7 +39,6 @@ impl ToString for AzureServiceVersion {
     }
 }
 
-// Not entirely sure this is a good idea
 // code lifted from BearerTokenCredentialPolicy
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]

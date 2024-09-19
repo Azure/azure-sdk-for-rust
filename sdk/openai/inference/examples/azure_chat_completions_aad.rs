@@ -8,6 +8,7 @@ use azure_openai_inference::{
     AzureOpenAIClientOptions, AzureServiceVersion,
 };
 
+/// This example illustrates how to use Azure OpenAI Chat Completions with Azure Active Directory authentication.
 #[tokio::main]
 async fn main() -> Result<()> {
     let endpoint =

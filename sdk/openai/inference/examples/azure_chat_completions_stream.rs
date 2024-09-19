@@ -7,6 +7,7 @@ use azure_openai_inference::{
 use futures::stream::StreamExt;
 use std::io::{self, Write};
 
+/// This example illustrates how to use Azure OpenAI with key credential authentication to stream chat completions.
 #[tokio::main]
 async fn main() -> Result<()> {
     let endpoint =
