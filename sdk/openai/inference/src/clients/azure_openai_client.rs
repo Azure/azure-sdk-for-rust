@@ -121,7 +121,6 @@ impl AzureOpenAIClient {
 }
 
 impl AzureOpenAIClientMethods for AzureOpenAIClient {
-
     /// Returns the endpoint [`Url`] of the client.
     fn endpoint(&self) -> &Url {
         &self.endpoint

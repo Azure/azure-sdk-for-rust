@@ -7,7 +7,13 @@ use crate::{
 use azure_core::{Context, Method, Response, Result};
 use futures::{Stream, StreamExt};
 
+/// A [`ChatCompletionsClient`]'s methods. This trait can be used for mocking.
 pub trait ChatCompletionsClientMethods {
+    /// Creates a new chat completion.
+    ///
+    /// # Arguments
+    /// * `deployment_name` - The name of the deployment in Azure. In OpenAI it is the model name to be used.
+    /// * `chat_completions_request` - The request specifying the chat completion to be created.
     #[allow(async_fn_in_trait)]
     async fn create_chat_completions(
         &self,
@@ -15,6 +21,11 @@ pub trait ChatCompletionsClientMethods {
         chat_completions_request: &CreateChatCompletionsRequest,
     ) -> Result<Response<CreateChatCompletionsResponse>>;
 
+    /// Creates a new chat completion and returns a streamed response.
+    ///
+    /// # Arguments
+    /// * `deployment_name` - The name of the deployment in Azure. In OpenAI it is the model name to be used.
+    /// * `chat_completions_request` - The request specifying the chat completion to be created.
     #[allow(async_fn_in_trait)]
     async fn stream_chat_completions(
         &self,
@@ -23,7 +34,9 @@ pub trait ChatCompletionsClientMethods {
     ) -> Result<impl Stream<Item = Result<CreateChatCompletionsStreamResponse>>>;
 }
 
+/// A client for Chat Completions related operations.
 pub struct ChatCompletionsClient {
+    /// The underlying HTTP client with an associated pipeline.
     base_client: Box<dyn BaseOpenAIClientMethods>,
 }
 
@@ -34,6 +47,11 @@ impl ChatCompletionsClient {
 }
 
 impl ChatCompletionsClientMethods for ChatCompletionsClient {
+    /// Creates a new chat completion.
+    ///
+    /// # Arguments
+    /// * `deployment_name` - The name of the deployment in Azure. In OpenAI it is the model name to be used.
+    /// * `chat_completions_request` - The request specifying the chat completion to be created.
     async fn create_chat_completions(
         &self,
         deployment_name: impl AsRef<str>,
@@ -50,6 +68,11 @@ impl ChatCompletionsClientMethods for ChatCompletionsClient {
             .await
     }
 
+    /// Creates a new chat completion and returns a streamed response.
+    ///
+    /// # Arguments
+    /// * `deployment_name` - The name of the deployment in Azure. In OpenAI it is the model name to be used.
+    /// * `chat_completions_request` - The request specifying the chat completion to be created.
     async fn stream_chat_completions(
         &self,
         deployment_name: impl AsRef<str>,
@@ -71,6 +94,7 @@ impl ChatCompletionsClientMethods for ChatCompletionsClient {
     }
 }
 
+/// A placeholder type to provide an implementation for the [`EventStreamer`] trait specifically for chat completions.
 struct ChatCompletionsStreamHandler;
 
 impl EventStreamer<CreateChatCompletionsStreamResponse> for ChatCompletionsStreamHandler {
