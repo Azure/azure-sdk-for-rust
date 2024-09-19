@@ -26,7 +26,9 @@ pub trait Model: Sized {
     /// For example, a type representing a simple REST API response will want to wait for the entire body to be received and then parse the body.
     /// However, a type representing the download of a large file, may not want to do that and instead prepare to stream the body to a file or other destination.
     #[cfg(not(target_arch = "wasm32"))]
-    fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>> + Send;
+    fn from_response_body(
+        body: ResponseBody,
+    ) -> impl Future<Output = crate::Result<Self>> + Send + Sync;
 
     #[cfg(target_arch = "wasm32")]
     fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>>;
