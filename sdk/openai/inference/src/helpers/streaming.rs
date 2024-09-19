@@ -85,7 +85,16 @@ pub(crate) fn string_chunks<'a>(
 
     // We filter errors, we should specifically target the error type yielded when we are not able to find an event in a chunk
     // Specifically the Error::with_messagge(ErrorKind::DataConversion, || "Incomplete chunk")
-    return stream.filter(|it| std::future::ready(it.is_ok()));
+    return stream.filter(|it| {
+        std::future::ready(
+            it.is_ok()
+                || it.as_ref().unwrap_err().to_string()
+                    != Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
+                        "Incomplete chunk"
+                    })
+                    .to_string(),
+        )
+    });
 }
 
 #[cfg(test)]
@@ -184,6 +193,27 @@ mod tests {
         let mut source_stream = futures::stream::iter(vec![
             Ok(bytes::Bytes::from_static(b"data: piece 1")),
             Ok(bytes::Bytes::from_static(b"\n\ndata: [DONE]")),
+        ]);
+
+        let actual = string_chunks(&mut source_stream, "\n\n");
+        pin_mut!(actual);
+        let actual: Vec<Result<String>> = actual.collect().await;
+
+        let expected: Vec<Result<String>> = vec![Ok("piece 1".to_string())];
+        assert_result_vectors(expected, actual);
+    }
+
+    // This is an over simplification, reasonable for an MVP. We should:
+    //   1. propagate error upwards
+    //   2. handle an unexpected "data:" marker (this will simply send the string as is, which will fail deserialization in an upper mapping layer)
+    #[tokio::test]
+    async fn error_in_response_ends_stream() {
+        let mut source_stream = futures::stream::iter(vec![
+            Ok(bytes::Bytes::from_static(b"data: piece 1\n\n")),
+            Err(Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                || "Incomplete chunk",
+            )),
         ]);
 
         let actual = string_chunks(&mut source_stream, "\n\n");
