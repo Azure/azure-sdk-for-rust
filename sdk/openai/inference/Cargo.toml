@@ -1,13 +1,13 @@
 [package]
 name = "azure_openai_inference"
 version = "0.1.0"
-description = "Rust wrappers around Microsoft Azure REST APIs - Azure OpenAI Inference"
+description = "Rust client SDK for Azure OpenAI Inference"
+readme = "README.md"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-readme.workspace = true
 keywords = ["sdk", "azure", "rest"]
 categories = ["api-bindings"]
 
