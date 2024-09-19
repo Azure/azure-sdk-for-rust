@@ -7,6 +7,18 @@ use azure_core::{
     Context, Header, Policy, PolicyResult, Request,
 };
 
+/// A key credential for the [OpenAIClient](crate::clients::OpenAIClient).
+///
+/// # Example
+/// ```no_run
+/// use azure_openai_inference::clients::{OpenAIClient, OpenAIClientMethods};
+///
+/// let secret = std::env::var("OPENAI_KEY").expect("Set OPENAI_KEY env variable");
+/// let open_ai_client = OpenAIClient::with_key_credential(
+///     secret,
+///     None,
+/// ).unwrap();
+/// ```
 #[derive(Debug, Clone)]
 pub struct OpenAIKeyCredential(Secret);
 
