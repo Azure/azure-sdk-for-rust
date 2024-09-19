@@ -1,13 +1,10 @@
-use super::BaseOpenAIClientMethods;
+use super::{new_json_request, BaseOpenAIClientMethods};
 use crate::{
     helpers::streaming::{string_chunks, EventStreamer},
     request::CreateChatCompletionsRequest,
     response::{CreateChatCompletionsResponse, CreateChatCompletionsStreamResponse},
 };
-use azure_core::{
-    headers::{ACCEPT, CONTENT_TYPE},
-    Context, Method, Response, Result,
-};
+use azure_core::{Context, Method, Response, Result};
 use futures::{Stream, StreamExt};
 
 pub trait ChatCompletionsClientMethods {
@@ -45,21 +42,11 @@ impl ChatCompletionsClientMethods for ChatCompletionsClient {
         let base_url = self.base_client.base_url(Some(deployment_name.as_ref()))?;
         let request_url = base_url.join("chat/completions")?;
 
-        let context = Context::new();
-
-        let mut request = azure_core::Request::new(request_url, Method::Post);
-        // this was replaced by the AzureServiceVersion policy, not sure what is the right approach
-        // adding the mandatory header shouldn't be necessary if the pipeline was setup correctly (?)
-        // request.add_mandatory_header(&self.key_credential);
-
-        // For some reason non-Azure OpenAI's API is strict about these headers being present
-        request.insert_header(CONTENT_TYPE, "application/json");
-        request.insert_header(ACCEPT, "application/json");
-        request.set_json(chat_completions_request)?;
+        let mut request = new_json_request(request_url, Method::Post, &chat_completions_request);
 
         self.base_client
             .pipeline()
-            .send::<CreateChatCompletionsResponse>(&context, &mut request)
+            .send::<CreateChatCompletionsResponse>(&Context::new(), &mut request)
             .await
     }
 
@@ -71,22 +58,12 @@ impl ChatCompletionsClientMethods for ChatCompletionsClient {
         let base_url = self.base_client.base_url(Some(deployment_name.as_ref()))?;
         let request_url = base_url.join("chat/completions")?;
 
-        let context = Context::new();
-
-        let mut request = azure_core::Request::new(request_url, Method::Post);
-        // this was replaced by the AzureServiceVersion policy, not sure what is the right approach
-        // adding the mandatory header shouldn't be necessary if the pipeline was setup correctly (?)
-        // request.add_mandatory_header(&self.key_credential);
-
-        // For some reason non-Azure OpenAI's API is strict about these headers being present
-        request.insert_header(CONTENT_TYPE, "application/json");
-        request.insert_header(ACCEPT, "application/json");
-        request.set_json(chat_completions_request)?;
+        let mut request = new_json_request(request_url, Method::Post, &chat_completions_request);
 
         let response_body = self
             .base_client
             .pipeline()
-            .send::<()>(&context, &mut request)
+            .send::<()>(&Context::new(), &mut request)
             .await?
             .into_body();
 

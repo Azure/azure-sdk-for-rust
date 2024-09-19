@@ -31,3 +31,21 @@ fn new_pipeline(
         per_retry_policies,
     )
 }
+
+fn new_json_request<T>(
+    url: azure_core::Url,
+    method: azure_core::Method,
+    json_body: &T,
+) -> azure_core::Request
+where
+    T: serde::Serialize,
+{
+    let mut request = azure_core::Request::new(url, method);
+
+    // For some reason non-Azure OpenAI's API is strict about these headers being present
+    request.insert_header(azure_core::headers::CONTENT_TYPE, "application/json");
+    request.insert_header(azure_core::headers::ACCEPT, "application/json");
+
+    request.set_json(json_body).unwrap();
+    request
+}
