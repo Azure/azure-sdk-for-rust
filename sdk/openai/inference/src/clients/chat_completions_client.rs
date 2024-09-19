@@ -28,7 +28,7 @@ pub struct ChatCompletionsClient {
 }
 
 impl ChatCompletionsClient {
-    pub(crate) fn new(base_client: Box<dyn BaseOpenAIClientMethods>) -> Self {
+    pub(super) fn new(base_client: Box<dyn BaseOpenAIClientMethods>) -> Self {
         Self { base_client }
     }
 }
