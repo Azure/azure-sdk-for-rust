@@ -11,7 +11,7 @@ pub async fn main() -> azure_core::Result<()> {
     let chat_completions_client =
         OpenAIClient::with_key_credential(secret, None)?.chat_completions_client();
 
-    let chat_completions_request = CreateChatCompletionsRequest::new_with_user_message(
+    let chat_completions_request = CreateChatCompletionsRequest::with_user_message(
         "gpt-3.5-turbo-1106",
         "Tell me a joke about pineapples",
     );

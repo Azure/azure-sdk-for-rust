@@ -1,6 +1,6 @@
 [package]
 name = "azure_openai_inference"
-version = "0.1.0"
+version = "1.0.0-beta.1"
 description = "Rust client SDK for Azure OpenAI Inference"
 readme = "README.md"
 authors.workspace = true
@@ -16,7 +16,6 @@ workspace = true
 
 [dependencies]
 azure_core = { workspace = true }
-tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 async-trait = { workspace = true }

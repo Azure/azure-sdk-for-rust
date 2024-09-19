@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
     )?
     .chat_completions_client();
 
-    let chat_completions_request = CreateChatCompletionsRequest::new_stream_with_user_message(
+    let chat_completions_request = CreateChatCompletionsRequest::with_user_message_and_stream(
         "gpt-4-1106-preview",
         "Write me an essay that is at least 200 words long on the nutritional values (or lack thereof) of fast food.
         Start the essay by stating 'this essay will be x many words long' where x is the number of words in the essay.",);

@@ -4,6 +4,8 @@
 
 This SDK provides Rust types to interact with both OpenAI and Azure OpenAI services.
 
+Note: Currently request and response models have as few fields as possible, leveraging the server side defaults wherever it can.
+
 ### Features
 
 All features are showcased in the `example` folder of this crate. The following is a list of what is currently supported:

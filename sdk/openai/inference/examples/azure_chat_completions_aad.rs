@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
     )?
     .chat_completions_client();
 
-    let chat_completions_request = CreateChatCompletionsRequest::new_with_user_message(
+    let chat_completions_request = CreateChatCompletionsRequest::with_user_message(
         "gpt-4-1106-preview",
         "Tell me a joke about pineapples",
     );
