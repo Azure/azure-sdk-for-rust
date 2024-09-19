@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{ImdsId, ImdsManagedIdentityCredential, TokenCredentialOptions};
-use azure_core::auth::{AccessToken, TokenCredential};
+use azure_core::credentials::{AccessToken, TokenCredential};
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::headers::HeaderName;
 use azure_core::Url;

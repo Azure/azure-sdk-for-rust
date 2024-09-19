@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use async_lock::RwLock;
-use azure_core::auth::AccessToken;
+use azure_core::credentials::AccessToken;
 use futures::Future;
 use std::collections::HashMap;
 use tracing::trace;
@@ -64,7 +64,7 @@ impl TokenCache {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::auth::Secret;
+    use azure_core::credentials::Secret;
     use std::{sync::Mutex, time::Duration};
     use time::OffsetDateTime;
 

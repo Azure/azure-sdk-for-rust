@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Azure Identity crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
+//! Azure Identity crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to <https://github.com/azure/azure-sdk-for-rust>.
 //!
 //! This crate provides several implementations of the [azure_core::auth::TokenCredential](https://docs.rs/azure_core/latest/azure_core/auth/trait.TokenCredential.html) trait.
 //! It is recommended to start with `azure_identity::create_credential()?`, which will create an instance of `DefaultAzureCredential` by default. If you want to use a specific credential type, the `AZURE_CREDENTIAL_KIND` environment variable may be set to a value from `azure_credential_kinds`, such as `azurecli` or `virtualmachine`.
@@ -43,16 +43,12 @@
 //! * [Client credentials flow](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow).
 //! * [Device code flow](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code).
 
-pub mod authorization_code_flow;
-pub mod client_credentials_flow;
-#[cfg(feature = "development")]
-pub mod development;
-pub mod device_code_flow;
+mod authorization_code_flow;
+mod credentials;
 mod env;
-pub mod federated_credentials_flow;
+mod federated_credentials_flow;
 mod oauth2_http_client;
-pub mod refresh_token;
+mod refresh_token;
 mod timeout;
-mod token_credentials;
 
-pub use crate::token_credentials::*;
+pub use crate::credentials::*;

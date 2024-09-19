@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Implements the oauth2 crate http client interface using an `azure_core::HttpClient` instance.
+//! Implements the oauth2 crate http client interface using an [`azure_core::HttpClient`] instance.
 //! <https://docs.rs/oauth2/latest/oauth2/#importing-oauth2-selecting-an-http-client-interface>
 
 use azure_core::{
@@ -16,7 +16,7 @@ pub(crate) struct Oauth2HttpClient {
 }
 
 impl Oauth2HttpClient {
-    /// Create a new `Oauth2HttpClient`
+    /// Create a new `Oauth2HttpClient`.
     pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
         Self { http_client }
     }
