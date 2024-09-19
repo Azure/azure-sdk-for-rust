@@ -1,6 +1,7 @@
 use azure_core::{Error, Result};
 use futures::{Stream, StreamExt};
 
+/// A trait used to designate a type into which the streams will be deserialized.
 pub(crate) trait EventStreamer<T>
 where
     T: serde::de::DeserializeOwned,
@@ -8,6 +9,15 @@ where
     fn event_stream(response_body: azure_core::ResponseBody) -> impl Stream<Item = Result<T>>;
 }
 
+/// A helper function to be used in streaming scenarios. The `response_body`, the input stream
+/// is buffered until a `stream_event_delimiter` is found. This constitutes a single event.
+/// These series of events are then returned as a stream.
+///
+/// # Arguments
+/// * `response_body` - The response body stream of an HTTP request.
+/// * `stream_event_delimiter` - The delimiter that separates events in the stream. In some cases `\n\n`, in other cases can be `\n\r\n\n`.
+/// # Returns
+/// The `response_body` stream segmented and streamed into String events demarcated by `stream_event_delimiter`.
 pub(crate) fn string_chunks<'a>(
     response_body: (impl Stream<Item = Result<bytes::Bytes>> + Unpin + 'a),
     stream_event_delimiter: &'a str,

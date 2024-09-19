@@ -62,7 +62,9 @@ pub mod request {
         /// # Example
         ///
         /// ```rust
-        /// let request = azure_openai_inference::request::CreateChatCompletionsRequest::with_user_message("gpt-3.5-turbo-1106", "Why couldn't the eagles take Frodo directly to mount doom?");
+        /// let request = azure_openai_inference::request::CreateChatCompletionsRequest::with_user_message(
+        ///     "gpt-3.5-turbo-1106",
+        ///     "Why couldn't the eagles take Frodo directly to mount doom?");
         /// ```
         pub fn with_user_message(model: &str, prompt: &str) -> Self {
             Self {
@@ -77,7 +79,9 @@ pub mod request {
         /// # Example
         ///
         /// ```rust
-        /// let request = azure_openai_inference::request::CreateChatCompletionsRequest::with_user_message_and_stream("gpt-3.5-turbo-1106", "Why couldn't the eagles take Frodo directly to mount doom?");
+        /// let request = azure_openai_inference::request::CreateChatCompletionsRequest::with_user_message_and_stream(
+        ///     "gpt-3.5-turbo-1106",
+        ///     "Why couldn't the eagles take Frodo directly to Mount Doom?");
         /// ```
         pub fn with_user_message_and_stream(
             model: impl Into<String>,
