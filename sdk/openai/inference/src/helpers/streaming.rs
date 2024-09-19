@@ -1,7 +1,7 @@
 use azure_core::{Error, Result};
 use futures::{Stream, StreamExt};
 
-pub trait EventStreamer<T>
+pub(crate) trait EventStreamer<T>
 where
     T: serde::de::DeserializeOwned,
 {
