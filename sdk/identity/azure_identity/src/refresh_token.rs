@@ -4,8 +4,8 @@
 //! Refresh tokens.
 
 use azure_core::{
-    credentials::Secret,
     content_type,
+    credentials::Secret,
     error::{http_response_from_body, Error, ErrorKind, ResultExt},
     headers,
     json::from_json,
