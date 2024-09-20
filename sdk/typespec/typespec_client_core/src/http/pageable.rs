@@ -32,22 +32,22 @@ macro_rules! declare {
             /// make repeated requests to the service yielding a new page each time.
             #[pin_project::pin_project]
             // This is to suppress the unused `project_ref` warning
-            pub struct Pageable<'a, T, E> {
+            pub struct Pageable<T, E> {
                 #[pin]
-                pub(crate) stream: ::std::pin::Pin<Box<dyn ::futures::Stream<Item = ::std::result::Result<T, E>> $($extra)* + 'a>>,
+                pub(crate) stream: ::std::pin::Pin<Box<dyn ::futures::Stream<Item = ::std::result::Result<T, E>> $($extra)*>>,
             }
         }
         pub use pageable::Pageable;
 
-        impl<'a, T, E> Pageable<'a, T, E>
+        impl<T, E> Pageable<T, E>
         where
             T: Continuable,
         {
             pub fn new<F>(
-                make_request: impl Fn(Option<T::Continuation>) -> F + Clone $($extra)* + 'a,
+                make_request: impl Fn(Option<T::Continuation>) -> F + Clone $($extra)* + 'static,
             ) -> Self
             where
-                F: ::std::future::Future<Output = Result<T, E>> $($extra)* + 'a,
+                F: ::std::future::Future<Output = Result<T, E>> $($extra)* + 'static,
             {
                 let stream = unfold(State::Init, move |state: State<T::Continuation>| {
                     let make_request = make_request.clone();
@@ -92,7 +92,7 @@ declare!(+ Send);
 #[cfg(target_arch = "wasm32")]
 declare!();
 
-impl<'a, T, E> Stream for Pageable<'a, T, E> {
+impl<T, E> Stream for Pageable<T, E> {
     type Item = Result<T, E>;
 
     fn poll_next(
@@ -104,7 +104,7 @@ impl<'a, T, E> Stream for Pageable<'a, T, E> {
     }
 }
 
-impl<'a, T, O> std::fmt::Debug for Pageable<'a, T, O> {
+impl<T, O> std::fmt::Debug for Pageable<T, O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Pageable").finish_non_exhaustive()
     }

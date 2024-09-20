@@ -187,16 +187,21 @@ impl ContainerClientMethods for ContainerClient {
         );
         base_req.set_json(&query.into())?;
 
+        // We have to double-clone here.
+        // First we clone the pipeline to pass it in to the closure
+        let pipeline = self.root_client.pipeline.clone();
         Ok(azure_core::Pageable::new(move |continuation| {
+            // Then we have to clone it again to pass it in to the async block.
+            // This is because Pageable can't borrow any data, it has to own it all.
+            // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
+            let pipeline = pipeline.clone();
             let mut req = base_req.clone();
             async move {
                 if let Some(continuation) = continuation {
                     req.insert_header(constants::CONTINUATION, continuation);
                 }
 
-                let resp = self
-                    .root_client
-                    .pipeline
+                let resp = pipeline
                     .send(Context::new(), &mut req, ResourceType::Items)
                     .await?;
 
