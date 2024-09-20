@@ -15,3 +15,5 @@ sample/
 *.vim
 .idea/
 .env
+.DS_Store
+
