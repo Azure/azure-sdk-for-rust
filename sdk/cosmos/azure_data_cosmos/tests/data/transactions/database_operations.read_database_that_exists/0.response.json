@@ -1,0 +1,45 @@
+{
+  "status": 200,
+  "headers": {
+    "cache-control": "no-store, no-cache",
+    "content-length": "171",
+    "content-location": "https://azure_testing.example.com/dbs/TestDatabase",
+    "content-type": "application/json",
+    "date": "Mon, 23 Sep 2024 17:22:54 GMT",
+    "etag": "\"0000a605-0000-4d00-0000-66eda89b0000\"",
+    "lsn": "13",
+    "pragma": "no-cache",
+    "server": "Microsoft-HTTPAPI/2.0",
+    "strict-transport-security": "max-age=31536000",
+    "x-ms-aad-applied-role-assignment": "88eefcc9-0357-4f5d-8c5a-56ed0e9f7259,88eefcc9-0357-4f5d-8c5a-56ed0e9f7259",
+    "x-ms-activity-id": "1df8cb77-c729-40d1-b0df-52277e2b5834",
+    "x-ms-cosmos-item-llsn": "12",
+    "x-ms-cosmos-llsn": "13",
+    "x-ms-gatewayversion": "version=2.14.0",
+    "x-ms-global-committed-lsn": "13",
+    "x-ms-item-lsn": "12",
+    "x-ms-last-state-change-utc": "Thu, 12 Sep 2024 09:40:12.617 GMT",
+    "x-ms-number-of-read-regions": "0",
+    "x-ms-request-charge": "2",
+    "x-ms-request-duration-ms": "1.678",
+    "x-ms-resource-quota": "databases=1000;",
+    "x-ms-resource-usage": "databases=2;",
+    "x-ms-schemaversion": "1.18",
+    "x-ms-serviceversion": "version=2.14.0.0",
+    "x-ms-session-token": "0:-1#13",
+    "x-ms-transport-request-id": "1703212",
+    "x-ms-xp-role": "1"
+  },
+  "body": {
+    "encoding": "Json",
+    "content": {
+      "_colls": "colls/",
+      "_etag": "\"0000a605-0000-4d00-0000-66eda89b0000\"",
+      "_rid": "QEFeAA==",
+      "_self": "dbs/QEFeAA==/",
+      "_ts": 1726851228,
+      "_users": "users/",
+      "id": "TestDatabase"
+    }
+  }
+}

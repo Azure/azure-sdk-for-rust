@@ -61,6 +61,12 @@ pub mod builders {
         }
     }
 
+    impl From<CosmosClientOptions> for CosmosClientOptionsBuilder {
+        fn from(options: CosmosClientOptions) -> Self {
+            Self(options)
+        }
+    }
+
     impl ClientOptionsBuilder for CosmosClientOptionsBuilder {
         fn with_per_call_policies<P>(mut self, per_call_policies: P) -> Self
         where

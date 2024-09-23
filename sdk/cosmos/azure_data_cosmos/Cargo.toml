@@ -29,6 +29,7 @@ serde_json.workspace = true
 azure_identity.workspace = true
 clap.workspace = true
 time.workspace = true
+azure_testing.workspace = true
 
 [lints]
 workspace = true
