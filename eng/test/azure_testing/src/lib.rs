@@ -52,7 +52,7 @@ pub struct TestContext {
 }
 
 impl TestContext {
-    /// Create a new [`TransactionContext`] with the provided package path, module-under-test, and transaction name.
+    /// Create a new [`TestContext`] with the provided package path, module-under-test, and transaction name.
     pub fn new(package_path: String, module_under_test: String, transaction_name: String) -> Self {
         Self {
             package_path,
@@ -61,7 +61,7 @@ impl TestContext {
         }
     }
 
-    /// Create a new [`TransactionContext`] with the provided package path and transaction name. The 'module-under-test' will be inferred from the test module path.
+    /// Create a new [`TestContext`] with the provided package path and transaction name. The 'module-under-test' will be inferred from the test module path.
     pub fn from_test_module_path(
         package_path: String,
         test_module_path: String,
@@ -70,8 +70,8 @@ impl TestContext {
         let path_segments: Vec<&str> = test_module_path.split("::").collect();
 
         let module_under_test = match path_segments.split_last() {
-            Some((&"test", rest)) => rest.last().map(|x| *x),
-            Some((&"tests", rest)) => rest.last().map(|x| *x),
+            Some((&"test", rest)) => rest.last().copied(),
+            Some((&"tests", rest)) => rest.last().copied(),
             Some((x, _)) => Some(*x),
             None => None,
         };
@@ -125,7 +125,7 @@ impl TestContext {
     }
 }
 
-/// Create a [`TransactionContext`] for the current test module and the provided transaction name.
+/// Create a [`TestContext`] for the current test module and the provided transaction name.
 ///
 /// If the current test module is named `test` or `tests`, the default "module under test" will be the parent module.
 /// For example, given `azure_data_cosmos::clients::database_client::test`, the "module under test" will be `database_client`.

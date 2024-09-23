@@ -92,6 +92,8 @@ impl<'a> Serialize for RequestSerializer<'a> {
 
         let body_bytes = match self.0.body() {
             Body::Bytes(bytes) => bytes.clone(),
+
+            #[cfg(not(target_arch = "wasm32"))] // wasm32 doesn't have any other variants.
             _ => todo!("only bytes body is supported"),
         };
 
@@ -99,7 +101,7 @@ impl<'a> Serialize for RequestSerializer<'a> {
         // This is because when running in replay mode, we need to be able to compare the request against the recorded request.
         // We do this at a byte level, so we need to match it exactly.
         // TODO: We could probably do something optimistic here and use the JSON encoding type if we detect that the incoming request body looks identical to a standard-serialized serde_json::Value.
-        let body = if body_bytes.len() == 0 {
+        let body = if body_bytes.is_empty() {
             SerializedBody {
                 encoding: BodyEncoding::Empty,
                 content: serde_json::Value::Null,
