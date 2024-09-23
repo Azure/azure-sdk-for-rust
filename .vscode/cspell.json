@@ -14,7 +14,9 @@
     "NOTICE.txt",
     "eng/",
     "*.dict.txt",
-    "rust-toolchain.toml"
+    "rust-toolchain.toml",
+    "*.request.json",
+    "*.response.json"
   ],
   "words": [
     "amqp",
