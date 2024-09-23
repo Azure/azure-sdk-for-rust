@@ -4,11 +4,11 @@
 #[cfg(not(target_arch = "wasm32"))]
 use crate::AzureCliCredential;
 use crate::{
-    timeout::TimeoutExt, token_credentials::cache::TokenCache, AppServiceManagedIdentityCredential,
+    credentials::cache::TokenCache, timeout::TimeoutExt, AppServiceManagedIdentityCredential,
     EnvironmentCredential, ImdsId, TokenCredentialOptions, VirtualMachineManagedIdentityCredential,
 };
 use azure_core::{
-    auth::{AccessToken, TokenCredential},
+    credentials::{AccessToken, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
 };
 use std::{sync::Arc, time::Duration};

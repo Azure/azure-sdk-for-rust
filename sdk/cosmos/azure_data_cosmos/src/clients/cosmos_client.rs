@@ -1,12 +1,12 @@
 use crate::authorization_policy::AuthorizationPolicy;
 use crate::clients::DatabaseClient;
 use crate::CosmosClientOptions;
-use azure_core::auth::TokenCredential;
+use azure_core::credentials::TokenCredential;
 use azure_core::{Pipeline, Url};
 use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
-use azure_core::auth::Secret;
+use azure_core::credentials::Secret;
 
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
@@ -36,7 +36,7 @@ impl CosmosClient {
     /// # Arguments
     ///
     /// * `endpoint` - The full URL of the Cosmos DB account, for example `https://myaccount.documents.azure.com/`.
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::auth::TokenCredential) that can provide an Entra ID token to use when authenticating.
+    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     ///
     /// # Examples

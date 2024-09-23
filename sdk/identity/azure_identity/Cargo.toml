@@ -41,14 +41,11 @@ serial_test.workspace = true
 clap.workspace = true
 
 [features]
-default = ["development", "reqwest", "old_azure_cli"]
+default = ["reqwest", "old_azure_cli"]
 reqwest = ["azure_core/reqwest"]
 reqwest_rustls = ["azure_core/reqwest_rustls"]
-development = []
 test_e2e = []
 client_certificate = ["openssl"]
-vendored_openssl = ["openssl/vendored"]
-azureauth_cli = []
 
 # If you are using and Azure CLI version older than 2.54.0 from November 2023,
 # upgrade your Azure CLI version or enable this feature.
@@ -58,15 +55,4 @@ azureauth_cli = []
 old_azure_cli = ["time/local-offset", "tz-rs"]
 
 [package.metadata.docs.rs]
-features = [
-  "reqwest",
-  "reqwest_rustls",
-  "development",
-  "client_certificate",
-  "azureauth_cli",
-  "old_azure_cli",
-]
-
-[[example]]
-name = "azureauth_cli_credential"
-required-features = ["azureauth_cli"]
+features = ["reqwest", "reqwest_rustls", "client_certificate"]

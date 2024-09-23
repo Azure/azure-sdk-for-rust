@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{date, new_http_client};
-use azure_identity::client_credentials_flow;
+use azure_core::{credentials::TokenCredential, date, new_http_client, Url};
+use azure_identity::ClientSecretCredential;
 use std::{
     env::{args, var},
     error::Error,
@@ -24,19 +24,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let http_client = new_http_client();
 
-    let token = client_credentials_flow::perform(
+    let credential = ClientSecretCredential::new(
         http_client,
-        &client_id,
-        &client_secret,
-        &[&format!(
+        Url::parse("https://login.microsoftonline.com").unwrap(),
+        tenant_id,
+        client_id,
+        client_secret,
+    );
+
+    let token = credential
+        .get_token(&[&format!(
             "https://{storage_account_name}.blob.core.windows.net/.default"
-        )],
-        &tenant_id,
-    )
-    .await?;
+        )])
+        .await?;
 
     println!("token received: {token:?}");
-    println!("token secret: {}", token.access_token().secret());
+    println!("token secret: {}", token.token.secret());
 
     let dt = OffsetDateTime::now_utc();
     let time = date::to_rfc1123(&dt);
@@ -48,7 +51,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ))
         .header(
             "Authorization",
-            format!("Bearer {}", token.access_token().secret()),
+            format!("Bearer {}", token.token.secret()),
         )
         .header("x-ms-version", "2019-07-07")
         .header("x-ms-date", time)

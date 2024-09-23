@@ -1,55 +1,20 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Authorize using the OAuth 2.0 client credentials flow with federated credentials.
-//!
-//! ```no_run
-//! use azure_core::{authority_hosts::AZURE_PUBLIC_CLOUD, Url};
-//! use azure_identity::{federated_credentials_flow};
-//!
-//! use std::env;
-//! use std::error::Error;
-//!
-//! #[tokio::main]
-//! async fn main() -> Result<(), Box<dyn Error>> {
-//!     let client_id =
-//!         env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable.");
-//!     let token = env::var("FEDERATED_TOKEN").expect("Missing FEDERATED_TOKEN environment variable.");
-//!     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
-//!     let subscription_id =
-//!         env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
-//!
-//!     let http_client = azure_core::new_http_client();
-//!     // This will give you the final token to use in authorization.
-//!     let token = federated_credentials_flow::perform(
-//!         http_client.clone(),
-//!         &client_id,
-//!         &token,
-//!         &["https://management.azure.com/"],
-//!         &tenant_id,
-//!         &AZURE_PUBLIC_CLOUD,
-//!     )
-//!     .await?;
-//!     Ok(())
-//! }
-//! ```
-//!
-//! You can learn more about this authorization flow [here](https://learn.microsoft.com/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow#third-case-access-token-request-with-a-federated-credential).
-
-mod login_response;
+mod response;
 
 use azure_core::{
     content_type,
     error::{http_response_from_body, ErrorKind, ResultExt},
     headers, HttpClient, Method, Request, Response, Url,
 };
-use login_response::LoginResponse;
+use response::LoginResponse;
 use std::sync::Arc;
 use tracing::{debug, error};
 use url::form_urlencoded;
 
-/// Perform the client credentials flow
-pub async fn perform(
+/// Authorize the client using the federated credentials flow.
+pub async fn authorize(
     http_client: Arc<dyn HttpClient>,
     client_id: &str,
     client_assertion: &str,

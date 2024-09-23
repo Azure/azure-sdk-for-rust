@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 
 #[cfg(feature = "client_certificate")]
-pub use crate::token_credentials::ClientCertificateCredential;
-use crate::token_credentials::{
+pub use crate::credentials::ClientCertificateCredential;
+use crate::credentials::{
     ClientSecretCredential, TokenCredentialOptions, WorkloadIdentityCredential,
 };
 use azure_core::{
-    auth::{AccessToken, TokenCredential},
+    credentials::{AccessToken, TokenCredential},
     error::{Error, ErrorKind},
 };
 

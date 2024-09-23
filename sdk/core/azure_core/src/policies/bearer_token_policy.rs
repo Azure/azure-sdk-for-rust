@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    auth::{AccessToken, TokenCredential},
+    auth::AccessToken,
+    credentials::TokenCredential,
     error::{Error, ErrorKind, Result},
     headers::AUTHORIZATION,
     policies::{Policy, PolicyResult},

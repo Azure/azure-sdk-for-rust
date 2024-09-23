@@ -3,7 +3,7 @@
 
 use crate::{ImdsId, ImdsManagedIdentityCredential, TokenCredentialOptions};
 use azure_core::{
-    auth::{AccessToken, TokenCredential},
+    credentials::{AccessToken, TokenCredential},
     headers::HeaderName,
     Url,
 };
