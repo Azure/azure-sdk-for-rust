@@ -9,7 +9,7 @@ members = [
   "sdk/cosmos/azure_data_cosmos",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
-  "eng/test/mock_transport",
+  "eng/test/azure_testing",
   "sdk/storage",
   "sdk/storage/azure_storage_blob",
 ]
@@ -45,6 +45,10 @@ path = "sdk/identity/azure_identity"
 [workspace.dependencies.azure_storage_common]
 version = "0.1.0"
 path = "sdk/storage"
+
+[workspace.dependencies.azure_testing]
+version = "0.1.0"
+path = "eng/test/azure_testing"
 
 [workspace.dependencies]
 async-lock = "3.0"

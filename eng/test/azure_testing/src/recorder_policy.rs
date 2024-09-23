@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::mock_request::RequestSerializer;
+use crate::TestContext;
 
 use super::mock_response::MockResponse;
 use super::MockTransaction;
@@ -17,8 +18,8 @@ pub struct MockTransportRecorderPolicy {
 }
 
 impl MockTransportRecorderPolicy {
-    pub fn new(transaction_name: String, http_client: Arc<dyn HttpClient>) -> Self {
-        let transaction = MockTransaction::new(transaction_name);
+    pub fn new(tx_context: TestContext, http_client: Arc<dyn HttpClient>) -> Self {
+        let transaction = MockTransaction::new(tx_context);
         Self {
             transaction,
             http_client,
@@ -39,16 +40,13 @@ impl Policy for MockTransportRecorderPolicy {
         assert_eq!(0, next.len());
 
         // serialize to file both the request and the response
-        let mut request_path = self.transaction.file_path(true)?;
-        let mut response_path = request_path.clone();
+        let mock_request = self.transaction.new_request(true)?;
 
-        let number = self.transaction.number();
-        request_path.push(format!("{number}_request.json"));
-        response_path.push(format!("{number}_response.json"));
-
-        let request_contents = serde_json::to_string(&RequestSerializer::new(request)).unwrap();
+        let request_contents =
+            serde_json::to_string_pretty(&RequestSerializer::new(request)).unwrap();
         {
-            let mut request_contents_stream = std::fs::File::create(&request_path).unwrap();
+            let mut request_contents_stream =
+                std::fs::File::create(&mock_request.request_path).unwrap();
             request_contents_stream
                 .write_all(request_contents.as_bytes())
                 .context(ErrorKind::MockFramework, "cannot write request file")?;
@@ -59,15 +57,15 @@ impl Policy for MockTransportRecorderPolicy {
         // we need to duplicate the response because we are about to consume the response stream.
         // We replace the HTTP stream with a memory-backed stream.
         let (response, mock_response) = MockResponse::duplicate(response).await?;
-        let response_contents = serde_json::to_string(&mock_response).unwrap();
+        let response_contents = serde_json::to_string_pretty(&mock_response).unwrap();
         {
-            let mut response_contents_stream = std::fs::File::create(&response_path).unwrap();
+            let mut response_contents_stream =
+                std::fs::File::create(&mock_request.response_path).unwrap();
             response_contents_stream
                 .write_all(response_contents.as_bytes())
                 .context(ErrorKind::MockFramework, "cannot write response file")?;
         }
 
-        self.transaction.increment_number();
         Ok(response)
     }
 }

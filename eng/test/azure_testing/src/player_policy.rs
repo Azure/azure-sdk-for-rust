@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::mock_request::RequestDeserializer;
+use crate::TestContext;
 
 use super::mock_response::MockResponse;
 use super::mock_transaction::MockTransaction;
@@ -16,8 +17,8 @@ pub struct MockTransportPlayerPolicy {
 }
 
 impl MockTransportPlayerPolicy {
-    pub fn new(transaction_name: String) -> Self {
-        let transaction = MockTransaction::new(transaction_name);
+    pub fn new(tx_context: TestContext) -> Self {
+        let transaction = MockTransaction::new(tx_context);
         Self { transaction }
     }
 }
@@ -34,17 +35,25 @@ impl Policy for MockTransportPlayerPolicy {
         // there must be no more policies
         assert_eq!(0, next.len());
 
+        // validate the host name is 'example.com'
+        // this is an opinionated check, we can remove it if needed
+        // essentially, the idea here is that we want to ensure we're never trying to make real requests in replay mode
+        // so we use this as a safety check
+        if request.url().host_str() != Some("example.com") {
+            return Err(Error::with_message(ErrorKind::MockFramework, || {
+                format!(
+                    "expected request to be made to 'example.com', but it was made to '{0}'",
+                    request.url().host_str().unwrap_or("unknown")
+                )
+            }));
+        }
+
         // deserialize to file both the request and the response
         let (expected_request, expected_response) = {
-            let mut request_path = self.transaction.file_path(false)?;
-            let mut response_path = request_path.clone();
+            let mock_request = self.transaction.new_request(false)?;
 
-            let number = self.transaction.number();
-            request_path.push(format!("{number}_request.json"));
-            response_path.push(format!("{number}_response.json"));
-
-            let request = std::fs::read_to_string(&request_path)?;
-            let response = std::fs::read_to_string(&response_path)?;
+            let request = std::fs::read_to_string(&mock_request.request_path)?;
+            let response = std::fs::read_to_string(&mock_request.response_path)?;
 
             (request, response)
         };
@@ -149,7 +158,6 @@ impl Policy for MockTransportPlayerPolicy {
             }));
         }
 
-        self.transaction.increment_number();
         Ok(expected_response.into())
     }
 }

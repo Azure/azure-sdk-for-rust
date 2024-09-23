@@ -3,12 +3,14 @@
 
 use azure_core::{
     base64, error,
-    headers::{HeaderName, HeaderValue, Headers},
+    headers::{self, HeaderName, HeaderValue, Headers},
     BytesStream, Response, StatusCode,
 };
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+
+use crate::{is_json_content_type, is_utf8_safe_content_type, BodyEncoding, SerializedBody};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct MockResponse {
@@ -70,7 +72,26 @@ impl<'de> Deserialize<'de> for MockResponse {
             let value = HeaderValue::from(v.to_owned());
             headers.insert(name, value);
         }
-        let body = Bytes::from(base64::decode(r.body).map_err(Error::custom)?);
+        let body = match r.body.encoding {
+            BodyEncoding::Empty => Bytes::new(),
+            BodyEncoding::Utf8 => Bytes::copy_from_slice(
+                r.body
+                    .content
+                    .as_str()
+                    .ok_or(Error::custom(
+                        "expected a string for content when body is UTF-8 encoded",
+                    ))?
+                    .as_bytes(),
+            ),
+            BodyEncoding::Json => serde_json::to_string(&r.body.content)
+                .map_err(|_| Error::custom("invalid JSON in JSON body"))?
+                .into(),
+            BodyEncoding::Base64 => base64::decode(r.body.content.as_str().ok_or(
+                Error::custom("expected a string for content when body is UTF-8 encoded"),
+            )?)
+            .map_err(|_| Error::custom("invalid base64 in JSON body"))?
+            .into(),
+        };
         let status = StatusCode::try_from(r.status)
             .map_err(|_| Error::custom(format!("invalid status code {}", r.status)))?;
 
@@ -85,10 +106,39 @@ impl Serialize for MockResponse {
     {
         let mut headers = BTreeMap::new();
         for (h, v) in self.headers.iter() {
+            let v = crate::sanitation::sanitize_header(h, v);
             headers.insert(h.as_str().into(), v.as_str().into());
         }
         let status = self.status as u16;
-        let body = base64::encode(&self.body);
+
+        let body = if self.body.is_empty() {
+            SerializedBody {
+                encoding: BodyEncoding::Empty,
+                content: serde_json::Value::Null,
+            }
+        } else if is_json_content_type(self.headers.get_optional_str(&headers::CONTENT_TYPE)) {
+            let bytes = Vec::from(self.body.clone());
+            SerializedBody {
+                encoding: BodyEncoding::Json,
+                content: serde_json::from_slice::<serde_json::Value>(&bytes)
+                    .map_err(|_| serde::ser::Error::custom("invalid utf-8 in JSON body"))?,
+            }
+        } else if is_utf8_safe_content_type(self.headers.get_optional_str(&headers::CONTENT_TYPE)) {
+            let bytes = Vec::from(self.body.clone());
+            SerializedBody {
+                encoding: BodyEncoding::Utf8,
+                content: serde_json::Value::String(
+                    String::from_utf8(bytes)
+                        .map_err(|_| serde::ser::Error::custom("invalid utf-8 in JSON body"))?,
+                ),
+            }
+        } else {
+            SerializedBody {
+                encoding: BodyEncoding::Base64,
+                content: serde_json::Value::String(base64::encode(&self.body)),
+            }
+        };
+
         let s = SerializedMockResponse {
             status,
             headers,
@@ -102,5 +152,5 @@ impl Serialize for MockResponse {
 pub(crate) struct SerializedMockResponse {
     status: u16,
     headers: BTreeMap<String, String>,
-    body: String,
+    body: SerializedBody,
 }
