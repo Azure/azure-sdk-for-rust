@@ -23,7 +23,12 @@ use serde::Serialize;
 ///
 /// ```rust
 /// # use azure_data_cosmos::{Query, NullValue};
-/// let query = Query::from("SELECT * FROM c WHERE ...")
+/// let query = Query::from("
+///     SELECT * FROM c
+///     WHERE c.id = @customer_id
+///     AND c.name = @customer_name
+///     AND c.is_active = @is_active
+///     AND c.offer_code = @offer_code")
 ///     .with_parameter("@customer_id", 42).unwrap()
 ///     .with_parameter("@customer_name", "Contoso").unwrap()
 ///     .with_parameter("@is_active", true).unwrap()
@@ -51,7 +56,7 @@ pub struct Query {
 }
 
 impl Query {
-    /// Creates a new [`Query`] with the same text and the same parameters, with one additional parameter added.
+    /// Consumes this [`Query`] instance, adds a new parameter to it, and returns it.
     ///
     /// Returns an error if the value cannot be serialized to JSON.
     pub fn with_parameter(
