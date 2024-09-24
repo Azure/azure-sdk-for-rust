@@ -3,6 +3,7 @@
 
 use crate::{
     credentials::{AccessToken, TokenCredential},
+    error::{Error, ErrorKind},
     headers::AUTHORIZATION,
     policies::{Policy, PolicyResult},
     Context, Request,
@@ -61,18 +62,23 @@ impl Policy for BearerTokenCredentialPolicy {
 
         if let Some(token) = &(*access_token) {
             if token.is_expired(Some(DEFAULT_REFRESH_TIME)) {
+                drop(access_token);
                 let mut access_token = self.access_token.write().await;
                 *access_token = Some(self.credential.get_token(&self.scopes()).await?);
             }
         } else {
+            drop(access_token);
             let mut access_token = self.access_token.write().await;
             *access_token = Some(self.credential.get_token(&self.scopes()).await?);
         }
 
-        request.insert_header(
-            AUTHORIZATION,
-            format!("Bearer {}", self.access_token().await.unwrap()),
-        );
+        let access_token = self.access_token().await.ok_or_else(|| {
+            Error::message(
+                ErrorKind::Credential,
+                "The request failed due to an error while fetching the access token.",
+            )
+        })?;
+        request.insert_header(AUTHORIZATION, format!("Bearer {}", access_token));
 
         next[0].send(ctx, request, &next[1..]).await
     }
