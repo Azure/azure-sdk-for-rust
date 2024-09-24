@@ -41,3 +41,4 @@
 # Eng Sys
 ###########
 /eng/                   @weshaggard @heaths @RickWinter
+/.github/CODEOWNERS      @RickWinter @ronniegeraghty @Azure/azure-sdk-eng
