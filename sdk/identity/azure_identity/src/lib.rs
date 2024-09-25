@@ -12,7 +12,7 @@
 //!    let subscription_id =
 //!        std::env::var("AZURE_SUBSCRIPTION_ID").expect("AZURE_SUBSCRIPTION_ID required");
 //!
-//!    let credential = azure_identity::create_credential()?;
+//!    let credential = azure_identity::DefaultAzureCredential::new()?;
 //!
 //!    // Let's enumerate the Azure storage accounts in the subscription using the REST API directly.
 //!    // This is just an example. It is easier to use the Azure SDK for Rust crates.

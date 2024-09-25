@@ -11,7 +11,7 @@ use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
 };
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
 pub struct DefaultAzureCredentialBuilder {
@@ -230,7 +230,20 @@ pub struct DefaultAzureCredential {
 }
 
 impl DefaultAzureCredential {
-    pub fn create(options: TokenCredentialOptions) -> azure_core::Result<DefaultAzureCredential> {
+    /// Create a [`DefaultAzureCredentialBuilder`] to create a `DefaultAzureCredential` with options.
+    pub fn builder() -> DefaultAzureCredentialBuilder {
+        DefaultAzureCredentialBuilder::new()
+    }
+
+    /// Creates a `DefaultAzureCredential` with default options.
+    pub fn new() -> azure_core::Result<DefaultAzureCredential> {
+        Self::with_options(TokenCredentialOptions::default())
+    }
+
+    /// Creates a `DefaultAzureCredential` with options.
+    pub fn with_options(
+        options: TokenCredentialOptions,
+    ) -> azure_core::Result<DefaultAzureCredential> {
         DefaultAzureCredentialBuilder::default()
             .with_options(options)
             .build()
@@ -262,13 +275,6 @@ impl DefaultAzureCredential {
             )
         }))
     }
-}
-
-/// Creates a new `DefaultAzureCredential` with the default options.
-pub fn create_default_credential() -> azure_core::Result<Arc<dyn TokenCredential>> {
-    DefaultAzureCredentialBuilder::default()
-        .build()
-        .map(|cred| Arc::new(cred) as Arc<dyn TokenCredential>)
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]

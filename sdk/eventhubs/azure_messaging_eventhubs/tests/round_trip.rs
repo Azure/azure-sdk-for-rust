@@ -10,7 +10,7 @@ use azure_core_amqp::{
     messaging::{AmqpMessage, AmqpMessageProperties},
     value::{AmqpList, AmqpValue},
 };
-use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
     consumer::{ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition},
     models::{EventData, MessageId},
@@ -32,7 +32,7 @@ async fn test_round_trip_batch() {
     let producer = ProducerClient::new(
         host.clone(),
         eventhub.clone(),
-        DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
+        DefaultAzureCredential::new().unwrap(),
         ProducerClientOptions::builder()
             .with_application_id(TEST_NAME)
             .build(),
@@ -114,7 +114,7 @@ async fn test_round_trip_batch() {
         host,
         eventhub,
         None,
-        DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
+        DefaultAzureCredential::new().unwrap(),
         Some(
             ConsumerClientOptions::builder()
                 .with_application_id(TEST_NAME)

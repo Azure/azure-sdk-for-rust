@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 // cspell: words
 use azure_core::error::Result;
-use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
 
 use std::env;
@@ -17,7 +17,7 @@ async fn main() -> Result<()> {
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let credential = DefaultAzureCredential::new().unwrap();
 
     let client = ProducerClient::new(
         host,

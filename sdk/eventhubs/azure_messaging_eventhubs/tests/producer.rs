@@ -9,7 +9,7 @@ use azure_core_amqp::{
     messaging::{AmqpMessage, AmqpMessageBody},
     value::{AmqpList, AmqpValue},
 };
-use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::producer::{
     batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions,
 };
@@ -26,7 +26,7 @@ async fn test_new() {
     let _client = ProducerClient::new(
         host,
         eventhub,
-        DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
+        DefaultAzureCredential::new().unwrap(),
         ProducerClientOptions::builder()
             .with_application_id("test_new")
             .build(),
@@ -40,7 +40,7 @@ async fn test_new_with_error() {
     let producer = ProducerClient::new(
         "invalid_host",
         eventhub,
-        azure_identity::DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
+        azure_identity::DefaultAzureCredential::new().unwrap(),
         ProducerClientOptions::builder()
             .with_application_id("test_new_with_error")
             .build(),
@@ -58,7 +58,7 @@ async fn test_open() {
     let client = ProducerClient::new(
         host,
         eventhub,
-        azure_identity::DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
+        azure_identity::DefaultAzureCredential::new().unwrap(),
         ProducerClientOptions::builder()
             .with_application_id("test_open")
             .build(),
@@ -73,7 +73,7 @@ async fn test_close() {
     let client = ProducerClient::new(
         host,
         eventhub,
-        azure_identity::DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
+        azure_identity::DefaultAzureCredential::new().unwrap(),
         ProducerClientOptions::builder()
             .with_application_id("test_close")
             .build(),
@@ -88,7 +88,7 @@ async fn test_get_properties() {
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let credential = DefaultAzureCredential::new().unwrap();
 
     let client = ProducerClient::new(
         host,
@@ -110,7 +110,7 @@ async fn test_get_partition_properties() {
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let credential = DefaultAzureCredential::new().unwrap();
 
     let client = ProducerClient::new(
         host,
@@ -163,7 +163,7 @@ async fn test_create_batch() {
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let credential = DefaultAzureCredential::new().unwrap();
 
     let client = ProducerClient::new(
         host,
@@ -186,7 +186,7 @@ async fn test_create_and_send_batch() {
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let credential = DefaultAzureCredential::new().unwrap();
 
     let client = ProducerClient::new(
         host,
@@ -238,7 +238,7 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let credential = DefaultAzureCredential::new().unwrap();
 
     let client = ProducerClient::new(
         host,
@@ -315,7 +315,7 @@ async fn test_overload_batch() {
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let credential = DefaultAzureCredential::new().unwrap();
 
     info!("Create producer client...");
 
