@@ -108,7 +108,7 @@ pub trait ContainerClientMethods {
     /// # }
     /// ```
     ///
-    /// See [`PartitionKey`] for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
+    /// See [`PartitionKey`](crate::PartitionKey) for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
     fn query_items<T: DeserializeOwned + Send>(
         &self,
         query: impl Into<Query>,

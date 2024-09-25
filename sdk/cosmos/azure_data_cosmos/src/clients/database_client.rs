@@ -55,7 +55,7 @@ pub trait DatabaseClientMethods {
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
-/// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](CosmosClient::database_client()).
+/// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
 pub struct DatabaseClient {
     database_url: Url,
     pipeline: CosmosPipeline,
