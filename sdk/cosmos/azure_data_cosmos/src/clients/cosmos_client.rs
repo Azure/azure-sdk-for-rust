@@ -111,6 +111,6 @@ impl CosmosClientMethods for CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the database.
     fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient {
-        DatabaseClient::new(self.clone(), id.as_ref())
+        DatabaseClient::new(self.pipeline.clone(), &self.endpoint, id.as_ref())
     }
 }

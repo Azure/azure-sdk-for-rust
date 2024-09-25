@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::clients::ContainerClient;
 use crate::models::DatabaseProperties;
 use crate::options::ReadDatabaseOptions;
 use crate::pipeline::ResourceType;
-use crate::utils::WithAddedPathSegments;
-use crate::CosmosClient;
+use crate::{clients::ContainerClient, pipeline::CosmosPipeline};
 
 use azure_core::{Context, Request};
+use typespec_client_core::http::AppendPathSegments;
 use url::Url;
 
 #[cfg(doc)]
@@ -58,19 +57,18 @@ pub trait DatabaseClientMethods {
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](CosmosClient::database_client()).
 pub struct DatabaseClient {
-    base_url: Url,
-    root_client: CosmosClient,
+    database_url: Url,
+    pipeline: CosmosPipeline,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(root_client: CosmosClient, database_id: &str) -> Self {
-        let base_url = root_client
-            .endpoint()
-            .with_added_path_segments(vec!["dbs", database_id]);
+    pub(crate) fn new(pipeline: CosmosPipeline, base_url: &Url, database_id: &str) -> Self {
+        let mut database_url = base_url.clone();
+        database_url.append_path_segments(vec!["dbs", database_id]);
 
         Self {
-            base_url,
-            root_client,
+            database_url,
+            pipeline,
         }
     }
 }
@@ -83,14 +81,13 @@ impl DatabaseClientMethods for DatabaseClient {
         // This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<azure_core::Response<DatabaseProperties>> {
-        let mut req = Request::new(self.base_url.clone(), azure_core::Method::Get);
-        self.root_client
-            .pipeline
+        let mut req = Request::new(self.database_url.clone(), azure_core::Method::Get);
+        self.pipeline
             .send(Context::new(), &mut req, ResourceType::Databases)
             .await
     }
 
     fn container_client(&self, name: impl AsRef<str>) -> ContainerClient {
-        ContainerClient::new(self.root_client.clone(), &self.base_url, name.as_ref())
+        ContainerClient::new(self.pipeline.clone(), &self.database_url, name.as_ref())
     }
 }

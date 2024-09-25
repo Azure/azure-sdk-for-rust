@@ -3,7 +3,7 @@
 
 use azure_data_cosmos::{
     clients::{ContainerClientMethods, DatabaseClientMethods},
-    CosmosClient, CosmosClientMethods,
+    CosmosClient, CosmosClientMethods, PartitionKey,
 };
 use clap::Parser;
 use futures::StreamExt;
@@ -47,8 +47,9 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_client = client.database_client(&args.database);
     let container_client = db_client.container_client(&args.container);
 
+    let pk = PartitionKey::from(args.partition_key);
     let mut items_pager =
-        container_client.query_items::<serde_json::Value>(&args.query, args.partition_key, None)?;
+        container_client.query_items::<serde_json::Value>(&args.query, pk, None)?;
 
     while let Some(page) = items_pager.next().await {
         let response = page?;

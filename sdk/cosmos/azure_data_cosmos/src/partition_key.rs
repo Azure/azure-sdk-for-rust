@@ -1,7 +1,24 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::NullValue;
+/// Describes the partition strategy that will be used when querying.
+///
+/// Currently, the only supported strategy is [`QueryPartitionStrategy::SinglePartition`], which executes the query against a single partition, specified by the [`PartitionKey`] provided.
+///
+/// [`QueryPartitionStrategy`] implements [`From`] for any type that is convertible to a `PartitionKey`.
+/// This allows you to use any of the syntaxes specified in the [`PartitionKey`] docs any place an [`Into<QueryPartitionStrategy>`] is expected.
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub enum QueryPartitionStrategy {
+    SinglePartition(PartitionKey),
+}
+
+impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
+    /// Converts the provided value to a [`QueryPartitionStrategy::SinglePartition`], specifying that a query should be executed over only the partition defined by this [`PartitionKey`].
+    fn from(value: T) -> Self {
+        QueryPartitionStrategy::SinglePartition(value.into())
+    }
+}
 
 /// Specifies a partition key value, usually used when querying a specific partition.
 ///
@@ -42,21 +59,21 @@ use crate::NullValue;
 /// ```
 ///
 /// Null values can be represented in one of two ways.
-/// First, you can use [`NullValue`] anywhere a `PartitionKey` is expected:
+/// First, you can use an empty tuple (`()`) anywhere a `PartitionKey` is expected:
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods, NullValue};
+/// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
 /// # let credential = azure_identity::create_default_credential().unwrap();
 /// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
 /// # let db_client = client.database_client("my_database");
 /// # let container_client = db_client.container_client("my_container");
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
-///     NullValue, // A null value in a single-level partition key.
+///     (), // A null value in a single-level partition key.
 ///     None).unwrap();
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
-///     ("a", NullValue, "b"), // A null value within a hierarchical partition key.
+///     ("a", (), "b"), // A null value within a hierarchical partition key.
 ///     None).unwrap();
 /// ```
 ///
@@ -156,8 +173,8 @@ impl From<InnerPartitionKeyValue> for PartitionKeyValue {
     }
 }
 
-impl From<NullValue> for PartitionKeyValue {
-    fn from(_: NullValue) -> Self {
+impl From<()> for PartitionKeyValue {
+    fn from(_: ()) -> Self {
         InnerPartitionKeyValue::Null.into()
     }
 }
@@ -260,15 +277,28 @@ impl_from_tuple!(0 A 1 B 2 C);
 
 #[cfg(test)]
 mod tests {
-    use crate::{NullValue, PartitionKey};
+    use crate::PartitionKey;
+
+    use super::QueryPartitionStrategy;
 
     fn key_to_string(v: impl Into<PartitionKey>) -> String {
         v.into().into_header_value().unwrap()
     }
 
+    /// Validates that a given value is `impl Into<QueryPartitionStrategy>` and works as-expected.
+    fn key_to_single_partition_strategy_string(v: impl Into<QueryPartitionStrategy>) -> String {
+        let strategy = v.into();
+        let QueryPartitionStrategy::SinglePartition(key) = strategy;
+        key.into_header_value().unwrap()
+    }
+
     #[test]
     pub fn static_str() {
         assert_eq!(key_to_string("my_partition_key"), r#"["my_partition_key"]"#);
+        assert_eq!(
+            key_to_single_partition_strategy_string("my_partition_key"),
+            r#"["my_partition_key"]"#
+        );
     }
 
     #[test]
@@ -303,7 +333,7 @@ mod tests {
 
     #[test]
     pub fn null_value() {
-        assert_eq!(key_to_string(NullValue), r#"[null]"#);
+        assert_eq!(key_to_string(()), r#"[null]"#);
     }
 
     #[test]
@@ -318,7 +348,7 @@ mod tests {
     #[test]
     pub fn tuple() {
         assert_eq!(
-            key_to_string((42u8, "my_partition_key", NullValue)),
+            key_to_string((42u8, "my_partition_key", ())),
             r#"[42,"my_partition_key",null]"#
         );
     }

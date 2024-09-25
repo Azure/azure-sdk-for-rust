@@ -5,13 +5,14 @@ use crate::{
     constants,
     models::{ContainerProperties, QueryResults},
     options::{QueryOptions, ReadContainerOptions},
-    pipeline::ResourceType,
+    pipeline::{CosmosPipeline, ResourceType},
     utils::WithAddedPathSegments,
-    CosmosClient, PartitionKey, Query,
+    Query, QueryPartitionStrategy,
 };
 
 use azure_core::{headers::HeaderValue, Context, Request};
 use serde::{de::DeserializeOwned, Deserialize};
+use typespec_client_core::http::AppendPathSegments;
 use url::Url;
 
 #[cfg(doc)]
@@ -54,17 +55,19 @@ pub trait ContainerClientMethods {
     /// The resulting document will be deserialized into the type provided as `T`.
     /// If you want to deserialize the document to a direct representation of the JSON returned, use [`serde_json::Value`] as the target type.
     ///
-    /// We recommend using "turbofish" syntax (`query_items::<SomeTargetType>(...)`) to specify the target type, as it makes type inference easier.
+    /// We recommend using ["turbofish" syntax](https://doc.rust-lang.org/book/appendix-02-operators.html#:~:text=turbofish) (`query_items::<SomeTargetType>(...)`) to specify the target type, as it makes type inference easier.
+    ///
+    /// **NOTE:** Currently, the Azure Cosmos DB SDK for Rust only supports single-partition querying. Cross-partition queries may be supported in the future.
     ///
     /// # Arguments
     ///
     /// * `query` - The query to execute.
-    /// * `partition_key` - The partition key to scope the query on.
+    /// * `partition_key_strategy` - The partition key to scope the query on.
     /// * `options` - Optional parameters for the request.
     ///
     /// # Examples
     ///
-    /// The `query` and `partition_key` parameters accept anything that can be transformed [`Into`] their relevant types.
+    /// The `query` and `partition_key_strategy` parameters accept anything that can be transformed [`Into`] their relevant types.
     /// This allows simple queries without parameters to be expressed easily:
     ///
     /// ```rust,no_run
@@ -110,7 +113,7 @@ pub trait ContainerClientMethods {
     fn query_items<T: DeserializeOwned + Send>(
         &self,
         query: impl Into<Query>,
-        partition_key: impl Into<PartitionKey>,
+        partition_key: impl Into<QueryPartitionStrategy>,
         options: Option<QueryOptions>,
     ) -> azure_core::Result<azure_core::Pageable<QueryResults<T>, azure_core::Error>>;
 }
@@ -119,17 +122,18 @@ pub trait ContainerClientMethods {
 ///
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 pub struct ContainerClient {
-    base_url: Url,
-    root_client: CosmosClient,
+    container_url: Url,
+    pipeline: CosmosPipeline,
 }
 
 impl ContainerClient {
-    pub(crate) fn new(root_client: CosmosClient, database_url: &Url, container_name: &str) -> Self {
-        let base_url = database_url.with_added_path_segments(vec!["colls", container_name]);
+    pub(crate) fn new(pipeline: CosmosPipeline, database_url: &Url, container_name: &str) -> Self {
+        let mut container_url = database_url.clone();
+        container_url.append_path_segments(&["colls", container_name]);
 
         Self {
-            base_url,
-            root_client,
+            container_url,
+            pipeline,
         }
     }
 }
@@ -142,9 +146,8 @@ impl ContainerClientMethods for ContainerClient {
         // This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<azure_core::Response<ContainerProperties>> {
-        let mut req = Request::new(self.base_url.clone(), azure_core::Method::Get);
-        self.root_client
-            .pipeline
+        let mut req = Request::new(self.container_url.clone(), azure_core::Method::Get);
+        self.pipeline
             .send(Context::new(), &mut req, ResourceType::Containers)
             .await
     }
@@ -152,7 +155,7 @@ impl ContainerClientMethods for ContainerClient {
     fn query_items<T: DeserializeOwned + Send>(
         &self,
         query: impl Into<Query>,
-        partition_key: impl Into<PartitionKey>,
+        partition_key: impl Into<QueryPartitionStrategy>,
 
         #[allow(unused_variables)]
         // This is a documented public API so prefixing with '_' is undesirable.
@@ -176,20 +179,23 @@ impl ContainerClientMethods for ContainerClient {
             }
         }
 
-        let url = self.base_url.with_added_path_segments(vec!["docs"]);
+        let url = self.container_url.with_added_path_segments(vec!["docs"]);
         let mut base_req = Request::new(url, azure_core::Method::Post);
 
         base_req.insert_header(constants::QUERY, "True");
         base_req.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
+
+        let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
         base_req.insert_header(
             constants::PARTITION_KEY,
-            HeaderValue::from_cow(partition_key.into().into_header_value()?),
+            HeaderValue::from_cow(partition_key.into_header_value()?),
         );
+
         base_req.set_json(&query.into())?;
 
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure
-        let pipeline = self.root_client.pipeline.clone();
+        let pipeline = self.pipeline.clone();
         Ok(azure_core::Pageable::new(move |continuation| {
             // Then we have to clone it again to pass it in to the async block.
             // This is because Pageable can't borrow any data, it has to own it all.
