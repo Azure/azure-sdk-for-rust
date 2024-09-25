@@ -4,15 +4,6 @@
 use url::Url;
 
 /// Appends new path segments to the target [`Url`].
-///
-/// # Examples
-/// ```rust
-/// use url::Url;
-///
-/// let mut url: Url = "https://example.com/foo".parse().unwrap();
-/// url.append_to_path(&["bar", "baz"]);
-/// assert_eq!("https://example.com/foo/bar/baz", url.to_string());
-/// ```
 pub trait AppendPathSegments {
     fn append_path_segments<'a>(&mut self, segments: impl IntoIterator<Item = &'a str>);
 }
