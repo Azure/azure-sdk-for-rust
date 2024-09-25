@@ -75,7 +75,7 @@ impl ConsumerClient {
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
-    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let my_credential = DefaultAzureCredential::new()?;
     /// let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
     /// # Ok(())}
     /// ```
@@ -124,7 +124,7 @@ impl ConsumerClient {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let my_credential = DefaultAzureCredential::new().unwrap();
     ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
     ///
     ///     let result = consumer.open().await;
@@ -166,7 +166,7 @@ impl ConsumerClient {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let my_credential = DefaultAzureCredential::new().unwrap();
     ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
     ///
     ///     consumer.open().await.unwrap();
@@ -214,7 +214,7 @@ impl ConsumerClient {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let my_credential = DefaultAzureCredential::new().unwrap();
     ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
     ///     let partition_id = "0";
     ///     let options = None;
@@ -315,7 +315,7 @@ impl ConsumerClient {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let my_credential = DefaultAzureCredential::new().unwrap();
     ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
     ///
     ///     let eventhub_properties = consumer.get_eventhub_properties().await;
@@ -366,7 +366,7 @@ impl ConsumerClient {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let my_credential = DefaultAzureCredential::new().unwrap();
     ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
     ///     let partition_id = "0";
     ///

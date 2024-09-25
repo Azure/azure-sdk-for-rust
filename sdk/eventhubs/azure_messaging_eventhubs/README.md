@@ -166,7 +166,7 @@ async fn send_events() {
     let host = std::env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = std::env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = azure_identity::DefaultAzureCredential::create(azure_identity::TokenCredentialOptions::default()).unwrap();
+    let credential = azure_identity::DefaultAzureCredential::new().unwrap();
 
     let client = azure_messaging_eventhubs::producer::ProducerClient::new(
         host,
@@ -200,7 +200,7 @@ async fn receive_events() {
     let host = std::env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = std::env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = azure_identity::DefaultAzureCredential::create(azure_identity::TokenCredentialOptions::default()).unwrap();
+    let credential = azure_identity::DefaultAzureCredential::new().unwrap();
     let client = azure_messaging_eventhubs::consumer::ConsumerClient::new(
         host,
         eventhub,

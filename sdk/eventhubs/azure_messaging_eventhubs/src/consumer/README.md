@@ -15,7 +15,7 @@ and manage the lifecycle of the consumer client.
 use azure_messaging_eventhubs::consumer::ConsumerClient;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 
-let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+let my_credential = DefaultAzureCredential::new().unwrap();
 let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
 ```
 
@@ -27,7 +27,7 @@ use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 
 #[tokio::main]
 async fn main() {
-    let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let my_credential = DefaultAzureCredential::new().unwrap();
     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
 
     let result = consumer.open().await;
@@ -53,7 +53,7 @@ use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 
 #[tokio::main]
 async fn main() {
-    let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let my_credential = DefaultAzureCredential::new().unwrap();
     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
 
     consumer.open().await.unwrap();
@@ -82,7 +82,7 @@ use async_std::stream::StreamExt;
 
 #[tokio::main]
 async fn main() {
-    let my_credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let my_credential = DefaultAzureCredential::new().unwrap();
     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
     let partition_id = "0";
     let options = None;

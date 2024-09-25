@@ -7,12 +7,15 @@
 //! It is recommended to start with `azure_identity::create_credential()?`, which will create an instance of `DefaultAzureCredential` by default. If you want to use a specific credential type, the `AZURE_CREDENTIAL_KIND` environment variable may be set to a value from `azure_credential_kinds`, such as `azurecli` or `virtualmachine`.
 //!
 //! ```no_run
+//!use azure_core::credentials::TokenCredential;
+//!use std::sync::Arc;
 //!#[tokio::main]
 //!async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!    let subscription_id =
 //!        std::env::var("AZURE_SUBSCRIPTION_ID").expect("AZURE_SUBSCRIPTION_ID required");
 //!
-//!    let credential = azure_identity::DefaultAzureCredential::new()?;
+//!    let credential = azure_identity::DefaultAzureCredential::new()
+//!        .map(|cred| Arc::new(cred) as Arc<dyn TokenCredential>)?;
 //!
 //!    // Let's enumerate the Azure storage accounts in the subscription using the REST API directly.
 //!    // This is just an example. It is easier to use the Azure SDK for Rust crates.

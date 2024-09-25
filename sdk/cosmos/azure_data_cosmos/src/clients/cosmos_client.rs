@@ -42,9 +42,10 @@ impl CosmosClient {
     /// # Examples
     ///
     /// ```rust,no_run
+    /// # use std::sync::Arc;
     /// use azure_data_cosmos::CosmosClient;
     ///
-    /// let credential = azure_identity::create_default_credential().unwrap();
+    /// let credential = Arc::new(azure_identity::DefaultAzureCredential::new().unwrap());
     /// let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
     /// ```
     pub fn new(

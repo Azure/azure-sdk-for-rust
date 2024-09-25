@@ -19,7 +19,7 @@
 /// # use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
-/// # let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+/// # let my_credentials = DefaultAzureCredential::new()?;
 
 /// use azure_messaging_eventhubs::consumer::ConsumerClient;
 /// use azure_messaging_eventhubs::models::EventData;
@@ -83,7 +83,7 @@ pub mod models {
     /// # use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// # let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    /// # let my_credentials = DefaultAzureCredential::new()?;
     /// let consumer_client = azure_messaging_eventhubs::consumer::ConsumerClient::new("fully_qualified_domain", "eventhub_name", None, my_credentials, None);
     ///
     /// let eventhub_properties = consumer_client.get_eventhub_properties().await?;
@@ -128,7 +128,7 @@ pub mod models {
     /// # use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// # let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    /// # let my_credentials = DefaultAzureCredential::new()?;
     /// let consumer_client = azure_messaging_eventhubs::consumer::ConsumerClient::new("fully_qualified_domain", "eventhub_name", None, my_credentials, None);
     ///
     /// let partition_properties = consumer_client.get_partition_properties("0").await?;
