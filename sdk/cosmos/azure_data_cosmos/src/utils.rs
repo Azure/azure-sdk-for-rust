@@ -3,21 +3,27 @@
 
 use url::Url;
 
-pub trait WithAddedPathSegments {
-    fn with_added_path_segments<'a>(&self, segments: impl IntoIterator<Item = &'a str>) -> Self;
+/// Appends new path segments to the target [`Url`].
+///
+/// # Examples
+/// ```rust
+/// use url::Url;
+///
+/// let mut url: Url = "https://example.com/foo".parse().unwrap();
+/// url.append_to_path(&["bar", "baz"]);
+/// assert_eq!("https://example.com/foo/bar/baz", url.to_string());
+/// ```
+pub trait AppendPathSegments {
+    fn append_path_segments<'a>(&mut self, segments: impl IntoIterator<Item = &'a str>);
 }
 
-impl WithAddedPathSegments for Url {
-    fn with_added_path_segments<'a>(&self, segments: impl IntoIterator<Item = &'a str>) -> Self {
-        let mut url = self.clone();
-        {
-            let mut path_segments = url
-                .path_segments_mut()
-                .expect("the URL must not be a 'cannot-be-a-base' URL");
-            for segment in segments.into_iter() {
-                path_segments.push(segment);
-            }
+impl AppendPathSegments for Url {
+    fn append_path_segments<'a>(&mut self, segments: impl IntoIterator<Item = &'a str>) {
+        let mut path_segments = self
+            .path_segments_mut()
+            .expect("the URL must not be a 'cannot-be-a-base' URL");
+        for segment in segments {
+            path_segments.push(segment.as_ref());
         }
-        url
     }
 }

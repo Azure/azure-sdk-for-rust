@@ -4,10 +4,10 @@
 use crate::models::DatabaseProperties;
 use crate::options::ReadDatabaseOptions;
 use crate::pipeline::ResourceType;
+use crate::utils::AppendPathSegments;
 use crate::{clients::ContainerClient, pipeline::CosmosPipeline};
 
 use azure_core::{Context, Request};
-use typespec_client_core::http::AppendPathSegments;
 use url::Url;
 
 #[cfg(doc)]
@@ -64,7 +64,7 @@ pub struct DatabaseClient {
 impl DatabaseClient {
     pub(crate) fn new(pipeline: CosmosPipeline, base_url: &Url, database_id: &str) -> Self {
         let mut database_url = base_url.clone();
-        database_url.append_path_segments(vec!["dbs", database_id]);
+        database_url.append_path_segments(["dbs", database_id]);
 
         Self {
             database_url,

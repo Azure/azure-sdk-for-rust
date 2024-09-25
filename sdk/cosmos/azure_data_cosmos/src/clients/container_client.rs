@@ -6,13 +6,12 @@ use crate::{
     models::{ContainerProperties, QueryResults},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::{CosmosPipeline, ResourceType},
-    utils::WithAddedPathSegments,
+    utils::AppendPathSegments,
     Query, QueryPartitionStrategy,
 };
 
 use azure_core::{headers::HeaderValue, Context, Request};
 use serde::{de::DeserializeOwned, Deserialize};
-use typespec_client_core::http::AppendPathSegments;
 use url::Url;
 
 #[cfg(doc)]
@@ -129,7 +128,7 @@ pub struct ContainerClient {
 impl ContainerClient {
     pub(crate) fn new(pipeline: CosmosPipeline, database_url: &Url, container_name: &str) -> Self {
         let mut container_url = database_url.clone();
-        container_url.append_path_segments(&["colls", container_name]);
+        container_url.append_path_segments(["colls", container_name]);
 
         Self {
             container_url,
@@ -179,7 +178,8 @@ impl ContainerClientMethods for ContainerClient {
             }
         }
 
-        let url = self.container_url.with_added_path_segments(vec!["docs"]);
+        let mut url = self.container_url.clone();
+        url.append_path_segments(["docs"]);
         let mut base_req = Request::new(url, azure_core::Method::Post);
 
         base_req.insert_header(constants::QUERY, "True");
