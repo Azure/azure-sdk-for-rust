@@ -61,21 +61,21 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             if let Some(handle_max) = options.handle_max() {
                 session_builder = session_builder.handle_max(handle_max);
             }
-            if let Some(offered_capabilities) = options.offered_capabilities().clone() {
+            if let Some(offered_capabilities) = options.offered_capabilities() {
                 for capability in offered_capabilities {
                     let capability: fe2o3_amqp_types::primitives::Symbol =
                         capability.clone().into();
                     session_builder = session_builder.add_offered_capabilities(capability);
                 }
             }
-            if let Some(desired_capabilities) = options.desired_capabilities().clone() {
+            if let Some(desired_capabilities) = options.desired_capabilities() {
                 for capability in desired_capabilities {
                     let capability: fe2o3_amqp_types::primitives::Symbol =
                         capability.clone().into();
                     session_builder = session_builder.add_desired_capabilities(capability);
                 }
             }
-            if let Some(properties) = options.properties().clone() {
+            if let Some(properties) = options.properties() {
                 let mut fields = fe2o3_amqp::types::definitions::Fields::new();
                 for property in properties.iter() {
                     debug!("Property: {:?}, Value: {:?}", property.0, property.1);
