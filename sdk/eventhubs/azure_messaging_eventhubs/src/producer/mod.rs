@@ -72,7 +72,7 @@ struct SenderInstance {
 /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 ///    let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
 ///    let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-///    let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+///    let my_credentials = DefaultAzureCredential::new()?;
 ///    let options = ProducerClientOptions::builder()
 ///      .with_application_id("your_application_id")
 ///      .build();
@@ -165,7 +165,7 @@ impl ProducerClient {
     /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///   let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///   let my_credentials = DefaultAzureCredential::new()?;
     ///   let options = ProducerClientOptions::builder()
     ///     .with_application_id("your_application_id")
     ///     .build();
@@ -207,7 +207,7 @@ impl ProducerClient {
     /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///   let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///   let my_credentials = DefaultAzureCredential::new()?;
     ///   let options = ProducerClientOptions::builder()
     ///    .with_application_id("your_application_id")
     ///    .build();
@@ -252,7 +252,7 @@ impl ProducerClient {
     /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///   let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///   let my_credentials = DefaultAzureCredential::new()?;
     ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, ProducerClientOptions::builder().build());
     ///   producer.open().await?;
     ///   let properties = producer.get_eventhub_properties().await?;
@@ -290,7 +290,7 @@ impl ProducerClient {
     ///  let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///     let my_credentials = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    ///     let my_credentials = DefaultAzureCredential::new()?;
     ///     let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, ProducerClientOptions::builder().build());
     ///     producer.open().await?;
     ///     let partition_properties = producer.get_partition_properties("0").await?;

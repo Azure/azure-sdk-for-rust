@@ -6,7 +6,7 @@
 #![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
 
 use async_std::future::timeout;
-use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::consumer::{
     ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition,
 };
@@ -25,7 +25,7 @@ async fn test_new() {
         host,
         eventhub,
         None,
-        DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
+        DefaultAzureCredential::new().unwrap(),
         Some(
             ConsumerClientOptions::builder()
                 .with_application_id("test_new")
@@ -43,7 +43,7 @@ async fn test_new_with_error() {
         "invalid_host",
         eventhub,
         None,
-        DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
+        DefaultAzureCredential::new().unwrap(),
         Some(
             ConsumerClientOptions::builder()
                 .with_application_id("test_new")
@@ -64,7 +64,7 @@ async fn test_open() {
         host,
         eventhub,
         None,
-        azure_identity::DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
+        azure_identity::DefaultAzureCredential::new().unwrap(),
         Some(
             ConsumerClientOptions::builder()
                 .with_application_id("test_open")
@@ -82,7 +82,7 @@ async fn test_close() {
         host,
         eventhub,
         None,
-        azure_identity::DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap(),
+        azure_identity::DefaultAzureCredential::new().unwrap(),
         Some(
             ConsumerClientOptions::builder()
                 .with_application_id("test_close")
@@ -99,7 +99,7 @@ async fn test_get_properties() {
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let credential = DefaultAzureCredential::new().unwrap();
 
     let client = ConsumerClient::new(
         host,
@@ -124,7 +124,7 @@ async fn test_get_partition_properties() {
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let credential = DefaultAzureCredential::new().unwrap();
 
     let client = ConsumerClient::new(
         host,
@@ -159,7 +159,7 @@ async fn receive_lots_of_events() {
 
     info!("Establishing credentials.");
 
-    let credential = DefaultAzureCredential::create(TokenCredentialOptions::default()).unwrap();
+    let credential = DefaultAzureCredential::new().unwrap();
 
     info!("Creating client.");
     let client = ConsumerClient::new(

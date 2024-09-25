@@ -3,7 +3,7 @@
 
 use crate::env::Env;
 use azure_core::{
-    error::{ErrorKind, ResultExt},
+    error::{ErrorKind, Result, ResultExt},
     Url,
 };
 use std::sync::Arc;
@@ -38,14 +38,6 @@ impl Default for TokenCredentialOptions {
 }
 
 impl TokenCredentialOptions {
-    #[cfg(test)]
-    pub(crate) fn new(env: Env, http_client: Arc<dyn azure_core::HttpClient>) -> Self {
-        Self {
-            env,
-            http_client,
-            authority_host: AZURE_PUBLIC_CLOUD.to_owned(),
-        }
-    }
     /// Set the authority host for authentication requests.
     pub fn set_authority_host(&mut self, authority_host: String) {
         self.authority_host = authority_host;
@@ -53,7 +45,7 @@ impl TokenCredentialOptions {
 
     /// The authority host to use for authentication requests.  The default is
     /// `https://login.microsoftonline.com`.
-    pub fn authority_host(&self) -> azure_core::Result<Url> {
+    pub fn authority_host(&self) -> Result<Url> {
         Url::parse(&self.authority_host).with_context(ErrorKind::DataConversion, || {
             format!("invalid authority host URL {}", &self.authority_host)
         })

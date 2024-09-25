@@ -21,10 +21,11 @@ pub trait DatabaseClientMethods {
     /// # Examples
     ///
     /// ```rust,no_run
+    /// # use std::sync::Arc;
     /// # async fn doc() {
     /// use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods};
     ///
-    /// let credential = azure_identity::create_default_credential().unwrap();
+    /// let credential = Arc::new(azure_identity::DefaultAzureCredential::new().unwrap());
     /// let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
     /// let db_client = client.database_client("my_database");
     /// let response = db_client.read(None)

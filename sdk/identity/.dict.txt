@@ -1,0 +1,8 @@
+adfs
+appservice
+azureauth
+clientcertificate
+clientsecret
+imds
+msal
+workloadidentity

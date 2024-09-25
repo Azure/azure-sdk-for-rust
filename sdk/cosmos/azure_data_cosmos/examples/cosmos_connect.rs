@@ -1,5 +1,6 @@
 use azure_data_cosmos::{clients::DatabaseClientMethods, CosmosClient, CosmosClientMethods};
 use clap::Parser;
+use std::sync::Arc;
 
 /// A simple example to show connecting to a Cosmos DB Account and retrieving the properties of a database.
 #[derive(Parser)]
@@ -33,13 +34,13 @@ fn create_client(args: &Args) -> CosmosClient {
     if let Some(key) = args.key.as_ref() {
         CosmosClient::with_key(&args.endpoint, key.clone(), None).unwrap()
     } else {
-        let cred = azure_identity::create_default_credential().unwrap();
+        let cred = Arc::new(azure_identity::DefaultAzureCredential::new().unwrap());
         CosmosClient::new(&args.endpoint, cred, None).unwrap()
     }
 }
 
 #[cfg(not(feature = "key_auth"))]
 fn create_client(args: &Args) -> CosmosClient {
-    let cred = azure_identity::create_default_credential().unwrap();
+    let cred = Arc::new(azure_identity::DefaultAzureCredential::new().unwrap());
     CosmosClient::new(&args.endpoint, cred, None).unwrap()
 }
