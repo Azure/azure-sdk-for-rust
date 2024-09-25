@@ -65,6 +65,11 @@
       "name": "cosmos",
       "path": "../sdk/cosmos/.dict.txt",
       "noSuggest": true
+    },
+    {
+      "name": "identity",
+      "path": "../sdk/identity/.dict.txt",
+      "noSuggest": true
     }
   ],
   "overrides": [
@@ -94,11 +99,10 @@
     },
     {
       "filename": "sdk/identity/**",
-      "words": [
-        "adfs",
-        "azureauth",
-        "msal",
-        "imds"
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "identity"
       ]
     },
     {
