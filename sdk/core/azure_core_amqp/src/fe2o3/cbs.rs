@@ -22,11 +22,11 @@ pub(crate) struct Fe2o3ClaimsBasedSecurity {
 }
 
 impl Fe2o3ClaimsBasedSecurity {
-    pub fn new(session: AmqpSession) -> Self {
-        Self {
+    pub fn new(session: AmqpSession) -> Result<Self> {
+        Ok(Self {
             cbs: OnceLock::new(),
-            session: session.implementation.get(),
-        }
+            session: session.implementation.get()?,
+        })
     }
 }
 
@@ -46,12 +46,12 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
             .attach(session.borrow_mut())
             .await
             .map_err(AmqpManagementAttach::from)?;
-        self.cbs
-            .set(Mutex::new(cbs_client))
-            .map_err(azure_core::Error::message(
+        self.cbs.set(Mutex::new(cbs_client)).map_err(|_| {
+            azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
                 "Claims Based Security is already set.",
-            ))?;
+            )
+        })?;
         Ok(())
     }
 

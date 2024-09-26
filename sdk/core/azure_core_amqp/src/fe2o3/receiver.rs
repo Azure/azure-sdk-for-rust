@@ -55,7 +55,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .auto_accept(auto_accept)
             .properties(properties.into())
             .name(name)
-            .attach(session.implementation.get().lock().await.borrow_mut())
+            .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
             .map_err(AmqpReceiverAttach::from)?;
         self.receiver.set(Arc::new(Mutex::new(receiver))).unwrap();

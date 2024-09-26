@@ -64,7 +64,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         let sender = session_builder
             .name(name.into())
             .target(target.into())
-            .attach(session.implementation.get().lock().await.borrow_mut())
+            .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
             .map_err(AmqpSenderAttach::from)?;
         self.sender.set(Arc::new(Mutex::new(sender))).unwrap();

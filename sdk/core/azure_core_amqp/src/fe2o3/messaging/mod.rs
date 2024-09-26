@@ -49,7 +49,7 @@ impl TryInto<AmqpValue> for Vec<Vec<serde_amqp::Value>> {
 
 fn amqp_message_from_fe2o3_message<T>(
     message: fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<T>>,
-) -> Result<AmqpMessage>
+) -> azure_core::Result<AmqpMessage>
 where
     T: std::fmt::Debug + Clone + TryInto<AmqpValue>,
     <T as TryInto<AmqpValue>>::Error: std::fmt::Debug,
@@ -118,7 +118,7 @@ impl From<fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body
     fn from(
         message: fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<Value>>,
     ) -> Self {
-        amqp_message_from_fe2o3_message(message)
+        amqp_message_from_fe2o3_message(message).unwrap()
     }
 }
 
@@ -134,7 +134,7 @@ impl
             fe2o3_amqp_types::messaging::Body<TransparentVec<fe2o3_amqp_types::messaging::Data>>,
         >,
     ) -> Self {
-        amqp_message_from_fe2o3_message(message)
+        amqp_message_from_fe2o3_message(message).unwrap()
     }
 }
 
@@ -154,7 +154,7 @@ impl
             >,
         >,
     ) -> Self {
-        amqp_message_from_fe2o3_message(message)
+        amqp_message_from_fe2o3_message(message).unwrap()
     }
 }
 

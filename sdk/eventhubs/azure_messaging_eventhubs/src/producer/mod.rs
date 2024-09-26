@@ -342,7 +342,7 @@ impl ProducerClient {
         let access_token = self.authorize_path(management_path).await?;
 
         trace!("Create management client.");
-        let management = AmqpManagement::new(session, "eventhubs_management", access_token);
+        let management = AmqpManagement::new(session, "eventhubs_management", access_token)?;
         management.attach().await?;
         mgmt_client
             .set(ManagementInstance::new(management))
@@ -442,7 +442,7 @@ impl ProducerClient {
             let session = AmqpSession::new();
             session.begin(connection, None).await?;
 
-            let cbs = AmqpClaimsBasedSecurity::new(session);
+            let cbs = AmqpClaimsBasedSecurity::new(session)?;
             cbs.attach().await?;
 
             debug!("Get Token.");

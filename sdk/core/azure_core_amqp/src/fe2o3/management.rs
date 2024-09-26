@@ -38,16 +38,16 @@ impl Fe2o3AmqpManagement {
         session: AmqpSession,
         client_node_name: impl Into<String>,
         access_token: AccessToken,
-    ) -> Self {
+    ) -> Result<Self> {
         // Session::get() returns a clone of the underlying session handle.
-        let session = session.implementation.get();
+        let session = session.implementation.get()?;
 
-        Self {
+        Ok(Self {
             access_token,
             client_node_name: client_node_name.into(),
             session,
             management: OnceLock::new(),
-        }
+        })
     }
 }
 
@@ -59,7 +59,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .await
             .map_err(AmqpManagementAttach::from)?;
 
-        self.management.set(Mutex::new(management)).map_err(|| {
+        self.management.set(Mutex::new(management)).map_err(|_| {
             azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
                 "Management is already set.",

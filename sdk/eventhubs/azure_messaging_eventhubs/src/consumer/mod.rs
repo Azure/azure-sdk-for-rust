@@ -430,7 +430,7 @@ impl ConsumerClient {
 
         trace!("Create management client.");
         let management =
-            AmqpManagement::new(session, "eventhubs_consumer_management", access_token);
+            AmqpManagement::new(session, "eventhubs_consumer_management", access_token)?;
         management.attach().await?;
         mgmt_client
             .set(ManagementInstance::new(management))
@@ -482,7 +482,7 @@ impl ConsumerClient {
             let session = AmqpSession::new();
             session.begin(connection, None).await?;
 
-            let cbs = AmqpClaimsBasedSecurity::new(session);
+            let cbs = AmqpClaimsBasedSecurity::new(session)?;
             cbs.attach().await?;
 
             debug!("Get Token.");

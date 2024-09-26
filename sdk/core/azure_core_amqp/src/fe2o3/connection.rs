@@ -109,7 +109,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
 
             self.connection
                 .set(Mutex::new(builder.open(url).await.map_err(AmqpOpen::from)?))
-                .map_err(|| {
+                .map_err(|_| {
                     azure_core::Error::new(
                         azure_core::error::ErrorKind::Other,
                         "Connection already set.",
