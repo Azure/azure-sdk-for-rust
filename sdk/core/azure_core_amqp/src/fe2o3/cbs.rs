@@ -46,7 +46,12 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
             .attach(session.borrow_mut())
             .await
             .map_err(AmqpManagementAttach::from)?;
-        self.cbs.set(Mutex::new(cbs_client)).unwrap();
+        self.cbs
+            .set(Mutex::new(cbs_client))
+            .map_err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Claims Based Security is already set.",
+            ))?;
         Ok(())
     }
 
@@ -69,12 +74,22 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
                     .to_offset(time::UtcOffset::UTC)
                     .unix_timestamp()
                     .checked_mul(1_000)
-                    .unwrap(),
+                    .ok_or_else(|| {
+                        azure_core::Error::message(
+                            azure_core::error::ErrorKind::Other,
+                            "Unable to convert time to unix timestamp.",
+                        )
+                    })?,
             )),
         );
         self.cbs
             .get()
-            .unwrap()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Claims Based Security was not set.",
+                )
+            })?
             .lock()
             .await
             .borrow_mut()

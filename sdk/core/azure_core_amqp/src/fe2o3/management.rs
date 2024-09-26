@@ -11,7 +11,7 @@ use crate::{
 };
 
 use async_std::sync::Mutex;
-use azure_core::{credentials::AccessToken, error::Result};
+use azure_core::{auth::AccessToken, error::Result};
 use fe2o3_amqp_management::operations::ReadResponse;
 use fe2o3_amqp_types::{messaging::ApplicationProperties, primitives::SimpleValue};
 use std::sync::{Arc, OnceLock};
@@ -59,7 +59,12 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .await
             .map_err(AmqpManagementAttach::from)?;
 
-        self.management.set(Mutex::new(management)).unwrap();
+        self.management.set(Mutex::new(management)).map_err(|| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Management is already set.",
+            )
+        })?;
         Ok(())
     }
     async fn call(
@@ -67,7 +72,17 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
         operation_type: impl Into<String>,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
-        let mut management = self.management.get().unwrap().lock().await;
+        let mut management = self
+            .management
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "management is not set.",
+                )
+            })?
+            .lock()
+            .await;
 
         let request = WithApplicationPropertiesRequest::new(
             operation_type,

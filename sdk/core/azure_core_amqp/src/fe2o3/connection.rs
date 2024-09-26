@@ -52,7 +52,12 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 .max_frame_size(65536);
 
             if options.is_some() {
-                let options = options.unwrap();
+                let options = options.ok_or_else(|| {
+                    azure_core::Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        "Connection options are not set.",
+                    )
+                })?;
                 if options.max_frame_size.is_some() {
                     builder = builder.max_frame_size(options.max_frame_size.unwrap());
                 }
@@ -104,13 +109,28 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
 
             self.connection
                 .set(Mutex::new(builder.open(url).await.map_err(AmqpOpen::from)?))
-                .unwrap();
+                .map_err(|| {
+                    azure_core::Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        "Connection already set.",
+                    )
+                })?;
             Ok(())
         }
     }
 
     async fn close(&self) -> Result<()> {
-        let mut connection = self.connection.get().unwrap().lock().await;
+        let mut connection = self
+            .connection
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Connection is not set",
+                )
+            })?
+            .lock()
+            .await;
         connection
             .borrow_mut()
             .close()
@@ -124,7 +144,17 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
     ) -> Result<()> {
-        let mut connection = self.connection.get().unwrap().lock().await;
+        let mut connection = self
+            .connection
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Connection is not set",
+                )
+            })?
+            .lock()
+            .await;
         connection
             .borrow_mut()
             .close_with_error(fe2o3_amqp::types::definitions::Error::new(

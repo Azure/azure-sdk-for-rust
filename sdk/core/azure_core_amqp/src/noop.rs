@@ -13,7 +13,7 @@ use super::{
     session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
-use azure_core::{credentials::AccessToken, error::Result};
+use azure_core::{auth::AccessToken, error::Result};
 
 #[derive(Debug, Default)]
 pub(crate) struct NoopAmqpConnection {}
@@ -56,7 +56,7 @@ impl AmqpConnectionApis for NoopAmqpConnection {
         condition: impl Into<AmqpSymbol>,
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-    ) -> Result<()> {
+    ) -> impl Result<()> {
         unimplemented!()
     }
 }

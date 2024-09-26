@@ -35,8 +35,17 @@ impl Fe2o3AmqpSession {
     }
 
     /// Returns a reference to the session handle
-    pub fn get(&self) -> Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>> {
-        self.session.get().unwrap().clone()
+    pub fn get(&self) -> Result<Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>>> {
+        Ok(self
+            .session
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Session Handle was not set",
+                )
+            })?
+            .clone())
     }
 }
 
@@ -46,7 +55,18 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         connection: &AmqpConnection,
         options: Option<AmqpSessionOptions>,
     ) -> Result<()> {
-        let mut connection = connection.implementation.get().get().unwrap().lock().await;
+        let mut connection = connection
+            .implementation
+            .get()
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    "Connection already set.",
+                )
+            })?
+            .lock()
+            .await;
 
         let mut session_builder = fe2o3_amqp::session::Session::builder();
         if options.is_some() {
@@ -102,7 +122,12 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
     async fn end(&self) -> Result<()> {
         self.session
             .get()
-            .unwrap()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Session Handle was not set",
+                )
+            })?
             .lock()
             .await
             .end()

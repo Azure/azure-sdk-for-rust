@@ -6,7 +6,7 @@ use super::{
     session::AmqpSession,
     value::{AmqpOrderedMap, AmqpValue},
 };
-use azure_core::{credentials::AccessToken, error::Result};
+use azure_core::{auth::AccessToken, error::Result};
 use std::fmt::Debug;
 
 #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]

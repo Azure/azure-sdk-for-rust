@@ -49,7 +49,7 @@ impl TryInto<AmqpValue> for Vec<Vec<serde_amqp::Value>> {
 
 fn amqp_message_from_fe2o3_message<T>(
     message: fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<T>>,
-) -> AmqpMessage
+) -> Result<AmqpMessage>
 where
     T: std::fmt::Debug + Clone + TryInto<AmqpValue>,
     <T as TryInto<AmqpValue>>::Error: std::fmt::Debug,
@@ -109,7 +109,7 @@ where
         amqp_message_builder.with_footer(footer.0.into());
     }
 
-    amqp_message_builder.build()
+    Ok(amqp_message_builder.build())
 }
 
 impl From<fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<Value>>>
