@@ -1,11 +1,19 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! Model types sent to and received from the Cosmos DB API.
+
 use azure_core::{
     date::{ComponentRange, OffsetDateTime},
-    Model,
+    Continuable, Model,
 };
 use serde::{Deserialize, Serialize};
 
 #[cfg(doc)]
-use crate::{clients::DatabaseClientMethods, CosmosClientMethods};
+use crate::{
+    clients::{ContainerClient, ContainerClientMethods, DatabaseClientMethods},
+    CosmosClientMethods,
+};
 
 /// Represents a timestamp in the format expected by Cosmos DB.
 ///
@@ -24,14 +32,26 @@ impl TryInto<OffsetDateTime> for CosmosTimestamp {
     }
 }
 
-/// Properties of a Cosmos DB database.
-///
-/// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
-#[derive(Model, Debug, Deserialize)]
-pub struct DatabaseProperties {
-    /// The ID of the database.
-    pub id: String,
+/// A page of query results, where each item is a document of type `T`.
+#[derive(Debug)]
+pub struct QueryResults<T> {
+    pub items: Vec<T>,
+    pub query_metrics: Option<String>,
+    pub index_metrics: Option<String>,
+    pub continuation_token: Option<String>,
+}
 
+impl<T> Continuable for QueryResults<T> {
+    type Continuation = String;
+
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation_token.clone()
+    }
+}
+
+/// Common system properties returned for most Cosmos DB resources.
+#[derive(Debug, Deserialize)]
+pub struct SystemProperties {
     /// The entity tag associated with the resource.
     #[serde(rename = "_etag")]
     pub etag: Option<azure_core::Etag>,
@@ -47,4 +67,30 @@ pub struct DatabaseProperties {
     /// A [`CosmosTimestamp`] representing the last modified time of the resource.
     #[serde(rename = "_ts")]
     pub last_modified: Option<CosmosTimestamp>,
+}
+
+/// Properties of a Cosmos DB database.
+///
+/// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
+#[derive(Model, Debug, Deserialize)]
+pub struct DatabaseProperties {
+    /// The ID of the database.
+    pub id: String,
+
+    /// A [`SystemProperties`] object containing common system properties for the database.
+    #[serde(flatten)]
+    pub system_properties: SystemProperties,
+}
+
+/// Properties of a Cosmos DB container.
+///
+/// Returned by [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
+#[derive(Model, Debug, Deserialize)]
+pub struct ContainerProperties {
+    /// The ID of the container.
+    pub id: String,
+
+    /// A [`SystemProperties`] object containing common system properties for the container.
+    #[serde(flatten)]
+    pub system_properties: SystemProperties,
 }

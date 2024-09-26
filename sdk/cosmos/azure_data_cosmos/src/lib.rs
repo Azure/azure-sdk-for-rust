@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #![doc = include_str!("../README.md")]
 // Docs.rs build is done with the nightly compiler, so we can enable nightly features in that build.
 // In this case we enable two features:
@@ -7,12 +10,17 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![cfg_attr(docsrs, feature(doc_cfg_hide))]
 
-mod authorization_policy;
 pub mod clients;
+pub(crate) mod constants;
 mod options;
+mod partition_key;
+pub(crate) mod pipeline;
+mod query;
+pub(crate) mod utils;
 
-/// Model types sent to and received from the Cosmos DB API.
 pub mod models;
 
 pub use clients::{CosmosClient, CosmosClientMethods};
 pub use options::*;
+pub use partition_key::*;
+pub use query::*;

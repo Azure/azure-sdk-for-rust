@@ -1,116 +1,23 @@
-use azure_core::ClientOptions;
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
-/// Options used when creating a [`CosmosClient`](crate::CosmosClient).
-///
-/// NOTE: There are currently no options to set on this type.
-/// It exists to enable future extensibility.
-#[derive(Clone, Debug, Default)]
-pub struct CosmosClientOptions {
-    pub(crate) client_options: ClientOptions,
-}
+mod cosmos_client_options;
+mod query_items_options;
+mod read_container_options;
+mod read_database_options;
 
-impl CosmosClientOptions {
-    /// Creates a new [`CosmosClientOptionsBuilder`](builders::CosmosClientOptionsBuilder) that can be used to construct a [`CosmosClientOptions`].
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let options = azure_data_cosmos::ReadDatabaseOptions::builder().build();
-    /// ```
-    pub fn builder() -> builders::CosmosClientOptionsBuilder {
-        builders::CosmosClientOptionsBuilder::default()
-    }
-}
+pub use cosmos_client_options::CosmosClientOptions;
+pub use query_items_options::QueryOptions;
+pub use read_container_options::ReadContainerOptions;
+pub use read_database_options::ReadDatabaseOptions;
 
-/// Options to be passed to [`DatabaseClientMethods::read()`](crate::clients::DatabaseClientMethods::read()).
-///
-/// NOTE: There are currently no options to set on this type.
-/// It exists to enable future extensibility.
-#[derive(Clone, Debug, Default)]
-pub struct ReadDatabaseOptions {}
-
-impl ReadDatabaseOptions {
-    /// Creates a new [`ReadDatabaseOptionsBuilder`](builders::ReadDatabaseOptionsBuilder) that can be used to construct a [`ReadDatabaseOptions`].
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let options = azure_data_cosmos::ReadDatabaseOptions::builder().build();
-    /// ```
-    pub fn builder() -> builders::ReadDatabaseOptionsBuilder {
-        builders::ReadDatabaseOptionsBuilder::default()
-    }
-}
-
-/// Builders for Cosmos-related options structs.
 pub mod builders {
-    use azure_core::builders::ClientOptionsBuilder;
+    //! Builders used to create options types.
+    //!
+    //! You shouldn't need to construct these builders on your own. Instead, use the `builder()` method on the related options type to get an instance of the builder.
 
-    use crate::{CosmosClientOptions, ReadDatabaseOptions};
-
-    /// Builder used to construct a [`CosmosClientOptions`].
-    #[derive(Default)]
-    pub struct CosmosClientOptionsBuilder(CosmosClientOptions);
-
-    impl CosmosClientOptionsBuilder {
-        /// Builds a [`CosmosClientOptions`] object from the builder.
-        ///
-        /// This does not consume the builder, and can be called multiple times.
-        pub fn build(&self) -> CosmosClientOptions {
-            self.0.clone()
-        }
-    }
-
-    impl ClientOptionsBuilder for CosmosClientOptionsBuilder {
-        fn with_per_call_policies<P>(mut self, per_call_policies: P) -> Self
-        where
-            P: Into<Vec<std::sync::Arc<dyn azure_core::Policy>>>,
-            Self: Sized,
-        {
-            self.0
-                .client_options
-                .set_per_call_policies(per_call_policies);
-            self
-        }
-
-        fn with_per_try_policies<P>(mut self, per_try_policies: P) -> Self
-        where
-            P: Into<Vec<std::sync::Arc<dyn azure_core::Policy>>>,
-            Self: Sized,
-        {
-            self.0.client_options.set_per_try_policies(per_try_policies);
-            self
-        }
-
-        fn with_retry<P>(mut self, retry: P) -> Self
-        where
-            P: Into<azure_core::RetryOptions>,
-            Self: Sized,
-        {
-            self.0.client_options.set_retry(retry);
-            self
-        }
-
-        fn with_transport<P>(mut self, transport: P) -> Self
-        where
-            P: Into<azure_core::TransportOptions>,
-            Self: Sized,
-        {
-            self.0.client_options.set_transport(transport);
-            self
-        }
-    }
-
-    /// Builder used to construct a [`ReadDatabaseOptions`].
-    #[derive(Default)]
-    pub struct ReadDatabaseOptionsBuilder(ReadDatabaseOptions);
-
-    impl ReadDatabaseOptionsBuilder {
-        /// Builds a [`CosmosClientOptions`] object from the builder.
-        ///
-        /// This does not consume the builder, and can be called multiple times.
-        pub fn build(&self) -> ReadDatabaseOptions {
-            self.0.clone()
-        }
-    }
+    pub use super::cosmos_client_options::CosmosClientOptionsBuilder;
+    pub use super::query_items_options::QueryOptionsBuilder;
+    pub use super::read_container_options::ReadContainerOptionsBuilder;
+    pub use super::read_database_options::ReadDatabaseOptionsBuilder;
 }
