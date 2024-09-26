@@ -49,7 +49,7 @@ pub enum ReceiverSettleMode {
 pub trait Serializable {
     fn serialize(&self, buffer: &mut [u8]) -> azure_core::Result<()>;
 
-    fn encoded_size(&self) -> usize;
+    fn encoded_size(&self) -> azure_core::Result<usize>;
 }
 
 #[cfg(feature = "cplusplus")]
