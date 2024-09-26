@@ -58,9 +58,18 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                         "Connection options are not set.",
                     )
                 })?;
+
+                // options.max_frame_size().inspect(move |s| {
+                //     builder.max_frame_size(*s);
+                // });
                 if options.max_frame_size.is_some() {
                     builder = builder.max_frame_size(options.max_frame_size.unwrap());
                 }
+
+                // options.channel_max.inspect(move |c| {
+                //     builder.channel_max(*c);
+                // });
+
                 if options.channel_max.is_some() {
                     builder = builder.channel_max(options.channel_max.unwrap());
                 }
