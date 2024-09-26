@@ -51,9 +51,10 @@ impl From<RangeFrom<usize>> for Range {
 }
 
 impl AsHeaders for Range {
+    type Error = std::convert::Infallible;
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
-    fn as_headers(&self) -> Self::Iter {
+    fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
         let mut headers = vec![(headers::MS_RANGE, format!("{self}").into())];
         if let Some(len) = self.optional_len() {
             if len < 1024 * 1024 * 4 {
@@ -63,7 +64,7 @@ impl AsHeaders for Range {
                 ));
             }
         }
-        headers.into_iter()
+        Ok(headers.into_iter())
     }
 }
 

@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::headers::{AsHeaders, HeaderName, HeaderValue};
+
+use crate::constants;
+
 /// Describes the partition strategy that will be used when querying.
 ///
 /// Currently, the only supported strategy is [`QueryPartitionStrategy::SinglePartition`], which executes the query against a single partition, specified by the [`PartitionKey`] provided.
@@ -90,8 +94,11 @@ impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
 #[derive(Debug, Clone)]
 pub struct PartitionKey(Vec<PartitionKeyValue>);
 
-impl PartitionKey {
-    pub(crate) fn into_header_value(self) -> azure_core::Result<String> {
+impl AsHeaders for PartitionKey {
+    type Error = azure_core::Error;
+    type Iter = std::iter::Once<(HeaderName, HeaderValue)>;
+
+    fn as_headers(&self) -> Result<std::iter::Once<(HeaderName, HeaderValue)>, Self::Error> {
         // We have to do some manual JSON serialization here.
         // The partition key is sent in an HTTP header, when used to set the partition key for a query.
         // It's not safe to use non-ASCII characters in HTTP headers, and serde_json will not escape non-ASCII characters if they are otherwise valid as UTF-8.
@@ -100,10 +107,10 @@ impl PartitionKey {
         let mut json = String::new();
         let mut utf_buf = [0; 2]; // A buffer for encoding UTF-16 characters.
         json.push('[');
-        for key in self.0 {
+        for key in &self.0 {
             match key.0 {
                 InnerPartitionKeyValue::Null => json.push_str("null"),
-                InnerPartitionKeyValue::String(string_key) => {
+                InnerPartitionKeyValue::String(ref string_key) => {
                     json.push('"');
                     for char in string_key.chars() {
                         match char {
@@ -125,8 +132,10 @@ impl PartitionKey {
                     }
                     json.push('"');
                 }
-                InnerPartitionKeyValue::Number(num) => {
-                    json.push_str(serde_json::to_string(&serde_json::Value::Number(num))?.as_str());
+                InnerPartitionKeyValue::Number(ref num) => {
+                    json.push_str(
+                        serde_json::to_string(&serde_json::Value::Number(num.clone()))?.as_str(),
+                    );
                 }
             }
 
@@ -137,7 +146,10 @@ impl PartitionKey {
         json.pop();
         json.push(']');
 
-        Ok(json)
+        Ok(std::iter::once((
+            constants::PARTITION_KEY,
+            HeaderValue::from_cow(json),
+        )))
     }
 }
 

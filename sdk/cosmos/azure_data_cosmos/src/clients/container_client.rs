@@ -10,7 +10,7 @@ use crate::{
     Query, QueryPartitionStrategy,
 };
 
-use azure_core::{headers::HeaderValue, Context, Request};
+use azure_core::{Context, Request};
 use serde::{de::DeserializeOwned, Deserialize};
 use url::Url;
 
@@ -136,9 +136,9 @@ impl ContainerClientMethods for ContainerClient {
         // This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<azure_core::Response<ContainerProperties>> {
-        let mut req = Request::new(self.container_url.clone(), azure_core::Method::Get);
+        let req = Request::new(self.container_url.clone(), azure_core::Method::Get);
         self.pipeline
-            .send(Context::new(), &mut req, ResourceType::Containers)
+            .send(Context::new(), req, ResourceType::Containers)
             .await
     }
 
@@ -177,10 +177,7 @@ impl ContainerClientMethods for ContainerClient {
         base_req.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
 
         let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
-        base_req.insert_header(
-            constants::PARTITION_KEY,
-            HeaderValue::from_cow(partition_key.into_header_value()?),
-        );
+        base_req.insert_headers(&partition_key)?;
 
         base_req.set_json(&query.into())?;
 
@@ -199,7 +196,7 @@ impl ContainerClientMethods for ContainerClient {
                 }
 
                 let resp = pipeline
-                    .send(Context::new(), &mut req, ResourceType::Items)
+                    .send(Context::new(), req, ResourceType::Items)
                     .await?;
 
                 let query_metrics = resp

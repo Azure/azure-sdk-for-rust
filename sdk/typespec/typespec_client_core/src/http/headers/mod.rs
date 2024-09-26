@@ -9,24 +9,27 @@ mod microsoft;
 pub use common::*;
 pub use microsoft::*;
 
-use std::{borrow::Cow, fmt::Debug, str::FromStr};
+use std::{borrow::Cow, convert::Infallible, fmt::Debug, str::FromStr};
 use typespec::error::{Error, ErrorKind, ResultExt};
 
 /// A trait for converting a type into request headers.
 pub trait AsHeaders {
+    type Error;
     type Iter: Iterator<Item = (HeaderName, HeaderValue)>;
-    fn as_headers(&self) -> Self::Iter;
+
+    fn as_headers(&self) -> Result<Self::Iter, Self::Error>;
 }
 
 impl<T> AsHeaders for T
 where
     T: Header,
 {
+    type Error = Infallible;
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
     /// Iterate over all the header name/value pairs.
-    fn as_headers(&self) -> Self::Iter {
-        vec![(self.name(), self.value())].into_iter()
+    fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
+        Ok(vec![(self.name(), self.value())].into_iter())
     }
 }
 
@@ -34,13 +37,14 @@ impl<T> AsHeaders for Option<T>
 where
     T: AsHeaders<Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>>,
 {
+    type Error = T::Error;
     type Iter = T::Iter;
 
     /// Iterate over all the header name/value pairs.
-    fn as_headers(&self) -> Self::Iter {
+    fn as_headers(&self) -> Result<Self::Iter, T::Error> {
         match self {
             Some(h) => h.as_headers(),
-            None => vec![].into_iter(),
+            None => Ok(vec![].into_iter()),
         }
     }
 }
@@ -146,13 +150,19 @@ impl Headers {
     }
 
     /// Add headers to the headers collection.
-    pub fn add<H>(&mut self, header: H)
+    ///
+    /// ## Errors
+    ///
+    /// The error this returns depends on the type `H`.
+    /// Many header types are infallible, and do not return
+    pub fn add<H>(&mut self, header: H) -> Result<(), H::Error>
     where
         H: AsHeaders,
     {
-        for (key, value) in header.as_headers() {
+        for (key, value) in header.as_headers()? {
             self.insert(key, value);
         }
+        Ok(())
     }
 
     /// Iterate over all the header name/value pairs.

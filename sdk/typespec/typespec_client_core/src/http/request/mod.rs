@@ -126,10 +126,11 @@ impl Request {
         &self.method
     }
 
-    pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) {
-        for (name, value) in headers.as_headers() {
+    pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) -> Result<(), T::Error> {
+        for (name, value) in headers.as_headers()? {
             self.insert_header(name, value);
         }
+        Ok(())
     }
 
     pub fn headers(&self) -> &Headers {
