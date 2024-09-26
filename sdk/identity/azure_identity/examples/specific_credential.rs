@@ -12,6 +12,7 @@ use azure_identity::{
     AppServiceManagedIdentityCredential, ImdsId, TokenCredentialOptions,
     VirtualMachineManagedIdentityCredential, WorkloadIdentityCredential,
 };
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -56,10 +57,10 @@ mod azure_credential_kinds {
 #[derive(Debug)]
 enum SpecificAzureCredentialKind {
     #[cfg(not(target_arch = "wasm32"))]
-    AzureCli(AzureCliCredential),
-    VirtualMachine(VirtualMachineManagedIdentityCredential),
-    AppService(AppServiceManagedIdentityCredential),
-    WorkloadIdentity(WorkloadIdentityCredential),
+    AzureCli(Arc<AzureCliCredential>),
+    VirtualMachine(Arc<VirtualMachineManagedIdentityCredential>),
+    AppService(Arc<AppServiceManagedIdentityCredential>),
+    WorkloadIdentity(Arc<WorkloadIdentityCredential>),
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -111,7 +112,7 @@ impl SpecificAzureCredential {
             // case insensitive and allow spaces
             match credential_type.replace(' ', "").to_lowercase().as_str() {
                 azure_credential_kinds::APP_SERVICE => {
-                    AppServiceManagedIdentityCredential::create(options)
+                    AppServiceManagedIdentityCredential::new(options)
                         .map(SpecificAzureCredentialKind::AppService)
                         .with_context(ErrorKind::Credential, || {
                             format!(
@@ -122,11 +123,11 @@ impl SpecificAzureCredential {
                 }
                 azure_credential_kinds::VIRTUAL_MACHINE => {
                     SpecificAzureCredentialKind::VirtualMachine(
-                        VirtualMachineManagedIdentityCredential::new(ImdsId::SystemAssigned, options),
+                        VirtualMachineManagedIdentityCredential::new(ImdsId::SystemAssigned, options)?,
                     )
                 }
                 #[cfg(not(target_arch = "wasm32"))]
-                azure_credential_kinds::AZURE_CLI => AzureCliCredential::create()
+                azure_credential_kinds::AZURE_CLI => AzureCliCredential::new()
                     .map(SpecificAzureCredentialKind::AzureCli)
                     .with_context(ErrorKind::Credential, || {
                         format!(
@@ -135,7 +136,7 @@ impl SpecificAzureCredential {
                         )
                     })?,
                 azure_credential_kinds::WORKLOAD_IDENTITY => {
-                    WorkloadIdentityCredential::create(options)
+                    WorkloadIdentityCredential::from_env(options)
                         .map(SpecificAzureCredentialKind::WorkloadIdentity)
                         .with_context(ErrorKind::Credential, || {
                             format!(

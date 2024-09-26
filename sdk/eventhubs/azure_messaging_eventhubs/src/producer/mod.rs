@@ -26,8 +26,8 @@ use azure_core::{
     error::{Error, Result},
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
+use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
-use std::{boxed::Box, collections::HashMap};
 use tracing::{debug, trace};
 use url::Url;
 
@@ -86,7 +86,7 @@ pub struct ProducerClient {
     sender_instances: Mutex<HashMap<String, SenderInstance>>,
     mgmt_client: Mutex<OnceLock<ManagementInstance>>,
     connection: OnceLock<AmqpConnection>,
-    credential: Box<dyn azure_core::credentials::TokenCredential>,
+    credential: Arc<dyn azure_core::credentials::TokenCredential>,
     eventhub: String,
     url: String,
     authorization_scopes: Mutex<HashMap<String, AccessToken>>,
@@ -108,7 +108,7 @@ impl ProducerClient {
     pub fn new(
         fully_qualified_namespace: impl Into<String>,
         eventhub: impl Into<String>,
-        credential: impl azure_core::credentials::TokenCredential + 'static,
+        credential: Arc<dyn azure_core::credentials::TokenCredential>,
         options: ProducerClientOptions,
     ) -> Self {
         let eventhub: String = eventhub.into();
@@ -116,7 +116,7 @@ impl ProducerClient {
         Self {
             options,
             connection: OnceLock::new(),
-            credential: Box::new(credential),
+            credential: credential.clone(),
             url: format!("amqps://{}/{}", fully_qualified_namespace, eventhub),
             eventhub,
             authorization_scopes: Mutex::new(HashMap::new()),

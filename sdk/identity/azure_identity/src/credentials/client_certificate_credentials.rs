@@ -24,7 +24,7 @@ use time::OffsetDateTime;
 use typespec_client_core::http::Model;
 use url::form_urlencoded;
 
-/// Refresh time to use in seconds
+/// Refresh time to use in seconds.
 const DEFAULT_REFRESH_TIME: i64 = 300;
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
@@ -41,13 +41,6 @@ pub struct ClientCertificateCredentialOptions {
     send_certificate_chain: bool,
 }
 
-/// Alias of CertificateCredentialOptions for backwards compatibility.
-#[deprecated(
-    since = "0.19.0",
-    note = "Please use ClientCertificateCredentialOptions instead"
-)]
-pub type CertificateCredentialOptions = ClientCertificateCredentialOptions;
-
 impl From<TokenCredentialOptions> for ClientCertificateCredentialOptions {
     fn from(options: TokenCredentialOptions) -> Self {
         let env = options.env();
@@ -59,12 +52,6 @@ impl From<TokenCredentialOptions> for ClientCertificateCredentialOptions {
             options,
             send_certificate_chain,
         }
-    }
-}
-
-impl Default for ClientCertificateCredentialOptions {
-    fn default() -> Self {
-        Self::from(TokenCredentialOptions::default())
     }
 }
 
@@ -85,13 +72,13 @@ impl ClientCertificateCredentialOptions {
         &mut self.options
     }
 
-    /// Enable/disable sending the certificate chain
+    /// Enable/disable sending the certificate chain.
     pub fn set_send_certificate_chain(&mut self, send_certificate_chain: bool) {
         self.send_certificate_chain = send_certificate_chain;
     }
 
     /// Whether certificate chain is sent as part of the request or not. Default is
-    /// set to true
+    /// set to true.
     pub fn send_certificate_chain(&self) -> bool {
         self.send_certificate_chain
     }
@@ -101,7 +88,7 @@ impl ClientCertificateCredentialOptions {
 /// was generated for an App Registration.
 ///
 /// In order to use subject name validation `send_cert_chain` option must be set to true
-/// The certificate is expected to be in base64 encoded PKCS12 format
+/// The certificate is expected to be in base64 encoded PKCS12 format.
 #[derive(Debug)]
 pub struct ClientCertificateCredential {
     tenant_id: String,
@@ -115,20 +102,20 @@ pub struct ClientCertificateCredential {
 }
 
 impl ClientCertificateCredential {
-    /// Create a new `ClientCertificateCredential`
+    /// Create a new `ClientCertificateCredential`.
     pub fn new<C, P>(
         tenant_id: String,
         client_id: String,
         client_certificate: C,
         client_certificate_pass: P,
         options: impl Into<ClientCertificateCredentialOptions>,
-    ) -> azure_core::Result<ClientCertificateCredential>
+    ) -> azure_core::Result<Arc<ClientCertificateCredential>>
     where
         C: Into<Secret>,
         P: Into<Secret>,
     {
         let options = options.into();
-        Ok(ClientCertificateCredential {
+        Ok(Arc::new(ClientCertificateCredential {
             tenant_id,
             client_id,
             client_certificate: client_certificate.into(),
@@ -137,7 +124,7 @@ impl ClientCertificateCredential {
             authority_host: options.options().authority_host()?.clone(),
             send_certificate_chain: options.send_certificate_chain(),
             cache: TokenCache::new(),
-        })
+        }))
     }
 
     fn sign(jwt: &str, pkey: &PKey<Private>) -> Result<Vec<u8>, ErrorStack> {
@@ -275,9 +262,17 @@ impl ClientCertificateCredential {
         ))
     }
 
-    pub fn create(
+    /// Create a new `ClientCertificateCredential` from environment variables.
+    ///
+    /// # Variables
+    ///
+    /// * `AZURE_TENANT_ID`
+    /// * `AZURE_CLIENT_ID`
+    /// * `AZURE_CLIENT_CERTIFICATE_PATH`
+    /// * `AZURE_CLIENT_CERTIFICATE_PASSWORD`
+    pub fn from_env(
         options: impl Into<ClientCertificateCredentialOptions>,
-    ) -> azure_core::Result<Self> {
+    ) -> azure_core::Result<Arc<Self>> {
         let options = options.into();
         let env = options.options().env();
         let tenant_id =

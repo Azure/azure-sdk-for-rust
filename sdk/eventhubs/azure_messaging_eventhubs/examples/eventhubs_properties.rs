@@ -18,7 +18,7 @@ async fn main() -> Result<()> {
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::new().unwrap();
+    let credential = DefaultAzureCredential::new()?;
 
     let client = ProducerClient::new(
         host,

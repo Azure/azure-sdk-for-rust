@@ -892,6 +892,7 @@ impl From<AmqpMessageProperties> for AmqpList {
     }
 }
 
+#[allow(clippy::vec_init_then_push)]
 #[test]
 fn test_size_of_serialized_timestamp() {
     let timestamp = fe2o3_amqp_types::primitives::Timestamp::from_milliseconds(12345);
@@ -1544,13 +1545,13 @@ mod tests {
             .with_delivery_count(3)
             .build();
 
-        assert_eq!(header.durable, true);
+        assert!(header.durable);
         assert_eq!(header.priority, 5);
         assert_eq!(
             header.time_to_live,
             Some(std::time::Duration::from_millis(1000))
         );
-        assert_eq!(header.first_acquirer, false);
+        assert!(!header.first_acquirer);
         assert_eq!(header.delivery_count, 3);
     }
 
@@ -1559,7 +1560,7 @@ mod tests {
         {
             let c_serialized = vec![0x00, 0x53, 0x70, 0xc0, 0x04, 0x02, 0x40, 0x50, 0x05];
             let deserialized_from_c: fe2o3_amqp_types::messaging::Header =
-                serde_amqp::de::from_slice(&c_serialized.as_slice()).unwrap();
+                serde_amqp::de::from_slice(c_serialized.as_slice()).unwrap();
 
             let header = fe2o3_amqp_types::messaging::Header::builder()
                 .priority(Priority::from(5))
@@ -1568,7 +1569,7 @@ mod tests {
 
             assert_eq!(c_serialized, serialized);
             let deserialized: fe2o3_amqp_types::messaging::Header =
-                serde_amqp::de::from_slice(&serialized.as_slice()).unwrap();
+                serde_amqp::de::from_slice(serialized.as_slice()).unwrap();
 
             assert_eq!(c_serialized, serialized);
             assert_eq!(header, deserialized);

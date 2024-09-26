@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sub_id = AzureCliCredential::get_subscription().await?;
     println!("Azure cli subscription: {sub_id}");
 
-    let credentials = AzureCliCredential::new();
+    let credentials = AzureCliCredential::new()?;
     let res = credentials
         .get_token(&["https://management.azure.com/.default"])
         .await?;

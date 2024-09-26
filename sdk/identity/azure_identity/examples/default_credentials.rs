@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subscription_id =
         std::env::var("AZURE_SUBSCRIPTION_ID").expect("AZURE_SUBSCRIPTION_ID required");
 
-    let credential = DefaultAzureCredential::new().map(|cred| Arc::new(cred))?;
+    let credential = DefaultAzureCredential::new().map(Arc::new)?;
 
     // Enumerate the Azure storage accounts in the subscription using the REST API directly.
     // This is just an example: you would normally pass in an `Arc::new(credential)` to an Azure SDK client.
