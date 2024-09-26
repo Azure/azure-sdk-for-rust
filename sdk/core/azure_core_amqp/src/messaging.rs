@@ -212,7 +212,9 @@ impl AmqpTarget {
 
 impl From<AmqpTarget> for String {
     fn from(target: AmqpTarget) -> String {
-        target.address.unwrap()
+        target
+            .address
+            .expect("Target does not have an address set.")
     }
 }
 
