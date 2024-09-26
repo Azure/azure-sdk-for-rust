@@ -32,11 +32,8 @@ pub trait ContainerClientMethods {
     ///
     /// ```rust,no_run
     /// # async fn doc() {
-    /// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
-    /// # let credential = azure_identity::create_default_credential().unwrap();
-    /// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
-    /// # let db_client = client.database_client("my_database");
-    /// # let container_client = db_client.container_client("my_container");
+    /// # use azure_data_cosmos::clients::{ContainerClient, ContainerClientMethods};
+    /// # let container_client: ContainerClient = panic!("this is a non-running example");
     /// let response = container_client.read(None)
     ///     .await.unwrap()
     ///     .deserialize_body()
@@ -71,11 +68,8 @@ pub trait ContainerClientMethods {
     ///
     /// ```rust,no_run
     /// # async fn doc() {
-    /// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
-    /// # let credential = azure_identity::create_default_credential().unwrap();
-    /// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
-    /// # let db_client = client.database_client("my_database");
-    /// # let container_client = db_client.container_client("my_container");
+    /// # use azure_data_cosmos::clients::{ContainerClient, ContainerClientMethods};
+    /// # let container_client: ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
     ///     id: u64,
@@ -92,11 +86,8 @@ pub trait ContainerClientMethods {
     ///
     /// ```rust,no_run
     /// # async fn doc() {
-    /// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods, Query};
-    /// # let credential = azure_identity::create_default_credential().unwrap();
-    /// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
-    /// # let db_client = client.database_client("my_database");
-    /// # let container_client = db_client.container_client("my_container");
+    /// # use azure_data_cosmos::{Query, clients::{ContainerClient, ContainerClientMethods}};
+    /// # let container_client: ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
     ///     id: u64,

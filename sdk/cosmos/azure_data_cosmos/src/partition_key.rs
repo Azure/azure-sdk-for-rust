@@ -29,11 +29,8 @@ impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
 /// A single, non-hierarchical, partition key can be specified using the underlying type itself:
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
-/// # let credential = azure_identity::create_default_credential().unwrap();
-/// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
-/// # let db_client = client.database_client("my_database");
-/// # let container_client = db_client.container_client("my_container");
+/// # use azure_data_cosmos::clients::{ContainerClient, ContainerClientMethods};
+/// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
 ///     "a single string partition key",
@@ -47,11 +44,8 @@ impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
 /// Hierarchical partition keys can be specified using tuples:
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
-/// # let credential = azure_identity::create_default_credential().unwrap();
-/// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
-/// # let db_client = client.database_client("my_database");
-/// # let container_client = db_client.container_client("my_container");
+/// # use azure_data_cosmos::clients::{ContainerClient, ContainerClientMethods};
+/// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
 ///     ("parent", "child"),
@@ -62,11 +56,8 @@ impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
 /// First, you can use an empty tuple (`()`) anywhere a `PartitionKey` is expected:
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
-/// # let credential = azure_identity::create_default_credential().unwrap();
-/// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
-/// # let db_client = client.database_client("my_database");
-/// # let container_client = db_client.container_client("my_container");
+/// # use azure_data_cosmos::clients::{ContainerClient, ContainerClientMethods};
+/// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
 ///     (), // A null value in a single-level partition key.
@@ -80,11 +71,8 @@ impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
 /// Or, if you have an [`Option<T>`], for some `T` that is valid as a partition key, it will automatically be serialized as `null` if it has the value [`Option::None`]:
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods, clients::DatabaseClientMethods, clients::ContainerClientMethods};
-/// # let credential = azure_identity::create_default_credential().unwrap();
-/// # let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
-/// # let db_client = client.database_client("my_database");
-/// # let container_client = db_client.container_client("my_container");
+/// # use azure_data_cosmos::clients::{ContainerClient, ContainerClientMethods};
+/// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// let my_partition_key: Option<String> = None;
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
