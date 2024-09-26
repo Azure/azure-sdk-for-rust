@@ -4,7 +4,11 @@
 
 use crate::Uuid;
 
-#[cfg(all(feature="cplusplus", feature="fe2o3-amqp", not(target_arch = "wasm32")))]
+#[cfg(all(
+    feature = "cplusplus",
+    feature = "fe2o3-amqp",
+    not(target_arch = "wasm32")
+))]
 use crate::fe2o3::error::AmqpSerialization;
 #[cfg(feature = "cplusplus")]
 use crate::{Deserializable, Serializable};
