@@ -5,8 +5,10 @@ use azure_data_cosmos::{
     clients::{ContainerClientMethods, DatabaseClientMethods},
     CosmosClient, CosmosClientMethods, PartitionKey,
 };
+use azure_identity::DefaultAzureCredential;
 use clap::Parser;
 use futures::StreamExt;
+use std::sync::Arc;
 
 /// An example to show querying a Cosmos DB container.
 #[derive(Parser)]
@@ -69,13 +71,13 @@ fn create_client(args: &Args) -> CosmosClient {
     if let Some(key) = args.key.as_ref() {
         CosmosClient::with_key(&args.endpoint, key.clone(), None).unwrap()
     } else {
-        let cred = azure_identity::create_default_credential().unwrap();
+        let cred = DefaultAzureCredential::new().map(Arc::new).unwrap();
         CosmosClient::new(&args.endpoint, cred, None).unwrap()
     }
 }
 
 #[cfg(not(feature = "key_auth"))]
 fn create_client(args: &Args) -> CosmosClient {
-    let cred = azure_identity::create_default_credential().unwrap();
+    let cred = DefaultAzureCredential::new().map(Arc::new).unwrap();
     CosmosClient::new(&args.endpoint, cred, None).unwrap()
 }
