@@ -1,6 +1,6 @@
 # azure_identity
 
-Azure Identity crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
+Azure Identity crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to <https://github.com/Azure/azure-sdk-for-rust>.
 
 This crate provides several implementations of the [azure_core::auth::TokenCredential](https://docs.rs/azure_core/latest/azure_core/auth/trait.TokenCredential.html) trait.
 It is recommended to start with `azure_identity::create_credential()?`, which will create an instance of `DefaultAzureCredential` by default. If you want to use a specific credential type, the `AZURE_CREDENTIAL_KIND` environment variable may be set to a value from `azure_credential_kinds`, such as `azurecli` or `virtualmachine`.
@@ -40,8 +40,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-The supported authentication flows are:
+## Design
 
-* [Authorization code flow](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).
-* [Client credentials flow](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow).
-* [Device code flow](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code).
+Each `TokenCredential` implementation provides a `new` constructor that returns an `azure_core::Result<Arc<Self>>`. The credential provider is contained within an `Arc` because these are designed to be reused by multiple clients for efficiency e.g.:
+
+```rust
+use azure_core::credentials::TokenCredential;
+use azure_identity::DefaultAzureCredential;
+# use azure_core::{ClientOptions, Result};
+# use std::sync::Arc;
+# struct StorageAccountClient;
+# impl StorageAccountClient {
+#     fn new(_endpoint: &str, _credential: Arc<dyn TokenCredential>, _options: Option<ClientOptions>) -> Result<Arc<Self>> {
+#         Ok(Arc::new(StorageAccountClient))
+#     }
+# }
+# struct SecretClient;
+# impl SecretClient {
+#     fn new(_endpoint: &str, _credential: Arc<dyn TokenCredential>, _options: Option<ClientOptions>) -> Result<Arc<Self>> {
+#         Ok(Arc::new(SecretClient))
+#     }
+# }
+
+let credential = DefaultAzureCredential::new().unwrap();
+let storage_client = StorageAccountClient::new(
+    "https://myaccount.blob.storage.azure.net",
+    credential.clone(),
+    None,
+);
+let secret_client = SecretClient::new("https://myvault.keyvault.azure.net",
+    credential.clone(),
+    None,
+);
+```
+
+Credentials are cached in memory and refreshed as needed. Using the same credentials in multiple clients prevents authenticating and refreshing tokens numerous times for each client otherwise.
