@@ -6,6 +6,8 @@ use azure_core_amqp::error::Error;
 
 /// Represents the different kinds of errors that can occur in the Eventhubs module.
 pub enum ErrorKind {
+    /// An arithmetic overflow has occurred.
+    ArithmeticError,
     /// An invalid parameter was passed to a function.
     InvalidParameter(String),
 
@@ -18,14 +20,26 @@ pub enum ErrorKind {
     /// The endpoint is missing.
     MissingEndpoint,
 
+    /// The session was missing for the partition.
+    MissingSession,
+
     /// The host is missing in the endpoint.
     MissingHostInEndpoint,
+
+    /// Missing Message Sender
+    MissingMessageSender,
 
     /// The connection is not yet open.
     MissingConnection,
 
+    /// The management client is not yet open.
+    MissingManagementClient,
+
     /// The management response is invalid.
     InvalidManagementResponse,
+
+    /// Unable to add authentication token.
+    UnableToAddAuthenticationToken,
 
     /// Represents the source of the AMQP error.
     /// This is used to wrap an AMQP error in an Eventhubs error.
@@ -50,9 +64,18 @@ impl std::error::Error for EventhubsError {
 impl std::fmt::Display for EventhubsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
+            ErrorKind::MissingMessageSender => write!(f,"Missing message sender."),
+            ErrorKind::ArithmeticError => write!(f, "Arithmetic overflow has occurred."),
             ErrorKind::InvalidManagementResponse => write!(f, "Invalid management response"),
+            ErrorKind::UnableToAddAuthenticationToken => {
+                write!(f, "Unable to add authentication token")
+            }
+            ErrorKind::MissingSession => {
+                write!(f, "The session for the specified partition is missing.")
+            }
             ErrorKind::AmqpError(source) => write!(f, "AmqpError: {:?}", source),
             ErrorKind::MissingConnection => write!(f, "Connection is not yet open."),
+            ErrorKind::MissingManagementClient => write!(f, "Missing management client."),
             ErrorKind::InvalidParameter(s) => write!(f, "Invalid parameter: {}", s),
             ErrorKind::MissingConnectionString => write!(f, "Missing connection string"),
             ErrorKind::MissingSharedAccessKeyName => {

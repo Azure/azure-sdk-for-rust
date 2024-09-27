@@ -37,21 +37,28 @@ impl ManagementInstance {
             .call("com.microsoft:eventhub", application_properties)
             .await?;
 
-        if !response.contains_key("name")
-            || !response.contains_key("type")
-            || !response.contains_key("created_at")
-            || !response.contains_key("partition_count")
-            || !response.contains_key("partition_ids")
-        {
+        if !response.contains_key("partition_count") {
             return Err(ErrorKind::InvalidManagementResponse.into());
         }
-        let name: String = response.get("name").unwrap().clone().into();
-        let created_at: SystemTime =
-            Into::<AmqpTimestamp>::into(response.get("created_at").unwrap().clone()).0;
+        let name: String = response
+            .get("name")
+            .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+            .clone()
+            .into();
+        let created_at: SystemTime = Into::<AmqpTimestamp>::into(
+            response
+                .get("created_at")
+                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .clone(),
+        )
+        .0;
         //        let partition_count: i32 =
-        //            Into::<i32>::into(response.get("partition_count".to_string()).unwrap().clone());
+        //            Into::<i32>::into(response.get("partition_count".to_string()).ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?.clone());
 
-        let partition_ids = response.get("partition_ids").unwrap();
+        let partition_ids = response
+            .get("partition_ids")
+            .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?;
+
         let partition_ids = match partition_ids {
             AmqpValue::Array(partition_ids) => partition_ids
                 .iter()
@@ -86,16 +93,8 @@ impl ManagementInstance {
             .await?;
 
         // Look for the required response properties
-        if !response.contains_key("name")
-            || !response.contains_key("type")
-            || !response.contains_key("partition")
-            || !response.contains_key("begin_sequence_number_epoch")
-            || !response.contains_key("begin_sequence_number")
+        if !response.contains_key("type")
             || !response.contains_key("last_enqueued_sequence_number_epoch")
-            || !response.contains_key("last_enqueued_sequence_number")
-            || !response.contains_key("last_enqueued_offset")
-            || !response.contains_key("last_enqueued_time_utc")
-            || !response.contains_key("is_partition_empty")
         {
             return Err(ErrorKind::InvalidManagementResponse.into());
         }
@@ -103,26 +102,42 @@ impl ManagementInstance {
         Ok(EventHubPartitionProperties {
             beginning_sequence_number: response
                 .get("begin_sequence_number")
-                .unwrap()
+                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
                 .clone()
                 .into(),
-            id: response.get("partition").unwrap().clone().into(),
-            eventhub: response.get("name").unwrap().clone().into(),
+            id: response
+                .get("partition")
+                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .clone()
+                .into(),
+            eventhub: response
+                .get("name")
+                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .clone()
+                .into(),
 
             last_enqueued_sequence_number: response
                 .get("last_enqueued_sequence_number")
-                .unwrap()
+                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
                 .clone()
                 .into(),
-            last_enqueued_offset: response.get("last_enqueued_offset").unwrap().clone().into(),
+            last_enqueued_offset: response
+                .get("last_enqueued_offset")
+                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .clone()
+                .into(),
             last_enqueued_time_utc: Into::<AmqpTimestamp>::into(
                 response
                     .get("last_enqueued_time_utc".to_string())
-                    .unwrap()
+                    .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
                     .clone(),
             )
             .0,
-            is_empty: response.get("is_partition_empty").unwrap().clone().into(),
+            is_empty: response
+                .get("is_partition_empty")
+                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .clone()
+                .into(),
         })
     }
 }

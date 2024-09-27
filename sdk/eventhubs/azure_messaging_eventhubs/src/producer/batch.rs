@@ -7,8 +7,8 @@ use std::sync::Mutex;
 
 use super::ProducerClient;
 
-use crate::models::EventData;
-use azure_core::error::Result;
+use crate::{error::ErrorKind, models::EventData};
+use azure_core::{error::Result, Error};
 use azure_core_amqp::{
     messaging::{AmqpAnnotations, AmqpMessage, AmqpMessageBody, AmqpMessageProperties},
     sender::AmqpSenderApis,
@@ -83,7 +83,18 @@ impl<'a> EventDataBatch<'a> {
 
     pub(crate) async fn attach(&mut self) -> Result<()> {
         let sender = self.producer.ensure_sender(self.get_batch_path()).await?;
-        self.max_size_in_bytes = sender.lock().await.max_message_size().await.unwrap();
+        self.max_size_in_bytes =
+            sender
+                .lock()
+                .await
+                .max_message_size()
+                .await?
+                .ok_or_else(|| {
+                    Error::message(
+                        azure_core::error::ErrorKind::Other,
+                        "No message size available.",
+                    )
+                })?;
         Ok(())
     }
 
@@ -95,6 +106,7 @@ impl<'a> EventDataBatch<'a> {
     /// The size of the batch in bytes.
     ///
     pub fn size(&self) -> u64 {
+        // Note that lock() returns an infallible result.
         self.batch_state.lock().unwrap().size_in_bytes
     }
 
@@ -117,13 +129,19 @@ impl<'a> EventDataBatch<'a> {
         self.len() == 0
     }
 
-    fn calculate_actual_size_for_payload(length: usize) -> u64 {
+    fn calculate_actual_size_for_payload(length: usize) -> Result<u64> {
         const MESSAGE_HEADER_SIZE_32: usize = 8;
         const MESSAGE_HEADER_SIZE_8: usize = 5;
         if length < 256 {
-            length.checked_add(MESSAGE_HEADER_SIZE_8).unwrap() as u64
+            Ok(length
+                .checked_add(MESSAGE_HEADER_SIZE_8)
+                .ok_or_else(|| azure_core::Error::from(ErrorKind::ArithmeticError))?
+                as u64)
         } else {
-            length.checked_add(MESSAGE_HEADER_SIZE_32).unwrap() as u64
+            Ok(length
+                .checked_add(MESSAGE_HEADER_SIZE_32)
+                .ok_or_else(|| azure_core::Error::from(ErrorKind::ArithmeticError))?
+                as u64)
         }
     }
 
@@ -232,8 +250,8 @@ impl<'a> EventDataBatch<'a> {
                 message_annotations = annotations.clone()
             }
             message_annotations.insert(
-                Into::<AmqpSymbol>::into("x-opt-partition-key"),
-                Into::<AmqpValue>::into(self.partition_key.as_ref().unwrap().clone()),
+                AmqpSymbol::from("x-opt-partition-key"),
+                AmqpValue::from(self.partition_key.as_ref().unwrap().clone()),
             );
             message.set_message_annotations(message_annotations);
         }
@@ -245,15 +263,16 @@ impl<'a> EventDataBatch<'a> {
             batch_state.size_in_bytes = batch_state
                 .size_in_bytes
                 .checked_add(message_len as u64)
-                .unwrap();
+                .ok_or_else(|| Error::from(ErrorKind::ArithmeticError))?;
             batch_state.batch_envelope = Some(self.create_batch_envelope(&message));
         }
         let serialized_message = AmqpMessage::serialize(message)?;
-        let actual_message_size = Self::calculate_actual_size_for_payload(serialized_message.len());
+        let actual_message_size =
+            Self::calculate_actual_size_for_payload(serialized_message.len())?;
         if batch_state
             .size_in_bytes
             .checked_add(actual_message_size)
-            .unwrap()
+            .ok_or_else(|| azure_core::Error::from(ErrorKind::ArithmeticError))?
             > self.max_size_in_bytes
         {
             debug!("Batch is full. Cannot add more messages.");
@@ -275,7 +294,10 @@ impl<'a> EventDataBatch<'a> {
     pub(crate) fn get_messages(&self) -> AmqpMessage {
         let mut batch_state = self.batch_state.lock().unwrap();
 
-        let mut batch_envelope = batch_state.batch_envelope.clone().unwrap();
+        let mut batch_envelope = batch_state
+            .batch_envelope
+            .clone()
+            .expect("Batch envelope should have been created when getting messages.");
 
         // Move the messages out of the batch state into a local variable so we
         // can subsequently move it to the message body.
@@ -309,25 +331,23 @@ impl<'a> EventDataBatch<'a> {
         // Do NOT transfer the body, that will be handled later.
         let mut batch_builder = AmqpMessage::builder();
 
-        if message.header().is_some() {
-            batch_builder.with_header(message.header().unwrap().clone());
+        if let Some(message_header) = message.header() {
+            batch_builder.with_header(message_header.clone());
         }
-        if message.properties().is_some() {
-            batch_builder.with_properties(message.properties().unwrap().clone());
+        if let Some(message_properties) = message.properties() {
+            batch_builder.with_properties(message_properties.clone());
         }
-        if message.application_properties().is_some() {
-            batch_builder
-                .with_application_properties(message.application_properties().unwrap().clone());
+        if let Some(application_properties) = message.application_properties() {
+            batch_builder.with_application_properties(application_properties.clone());
         }
-        if message.delivery_annotations().is_some() {
-            batch_builder
-                .with_delivery_annotations(message.delivery_annotations().unwrap().clone());
+        if let Some(delivery_annotations) = message.delivery_annotations() {
+            batch_builder.with_delivery_annotations(delivery_annotations.clone());
         }
-        if message.message_annotations().is_some() {
-            batch_builder.with_message_annotations(message.message_annotations().unwrap().clone());
+        if let Some(message_annotations) = message.message_annotations() {
+            batch_builder.with_message_annotations(message_annotations.clone());
         }
-        if message.footer().is_some() {
-            batch_builder.with_footer(message.footer().unwrap().clone());
+        if let Some(footer) = message.footer() {
+            batch_builder.with_footer(footer.clone());
         }
 
         batch_builder.build()

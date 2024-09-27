@@ -9,7 +9,7 @@ use crate::{
     session::{AmqpSessionApis, AmqpSessionOptions},
 };
 use async_std::sync::Mutex;
-use azure_core::Result;
+use azure_core::{error::ErrorKind, Error, Result};
 use std::{
     borrow::BorrowMut,
     sync::{Arc, OnceLock},
@@ -69,9 +69,8 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             .await;
 
         let mut session_builder = fe2o3_amqp::session::Session::builder();
-        if options.is_some() {
-            let options = options.unwrap();
 
+        if let Some(options) = options {
             if let Some(incoming_window) = options.incoming_window() {
                 session_builder = session_builder.incoming_window(incoming_window);
             }
@@ -98,12 +97,10 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             if let Some(properties) = options.properties() {
                 let mut fields = fe2o3_amqp::types::definitions::Fields::new();
                 for property in properties.iter() {
-                    debug!("Property: {:?}, Value: {:?}", property.0, property.1);
-                    let k: fe2o3_amqp_types::primitives::Symbol = property.0.into();
-                    let v: fe2o3_amqp_types::primitives::Value = property.1.into();
-                    debug!("Property: {:?}, Value: {:?}", k, v);
-
-                    fields.insert(k, v);
+                    fields.insert(
+                        fe2o3_amqp_types::primitives::Symbol::from(property.0),
+                        fe2o3_amqp_types::primitives::Value::from(property.1),
+                    );
                 }
                 session_builder = session_builder.properties(fields);
             }
@@ -115,19 +112,16 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             .begin(connection.borrow_mut())
             .await
             .map_err(AmqpBegin::from)?;
-        self.session.set(Arc::new(Mutex::new(session))).unwrap();
+        self.session
+            .set(Arc::new(Mutex::new(session)))
+            .map_err(|_| Error::message(ErrorKind::Other, "Could not set session instance."))?;
         Ok(())
     }
 
     async fn end(&self) -> Result<()> {
         self.session
             .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Session Handle was not set",
-                )
-            })?
+            .ok_or_else(|| Error::message(ErrorKind::Other, "Session Handle was not set"))?
             .lock()
             .await
             .end()

@@ -6,7 +6,7 @@ use crate::messaging::{AmqpMessage, AmqpTarget};
 use crate::sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions};
 use crate::session::AmqpSession;
 use async_std::sync::Mutex;
-use azure_core::error::Result;
+use azure_core::Result;
 use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};
 
@@ -67,12 +67,28 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
             .map_err(AmqpSenderAttach::from)?;
-        self.sender.set(Arc::new(Mutex::new(sender))).unwrap();
+        self.sender.set(Arc::new(Mutex::new(sender))).map_err(|_| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Could not set message sender.",
+            )
+        })?;
         Ok(())
     }
 
-    async fn max_message_size(&self) -> Option<u64> {
-        self.sender.get().unwrap().lock().await.max_message_size()
+    async fn max_message_size(&self) -> azure_core::Result<Option<u64>> {
+        Ok(self
+            .sender
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Message Sender not set.",
+                )
+            })?
+            .lock()
+            .await
+            .max_message_size())
     }
 
     #[tracing::instrument]
@@ -100,7 +116,10 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         let outcome = self
             .sender
             .get()
-            .unwrap()
+            .ok_or_else(|| azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Message Sender not set.",
+            ))?
             .lock()
             .await
             .send(sendable)

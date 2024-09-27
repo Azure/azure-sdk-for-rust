@@ -11,6 +11,7 @@ use crate::{
     messaging::{AmqpMessage, AmqpMessageBody},
     value::AmqpValue,
 };
+use azure_core::{error::ErrorKind, Error};
 use fe2o3_amqp_types::messaging::{message::EmptyBody, IntoBody};
 use serde_amqp::{extensions::TransparentVec, Value};
 use tracing::info;
@@ -47,12 +48,31 @@ impl TryInto<AmqpValue> for Vec<Vec<serde_amqp::Value>> {
     }
 }
 
+/*
+ * Convert a fe2o3 message into an AMQP message.
+ *
+ * Note that this API can be used for four different scenarios:
+ * 1) Body is empty
+ * 2) Body is an array of binary blobs
+ * 3) Body is an AMQP value
+ * 4) Body is a sequence of AMQP values.
+ *
+ * In order to satisfy all four of these, the method is specialized on the type of body element.
+ * Since the actual body is either <nothing>, a Vec<Vec<u8>> or AmqpValue or Vec<AmqpValue>
+ * the T specialization is declared as being TryInto<AmqpValue>. That way, when processing the
+ * empty body or the binary body, we won't call Into<AmqpValue> on the body, and when it is
+ * a Vec<AmqpValue> or an AmqpValue, we will.
+ *
+ * TryInto<T> has a specialization where Into<T> exists, which returns an immutable error
+ * and in this case there is an fe2o3 Value Into AmqpValue specialization, which means that the call to convert
+ * the T value into an AmqpValue will always succeed.
+ */
 fn amqp_message_from_fe2o3_message<T>(
     message: fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<T>>,
 ) -> azure_core::Result<AmqpMessage>
 where
     T: std::fmt::Debug + Clone + TryInto<AmqpValue>,
-    <T as TryInto<AmqpValue>>::Error: std::fmt::Debug,
+    <T as TryInto<AmqpValue>>::Error: std::error::Error,
 {
     let mut amqp_message_builder = AmqpMessage::builder();
 
@@ -65,22 +85,41 @@ where
         let body = AmqpMessageBody::Empty;
         amqp_message_builder.with_body(body);
     } else if body.is_data() {
-        let data = body.try_into_data().unwrap();
+        let data = body.try_into_data().map_err(|_| {
+            Error::message(
+                ErrorKind::DataConversion,
+                "Could not convert AMQP Message Body to data.",
+            )
+        })?;
         let body = AmqpMessageBody::Binary(data.map(|x| x.to_vec()).collect());
         amqp_message_builder.with_body(body);
     } else if body.is_value() {
-        let value = body.try_into_value().unwrap();
+        let value = body.try_into_value().map_err(|_| {
+            Error::message(
+                ErrorKind::DataConversion,
+                "Could not convert AMQP Message Body to value.",
+            )
+        })?;
+        // Because a conversion exists between fe2o3 values and AmqpValue types,
+        // this try_into will always succeed.
         let value = value.try_into().unwrap();
         amqp_message_builder.with_body(AmqpMessageBody::Value(value));
     } else if body.is_sequence() {
-        let sequence = body.try_into_sequence().unwrap();
+        let sequence = body.try_into_sequence().map_err(|_| {
+            Error::message(
+                ErrorKind::DataConversion,
+                "Could not convert AMQP Message Body to sequence.",
+            )
+        })?;
+
         let body = AmqpMessageBody::Sequence(
             sequence
                 .map(|x| {
-                    x.iter()
+                    x.into_iter()
                         .map(|v| {
-                            let v: AmqpValue = v.clone().try_into().unwrap();
-                            Into::<AmqpValue>::into(v)
+                            // Because a conversion exists between fe2o3 values and AmqpValue types,
+                            // this try_into will always succeed.
+                            TryInto::<AmqpValue>::try_into(v).unwrap()
                         })
                         .collect()
                 })

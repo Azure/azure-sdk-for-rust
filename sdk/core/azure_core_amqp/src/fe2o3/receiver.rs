@@ -58,17 +58,45 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
             .map_err(AmqpReceiverAttach::from)?;
-        self.receiver.set(Arc::new(Mutex::new(receiver))).unwrap();
+        self.receiver
+            .set(Arc::new(Mutex::new(receiver)))
+            .map_err(|_| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Could not set message receiver.",
+                )
+            })?;
         Ok(())
     }
 
-    async fn max_message_size(&self) -> Option<u64> {
-        self.receiver.get().unwrap().lock().await.max_message_size()
+    async fn max_message_size(&self) -> Result<Option<u64>> {
+        Ok(self
+            .receiver
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Message receiver is not set",
+                )
+            })?
+            .lock()
+            .await
+            .max_message_size())
     }
 
     #[tracing::instrument]
     async fn receive(&self) -> Result<AmqpMessage> {
-        let mut receiver = self.receiver.get().unwrap().lock().await;
+        let mut receiver = self
+            .receiver
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Message receiver is not set.",
+                )
+            })?
+            .lock()
+            .await;
 
         let delivery: fe2o3_amqp::link::delivery::Delivery<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
