@@ -277,19 +277,22 @@ impl_from_tuple!(0 A 1 B 2 C);
 
 #[cfg(test)]
 mod tests {
-    use crate::PartitionKey;
-
-    use super::QueryPartitionStrategy;
+    use crate::{constants, PartitionKey, QueryPartitionStrategy};
+    use typespec_client_core::http::headers::AsHeaders;
 
     fn key_to_string(v: impl Into<PartitionKey>) -> String {
-        v.into().into_header_value().unwrap()
+        let key = v.into();
+        let mut headers_iter = key.as_headers().unwrap();
+        let (name, value) = headers_iter.next().unwrap();
+        assert_eq!(constants::PARTITION_KEY, name);
+        value.as_str().into()
     }
 
     /// Validates that a given value is `impl Into<QueryPartitionStrategy>` and works as-expected.
     fn key_to_single_partition_strategy_string(v: impl Into<QueryPartitionStrategy>) -> String {
         let strategy = v.into();
         let QueryPartitionStrategy::SinglePartition(key) = strategy;
-        key.into_header_value().unwrap()
+        key_to_string(key)
     }
 
     #[test]
@@ -339,10 +342,7 @@ mod tests {
     #[test]
     pub fn non_ascii_string() {
         let key = PartitionKey::from("smile 😀");
-        assert_eq!(
-            key.into_header_value().unwrap().as_str(),
-            r#"["smile \ud83d\ude00"]"#
-        );
+        assert_eq!(key_to_string(key), r#"["smile \ud83d\ude00"]"#);
     }
 
     #[test]

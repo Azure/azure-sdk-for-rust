@@ -136,9 +136,9 @@ impl ContainerClientMethods for ContainerClient {
         // This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<azure_core::Response<ContainerProperties>> {
-        let req = Request::new(self.container_url.clone(), azure_core::Method::Get);
+        let mut req = Request::new(self.container_url.clone(), azure_core::Method::Get);
         self.pipeline
-            .send(Context::new(), req, ResourceType::Containers)
+            .send(Context::new(), &mut req, ResourceType::Containers)
             .await
     }
 
@@ -196,7 +196,7 @@ impl ContainerClientMethods for ContainerClient {
                 }
 
                 let resp = pipeline
-                    .send(Context::new(), req, ResourceType::Items)
+                    .send(Context::new(), &mut req, ResourceType::Items)
                     .await?;
 
                 let query_metrics = resp
