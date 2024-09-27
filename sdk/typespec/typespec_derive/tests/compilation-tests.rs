@@ -80,6 +80,7 @@ pub fn compilation_tests() {
                     }
                     assert!(span_file_name.is_absolute());
 
+                    #[allow(clippy::expect_fun_call)]
                     let relative_span_path = span_file_name
                         .strip_prefix(&repo_root)
                         .expect(&format!(
@@ -169,7 +170,7 @@ pub fn compilation_tests() {
         }
     }
 
-    if errors.len() > 0 {
+    if !errors.is_empty() {
         panic!("{}", errors);
     }
 }

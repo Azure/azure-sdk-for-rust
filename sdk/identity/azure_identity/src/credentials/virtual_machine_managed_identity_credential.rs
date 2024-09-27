@@ -7,6 +7,7 @@ use azure_core::{
     headers::HeaderName,
     Url,
 };
+use std::sync::Arc;
 
 const ENDPOINT: &str = "http://169.254.169.254/metadata/identity/oauth2/token";
 const API_VERSION: &str = "2019-08-01";
@@ -19,9 +20,12 @@ pub struct VirtualMachineManagedIdentityCredential {
 }
 
 impl VirtualMachineManagedIdentityCredential {
-    pub fn new(id: ImdsId, options: impl Into<TokenCredentialOptions>) -> Self {
+    pub fn new(
+        id: ImdsId,
+        options: impl Into<TokenCredentialOptions>,
+    ) -> azure_core::Result<Arc<Self>> {
         let endpoint = Url::parse(ENDPOINT).unwrap(); // valid url constant
-        Self {
+        Ok(Arc::new(Self {
             credential: ImdsManagedIdentityCredential::new(
                 options,
                 endpoint,
@@ -30,7 +34,7 @@ impl VirtualMachineManagedIdentityCredential {
                 SECRET_ENV,
                 id,
             ),
-        }
+        }))
     }
 }
 

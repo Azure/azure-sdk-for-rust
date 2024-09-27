@@ -31,30 +31,37 @@ pub struct WorkloadIdentityCredential {
 }
 
 impl WorkloadIdentityCredential {
-    /// Create a new `WorkloadIdentityCredential`
+    /// Create a new `WorkloadIdentityCredential`.
     pub fn new<T>(
         http_client: Arc<dyn HttpClient>,
         authority_host: Url,
         tenant_id: String,
         client_id: String,
         token: T,
-    ) -> Self
+    ) -> azure_core::Result<Arc<Self>>
     where
         T: Into<Secret>,
     {
-        Self {
+        Ok(Arc::new(Self {
             http_client,
             authority_host,
             tenant_id,
             client_id,
             token: token.into(),
             cache: TokenCache::new(),
-        }
+        }))
     }
 
-    pub fn create(
+    /// Create a new `WorkloadIdentityCredential` from environment variables.
+    ///
+    /// # Variables
+    ///
+    /// * `AZURE_TENANT_ID`
+    /// * `AZURE_CLIENT_ID`
+    /// * `AZURE_FEDERATED_TOKEN` or `AZURE_FEDERATED_TOKEN_FILE`
+    pub fn from_env(
         options: impl Into<TokenCredentialOptions>,
-    ) -> azure_core::Result<WorkloadIdentityCredential> {
+    ) -> azure_core::Result<Arc<WorkloadIdentityCredential>> {
         let options = options.into();
         let http_client = options.http_client();
         let authority_host = options.authority_host()?;
@@ -80,13 +87,13 @@ impl WorkloadIdentityCredential {
             .var(AZURE_FEDERATED_TOKEN)
             .map_kind(ErrorKind::Credential)
         {
-            return Ok(WorkloadIdentityCredential::new(
+            return WorkloadIdentityCredential::new(
                 http_client,
                 authority_host,
                 tenant_id,
                 client_id,
                 token,
-            ));
+            );
         }
 
         if let Ok(token_file) = env
@@ -102,13 +109,13 @@ impl WorkloadIdentityCredential {
                     )
                 },
             )?;
-            return Ok(WorkloadIdentityCredential::new(
+            return WorkloadIdentityCredential::new(
                 http_client,
                 authority_host,
                 tenant_id,
                 client_id,
                 token,
-            ));
+            );
         }
 
         Err(Error::with_message(ErrorKind::Credential, || {

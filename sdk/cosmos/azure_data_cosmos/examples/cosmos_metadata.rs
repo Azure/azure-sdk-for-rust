@@ -6,7 +6,6 @@ use azure_data_cosmos::{
     CosmosClient, CosmosClientMethods,
 };
 use clap::Parser;
-use std::sync::Arc;
 
 /// A simple example to show connecting to a Cosmos DB Account and retrieving the properties of a database.
 #[derive(Parser)]
@@ -29,13 +28,13 @@ pub struct Args {
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
+    tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
     let args = Args::parse();
 
-    let client = create_client(&args);
+    let client = create_client(&args)?;
 
     let db_client = client.database_client(&args.database);
     if let Some(container_name) = args.container {
@@ -55,17 +54,17 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "key_auth")]
-fn create_client(args: &Args) -> CosmosClient {
+fn create_client(args: &Args) -> azure_core::Result<CosmosClient> {
     if let Some(key) = args.key.as_ref() {
-        CosmosClient::with_key(&args.endpoint, key.clone(), None).unwrap()
+        CosmosClient::with_key(&args.endpoint, key.clone(), None)
     } else {
-        let cred = Arc::new(azure_identity::DefaultAzureCredential::new().unwrap());
-        CosmosClient::new(&args.endpoint, cred, None).unwrap()
+        let cred = azure_identity::DefaultAzureCredential::new()?;
+        CosmosClient::new(&args.endpoint, cred, None)
     }
 }
 
 #[cfg(not(feature = "key_auth"))]
-fn create_client(args: &Args) -> CosmosClient {
-    let cred = Arc::new(azure_identity::DefaultAzureCredential::new().unwrap());
-    CosmosClient::new(&args.endpoint, cred, None).unwrap()
+fn create_client(args: &Args) -> azure_core::Result<CosmosClient> {
+    let cred = azure_identity::DefaultAzureCredential::new()?;
+    CosmosClient::new(&args.endpoint, cred, None)
 }

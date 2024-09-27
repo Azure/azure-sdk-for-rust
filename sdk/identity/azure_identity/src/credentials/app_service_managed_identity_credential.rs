@@ -6,6 +6,7 @@ use azure_core::credentials::{AccessToken, TokenCredential};
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::headers::HeaderName;
 use azure_core::Url;
+use std::sync::Arc;
 
 const ENDPOINT_ENV: &str = "IDENTITY_ENDPOINT";
 const API_VERSION: &str = "2019-08-01";
@@ -18,7 +19,7 @@ pub struct AppServiceManagedIdentityCredential {
 }
 
 impl AppServiceManagedIdentityCredential {
-    pub fn create(options: impl Into<TokenCredentialOptions>) -> azure_core::Result<Self> {
+    pub fn new(options: impl Into<TokenCredentialOptions>) -> azure_core::Result<Arc<Self>> {
         let options = options.into();
         let env = options.env();
         let endpoint = &env
@@ -35,7 +36,7 @@ impl AppServiceManagedIdentityCredential {
                 ENDPOINT_ENV
             )
         })?;
-        Ok(Self {
+        Ok(Arc::new(Self {
             credential: ImdsManagedIdentityCredential::new(
                 options,
                 endpoint,
@@ -44,7 +45,7 @@ impl AppServiceManagedIdentityCredential {
                 SECRET_ENV,
                 ImdsId::SystemAssigned,
             ),
-        })
+        }))
     }
 }
 

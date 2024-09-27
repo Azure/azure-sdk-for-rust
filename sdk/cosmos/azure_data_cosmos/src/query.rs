@@ -150,7 +150,7 @@ mod tests {
             .with_parameter("float_param", 4.2)?
             .with_parameter("bool_param", true)?
             .with_parameter("obj_param", obj_param)?
-            .with_parameter("arr_param", &["a", "b", "c"])?
+            .with_parameter("arr_param", ["a", "b", "c"])?
             .with_parameter("null_option", null_option)?
             .with_parameter("null_value", ())?;
         let serialized = serde_json::to_string(&query).unwrap();

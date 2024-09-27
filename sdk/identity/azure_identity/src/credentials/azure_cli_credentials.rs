@@ -9,7 +9,7 @@ use azure_core::{
     json::from_json,
 };
 use serde::Deserialize;
-use std::str;
+use std::{str, sync::Arc};
 use time::OffsetDateTime;
 use tracing::trace;
 
@@ -153,23 +153,13 @@ pub struct AzureCliCredential {
     cache: TokenCache,
 }
 
-impl Default for AzureCliCredential {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl AzureCliCredential {
-    pub fn create() -> azure_core::Result<Self> {
+    /// Create a new `AzureCliCredential`.
+    pub fn new() -> azure_core::Result<Arc<Self>> {
         // TODO check `az version` to see if it's installed
-        Ok(AzureCliCredential::new())
-    }
-
-    /// Create a new `AzureCliCredential`
-    pub fn new() -> Self {
-        Self {
+        Ok(Arc::new(Self {
             cache: TokenCache::new(),
-        }
+        }))
     }
 
     /// Get an access token for an optional resource

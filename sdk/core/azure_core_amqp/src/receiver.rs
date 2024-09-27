@@ -257,7 +257,7 @@ mod tests {
             .with_auto_accept(true)
             .build();
 
-        assert_eq!(receiver_options.auto_accept, true);
+        assert!(receiver_options.auto_accept);
     }
 
     #[test]
@@ -297,6 +297,6 @@ mod tests {
             receiver_options.credit_mode.unwrap(),
             ReceiverCreditMode::Manual
         );
-        assert_eq!(receiver_options.auto_accept, false);
+        assert!(!receiver_options.auto_accept);
     }
 }

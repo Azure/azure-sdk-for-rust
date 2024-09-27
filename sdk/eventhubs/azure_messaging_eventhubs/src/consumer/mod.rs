@@ -45,7 +45,7 @@ pub struct ConsumerClient {
     session_instances: Mutex<HashMap<String, Arc<AmqpSession>>>,
     mgmt_client: Mutex<OnceLock<ManagementInstance>>,
     connection: OnceLock<AmqpConnection>,
-    credential: Box<dyn azure_core::credentials::TokenCredential>,
+    credential: Arc<dyn azure_core::credentials::TokenCredential>,
     eventhub: String,
     url: String,
     authorization_scopes: Mutex<HashMap<String, AccessToken>>,
@@ -84,7 +84,7 @@ impl ConsumerClient {
         fully_qualified_namespace: impl Into<String> + Debug,
         eventhub_name: impl Into<String> + Debug,
         consumer_group: Option<String>,
-        credential: impl TokenCredential + 'static,
+        credential: Arc<dyn TokenCredential>,
         options: Option<ConsumerClientOptions>,
     ) -> Self {
         let eventhub_name = eventhub_name.into();
@@ -100,7 +100,7 @@ impl ConsumerClient {
             session_instances: Mutex::new(HashMap::new()),
             mgmt_client: Mutex::new(OnceLock::new()),
             connection: OnceLock::new(),
-            credential: Box::new(credential),
+            credential,
             eventhub: eventhub_name,
             url,
             authorization_scopes: Mutex::new(HashMap::new()),

@@ -11,7 +11,7 @@ use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
 };
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
 pub struct DefaultAzureCredentialBuilder {
@@ -104,7 +104,7 @@ impl DefaultAzureCredentialBuilder {
         for source in included {
             match source {
                 DefaultAzureCredentialType::AppService => {
-                    match AppServiceManagedIdentityCredential::create(self.options.clone()) {
+                    match AppServiceManagedIdentityCredential::new(self.options.clone()) {
                         Ok(credential) => {
                             sources.push(DefaultAzureCredentialKind::AppService(credential))
                         }
@@ -116,12 +116,12 @@ impl DefaultAzureCredentialBuilder {
                         VirtualMachineManagedIdentityCredential::new(
                             ImdsId::SystemAssigned,
                             self.options.clone(),
-                        ),
+                        )?,
                     ));
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 DefaultAzureCredentialType::AzureCli => {
-                    if let Ok(credential) = AzureCliCredential::create() {
+                    if let Ok(credential) = AzureCliCredential::new() {
                         sources.push(DefaultAzureCredentialKind::AzureCli(credential));
                     }
                 }
@@ -139,10 +139,10 @@ impl DefaultAzureCredentialBuilder {
     }
 
     /// Create a `DefaultAzureCredential` from this builder.
-    pub fn build(&self) -> azure_core::Result<DefaultAzureCredential> {
+    pub fn build(&self) -> azure_core::Result<Arc<DefaultAzureCredential>> {
         let included = self.included();
         let sources = self.create_sources(&included)?;
-        Ok(DefaultAzureCredential::with_sources(sources))
+        DefaultAzureCredential::with_sources(sources)
     }
 }
 
@@ -159,12 +159,12 @@ enum DefaultAzureCredentialType {
 #[derive(Debug)]
 pub(crate) enum DefaultAzureCredentialKind {
     /// `TokenCredential` from managed identity that has been assigned to an App Service.
-    AppService(AppServiceManagedIdentityCredential),
+    AppService(Arc<AppServiceManagedIdentityCredential>),
     /// `TokenCredential` from managed identity that has been assigned to a virtual machine.
-    VirtualMachine(VirtualMachineManagedIdentityCredential),
+    VirtualMachine(Arc<VirtualMachineManagedIdentityCredential>),
     #[cfg(not(target_arch = "wasm32"))]
     /// `TokenCredential` from Azure CLI.
-    AzureCli(AzureCliCredential),
+    AzureCli(Arc<AzureCliCredential>),
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -219,8 +219,9 @@ impl TokenCredential for DefaultAzureCredentialKind {
 /// Provides a default `TokenCredential` authentication flow for applications that will be deployed to Azure.
 ///
 /// The following credential types if enabled will be tried, in order:
-/// - `ManagedIdentityCredential`
-/// - `AzureCliCredential`
+///
+/// * `ManagedIdentityCredential`
+/// * `AzureCliCredential`
 ///
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
 #[derive(Debug)]
@@ -236,25 +237,25 @@ impl DefaultAzureCredential {
     }
 
     /// Creates a `DefaultAzureCredential` with default options.
-    pub fn new() -> azure_core::Result<DefaultAzureCredential> {
+    pub fn new() -> azure_core::Result<Arc<DefaultAzureCredential>> {
         Self::with_options(TokenCredentialOptions::default())
     }
 
     /// Creates a `DefaultAzureCredential` with options.
     pub fn with_options(
         options: TokenCredentialOptions,
-    ) -> azure_core::Result<DefaultAzureCredential> {
+    ) -> azure_core::Result<Arc<DefaultAzureCredential>> {
         DefaultAzureCredentialBuilder::default()
             .with_options(options)
             .build()
     }
 
     /// Creates a `DefaultAzureCredential` with specified sources.
-    fn with_sources(sources: Vec<DefaultAzureCredentialKind>) -> Self {
-        DefaultAzureCredential {
+    fn with_sources(sources: Vec<DefaultAzureCredentialKind>) -> azure_core::Result<Arc<Self>> {
+        Ok(Arc::new(DefaultAzureCredential {
             sources,
             cache: TokenCache::new(),
-        }
+        }))
     }
 
     /// Try to fetch a token using each of the credential sources until one succeeds

@@ -694,7 +694,7 @@ mod tests {
             >::new(
                 seq.into_iter()
                     .map(|x| {
-                        let iter = x.into_iter().map(|y| y.into());
+                        let iter = x.into_iter().map(Into::into);
                         iter.collect::<fe2o3_amqp_types::primitives::List<fe2o3_amqp_types::primitives::Value>>().into()
                     })
                     .collect::<Vec<
@@ -717,7 +717,7 @@ mod tests {
         //     AmqpMessageBody::Sequence(
         //         test_body
         //             .into_iter()
-        //             .map(|x| x.into_iter().map(|y| y.into()).collect())
+        //             .map(|x| x.into_iter().map(Into::into).collect())
         //             .collect()
         //     )
         // );

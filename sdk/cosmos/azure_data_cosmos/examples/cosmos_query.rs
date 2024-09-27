@@ -8,7 +8,6 @@ use azure_data_cosmos::{
 use azure_identity::DefaultAzureCredential;
 use clap::Parser;
 use futures::StreamExt;
-use std::sync::Arc;
 
 /// An example to show querying a Cosmos DB container.
 #[derive(Parser)]
@@ -38,13 +37,13 @@ pub struct Args {
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
+    tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
     let args = Args::parse();
 
-    let client = create_client(&args);
+    let client = create_client(&args)?;
 
     let db_client = client.database_client(&args.database);
     let container_client = db_client.container_client(&args.container);
@@ -67,17 +66,17 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(feature = "key_auth")]
-fn create_client(args: &Args) -> CosmosClient {
+fn create_client(args: &Args) -> azure_core::Result<CosmosClient> {
     if let Some(key) = args.key.as_ref() {
-        CosmosClient::with_key(&args.endpoint, key.clone(), None).unwrap()
+        CosmosClient::with_key(&args.endpoint, key.clone(), None)
     } else {
-        let cred = DefaultAzureCredential::new().map(Arc::new).unwrap();
-        CosmosClient::new(&args.endpoint, cred, None).unwrap()
+        let cred = DefaultAzureCredential::new()?;
+        CosmosClient::new(&args.endpoint, cred, None)
     }
 }
 
 #[cfg(not(feature = "key_auth"))]
-fn create_client(args: &Args) -> CosmosClient {
-    let cred = DefaultAzureCredential::new().map(Arc::new).unwrap();
-    CosmosClient::new(&args.endpoint, cred, None).unwrap()
+fn create_client(args: &Args) -> azure_core::Result<CosmosClient> {
+    let cred = DefaultAzureCredential::new()?;
+    CosmosClient::new(&args.endpoint, cred, None)
 }
