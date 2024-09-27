@@ -54,7 +54,7 @@ pub async fn exchange(
     let rsp_status = rsp.status();
 
     if rsp_status.is_success() {
-        rsp.deserialize_body_into()
+        rsp.deserialize_body_into::<RefreshTokenResponse>()
             .await
             .map_kind(ErrorKind::Credential)
     } else {

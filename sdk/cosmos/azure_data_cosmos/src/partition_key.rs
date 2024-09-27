@@ -191,6 +191,12 @@ impl From<String> for PartitionKeyValue {
     }
 }
 
+impl From<&String> for PartitionKeyValue {
+    fn from(value: &String) -> Self {
+        InnerPartitionKeyValue::String(value.clone()).into()
+    }
+}
+
 macro_rules! impl_from_number {
     ($source_type: ty) => {
         impl From<$source_type> for PartitionKeyValue {

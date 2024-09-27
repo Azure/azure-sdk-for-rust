@@ -3,15 +3,15 @@
 
 use crate::{
     constants,
-    models::{ContainerProperties, QueryResults},
+    models::{ContainerProperties, Item, QueryResults},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::{CosmosPipeline, ResourceType},
     utils::AppendPathSegments,
-    Query, QueryPartitionStrategy,
+    ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
 };
 
-use azure_core::{Context, Request};
-use serde::{de::DeserializeOwned, Deserialize};
+use azure_core::{Context, Request, Response};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use url::Url;
 
 #[cfg(doc)]
@@ -45,6 +45,47 @@ pub trait ContainerClientMethods {
         &self,
         options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<azure_core::Response<ContainerProperties>>;
+
+    /// Creates a new item in the container.
+    ///
+    /// # Arguments
+    /// * `partition_key` - The partition key of the new item.
+    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`]
+    /// * `options` - Optional parameters for the request
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # azure_data_cosmos::Item;
+    /// # async fn doc() {
+    /// #[derive(Serialize)]
+    /// pub struct Product {
+    ///     #[serde(rename = "id")] // Use serde attributes to control serialization
+    ///     product_id: String,
+    ///     category_id: String,
+    ///     product_name: String,
+    /// }
+    /// let p = Product {
+    ///     product_id: "product1".to_string(),
+    ///     category_id: "category1".to_string(),
+    ///     product_name: "Product #1".to_string(),
+    /// };
+    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// let created_item = container_client
+    ///     .create_item("category1", p, None)
+    ///     .await.unwrap()
+    ///     .deserialize_body()
+    ///     .await.unwrap();
+    /// println!("Created: {:#?}", created_item);
+    /// # }
+    /// ```
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
+    async fn create_item<T: Serialize + DeserializeOwned>(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item: T,
+        options: Option<ItemOptions>,
+    ) -> azure_core::Result<azure_core::Response<Item<T>>>;
 
     /// Executes a single-partition query against items in the container.
     ///
@@ -118,8 +159,7 @@ pub struct ContainerClient {
 
 impl ContainerClient {
     pub(crate) fn new(pipeline: CosmosPipeline, database_url: &Url, container_name: &str) -> Self {
-        let mut container_url = database_url.clone();
-        container_url.append_path_segments(["colls", container_name]);
+        let container_url = database_url.with_path_segments(["colls", container_name]);
 
         Self {
             container_url,
@@ -139,6 +179,24 @@ impl ContainerClientMethods for ContainerClient {
         let mut req = Request::new(self.container_url.clone(), azure_core::Method::Get);
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Containers)
+            .await
+    }
+
+    async fn create_item<T: Serialize>(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item: T,
+
+        #[allow(unused_variables)]
+        // This is a documented public API so prefixing with '_' is undesirable.
+        options: Option<ItemOptions>,
+    ) -> azure_core::Result<azure_core::Response<Item<T>>> {
+        let url = self.container_url.with_path_segments(["docs"]);
+        let mut req = Request::new(url, azure_core::Method::Post);
+        req.insert_headers(&partition_key.into());
+        req.set_json(&item)?;
+        self.pipeline
+            .send(Context::new(), &mut req, ResourceType::Items)
             .await
     }
 
@@ -169,8 +227,7 @@ impl ContainerClientMethods for ContainerClient {
             }
         }
 
-        let mut url = self.container_url.clone();
-        url.append_path_segments(["docs"]);
+        let url = self.container_url.with_path_segments(["docs"]);
         let mut base_req = Request::new(url, azure_core::Method::Post);
 
         base_req.insert_header(constants::QUERY, "True");
@@ -195,7 +252,7 @@ impl ContainerClientMethods for ContainerClient {
                     req.insert_header(constants::CONTINUATION, continuation);
                 }
 
-                let resp = pipeline
+                let resp: Response<QueryResponseModel<T>> = pipeline
                     .send(Context::new(), &mut req, ResourceType::Items)
                     .await?;
 

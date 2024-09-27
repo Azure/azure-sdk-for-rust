@@ -3,11 +3,8 @@
 
 //! Model types sent to and received from the Cosmos DB API.
 
-use azure_core::{
-    date::{ComponentRange, OffsetDateTime},
-    Continuable, Model,
-};
-use serde::{Deserialize, Serialize};
+use azure_core::{date::OffsetDateTime, Continuable, Model};
+use serde::{de::DeserializeOwned, Deserialize, Deserializer};
 
 #[cfg(doc)]
 use crate::{
@@ -15,25 +12,57 @@ use crate::{
     CosmosClientMethods,
 };
 
-/// Represents a timestamp in the format expected by Cosmos DB.
-///
-/// Cosmos DB timestamps are represented as the number of seconds since the Unix epoch.
-/// Use [`CosmosTimestamp::try_into`] implementation to convert this into an [`OffsetDateTime`].
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CosmosTimestamp(i64);
+/// Wrapper type used to hold items stored in a Cosmos DB Container.
+#[non_exhaustive]
+#[derive(Deserialize, Debug, Clone, Default)]
+#[serde(transparent)]
+pub struct Item<T>(
+    // This wrapper type is necessary because Response<T> needs T to implement azure_core::Model.
+    // However, we don't want to require user types to have to implement azure_core::Model.
+    // So this type does that, and handles deserializing the payload from JSON.
+    T,
+);
 
-/// Converts a [`CosmosTimestamp`] into a [`OffsetDateTime`].
-impl TryInto<OffsetDateTime> for CosmosTimestamp {
-    type Error = ComponentRange;
+impl<T> Item<T> {
+    /// Unwraps the inner `T` representing the item itself.
+    pub fn into_inner(self) -> T {
+        self.0
+    }
+}
 
-    /// Attempts to convert this [`CosmosTimestamp`] into a [`OffsetDateTime`].
-    fn try_into(self) -> Result<OffsetDateTime, Self::Error> {
-        OffsetDateTime::from_unix_timestamp(self.0)
+// The derive macro for Model doesn't currently "auto-detect" trait bounds for generic types.
+// So we have to manually implement Model
+// See https://github.com/Azure/azure-sdk-for-rust/issues/1803
+impl<T: DeserializeOwned> Model for Item<T> {
+    fn from_response_body(
+        body: azure_core::ResponseBody,
+    ) -> impl std::future::Future<Output = typespec_client_core::Result<Self>> + Send + Sync {
+        body.json()
+    }
+}
+
+fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let seconds_since_epoch = Option::<i64>::deserialize(deserializer)?;
+    match seconds_since_epoch {
+        None => Ok(None),
+        Some(seconds) => Ok(Some(OffsetDateTime::from_unix_timestamp(seconds).map_err(
+            |_| {
+                use serde::de::Error;
+                D::Error::invalid_value(
+                    serde::de::Unexpected::Signed(seconds),
+                    &"a valid timestamp",
+                )
+            },
+        )?)),
     }
 }
 
 /// A page of query results, where each item is a document of type `T`.
-#[derive(Debug)]
+#[non_exhaustive]
+#[derive(Clone, Default, Debug)]
 pub struct QueryResults<T> {
     pub items: Vec<T>,
     pub query_metrics: Option<String>,
@@ -50,7 +79,8 @@ impl<T> Continuable for QueryResults<T> {
 }
 
 /// Common system properties returned for most Cosmos DB resources.
-#[derive(Debug, Deserialize)]
+#[non_exhaustive]
+#[derive(Clone, Default, Debug, Deserialize)]
 pub struct SystemProperties {
     /// The entity tag associated with the resource.
     #[serde(rename = "_etag")]
@@ -66,13 +96,15 @@ pub struct SystemProperties {
 
     /// A [`CosmosTimestamp`] representing the last modified time of the resource.
     #[serde(rename = "_ts")]
-    pub last_modified: Option<CosmosTimestamp>,
+    #[serde(deserialize_with = "deserialize_cosmos_timestamp")]
+    pub last_modified: Option<OffsetDateTime>,
 }
 
 /// Properties of a Cosmos DB database.
 ///
 /// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
-#[derive(Model, Debug, Deserialize)]
+#[non_exhaustive]
+#[derive(Model, Clone, Default, Debug, Deserialize)]
 pub struct DatabaseProperties {
     /// The ID of the database.
     pub id: String,
@@ -85,7 +117,8 @@ pub struct DatabaseProperties {
 /// Properties of a Cosmos DB container.
 ///
 /// Returned by [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
-#[derive(Model, Debug, Deserialize)]
+#[non_exhaustive]
+#[derive(Model, Clone, Default, Debug, Deserialize)]
 pub struct ContainerProperties {
     /// The ID of the container.
     pub id: String,
