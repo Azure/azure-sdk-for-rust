@@ -116,10 +116,12 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         let outcome = self
             .sender
             .get()
-            .ok_or_else(|| azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "Message Sender not set.",
-            ))?
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Message Sender not set.",
+                )
+            })?
             .lock()
             .await
             .send(sendable)

@@ -420,7 +420,10 @@ impl ProducerClient {
                     &session,
                     format!(
                         "{}-rust-sender",
-                        self.options.application_id.as_ref().unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
+                        self.options
+                            .application_id
+                            .as_ref()
+                            .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
                     ),
                     path.clone(),
                     Some(
@@ -440,7 +443,11 @@ impl ProducerClient {
                 },
             );
         }
-        Ok(sender_instances.get(&path).ok_or_else(||Error::from(ErrorKind::MissingMessageSender))?.sender.clone())
+        Ok(sender_instances
+            .get(&path)
+            .ok_or_else(|| Error::from(ErrorKind::MissingMessageSender))?
+            .sender
+            .clone())
     }
 
     async fn authorize_path(&self, url: impl Into<String>) -> Result<AccessToken> {
@@ -472,9 +479,14 @@ impl ProducerClient {
             let expires_at = token.expires_on;
             cbs.authorize_path(&url, token.token.secret(), expires_at)
                 .await?;
-            scopes.insert(url.clone(), token).ok_or_else(||Error::from(ErrorKind::UnableToAddAuthenticationToken))?;
+            scopes
+                .insert(url.clone(), token)
+                .ok_or_else(|| Error::from(ErrorKind::UnableToAddAuthenticationToken))?;
         }
-        Ok(scopes.get(url.as_str()).ok_or_else(||Error::from(ErrorKind::UnableToAddAuthenticationToken))?.clone())
+        Ok(scopes
+            .get(url.as_str())
+            .ok_or_else(|| Error::from(ErrorKind::UnableToAddAuthenticationToken))?
+            .clone())
     }
 }
 

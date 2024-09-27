@@ -64,7 +64,7 @@ impl std::error::Error for EventhubsError {
 impl std::fmt::Display for EventhubsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            ErrorKind::MissingMessageSender => write!(f,"Missing message sender."),
+            ErrorKind::MissingMessageSender => write!(f, "Missing message sender."),
             ErrorKind::ArithmeticError => write!(f, "Arithmetic overflow has occurred."),
             ErrorKind::InvalidManagementResponse => write!(f, "Invalid management response"),
             ErrorKind::UnableToAddAuthenticationToken => {
