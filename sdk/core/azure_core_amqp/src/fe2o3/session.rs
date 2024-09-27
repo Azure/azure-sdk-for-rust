@@ -9,7 +9,7 @@ use crate::{
     session::{AmqpSessionApis, AmqpSessionOptions},
 };
 use async_std::sync::Mutex;
-use azure_core::Result;
+use azure_core::{error::ErrorKind, Error, Result};
 use std::{
     borrow::BorrowMut,
     sync::{Arc, OnceLock},
@@ -35,8 +35,17 @@ impl Fe2o3AmqpSession {
     }
 
     /// Returns a reference to the session handle
-    pub fn get(&self) -> Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>> {
-        self.session.get().unwrap().clone()
+    pub fn get(&self) -> Result<Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>>> {
+        Ok(self
+            .session
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Session Handle was not set",
+                )
+            })?
+            .clone())
     }
 }
 
@@ -46,46 +55,56 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         connection: &AmqpConnection,
         options: Option<AmqpSessionOptions>,
     ) -> Result<()> {
-        let mut connection = connection.implementation.get().get().unwrap().lock().await;
+        let mut connection = connection
+            .implementation
+            .get()
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    "Connection already set.",
+                )
+            })?
+            .lock()
+            .await;
 
         let mut session_builder = fe2o3_amqp::session::Session::builder();
-        if options.is_some() {
-            let options = options.unwrap();
 
-            if let Some(incoming_window) = options.incoming_window {
+        if let Some(options) = options {
+            if let Some(incoming_window) = options.incoming_window() {
                 session_builder = session_builder.incoming_window(incoming_window);
             }
-            if let Some(outgoing_window) = options.outgoing_window {
+            if let Some(outgoing_window) = options.outgoing_window() {
                 session_builder = session_builder.outgoing_window(outgoing_window);
             }
-            if let Some(handle_max) = options.handle_max {
+            if let Some(handle_max) = options.handle_max() {
                 session_builder = session_builder.handle_max(handle_max);
             }
-            if let Some(offered_capabilities) = options.offered_capabilities.clone() {
+            if let Some(offered_capabilities) = options.offered_capabilities() {
                 for capability in offered_capabilities {
-                    let capability: fe2o3_amqp_types::primitives::Symbol = capability.into();
+                    let capability: fe2o3_amqp_types::primitives::Symbol =
+                        capability.clone().into();
                     session_builder = session_builder.add_offered_capabilities(capability);
                 }
             }
-            if let Some(desired_capabilities) = options.desired_capabilities.clone() {
+            if let Some(desired_capabilities) = options.desired_capabilities() {
                 for capability in desired_capabilities {
-                    let capability: fe2o3_amqp_types::primitives::Symbol = capability.into();
+                    let capability: fe2o3_amqp_types::primitives::Symbol =
+                        capability.clone().into();
                     session_builder = session_builder.add_desired_capabilities(capability);
                 }
             }
-            if let Some(properties) = options.properties.clone() {
+            if let Some(properties) = options.properties() {
                 let mut fields = fe2o3_amqp::types::definitions::Fields::new();
                 for property in properties.iter() {
-                    debug!("Property: {:?}, Value: {:?}", property.0, property.1);
-                    let k: fe2o3_amqp_types::primitives::Symbol = property.0.into();
-                    let v: fe2o3_amqp_types::primitives::Value = property.1.into();
-                    debug!("Property: {:?}, Value: {:?}", k, v);
-
-                    fields.insert(k, v);
+                    fields.insert(
+                        fe2o3_amqp_types::primitives::Symbol::from(property.0),
+                        fe2o3_amqp_types::primitives::Value::from(property.1),
+                    );
                 }
                 session_builder = session_builder.properties(fields);
             }
-            if let Some(buffer_size) = options.buffer_size {
+            if let Some(buffer_size) = options.buffer_size() {
                 session_builder = session_builder.buffer_size(buffer_size);
             }
         }
@@ -93,11 +112,21 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             .begin(connection.borrow_mut())
             .await
             .map_err(AmqpBegin::from)?;
-        self.session.set(Arc::new(Mutex::new(session))).unwrap();
+        self.session
+            .set(Arc::new(Mutex::new(session)))
+            .map_err(|_| Error::message(ErrorKind::Other, "Could not set session instance."))?;
         Ok(())
     }
 
     async fn end(&self) -> Result<()> {
-        todo!()
+        self.session
+            .get()
+            .ok_or_else(|| Error::message(ErrorKind::Other, "Session Handle was not set"))?
+            .lock()
+            .await
+            .end()
+            .await
+            .map_err(super::error::AmqpSession::from)?;
+        Ok(())
     }
 }

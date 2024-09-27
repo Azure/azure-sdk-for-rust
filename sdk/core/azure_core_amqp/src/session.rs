@@ -15,21 +15,53 @@ type SessionImplementation = super::fe2o3::session::Fe2o3AmqpSession;
 #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
 type SessionImplementation = super::noop::NoopAmqpSession;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct AmqpSessionOptions {
-    pub(crate) next_outgoing_id: Option<u32>,
-    pub(crate) incoming_window: Option<u32>,
-    pub(crate) outgoing_window: Option<u32>,
-    pub(crate) handle_max: Option<u32>,
-    pub(crate) offered_capabilities: Option<Vec<AmqpSymbol>>,
-    pub(crate) desired_capabilities: Option<Vec<AmqpSymbol>>,
-    pub(crate) properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-    pub(crate) buffer_size: Option<usize>,
+    next_outgoing_id: Option<u32>,
+    incoming_window: Option<u32>,
+    outgoing_window: Option<u32>,
+    handle_max: Option<u32>,
+    offered_capabilities: Option<Vec<AmqpSymbol>>,
+    desired_capabilities: Option<Vec<AmqpSymbol>>,
+    properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    buffer_size: Option<usize>,
 }
 
 impl AmqpSessionOptions {
     pub fn builder() -> builders::AmqpSessionOptionsBuilder {
         builders::AmqpSessionOptionsBuilder::new()
+    }
+
+    pub fn next_outgoing_id(&self) -> Option<u32> {
+        self.next_outgoing_id
+    }
+
+    pub fn incoming_window(&self) -> Option<u32> {
+        self.incoming_window
+    }
+
+    pub fn outgoing_window(&self) -> Option<u32> {
+        self.outgoing_window
+    }
+
+    pub fn handle_max(&self) -> Option<u32> {
+        self.handle_max
+    }
+
+    pub fn offered_capabilities(&self) -> Option<&Vec<AmqpSymbol>> {
+        self.offered_capabilities.as_ref()
+    }
+
+    pub fn desired_capabilities(&self) -> Option<&Vec<AmqpSymbol>> {
+        self.desired_capabilities.as_ref()
+    }
+
+    pub fn properties(&self) -> Option<&AmqpOrderedMap<AmqpSymbol, AmqpValue>> {
+        self.properties.as_ref()
+    }
+
+    pub fn buffer_size(&self) -> Option<usize> {
+        self.buffer_size
     }
 }
 
@@ -83,50 +115,56 @@ pub mod builders {
                 options: Default::default(),
             }
         }
-        pub fn build(self) -> AmqpSessionOptions {
-            self.options
+        pub fn build(&mut self) -> AmqpSessionOptions {
+            self.options.clone()
         }
-        #[allow(dead_code)]
-        pub fn with_next_outgoing_id(mut self, next_outgoing_id: u32) -> Self {
+        pub fn with_next_outgoing_id(&mut self, next_outgoing_id: u32) -> &mut Self {
             self.options.next_outgoing_id = Some(next_outgoing_id);
             self
         }
-        #[allow(dead_code)]
-        pub fn with_incoming_window(mut self, incoming_window: u32) -> Self {
+        pub fn with_incoming_window(&mut self, incoming_window: u32) -> &mut Self {
             self.options.incoming_window = Some(incoming_window);
             self
         }
-        #[allow(dead_code)]
-        pub fn with_outgoing_window(mut self, outgoing_window: u32) -> Self {
+        pub fn with_outgoing_window(&mut self, outgoing_window: u32) -> &mut Self {
             self.options.outgoing_window = Some(outgoing_window);
             self
         }
-        #[allow(dead_code)]
-        pub fn with_handle_max(mut self, handle_max: u32) -> Self {
+        pub fn with_handle_max(&mut self, handle_max: u32) -> &mut Self {
             self.options.handle_max = Some(handle_max);
             self
         }
-        #[allow(dead_code)]
-        pub fn with_offered_capabilities(mut self, offered_capabilities: Vec<AmqpSymbol>) -> Self {
+        pub fn with_offered_capabilities(
+            &mut self,
+            offered_capabilities: Vec<AmqpSymbol>,
+        ) -> &mut Self {
             self.options.offered_capabilities = Some(offered_capabilities);
             self
         }
-        #[allow(dead_code)]
-        pub fn with_desired_capabilities(mut self, desired_capabilities: Vec<AmqpSymbol>) -> Self {
+        pub fn with_desired_capabilities(
+            &mut self,
+            desired_capabilities: Vec<AmqpSymbol>,
+        ) -> &mut Self {
             self.options.desired_capabilities = Some(desired_capabilities);
             self
         }
-        #[allow(dead_code)]
-        pub fn with_properties(mut self, properties: Vec<(&str, &str)>) -> Self {
+        pub fn with_properties<K, V>(
+            &mut self,
+            properties: impl Into<AmqpOrderedMap<K, V>>,
+        ) -> &mut Self
+        where
+            K: Into<AmqpSymbol> + PartialEq + Default + Debug,
+            V: Into<AmqpValue> + Default,
+        {
             let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = properties
+                .into()
                 .into_iter()
-                .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
+                .map(|(k, v)| (k.into(), v.into()))
                 .collect();
             self.options.properties = Some(properties_map);
             self
         }
-        #[allow(dead_code)]
-        pub fn with_buffer_size(mut self, buffer_size: usize) -> Self {
+        pub fn with_buffer_size(&mut self, buffer_size: usize) -> &mut Self {
             self.options.buffer_size = Some(buffer_size);
             self
         }
@@ -138,7 +176,8 @@ mod tests {
 
     #[test]
     fn test_amqp_session_options_builder() {
-        let builder = AmqpSessionOptions::builder()
+        let mut builder = AmqpSessionOptions::builder();
+        builder
             .with_next_outgoing_id(1)
             .with_incoming_window(1)
             .with_outgoing_window(1)

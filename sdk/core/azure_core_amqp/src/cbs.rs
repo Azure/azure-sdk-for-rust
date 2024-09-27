@@ -74,9 +74,9 @@ impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity {
 }
 
 impl AmqpClaimsBasedSecurity {
-    pub fn new(session: AmqpSession) -> Self {
-        Self {
-            implementation: CbsImplementation::new(session),
-        }
+    pub fn new(session: AmqpSession) -> Result<Self> {
+        Ok(Self {
+            implementation: CbsImplementation::new(session)?,
+        })
     }
 }

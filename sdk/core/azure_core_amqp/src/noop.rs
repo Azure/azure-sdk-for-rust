@@ -82,8 +82,8 @@ impl AmqpSessionApis for NoopAmqpSession {
 }
 
 impl NoopAmqpClaimsBasedSecurity {
-    pub fn new(session: AmqpSession) -> Self {
-        Self {}
+    pub fn new(session: AmqpSession) -> Result<Self> {
+        Ok(Self {})
     }
 }
 
@@ -102,8 +102,12 @@ impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity {
 }
 
 impl NoopAmqpManagement {
-    pub fn new(session: AmqpSession, name: impl Into<String>, access_token: AccessToken) -> Self {
-        Self {}
+    pub fn new(
+        session: AmqpSession,
+        name: impl Into<String>,
+        access_token: AccessToken,
+    ) -> Result<Self> {
+        Ok(Self {})
     }
 }
 impl AmqpManagementApis for NoopAmqpManagement {
@@ -137,7 +141,7 @@ impl AmqpSenderApis for NoopAmqpSender {
         unimplemented!();
     }
 
-    async fn max_message_size(&self) -> Option<u64> {
+    async fn max_message_size(&self) -> Result<Option<u64>> {
         unimplemented!();
     }
 
@@ -166,7 +170,7 @@ impl AmqpReceiverApis for NoopAmqpReceiver {
         unimplemented!();
     }
 
-    async fn max_message_size(&self) -> Option<u64> {
+    async fn max_message_size(&self) -> Result<Option<u64>> {
         unimplemented!();
     }
 

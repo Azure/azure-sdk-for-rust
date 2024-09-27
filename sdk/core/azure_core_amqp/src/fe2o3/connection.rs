@@ -51,66 +51,85 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 .container_id(id)
                 .max_frame_size(65536);
 
-            if options.is_some() {
-                let options = options.unwrap();
-                if options.max_frame_size.is_some() {
-                    builder = builder.max_frame_size(options.max_frame_size.unwrap());
-                }
-                if options.channel_max.is_some() {
-                    builder = builder.channel_max(options.channel_max.unwrap());
-                }
-                if options.idle_timeout.is_some() {
-                    builder = builder
-                        .idle_time_out(options.idle_timeout.unwrap().whole_milliseconds() as u32);
-                }
-                if options.outgoing_locales.is_some() {
-                    for locale in options.outgoing_locales.as_ref().unwrap() {
-                        builder = builder.add_outgoing_locales(locale.as_str());
-                    }
-                }
-                if options.incoming_locales.is_some() {
-                    for locale in options.incoming_locales.as_ref().unwrap() {
-                        builder = builder.add_incoming_locales(locale.as_str());
-                    }
-                }
-                if options.offered_capabilities.is_some() {
-                    for capability in options.offered_capabilities.unwrap() {
-                        let capability: fe2o3_amqp_types::primitives::Symbol = capability.into();
-                        builder = builder.add_offered_capabilities(capability);
-                    }
-                }
-                if options.desired_capabilities.is_some() {
-                    for capability in options.desired_capabilities.unwrap() {
-                        let capability: fe2o3_amqp_types::primitives::Symbol = capability.into();
-                        builder = builder.add_desired_capabilities(capability);
-                    }
-                }
-                if options.properties.is_some() {
-                    let mut fields = fe2o3_amqp::types::definitions::Fields::new();
-                    for property in options.properties.unwrap().iter() {
-                        debug!("Property: {:?}, Value: {:?}", property.0, property.1);
-                        let k: fe2o3_amqp_types::primitives::Symbol = property.0.into();
-                        let v: fe2o3_amqp_types::primitives::Value = property.1.into();
-                        debug!("Property2: {:?}, Value: {:?}", k, v);
+            let options = options.ok_or_else(|| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    "Connection options are not set.",
+                )
+            })?;
 
-                        fields.insert(k, v);
-                    }
-                    builder = builder.properties(fields);
+            if let Some(frame_size) = options.max_frame_size {
+                builder = builder.max_frame_size(frame_size);
+            }
+
+            if let Some(channel_max) = options.channel_max {
+                builder = builder.channel_max(channel_max);
+            }
+            if let Some(idle_timeout) = options.idle_timeout {
+                builder = builder.idle_time_out(idle_timeout.whole_milliseconds() as u32);
+            }
+            if let Some(outgoing_locales) = options.outgoing_locales.as_ref() {
+                for locale in outgoing_locales {
+                    builder = builder.add_outgoing_locales(locale.as_str());
                 }
-                if options.buffer_size.is_some() {
-                    builder = builder.buffer_size(options.buffer_size.unwrap());
+            }
+            if let Some(incoming_locales) = options.incoming_locales {
+                for locale in incoming_locales {
+                    builder = builder.add_incoming_locales(locale.as_str());
                 }
+            }
+            if let Some(offered_capabilities) = options.offered_capabilities.as_ref() {
+                for capability in offered_capabilities {
+                    let capability: fe2o3_amqp_types::primitives::Symbol =
+                        capability.clone().into();
+                    builder = builder.add_offered_capabilities(capability);
+                }
+            }
+            if let Some(desired_capabilities) = options.desired_capabilities.as_ref() {
+                for capability in desired_capabilities {
+                    let capability: fe2o3_amqp_types::primitives::Symbol =
+                        capability.clone().into();
+                    builder = builder.add_desired_capabilities(capability);
+                }
+            }
+            if let Some(properties) = options.properties.as_ref() {
+                let mut fields = fe2o3_amqp::types::definitions::Fields::new();
+                for property in properties.iter() {
+                    let k = fe2o3_amqp_types::primitives::Symbol::from(property.0);
+                    let v = fe2o3_amqp_types::primitives::Value::from(property.1);
+
+                    fields.insert(k, v);
+                }
+                builder = builder.properties(fields);
+            }
+            if let Some(buffer_size) = options.buffer_size {
+                builder = builder.buffer_size(buffer_size);
             }
 
             self.connection
                 .set(Mutex::new(builder.open(url).await.map_err(AmqpOpen::from)?))
-                .unwrap();
+                .map_err(|_| {
+                    azure_core::Error::new(
+                        azure_core::error::ErrorKind::Other,
+                        "Connection already set.",
+                    )
+                })?;
             Ok(())
         }
     }
 
     async fn close(&self) -> Result<()> {
-        let mut connection = self.connection.get().unwrap().lock().await;
+        let mut connection = self
+            .connection
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Connection is not set",
+                )
+            })?
+            .lock()
+            .await;
         connection
             .borrow_mut()
             .close()
@@ -124,7 +143,17 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
     ) -> Result<()> {
-        let mut connection = self.connection.get().unwrap().lock().await;
+        let mut connection = self
+            .connection
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Connection is not set",
+                )
+            })?
+            .lock()
+            .await;
         connection
             .borrow_mut()
             .close_with_error(fe2o3_amqp::types::definitions::Error::new(

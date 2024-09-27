@@ -38,16 +38,16 @@ impl Fe2o3AmqpManagement {
         session: AmqpSession,
         client_node_name: impl Into<String>,
         access_token: AccessToken,
-    ) -> Self {
+    ) -> Result<Self> {
         // Session::get() returns a clone of the underlying session handle.
-        let session = session.implementation.get();
+        let session = session.implementation.get()?;
 
-        Self {
+        Ok(Self {
             access_token,
             client_node_name: client_node_name.into(),
             session,
             management: OnceLock::new(),
-        }
+        })
     }
 }
 
@@ -59,7 +59,12 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .await
             .map_err(AmqpManagementAttach::from)?;
 
-        self.management.set(Mutex::new(management)).unwrap();
+        self.management.set(Mutex::new(management)).map_err(|_| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Management is already set.",
+            )
+        })?;
         Ok(())
     }
     async fn call(
@@ -67,7 +72,17 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
         operation_type: impl Into<String>,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
-        let mut management = self.management.get().unwrap().lock().await;
+        let mut management = self
+            .management
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "management is not set.",
+                )
+            })?
+            .lock()
+            .await;
 
         let request = WithApplicationPropertiesRequest::new(
             operation_type,

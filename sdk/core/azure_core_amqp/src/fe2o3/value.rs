@@ -47,7 +47,11 @@ impl From<fe2o3_amqp_types::primitives::Timestamp> for AmqpTimestamp {
 
 impl From<AmqpTimestamp> for fe2o3_amqp_types::primitives::Timestamp {
     fn from(timestamp: AmqpTimestamp) -> Self {
-        let t = timestamp.0.duration_since(UNIX_EPOCH).unwrap().as_millis();
+        let t = timestamp
+            .0
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not convert timestamp to time since unix epoch")
+            .as_millis();
         fe2o3_amqp_types::primitives::Timestamp::from_milliseconds(t as i64)
     }
 }
@@ -325,7 +329,10 @@ impl PartialEq<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             }
             AmqpValue::Char(c) => self == &fe2o3_amqp_types::primitives::Value::Char(*c),
             AmqpValue::TimeStamp(t) => {
-                let t: u64 = t.0.duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
+                let t: u64 =
+                    t.0.duration_since(UNIX_EPOCH)
+                        .expect("Could not convert timestamp into unix epoch")
+                        .as_millis() as u64;
                 self == &fe2o3_amqp_types::primitives::Value::Timestamp(
                     Timestamp::from_milliseconds(t as i64),
                 )

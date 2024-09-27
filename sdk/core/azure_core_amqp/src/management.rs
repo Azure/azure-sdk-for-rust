@@ -51,9 +51,9 @@ impl AmqpManagement {
         session: AmqpSession,
         client_node_name: impl Into<String>,
         access_token: AccessToken,
-    ) -> Self {
-        Self {
-            implementation: ManagementImplementation::new(session, client_node_name, access_token),
-        }
+    ) -> Result<Self> {
+        Ok(Self {
+            implementation: ManagementImplementation::new(session, client_node_name, access_token)?,
+        })
     }
 }
