@@ -98,7 +98,7 @@ impl AsHeaders for PartitionKey {
     type Error = azure_core::Error;
     type Iter = std::iter::Once<(HeaderName, HeaderValue)>;
 
-    fn as_headers(&self) -> Result<std::iter::Once<(HeaderName, HeaderValue)>, Self::Error> {
+    fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
         // We have to do some manual JSON serialization here.
         // The partition key is sent in an HTTP header, when used to set the partition key for a query.
         // It's not safe to use non-ASCII characters in HTTP headers, and serde_json will not escape non-ASCII characters if they are otherwise valid as UTF-8.
