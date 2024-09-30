@@ -1,7 +1,7 @@
 [package]
 name = "azure_openai_inference"
 version = "1.0.0-beta.1"
-description = "Rust client SDK for Azure OpenAI Inference"
+description = "Rust client library for Azure OpenAI Inference"
 readme = "README.md"
 authors.workspace = true
 edition.workspace = true
