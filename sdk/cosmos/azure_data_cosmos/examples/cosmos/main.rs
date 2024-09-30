@@ -11,8 +11,13 @@ mod delete;
 mod metadata;
 mod query;
 mod read;
+mod replace;
+mod upsert;
 
-/// An example to show querying a Cosmos DB container.
+/// A set of basic examples for interacting with Cosmos.
+///
+/// NOTE: This is not intended to be a general-purpose CLI for managing items in Cosmos DB.
+/// It exists for illustrative purposes and to simplify ad-hoc end-to-end testing.
 #[derive(Clone, Parser)]
 struct ProgramArgs {
     #[clap(flatten)]
@@ -35,11 +40,13 @@ struct SharedArgs {
 
 #[derive(Clone, Subcommand)]
 enum Subcommands {
-    Query(query::QueryCommand),
-    Metadata(metadata::MetadataCommand),
     Create(create::CreateCommand),
-    Read(read::ReadCommand),
     Delete(delete::DeleteCommand),
+    Metadata(metadata::MetadataCommand),
+    Query(query::QueryCommand),
+    Read(read::ReadCommand),
+    Replace(replace::ReplaceCommand),
+    Upsert(upsert::UpsertCommand),
 }
 
 #[tokio::main]
@@ -58,11 +65,13 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     let client = create_client(&args.shared_args);
 
     match cmd {
-        Subcommands::Query(cmd) => cmd.run(client).await,
-        Subcommands::Metadata(cmd) => cmd.run(client).await,
         Subcommands::Create(cmd) => cmd.run(client).await,
-        Subcommands::Read(cmd) => cmd.run(client).await,
         Subcommands::Delete(cmd) => cmd.run(client).await,
+        Subcommands::Metadata(cmd) => cmd.run(client).await,
+        Subcommands::Query(cmd) => cmd.run(client).await,
+        Subcommands::Read(cmd) => cmd.run(client).await,
+        Subcommands::Replace(cmd) => cmd.run(client).await,
+        Subcommands::Upsert(cmd) => cmd.run(client).await,
     }
 }
 

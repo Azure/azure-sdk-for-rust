@@ -89,6 +89,97 @@ pub trait ContainerClientMethods {
         options: Option<ItemOptions>,
     ) -> azure_core::Result<azure_core::Response<Item<T>>>;
 
+    /// Replaces an existing item in the container.
+    ///
+    /// # Arguments
+    /// * `partition_key` - The partition key of the item to replace.
+    /// * `item_id` - The id of the item to replace.
+    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`]
+    /// * `options` - Optional parameters for the request
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::{clients::{ContainerClient, ContainerClientMethods}, models::Item};
+    /// # use serde::{Deserialize, Serialize};
+    /// # async fn doc() {
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// pub struct Product {
+    ///     #[serde(rename = "id")] // Use serde attributes to control serialization
+    ///     product_id: String,
+    ///     category_id: String,
+    ///     product_name: String,
+    /// }
+    /// let p = Product {
+    ///     product_id: "product1".to_string(),
+    ///     category_id: "category1".to_string(),
+    ///     product_name: "Product #1".to_string(),
+    /// };
+    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// let updated_item = container_client
+    ///     .replace_item("category1", "product1", p, None)
+    ///     .await.unwrap()
+    ///     .deserialize_body()
+    ///     .await.unwrap()
+    ///     .into_inner();
+    /// println!("Updated Item: {:#?}", updated_item);
+    /// # }
+    /// ```
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
+    async fn replace_item<T: Serialize + DeserializeOwned>(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item_id: impl AsRef<str>,
+        item: T,
+        options: Option<ItemOptions>,
+    ) -> azure_core::Result<azure_core::Response<Item<T>>>;
+
+    /// Creates or replaces an item in the container.
+    ///
+    /// If an item with the same ID is found in the container, it is updated with the provided content.
+    /// If no item with the same ID is found in the container, a new item is created with the provided content.
+    ///
+    /// # Arguments
+    /// * `partition_key` - The partition key of the item to create or replace.
+    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`]
+    /// * `options` - Optional parameters for the request
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::{clients::{ContainerClient, ContainerClientMethods}, models::Item};
+    /// # use serde::{Deserialize, Serialize};
+    /// # async fn doc() {
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// pub struct Product {
+    ///     #[serde(rename = "id")] // Use serde attributes to control serialization
+    ///     product_id: String,
+    ///     category_id: String,
+    ///     product_name: String,
+    /// }
+    /// let p = Product {
+    ///     product_id: "product1".to_string(),
+    ///     category_id: "category1".to_string(),
+    ///     product_name: "Product #1".to_string(),
+    /// };
+    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// let updated_item = container_client
+    ///     .upsert_item("category1", p, None)
+    ///     .await.unwrap()
+    ///     .deserialize_body()
+    ///     .await.unwrap()
+    ///     .into_inner();
+    /// println!("Updated Item: {:#?}", updated_item);
+    /// # }
+    /// ```
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
+    async fn upsert_item<T: Serialize + DeserializeOwned>(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item: T,
+        options: Option<ItemOptions>,
+    ) -> azure_core::Result<azure_core::Response<Item<T>>>;
+
     /// Reads a specific item from the container.
     ///
     /// # Arguments
@@ -261,6 +352,52 @@ impl ContainerClientMethods for ContainerClient {
         let url = self.container_url.with_path_segments(["docs"]);
         let mut req = Request::new(url, azure_core::Method::Post);
         req.insert_headers(&partition_key.into());
+        req.set_json(&item)?;
+        self.pipeline
+            .send(Context::new(), &mut req, ResourceType::Items)
+            .await
+    }
+
+    async fn replace_item<T: Serialize>(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item_id: impl AsRef<str>,
+        item: T,
+
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
+        options: Option<ItemOptions>,
+    ) -> azure_core::Result<azure_core::Response<Item<T>>> {
+        let url = self
+            .container_url
+            .with_path_segments(["docs", item_id.as_ref()]);
+        let mut req = Request::new(url, azure_core::Method::Put);
+        req.insert_header(
+            constants::PARTITION_KEY,
+            HeaderValue::from_cow(partition_key.into().into_header_value()?),
+        );
+        req.set_json(&item)?;
+        self.pipeline
+            .send(Context::new(), &mut req, ResourceType::Items)
+            .await
+    }
+
+    async fn upsert_item<T: Serialize>(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item: T,
+
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
+        options: Option<ItemOptions>,
+    ) -> azure_core::Result<azure_core::Response<Item<T>>> {
+        let url = self.container_url.with_path_segments(["docs"]);
+        let mut req = Request::new(url, azure_core::Method::Post);
+        req.insert_header(constants::IS_UPSERT, "true");
+        req.insert_header(
+            constants::PARTITION_KEY,
+            HeaderValue::from_cow(partition_key.into().into_header_value()?),
+        );
         req.set_json(&item)?;
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Items)
