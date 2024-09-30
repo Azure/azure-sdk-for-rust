@@ -4,5 +4,5 @@ mod helpers;
 mod models;
 mod options;
 
-pub use models::*;
+pub use models::{request::*, response};
 pub use options::*;
