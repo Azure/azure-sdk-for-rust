@@ -49,12 +49,11 @@ impl AzureOpenAIClient {
     /// ```no_run
     /// use azure_openai_inference::clients::{AzureOpenAIClient, AzureOpenAIClientMethods};
     /// use azure_identity::DefaultAzureCredentialBuilder;
-    /// use std::sync::Arc;
     ///
     /// let endpoint = std::env::var("AZURE_OPENAI_ENDPOINT").expect("Set AZURE_OPENAI_ENDPOINT environment variable");
     /// let client = AzureOpenAIClient::new(
     ///     endpoint,
-    ///     Arc::new(DefaultAzureCredentialBuilder::new().build().unwrap()),
+    ///     DefaultAzureCredentialBuilder::new().build().unwrap(),
     ///     None,
     /// ).unwrap();
     /// ```

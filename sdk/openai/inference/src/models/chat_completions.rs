@@ -64,7 +64,7 @@ pub mod request {
         /// # Example
         ///
         /// ```rust
-        /// let request = azure_openai_inference::request::CreateChatCompletionsRequest::with_user_message(
+        /// let request = azure_openai_inference::CreateChatCompletionsRequest::with_user_message(
         ///     "gpt-3.5-turbo-1106",
         ///     "Why couldn't the eagles take Frodo directly to mount doom?");
         /// ```
@@ -81,7 +81,7 @@ pub mod request {
         /// # Example
         ///
         /// ```rust
-        /// let request = azure_openai_inference::request::CreateChatCompletionsRequest::with_user_message_and_stream(
+        /// let request = azure_openai_inference::CreateChatCompletionsRequest::with_user_message_and_stream(
         ///     "gpt-3.5-turbo-1106",
         ///     "Why couldn't the eagles take Frodo directly to Mount Doom?");
         /// ```
@@ -101,11 +101,11 @@ pub mod request {
         ///
         /// # Example
         /// ```rust
-        /// let request = azure_openai_inference::request::CreateChatCompletionsRequest::with_messages(
+        /// let request = azure_openai_inference::CreateChatCompletionsRequest::with_messages(
         ///     "gpt-3.5-turbo-1106",
         ///     vec![
-        ///         azure_openai_inference::request::ChatCompletionRequestMessage::with_system_role("You are a good math tutor who explains things briefly."),
-        ///         azure_openai_inference::request::ChatCompletionRequestMessage::with_user_role("What is the value of 'x' in the equation: '2x + 3 = 11'?"),
+        ///         azure_openai_inference::ChatCompletionRequestMessage::with_system_role("You are a good math tutor who explains things briefly."),
+        ///         azure_openai_inference::ChatCompletionRequestMessage::with_user_role("What is the value of 'x' in the equation: '2x + 3 = 11'?"),
         ///    ]);
         pub fn with_messages(
             model: impl Into<String>,
