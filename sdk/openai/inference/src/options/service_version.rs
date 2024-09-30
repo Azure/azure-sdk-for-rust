@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 use async_trait::async_trait;
-use std::sync::Arc;
+use std::{fmt::Display, sync::Arc};
 
 use azure_core::{Context, Policy, PolicyResult, Request};
 
@@ -36,13 +36,13 @@ impl From<AzureServiceVersion> for String {
             AzureServiceVersion::V2023_12_01Preview => "2023-12-01-preview",
             AzureServiceVersion::V2024_07_01Preview => "2024-07-01-preview",
         };
-        return String::from(as_str);
+        String::from(as_str)
     }
 }
 
-impl ToString for AzureServiceVersion {
-    fn to_string(&self) -> String {
-        String::from(self.clone())
+impl Display for AzureServiceVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&String::from(self.clone()))
     }
 }
 
@@ -64,8 +64,8 @@ impl Policy for AzureServiceVersion {
     }
 }
 
-impl Into<Arc<dyn Policy>> for AzureServiceVersion {
-    fn into(self) -> Arc<dyn Policy> {
-        Arc::new(self)
+impl From<AzureServiceVersion> for Arc<dyn Policy> {
+    fn from(version: AzureServiceVersion) -> Arc<dyn Policy> {
+        Arc::new(version)
     }
 }

@@ -55,8 +55,8 @@ impl Policy for OpenAIKeyCredential {
     }
 }
 
-impl Into<Arc<dyn Policy>> for OpenAIKeyCredential {
-    fn into(self) -> Arc<dyn Policy> {
-        Arc::new(self)
+impl From<OpenAIKeyCredential> for Arc<dyn Policy> {
+    fn from(credential: OpenAIKeyCredential) -> Arc<dyn Policy> {
+        Arc::new(credential)
     }
 }

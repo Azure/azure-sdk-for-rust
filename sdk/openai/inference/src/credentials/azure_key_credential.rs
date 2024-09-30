@@ -38,7 +38,7 @@ impl Header for AzureKeyCredential {
     }
 
     fn value(&self) -> HeaderValue {
-        HeaderValue::from_cow(format!("{}", self.0.secret()))
+        HeaderValue::from_cow(self.0.secret().to_string())
     }
 }
 
@@ -57,8 +57,8 @@ impl Policy for AzureKeyCredential {
     }
 }
 
-impl Into<Arc<dyn Policy>> for AzureKeyCredential {
-    fn into(self) -> Arc<dyn Policy> {
-        Arc::new(self)
+impl From<AzureKeyCredential> for Arc<dyn Policy> {
+    fn from(credential: AzureKeyCredential) -> Arc<dyn Policy> {
+        Arc::new(credential)
     }
 }

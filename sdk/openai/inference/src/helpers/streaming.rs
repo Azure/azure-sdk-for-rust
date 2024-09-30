@@ -56,7 +56,7 @@ pub(crate) fn string_chunks<'a>(
                         None
                     };
                 }
-                if chunk_buffer.len() > 0 {
+                if !chunk_buffer.is_empty() {
                     return Some((
                         Err(Error::with_message(
                             azure_core::error::ErrorKind::DataConversion,
