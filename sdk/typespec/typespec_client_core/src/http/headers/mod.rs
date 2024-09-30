@@ -14,7 +14,7 @@ use typespec::error::{Error, ErrorKind, ResultExt};
 
 /// A trait for converting a type into request headers.
 pub trait AsHeaders {
-    type Error;
+    type Error: std::error::Error + Send + Sync + 'static;
     type Iter: Iterator<Item = (HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Result<Self::Iter, Self::Error>;
@@ -55,10 +55,10 @@ where
 pub trait FromHeaders: Sized {
     type Error: std::error::Error + Send + Sync + 'static;
 
-    /// Holds a list of the header names that [`FromHeaders::from_headers`] expects.
+    /// Gets a list of the header names that [`FromHeaders::from_headers`] expects.
     ///
     /// Used by [`Headers::get()`] to generate an error if the headers are not present.
-    const HEADER_NAMES: &'static [&'static str] = &[];
+    fn header_names() -> &'static [&'static str];
 
     /// Extracts the value from the provided [`Headers`] collection.
     ///
@@ -99,7 +99,18 @@ impl Headers {
             Ok(Some(x)) => Ok(x),
             Ok(None) => Err(crate::Error::with_message(
                 ErrorKind::DataConversion,
-                || format!("required headers not found: {}", H::HEADER_NAMES.join(", ")),
+                || {
+                    let required_headers = H::header_names();
+                    format!(
+                        "required {} not found: {}",
+                        if required_headers.len() == 1 {
+                            "header"
+                        } else {
+                            "headers"
+                        },
+                        required_headers.join(", ")
+                    )
+                },
             )),
             Err(e) => Err(crate::Error::new(ErrorKind::DataConversion, e)),
         }
@@ -196,7 +207,8 @@ impl Headers {
     /// ## Errors
     ///
     /// The error this returns depends on the type `H`.
-    /// Many header types are infallible, and do not return
+    /// Many header types are infallible, return a `Result` with [`Infallible`] as the error type.
+    /// In this case, you can safely `.unwrap()` the value without risking a panic.
     pub fn add<H>(&mut self, header: H) -> Result<(), H::Error>
     where
         H: AsHeaders,
@@ -328,8 +340,8 @@ impl From<&String> for HeaderValue {
 
 #[cfg(test)]
 mod tests {
+    use crate::http::Url;
     use typespec::error::ErrorKind;
-    use url::Url;
 
     use super::{FromHeaders, HeaderName, Headers};
 
@@ -340,7 +352,9 @@ mod tests {
     impl FromHeaders for ContentLocationForTest {
         type Error = url::ParseError;
 
-        const HEADER_NAMES: &'static [&'static str] = &["content-location"];
+        fn header_names() -> &'static [&'static str] {
+            &["content-location"]
+        }
 
         fn from_headers(headers: &super::Headers) -> Result<Option<Self>, Self::Error> {
             let Some(loc) = headers.get_optional_str(&HeaderName::from("content-location")) else {
@@ -392,7 +406,35 @@ mod tests {
 
         // The "Display" implementation is the canonical way to get an error's "message"
         assert_eq!(
-            "required headers not found: content-location",
+            "required header not found: content-location",
+            format!("{}", err)
+        );
+    }
+
+    #[test]
+    pub fn headers_get_returns_err_if_header_requiring_multiple_headers_not_present() {
+        #[derive(Debug)]
+        struct HasTwoHeaders;
+
+        impl FromHeaders for HasTwoHeaders {
+            type Error = std::convert::Infallible;
+
+            fn header_names() -> &'static [&'static str] {
+                &["header-a", "header-b"]
+            }
+
+            fn from_headers(_: &Headers) -> Result<Option<Self>, Self::Error> {
+                Ok(None)
+            }
+        }
+
+        let headers = Headers::new();
+        let err = headers.get::<HasTwoHeaders>().unwrap_err();
+        assert_eq!(&ErrorKind::DataConversion, err.kind());
+
+        // The "Display" implementation is the canonical way to get an error's "message"
+        assert_eq!(
+            "required headers not found: header-a, header-b",
             format!("{}", err)
         );
     }
