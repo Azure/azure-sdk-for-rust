@@ -36,7 +36,7 @@ async fn main() {
         .await
         .unwrap();
 
-    // this pins the stream to the stack so it is safe to poll it (namely, it won't be de-alloacted or moved)
+    // this pins the stream to the stack so it is safe to poll it (namely, it won't be de-allocated or moved)
     futures::pin_mut!(response);
 
     while let Some(result) = response.next().await {
