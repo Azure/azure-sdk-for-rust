@@ -6,7 +6,7 @@ use std::{fmt::Display, sync::Arc};
 use azure_core::{Context, Policy, PolicyResult, Request};
 
 /// The version of the Azure service to use.
-/// This enum is passed to the [`AzureOpenAIClientOptionsBuilder`](crate::builders::AzureOpenAIClientOptionsBuilder) to configure an [`AzureOpenAIClient`](crate::clients::AzureOpenAIClient) to specify the version of the service to use.
+/// This enum is passed to the [`AzureOpenAIClientOptionsBuilder`](crate::AzureOpenAIClientOptionsBuilder) to configure an [`AzureOpenAIClient`](crate::clients::AzureOpenAIClient) to specify the version of the service to use.
 ///
 /// If no version is specified, the latest version will be used. See [`AzureServiceVersion::get_latest()`](AzureServiceVersion::get_latest).
 #[derive(Debug, Clone)]
