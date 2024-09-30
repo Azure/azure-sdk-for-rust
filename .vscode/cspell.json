@@ -39,6 +39,7 @@
     "iothub",
     "keyvault",
     "msrc",
+    "openai",
     "pageable",
     "pkce",
     "pkcs",
