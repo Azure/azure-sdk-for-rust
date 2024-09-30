@@ -18,8 +18,6 @@ pub trait OpenAIClientMethods {
 pub struct OpenAIClient {
     base_url: Url,
     pipeline: azure_core::Pipeline,
-    #[allow(dead_code)]
-    options: OpenAIClientOptions,
 }
 
 impl OpenAIClient {
@@ -46,11 +44,7 @@ impl OpenAIClient {
 
         let pipeline = super::new_pipeline(vec![auth_policy], options.client_options.clone());
 
-        Ok(OpenAIClient {
-            base_url,
-            pipeline,
-            options,
-        })
+        Ok(OpenAIClient { base_url, pipeline })
     }
 }
 

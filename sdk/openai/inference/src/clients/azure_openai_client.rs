@@ -29,10 +29,6 @@ pub struct AzureOpenAIClient {
 
     /// The pipeline for sending requests to the service.
     pipeline: azure_core::Pipeline,
-
-    /// The options for the client.
-    #[allow(dead_code)]
-    options: AzureOpenAIClientOptions,
 }
 
 impl AzureOpenAIClient {
@@ -72,11 +68,7 @@ impl AzureOpenAIClient {
 
         let pipeline = super::new_pipeline(per_call_policies, options.client_options.clone());
 
-        Ok(AzureOpenAIClient {
-            endpoint,
-            pipeline,
-            options,
-        })
+        Ok(AzureOpenAIClient { endpoint, pipeline })
     }
 
     /// Creates a new [`AzureOpenAIClient`] using a key credential
@@ -113,11 +105,7 @@ impl AzureOpenAIClient {
 
         let pipeline = super::new_pipeline(per_call_policies, options.client_options.clone());
 
-        Ok(AzureOpenAIClient {
-            endpoint,
-            pipeline,
-            options,
-        })
+        Ok(AzureOpenAIClient { endpoint, pipeline })
     }
 }
 
