@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use std::sync::Arc;
 
 use azure_core::{
-    auth::Secret,
+    credentials::Secret,
     headers::{HeaderName, HeaderValue},
     Context, Header, Policy, PolicyResult, Request,
 };

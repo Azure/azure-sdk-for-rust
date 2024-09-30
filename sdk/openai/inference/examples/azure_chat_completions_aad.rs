@@ -1,7 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-use std::sync::Arc;
-
 use azure_identity::DefaultAzureCredentialBuilder;
 use azure_openai_inference::{
     clients::{AzureOpenAIClient, AzureOpenAIClientMethods, ChatCompletionsClientMethods},
@@ -16,7 +14,9 @@ async fn main() {
 
     let chat_completions_client = AzureOpenAIClient::new(
         endpoint,
-        Arc::new(DefaultAzureCredentialBuilder::new().build().unwrap()),
+        DefaultAzureCredentialBuilder::new()
+            .build()
+            .expect("Failed to create Azure credential"),
         Some(
             AzureOpenAIClientOptions::builder()
                 .with_api_version(AzureServiceVersion::V2023_12_01Preview)
