@@ -1,4 +1,3 @@
-use azure_core::Result;
 use azure_openai_inference::{
     clients::{ChatCompletionsClientMethods, OpenAIClient, OpenAIClientMethods},
     request::CreateChatCompletionsRequest,
@@ -8,11 +7,12 @@ use std::io::{self, Write};
 
 /// This example illustrates how to use OpenAI to stream chat completions.
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
     let secret = std::env::var("OPENAI_KEY").expect("Set OPENAI_KEY env variable");
 
-    let chat_completions_client =
-        OpenAIClient::with_key_credential(secret, None)?.chat_completions_client();
+    let chat_completions_client = OpenAIClient::with_key_credential(secret, None)
+        .unwrap()
+        .chat_completions_client();
 
     let chat_completions_request = CreateChatCompletionsRequest::with_user_message_and_stream(
         "gpt-3.5-turbo-1106",
@@ -21,7 +21,8 @@ async fn main() -> Result<()> {
 
     let response = chat_completions_client
         .stream_chat_completions(&chat_completions_request.model, &chat_completions_request)
-        .await?;
+        .await
+        .unwrap();
 
     // this pins the stream to the stack so it is safe to poll it (namely, it won't be dealloacted or moved)
     futures::pin_mut!(response);
@@ -41,6 +42,4 @@ async fn main() -> Result<()> {
             Err(e) => println!("Error: {:?}", e),
         }
     }
-
-    Ok(())
 }

@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use azure_core::Result;
 use azure_identity::DefaultAzureCredentialBuilder;
 use azure_openai_inference::{
     clients::{AzureOpenAIClient, AzureOpenAIClientMethods, ChatCompletionsClientMethods},
@@ -10,19 +9,20 @@ use azure_openai_inference::{
 
 /// This example illustrates how to use Azure OpenAI Chat Completions with Azure Active Directory authentication.
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
     let endpoint =
         std::env::var("AZURE_OPENAI_ENDPOINT").expect("Set AZURE_OPENAI_ENDPOINT env variable");
 
     let chat_completions_client = AzureOpenAIClient::new(
         endpoint,
-        Arc::new(DefaultAzureCredentialBuilder::new().build()?),
+        Arc::new(DefaultAzureCredentialBuilder::new().build().unwrap()),
         Some(
             AzureOpenAIClientOptions::builder()
                 .with_api_version(AzureServiceVersion::V2023_12_01Preview)
                 .build(),
         ),
-    )?
+    )
+    .unwrap()
     .chat_completions_client();
 
     let chat_completions_request = CreateChatCompletionsRequest::with_user_message(
@@ -36,13 +36,14 @@ async fn main() -> Result<()> {
 
     match response {
         Ok(chat_completions_response) => {
-            let chat_completions = chat_completions_response.deserialize_body().await?;
+            let chat_completions = chat_completions_response
+                .deserialize_body()
+                .await
+                .expect("Failed to deserialize response");
             println!("{:#?}", &chat_completions);
         }
         Err(e) => {
             println!("Error: {}", e);
         }
     };
-
-    Ok(())
 }

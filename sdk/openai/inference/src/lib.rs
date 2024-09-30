@@ -1,5 +1,5 @@
-mod credentials;
 pub mod clients;
+mod credentials;
 mod helpers;
 mod models;
 mod options;
