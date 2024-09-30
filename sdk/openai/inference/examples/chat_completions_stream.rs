@@ -1,6 +1,6 @@
 use azure_openai_inference::{
     clients::{ChatCompletionsClientMethods, OpenAIClient, OpenAIClientMethods},
-    request::CreateChatCompletionsRequest,
+    CreateChatCompletionsRequest,
 };
 use futures::stream::StreamExt;
 use std::io::{self, Write};

@@ -1,8 +1,8 @@
 use super::{new_json_request, BaseOpenAIClientMethods};
 use crate::{
     helpers::streaming::{string_chunks, EventStreamer},
-    request::CreateChatCompletionsRequest,
     response::{CreateChatCompletionsResponse, CreateChatCompletionsStreamResponse},
+    CreateChatCompletionsRequest,
 };
 use azure_core::{Context, Method, Response, Result};
 use futures::{Stream, StreamExt};

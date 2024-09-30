@@ -3,8 +3,7 @@ use std::sync::Arc;
 use azure_identity::DefaultAzureCredentialBuilder;
 use azure_openai_inference::{
     clients::{AzureOpenAIClient, AzureOpenAIClientMethods, ChatCompletionsClientMethods},
-    request::CreateChatCompletionsRequest,
-    AzureOpenAIClientOptions, AzureServiceVersion,
+    AzureOpenAIClientOptions, AzureServiceVersion, CreateChatCompletionsRequest,
 };
 
 /// This example illustrates how to use Azure OpenAI Chat Completions with Azure Active Directory authentication.

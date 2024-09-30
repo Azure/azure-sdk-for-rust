@@ -1,6 +1,6 @@
 use azure_openai_inference::{
     clients::{ChatCompletionsClientMethods, OpenAIClient, OpenAIClientMethods},
-    request::CreateChatCompletionsRequest,
+    CreateChatCompletionsRequest,
 };
 
 /// This example illustrates how to use OpenAI to generate a chat completion.
