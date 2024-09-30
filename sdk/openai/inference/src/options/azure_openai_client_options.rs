@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 use azure_core::ClientOptions;
 
 use crate::AzureServiceVersion;

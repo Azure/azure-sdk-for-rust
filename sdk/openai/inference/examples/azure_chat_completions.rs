@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 use azure_openai_inference::{
     clients::{AzureOpenAIClient, AzureOpenAIClientMethods, ChatCompletionsClientMethods},
     AzureOpenAIClientOptions, AzureServiceVersion, CreateChatCompletionsRequest,

@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 use azure_core::ClientOptions;
 
 /// Options to be passed to [`OpenAIClient`](crate::clients::OpenAIClient).

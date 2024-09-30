@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 use super::{new_json_request, BaseOpenAIClientMethods};
 use crate::{
     helpers::streaming::{string_chunks, EventStreamer},

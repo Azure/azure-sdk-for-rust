@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 mod azure_openai_client;
 mod chat_completions_client;
 mod openai_client;
