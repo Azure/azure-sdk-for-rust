@@ -51,7 +51,7 @@ enum Subcommands {
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
-    let _ = tracing_subscriber::fmt()
+    tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
@@ -80,13 +80,13 @@ fn create_client(args: &SharedArgs) -> CosmosClient {
     if let Some(key) = args.key.as_ref() {
         CosmosClient::with_key(&args.endpoint, key.clone(), None).unwrap()
     } else {
-        let cred = DefaultAzureCredential::new().map(Arc::new).unwrap();
+        let cred = DefaultAzureCredential::new().unwrap();
         CosmosClient::new(&args.endpoint, cred, None).unwrap()
     }
 }
 
 #[cfg(not(feature = "key_auth"))]
 fn create_client(args: &SharedArgs) -> CosmosClient {
-    let cred = DefaultAzureCredential::new().map(Arc::new).unwrap();
+    let cred = DefaultAzureCredential::new().unwrap();
     CosmosClient::new(&args.endpoint, cred, None).unwrap()
 }
