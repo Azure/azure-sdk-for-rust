@@ -75,7 +75,7 @@ impl AzureOpenAIClient {
     ///
     /// # Parameters
     /// * `endpoint` - The full URL of the Azure OpenAI resource endpoint.
-    /// * `secret` - The key creadential used for authentication. Passed as header parameter in the request.
+    /// * `secret` - The key credential used for authentication. Passed as header parameter in the request.
     /// * `client_options` - Optional configuration for the client. The [`AzureServiceVersion`](crate::options::AzureServiceVersion) can be provided here.
     ///
     /// # Example

@@ -45,7 +45,7 @@ pub(crate) fn string_chunks<'a>(
 
                     return if let Ok(yielded_value) = std::str::from_utf8(&bytes) {
                         // We strip the "data: " portion of the event. The rest is always JSON and will be deserialized
-                        // by a subsquent mapping function for this stream
+                        // by a subsequent mapping function for this stream
                         let yielded_value = yielded_value.trim_start_matches("data:").trim();
                         if yielded_value == "[DONE]" {
                             return None;
@@ -95,7 +95,7 @@ pub(crate) fn string_chunks<'a>(
         },
     );
 
-    // We specifically allow the Error::with_messagge(ErrorKind::DataConversion, || "Incomplete chunk")
+    // We specifically allow the Error::with_message(ErrorKind::DataConversion, || "Incomplete chunk")
     // So that we are able to continue pushing bytes to the buffer until we find the next delimiter
     return stream.filter(|it| {
         std::future::ready(
@@ -186,7 +186,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn event_delimeter_split_across_chunks() {
+    async fn event_delimiter_split_across_chunks() {
         let mut source_stream = futures::stream::iter(vec![
             Ok(bytes::Bytes::from_static(b"data: piece 1\n")),
             Ok(bytes::Bytes::from_static(b"\ndata: [DONE]")),

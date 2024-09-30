@@ -10,7 +10,7 @@ pub use azure_openai_client::{AzureOpenAIClient, AzureOpenAIClientMethods};
 pub use chat_completions_client::{ChatCompletionsClient, ChatCompletionsClientMethods};
 pub use openai_client::{OpenAIClient, OpenAIClientMethods};
 
-/// A trait that defines the common behaviour expected from an [`OpenAIClient`] and an [`AzureOpenAIClient`].
+/// A trait that defines the common behavior expected from an [`OpenAIClient`] and an [`AzureOpenAIClient`].
 /// This trait will be used as a boxed types for any clients such as [`ChatCompletionsClient`] so they issue HTTP requests.
 trait BaseOpenAIClientMethods {
     /// Returns the base [`Url`] of the underlying client.
