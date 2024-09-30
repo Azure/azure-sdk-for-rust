@@ -7,8 +7,10 @@ use clap::{Args, CommandFactory, Parser, Subcommand};
 use std::{error::Error, sync::Arc};
 
 mod create;
+mod delete;
 mod metadata;
 mod query;
+mod read;
 
 /// An example to show querying a Cosmos DB container.
 #[derive(Clone, Parser)]
@@ -36,6 +38,8 @@ enum Subcommands {
     Query(query::QueryCommand),
     Metadata(metadata::MetadataCommand),
     Create(create::CreateCommand),
+    Read(read::ReadCommand),
+    Delete(delete::DeleteCommand),
 }
 
 #[tokio::main]
@@ -57,6 +61,8 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         Subcommands::Query(cmd) => cmd.run(client).await,
         Subcommands::Metadata(cmd) => cmd.run(client).await,
         Subcommands::Create(cmd) => cmd.run(client).await,
+        Subcommands::Read(cmd) => cmd.run(client).await,
+        Subcommands::Delete(cmd) => cmd.run(client).await,
     }
 }
 

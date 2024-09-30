@@ -6,6 +6,7 @@ use azure_data_cosmos::{
 };
 use clap::Args;
 
+/// Creates a new item.
 #[derive(Clone, Args)]
 pub struct CreateCommand {
     /// The database in which to create the item.

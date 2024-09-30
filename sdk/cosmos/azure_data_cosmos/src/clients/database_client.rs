@@ -73,7 +73,7 @@ impl DatabaseClientMethods for DatabaseClient {
         &self,
 
         #[allow(unused_variables)]
-        // This is a documented public API so prefixing with '_' is undesirable.
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<azure_core::Response<DatabaseProperties>> {
         let mut req = Request::new(self.database_url.clone(), azure_core::Method::Get);

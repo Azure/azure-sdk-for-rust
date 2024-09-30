@@ -7,6 +7,7 @@ use azure_data_cosmos::{
 use clap::Args;
 use futures::StreamExt;
 
+/// Run a single-partition query against a container.
 #[derive(Clone, Args)]
 pub struct QueryCommand {
     /// The database to query.

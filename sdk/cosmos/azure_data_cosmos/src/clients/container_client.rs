@@ -56,9 +56,10 @@ pub trait ContainerClientMethods {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # azure_data_cosmos::Item;
+    /// # use azure_data_cosmos::{clients::{ContainerClient, ContainerClientMethods}, models::Item};
+    /// # use serde::{Deserialize, Serialize};
     /// # async fn doc() {
-    /// #[derive(Serialize)]
+    /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
     ///     #[serde(rename = "id")] // Use serde attributes to control serialization
     ///     product_id: String,
@@ -75,7 +76,8 @@ pub trait ContainerClientMethods {
     ///     .create_item("category1", p, None)
     ///     .await.unwrap()
     ///     .deserialize_body()
-    ///     .await.unwrap();
+    ///     .await.unwrap()
+    ///     .into_inner();
     /// println!("Created: {:#?}", created_item);
     /// # }
     /// ```
@@ -86,6 +88,71 @@ pub trait ContainerClientMethods {
         item: T,
         options: Option<ItemOptions>,
     ) -> azure_core::Result<azure_core::Response<Item<T>>>;
+
+    /// Reads a specific item from the container.
+    ///
+    /// # Arguments
+    /// * `partition_key` - The partition key of the item to read.
+    /// * `item_id` - The id of the item to read.
+    /// * `options` - Optional parameters for the request
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::{clients::{ContainerClient, ContainerClientMethods}, models::Item};
+    /// # use serde::{Deserialize, Serialize};
+    /// # async fn doc() {
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// pub struct Product {
+    ///     #[serde(rename = "id")] // Use serde attributes to control serialization
+    ///     product_id: String,
+    ///     category_id: String,
+    ///     product_name: String,
+    /// }
+    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// let item: Product = container_client
+    ///     .read_item("partition1", "item1", None)
+    ///     .await.unwrap()
+    ///     .deserialize_body()
+    ///     .await.unwrap()
+    ///     .into_inner();
+    /// println!("Read Item: {:#?}", item);
+    /// # }
+    /// ```
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
+    async fn read_item<T: DeserializeOwned>(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item_id: impl AsRef<str>,
+        options: Option<ItemOptions>,
+    ) -> azure_core::Result<azure_core::Response<Item<T>>>;
+
+    /// Deletes an item from the container.
+    ///
+    /// # Arguments
+    /// * `partition_key` - The partition key of the item to delete.
+    /// * `item_id` - The id of the item to delete.
+    /// * `options` - Optional parameters for the request
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::{clients::{ContainerClient, ContainerClientMethods}, models::Item};
+    /// # use serde::{Deserialize, Serialize};
+    /// # async fn doc() {
+    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// container_client
+    ///     .delete_item("partition1", "item1", None)
+    ///     .await.unwrap();
+    /// # }
+    /// ```
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
+    async fn delete_item(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item_id: impl AsRef<str>,
+        options: Option<ItemOptions>,
+    ) -> azure_core::Result<azure_core::Response>;
 
     /// Executes a single-partition query against items in the container.
     ///
@@ -173,7 +240,7 @@ impl ContainerClientMethods for ContainerClient {
         &self,
 
         #[allow(unused_variables)]
-        // This is a documented public API so prefixing with '_' is undesirable.
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<azure_core::Response<ContainerProperties>> {
         let mut req = Request::new(self.container_url.clone(), azure_core::Method::Get);
@@ -188,7 +255,7 @@ impl ContainerClientMethods for ContainerClient {
         item: T,
 
         #[allow(unused_variables)]
-        // This is a documented public API so prefixing with '_' is undesirable.
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ItemOptions>,
     ) -> azure_core::Result<azure_core::Response<Item<T>>> {
         let url = self.container_url.with_path_segments(["docs"]);
@@ -200,13 +267,58 @@ impl ContainerClientMethods for ContainerClient {
             .await
     }
 
+    async fn read_item<T: DeserializeOwned>(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item_id: impl AsRef<str>,
+
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
+        options: Option<ItemOptions>,
+    ) -> azure_core::Result<azure_core::Response<Item<T>>> {
+        let url = self
+            .container_url
+            .with_path_segments(["docs", item_id.as_ref()]);
+        let mut req = Request::new(url, azure_core::Method::Get);
+        req.insert_header(
+            constants::PARTITION_KEY,
+            HeaderValue::from_cow(partition_key.into().into_header_value()?),
+        );
+        self.pipeline
+            .send(Context::new(), &mut req, ResourceType::Items)
+            .await
+    }
+
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
+    async fn delete_item(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item_id: impl AsRef<str>,
+
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
+        options: Option<ItemOptions>,
+    ) -> azure_core::Result<azure_core::Response> {
+        let url = self
+            .container_url
+            .with_path_segments(["docs", item_id.as_ref()]);
+        let mut req = Request::new(url, azure_core::Method::Delete);
+        req.insert_header(
+            constants::PARTITION_KEY,
+            HeaderValue::from_cow(partition_key.into().into_header_value()?),
+        );
+        self.pipeline
+            .send(Context::new(), &mut req, ResourceType::Items)
+            .await
+    }
+
     fn query_items<T: DeserializeOwned + Send>(
         &self,
         query: impl Into<Query>,
         partition_key: impl Into<QueryPartitionStrategy>,
 
         #[allow(unused_variables)]
-        // This is a documented public API so prefixing with '_' is undesirable.
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryOptions>,
     ) -> azure_core::Result<azure_core::Pageable<QueryResults<T>, azure_core::Error>> {
         // Represents the raw response model from the server.
