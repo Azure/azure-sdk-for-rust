@@ -40,9 +40,15 @@ pub trait Model: Sized {
 
 // Allow for deserializing into "raw" JSON.
 impl Model for serde_json::Value {
+    #[cfg(not(target_arch = "wasm32"))]
     fn from_response_body(
         body: ResponseBody,
     ) -> impl Future<Output = crate::Result<Self>> + Send + Sync {
+        body.json()
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>> {
         body.json()
     }
 }

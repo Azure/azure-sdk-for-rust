@@ -34,9 +34,17 @@ impl<T> Item<T> {
 // So we have to manually implement Model
 // See https://github.com/Azure/azure-sdk-for-rust/issues/1803
 impl<T: DeserializeOwned> Model for Item<T> {
+    #[cfg(not(target_arch = "wasm32"))]
     fn from_response_body(
         body: azure_core::ResponseBody,
     ) -> impl std::future::Future<Output = typespec_client_core::Result<Self>> + Send + Sync {
+        body.json()
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn from_response_body(
+        body: azure_core::ResponseBody,
+    ) -> impl std::future::Future<Output = typespec_client_core::Result<Self>> {
         body.json()
     }
 }
