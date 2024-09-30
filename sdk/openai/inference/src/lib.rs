@@ -1,4 +1,4 @@
-mod auth;
+mod credentials;
 pub mod clients;
 mod helpers;
 mod models;

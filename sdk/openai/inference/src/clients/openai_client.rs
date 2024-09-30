@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use azure_core::{Policy, Result, Url};
 
-use crate::{auth::OpenAIKeyCredential, OpenAIClientOptions};
+use crate::{credentials::OpenAIKeyCredential, OpenAIClientOptions};
 
 use super::{BaseOpenAIClientMethods, ChatCompletionsClient};
 

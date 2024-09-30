@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::auth::{AzureKeyCredential, DEFAULT_SCOPE};
+use crate::credentials::{AzureKeyCredential, DEFAULT_SCOPE};
 
 use crate::options::AzureOpenAIClientOptions;
 use azure_core::auth::TokenCredential;
