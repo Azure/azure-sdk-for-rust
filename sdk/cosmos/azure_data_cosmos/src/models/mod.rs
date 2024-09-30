@@ -94,7 +94,7 @@ pub struct SystemProperties {
     #[serde(rename = "_rid")]
     pub resource_id: Option<String>,
 
-    /// A [`CosmosTimestamp`] representing the last modified time of the resource.
+    /// A [`OffsetDateTime`] representing the last modified time of the resource.
     #[serde(rename = "_ts")]
     #[serde(deserialize_with = "deserialize_cosmos_timestamp")]
     pub last_modified: Option<OffsetDateTime>,

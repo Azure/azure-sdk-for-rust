@@ -4,7 +4,7 @@
 use azure_data_cosmos::CosmosClient;
 use azure_identity::DefaultAzureCredential;
 use clap::{Args, CommandFactory, Parser, Subcommand};
-use std::{error::Error, sync::Arc};
+use std::error::Error;
 
 mod create;
 mod delete;
