@@ -56,6 +56,13 @@ pub struct AmqpClaimsBasedSecurity<'a> {
     implementation: CbsImplementation<'a>,
 }
 
+impl<'a> AmqpClaimsBasedSecurity<'a> {
+    pub fn new(session: &'a AmqpSession) -> Result<Self> {
+        Ok(Self {
+            implementation: CbsImplementation::new(session)?,
+        })
+    }
+}
 impl<'a> AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity<'a> {
     async fn authorize_path(
         &self,
@@ -69,13 +76,5 @@ impl<'a> AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity<'a> {
     }
     async fn attach(&self) -> Result<()> {
         self.implementation.attach().await
-    }
-}
-
-impl<'a> AmqpClaimsBasedSecurity<'a> {
-    pub fn new(session: &'a AmqpSession) -> Result<Self> {
-        Ok(Self {
-            implementation: CbsImplementation::new(session)?,
-        })
     }
 }

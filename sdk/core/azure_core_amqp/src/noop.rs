@@ -14,6 +14,7 @@ use super::{
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
 use azure_core::{credentials::AccessToken, error::Result};
+use std::marker::PhantomData;
 
 #[derive(Debug, Default)]
 pub(crate) struct NoopAmqpConnection {}
@@ -31,7 +32,9 @@ pub(crate) struct NoopAmqpReceiver {}
 pub(crate) struct NoopAmqpSession {}
 
 #[derive(Debug, Default)]
-pub(crate) struct NoopAmqpClaimsBasedSecurity {}
+pub(crate) struct NoopAmqpClaimsBasedSecurity<'a> {
+    phantom: PhantomData<&'a AmqpSession>,
+}
 
 impl NoopAmqpConnection {
     pub fn new() -> Self {
@@ -81,13 +84,15 @@ impl AmqpSessionApis for NoopAmqpSession {
     }
 }
 
-impl NoopAmqpClaimsBasedSecurity {
-    pub fn new(session: &AmqpSession) -> Result<Self> {
-        Ok(Self {})
+impl<'a> NoopAmqpClaimsBasedSecurity<'a> {
+    pub fn new(session: &'a AmqpSession) -> Result<Self> {
+        Ok(Self {
+            phantom: PhantomData,
+        })
     }
 }
 
-impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity {
+impl<'a> AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity<'a> {
     async fn attach(&self) -> Result<()> {
         unimplemented!();
     }
