@@ -351,7 +351,7 @@ impl ContainerClientMethods for ContainerClient {
     ) -> azure_core::Result<azure_core::Response<Item<T>>> {
         let url = self.container_url.with_path_segments(["docs"]);
         let mut req = Request::new(url, azure_core::Method::Post);
-        req.insert_headers(&partition_key.into());
+        req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Items)
@@ -372,10 +372,7 @@ impl ContainerClientMethods for ContainerClient {
             .container_url
             .with_path_segments(["docs", item_id.as_ref()]);
         let mut req = Request::new(url, azure_core::Method::Put);
-        req.insert_header(
-            constants::PARTITION_KEY,
-            HeaderValue::from_cow(partition_key.into().into_header_value()?),
-        );
+        req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Items)
@@ -394,10 +391,7 @@ impl ContainerClientMethods for ContainerClient {
         let url = self.container_url.with_path_segments(["docs"]);
         let mut req = Request::new(url, azure_core::Method::Post);
         req.insert_header(constants::IS_UPSERT, "true");
-        req.insert_header(
-            constants::PARTITION_KEY,
-            HeaderValue::from_cow(partition_key.into().into_header_value()?),
-        );
+        req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Items)
@@ -417,10 +411,7 @@ impl ContainerClientMethods for ContainerClient {
             .container_url
             .with_path_segments(["docs", item_id.as_ref()]);
         let mut req = Request::new(url, azure_core::Method::Get);
-        req.insert_header(
-            constants::PARTITION_KEY,
-            HeaderValue::from_cow(partition_key.into().into_header_value()?),
-        );
+        req.insert_headers(&partition_key.into())?;
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Items)
             .await
@@ -439,10 +430,7 @@ impl ContainerClientMethods for ContainerClient {
             .container_url
             .with_path_segments(["docs", item_id.as_ref()]);
         let mut req = Request::new(url, azure_core::Method::Delete);
-        req.insert_header(
-            constants::PARTITION_KEY,
-            HeaderValue::from_cow(partition_key.into().into_header_value()?),
-        );
+        req.insert_headers(&partition_key.into())?;
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Items)
             .await
