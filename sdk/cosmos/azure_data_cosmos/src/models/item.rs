@@ -47,7 +47,8 @@ impl<T> Item<T> {
     /// Returns the contained [`Item::Present`] value, consuming the `self` value.
     ///
     /// This function will panic if the value is [`Item::Omitted`].
-    /// If you want a non-panicking option, either use pattern matching, or [`Item::into`]
+    /// If you want a non-panicking option, either use pattern matching, or call `Item::into()`,
+    /// to convert this instance into an [`Option<T>`] and use the functions provided by [`Option<T>`] to unwrap without panicking.
     pub fn unwrap(self) -> T {
         match self {
             Item::Present(t) => t,
