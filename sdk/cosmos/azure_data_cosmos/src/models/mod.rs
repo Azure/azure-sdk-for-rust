@@ -12,21 +12,57 @@ use crate::{
     CosmosClientMethods,
 };
 
-/// Wrapper type used to hold items stored in a Cosmos DB Container.
+/// Returned by Cosmos DB APIs that return a single item.
+///
+/// In some circumstances, an API that _can_ return an item will **not** return an item.
+/// For example, you can use [`ItemOptions`](crate::options::ItemOptions) to configure APIs
+/// that write new or updated items to avoid returning the updated item.
+/// If you do this, the [`Item<T>`] returned from the API will be empty.
+/// Unwrapping an empty [`Item<T>`] with [`Item<T>::into`] will panic.
+/// Unwrapping an empty [`Item<T>`] with [`Item<T>::try_into`] returns a [`MissingItem`] error.
+/// You can check if an [`Item<T>`] is empty using [`Item<T>::is_empty`]
 #[non_exhaustive]
 #[derive(Deserialize, Debug, Clone, Default)]
 #[serde(transparent)]
 pub struct Item<T>(
-    // This wrapper type is necessary because Response<T> needs T to implement azure_core::Model.
-    // However, we don't want to require user types to have to implement azure_core::Model.
-    // So this type does that, and handles deserializing the payload from JSON.
-    T,
+    // Item<T> carries an Option<T> to prepare for supporting the "enable content response on write" option on ItemOptions.
+    // When this option is set to false, write operations _will not_ return the just-written item.
+    // When this option is set to true (default), write operations _will_ return the just-written item.
+    // Modelling this in Rust requires that we return an Option<T>.
+    // We'll have to use docs to teach users when to use `into`, and when to use `try_into`
+    Option<T>,
 );
 
 impl<T> Item<T> {
-    /// Unwraps the inner `T` representing the item itself.
-    pub fn into_inner(self) -> T {
-        self.0
+    /// Returns a boolean indicating if the [`Item<T>`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_none()
+    }
+}
+
+impl<T> Into<T> for Item<T> {
+    /// Converts the [`Item<T>`] to the inner item, panicking if the server did not return the item.
+    ///
+    /// If you know you do not set the "enable content response on write" option to `false` (the default is `true`), this conversion is safe.
+    /// If you want to avoid panics, use [`Item<T>::try_into`] instead.
+    fn into(self) -> T {
+        self.0.unwrap()
+    }
+}
+
+/// Error type returned when calling [`Item::try_into`] when the item is empty.
+///
+/// See the documentation for [`Item<T>`] for more information.
+pub struct MissingItem;
+
+impl<T> TryInto<T> for Item<T> {
+    type Error = MissingItem;
+
+    /// Converts [`Item<T>`] to the inner item, returning [`MissingItem`] if the server did not return the item.
+    ///
+    /// See the documentation for [`Item<T>`] for more information.
+    fn try_into(self) -> Result<T, Self::Error> {
+        self.0.ok_or(MissingItem)
     }
 }
 
