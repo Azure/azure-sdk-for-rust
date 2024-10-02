@@ -82,7 +82,7 @@ impl AmqpSessionApis for NoopAmqpSession {
 }
 
 impl NoopAmqpClaimsBasedSecurity {
-    pub fn new(session: AmqpSession) -> Result<Self> {
+    pub fn new(session: &AmqpSession) -> Result<Self> {
         Ok(Self {})
     }
 }

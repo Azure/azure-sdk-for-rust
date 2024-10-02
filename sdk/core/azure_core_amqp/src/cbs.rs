@@ -11,7 +11,7 @@ use super::session::AmqpSession;
 type CbsImplementation<'a> = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity<'a>;
 
 #[cfg(any(not(any(feature = "fe2o3-amqp")), target_arch = "wasm32"))]
-type CbsImplementation = super::noop::NoopAmqpClaimsBasedSecurity;
+type CbsImplementation<'a> = super::noop::NoopAmqpClaimsBasedSecurity<'a>;
 
 pub trait AmqpClaimsBasedSecurityApis {
     /// Asynchronously attaches the Claims-Based Security (CBS) node to the AMQP session.
@@ -75,7 +75,7 @@ impl<'a> AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity<'a> {
 impl<'a> AmqpClaimsBasedSecurity<'a> {
     pub fn new(session: &'a AmqpSession) -> Result<Self> {
         Ok(Self {
-            implementation: CbsImplementation::new(&session)?,
+            implementation: CbsImplementation::new(session)?,
         })
     }
 }
