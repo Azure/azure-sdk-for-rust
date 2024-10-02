@@ -8,7 +8,7 @@ use std::fmt::Debug;
 use super::session::AmqpSession;
 
 #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
-type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
+type CbsImplementation<'a> = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity<'a>;
 
 #[cfg(any(not(any(feature = "fe2o3-amqp")), target_arch = "wasm32"))]
 type CbsImplementation = super::noop::NoopAmqpClaimsBasedSecurity;
@@ -52,11 +52,11 @@ pub trait AmqpClaimsBasedSecurityApis {
 }
 
 #[derive(Debug)]
-pub struct AmqpClaimsBasedSecurity {
-    implementation: CbsImplementation,
+pub struct AmqpClaimsBasedSecurity<'a> {
+    implementation: CbsImplementation<'a>,
 }
 
-impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity {
+impl<'a> AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity<'a> {
     async fn authorize_path(
         &self,
         path: impl Into<String> + Debug,
@@ -67,16 +67,15 @@ impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity {
             .authorize_path(path, secret, expires_on)
             .await
     }
-
     async fn attach(&self) -> Result<()> {
         self.implementation.attach().await
     }
 }
 
-impl AmqpClaimsBasedSecurity {
-    pub fn new(session: AmqpSession) -> Result<Self> {
+impl<'a> AmqpClaimsBasedSecurity<'a> {
+    pub fn new(session: &'a AmqpSession) -> Result<Self> {
         Ok(Self {
-            implementation: CbsImplementation::new(session)?,
+            implementation: CbsImplementation::new(&session)?,
         })
     }
 }

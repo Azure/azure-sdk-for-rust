@@ -491,7 +491,7 @@ impl ConsumerClient {
             let session = AmqpSession::new();
             session.begin(connection, None).await?;
 
-            let cbs = AmqpClaimsBasedSecurity::new(session)?;
+            let cbs = AmqpClaimsBasedSecurity::new(&session)?;
             cbs.attach().await?;
 
             debug!("Get Token.");

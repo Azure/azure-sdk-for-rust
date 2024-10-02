@@ -51,61 +51,55 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 .container_id(id)
                 .max_frame_size(65536);
 
-            let options = options.ok_or_else(|| {
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
-                    "Connection options are not set.",
-                )
-            })?;
+            if let Some(options) = options {
+                if let Some(frame_size) = options.max_frame_size {
+                    builder = builder.max_frame_size(frame_size);
+                }
 
-            if let Some(frame_size) = options.max_frame_size {
-                builder = builder.max_frame_size(frame_size);
-            }
+                if let Some(channel_max) = options.channel_max {
+                    builder = builder.channel_max(channel_max);
+                }
+                if let Some(idle_timeout) = options.idle_timeout {
+                    builder = builder.idle_time_out(idle_timeout.whole_milliseconds() as u32);
+                }
+                if let Some(outgoing_locales) = options.outgoing_locales.as_ref() {
+                    for locale in outgoing_locales {
+                        builder = builder.add_outgoing_locales(locale.as_str());
+                    }
+                }
+                if let Some(incoming_locales) = options.incoming_locales {
+                    for locale in incoming_locales {
+                        builder = builder.add_incoming_locales(locale.as_str());
+                    }
+                }
+                if let Some(offered_capabilities) = options.offered_capabilities.as_ref() {
+                    for capability in offered_capabilities {
+                        let capability: fe2o3_amqp_types::primitives::Symbol =
+                            capability.clone().into();
+                        builder = builder.add_offered_capabilities(capability);
+                    }
+                }
+                if let Some(desired_capabilities) = options.desired_capabilities.as_ref() {
+                    for capability in desired_capabilities {
+                        let capability: fe2o3_amqp_types::primitives::Symbol =
+                            capability.clone().into();
+                        builder = builder.add_desired_capabilities(capability);
+                    }
+                }
+                if let Some(properties) = options.properties.as_ref() {
+                    let mut fields = fe2o3_amqp::types::definitions::Fields::new();
+                    for property in properties.iter() {
+                        let k = fe2o3_amqp_types::primitives::Symbol::from(property.0);
+                        let v = fe2o3_amqp_types::primitives::Value::from(property.1);
 
-            if let Some(channel_max) = options.channel_max {
-                builder = builder.channel_max(channel_max);
-            }
-            if let Some(idle_timeout) = options.idle_timeout {
-                builder = builder.idle_time_out(idle_timeout.whole_milliseconds() as u32);
-            }
-            if let Some(outgoing_locales) = options.outgoing_locales.as_ref() {
-                for locale in outgoing_locales {
-                    builder = builder.add_outgoing_locales(locale.as_str());
+                        fields.insert(k, v);
+                    }
+                    builder = builder.properties(fields);
+                }
+                if let Some(buffer_size) = options.buffer_size {
+                    builder = builder.buffer_size(buffer_size);
                 }
             }
-            if let Some(incoming_locales) = options.incoming_locales {
-                for locale in incoming_locales {
-                    builder = builder.add_incoming_locales(locale.as_str());
-                }
-            }
-            if let Some(offered_capabilities) = options.offered_capabilities.as_ref() {
-                for capability in offered_capabilities {
-                    let capability: fe2o3_amqp_types::primitives::Symbol =
-                        capability.clone().into();
-                    builder = builder.add_offered_capabilities(capability);
-                }
-            }
-            if let Some(desired_capabilities) = options.desired_capabilities.as_ref() {
-                for capability in desired_capabilities {
-                    let capability: fe2o3_amqp_types::primitives::Symbol =
-                        capability.clone().into();
-                    builder = builder.add_desired_capabilities(capability);
-                }
-            }
-            if let Some(properties) = options.properties.as_ref() {
-                let mut fields = fe2o3_amqp::types::definitions::Fields::new();
-                for property in properties.iter() {
-                    let k = fe2o3_amqp_types::primitives::Symbol::from(property.0);
-                    let v = fe2o3_amqp_types::primitives::Value::from(property.1);
-
-                    fields.insert(k, v);
-                }
-                builder = builder.properties(fields);
-            }
-            if let Some(buffer_size) = options.buffer_size {
-                builder = builder.buffer_size(buffer_size);
-            }
-
             self.connection
                 .set(Mutex::new(builder.open(url).await.map_err(AmqpOpen::from)?))
                 .map_err(|_| {
