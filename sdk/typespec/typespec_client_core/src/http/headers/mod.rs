@@ -9,24 +9,27 @@ mod microsoft;
 pub use common::*;
 pub use microsoft::*;
 
-use std::{borrow::Cow, fmt::Debug, str::FromStr};
+use std::{borrow::Cow, convert::Infallible, fmt::Debug, str::FromStr};
 use typespec::error::{Error, ErrorKind, ResultExt};
 
 /// A trait for converting a type into request headers.
 pub trait AsHeaders {
+    type Error: std::error::Error + Send + Sync + 'static;
     type Iter: Iterator<Item = (HeaderName, HeaderValue)>;
-    fn as_headers(&self) -> Self::Iter;
+
+    fn as_headers(&self) -> Result<Self::Iter, Self::Error>;
 }
 
 impl<T> AsHeaders for T
 where
     T: Header,
 {
+    type Error = Infallible;
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
     /// Iterate over all the header name/value pairs.
-    fn as_headers(&self) -> Self::Iter {
-        vec![(self.name(), self.value())].into_iter()
+    fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
+        Ok(vec![(self.name(), self.value())].into_iter())
     }
 }
 
@@ -34,15 +37,36 @@ impl<T> AsHeaders for Option<T>
 where
     T: AsHeaders<Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>>,
 {
+    type Error = T::Error;
     type Iter = T::Iter;
 
     /// Iterate over all the header name/value pairs.
-    fn as_headers(&self) -> Self::Iter {
+    fn as_headers(&self) -> Result<Self::Iter, T::Error> {
         match self {
             Some(h) => h.as_headers(),
-            None => vec![].into_iter(),
+            None => Ok(vec![].into_iter()),
         }
     }
+}
+
+/// Extract a value from the [`Headers`] collection.
+///
+/// The [`FromHeaders::from_headers()`] method is usually used implicitly, through [`Headers::get()`] or [`Headers::get_optional()`].
+pub trait FromHeaders: Sized {
+    type Error: std::error::Error + Send + Sync + 'static;
+
+    /// Gets a list of the header names that [`FromHeaders::from_headers`] expects.
+    ///
+    /// Used by [`Headers::get()`] to generate an error if the headers are not present.
+    fn header_names() -> &'static [&'static str];
+
+    /// Extracts the value from the provided [`Headers`] collection.
+    ///
+    /// This method returns one of the following three values:
+    /// * `Ok(Some(...))` if the relevant headers are present and could be parsed into the value.
+    /// * `Ok(None)` if the relevant headers are not present, so no attempt to parse them can be made.
+    /// * `Err(...)` if an error occurred when trying to parse the headers. This likely indicates that the headers are present but invalid.
+    fn from_headers(headers: &Headers) -> Result<Option<Self>, Self::Error>;
 }
 
 /// View a type as an HTTP header.
@@ -67,6 +91,34 @@ impl Headers {
     /// Create a new headers collection.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Gets the headers represented by `H`, or return an error if the header is not found.
+    pub fn get<H: FromHeaders>(&self) -> crate::Result<H> {
+        match H::from_headers(self) {
+            Ok(Some(x)) => Ok(x),
+            Ok(None) => Err(crate::Error::with_message(
+                ErrorKind::DataConversion,
+                || {
+                    let required_headers = H::header_names();
+                    format!(
+                        "required header(s) not found: {}",
+                        required_headers.join(", ")
+                    )
+                },
+            )),
+            Err(e) => Err(crate::Error::new(ErrorKind::DataConversion, e)),
+        }
+    }
+
+    /// Gets the headers represented by `H`, if they are present.
+    ///
+    /// This method returns one of the following three values:
+    /// * `Ok(Some(...))` if the relevant headers are present and could be parsed into the value.
+    /// * `Ok(None)` if the relevant headers are not present, so no attempt to parse them can be made.
+    /// * `Err(...)` if an error occurred when trying to parse the headers. This likely indicates that the headers are present but invalid.
+    pub fn get_optional<H: FromHeaders>(&self) -> Result<Option<H>, H::Error> {
+        H::from_headers(self)
     }
 
     /// Optionally get a header value as a `String`.
@@ -146,13 +198,20 @@ impl Headers {
     }
 
     /// Add headers to the headers collection.
-    pub fn add<H>(&mut self, header: H)
+    ///
+    /// ## Errors
+    ///
+    /// The error this returns depends on the type `H`.
+    /// Many header types are infallible, return a `Result` with [`Infallible`] as the error type.
+    /// In this case, you can safely `.unwrap()` the value without risking a panic.
+    pub fn add<H>(&mut self, header: H) -> Result<(), H::Error>
     where
         H: AsHeaders,
     {
-        for (key, value) in header.as_headers() {
+        for (key, value) in header.as_headers()? {
             self.insert(key, value);
         }
+        Ok(())
     }
 
     /// Iterate over all the header name/value pairs.
@@ -271,5 +330,117 @@ impl From<String> for HeaderValue {
 impl From<&String> for HeaderValue {
     fn from(s: &String) -> Self {
         s.clone().into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::http::Url;
+    use typespec::error::ErrorKind;
+
+    use super::{FromHeaders, HeaderName, Headers};
+
+    // Just in case we add a ContentLocation struct later, this one is named "ForTest" to indicate it's just here for this test.
+    #[derive(Debug)]
+    struct ContentLocationForTest(Url);
+
+    impl FromHeaders for ContentLocationForTest {
+        type Error = url::ParseError;
+
+        fn header_names() -> &'static [&'static str] {
+            &["content-location"]
+        }
+
+        fn from_headers(headers: &super::Headers) -> Result<Option<Self>, Self::Error> {
+            let Some(loc) = headers.get_optional_str(&HeaderName::from("content-location")) else {
+                return Ok(None);
+            };
+
+            Ok(Some(ContentLocationForTest(loc.parse()?)))
+        }
+    }
+
+    #[test]
+    pub fn headers_get_optional_returns_ok_some_if_header_present_and_valid() {
+        let mut headers = Headers::new();
+        headers.insert("content-location", "https://example.com");
+        let content_location: ContentLocationForTest = headers.get_optional().unwrap().unwrap();
+        assert_eq!("https://example.com/", content_location.0.as_str())
+    }
+
+    #[test]
+    pub fn headers_get_optional_returns_ok_none_if_header_not_present() {
+        let headers = Headers::new();
+        let content_location: Option<ContentLocationForTest> = headers.get_optional().unwrap();
+        assert!(content_location.is_none())
+    }
+
+    #[test]
+    pub fn headers_get_optional_returns_err_if_conversion_fails() {
+        let mut headers = Headers::new();
+        headers.insert("content-location", "not a URL");
+        let err = headers
+            .get_optional::<ContentLocationForTest>()
+            .unwrap_err();
+        assert_eq!(url::ParseError::RelativeUrlWithoutBase, err)
+    }
+
+    #[test]
+    pub fn headers_get_returns_ok_if_header_present_and_valid() {
+        let mut headers = Headers::new();
+        headers.insert("content-location", "https://example.com");
+        let content_location: ContentLocationForTest = headers.get().unwrap();
+        assert_eq!("https://example.com/", content_location.0.as_str())
+    }
+
+    #[test]
+    pub fn headers_get_returns_err_if_header_not_present() {
+        let headers = Headers::new();
+        let err = headers.get::<ContentLocationForTest>().unwrap_err();
+        assert_eq!(&ErrorKind::DataConversion, err.kind());
+
+        // The "Display" implementation is the canonical way to get an error's "message"
+        assert_eq!(
+            "required header(s) not found: content-location",
+            format!("{}", err)
+        );
+    }
+
+    #[test]
+    pub fn headers_get_returns_err_if_header_requiring_multiple_headers_not_present() {
+        #[derive(Debug)]
+        struct HasTwoHeaders;
+
+        impl FromHeaders for HasTwoHeaders {
+            type Error = std::convert::Infallible;
+
+            fn header_names() -> &'static [&'static str] {
+                &["header-a", "header-b"]
+            }
+
+            fn from_headers(_: &Headers) -> Result<Option<Self>, Self::Error> {
+                Ok(None)
+            }
+        }
+
+        let headers = Headers::new();
+        let err = headers.get::<HasTwoHeaders>().unwrap_err();
+        assert_eq!(&ErrorKind::DataConversion, err.kind());
+
+        // The "Display" implementation is the canonical way to get an error's "message"
+        assert_eq!(
+            "required header(s) not found: header-a, header-b",
+            format!("{}", err)
+        );
+    }
+
+    #[test]
+    pub fn headers_get_returns_err_if_conversion_fails() {
+        let mut headers = Headers::new();
+        headers.insert("content-location", "not a URL");
+        let err = headers.get::<ContentLocationForTest>().unwrap_err();
+        assert_eq!(&ErrorKind::DataConversion, err.kind());
+        let inner: Box<url::ParseError> = err.into_inner().unwrap().downcast().unwrap();
+        assert_eq!(Box::new(url::ParseError::RelativeUrlWithoutBase), inner)
     }
 }

@@ -10,7 +10,7 @@ use crate::{
     Query, QueryPartitionStrategy,
 };
 
-use azure_core::{headers::HeaderValue, Context, Request};
+use azure_core::{Context, Request};
 use serde::{de::DeserializeOwned, Deserialize};
 use url::Url;
 
@@ -177,10 +177,7 @@ impl ContainerClientMethods for ContainerClient {
         base_req.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
 
         let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
-        base_req.insert_header(
-            constants::PARTITION_KEY,
-            HeaderValue::from_cow(partition_key.into_header_value()?),
-        );
+        base_req.insert_headers(&partition_key)?;
 
         base_req.set_json(&query.into())?;
 
