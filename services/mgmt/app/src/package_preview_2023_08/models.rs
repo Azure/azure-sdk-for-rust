@@ -6561,14 +6561,17 @@ impl UsageName {
         Self::default()
     }
 }
-#[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct UserAssignedIdentities {}
-impl UserAssignedIdentities {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
+
+// #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
+// #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+// pub struct UserAssignedIdentities {}
+// impl UserAssignedIdentities {
+//     pub fn new() -> Self {
+//         Self::default()
+//     }
+// }
+pub type UserAssignedIdentities = std::collections::HashMap<String, serde_json::value::Value>;
+
 #[doc = "User assigned identity properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentity {
