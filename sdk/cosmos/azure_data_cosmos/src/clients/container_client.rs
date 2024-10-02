@@ -77,7 +77,7 @@ pub trait ContainerClientMethods {
     ///     .await.unwrap()
     ///     .deserialize_body()
     ///     .await.unwrap()
-    ///     .into_inner();
+    ///     .unwrap();
     /// println!("Created: {:#?}", created_item);
     /// # }
     /// ```
@@ -121,7 +121,7 @@ pub trait ContainerClientMethods {
     ///     .await.unwrap()
     ///     .deserialize_body()
     ///     .await.unwrap()
-    ///     .into_inner();
+    ///     .unwrap();
     /// println!("Updated Item: {:#?}", updated_item);
     /// # }
     /// ```
@@ -168,7 +168,7 @@ pub trait ContainerClientMethods {
     ///     .await.unwrap()
     ///     .deserialize_body()
     ///     .await.unwrap()
-    ///     .into_inner();
+    ///     .unwrap();
     /// println!("Updated Item: {:#?}", updated_item);
     /// # }
     /// ```
@@ -206,7 +206,7 @@ pub trait ContainerClientMethods {
     ///     .await.unwrap()
     ///     .deserialize_body()
     ///     .await.unwrap()
-    ///     .into_inner();
+    ///     .unwrap();
     /// println!("Read Item: {:#?}", item);
     /// # }
     /// ```

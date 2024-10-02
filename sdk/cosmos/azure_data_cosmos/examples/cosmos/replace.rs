@@ -43,7 +43,7 @@ impl ReplaceCommand {
         match response {
             Err(e) if e.http_status() == Some(StatusCode::NotFound) => println!("Item not found!"),
             Ok(r) => {
-                let item: serde_json::Value = r.deserialize_body().await?.into_inner();
+                let item: serde_json::Value = r.deserialize_body().await?.unwrap();
                 println!("Replaced item:");
                 println!("{:#?}", item);
             }

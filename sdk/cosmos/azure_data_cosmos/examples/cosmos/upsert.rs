@@ -37,7 +37,7 @@ impl UpsertCommand {
             .await?
             .deserialize_body()
             .await?
-            .into_inner();
+            .unwrap();
         println!("Created item:");
         println!("{:#?}", created);
         Ok(())
