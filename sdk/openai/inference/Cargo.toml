@@ -1,0 +1,30 @@
+[package]
+name = "azure_openai_inference"
+version = "1.0.0-beta.1"
+description = "Rust client library for Azure OpenAI Inference"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+keywords = ["sdk", "azure", "rest"]
+categories = ["api-bindings"]
+
+[lints]
+workspace = true
+
+[dependencies]
+azure_core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+futures = { workspace = true }
+bytes = { workspace = true }
+typespec_client_core = { workspace = true, features = ["derive"] }
+
+[dev-dependencies]
+azure_core = { workspace = true, features = ["reqwest"] }
+azure_identity = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true }
