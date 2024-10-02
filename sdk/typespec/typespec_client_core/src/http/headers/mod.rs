@@ -102,12 +102,7 @@ impl Headers {
                 || {
                     let required_headers = H::header_names();
                     format!(
-                        "required {} not found: {}",
-                        if required_headers.len() == 1 {
-                            "header"
-                        } else {
-                            "headers"
-                        },
+                        "required header(s) not found: {}",
                         required_headers.join(", ")
                     )
                 },
@@ -406,7 +401,7 @@ mod tests {
 
         // The "Display" implementation is the canonical way to get an error's "message"
         assert_eq!(
-            "required header not found: content-location",
+            "required header(s) not found: content-location",
             format!("{}", err)
         );
     }
@@ -434,7 +429,7 @@ mod tests {
 
         // The "Display" implementation is the canonical way to get an error's "message"
         assert_eq!(
-            "required headers not found: header-a, header-b",
+            "required header(s) not found: header-a, header-b",
             format!("{}", err)
         );
     }
