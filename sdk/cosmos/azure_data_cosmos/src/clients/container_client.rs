@@ -426,7 +426,6 @@ impl ContainerClientMethods for ContainerClient {
             .await
     }
 
-    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
     async fn delete_item(
         &self,
         partition_key: impl Into<PartitionKey>,

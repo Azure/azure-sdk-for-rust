@@ -21,7 +21,7 @@ pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 ///
 /// [`Response<T>`] is designed to work with values that may be serialized in various formats (JSON, XML, etc.).
 /// In order to support that, the `T` provided must implement [`Model`], which provides the [`Model::from_response_body`]
-/// method to deserialize the type from an arbitrary
+/// method to deserialize the type from a response body.
 pub trait Model: Sized {
     /// Deserialize the response body into type `Self`.
     ///
