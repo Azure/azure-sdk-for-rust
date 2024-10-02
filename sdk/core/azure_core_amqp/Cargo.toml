@@ -33,7 +33,6 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
-tokio.workspace = true
 
 [features]
 default = ["fe2o3-amqp"]
