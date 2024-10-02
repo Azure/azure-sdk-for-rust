@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_core::Model;
 use serde::de::DeserializeOwned;
 
@@ -53,10 +56,10 @@ impl<T> Item<T> {
     }
 }
 
-impl<T> Into<Option<T>> for Item<T> {
-    /// Converts the [`Item<T>`] into an [`Option<T>`], where [`Item::Present`] maps to [`Option::Some`] and [`Item::Omitted`] maps to [`Option::None`].
-    fn into(self) -> Option<T> {
-        match self {
+impl<T> From<Item<T>> for Option<T> {
+    /// Creates an [`Option<T>`] from an [`Item<T>`], where [`Item::Present`] maps to [`Option::Some`] and [`Item::Omitted`] maps to [`Option::None`].
+    fn from(value: Item<T>) -> Self {
+        match value {
             Item::Present(t) => Some(t),
             Item::Omitted => None,
         }
