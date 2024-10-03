@@ -41,7 +41,6 @@ tokio = { workspace = true, features = ["macros", "rt", "time"] }
 [dev-dependencies]
 once_cell.workspace = true
 tokio.workspace = true
-typespec_derive.workspace = true
 
 [features]
 default = [

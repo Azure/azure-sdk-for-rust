@@ -21,7 +21,6 @@ use openssl::{
 use serde::Deserialize;
 use std::{str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
-use typespec_client_core::http::Model;
 use url::form_urlencoded;
 
 /// Refresh time to use in seconds.
@@ -255,7 +254,7 @@ impl ClientCertificateCredential {
             return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
         }
 
-        let response: AadTokenResponse = rsp.deserialize_body_into().await?;
+        let response: AadTokenResponse = rsp.into_body().json().await?;
         Ok(AccessToken::new(
             response.access_token,
             OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),
@@ -326,7 +325,7 @@ impl ClientCertificateCredential {
     }
 }
 
-#[derive(Model, Deserialize, Debug, Default)]
+#[derive(Deserialize, Debug, Default)]
 #[serde(default)]
 struct AadTokenResponse {
     token_type: String,

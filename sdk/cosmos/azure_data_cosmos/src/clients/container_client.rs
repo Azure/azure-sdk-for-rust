@@ -34,17 +34,14 @@ pub trait ContainerClientMethods {
     /// # async fn doc() {
     /// # use azure_data_cosmos::clients::{ContainerClient, ContainerClientMethods};
     /// # let container_client: ContainerClient = panic!("this is a non-running example");
-    /// let response = container_client.read(None)
-    ///     .await.unwrap()
-    ///     .deserialize_body()
-    ///     .await.unwrap();
+    /// let response = container_client.read(None).await.unwrap();
     /// # }
     /// ```
     #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
-    async fn read(
+    fn read(
         &self,
         options: Option<ReadContainerOptions>,
-    ) -> azure_core::Result<azure_core::Response<ContainerProperties>>;
+    ) -> azure_core::ResponseFuture<ContainerProperties>;
 
     /// Executes a single-partition query against items in the container.
     ///
@@ -129,17 +126,16 @@ impl ContainerClient {
 }
 
 impl ContainerClientMethods for ContainerClient {
-    async fn read(
+    fn read(
         &self,
 
         #[allow(unused_variables)]
         // This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadContainerOptions>,
-    ) -> azure_core::Result<azure_core::Response<ContainerProperties>> {
-        let mut req = Request::new(self.container_url.clone(), azure_core::Method::Get);
+    ) -> azure_core::ResponseFuture<ContainerProperties> {
+        let req = Request::new(self.container_url.clone(), azure_core::Method::Get);
         self.pipeline
-            .send(Context::new(), &mut req, ResourceType::Containers)
-            .await
+            .send(Context::new(), req, ResourceType::Containers)
     }
 
     fn query_items<T: DeserializeOwned + Send>(
@@ -157,16 +153,6 @@ impl ContainerClientMethods for ContainerClient {
         struct QueryResponseModel<M> {
             #[serde(rename = "Documents")]
             documents: Vec<M>,
-        }
-
-        // We have to manually implement Model, because the derive macro doesn't support auto-inferring type and lifetime bounds.
-        // See https://github.com/Azure/azure-sdk-for-rust/issues/1803
-        impl<M: DeserializeOwned> azure_core::Model for QueryResponseModel<M> {
-            async fn from_response_body(
-                body: azure_core::ResponseBody,
-            ) -> typespec_client_core::Result<Self> {
-                body.json().await
-            }
         }
 
         let mut url = self.container_url.clone();
@@ -196,7 +182,7 @@ impl ContainerClientMethods for ContainerClient {
                 }
 
                 let resp = pipeline
-                    .send(Context::new(), &mut req, ResourceType::Items)
+                    .send(Context::new(), req, ResourceType::Items)
                     .await?;
 
                 let query_metrics = resp
@@ -208,7 +194,7 @@ impl ContainerClientMethods for ContainerClient {
                 let continuation_token =
                     resp.headers().get_optional_string(&constants::CONTINUATION);
 
-                let query_response: QueryResponseModel<T> = resp.deserialize_body().await?;
+                let query_response: QueryResponseModel<T> = resp.into_body();
 
                 let query_results = QueryResults {
                     items: query_response.documents,

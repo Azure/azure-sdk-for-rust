@@ -62,5 +62,4 @@ features = [
   "reqwest_rustls",
   "hmac_rust",
   "hmac_openssl",
-  "xml",
 ]

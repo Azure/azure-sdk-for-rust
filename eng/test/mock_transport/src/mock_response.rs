@@ -21,7 +21,7 @@ impl From<MockResponse> for Response {
     fn from(mock_response: MockResponse) -> Self {
         let bytes_stream: azure_core::BytesStream = mock_response.body.into();
 
-        Self::new(
+        Self::from_stream(
             mock_response.status,
             mock_response.headers,
             Box::pin(bytes_stream),
@@ -46,7 +46,7 @@ impl MockResponse {
             "an error occurred fetching the next part of the byte stream",
         )?;
 
-        let response = Response::new(
+        let response = Response::from_stream(
             status_code,
             header_map.clone(),
             Box::pin(BytesStream::new(response_bytes.clone())),

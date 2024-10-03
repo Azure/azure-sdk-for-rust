@@ -5,7 +5,7 @@
 
 use azure_core::{
     date::{ComponentRange, OffsetDateTime},
-    Continuable, Model,
+    Continuable,
 };
 use serde::{Deserialize, Serialize};
 
@@ -72,7 +72,7 @@ pub struct SystemProperties {
 /// Properties of a Cosmos DB database.
 ///
 /// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
-#[derive(Model, Debug, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct DatabaseProperties {
     /// The ID of the database.
     pub id: String,
@@ -85,7 +85,7 @@ pub struct DatabaseProperties {
 /// Properties of a Cosmos DB container.
 ///
 /// Returned by [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
-#[derive(Model, Debug, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ContainerProperties {
     /// The ID of the container.
     pub id: String,

@@ -4,8 +4,7 @@
 use crate::http::{
     headers::{HeaderName, HeaderValue, Headers},
     request::{Body, Request},
-    response::PinnedStream,
-    HttpClient, Method, Response, StatusCode,
+    HttpClient, Method, PinnedStream, Response, StatusCode,
 };
 use async_trait::async_trait;
 use futures::TryStreamExt;
@@ -77,7 +76,11 @@ impl HttpClient for ::reqwest::Client {
             )
         }));
 
-        Ok(Response::new(try_from_status(status)?, headers, body))
+        Ok(Response::from_stream(
+            try_from_status(status)?,
+            headers,
+            body,
+        ))
     }
 }
 
