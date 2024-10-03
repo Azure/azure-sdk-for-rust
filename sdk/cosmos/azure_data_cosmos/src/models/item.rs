@@ -28,22 +28,6 @@ pub enum Item<T> {
 }
 
 impl<T> Item<T> {
-    /// Returns a boolean indicating if the [`Item<T>`] was omitted.
-    pub fn is_omitted(&self) -> bool {
-        match self {
-            Item::Present(_) => false,
-            Item::Omitted => true,
-        }
-    }
-
-    /// Returns a boolean indicating if the [`Item<T>`] is present.
-    pub fn is_present(&self) -> bool {
-        match self {
-            Item::Present(_) => true,
-            Item::Omitted => false,
-        }
-    }
-
     /// Returns the contained [`Item::Present`] value, consuming the `self` value.
     ///
     /// This function will panic if the value is [`Item::Omitted`].
