@@ -3,7 +3,7 @@
 
 use crate::http::{
     policies::{CustomHeadersPolicy, Policy, TransportPolicy},
-    ClientOptions, Context, Request, Response, RetryOptions,
+    ClientOptions, Context, Request, ResponseBody, RetryOptions,
 };
 use std::sync::Arc;
 
@@ -78,15 +78,18 @@ impl Pipeline {
         &self.pipeline
     }
 
-    pub async fn send<T>(
-        &self,
-        ctx: &Context<'_>,
-        request: &mut Request,
-    ) -> crate::Result<Response<T>> {
-        self.pipeline[0]
-            .send(ctx, request, &self.pipeline[1..])
-            .await
-            .map(|resp| resp.with_default_deserialize_type())
+    // The outer Pipeline::send method takes ownership of the Context and Request, to allow them to be captured in the ResponseFuture
+    // Pipeline _policies_ must not take these by value though, as policies may be executed with the same request multiple times (such as in retry scenarios)
+    pub fn send<'a>(
+        &'a self,
+        ctx: Context<'a>,
+        mut request: Request,
+    ) -> crate::http::ResponseFuture<'a, ResponseBody> {
+        crate::http::ResponseFuture::new(async move {
+            self.pipeline[0]
+                .send(&ctx, &mut request, &self.pipeline[1..])
+                .await
+        })
     }
 }
 
@@ -94,12 +97,14 @@ impl Pipeline {
 mod tests {
     use super::*;
     use crate::{
-        http::{headers::Headers, policies::PolicyResult, Method, StatusCode, TransportOptions},
+        http::{
+            headers::Headers, policies::PolicyResult, Method, Response, StatusCode,
+            TransportOptions,
+        },
         stream::BytesStream,
     };
     use bytes::Bytes;
     use serde::Deserialize;
-    use typespec_derive::Model;
 
     #[tokio::test]
     async fn deserializes_response() {
@@ -117,13 +122,15 @@ mod tests {
             ) -> PolicyResult {
                 let buffer = Bytes::from_static(br#"{"foo":1,"bar":"baz"}"#);
                 let stream: BytesStream = buffer.into();
-                let response = Response::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
-                Ok(std::future::ready(response).await)
+                Ok(Response::from_stream(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    Box::pin(stream),
+                ))
             }
         }
 
-        #[derive(Model, Debug, Deserialize)]
-        #[typespec(crate = "crate")]
+        #[derive(Debug, Deserialize)]
         struct Model {
             foo: i32,
             bar: String,
@@ -133,14 +140,13 @@ mod tests {
             ClientOptions::new(TransportOptions::new_custom_policy(Arc::new(Responder {})));
         let pipeline = Pipeline::new(options, Vec::new(), Vec::new());
 
-        let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
+        let request = Request::new("http://localhost".parse().unwrap(), Method::Get);
         let model: Model = pipeline
-            .send(&Context::default(), &mut request)
+            .send(Context::default(), request)
+            .json()
             .await
             .unwrap()
-            .deserialize_body()
-            .await
-            .unwrap();
+            .into_body();
 
         assert_eq!(1, model.foo);
         assert_eq!("baz", &model.bar);

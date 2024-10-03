@@ -30,17 +30,14 @@ pub trait DatabaseClientMethods {
     /// # async fn doc() {
     /// # use azure_data_cosmos::clients::{DatabaseClient, DatabaseClientMethods};
     /// # let database_client: DatabaseClient = panic!("this is a non-running example");
-    /// let response = database_client.read(None)
-    ///     .await.unwrap()
-    ///     .deserialize_body()
-    ///     .await.unwrap();
+    /// let response = database_client.read(None).await.unwrap();
     /// # }
     /// ```
     #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
-    async fn read(
+    fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
-    ) -> azure_core::Result<azure_core::Response<DatabaseProperties>>;
+    ) -> azure_core::ResponseFuture<DatabaseProperties>;
 
     /// Gets a [`ContainerClient`] that can be used to access the collection with the specified name.
     ///
@@ -70,17 +67,16 @@ impl DatabaseClient {
 }
 
 impl DatabaseClientMethods for DatabaseClient {
-    async fn read(
+    fn read(
         &self,
 
         #[allow(unused_variables)]
         // This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadDatabaseOptions>,
-    ) -> azure_core::Result<azure_core::Response<DatabaseProperties>> {
-        let mut req = Request::new(self.database_url.clone(), azure_core::Method::Get);
+    ) -> azure_core::ResponseFuture<DatabaseProperties> {
+        let req = Request::new(self.database_url.clone(), azure_core::Method::Get);
         self.pipeline
-            .send(Context::new(), &mut req, ResourceType::Databases)
-            .await
+            .send(Context::new(), req, ResourceType::Databases)
     }
 
     fn container_client(&self, name: impl AsRef<str>) -> ContainerClient {

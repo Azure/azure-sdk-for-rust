@@ -15,6 +15,14 @@
 #![deny(missing_debug_implementations, nonstandard_style)]
 // #![warn(missing_docs, future_incompatible, unreachable_pub)]
 
+// Docs.rs build is done with the nightly compiler, so we can enable nightly features in that build.
+// In this case we enable two features:
+// - `doc_auto_cfg`: Automatically scans `cfg` attributes and uses them to show those required configurations in the generated documentation.
+// - `doc_cfg_hide`: Ignore the `doc` configuration for `doc_auto_cfg`.
+// See https://doc.rust-lang.org/rustdoc/unstable-features.html#doc_auto_cfg-automatically-generate-doccfg for more details.
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg_hide))]
+
 #[macro_use]
 mod macros;
 
@@ -38,7 +46,9 @@ pub use models::*;
 pub use options::*;
 pub use pipeline::*;
 pub use policies::*;
-pub use typespec_client_core::http::response::{Model, PinnedStream, Response, ResponseBody};
+pub use typespec_client_core::http::{
+    LazyResponse, PinnedStream, Response, ResponseBody, ResponseFuture,
+};
 
 // Re-export typespec types that are not specific to Azure.
 pub use typespec::{Error, Result};

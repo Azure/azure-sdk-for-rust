@@ -39,16 +39,12 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_client = client.database_client(&args.database);
     if let Some(container_name) = args.container {
         let container_client = db_client.container_client(container_name);
-        let response = container_client
-            .read(None)
-            .await?
-            .deserialize_body()
-            .await?;
-        println!("{:?}", response);
+        let response = container_client.read(None).await?;
+        println!("{:?}", response.into_body());
         return Ok(());
     } else {
-        let response = db_client.read(None).await?.deserialize_body().await?;
-        println!("{:?}", response);
+        let response = db_client.read(None).await?;
+        println!("{:?}", response.into_body());
     }
     Ok(())
 }

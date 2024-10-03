@@ -12,7 +12,9 @@ mod pageable;
 mod pipeline;
 pub mod policies;
 pub mod request;
-pub mod response;
+mod response;
+mod response_body;
+mod response_future;
 
 pub use clients::*;
 pub use context::*;
@@ -22,11 +24,22 @@ pub use options::*;
 pub use pageable::*;
 pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
-pub use response::{Model, Response};
+pub use response::Response;
+pub use response_body::ResponseBody;
+pub use response_future::{LazyResponse, ResponseFuture};
 
 // Re-export important types.
 pub use http_types::{Method, StatusCode};
 pub use url::Url;
+
+use bytes::Bytes;
+use futures::Stream;
+use std::pin::Pin;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
+#[cfg(target_arch = "wasm32")]
+pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
 /// Add a new query pair into the target [`Url`]'s query string.
 pub trait AppendToUrlQuery {

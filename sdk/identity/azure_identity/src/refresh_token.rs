@@ -14,7 +14,6 @@ use azure_core::{
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;
-use typespec_client_core::Model;
 use url::form_urlencoded;
 
 /// Exchange a refresh token for a new access token and refresh token.
@@ -54,9 +53,7 @@ pub async fn exchange(
     let rsp_status = rsp.status();
 
     if rsp_status.is_success() {
-        rsp.deserialize_body_into()
-            .await
-            .map_kind(ErrorKind::Credential)
+        rsp.into_body().json().await.map_kind(ErrorKind::Credential)
     } else {
         let rsp_body = rsp.into_body().collect().await?;
         let token_error: RefreshTokenError =
@@ -67,7 +64,7 @@ pub async fn exchange(
 
 /// A refresh token
 #[allow(dead_code)]
-#[derive(Model, Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct RefreshTokenResponse {
     token_type: String,
     #[serde(rename = "scope", deserialize_with = "deserialize::split")]
