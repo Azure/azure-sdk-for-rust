@@ -466,6 +466,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(feature = "xml")]
     #[tokio::test]
     pub async fn response_future_returns_xml_model_lazily_when_lazy_called() -> Result<(), Error> {
         let client = FakeSecretClientXml::new();
