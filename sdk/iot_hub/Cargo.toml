@@ -1,12 +1,12 @@
 [package]
 name = "azure_iot_hub"
-version = "0.20.0"
+version = "0.21.0"
 authors = ["Microsoft Corp."]
 edition = "2021"
 description = "Azure IoT Hub"
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
-homepage = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust/tree/legacy"
 documentation = "https://docs.rs/azure_iot_hub"
 
 [dependencies]

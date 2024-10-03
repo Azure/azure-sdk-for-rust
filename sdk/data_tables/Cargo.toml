@@ -1,12 +1,12 @@
 [package]
 name = "azure_data_tables"
-version = "0.20.0"
+version = "0.21.0"
 description = "Azure Table storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
-homepage = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust/tree/legacy"
 documentation = "https://docs.rs/azure_data_tables"
 keywords = ["sdk", "azure", "storage", "data-tables"]
 categories = ["api-bindings"]

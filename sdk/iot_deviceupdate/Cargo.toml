@@ -1,10 +1,10 @@
 [package]
 name = "azure_iot_deviceupdate"
-version = "0.20.0"
+version = "0.21.0"
 authors = ["roland.erk@conplement.de"]
 description = "Rust wrapper around Microsoft Azure REST APIs for Azure Device Update"
 repository = "https://github.com/azure/azure-sdk-for-rust"
-homepage = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust/tree/legacy"
 documentation = "https://docs.rs/azure_iot_deviceupdate"
 keywords = ["azure", "microsoft", "sdk", "device", "update", "cloud"]
 categories = ["api-bindings"]
