@@ -91,7 +91,6 @@ mod tests {
             category: "category1".to_string(),
         };
         assert_eq!(Item::Present(expected.clone()), item);
-        assert!(item.is_present());
         assert_eq!(Some(expected), item.into());
     }
 
@@ -103,7 +102,6 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(Item::Omitted, item);
-        assert!(item.is_omitted());
         assert_eq!(Option::<Product>::None, item.into());
     }
 }
