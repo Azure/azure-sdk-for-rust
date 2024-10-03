@@ -28,17 +28,17 @@ pub struct Parameter {
     pub collection_format: Option<CollectionFormat>,
 
     /// provides a mechanism to specify that the global parameter is actually a parameter on the operation and not a client property
-    /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-parameter-location
+    /// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-parameter-location
     #[serde(rename = "x-ms-parameter-location", skip_serializing_if = "Option::is_none")]
     pub x_ms_parameter_location: Option<String>,
 
     /// skips URL encoding for path and query parameters
-    /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-skip-url-encoding
+    /// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-skip-url-encoding
     #[serde(rename = "x-ms-skip-url-encoding", skip_serializing_if = "Option::is_none")]
     pub x_ms_skip_url_encoding: Option<bool>,
 
     /// groups method parameters in generated clients
-    /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-parameter-grouping
+    /// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-parameter-grouping
     #[serde(rename = "x-ms-parameter-grouping", skip_serializing_if = "Option::is_none")]
     pub x_ms_parameter_grouping: Option<MsParameterGrouping>,
 
