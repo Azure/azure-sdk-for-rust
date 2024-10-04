@@ -2,24 +2,13 @@
 
 This repository is for the development of the [unofficial](https://github.com/Azure/azure-sdk-for-rust/blob/main/FAQ.md#why-is-it-unofficial) Azure SDK for Rust.
 
+## Getting started
+
+To get started with a library, see the `README.md` file located in the library's project folder. You can find these library folders grouped by service in the `/sdk` directory.
+
 ## Crates
 
 [All Azure SDK for Rust crates](https://crates.io/teams/github:azure:azure-sdk-publish-rust) are published on crates.io.
-
-### SDK
-These [SDK crates](sdk) are available:
-- [azure_core](https://crates.io/crates/azure_core)
-- [azure_identity](https://crates.io/crates/azure_identity)
-- [azure_data_cosmos](https://crates.io/crates/azure_data_cosmos)
-- [azure_data_tables](https://crates.io/crates/azure_data_tables)
-- [azure_iot_hub](https://crates.io/crates/azure_iot_hub)
-- [azure_security_keyvault](https://crates.io/crates/azure_security_keyvault)
-- [azure_storage_blobs](https://crates.io/crates/azure_storage_blobs)
-- [azure_storage_datalake](https://crates.io/crates/azure_storage_datalake)
-- [azure_storage_queues](https://crates.io/crates/azure_storage_queues)
-
-### Services
-Azure service crates generated from [Azure REST API Specifications](https://github.com/Azure/azure-rest-api-specs) are available in [services](services).
 
 ## Status
 
@@ -37,7 +26,31 @@ Building each crate should be as straight forward as `cargo build`, but check ea
 
 This library comes with a testing framework that executes against prerecorded sessions to quickly validate code changes without incurring in Azure costs. You can read more about it in the [Mock testing framework's README](https://github.com/Azure/azure-sdk-for-rust/tree/feature/track2/doc/mock_transport.md).
 
+## Need help?
+
+- For reference documentation visit [docs.rs](https://docs.rs/).
+- For examples, go to the `/examples` sub-directory in any library's project folder.
+  - Ex:`/sdk/identity/azure_identity/examples`
+- Have a question, or find a bug? File an issue via [GitHub Issues](https://github.com/Azure/azure-sdk-for-rust/issues/new/choose).
+- Check [previous questions](https://stackoverflow.com/questions/tagged/azure+rust) or ask new ones on StackOverflow using the `azure` and `rust` tags.
+
+### Reporting security issues and security bugs
+
+Security issues and bugs should be reported privately, via email, to the Microsoft Security Response Center (MSRC) <secure@microsoft.com>. You should receive a response within 24 hours. If for some reason you do not, please follow up via email to ensure we received your original message. Further information, including the MSRC PGP key, can be found in the [Security TechCenter](https://www.microsoft.com/msrc/faqs-report-an-issue).
+
+## We want your thoughts!
+
+### Feature Requests
+
+What features are important to you? You can let us know by looking at our open [feature requests](https://github.com/Azure/azure-sdk-for-rust/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc) and sharing your thoughts by giving the issue a thumbs up or thumbs down. (Note the list is sorted by the number of thumbs up in descending order.)
+
+### Design Discussions
+
+We would love to incorporate the community's input into our library design process. Here's a list of [design discussions](https://github.com/Azure/azure-sdk-for-rust/labels/design-discussion) that we're currently having. Participate in the discussions by leaving your comments in the issue!
+
 ## Contributing
+
+For details on contributing to this repository, see the [contributing guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md).
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
