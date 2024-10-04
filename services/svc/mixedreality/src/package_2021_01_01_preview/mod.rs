@@ -326,12 +326,8 @@ pub mod remote_rendering {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/accounts/{}/conversions/{}",
-                    self.client.endpoint(),
-                    &self.account_id,
-                    &self.conversion_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/accounts/{}/conversions/{}", &self.account_id, &self.conversion_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -440,12 +436,8 @@ pub mod remote_rendering {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/accounts/{}/conversions/{}",
-                    self.client.endpoint(),
-                    &self.account_id,
-                    &self.conversion_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/accounts/{}/conversions/{}", &self.account_id, &self.conversion_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -577,7 +569,8 @@ pub mod remote_rendering {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/accounts/{}/conversions", self.client.endpoint(), &self.account_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/accounts/{}/conversions", &self.account_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -662,12 +655,8 @@ pub mod remote_rendering {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/accounts/{}/sessions/{}",
-                    self.client.endpoint(),
-                    &self.account_id,
-                    &self.session_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/accounts/{}/sessions/{}", &self.account_id, &self.session_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -776,12 +765,8 @@ pub mod remote_rendering {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/accounts/{}/sessions/{}",
-                    self.client.endpoint(),
-                    &self.account_id,
-                    &self.session_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/accounts/{}/sessions/{}", &self.account_id, &self.session_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -880,12 +865,8 @@ pub mod remote_rendering {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/accounts/{}/sessions/{}",
-                    self.client.endpoint(),
-                    &self.account_id,
-                    &self.session_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/accounts/{}/sessions/{}", &self.account_id, &self.session_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -988,12 +969,8 @@ pub mod remote_rendering {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/accounts/{}/sessions/{}/:stop",
-                    self.client.endpoint(),
-                    &self.account_id,
-                    &self.session_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/accounts/{}/sessions/{}/:stop", &self.account_id, &self.session_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1103,7 +1080,8 @@ pub mod remote_rendering {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/accounts/{}/sessions", self.client.endpoint(), &self.account_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/accounts/{}/sessions", &self.account_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

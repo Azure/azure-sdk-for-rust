@@ -358,7 +358,8 @@ pub mod execution {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/execution/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/startlocalrun" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/execution/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/startlocalrun" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ;
                 Ok(url)
             }
         }
@@ -466,7 +467,8 @@ pub mod execution {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/execution/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/startrun" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/execution/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/startrun" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ;
                 Ok(url)
             }
         }
@@ -571,7 +573,8 @@ pub mod execution {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/execution/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/snapshotrun" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/execution/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/snapshotrun" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ;
                 Ok(url)
             }
         }
@@ -667,7 +670,8 @@ pub mod execution {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/execution/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runId/{}/cancel" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/execution/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runId/{}/cancel" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -972,7 +976,8 @@ pub mod assets {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/assets" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/assets" , & self . subscription_id , & self . resource_group , & self . workspace)) ;
                 Ok(url)
             }
         }
@@ -1064,7 +1069,8 @@ pub mod assets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/assets" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/assets" , & self . subscription_id , & self . resource_group , & self . workspace)) ;
                 Ok(url)
             }
         }
@@ -1158,7 +1164,8 @@ pub mod assets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/assets/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/assets/{}" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -1254,7 +1261,8 @@ pub mod assets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/assets/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/assets/{}" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -1343,7 +1351,8 @@ pub mod assets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/assets/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/assets/{}" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -1584,7 +1593,8 @@ pub mod ml_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models/{}" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -1680,7 +1690,8 @@ pub mod ml_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models/{}" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -1769,7 +1780,8 @@ pub mod ml_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models/{}" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -1950,7 +1962,8 @@ pub mod ml_models {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models" , & self . subscription_id , & self . resource_group , & self . workspace)) ;
                 Ok(url)
             }
         }
@@ -2033,7 +2046,8 @@ pub mod ml_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models" , & self . subscription_id , & self . resource_group , & self . workspace)) ;
                 Ok(url)
             }
         }
@@ -2145,7 +2159,8 @@ pub mod ml_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models/{}/metrics" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/models/{}/metrics" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -2272,7 +2287,8 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/operations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/operations/{}" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -2459,7 +2475,8 @@ pub mod profiles {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/images/{}/profiles/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . image_id , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/images/{}/profiles/{}" , & self . subscription_id , & self . resource_group , & self . workspace , & self . image_id , & self . id)) ;
                 Ok(url)
             }
         }
@@ -2635,7 +2652,8 @@ pub mod profiles {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/images/{}/profiles" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . image_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/images/{}/profiles" , & self . subscription_id , & self . resource_group , & self . workspace , & self . image_id)) ;
                 Ok(url)
             }
         }
@@ -2714,7 +2732,8 @@ pub mod profiles {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/images/{}/profiles" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . image_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/images/{}/profiles" , & self . subscription_id , & self . resource_group , & self . workspace , & self . image_id)) ;
                 Ok(url)
             }
         }
@@ -3015,7 +3034,8 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -3106,7 +3126,8 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -3183,7 +3204,8 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -3391,7 +3413,8 @@ pub mod services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services" , & self . subscription_id , & self . resource_group , & self . workspace)) ;
                 Ok(url)
             }
         }
@@ -3469,7 +3492,8 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services" , & self . subscription_id , & self . resource_group , & self . workspace)) ;
                 Ok(url)
             }
         }
@@ -3552,7 +3576,8 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}/listkeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}/listkeys" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -3648,7 +3673,8 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}/regenerateKeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}/regenerateKeys" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -3743,7 +3769,8 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}/token" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/modelmanagement/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/services/{}/token" , & self . subscription_id , & self . resource_group , & self . workspace , & self . id)) ;
                 Ok(url)
             }
         }
@@ -3909,7 +3936,8 @@ pub mod events {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/batch/events" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/batch/events" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ;
                 Ok(url)
             }
         }
@@ -4010,7 +4038,8 @@ pub mod events {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/events" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/events" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -4240,7 +4269,8 @@ pub mod experiments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ;
                 Ok(url)
             }
         }
@@ -4335,7 +4365,8 @@ pub mod experiments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ;
                 Ok(url)
             }
         }
@@ -4429,7 +4460,8 @@ pub mod experiments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experimentids/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experimentids/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_id)) ;
                 Ok(url)
             }
         }
@@ -4534,7 +4566,8 @@ pub mod experiments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experimentids/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experimentids/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_id)) ;
                 Ok(url)
             }
         }
@@ -4657,7 +4690,8 @@ pub mod experiments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments:query" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments:query" , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ;
                 Ok(url)
             }
         }
@@ -4750,7 +4784,8 @@ pub mod experiments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experimentids/{}/tags" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experimentids/{}/tags" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_id)) ;
                 Ok(url)
             }
         }
@@ -5115,7 +5150,8 @@ pub mod runs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/children" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/children" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -5198,7 +5234,8 @@ pub mod runs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/details" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/details" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -5303,7 +5340,8 @@ pub mod runs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/batch/runs" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/batch/runs" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ;
                 Ok(url)
             }
         }
@@ -5398,7 +5436,8 @@ pub mod runs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -5504,7 +5543,8 @@ pub mod runs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -5606,7 +5646,8 @@ pub mod runs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/tags" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/tags" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -5730,7 +5771,8 @@ pub mod runs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs:query" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs:query" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ;
                 Ok(url)
             }
         }
@@ -6042,7 +6084,8 @@ pub mod run_artifacts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -6162,7 +6205,8 @@ pub mod run_artifacts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/path" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/path" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -6254,7 +6298,8 @@ pub mod run_artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/metadata" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/metadata" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -6358,7 +6403,8 @@ pub mod run_artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/contentinfo" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/contentinfo" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -6462,7 +6508,8 @@ pub mod run_artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/artifacturi" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/artifacturi" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -6594,7 +6641,8 @@ pub mod run_artifacts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/prefix/contentinfo" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/prefix/contentinfo" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -6688,7 +6736,8 @@ pub mod run_artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/batch/metadata" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/artifacts/batch/metadata" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -6907,7 +6956,8 @@ pub mod run_metrics {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/metrics" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/metrics" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -6996,7 +7046,8 @@ pub mod run_metrics {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/batch/metrics" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/runs/{}/batch/metrics" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . run_id)) ;
                 Ok(url)
             }
         }
@@ -7079,7 +7130,8 @@ pub mod run_metrics {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/metrics/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . metric_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/metrics/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name , & self . metric_id)) ;
                 Ok(url)
             }
         }
@@ -7247,7 +7299,8 @@ pub mod run_metrics {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/metrics:query" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/history/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/experiments/{}/metrics:query" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . experiment_name)) ;
                 Ok(url)
             }
         }
@@ -7571,13 +7624,11 @@ pub mod list {
             azure_core::Pageable::new(make_request)
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.resource_group_name,
-                &self.workspace_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores",
+                &self.subscription_id, &self.resource_group_name, &self.workspace_name
+            ));
             Ok(url)
         }
     }
@@ -7686,13 +7737,11 @@ pub mod create {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.resource_group_name,
-                &self.workspace_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores",
+                &self.subscription_id, &self.resource_group_name, &self.workspace_name
+            ));
             Ok(url)
         }
     }
@@ -7768,13 +7817,11 @@ pub mod delete_all {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.resource_group_name,
-                &self.workspace_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores",
+                &self.subscription_id, &self.resource_group_name, &self.workspace_name
+            ));
             Ok(url)
         }
     }
@@ -7856,7 +7903,8 @@ pub mod get {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core :: Url :: parse (& format ! ("{}/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . name)) ? ;
+            let mut url = self.client.endpoint().clone();
+            url . set_path (& format ! ("/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . name)) ;
             Ok(url)
         }
     }
@@ -7978,7 +8026,8 @@ pub mod update {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core :: Url :: parse (& format ! ("{}/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . name)) ? ;
+            let mut url = self.client.endpoint().clone();
+            url . set_path (& format ! ("/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . name)) ;
             Ok(url)
         }
     }
@@ -8055,7 +8104,8 @@ pub mod delete {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core :: Url :: parse (& format ! ("{}/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . name)) ? ;
+            let mut url = self.client.endpoint().clone();
+            url . set_path (& format ! ("/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/datastores/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . name)) ;
             Ok(url)
         }
     }
@@ -8132,14 +8182,11 @@ pub mod set_default {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/default/{}",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.resource_group_name,
-                &self.workspace_name,
-                &self.name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/default/{}",
+                &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.name
+            ));
             Ok(url)
         }
     }
@@ -8220,13 +8267,11 @@ pub mod get_default {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/default",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.resource_group_name,
-                &self.workspace_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/datastore/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/default",
+                &self.subscription_id, &self.resource_group_name, &self.workspace_name
+            ));
             Ok(url)
         }
     }
@@ -8819,7 +8864,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/metadata" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/metadata" , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ;
                 Ok(url)
             }
         }
@@ -8914,7 +8960,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/register" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/register" , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ;
                 Ok(url)
             }
         }
@@ -9012,7 +9059,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/metadata" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/metadata" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -9120,7 +9168,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/metadata" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/metadata" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -9240,7 +9289,8 @@ pub mod artifacts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -9332,7 +9382,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/content" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/content" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -9467,7 +9518,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/content" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/content" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -9571,7 +9623,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/contentinfo" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/contentinfo" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -9675,7 +9728,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/contentinfo/storageuri" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/contentinfo/storageuri" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -9779,7 +9833,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/write" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/write" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -9911,7 +9966,8 @@ pub mod artifacts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/prefix/contentinfo" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/prefix/contentinfo" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -10031,7 +10087,8 @@ pub mod artifacts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/prefix/contentinfo/storageuri" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/prefix/contentinfo/storageuri" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -10114,7 +10171,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/batch/metadata" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/batch/metadata" , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ;
                 Ok(url)
             }
         }
@@ -10209,7 +10267,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/storageuri/batch/metadata" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/storageuri/batch/metadata" , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ;
                 Ok(url)
             }
         }
@@ -10325,7 +10384,8 @@ pub mod artifacts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/batch/ingest/containersas" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/batch/ingest/containersas" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -10410,7 +10470,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/batch/metadata" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/batch/metadata" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -10511,7 +10572,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/batch/metadata:delete" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/batch/metadata:delete" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -10598,7 +10660,8 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core :: Url :: parse (& format ! ("{}/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/batch" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/artifact/v2.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}/artifacts/{}/{}/batch" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . origin , & self . container)) ;
                 Ok(url)
             }
         }
@@ -10721,7 +10784,8 @@ pub mod hyper_drive {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/hyperdrive/v1.0/{}/runs", self.client.endpoint(), &self.arm_scope))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/hyperdrive/v1.0/{}/runs", &self.arm_scope));
                 Ok(url)
             }
         }
@@ -10823,12 +10887,8 @@ pub mod hyper_drive {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/hyperdrive/v1.0/{}/runs/{}/cancel",
-                    self.client.endpoint(),
-                    &self.arm_scope,
-                    &self.run_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/hyperdrive/v1.0/{}/runs/{}/cancel", &self.arm_scope, &self.run_id));
                 Ok(url)
             }
         }

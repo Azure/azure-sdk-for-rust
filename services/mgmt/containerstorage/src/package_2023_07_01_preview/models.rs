@@ -9,7 +9,7 @@ pub struct Assignment {
     #[doc = "Status of the assignment resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<AssignmentStatus>,
-    #[doc = "A type definition that refers the id to an ARM resource."]
+    #[doc = "A type definition that refers the id to an Azure Resource Manager resource."]
     pub id: AssignmentId,
 }
 impl Assignment {

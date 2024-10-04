@@ -10986,7 +10986,7 @@ pub struct OnlineRequestSettings {
     #[doc = "The number of maximum concurrent requests per node allowed per deployment. Defaults to 1."]
     #[serde(rename = "maxConcurrentRequestsPerInstance", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_requests_per_instance: Option<i32>,
-    #[doc = "The maximum amount of time a request will stay in the queue in ISO 8601 format.\r\nDefaults to 500ms."]
+    #[doc = "(Deprecated for Managed Online Endpoints) The maximum amount of time a request will stay in the queue in ISO 8601 format.\r\nDefaults to 500ms.\r\n(Now increase `request_timeout_ms` to account for any networking/queue delays)"]
     #[serde(rename = "maxQueueWait", default, skip_serializing_if = "Option::is_none")]
     pub max_queue_wait: Option<String>,
     #[doc = "The scoring timeout in ISO 8601 format.\r\nDefaults to 5000ms."]

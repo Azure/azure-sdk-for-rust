@@ -445,7 +445,8 @@ pub mod get_docker_registry_v2_support {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/v2/", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/v2/",));
             Ok(url)
         }
     }
@@ -534,7 +535,8 @@ pub mod get_tag_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/v2/{}/tags/list", self.client.endpoint(), &self.name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/v2/{}/tags/list", &self.name));
             Ok(url)
         }
     }
@@ -635,12 +637,8 @@ pub mod get_manifest {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/v2/{}/manifests/{}",
-                self.client.endpoint(),
-                &self.name,
-                &self.reference
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/v2/{}/manifests/{}", &self.name, &self.reference));
             Ok(url)
         }
     }
@@ -753,12 +751,8 @@ pub mod create_manifest {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/v2/{}/manifests/{}",
-                self.client.endpoint(),
-                &self.name,
-                &self.reference
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/v2/{}/manifests/{}", &self.name, &self.reference));
             Ok(url)
         }
     }
@@ -845,12 +839,8 @@ pub mod delete_manifest {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/v2/{}/manifests/{}",
-                self.client.endpoint(),
-                &self.name,
-                &self.reference
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/v2/{}/manifests/{}", &self.name, &self.reference));
             Ok(url)
         }
     }
@@ -956,7 +946,8 @@ pub mod get_repositories {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/v2/_catalog", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/v2/_catalog",));
             Ok(url)
         }
     }
@@ -1064,7 +1055,8 @@ pub mod get_acr_repositories {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/acr/v1/_catalog", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/acr/v1/_catalog",));
             Ok(url)
         }
     }
@@ -1155,7 +1147,8 @@ pub mod get_acr_repository_attributes {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/acr/v1/{}", self.client.endpoint(), &self.name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/acr/v1/{}", &self.name));
             Ok(url)
         }
     }
@@ -1252,7 +1245,8 @@ pub mod update_acr_repository_attributes {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/acr/v1/{}", self.client.endpoint(), &self.name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/acr/v1/{}", &self.name));
             Ok(url)
         }
     }
@@ -1331,7 +1325,8 @@ pub mod delete_acr_repository {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/acr/v1/{}", self.client.endpoint(), &self.name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/acr/v1/{}", &self.name));
             Ok(url)
         }
     }
@@ -1458,7 +1453,8 @@ pub mod get_acr_tags {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/acr/v1/{}/_tags", self.client.endpoint(), &self.name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/acr/v1/{}/_tags", &self.name));
             Ok(url)
         }
     }
@@ -1550,12 +1546,8 @@ pub mod get_acr_tag_attributes {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/acr/v1/{}/_tags/{}",
-                self.client.endpoint(),
-                &self.name,
-                &self.reference
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/acr/v1/{}/_tags/{}", &self.name, &self.reference));
             Ok(url)
         }
     }
@@ -1653,12 +1645,8 @@ pub mod update_acr_tag_attributes {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/acr/v1/{}/_tags/{}",
-                self.client.endpoint(),
-                &self.name,
-                &self.reference
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/acr/v1/{}/_tags/{}", &self.name, &self.reference));
             Ok(url)
         }
     }
@@ -1733,12 +1721,8 @@ pub mod delete_acr_tag {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/acr/v1/{}/_tags/{}",
-                self.client.endpoint(),
-                &self.name,
-                &self.reference
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/acr/v1/{}/_tags/{}", &self.name, &self.reference));
             Ok(url)
         }
     }
@@ -1844,7 +1828,8 @@ pub mod get_acr_manifests {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/acr/v1/{}/_manifests", self.client.endpoint(), &self.name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/acr/v1/{}/_manifests", &self.name));
             Ok(url)
         }
     }
@@ -1936,12 +1921,8 @@ pub mod get_acr_manifest_attributes {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/acr/v1/{}/_manifests/{}",
-                self.client.endpoint(),
-                &self.name,
-                &self.reference
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/acr/v1/{}/_manifests/{}", &self.name, &self.reference));
             Ok(url)
         }
     }
@@ -2039,12 +2020,8 @@ pub mod update_acr_manifest_attributes {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/acr/v1/{}/_manifests/{}",
-                self.client.endpoint(),
-                &self.name,
-                &self.reference
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/acr/v1/{}/_manifests/{}", &self.name, &self.reference));
             Ok(url)
         }
     }
@@ -2148,7 +2125,8 @@ pub mod get_acr_refresh_token_from_exchange {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/oauth2/exchange", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/oauth2/exchange",));
             Ok(url)
         }
     }
@@ -2244,7 +2222,8 @@ pub mod get_acr_access_token_from_login {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/oauth2/token", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/oauth2/token",));
             Ok(url)
         }
     }
@@ -2343,7 +2322,8 @@ pub mod get_acr_access_token {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!("{}/oauth2/token", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/oauth2/token",));
             Ok(url)
         }
     }

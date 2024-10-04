@@ -275,12 +275,11 @@ pub mod tenant_activity_log_alerts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts/{}",
-                    self.client.endpoint(),
-                    &self.management_group_name,
-                    &self.alert_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts/{}",
+                    &self.management_group_name, &self.alert_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -379,12 +378,11 @@ pub mod tenant_activity_log_alerts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts/{}",
-                    self.client.endpoint(),
-                    &self.management_group_name,
-                    &self.alert_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts/{}",
+                    &self.management_group_name, &self.alert_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -483,12 +481,11 @@ pub mod tenant_activity_log_alerts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts/{}",
-                    self.client.endpoint(),
-                    &self.management_group_name,
-                    &self.alert_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts/{}",
+                    &self.management_group_name, &self.alert_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -580,12 +577,11 @@ pub mod tenant_activity_log_alerts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts/{}",
-                    self.client.endpoint(),
-                    &self.management_group_name,
-                    &self.alert_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts/{}",
+                    &self.management_group_name, &self.alert_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -694,10 +690,8 @@ pub mod tenant_activity_log_alerts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -807,11 +801,11 @@ pub mod tenant_activity_log_alerts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.AlertsManagement/tenantActivityLogAlerts",
                     &self.management_group_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

@@ -342,7 +342,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?restype=service&comp=properties", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?restype=service&comp=properties",));
                 Ok(url)
             }
         }
@@ -467,7 +468,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?restype=service&comp=properties", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?restype=service&comp=properties",));
                 Ok(url)
             }
         }
@@ -587,7 +589,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?restype=service&comp=stats", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?restype=service&comp=stats",));
                 Ok(url)
             }
         }
@@ -756,7 +759,8 @@ pub mod service {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?comp=list", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?comp=list",));
                 Ok(url)
             }
         }
@@ -878,7 +882,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?restype=service&comp=userdelegationkey", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?restype=service&comp=userdelegationkey",));
                 Ok(url)
             }
         }
@@ -999,7 +1004,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?restype=account&comp=properties", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?restype=account&comp=properties",));
                 Ok(url)
             }
         }
@@ -1105,7 +1111,7 @@ pub mod service {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2021-08-06");
                         let req_body = azure_core::to_json(&this.body)?;
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         req.insert_header("content-type", &this.content_type);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -1119,7 +1125,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?comp=batch", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?comp=batch",));
                 Ok(url)
             }
         }
@@ -1284,7 +1291,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?comp=blobs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?comp=blobs",));
                 Ok(url)
             }
         }
@@ -1801,7 +1809,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?restype=container", self.client.endpoint(), &self.container_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container", &self.container_name));
                 Ok(url)
             }
         }
@@ -1964,7 +1973,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?restype=container", self.client.endpoint(), &self.container_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container", &self.container_name));
                 Ok(url)
             }
         }
@@ -2107,7 +2117,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?restype=container", self.client.endpoint(), &self.container_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container", &self.container_name));
                 Ok(url)
             }
         }
@@ -2258,11 +2269,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=container&comp=metadata",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container&comp=metadata", &self.container_name));
                 Ok(url)
             }
         }
@@ -2405,11 +2413,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=container&comp=acl",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container&comp=acl", &self.container_name));
                 Ok(url)
             }
         }
@@ -2592,11 +2597,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=container&comp=acl",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container&comp=acl", &self.container_name));
                 Ok(url)
             }
         }
@@ -2730,11 +2732,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=container&comp=undelete",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container&comp=undelete", &self.container_name));
                 Ok(url)
             }
         }
@@ -2861,11 +2860,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=container&comp=rename",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container&comp=rename", &self.container_name));
                 Ok(url)
             }
         }
@@ -2972,7 +2968,7 @@ pub mod container {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2021-08-06");
                         let req_body = azure_core::to_json(&this.body)?;
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         req.insert_header("content-type", &this.content_type);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -2986,11 +2982,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=container&comp=batch",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container&comp=batch", &self.container_name));
                 Ok(url)
             }
         }
@@ -3156,11 +3149,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=container&comp=blobs",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container&comp=blobs", &self.container_name));
                 Ok(url)
             }
         }
@@ -3338,11 +3328,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?comp=lease&restype=container&acquire",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?comp=lease&restype=container&acquire", &self.container_name));
                 Ok(url)
             }
         }
@@ -3488,11 +3475,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?comp=lease&restype=container&release",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?comp=lease&restype=container&release", &self.container_name));
                 Ok(url)
             }
         }
@@ -3642,11 +3626,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?comp=lease&restype=container&renew",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?comp=lease&restype=container&renew", &self.container_name));
                 Ok(url)
             }
         }
@@ -3803,11 +3784,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?comp=lease&restype=container&break",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?comp=lease&restype=container&break", &self.container_name));
                 Ok(url)
             }
         }
@@ -3959,11 +3937,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?comp=lease&restype=container&change",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?comp=lease&restype=container&change", &self.container_name));
                 Ok(url)
             }
         }
@@ -4129,11 +4104,8 @@ pub mod container {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=container&comp=list&flat",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container&comp=list&flat", &self.container_name));
                 Ok(url)
             }
         }
@@ -4302,11 +4274,8 @@ pub mod container {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=container&comp=list&hierarchy",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container&comp=list&hierarchy", &self.container_name));
                 Ok(url)
             }
         }
@@ -4412,11 +4381,8 @@ pub mod container {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=account&comp=properties",
-                    self.client.endpoint(),
-                    &self.container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=account&comp=properties", &self.container_name));
                 Ok(url)
             }
         }
@@ -5448,7 +5414,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/{}", self.client.endpoint(), &self.container_name, &self.blob))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -5667,7 +5634,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/{}", self.client.endpoint(), &self.container_name, &self.blob))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -6089,7 +6057,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/{}", self.client.endpoint(), &self.container_name, &self.blob))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -6206,12 +6175,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=undelete",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=undelete", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -6347,12 +6312,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=expiry",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=expiry", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -6590,12 +6551,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=properties&SetHTTPHeaders",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=properties&SetHTTPHeaders", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -6757,12 +6714,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=immutabilityPolicies",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=immutabilityPolicies", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -6879,12 +6832,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=immutabilityPolicies",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=immutabilityPolicies", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -6999,7 +6948,7 @@ pub mod blob {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("x-ms-legal-hold", this.x_ms_legal_hold.to_string());
+                        req.insert_header("x-ms-legal-hold", &this.x_ms_legal_hold.to_string());
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -7007,12 +6956,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=legalhold",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=legalhold", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -7255,12 +7200,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=metadata",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=metadata", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -7454,12 +7395,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=lease&acquire",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=lease&acquire", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -7633,12 +7570,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=lease&release",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=lease&release", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -7816,12 +7749,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=lease&renew",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=lease&renew", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -8001,12 +7930,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=lease&change",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=lease&change", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -8191,12 +8116,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=lease&break",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=lease&break", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -8433,12 +8354,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=snapshot",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=snapshot", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -8754,12 +8671,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=copy",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=copy", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -9099,12 +9012,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=copy&sync",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=copy&sync", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -9232,12 +9141,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=copy&copyid",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=copy&copyid", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -9397,12 +9302,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=tier",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=tier", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -9509,12 +9410,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?restype=account&comp=properties",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?restype=account&comp=properties", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -9862,12 +9759,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=query",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=query", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -10037,12 +9930,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=tags",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=tags", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -10227,12 +10116,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=tags",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=tags", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -10848,7 +10733,7 @@ pub mod page_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(x_ms_access_tier) = &this.x_ms_access_tier {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
                         }
@@ -10903,7 +10788,7 @@ pub mod page_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-blob-content-length", this.x_ms_blob_content_length.to_string());
+                        req.insert_header("x-ms-blob-content-length", &this.x_ms_blob_content_length.to_string());
                         if let Some(x_ms_blob_sequence_number) = &this.x_ms_blob_sequence_number {
                             req.insert_header("x-ms-blob-sequence-number", x_ms_blob_sequence_number.to_string());
                         }
@@ -10932,12 +10817,8 @@ pub mod page_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?PageBlob",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?PageBlob", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -11179,7 +11060,7 @@ pub mod page_blob {
                         req.insert_header("x-ms-page-write", &this.x_ms_page_write);
                         req.insert_header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -11240,12 +11121,8 @@ pub mod page_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=page&update",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=page&update", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -11457,7 +11334,7 @@ pub mod page_blob {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2021-08-06");
                         req.insert_header("x-ms-page-write", &this.x_ms_page_write);
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -11513,12 +11390,8 @@ pub mod page_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=page&clear",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=page&clear", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -11787,7 +11660,7 @@ pub mod page_blob {
                         if let Some(x_ms_source_content_crc64) = &this.x_ms_source_content_crc64 {
                             req.insert_header("x-ms-source-content-crc64", x_ms_source_content_crc64);
                         }
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -11856,12 +11729,8 @@ pub mod page_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=page&update&fromUrl",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=page&update&fromUrl", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -12094,12 +11963,8 @@ pub mod page_blob {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=pagelist",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=pagelist", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -12350,12 +12215,8 @@ pub mod page_blob {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=pagelist&diff",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=pagelist&diff", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -12566,7 +12427,7 @@ pub mod page_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-blob-content-length", this.x_ms_blob_content_length.to_string());
+                        req.insert_header("x-ms-blob-content-length", &this.x_ms_blob_content_length.to_string());
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -12577,12 +12438,8 @@ pub mod page_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=properties&Resize",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=properties&Resize", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -12777,12 +12634,11 @@ pub mod page_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=properties&UpdateSequenceNumber",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}?comp=properties&UpdateSequenceNumber",
+                    &self.container_name, &self.blob
+                ));
                 Ok(url)
             }
         }
@@ -12962,12 +12818,8 @@ pub mod page_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=incrementalcopy",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=incrementalcopy", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -13395,7 +13247,7 @@ pub mod append_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(x_ms_blob_content_type) = &this.x_ms_blob_content_type {
                             req.insert_header("x-ms-blob-content-type", x_ms_blob_content_type);
                         }
@@ -13472,12 +13324,8 @@ pub mod append_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?AppendBlob",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?AppendBlob", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -13713,7 +13561,7 @@ pub mod append_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -13765,12 +13613,8 @@ pub mod append_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=appendblock",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=appendblock", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -14051,7 +13895,7 @@ pub mod append_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -14116,12 +13960,8 @@ pub mod append_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=appendblock&fromUrl",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=appendblock&fromUrl", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -14304,12 +14144,8 @@ pub mod append_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=seal",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=seal", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -14863,7 +14699,7 @@ pub mod block_blob {
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(x_ms_blob_content_type) = &this.x_ms_blob_content_type {
                             req.insert_header("x-ms-blob-content-type", x_ms_blob_content_type);
                         }
@@ -14945,12 +14781,8 @@ pub mod block_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?BlockBlob",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?BlockBlob", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -15269,7 +15101,7 @@ pub mod block_blob {
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(x_ms_blob_content_type) = &this.x_ms_blob_content_type {
                             req.insert_header("x-ms-blob-content-type", x_ms_blob_content_type);
                         }
@@ -15365,12 +15197,8 @@ pub mod block_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?BlockBlob&fromUrl",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?BlockBlob&fromUrl", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -15544,7 +15372,7 @@ pub mod block_blob {
                         req.insert_header(azure_core::headers::VERSION, "2021-08-06");
                         let blockid = &this.blockid;
                         req.url_mut().query_pairs_mut().append_pair("blockid", blockid);
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -15580,12 +15408,8 @@ pub mod block_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=block",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=block", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -15795,7 +15619,7 @@ pub mod block_blob {
                         req.insert_header(azure_core::headers::VERSION, "2021-08-06");
                         let blockid = &this.blockid;
                         req.url_mut().query_pairs_mut().append_pair("blockid", blockid);
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         req.insert_header("x-ms-copy-source", &this.x_ms_copy_source);
                         if let Some(x_ms_source_range) = &this.x_ms_source_range {
                             req.insert_header("x-ms-source-range", x_ms_source_range);
@@ -15849,12 +15673,8 @@ pub mod block_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=block&fromURL",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=block&fromURL", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -16023,12 +15843,8 @@ pub mod block_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=blocklist",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=blocklist", &self.container_name, &self.blob));
                 Ok(url)
             }
         }
@@ -16416,12 +16232,8 @@ pub mod block_blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=blocklist",
-                    self.client.endpoint(),
-                    &self.container_name,
-                    &self.blob
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=blocklist", &self.container_name, &self.blob));
                 Ok(url)
             }
         }

@@ -453,12 +453,11 @@ pub mod get_user_settings_with_location {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-                self.client.endpoint(),
-                &self.location,
-                &self.user_settings_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Portal/locations/{}/userSettings/{}",
+                &self.location, &self.user_settings_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -557,12 +556,11 @@ pub mod put_user_settings_with_location {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-                self.client.endpoint(),
-                &self.location,
-                &self.user_settings_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Portal/locations/{}/userSettings/{}",
+                &self.location, &self.user_settings_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -661,12 +659,11 @@ pub mod patch_user_settings_with_location {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-                self.client.endpoint(),
-                &self.location,
-                &self.user_settings_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Portal/locations/{}/userSettings/{}",
+                &self.location, &self.user_settings_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -758,12 +755,11 @@ pub mod delete_user_settings_with_location {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-                self.client.endpoint(),
-                &self.location,
-                &self.user_settings_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Portal/locations/{}/userSettings/{}",
+                &self.location, &self.user_settings_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -848,12 +844,11 @@ pub mod get_console_with_location {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-                self.client.endpoint(),
-                &self.location,
-                &self.console_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Portal/locations/{}/consoles/{}",
+                &self.location, &self.console_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -950,12 +945,11 @@ pub mod put_console_with_location {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-                self.client.endpoint(),
-                &self.location,
-                &self.console_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Portal/locations/{}/consoles/{}",
+                &self.location, &self.console_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1047,12 +1041,11 @@ pub mod delete_console_with_location {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-                self.client.endpoint(),
-                &self.location,
-                &self.console_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Portal/locations/{}/consoles/{}",
+                &self.location, &self.console_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1144,12 +1137,11 @@ pub mod keep_alive_with_location {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/locations/{}/consoles/{}/keepAlive",
-                self.client.endpoint(),
-                &self.location,
-                &self.console_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Portal/locations/{}/consoles/{}/keepAlive",
+                &self.location, &self.console_name
+            ));
             Ok(url)
         }
     }
@@ -1244,11 +1236,8 @@ pub mod get_user_settings {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/userSettings/{}",
-                self.client.endpoint(),
-                &self.user_settings_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Portal/userSettings/{}", &self.user_settings_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1346,11 +1335,8 @@ pub mod put_user_settings {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/userSettings/{}",
-                self.client.endpoint(),
-                &self.user_settings_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Portal/userSettings/{}", &self.user_settings_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1448,11 +1434,8 @@ pub mod patch_user_settings {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/userSettings/{}",
-                self.client.endpoint(),
-                &self.user_settings_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Portal/userSettings/{}", &self.user_settings_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1543,11 +1526,8 @@ pub mod delete_user_settings {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/userSettings/{}",
-                self.client.endpoint(),
-                &self.user_settings_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Portal/userSettings/{}", &self.user_settings_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1631,11 +1611,8 @@ pub mod get_console {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/consoles/{}",
-                self.client.endpoint(),
-                &self.console_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Portal/consoles/{}", &self.console_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1733,11 +1710,8 @@ pub mod put_console {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/consoles/{}",
-                self.client.endpoint(),
-                &self.console_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Portal/consoles/{}", &self.console_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1828,11 +1802,8 @@ pub mod delete_console {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/consoles/{}",
-                self.client.endpoint(),
-                &self.console_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Portal/consoles/{}", &self.console_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1923,11 +1894,8 @@ pub mod keep_alive {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Portal/consoles/{}/keepAlive",
-                self.client.endpoint(),
-                &self.console_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Portal/consoles/{}/keepAlive", &self.console_name));
             Ok(url)
         }
     }

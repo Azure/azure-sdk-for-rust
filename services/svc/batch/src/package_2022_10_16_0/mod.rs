@@ -344,7 +344,8 @@ pub mod application {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/applications", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/applications",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -486,7 +487,8 @@ pub mod application {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/applications/{}", self.client.endpoint(), &self.application_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/applications/{}", &self.application_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -998,7 +1000,8 @@ pub mod pool {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/poolusagemetrics", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/poolusagemetrics",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1139,7 +1142,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/lifetimepoolstats", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/lifetimepoolstats",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1354,7 +1358,8 @@ pub mod pool {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1496,7 +1501,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1692,7 +1698,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1883,7 +1890,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2048,7 +2056,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2221,7 +2230,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2363,7 +2373,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/disableautoscale", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/disableautoscale", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2542,7 +2553,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/enableautoscale", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/enableautoscale", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2690,7 +2702,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/evaluateautoscale", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/evaluateautoscale", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2881,7 +2894,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/resize", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/resize", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3059,7 +3073,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/stopresize", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/stopresize", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3202,7 +3217,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/updateproperties", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/updateproperties", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3381,7 +3397,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/removenodes", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/removenodes", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3600,7 +3617,8 @@ pub mod account {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/supportedimages", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/supportedimages",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3777,7 +3795,8 @@ pub mod account {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/nodecounts", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/nodecounts",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4171,7 +4190,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/lifetimejobstats", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/lifetimejobstats",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4379,7 +4399,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4570,7 +4591,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4749,7 +4771,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4914,7 +4937,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5093,7 +5117,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/disable", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/disable", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5271,7 +5296,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/enable", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/enable", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5459,7 +5485,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/terminate", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/terminate", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5662,7 +5689,8 @@ pub mod job {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5804,7 +5832,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6008,7 +6037,8 @@ pub mod job {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}/jobs", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}/jobs", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6205,11 +6235,8 @@ pub mod job {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/jobpreparationandreleasetaskstatus",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/jobpreparationandreleasetaskstatus", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6343,7 +6370,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/taskcounts", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/taskcounts", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6641,7 +6669,8 @@ pub mod certificate {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/certificates", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/certificates",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6783,7 +6812,8 @@ pub mod certificate {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/certificates", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/certificates",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6926,12 +6956,11 @@ pub mod certificate {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/certificates(thumbprintAlgorithm={},thumbprint={})/canceldelete",
-                    self.client.endpoint(),
-                    &self.thumbprint_algorithm,
-                    &self.thumbprint
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/certificates(thumbprintAlgorithm={},thumbprint={})/canceldelete",
+                    &self.thumbprint_algorithm, &self.thumbprint
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7083,12 +7112,11 @@ pub mod certificate {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
-                    self.client.endpoint(),
-                    &self.thumbprint_algorithm,
-                    &self.thumbprint
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/certificates(thumbprintAlgorithm={},thumbprint={})",
+                    &self.thumbprint_algorithm, &self.thumbprint
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7238,12 +7266,11 @@ pub mod certificate {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
-                    self.client.endpoint(),
-                    &self.thumbprint_algorithm,
-                    &self.thumbprint
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/certificates(thumbprintAlgorithm={},thumbprint={})",
+                    &self.thumbprint_algorithm, &self.thumbprint
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7641,13 +7668,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/files/{}", &self.job_id, &self.task_id, &self.file_path));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7799,13 +7821,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/files/{}", &self.job_id, &self.task_id, &self.file_path));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7987,13 +8004,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/files/{}", &self.job_id, &self.task_id, &self.file_path));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8189,13 +8201,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/files/{}",
+                    &self.pool_id, &self.node_id, &self.file_path
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8347,13 +8357,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/files/{}",
+                    &self.pool_id, &self.node_id, &self.file_path
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8535,13 +8543,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/files/{}",
+                    &self.pool_id, &self.node_id, &self.file_path
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8737,12 +8743,8 @@ pub mod file {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/files",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/files", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8938,12 +8940,8 @@ pub mod file {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/files",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/files", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9339,7 +9337,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9530,7 +9529,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9709,7 +9709,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9874,7 +9875,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10047,7 +10049,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10225,11 +10228,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobschedules/{}/disable",
-                    self.client.endpoint(),
-                    &self.job_schedule_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}/disable", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10407,7 +10407,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}/enable", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}/enable", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10585,11 +10586,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobschedules/{}/terminate",
-                    self.client.endpoint(),
-                    &self.job_schedule_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}/terminate", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10792,7 +10790,8 @@ pub mod job_schedule {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10934,7 +10933,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11336,7 +11336,8 @@ pub mod task {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/tasks", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11479,7 +11480,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/tasks", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11615,7 +11617,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/addtaskcollection", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/addtaskcollection", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11828,7 +11831,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12020,7 +12024,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12186,7 +12191,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12338,12 +12344,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/subtasksinfo",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/subtasksinfo", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12534,12 +12536,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/terminate",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/terminate", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12718,12 +12716,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/reactivate",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/reactivate", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13119,12 +13113,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/users",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/users", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13269,13 +13259,11 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/users/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.user_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/users/{}",
+                    &self.pool_id, &self.node_id, &self.user_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13406,13 +13394,11 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/users/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.user_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/users/{}",
+                    &self.pool_id, &self.node_id, &self.user_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13564,12 +13550,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13734,12 +13716,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/reboot",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/reboot", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13892,12 +13870,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/reimage",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/reimage", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14053,12 +14027,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/disablescheduling",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/disablescheduling", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14201,12 +14171,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/enablescheduling",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/enablescheduling", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14349,12 +14315,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/remoteloginsettings",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/remoteloginsettings", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14509,12 +14471,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/rdp",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/rdp", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14663,12 +14621,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/uploadbatchservicelogs",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/uploadbatchservicelogs", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14875,7 +14829,8 @@ pub mod compute_node {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/nodes", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15080,13 +15035,11 @@ pub mod compute_node_extension {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/extensions/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.extension_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/extensions/{}",
+                    &self.pool_id, &self.node_id, &self.extension_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15285,12 +15238,8 @@ pub mod compute_node_extension {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/extensions",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/extensions", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

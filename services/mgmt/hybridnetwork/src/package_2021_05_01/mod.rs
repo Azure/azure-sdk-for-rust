@@ -335,13 +335,11 @@ pub mod network_functions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.network_function_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.network_function_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -440,13 +438,11 @@ pub mod network_functions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.network_function_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.network_function_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -601,13 +597,11 @@ pub mod network_functions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.network_function_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.network_function_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -699,13 +693,11 @@ pub mod network_functions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.network_function_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.network_function_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -815,11 +807,11 @@ pub mod network_functions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctions",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctions",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -930,12 +922,11 @@ pub mod network_functions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1158,13 +1149,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.device_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.device_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1263,13 +1252,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.device_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.device_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1424,13 +1411,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.device_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.device_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1522,13 +1507,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.device_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.device_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1638,11 +1621,11 @@ pub mod devices {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/devices",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/devices",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1753,12 +1736,11 @@ pub mod devices {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1845,13 +1827,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}/listRegistrationKey",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.device_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}/listRegistrationKey",
+                    &self.subscription_id, &self.resource_group_name, &self.device_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1986,7 +1966,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.HybridNetwork/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/providers/Microsoft.HybridNetwork/operations",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2132,12 +2113,11 @@ pub mod vendors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
+                    &self.subscription_id, &self.vendor_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2244,12 +2224,11 @@ pub mod vendors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
+                    &self.subscription_id, &self.vendor_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2395,12 +2374,11 @@ pub mod vendors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
+                    &self.subscription_id, &self.vendor_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2510,11 +2488,11 @@ pub mod vendors {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2682,13 +2660,11 @@ pub mod vendor_skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name,
-                    &self.sku_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
+                    &self.subscription_id, &self.vendor_name, &self.sku_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2787,13 +2763,11 @@ pub mod vendor_skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name,
-                    &self.sku_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
+                    &self.subscription_id, &self.vendor_name, &self.sku_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2940,13 +2914,11 @@ pub mod vendor_skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name,
-                    &self.sku_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
+                    &self.subscription_id, &self.vendor_name, &self.sku_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3057,12 +3029,11 @@ pub mod vendor_skus {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus",
+                    &self.subscription_id, &self.vendor_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3272,13 +3243,11 @@ pub mod vendor_sku_preview {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name,
-                    &self.sku_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions",
+                    &self.subscription_id, &self.vendor_name, &self.sku_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3365,14 +3334,11 @@ pub mod vendor_sku_preview {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name,
-                    &self.sku_name,
-                    &self.preview_subscription
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
+                    &self.subscription_id, &self.vendor_name, &self.sku_name, &self.preview_subscription
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3472,14 +3438,11 @@ pub mod vendor_sku_preview {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name,
-                    &self.sku_name,
-                    &self.preview_subscription
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
+                    &self.subscription_id, &self.vendor_name, &self.sku_name, &self.preview_subscription
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3627,14 +3590,11 @@ pub mod vendor_sku_preview {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name,
-                    &self.sku_name,
-                    &self.preview_subscription
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
+                    &self.subscription_id, &self.vendor_name, &self.sku_name, &self.preview_subscription
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3764,11 +3724,11 @@ pub mod network_function_vendors {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3920,12 +3880,11 @@ pub mod network_function_vendor_skus {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors/{}/vendorSkus",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors/{}/vendorSkus",
+                    &self.subscription_id, &self.vendor_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4037,13 +3996,11 @@ pub mod network_function_vendor_skus {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors/{}/vendorSkus/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.vendor_name,
-                    &self.vendor_sku_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors/{}/vendorSkus/{}",
+                    &self.subscription_id, &self.vendor_name, &self.vendor_sku_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4207,14 +4164,11 @@ pub mod vendor_network_functions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location_name,
-                    &self.vendor_name,
-                    &self.service_key
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}",
+                    &self.subscription_id, &self.location_name, &self.vendor_name, &self.service_key
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4314,14 +4268,11 @@ pub mod vendor_network_functions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location_name,
-                    &self.vendor_name,
-                    &self.service_key
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}",
+                    &self.subscription_id, &self.location_name, &self.vendor_name, &self.service_key
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4509,13 +4460,11 @@ pub mod vendor_network_functions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location_name,
-                    &self.vendor_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions",
+                    &self.subscription_id, &self.location_name, &self.vendor_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4730,7 +4679,8 @@ pub mod role_instances {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/start" , self . client . endpoint () , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/start" , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4813,7 +4763,11 @@ pub mod role_instances {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/stop" , self . client . endpoint () , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/stop",
+                    &self.subscription_id, &self.location_name, &self.vendor_name, &self.service_key, &self.role_instance_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4896,7 +4850,8 @@ pub mod role_instances {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/restart" , self . client . endpoint () , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/restart" , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4984,15 +4939,11 @@ pub mod role_instances {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location_name,
-                    &self.vendor_name,
-                    &self.service_key,
-                    &self.role_instance_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}",
+                    &self.subscription_id, &self.location_name, &self.vendor_name, &self.service_key, &self.role_instance_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5117,14 +5068,11 @@ pub mod role_instances {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location_name,
-                    &self.vendor_name,
-                    &self.service_key
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances",
+                    &self.subscription_id, &self.location_name, &self.vendor_name, &self.service_key
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

@@ -675,13 +675,11 @@ pub mod firmware {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -768,14 +766,11 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.firmware_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.firmware_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -876,14 +871,11 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.firmware_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.firmware_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -984,14 +976,11 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.firmware_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.firmware_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1085,14 +1074,11 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.firmware_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.firmware_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1180,7 +1166,8 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateDownloadUrl" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateDownloadUrl" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1280,7 +1267,8 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateFilesystemDownloadUrl" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateFilesystemDownloadUrl" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1380,7 +1368,11 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateSummary" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateSummary",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.firmware_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1506,7 +1498,8 @@ pub mod firmware {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateComponentList" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateComponentList" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1594,7 +1587,8 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateComponentDetails" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateComponentDetails" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1720,7 +1714,8 @@ pub mod firmware {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateBinaryHardeningList" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateBinaryHardeningList" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1808,7 +1803,8 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateBinaryHardeningSummary" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateBinaryHardeningSummary" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1908,7 +1904,8 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateBinaryHardeningDetails" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateBinaryHardeningDetails" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2034,7 +2031,8 @@ pub mod firmware {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generatePasswordHashList" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generatePasswordHashList" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2148,7 +2146,11 @@ pub mod firmware {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCveList" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCveList",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.firmware_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2236,7 +2238,8 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCveSummary" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCveSummary" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2336,7 +2339,8 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCryptoCertificateSummary" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCryptoCertificateSummary" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2436,7 +2440,8 @@ pub mod firmware {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCryptoKeySummary" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCryptoKeySummary" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2562,7 +2567,8 @@ pub mod firmware {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCryptoCertificateList" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCryptoCertificateList" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2676,7 +2682,8 @@ pub mod firmware {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCryptoKeyList" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/firmwares/{}/generateCryptoKeyList" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . firmware_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2926,11 +2933,11 @@ pub mod workspaces {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.IoTFirmwareDefense/workspaces",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.IoTFirmwareDefense/workspaces",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3041,12 +3048,11 @@ pub mod workspaces {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3132,13 +3138,11 @@ pub mod workspaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3238,13 +3242,11 @@ pub mod workspaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3344,13 +3346,11 @@ pub mod workspaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3443,13 +3443,11 @@ pub mod workspaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3537,13 +3535,11 @@ pub mod workspaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/generateUploadUrl",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IoTFirmwareDefense/workspaces/{}/generateUploadUrl",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3678,10 +3674,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.IoTFirmwareDefense/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/providers/Microsoft.IoTFirmwareDefense/operations",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

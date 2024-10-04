@@ -262,7 +262,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?restype=service&comp=properties", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?restype=service&comp=properties",));
                 Ok(url)
             }
         }
@@ -373,7 +374,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?restype=service&comp=properties", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?restype=service&comp=properties",));
                 Ok(url)
             }
         }
@@ -516,7 +518,8 @@ pub mod service {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?comp=list", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?comp=list",));
                 Ok(url)
             }
         }
@@ -995,7 +998,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?restype=share", self.client.endpoint(), &self.share_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share", &self.share_name));
                 Ok(url)
             }
         }
@@ -1150,7 +1154,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?restype=share", self.client.endpoint(), &self.share_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share", &self.share_name));
                 Ok(url)
             }
         }
@@ -1279,7 +1284,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?restype=share", self.client.endpoint(), &self.share_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share", &self.share_name));
                 Ok(url)
             }
         }
@@ -1436,11 +1442,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=share&comp=lease&acquire",
-                    self.client.endpoint(),
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=lease&acquire", &self.share_name));
                 Ok(url)
             }
         }
@@ -1577,11 +1580,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=share&comp=lease&release",
-                    self.client.endpoint(),
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=lease&release", &self.share_name));
                 Ok(url)
             }
         }
@@ -1731,11 +1731,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=share&comp=lease&change",
-                    self.client.endpoint(),
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=lease&change", &self.share_name));
                 Ok(url)
             }
         }
@@ -1876,11 +1873,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=share&comp=lease&renew",
-                    self.client.endpoint(),
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=lease&renew", &self.share_name));
                 Ok(url)
             }
         }
@@ -2041,11 +2035,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=share&comp=lease&break",
-                    self.client.endpoint(),
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=lease&break", &self.share_name));
                 Ok(url)
             }
         }
@@ -2168,11 +2159,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=share&comp=snapshot",
-                    self.client.endpoint(),
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=snapshot", &self.share_name));
                 Ok(url)
             }
         }
@@ -2281,11 +2269,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=share&comp=filepermission",
-                    self.client.endpoint(),
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=filepermission", &self.share_name));
                 Ok(url)
             }
         }
@@ -2406,11 +2391,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=share&comp=filepermission",
-                    self.client.endpoint(),
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=filepermission", &self.share_name));
                 Ok(url)
             }
         }
@@ -2556,11 +2538,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=share&comp=properties",
-                    self.client.endpoint(),
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=properties", &self.share_name));
                 Ok(url)
             }
         }
@@ -2688,11 +2667,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=share&comp=metadata",
-                    self.client.endpoint(),
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=metadata", &self.share_name));
                 Ok(url)
             }
         }
@@ -2816,7 +2792,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?restype=share&comp=acl", self.client.endpoint(), &self.share_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=acl", &self.share_name));
                 Ok(url)
             }
         }
@@ -2958,7 +2935,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?restype=share&comp=acl", self.client.endpoint(), &self.share_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=acl", &self.share_name));
                 Ok(url)
             }
         }
@@ -3082,7 +3060,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?restype=share&comp=stats", self.client.endpoint(), &self.share_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=stats", &self.share_name));
                 Ok(url)
             }
         }
@@ -3236,11 +3215,8 @@ pub mod share {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=share&comp=undelete",
-                    self.client.endpoint(),
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=share&comp=undelete", &self.share_name));
                 Ok(url)
             }
         }
@@ -3604,12 +3580,8 @@ pub mod directory {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?restype=directory",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?restype=directory", &self.share_name, &self.directory));
                 Ok(url)
             }
         }
@@ -3820,12 +3792,8 @@ pub mod directory {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?restype=directory",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?restype=directory", &self.share_name, &self.directory));
                 Ok(url)
             }
         }
@@ -3928,12 +3896,8 @@ pub mod directory {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?restype=directory",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?restype=directory", &self.share_name, &self.directory));
                 Ok(url)
             }
         }
@@ -4135,12 +4099,11 @@ pub mod directory {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?restype=directory&comp=properties",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}?restype=directory&comp=properties",
+                    &self.share_name, &self.directory
+                ));
                 Ok(url)
             }
         }
@@ -4261,12 +4224,11 @@ pub mod directory {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?restype=directory&comp=metadata",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}?restype=directory&comp=metadata",
+                    &self.share_name, &self.directory
+                ));
                 Ok(url)
             }
         }
@@ -4437,12 +4399,8 @@ pub mod directory {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?restype=directory&comp=list",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?restype=directory&comp=list", &self.share_name, &self.directory));
                 Ok(url)
             }
         }
@@ -4590,12 +4548,8 @@ pub mod directory {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=listhandles",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=listhandles", &self.share_name, &self.directory));
                 Ok(url)
             }
         }
@@ -4753,12 +4707,8 @@ pub mod directory {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=forceclosehandles",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=forceclosehandles", &self.share_name, &self.directory));
                 Ok(url)
             }
         }
@@ -5014,12 +4964,8 @@ pub mod directory {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?restype=directory&comp=rename",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?restype=directory&comp=rename", &self.share_name, &self.directory));
                 Ok(url)
             }
         }
@@ -5810,13 +5756,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}/{}", &self.share_name, &self.directory, &self.file_name));
                 Ok(url)
             }
         }
@@ -6058,7 +5999,7 @@ pub mod file {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-content-length", this.x_ms_content_length.to_string());
+                        req.insert_header("x-ms-content-length", &this.x_ms_content_length.to_string());
                         req.insert_header("x-ms-type", &this.x_ms_type);
                         if let Some(x_ms_content_type) = &this.x_ms_content_type {
                             req.insert_header("x-ms-content-type", x_ms_content_type);
@@ -6107,13 +6048,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}/{}", &self.share_name, &self.directory, &self.file_name));
                 Ok(url)
             }
         }
@@ -6226,13 +6162,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}/{}", &self.share_name, &self.directory, &self.file_name));
                 Ok(url)
             }
         }
@@ -6482,13 +6413,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}/{}", &self.share_name, &self.directory, &self.file_name));
                 Ok(url)
             }
         }
@@ -6763,13 +6689,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=properties",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=properties",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }
@@ -6900,13 +6824,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=metadata",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=metadata",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }
@@ -7056,13 +6978,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=lease&acquire",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=lease&acquire",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }
@@ -7192,13 +7112,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=lease&release",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=lease&release",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }
@@ -7341,13 +7259,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=lease&change",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=lease&change",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }
@@ -7488,13 +7404,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=lease&break",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=lease&break",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }
@@ -7650,7 +7564,7 @@ pub mod file {
                         }
                         req.insert_header("x-ms-range", &this.x_ms_range);
                         req.insert_header("x-ms-write", &this.x_ms_write);
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -7666,13 +7580,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=range",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}/{}?comp=range", &self.share_name, &self.directory, &self.file_name));
                 Ok(url)
             }
         }
@@ -7845,7 +7754,7 @@ pub mod file {
                             req.insert_header("x-ms-source-range", x_ms_source_range);
                         }
                         req.insert_header("x-ms-write", &this.x_ms_write);
-                        req.insert_header("content-length", this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(x_ms_source_content_crc64) = &this.x_ms_source_content_crc64 {
                             req.insert_header("x-ms-source-content-crc64", x_ms_source_content_crc64);
                         }
@@ -7871,13 +7780,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=range&fromURL",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=range&fromURL",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }
@@ -8034,13 +7941,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=rangelist",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=rangelist",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }
@@ -8273,13 +8178,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=copy",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}/{}?comp=copy", &self.share_name, &self.directory, &self.file_name));
                 Ok(url)
             }
         }
@@ -8394,13 +8294,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=copy&copyid",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=copy&copyid",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }
@@ -8540,13 +8438,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=listhandles",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=listhandles",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }
@@ -8696,13 +8592,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=forceclosehandles",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=forceclosehandles",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }
@@ -8968,13 +8862,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}/{}?comp=rename",
-                    self.client.endpoint(),
-                    &self.share_name,
-                    &self.directory,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/{}/{}?comp=rename",
+                    &self.share_name, &self.directory, &self.file_name
+                ));
                 Ok(url)
             }
         }

@@ -307,12 +307,11 @@ pub mod certificate_profile_operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/codesigningaccounts/{}/certificateprofiles/{}:sign",
-                    self.client.endpoint(),
-                    &self.account_name,
-                    &self.certificate_profile
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/codesigningaccounts/{}/certificateprofiles/{}:sign",
+                    &self.account_name, &self.certificate_profile
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -438,13 +437,11 @@ pub mod certificate_profile_operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/codesigningaccounts/{}/certificateprofiles/{}/sign/{}",
-                    self.client.endpoint(),
-                    &self.account_name,
-                    &self.certificate_profile,
-                    &self.operation_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/codesigningaccounts/{}/certificateprofiles/{}/sign/{}",
+                    &self.account_name, &self.certificate_profile, &self.operation_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -567,12 +564,11 @@ pub mod certificate_profile_operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/codesigningaccounts/{}/certificateprofiles/{}/sign/eku",
-                    self.client.endpoint(),
-                    &self.account_name,
-                    &self.certificate_profile
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/codesigningaccounts/{}/certificateprofiles/{}/sign/eku",
+                    &self.account_name, &self.certificate_profile
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -657,12 +653,11 @@ pub mod certificate_profile_operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/codesigningaccounts/{}/certificateprofiles/{}/sign/rootcert",
-                    self.client.endpoint(),
-                    &self.account_name,
-                    &self.certificate_profile
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/codesigningaccounts/{}/certificateprofiles/{}/sign/rootcert",
+                    &self.account_name, &self.certificate_profile
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

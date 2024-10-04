@@ -342,7 +342,8 @@ pub mod publish_event_grid_events {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}?overload=EventGridEvent", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("?overload=EventGridEvent",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -431,7 +432,8 @@ pub mod publish_cloud_event_events {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}?overload=cloudEvent", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("?overload=cloudEvent",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -511,7 +513,8 @@ pub mod publish_custom_event_events {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}?overload=customEvent", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("?overload=customEvent",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -597,11 +600,8 @@ pub mod publish_cloud_events {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}:publish?_overload=publishCloudEvents",
-                self.client.endpoint(),
-                &self.topic_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/topics/{}:publish?_overload=publishCloudEvents", &self.topic_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -699,7 +699,8 @@ pub mod publish_cloud_event {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/topics/{}:publish", self.client.endpoint(), &self.topic_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/topics/{}:publish", &self.topic_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -817,12 +818,11 @@ pub mod receive_cloud_events {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}/eventsubscriptions/{}:receive",
-                self.client.endpoint(),
-                &self.topic_name,
-                &self.event_subscription_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/topics/{}/eventsubscriptions/{}:receive",
+                &self.topic_name, &self.event_subscription_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -921,12 +921,11 @@ pub mod acknowledge_cloud_events {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}/eventsubscriptions/{}:acknowledge",
-                self.client.endpoint(),
-                &self.topic_name,
-                &self.event_subscription_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/topics/{}/eventsubscriptions/{}:acknowledge",
+                &self.topic_name, &self.event_subscription_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1036,12 +1035,11 @@ pub mod release_cloud_events {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}/eventsubscriptions/{}:release",
-                self.client.endpoint(),
-                &self.topic_name,
-                &self.event_subscription_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/topics/{}/eventsubscriptions/{}:release",
+                &self.topic_name, &self.event_subscription_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1140,12 +1138,11 @@ pub mod reject_cloud_events {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}/eventsubscriptions/{}:reject",
-                self.client.endpoint(),
-                &self.topic_name,
-                &self.event_subscription_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/topics/{}/eventsubscriptions/{}:reject",
+                &self.topic_name, &self.event_subscription_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1244,12 +1241,11 @@ pub mod renew_cloud_event_locks {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}/eventsubscriptions/{}:renewLock",
-                self.client.endpoint(),
-                &self.topic_name,
-                &self.event_subscription_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/topics/{}/eventsubscriptions/{}:renewLock",
+                &self.topic_name, &self.event_subscription_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()

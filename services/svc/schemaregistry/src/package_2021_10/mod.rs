@@ -205,7 +205,8 @@ pub mod schema_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/$schemaGroups", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/$schemaGroups",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "2021-10");
@@ -428,7 +429,8 @@ pub mod schema {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/$schemaGroups/$schemas/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/$schemaGroups/$schemas/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "2021-10");
@@ -524,12 +526,11 @@ pub mod schema {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/$schemaGroups/{}/schemas/{}/versions",
-                    self.client.endpoint(),
-                    &self.group_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/$schemaGroups/{}/schemas/{}/versions",
+                    &self.group_name, &self.schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "2021-10");
@@ -660,13 +661,11 @@ pub mod schema {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/$schemaGroups/{}/schemas/{}/versions/{}",
-                    self.client.endpoint(),
-                    &self.group_name,
-                    &self.schema_name,
-                    &self.schema_version
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/$schemaGroups/{}/schemas/{}/versions/{}",
+                    &self.group_name, &self.schema_name, &self.schema_version
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "2021-10");
@@ -789,12 +788,8 @@ pub mod schema {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/$schemaGroups/{}/schemas/{}:get-id",
-                    self.client.endpoint(),
-                    &self.group_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/$schemaGroups/{}/schemas/{}:get-id", &self.group_name, &self.schema_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "2021-10");
@@ -905,12 +900,8 @@ pub mod schema {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/$schemaGroups/{}/schemas/{}",
-                    self.client.endpoint(),
-                    &self.group_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/$schemaGroups/{}/schemas/{}", &self.group_name, &self.schema_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "2021-10");

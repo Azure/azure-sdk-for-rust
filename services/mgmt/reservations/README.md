@@ -1,14 +1,14 @@
 # azure_mgmt_reservations crate
 
-This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
+This is an unofficial, unsupported generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust/tree/legacy) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/reservations/resource-manager/readme.md
 
-To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/legacy/services/README.md#examples).
 
 The default tag is `package-2022-11`.
 
-The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/legacy/services/tags.md) are available:
 
 - `package-preview-2019-07-19` has 24 operations from 2 API versions: `2019-04-01`, `2019-07-19-preview`. Use crate feature `package-preview-2019-07-19` to enable. The operations will be in the `package_preview_2019_07_19` module.
 - `package-preview-2019-04` has 16 operations from 1 API versions: `2019-04-01`. Use crate feature `package-preview-2019-04` to enable. The operations will be in the `package_preview_2019_04` module.

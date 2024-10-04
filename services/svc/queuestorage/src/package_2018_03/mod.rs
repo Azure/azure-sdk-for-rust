@@ -282,7 +282,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?restype=service&comp=properties", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?restype=service&comp=properties",));
                 Ok(url)
             }
         }
@@ -402,7 +403,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?restype=service&comp=properties", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?restype=service&comp=properties",));
                 Ok(url)
             }
         }
@@ -517,7 +519,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?restype=service&comp=stats", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?restype=service&comp=stats",));
                 Ok(url)
             }
         }
@@ -685,7 +688,8 @@ pub mod service {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/?comp=list", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/?comp=list",));
                 Ok(url)
             }
         }
@@ -890,7 +894,8 @@ pub mod queue {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}", self.client.endpoint(), &self.queue_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}", &self.queue_name));
                 Ok(url)
             }
         }
@@ -1001,7 +1006,8 @@ pub mod queue {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}", self.client.endpoint(), &self.queue_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}", &self.queue_name));
                 Ok(url)
             }
         }
@@ -1120,7 +1126,8 @@ pub mod queue {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?comp=metadata", self.client.endpoint(), &self.queue_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?comp=metadata", &self.queue_name));
                 Ok(url)
             }
         }
@@ -1240,7 +1247,8 @@ pub mod queue {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?comp=metadata", self.client.endpoint(), &self.queue_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?comp=metadata", &self.queue_name));
                 Ok(url)
             }
         }
@@ -1356,7 +1364,8 @@ pub mod queue {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?comp=acl", self.client.endpoint(), &self.queue_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?comp=acl", &self.queue_name));
                 Ok(url)
             }
         }
@@ -1490,7 +1499,8 @@ pub mod queue {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?comp=acl", self.client.endpoint(), &self.queue_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?comp=acl", &self.queue_name));
                 Ok(url)
             }
         }
@@ -1693,7 +1703,8 @@ pub mod messages {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/messages", self.client.endpoint(), &self.queue_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/messages", &self.queue_name));
                 Ok(url)
             }
         }
@@ -1843,7 +1854,8 @@ pub mod messages {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/messages", self.client.endpoint(), &self.queue_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/messages", &self.queue_name));
                 Ok(url)
             }
         }
@@ -1966,7 +1978,8 @@ pub mod messages {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/messages", self.client.endpoint(), &self.queue_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/messages", &self.queue_name));
                 Ok(url)
             }
         }
@@ -2093,7 +2106,8 @@ pub mod messages {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/messages?peekonly=true", self.client.endpoint(), &self.queue_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/messages?peekonly=true", &self.queue_name));
                 Ok(url)
             }
         }
@@ -2303,12 +2317,8 @@ pub mod message_id {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/messages/{}",
-                    self.client.endpoint(),
-                    &self.queue_name,
-                    &self.messageid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/messages/{}", &self.queue_name, &self.messageid));
                 Ok(url)
             }
         }
@@ -2423,12 +2433,8 @@ pub mod message_id {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/messages/{}",
-                    self.client.endpoint(),
-                    &self.queue_name,
-                    &self.messageid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/messages/{}", &self.queue_name, &self.messageid));
                 Ok(url)
             }
         }

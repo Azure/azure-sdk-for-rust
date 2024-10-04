@@ -267,12 +267,11 @@ pub mod blueprints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}",
+                    &self.resource_scope, &self.blueprint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -371,12 +370,11 @@ pub mod blueprints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}",
+                    &self.resource_scope, &self.blueprint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -473,12 +471,11 @@ pub mod blueprints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}",
+                    &self.resource_scope, &self.blueprint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -600,11 +597,8 @@ pub mod blueprints {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints",
-                    self.client.endpoint(),
-                    &self.resource_scope
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.Blueprint/blueprints", &self.resource_scope));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -772,13 +766,11 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name,
-                    &self.artifact_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
+                    &self.resource_scope, &self.blueprint_name, &self.artifact_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -878,13 +870,11 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name,
-                    &self.artifact_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
+                    &self.resource_scope, &self.blueprint_name, &self.artifact_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -982,13 +972,11 @@ pub mod artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name,
-                    &self.artifact_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
+                    &self.resource_scope, &self.blueprint_name, &self.artifact_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1111,12 +1099,11 @@ pub mod artifacts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts",
+                    &self.resource_scope, &self.blueprint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1282,13 +1269,11 @@ pub mod published_blueprints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name,
-                    &self.version_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
+                    &self.resource_scope, &self.blueprint_name, &self.version_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1397,13 +1382,11 @@ pub mod published_blueprints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name,
-                    &self.version_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
+                    &self.resource_scope, &self.blueprint_name, &self.version_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1501,13 +1484,11 @@ pub mod published_blueprints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name,
-                    &self.version_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
+                    &self.resource_scope, &self.blueprint_name, &self.version_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1630,12 +1611,11 @@ pub mod published_blueprints {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}/versions",
+                    &self.resource_scope, &self.blueprint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1773,14 +1753,11 @@ pub mod published_artifacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name,
-                    &self.version_id,
-                    &self.artifact_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts/{}",
+                    &self.resource_scope, &self.blueprint_name, &self.version_id, &self.artifact_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1904,13 +1881,11 @@ pub mod published_artifacts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.blueprint_name,
-                    &self.version_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts",
+                    &self.resource_scope, &self.blueprint_name, &self.version_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2075,12 +2050,11 @@ pub mod assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
+                    &self.resource_scope, &self.assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2179,12 +2153,11 @@ pub mod assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
+                    &self.resource_scope, &self.assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2290,12 +2263,11 @@ pub mod assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
+                    &self.resource_scope, &self.assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2393,12 +2365,11 @@ pub mod assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}/whoIsBlueprint",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}/whoIsBlueprint",
+                    &self.resource_scope, &self.assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2520,11 +2491,11 @@ pub mod assignments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprintAssignments",
                     &self.resource_scope
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2676,12 +2647,11 @@ pub mod assignment_operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}/assignmentOperations",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}/assignmentOperations",
+                    &self.resource_scope, &self.assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2767,13 +2737,11 @@ pub mod assignment_operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}/assignmentOperations/{}",
-                    self.client.endpoint(),
-                    &self.resource_scope,
-                    &self.assignment_name,
-                    &self.assignment_operation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}/assignmentOperations/{}",
+                    &self.resource_scope, &self.assignment_name, &self.assignment_operation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

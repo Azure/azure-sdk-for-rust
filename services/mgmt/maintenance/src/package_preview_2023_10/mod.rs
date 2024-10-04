@@ -261,7 +261,8 @@ pub mod scheduled_event {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Compute/{}/{}/providers/Microsoft.Maintenance/scheduledevents/{}/acknowledge" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_type , & self . resource_name , & self . scheduled_event_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Compute/{}/{}/providers/Microsoft.Maintenance/scheduledevents/{}/acknowledge" , & self . subscription_id , & self . resource_group_name , & self . resource_type , & self . resource_name , & self . scheduled_event_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -391,11 +392,11 @@ pub mod public_maintenance_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Maintenance/publicMaintenanceConfigurations",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Maintenance/publicMaintenanceConfigurations",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -480,12 +481,11 @@ pub mod public_maintenance_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Maintenance/publicMaintenanceConfigurations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Maintenance/publicMaintenanceConfigurations/{}",
+                    &self.subscription_id, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -762,9 +762,9 @@ pub mod apply_updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/applyUpdates/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/applyUpdates/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.provider_name,
@@ -773,7 +773,7 @@ pub mod apply_updates {
                     &self.resource_type,
                     &self.resource_name,
                     &self.apply_update_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -874,16 +874,16 @@ pub mod apply_updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/applyUpdates/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/applyUpdates/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.provider_name,
                     &self.resource_type,
                     &self.resource_name,
                     &self.apply_update_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -986,16 +986,16 @@ pub mod apply_updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/applyUpdates/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/applyUpdates/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.provider_name,
                     &self.resource_type,
                     &self.resource_name,
                     &self.apply_update_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1097,9 +1097,9 @@ pub mod apply_updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/applyUpdates/default",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/applyUpdates/default",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.provider_name,
@@ -1107,7 +1107,7 @@ pub mod apply_updates {
                     &self.resource_parent_name,
                     &self.resource_type,
                     &self.resource_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1207,15 +1207,11 @@ pub mod apply_updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/applyUpdates/default",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.provider_name,
-                    &self.resource_type,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/applyUpdates/default",
+                    &self.subscription_id, &self.resource_group_name, &self.provider_name, &self.resource_type, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1313,11 +1309,11 @@ pub mod apply_updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Maintenance/applyUpdates",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Maintenance/applyUpdates",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1674,7 +1670,8 @@ pub mod configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . provider_name , & self . resource_parent_type , & self . resource_parent_name , & self . resource_type , & self . resource_name , & self . configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . provider_name , & self . resource_parent_type , & self . resource_parent_name , & self . resource_type , & self . resource_name , & self . configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1779,7 +1776,8 @@ pub mod configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . provider_name , & self . resource_parent_type , & self . resource_parent_name , & self . resource_type , & self . resource_name , & self . configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . provider_name , & self . resource_parent_type , & self . resource_parent_name , & self . resource_type , & self . resource_name , & self . configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1882,7 +1880,8 @@ pub mod configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . provider_name , & self . resource_parent_type , & self . resource_parent_name , & self . resource_type , & self . resource_name , & self . configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . provider_name , & self . resource_parent_type , & self . resource_parent_name , & self . resource_type , & self . resource_name , & self . configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1983,16 +1982,16 @@ pub mod configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.provider_name,
                     &self.resource_type,
                     &self.resource_name,
                     &self.configuration_assignment_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2095,16 +2094,16 @@ pub mod configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.provider_name,
                     &self.resource_type,
                     &self.resource_name,
                     &self.configuration_assignment_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2205,16 +2204,16 @@ pub mod configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.provider_name,
                     &self.resource_type,
                     &self.resource_name,
                     &self.configuration_assignment_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2318,7 +2317,17 @@ pub mod configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . provider_name , & self . resource_parent_type , & self . resource_parent_name , & self . resource_type , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments",
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.provider_name,
+                    &self.resource_parent_type,
+                    &self.resource_parent_name,
+                    &self.resource_type,
+                    &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2408,15 +2417,11 @@ pub mod configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.provider_name,
-                    &self.resource_type,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/configurationAssignments",
+                    &self.subscription_id, &self.resource_group_name, &self.provider_name, &self.resource_type, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2604,13 +2609,11 @@ pub mod maintenance_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/maintenanceConfigurations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/maintenanceConfigurations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2710,13 +2713,11 @@ pub mod maintenance_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/maintenanceConfigurations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/maintenanceConfigurations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2816,13 +2817,11 @@ pub mod maintenance_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/maintenanceConfigurations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/maintenanceConfigurations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2920,13 +2919,11 @@ pub mod maintenance_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/maintenanceConfigurations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/maintenanceConfigurations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3024,11 +3021,11 @@ pub mod maintenance_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Maintenance/maintenanceConfigurations",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Maintenance/maintenanceConfigurations",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3137,12 +3134,11 @@ pub mod maintenance_configurations_for_resource_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maintenance/maintenanceConfigurations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maintenance/maintenanceConfigurations",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3251,12 +3247,11 @@ pub mod apply_update_for_resource_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maintenance/applyUpdates",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maintenance/applyUpdates",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3362,11 +3357,11 @@ pub mod configuration_assignments_within_subscription {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Maintenance/configurationAssignments",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Maintenance/configurationAssignments",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3531,12 +3526,11 @@ pub mod configuration_assignments_for_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.configuration_assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
+                    &self.subscription_id, &self.configuration_assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3635,12 +3629,11 @@ pub mod configuration_assignments_for_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.configuration_assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
+                    &self.subscription_id, &self.configuration_assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3739,12 +3732,11 @@ pub mod configuration_assignments_for_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.configuration_assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
+                    &self.subscription_id, &self.configuration_assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3841,12 +3833,11 @@ pub mod configuration_assignments_for_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.configuration_assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
+                    &self.subscription_id, &self.configuration_assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4040,13 +4031,11 @@ pub mod configuration_assignments_for_resource_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4146,13 +4135,11 @@ pub mod configuration_assignments_for_resource_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4252,13 +4239,11 @@ pub mod configuration_assignments_for_resource_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4356,13 +4341,11 @@ pub mod configuration_assignments_for_resource_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Maintenance/configurationAssignments/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4474,7 +4457,8 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Maintenance/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/providers/Microsoft.Maintenance/operations",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4634,9 +4618,9 @@ pub mod updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/updates",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/{}/providers/Microsoft.Maintenance/updates",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.provider_name,
@@ -4644,7 +4628,7 @@ pub mod updates {
                     &self.resource_parent_name,
                     &self.resource_type,
                     &self.resource_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4734,15 +4718,11 @@ pub mod updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/updates",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.provider_name,
-                    &self.resource_type,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.Maintenance/updates",
+                    &self.subscription_id, &self.resource_group_name, &self.provider_name, &self.resource_type, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

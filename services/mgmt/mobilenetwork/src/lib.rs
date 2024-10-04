@@ -7,8 +7,6 @@
 #![allow(rustdoc::bare_urls)]
 #![allow(rustdoc::invalid_html_tags)]
 #![allow(rustdoc::broken_intra_doc_links)]
-#[cfg(feature = "package-2022-03-01-preview")]
-pub mod package_2022_03_01_preview;
 #[cfg(feature = "package-2022-04-01-preview")]
 pub mod package_2022_04_01_preview;
 #[cfg(feature = "package-2022-11-01")]
@@ -17,5 +15,7 @@ pub mod package_2022_11_01;
 pub mod package_2023_06;
 #[cfg(feature = "package-2023-09")]
 pub mod package_2023_09;
-#[cfg(all(feature = "default_tag", feature = "package-2023-09"))]
-pub use package_2023_09::*;
+#[cfg(feature = "package-2024-02")]
+pub mod package_2024_02;
+#[cfg(all(feature = "default_tag", feature = "package-2024-02"))]
+pub use package_2024_02::*;

@@ -334,7 +334,8 @@ pub mod marketplace_agreements {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/offerTypes/{}/publishers/{}/offers/{}/plans/{}/agreements/current" , self . client . endpoint () , & self . subscription_id , & self . offer_type , & self . publisher_id , & self . offer_id , & self . plan_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/offerTypes/{}/publishers/{}/offers/{}/plans/{}/agreements/current" , & self . subscription_id , & self . offer_type , & self . publisher_id , & self . offer_id , & self . plan_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -436,7 +437,8 @@ pub mod marketplace_agreements {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/offerTypes/{}/publishers/{}/offers/{}/plans/{}/agreements/current" , self . client . endpoint () , & self . subscription_id , & self . offer_type , & self . publisher_id , & self . offer_id , & self . plan_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/offerTypes/{}/publishers/{}/offers/{}/plans/{}/agreements/current" , & self . subscription_id , & self . offer_type , & self . publisher_id , & self . offer_id , & self . plan_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -536,14 +538,11 @@ pub mod marketplace_agreements {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}/sign",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.publisher_id,
-                    &self.offer_id,
-                    &self.plan_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}/sign",
+                    &self.subscription_id, &self.publisher_id, &self.offer_id, &self.plan_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -643,14 +642,11 @@ pub mod marketplace_agreements {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}/cancel",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.publisher_id,
-                    &self.offer_id,
-                    &self.plan_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}/cancel",
+                    &self.subscription_id, &self.publisher_id, &self.offer_id, &self.plan_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -749,14 +745,11 @@ pub mod marketplace_agreements {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.publisher_id,
-                    &self.offer_id,
-                    &self.plan_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}",
+                    &self.subscription_id, &self.publisher_id, &self.offer_id, &self.plan_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -852,11 +845,11 @@ pub mod marketplace_agreements {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -991,10 +984,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.MarketplaceOrdering/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/providers/Microsoft.MarketplaceOrdering/operations",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

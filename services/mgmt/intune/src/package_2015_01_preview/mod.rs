@@ -366,7 +366,8 @@ pub mod get_locations {
             azure_core::Pageable::new(make_request)
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Intune/locations", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Intune/locations",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -449,7 +450,8 @@ pub mod get_location_by_host_name {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Intune/locations/hostName", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Intune/locations/hostName",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -597,11 +599,8 @@ pub mod get_apps {
             azure_core::Pageable::new(make_request)
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Intune/locations/{}/apps",
-                self.client.endpoint(),
-                &self.host_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Intune/locations/{}/apps", &self.host_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -738,12 +737,11 @@ pub mod get_mam_user_devices {
             azure_core::Pageable::new(make_request)
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices",
-                self.client.endpoint(),
-                &self.host_name,
-                &self.user_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Intune/locations/{}/users/{}/devices",
+                &self.host_name, &self.user_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -838,13 +836,11 @@ pub mod get_mam_user_device_by_device_name {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}",
-                self.client.endpoint(),
-                &self.host_name,
-                &self.user_name,
-                &self.device_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}",
+                &self.host_name, &self.user_name, &self.device_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -943,13 +939,11 @@ pub mod wipe_mam_user_device {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}/wipe",
-                self.client.endpoint(),
-                &self.host_name,
-                &self.user_name,
-                &self.device_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}/wipe",
+                &self.host_name, &self.user_name, &self.device_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1097,11 +1091,11 @@ pub mod get_operation_results {
             azure_core::Pageable::new(make_request)
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Intune/locations/{}/operationResults",
-                self.client.endpoint(),
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Intune/locations/{}/operationResults",
                 &self.host_name
-            ))?;
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1211,11 +1205,11 @@ pub mod get_mam_statuses {
             azure_core::Pageable::new(make_request)
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Intune/locations/{}/statuses/default",
-                self.client.endpoint(),
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Intune/locations/{}/statuses/default",
                 &self.host_name
-            ))?;
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1351,11 +1345,8 @@ pub mod get_mam_flagged_users {
             azure_core::Pageable::new(make_request)
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers",
-                self.client.endpoint(),
-                &self.host_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/providers/Microsoft.Intune/locations/{}/flaggedUsers", &self.host_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1449,12 +1440,11 @@ pub mod get_mam_flagged_user_by_name {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}",
-                self.client.endpoint(),
-                &self.host_name,
-                &self.user_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}",
+                &self.host_name, &self.user_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1603,12 +1593,11 @@ pub mod get_mam_user_flagged_enrolled_apps {
             azure_core::Pageable::new(make_request)
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}/flaggedEnrolledApps",
-                self.client.endpoint(),
-                &self.host_name,
-                &self.user_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}/flaggedEnrolledApps",
+                &self.host_name, &self.user_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1950,11 +1939,8 @@ pub mod ios {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies",
-                    self.client.endpoint(),
-                    &self.host_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/providers/Microsoft.Intune/locations/{}/iosPolicies", &self.host_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2048,12 +2034,11 @@ pub mod ios {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2152,12 +2137,11 @@ pub mod ios {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2256,12 +2240,11 @@ pub mod ios {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2353,12 +2336,11 @@ pub mod ios {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2495,12 +2477,11 @@ pub mod ios {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2583,13 +2564,11 @@ pub mod ios {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name,
-                    &self.app_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
+                    &self.host_name, &self.policy_name, &self.app_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2670,13 +2649,11 @@ pub mod ios {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name,
-                    &self.app_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
+                    &self.host_name, &self.policy_name, &self.app_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2787,12 +2764,11 @@ pub mod ios {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2875,13 +2851,11 @@ pub mod ios {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name,
-                    &self.group_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
+                    &self.host_name, &self.policy_name, &self.group_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2962,13 +2936,11 @@ pub mod ios {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name,
-                    &self.group_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
+                    &self.host_name, &self.policy_name, &self.group_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3311,11 +3283,11 @@ pub mod android {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/androidPolicies",
                     &self.host_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3409,12 +3381,11 @@ pub mod android {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3513,12 +3484,11 @@ pub mod android {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3617,12 +3587,11 @@ pub mod android {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3714,12 +3683,11 @@ pub mod android {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3856,12 +3824,11 @@ pub mod android {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/AndroidPolicies/{}/apps",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/AndroidPolicies/{}/apps",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3944,13 +3911,11 @@ pub mod android {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name,
-                    &self.app_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
+                    &self.host_name, &self.policy_name, &self.app_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4031,13 +3996,11 @@ pub mod android {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name,
-                    &self.app_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
+                    &self.host_name, &self.policy_name, &self.app_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4148,12 +4111,11 @@ pub mod android {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups",
+                    &self.host_name, &self.policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4236,13 +4198,11 @@ pub mod android {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name,
-                    &self.group_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
+                    &self.host_name, &self.policy_name, &self.group_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4323,13 +4283,11 @@ pub mod android {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
-                    self.client.endpoint(),
-                    &self.host_name,
-                    &self.policy_name,
-                    &self.group_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
+                    &self.host_name, &self.policy_name, &self.group_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

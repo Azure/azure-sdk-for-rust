@@ -533,7 +533,8 @@ pub mod dev_boxes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/projects/{}/pools", self.client.endpoint(), &self.project_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/projects/{}/pools", &self.project_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -618,12 +619,8 @@ pub mod dev_boxes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/pools/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/projects/{}/pools/{}", &self.project_name, &self.pool_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -764,12 +761,8 @@ pub mod dev_boxes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/pools/{}/schedules",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/projects/{}/pools/{}/schedules", &self.project_name, &self.pool_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -855,13 +848,11 @@ pub mod dev_boxes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/pools/{}/schedules/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.pool_name,
-                    &self.schedule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/pools/{}/schedules/{}",
+                    &self.project_name, &self.pool_name, &self.schedule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1002,12 +993,8 @@ pub mod dev_boxes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/devboxes",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/projects/{}/users/{}/devboxes", &self.project_name, &self.user_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1093,13 +1080,11 @@ pub mod dev_boxes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/devboxes/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.dev_box_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/devboxes/{}",
+                    &self.project_name, &self.user_id, &self.dev_box_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1201,13 +1186,11 @@ pub mod dev_boxes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/devboxes/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.dev_box_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/devboxes/{}",
+                    &self.project_name, &self.user_id, &self.dev_box_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1311,13 +1294,11 @@ pub mod dev_boxes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/devboxes/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.dev_box_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/devboxes/{}",
+                    &self.project_name, &self.user_id, &self.dev_box_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1408,13 +1389,11 @@ pub mod dev_boxes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/devboxes/{}:start",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.dev_box_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/devboxes/{}:start",
+                    &self.project_name, &self.user_id, &self.dev_box_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1514,13 +1493,11 @@ pub mod dev_boxes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/devboxes/{}:stop",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.dev_box_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/devboxes/{}:stop",
+                    &self.project_name, &self.user_id, &self.dev_box_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1606,13 +1583,11 @@ pub mod dev_boxes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/devboxes/{}/remoteConnection",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.dev_box_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/devboxes/{}/remoteConnection",
+                    &self.project_name, &self.user_id, &self.dev_box_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1736,13 +1711,11 @@ pub mod dev_boxes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/devboxes/{}/upcomingActions",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.dev_box_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/devboxes/{}/upcomingActions",
+                    &self.project_name, &self.user_id, &self.dev_box_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1829,14 +1802,11 @@ pub mod dev_boxes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/devboxes/{}/upcomingActions/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.dev_box_name,
-                    &self.upcoming_action_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/devboxes/{}/upcomingActions/{}",
+                    &self.project_name, &self.user_id, &self.dev_box_name, &self.upcoming_action_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1931,14 +1901,11 @@ pub mod dev_boxes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/devboxes/{}/upcomingActions/{}:skip",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.dev_box_name,
-                    &self.upcoming_action_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/devboxes/{}/upcomingActions/{}:skip",
+                    &self.project_name, &self.user_id, &self.dev_box_name, &self.upcoming_action_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2029,14 +1996,11 @@ pub mod dev_boxes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/devboxes/{}/upcomingActions/{}:delay",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.dev_box_name,
-                    &self.upcoming_action_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/devboxes/{}/upcomingActions/{}:delay",
+                    &self.project_name, &self.user_id, &self.dev_box_name, &self.upcoming_action_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2223,7 +2187,8 @@ pub mod dev_center {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/devboxes", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/devboxes",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2351,7 +2316,8 @@ pub mod dev_center {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/users/{}/devboxes", self.client.endpoint(), &self.user_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/users/{}/devboxes", &self.user_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2478,7 +2444,8 @@ pub mod dev_center {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/projects", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/projects",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2562,7 +2529,8 @@ pub mod dev_center {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/projects/{}", self.client.endpoint(), &self.project_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/projects/{}", &self.project_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2931,7 +2899,8 @@ pub mod environments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/projects/{}/environments", self.client.endpoint(), &self.project_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/projects/{}/environments", &self.project_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3051,12 +3020,8 @@ pub mod environments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/environments",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/projects/{}/users/{}/environments", &self.project_name, &self.user_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3142,13 +3107,11 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/environments/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.environment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/environments/{}",
+                    &self.project_name, &self.user_id, &self.environment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3260,13 +3223,11 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/environments/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.environment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/environments/{}",
+                    &self.project_name, &self.user_id, &self.environment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3368,13 +3329,11 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/environments/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.environment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/environments/{}",
+                    &self.project_name, &self.user_id, &self.environment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3476,13 +3435,11 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/environments/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.environment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/environments/{}",
+                    &self.project_name, &self.user_id, &self.environment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3577,13 +3534,11 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/environments/{}:deploy",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.environment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/environments/{}:deploy",
+                    &self.project_name, &self.user_id, &self.environment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3678,13 +3633,11 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/users/{}/environments/{}:custom",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.user_id,
-                    &self.environment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/users/{}/environments/{}:custom",
+                    &self.project_name, &self.user_id, &self.environment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3803,7 +3756,8 @@ pub mod environments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/projects/{}/catalogItems", self.client.endpoint(), &self.project_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/projects/{}/catalogItems", &self.project_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3888,12 +3842,8 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/catalogItems/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.catalog_item_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/projects/{}/catalogItems/{}", &self.project_name, &self.catalog_item_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4025,12 +3975,11 @@ pub mod environments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/catalogItems/{}/versions",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.catalog_item_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/catalogItems/{}/versions",
+                    &self.project_name, &self.catalog_item_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4116,13 +4065,11 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/catalogItems/{}/versions/{}",
-                    self.client.endpoint(),
-                    &self.project_name,
-                    &self.catalog_item_id,
-                    &self.version
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/projects/{}/catalogItems/{}/versions/{}",
+                    &self.project_name, &self.catalog_item_id, &self.version
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4253,11 +4200,8 @@ pub mod environments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/projects/{}/environmentTypes",
-                    self.client.endpoint(),
-                    &self.project_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/projects/{}/environmentTypes", &self.project_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

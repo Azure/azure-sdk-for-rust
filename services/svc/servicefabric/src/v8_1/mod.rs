@@ -3559,7 +3559,8 @@ pub mod get_cluster_manifest {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetClusterManifest", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetClusterManifest",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -3718,7 +3719,8 @@ pub mod get_cluster_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetClusterHealth", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetClusterHealth",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -3888,7 +3890,8 @@ pub mod get_cluster_health_using_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetClusterHealth", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetClusterHealth",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -3991,7 +3994,8 @@ pub mod get_cluster_health_chunk {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetClusterHealthChunk", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetClusterHealthChunk",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -4108,7 +4112,8 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetClusterHealthChunk", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetClusterHealthChunk",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -4217,7 +4222,8 @@ pub mod report_cluster_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/ReportClusterHealth", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/ReportClusterHealth",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -4317,7 +4323,8 @@ pub mod get_provisioned_fabric_code_version_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetProvisionedCodeVersions", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetProvisionedCodeVersions",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -4429,7 +4436,8 @@ pub mod get_provisioned_fabric_config_version_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetProvisionedConfigVersions", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetProvisionedConfigVersions",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -4532,7 +4540,8 @@ pub mod get_cluster_upgrade_progress {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetUpgradeProgress", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetUpgradeProgress",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -4640,7 +4649,8 @@ pub mod get_cluster_configuration {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetClusterConfiguration", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetClusterConfiguration",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -4743,7 +4753,8 @@ pub mod get_cluster_configuration_upgrade_status {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetClusterConfigurationUpgradeStatus", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetClusterConfigurationUpgradeStatus",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -4846,7 +4857,8 @@ pub mod get_upgrade_orchestration_service_state {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetUpgradeOrchestrationServiceState", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetUpgradeOrchestrationServiceState",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -4951,7 +4963,8 @@ pub mod set_upgrade_orchestration_service_state {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/SetUpgradeOrchestrationServiceState", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/SetUpgradeOrchestrationServiceState",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -5051,7 +5064,8 @@ pub mod provision_cluster {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/Provision", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/Provision",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -5139,7 +5153,8 @@ pub mod unprovision_cluster {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/Unprovision", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/Unprovision",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -5226,7 +5241,8 @@ pub mod rollback_cluster_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/RollbackUpgrade", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/RollbackUpgrade",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -5314,7 +5330,8 @@ pub mod resume_cluster_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/MoveToNextUpgradeDomain", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/MoveToNextUpgradeDomain",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -5402,7 +5419,8 @@ pub mod start_cluster_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/Upgrade", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/Upgrade",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -5490,7 +5508,8 @@ pub mod start_cluster_configuration_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/StartClusterConfigurationUpgrade", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/StartClusterConfigurationUpgrade",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -5578,7 +5597,8 @@ pub mod update_cluster_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/UpdateUpgrade", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/UpdateUpgrade",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -5669,7 +5689,8 @@ pub mod get_aad_metadata {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetAadMetadata", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetAadMetadata",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -5772,7 +5793,8 @@ pub mod get_cluster_version {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetClusterVersion", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetClusterVersion",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -5875,7 +5897,8 @@ pub mod get_cluster_load {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetLoadInformation", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetLoadInformation",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -5977,10 +6000,8 @@ pub mod toggle_verbose_service_placement_health_reporting {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/$/ToggleVerboseServicePlacementHealthReporting",
-                self.client.endpoint(),
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/ToggleVerboseServicePlacementHealthReporting",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -6098,7 +6119,8 @@ pub mod get_node_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -6202,7 +6224,8 @@ pub mod get_node_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes/{}", self.client.endpoint(), &self.node_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -6317,7 +6340,8 @@ pub mod get_node_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/GetHealth", self.client.endpoint(), &self.node_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/GetHealth", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -6443,7 +6467,8 @@ pub mod get_node_health_using_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/GetHealth", self.client.endpoint(), &self.node_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/GetHealth", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -6553,7 +6578,8 @@ pub mod report_node_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/ReportHealth", self.client.endpoint(), &self.node_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/ReportHealth", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -6645,11 +6671,8 @@ pub mod get_node_load_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetLoadInformation",
-                self.client.endpoint(),
-                &self.node_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/GetLoadInformation", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -6750,7 +6773,8 @@ pub mod disable_node {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/Deactivate", self.client.endpoint(), &self.node_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/Deactivate", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -6838,7 +6862,8 @@ pub mod enable_node {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/Activate", self.client.endpoint(), &self.node_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/Activate", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -6926,7 +6951,8 @@ pub mod remove_node_state {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/RemoveNodeState", self.client.endpoint(), &self.node_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/RemoveNodeState", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -7015,7 +7041,8 @@ pub mod restart_node {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/Restart", self.client.endpoint(), &self.node_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/Restart", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -7102,11 +7129,8 @@ pub mod remove_configuration_overrides {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/RemoveConfigurationOverrides",
-                self.client.endpoint(),
-                &self.node_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/RemoveConfigurationOverrides", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -7198,11 +7222,8 @@ pub mod get_configuration_overrides {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetConfigurationOverrides",
-                self.client.endpoint(),
-                &self.node_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/GetConfigurationOverrides", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -7312,11 +7333,8 @@ pub mod add_configuration_parameter_overrides {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/AddConfigurationParameterOverrides",
-                self.client.endpoint(),
-                &self.node_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/AddConfigurationParameterOverrides", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -7396,7 +7414,8 @@ pub mod remove_node_tags {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/RemoveNodeTags", self.client.endpoint(), &self.node_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/RemoveNodeTags", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -7476,7 +7495,8 @@ pub mod add_node_tags {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/AddNodeTags", self.client.endpoint(), &self.node_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/AddNodeTags", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -7608,7 +7628,8 @@ pub mod get_application_type_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ApplicationTypes", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ApplicationTypes",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -7752,11 +7773,8 @@ pub mod get_application_type_info_list_by_name {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ApplicationTypes/{}",
-                self.client.endpoint(),
-                &self.application_type_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ApplicationTypes/{}", &self.application_type_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -7856,7 +7874,8 @@ pub mod provision_application_type {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ApplicationTypes/$/Provision", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ApplicationTypes/$/Provision",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -7945,11 +7964,8 @@ pub mod unprovision_application_type {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ApplicationTypes/{}/$/Unprovision",
-                self.client.endpoint(),
-                &self.application_type_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ApplicationTypes/{}/$/Unprovision", &self.application_type_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -8046,11 +8062,8 @@ pub mod get_service_type_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ApplicationTypes/{}/$/GetServiceTypes",
-                self.client.endpoint(),
-                &self.application_type_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ApplicationTypes/{}/$/GetServiceTypes", &self.application_type_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -8160,12 +8173,11 @@ pub mod get_service_type_info_by_name {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ApplicationTypes/{}/$/GetServiceTypes/{}",
-                self.client.endpoint(),
-                &self.application_type_name,
-                &self.service_type_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/ApplicationTypes/{}/$/GetServiceTypes/{}",
+                &self.application_type_name, &self.service_type_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -8279,11 +8291,8 @@ pub mod get_service_manifest {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ApplicationTypes/{}/$/GetServiceManifest",
-                self.client.endpoint(),
-                &self.application_type_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ApplicationTypes/{}/$/GetServiceManifest", &self.application_type_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -8399,12 +8408,11 @@ pub mod get_deployed_service_type_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetServiceTypes",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetServiceTypes",
+                &self.node_name, &self.application_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -8521,13 +8529,11 @@ pub mod get_deployed_service_type_info_by_name {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetServiceTypes/{}",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id,
-                &self.service_type_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetServiceTypes/{}",
+                &self.node_name, &self.application_id, &self.service_type_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -8627,7 +8633,8 @@ pub mod create_application {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Applications/$/Create", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/$/Create",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -8726,11 +8733,8 @@ pub mod delete_application {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/Delete",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/Delete", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -8822,11 +8826,8 @@ pub mod get_application_load_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/GetLoadInformation",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/GetLoadInformation", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -8980,7 +8981,8 @@ pub mod get_application_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Applications", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -9095,7 +9097,8 @@ pub mod get_application_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Applications/{}", self.client.endpoint(), &self.application_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -9244,11 +9247,8 @@ pub mod get_application_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/GetHealth",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/GetHealth", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -9408,11 +9408,8 @@ pub mod get_application_health_using_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/GetHealth",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/GetHealth", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -9522,11 +9519,8 @@ pub mod report_application_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/ReportHealth",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/ReportHealth", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -9615,11 +9609,8 @@ pub mod start_application_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/Upgrade",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/Upgrade", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -9711,11 +9702,8 @@ pub mod get_application_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/GetUpgradeProgress",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/GetUpgradeProgress", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -9816,11 +9804,8 @@ pub mod update_application_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/UpdateUpgrade",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/UpdateUpgrade", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -9909,11 +9894,8 @@ pub mod update_application {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/Update",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/Update", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -10002,11 +9984,8 @@ pub mod resume_application_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/MoveToNextUpgradeDomain",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/MoveToNextUpgradeDomain", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -10094,11 +10073,8 @@ pub mod rollback_application_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/RollbackUpgrade",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/RollbackUpgrade", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -10219,7 +10195,8 @@ pub mod get_deployed_application_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/GetApplications", self.client.endpoint(), &self.node_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/GetApplications", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -10335,12 +10312,8 @@ pub mod get_deployed_application_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/GetApplications/{}", &self.node_name, &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -10479,12 +10452,11 @@ pub mod get_deployed_application_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetHealth",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetHealth",
+                &self.node_name, &self.application_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -10634,12 +10606,11 @@ pub mod get_deployed_application_health_using_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetHealth",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetHealth",
+                &self.node_name, &self.application_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -10750,12 +10721,11 @@ pub mod report_deployed_application_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/ReportHealth",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/ReportHealth",
+                &self.node_name, &self.application_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -10852,11 +10822,11 @@ pub mod get_application_manifest {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ApplicationTypes/{}/$/GetApplicationManifest",
-                self.client.endpoint(),
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/ApplicationTypes/{}/$/GetApplicationManifest",
                 &self.application_type_name
-            ))?;
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -10978,11 +10948,8 @@ pub mod get_service_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/GetServices",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/GetServices", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -11087,12 +11054,11 @@ pub mod get_service_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/GetServices/{}",
-                self.client.endpoint(),
-                &self.application_id,
-                &self.service_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Applications/{}/$/GetServices/{}",
+                &self.application_id, &self.service_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -11196,11 +11162,8 @@ pub mod get_application_name_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Services/{}/$/GetApplicationName",
-                self.client.endpoint(),
-                &self.service_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/GetApplicationName", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -11301,11 +11264,8 @@ pub mod create_service {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/GetServices/$/Create",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/GetServices/$/Create", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -11394,11 +11354,11 @@ pub mod create_service_from_template {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/GetServices/$/CreateFromTemplate",
-                self.client.endpoint(),
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Applications/{}/$/GetServices/$/CreateFromTemplate",
                 &self.application_id
-            ))?;
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -11497,7 +11457,8 @@ pub mod delete_service {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Services/{}/$/Delete", self.client.endpoint(), &self.service_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/Delete", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -11586,7 +11547,8 @@ pub mod update_service {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Services/{}/$/Update", self.client.endpoint(), &self.service_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/Update", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -11678,11 +11640,8 @@ pub mod get_service_description {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Services/{}/$/GetDescription",
-                self.client.endpoint(),
-                &self.service_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/GetDescription", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -11819,7 +11778,8 @@ pub mod get_service_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Services/{}/$/GetHealth", self.client.endpoint(), &self.service_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/GetHealth", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -11967,7 +11927,8 @@ pub mod get_service_health_using_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Services/{}/$/GetHealth", self.client.endpoint(), &self.service_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/GetHealth", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -12077,7 +12038,8 @@ pub mod report_service_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Services/{}/$/ReportHealth", self.client.endpoint(), &self.service_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/ReportHealth", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -12202,11 +12164,8 @@ pub mod resolve_service {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Services/{}/$/ResolvePartition",
-                self.client.endpoint(),
-                &self.service_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/ResolvePartition", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -12330,11 +12289,8 @@ pub mod get_unplaced_replica_information {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Services/{}/$/GetUnplacedReplicaInformation",
-                self.client.endpoint(),
-                &self.service_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/GetUnplacedReplicaInformation", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -12467,7 +12423,8 @@ pub mod get_loaded_partition_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetLoadedPartitionInfoList", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetLoadedPartitionInfoList",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -12580,7 +12537,8 @@ pub mod get_partition_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Services/{}/$/GetPartitions", self.client.endpoint(), &self.service_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/GetPartitions", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -12684,7 +12642,8 @@ pub mod get_partition_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Partitions/{}", self.client.endpoint(), &self.partition_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -12788,11 +12747,8 @@ pub mod get_service_name_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/GetServiceName",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/GetServiceName", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -12929,7 +12885,8 @@ pub mod get_partition_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/GetHealth", self.client.endpoint(), &self.partition_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/GetHealth", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -13077,7 +13034,8 @@ pub mod get_partition_health_using_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/GetHealth", self.client.endpoint(), &self.partition_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/GetHealth", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -13187,11 +13145,8 @@ pub mod report_partition_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/ReportHealth",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/ReportHealth", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -13283,11 +13238,8 @@ pub mod get_partition_load_information {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/GetLoadInformation",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/GetLoadInformation", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -13387,7 +13339,8 @@ pub mod reset_partition_load {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/ResetLoad", self.client.endpoint(), &self.partition_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/ResetLoad", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -13475,7 +13428,8 @@ pub mod recover_partition {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/Recover", self.client.endpoint(), &self.partition_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/Recover", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -13563,11 +13517,8 @@ pub mod recover_service_partitions {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Services/$/{}/$/GetPartitions/$/Recover",
-                self.client.endpoint(),
-                &self.service_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/$/{}/$/GetPartitions/$/Recover", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -13654,7 +13605,8 @@ pub mod recover_system_partitions {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/RecoverSystemPartitions", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/RecoverSystemPartitions",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -13741,7 +13693,8 @@ pub mod recover_all_partitions {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/RecoverAllPartitions", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/RecoverAllPartitions",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -13849,11 +13802,8 @@ pub mod move_primary_replica {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/MovePrimaryReplica",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/MovePrimaryReplica", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -13964,11 +13914,8 @@ pub mod move_secondary_replica {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/MoveSecondaryReplica",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/MoveSecondaryReplica", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -14079,7 +14026,8 @@ pub mod update_partition_load {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/UpdatePartitionLoad", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/UpdatePartitionLoad",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -14209,12 +14157,11 @@ pub mod move_instance {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Services/{}/$/GetPartitions/{}/$/MoveInstance",
-                self.client.endpoint(),
-                &self.service_id,
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Services/{}/$/GetPartitions/{}/$/MoveInstance",
+                &self.service_id, &self.partition_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -14332,12 +14279,11 @@ pub mod move_auxiliary_replica {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Services/{}/$/GetPartitions/{}/$/MoveAuxiliaryReplica",
-                self.client.endpoint(),
-                &self.service_id,
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Services/{}/$/GetPartitions/{}/$/MoveAuxiliaryReplica",
+                &self.service_id, &self.partition_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -14421,7 +14367,8 @@ pub mod create_repair_task {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/CreateRepairTask", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/CreateRepairTask",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -14517,7 +14464,8 @@ pub mod cancel_repair_task {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/CancelRepairTask", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/CancelRepairTask",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -14608,7 +14556,8 @@ pub mod delete_repair_task {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/DeleteRepairTask", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/DeleteRepairTask",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -14719,7 +14668,8 @@ pub mod get_repair_task_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/GetRepairTaskList", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/GetRepairTaskList",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -14815,7 +14765,8 @@ pub mod force_approve_repair_task {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/ForceApproveRepairTask", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/ForceApproveRepairTask",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -14911,7 +14862,8 @@ pub mod update_repair_task_health_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/UpdateRepairTaskHealthPolicy", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/UpdateRepairTaskHealthPolicy",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -15007,7 +14959,8 @@ pub mod update_repair_execution_state {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/UpdateRepairExecutionState", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/UpdateRepairExecutionState",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -15120,11 +15073,8 @@ pub mod get_replica_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/GetReplicas",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/GetReplicas", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -15229,12 +15179,8 @@ pub mod get_replica_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/GetReplicas/{}",
-                self.client.endpoint(),
-                &self.partition_id,
-                &self.replica_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/GetReplicas/{}", &self.partition_id, &self.replica_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -15350,12 +15296,11 @@ pub mod get_replica_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/GetReplicas/{}/$/GetHealth",
-                self.client.endpoint(),
-                &self.partition_id,
-                &self.replica_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Partitions/{}/$/GetReplicas/{}/$/GetHealth",
+                &self.partition_id, &self.replica_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -15482,12 +15427,11 @@ pub mod get_replica_health_using_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/GetReplicas/{}/$/GetHealth",
-                self.client.endpoint(),
-                &self.partition_id,
-                &self.replica_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Partitions/{}/$/GetReplicas/{}/$/GetHealth",
+                &self.partition_id, &self.replica_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -15601,12 +15545,11 @@ pub mod report_replica_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/GetReplicas/{}/$/ReportHealth",
-                self.client.endpoint(),
-                &self.partition_id,
-                &self.replica_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Partitions/{}/$/GetReplicas/{}/$/ReportHealth",
+                &self.partition_id, &self.replica_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -15719,12 +15662,11 @@ pub mod get_deployed_service_replica_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetReplicas",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetReplicas",
+                &self.node_name, &self.application_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -15830,13 +15772,11 @@ pub mod get_deployed_service_replica_detail_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetPartitions/{}/$/GetReplicas/{}/$/GetDetail",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.partition_id,
-                &self.replica_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetPartitions/{}/$/GetReplicas/{}/$/GetDetail",
+                &self.node_name, &self.partition_id, &self.replica_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -15941,12 +15881,11 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetPartitions/{}/$/GetReplicas",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetPartitions/{}/$/GetReplicas",
+                &self.node_name, &self.partition_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -16048,13 +15987,11 @@ pub mod restart_replica {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetPartitions/{}/$/GetReplicas/{}/$/Restart",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.partition_id,
-                &self.replica_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetPartitions/{}/$/GetReplicas/{}/$/Restart",
+                &self.node_name, &self.partition_id, &self.replica_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -16155,13 +16092,11 @@ pub mod remove_replica {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetPartitions/{}/$/GetReplicas/{}/$/Delete",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.partition_id,
-                &self.replica_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetPartitions/{}/$/GetReplicas/{}/$/Delete",
+                &self.node_name, &self.partition_id, &self.replica_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -16254,12 +16189,11 @@ pub mod get_deployed_service_package_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetServicePackages",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetServicePackages",
+                &self.node_name, &self.application_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -16365,13 +16299,11 @@ pub mod get_deployed_service_package_info_list_by_name {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetServicePackages/{}",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id,
-                &self.service_package_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetServicePackages/{}",
+                &self.node_name, &self.application_id, &self.service_package_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -16488,13 +16420,11 @@ pub mod get_deployed_service_package_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetServicePackages/{}/$/GetHealth",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id,
-                &self.service_package_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetServicePackages/{}/$/GetHealth",
+                &self.node_name, &self.application_id, &self.service_package_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -16622,13 +16552,11 @@ pub mod get_deployed_service_package_health_using_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetServicePackages/{}/$/GetHealth",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id,
-                &self.service_package_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetServicePackages/{}/$/GetHealth",
+                &self.node_name, &self.application_id, &self.service_package_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -16740,13 +16668,11 @@ pub mod report_deployed_service_package_health {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetServicePackages/{}/$/ReportHealth",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id,
-                &self.service_package_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetServicePackages/{}/$/ReportHealth",
+                &self.node_name, &self.application_id, &self.service_package_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -16835,11 +16761,8 @@ pub mod deploy_service_package_to_node {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/DeployServicePackage",
-                self.client.endpoint(),
-                &self.node_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Nodes/{}/$/DeployServicePackage", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -16952,12 +16875,11 @@ pub mod get_deployed_code_package_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetCodePackages",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetCodePackages",
+                &self.node_name, &self.application_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -17059,12 +16981,11 @@ pub mod restart_deployed_code_package {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetCodePackages/$/Restart",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetCodePackages/$/Restart",
+                &self.node_name, &self.application_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -17183,12 +17104,11 @@ pub mod get_container_logs_deployed_on_node {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetCodePackages/$/ContainerLogs",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetCodePackages/$/ContainerLogs",
+                &self.node_name, &self.application_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -17308,12 +17228,11 @@ pub mod invoke_container_api {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Nodes/{}/$/GetApplications/{}/$/GetCodePackages/$/ContainerApi",
-                self.client.endpoint(),
-                &self.node_name,
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Nodes/{}/$/GetApplications/{}/$/GetCodePackages/$/ContainerApi",
+                &self.node_name, &self.application_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -17413,7 +17332,8 @@ pub mod create_compose_deployment {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ComposeDeployments/$/Create", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ComposeDeployments/$/Create",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -17505,7 +17425,8 @@ pub mod get_compose_deployment_status {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ComposeDeployments/{}", self.client.endpoint(), &self.deployment_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ComposeDeployments/{}", &self.deployment_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -17626,7 +17547,8 @@ pub mod get_compose_deployment_status_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ComposeDeployments", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ComposeDeployments",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -17730,11 +17652,8 @@ pub mod get_compose_deployment_upgrade_progress {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ComposeDeployments/{}/$/GetUpgradeProgress",
-                self.client.endpoint(),
-                &self.deployment_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ComposeDeployments/{}/$/GetUpgradeProgress", &self.deployment_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -17834,11 +17753,8 @@ pub mod remove_compose_deployment {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ComposeDeployments/{}/$/Delete",
-                self.client.endpoint(),
-                &self.deployment_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ComposeDeployments/{}/$/Delete", &self.deployment_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -17927,11 +17843,8 @@ pub mod start_compose_deployment_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ComposeDeployments/{}/$/Upgrade",
-                self.client.endpoint(),
-                &self.deployment_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ComposeDeployments/{}/$/Upgrade", &self.deployment_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -18019,11 +17932,8 @@ pub mod start_rollback_compose_deployment_upgrade {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ComposeDeployments/{}/$/RollbackUpgrade",
-                self.client.endpoint(),
-                &self.deployment_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ComposeDeployments/{}/$/RollbackUpgrade", &self.deployment_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -18114,7 +18024,8 @@ pub mod get_chaos {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Tools/Chaos", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Tools/Chaos",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -18214,7 +18125,8 @@ pub mod start_chaos {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Tools/Chaos/$/Start", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Tools/Chaos/$/Start",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -18301,7 +18213,8 @@ pub mod stop_chaos {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Tools/Chaos/$/Stop", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Tools/Chaos/$/Stop",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -18428,7 +18341,8 @@ pub mod get_chaos_events {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Tools/Chaos/Events", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Tools/Chaos/Events",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -18531,7 +18445,8 @@ pub mod get_chaos_schedule {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Tools/Chaos/Schedule", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Tools/Chaos/Schedule",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -18631,7 +18546,8 @@ pub mod post_chaos_schedule {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Tools/Chaos/Schedule", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Tools/Chaos/Schedule",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -18723,7 +18639,8 @@ pub mod get_image_store_content {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ImageStore/{}", self.client.endpoint(), &self.content_path))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/{}", &self.content_path));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -18822,7 +18739,8 @@ pub mod upload_file {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ImageStore/{}", self.client.endpoint(), &self.content_path))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/{}", &self.content_path));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -18909,7 +18827,8 @@ pub mod delete_image_store_content {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ImageStore/{}", self.client.endpoint(), &self.content_path))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/{}", &self.content_path));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -19000,7 +18919,8 @@ pub mod get_image_store_root_content {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ImageStore", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -19100,7 +19020,8 @@ pub mod copy_image_store_content {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ImageStore/$/Copy", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/$/Copy",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -19189,7 +19110,8 @@ pub mod delete_image_store_upload_session {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ImageStore/$/DeleteUploadSession", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/$/DeleteUploadSession",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -19279,7 +19201,8 @@ pub mod commit_image_store_upload_session {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ImageStore/$/CommitUploadSession", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/$/CommitUploadSession",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -19373,7 +19296,8 @@ pub mod get_image_store_upload_session_by_id {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ImageStore/$/GetUploadSession", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/$/GetUploadSession",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -19477,11 +19401,8 @@ pub mod get_image_store_upload_session_by_path {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ImageStore/{}/$/GetUploadSession",
-                self.client.endpoint(),
-                &self.content_path
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/{}/$/GetUploadSession", &self.content_path));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -19585,11 +19506,8 @@ pub mod upload_file_chunk {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ImageStore/{}/$/UploadChunk",
-                self.client.endpoint(),
-                &self.content_path
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/{}/$/UploadChunk", &self.content_path));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -19680,7 +19598,8 @@ pub mod get_image_store_root_folder_size {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ImageStore/$/FolderSize", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/$/FolderSize",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -19784,11 +19703,8 @@ pub mod get_image_store_folder_size {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/ImageStore/{}/$/FolderSize",
-                self.client.endpoint(),
-                &self.content_path
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/{}/$/FolderSize", &self.content_path));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -19891,7 +19807,8 @@ pub mod get_image_store_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/ImageStore/$/Info", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/ImageStore/$/Info",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -20007,7 +19924,8 @@ pub mod invoke_infrastructure_command {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/InvokeInfrastructureCommand", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/InvokeInfrastructureCommand",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -20122,7 +20040,8 @@ pub mod invoke_infrastructure_query {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/$/InvokeInfrastructureQuery", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/$/InvokeInfrastructureQuery",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -20229,12 +20148,11 @@ pub mod start_data_loss {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Faults/Services/{}/$/GetPartitions/{}/$/StartDataLoss",
-                self.client.endpoint(),
-                &self.service_id,
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Faults/Services/{}/$/GetPartitions/{}/$/StartDataLoss",
+                &self.service_id, &self.partition_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -20330,12 +20248,11 @@ pub mod get_data_loss_progress {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Faults/Services/{}/$/GetPartitions/{}/$/GetDataLossProgress",
-                self.client.endpoint(),
-                &self.service_id,
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Faults/Services/{}/$/GetPartitions/{}/$/GetDataLossProgress",
+                &self.service_id, &self.partition_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -20447,12 +20364,11 @@ pub mod start_quorum_loss {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Faults/Services/{}/$/GetPartitions/{}/$/StartQuorumLoss",
-                self.client.endpoint(),
-                &self.service_id,
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Faults/Services/{}/$/GetPartitions/{}/$/StartQuorumLoss",
+                &self.service_id, &self.partition_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -20548,12 +20464,11 @@ pub mod get_quorum_loss_progress {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Faults/Services/{}/$/GetPartitions/{}/$/GetQuorumLossProgress",
-                self.client.endpoint(),
-                &self.service_id,
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Faults/Services/{}/$/GetPartitions/{}/$/GetQuorumLossProgress",
+                &self.service_id, &self.partition_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -20662,12 +20577,11 @@ pub mod start_partition_restart {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Faults/Services/{}/$/GetPartitions/{}/$/StartRestart",
-                self.client.endpoint(),
-                &self.service_id,
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Faults/Services/{}/$/GetPartitions/{}/$/StartRestart",
+                &self.service_id, &self.partition_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -20763,12 +20677,11 @@ pub mod get_partition_restart_progress {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Faults/Services/{}/$/GetPartitions/{}/$/GetRestartProgress",
-                self.client.endpoint(),
-                &self.service_id,
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/Faults/Services/{}/$/GetPartitions/{}/$/GetRestartProgress",
+                &self.service_id, &self.partition_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -20884,11 +20797,8 @@ pub mod start_node_transition {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Faults/Nodes/{}/$/StartTransition/",
-                self.client.endpoint(),
-                &self.node_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Faults/Nodes/{}/$/StartTransition/", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -20983,11 +20893,8 @@ pub mod get_node_transition_progress {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Faults/Nodes/{}/$/GetTransitionProgress",
-                self.client.endpoint(),
-                &self.node_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Faults/Nodes/{}/$/GetTransitionProgress", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -21098,7 +21005,8 @@ pub mod get_fault_operation_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Faults/", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Faults/",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -21203,7 +21111,8 @@ pub mod cancel_operation {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Faults/$/Cancel", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Faults/$/Cancel",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -21302,7 +21211,8 @@ pub mod create_backup_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/BackupRestore/BackupPolicies/$/Create", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/BackupRestore/BackupPolicies/$/Create",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -21390,11 +21300,8 @@ pub mod delete_backup_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/BackupRestore/BackupPolicies/{}/$/Delete",
-                self.client.endpoint(),
-                &self.backup_policy_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/BackupRestore/BackupPolicies/{}/$/Delete", &self.backup_policy_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -21503,7 +21410,8 @@ pub mod get_backup_policy_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/BackupRestore/BackupPolicies", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/BackupRestore/BackupPolicies",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -21607,11 +21515,8 @@ pub mod get_backup_policy_by_name {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/BackupRestore/BackupPolicies/{}",
-                self.client.endpoint(),
-                &self.backup_policy_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/BackupRestore/BackupPolicies/{}", &self.backup_policy_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -21733,11 +21638,11 @@ pub mod get_all_entities_backed_up_by_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/BackupRestore/BackupPolicies/{}/$/GetBackupEnabledEntities",
-                self.client.endpoint(),
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/BackupRestore/BackupPolicies/{}/$/GetBackupEnabledEntities",
                 &self.backup_policy_name
-            ))?;
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -21849,11 +21754,8 @@ pub mod update_backup_policy {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/BackupRestore/BackupPolicies/{}/$/Update",
-                self.client.endpoint(),
-                &self.backup_policy_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/BackupRestore/BackupPolicies/{}/$/Update", &self.backup_policy_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -21942,11 +21844,8 @@ pub mod enable_application_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/EnableBackup",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/EnableBackup", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -22044,11 +21943,8 @@ pub mod disable_application_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/DisableBackup",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/DisableBackup", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -22158,11 +22054,8 @@ pub mod get_application_backup_configuration_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/GetBackupConfigurationInfo",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/GetBackupConfigurationInfo", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -22315,11 +22208,8 @@ pub mod get_application_backup_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/GetBackups",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/GetBackups", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -22419,11 +22309,8 @@ pub mod suspend_application_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/SuspendBackup",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/SuspendBackup", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -22511,11 +22398,8 @@ pub mod resume_application_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Applications/{}/$/ResumeBackup",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Applications/{}/$/ResumeBackup", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -22604,7 +22488,8 @@ pub mod enable_service_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Services/{}/$/EnableBackup", self.client.endpoint(), &self.service_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/EnableBackup", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -22702,7 +22587,8 @@ pub mod disable_service_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Services/{}/$/DisableBackup", self.client.endpoint(), &self.service_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/DisableBackup", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -22812,11 +22698,8 @@ pub mod get_service_backup_configuration_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Services/{}/$/GetBackupConfigurationInfo",
-                self.client.endpoint(),
-                &self.service_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/GetBackupConfigurationInfo", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -22969,7 +22852,8 @@ pub mod get_service_backup_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Services/{}/$/GetBackups", self.client.endpoint(), &self.service_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/GetBackups", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -23069,7 +22953,8 @@ pub mod suspend_service_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Services/{}/$/SuspendBackup", self.client.endpoint(), &self.service_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/SuspendBackup", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -23157,7 +23042,8 @@ pub mod resume_service_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Services/{}/$/ResumeBackup", self.client.endpoint(), &self.service_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Services/{}/$/ResumeBackup", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -23246,11 +23132,8 @@ pub mod enable_partition_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/EnableBackup",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/EnableBackup", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -23348,11 +23231,8 @@ pub mod disable_partition_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/DisableBackup",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/DisableBackup", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -23444,11 +23324,8 @@ pub mod get_partition_backup_configuration_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/GetBackupConfigurationInfo",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/GetBackupConfigurationInfo", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -23583,11 +23460,8 @@ pub mod get_partition_backup_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/GetBackups",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/GetBackups", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -23687,11 +23561,8 @@ pub mod suspend_partition_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/SuspendBackup",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/SuspendBackup", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -23779,11 +23650,8 @@ pub mod resume_partition_backup {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/ResumeBackup",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/ResumeBackup", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -23892,7 +23760,8 @@ pub mod backup_partition {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/Backup", self.client.endpoint(), &self.partition_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/Backup", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -23984,11 +23853,8 @@ pub mod get_partition_backup_progress {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/GetBackupProgress",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/GetBackupProgress", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -24100,7 +23966,8 @@ pub mod restore_partition {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/Restore", self.client.endpoint(), &self.partition_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/Restore", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -24192,11 +24059,8 @@ pub mod get_partition_restore_progress {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Partitions/{}/$/GetRestoreProgress",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Partitions/{}/$/GetRestoreProgress", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -24319,7 +24183,8 @@ pub mod get_backups_from_backup_location {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/BackupRestore/$/GetBackups", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/BackupRestore/$/GetBackups",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -24419,7 +24284,8 @@ pub mod create_name {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Names/$/Create", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Names/$/Create",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -24506,7 +24372,8 @@ pub mod get_name_exists_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Names/{}", self.client.endpoint(), &self.name_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Names/{}", &self.name_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -24593,7 +24460,8 @@ pub mod delete_name {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Names/{}", self.client.endpoint(), &self.name_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Names/{}", &self.name_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -24703,7 +24571,8 @@ pub mod get_sub_name_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Names/{}/$/GetSubNames", self.client.endpoint(), &self.name_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Names/{}/$/GetSubNames", &self.name_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -24827,7 +24696,8 @@ pub mod get_property_info_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Names/{}/$/GetProperties", self.client.endpoint(), &self.name_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Names/{}/$/GetProperties", &self.name_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -24934,7 +24804,8 @@ pub mod get_property_info {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Names/{}/$/GetProperty", self.client.endpoint(), &self.name_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Names/{}/$/GetProperty", &self.name_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -25035,7 +24906,8 @@ pub mod put_property {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Names/{}/$/GetProperty", self.client.endpoint(), &self.name_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Names/{}/$/GetProperty", &self.name_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -25125,7 +24997,8 @@ pub mod delete_property {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Names/{}/$/GetProperty", self.client.endpoint(), &self.name_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Names/{}/$/GetProperty", &self.name_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -25219,11 +25092,8 @@ pub mod submit_property_batch {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/Names/{}/$/GetProperties/$/SubmitBatch",
-                self.client.endpoint(),
-                &self.name_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Names/{}/$/GetProperties/$/SubmitBatch", &self.name_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -25365,7 +25235,8 @@ pub mod get_cluster_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/EventsStore/Cluster/Events", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/Cluster/Events",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -25507,7 +25378,8 @@ pub mod get_containers_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/EventsStore/Containers/Events", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/Containers/Events",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -25650,11 +25522,8 @@ pub mod get_node_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/EventsStore/Nodes/{}/$/Events",
-                self.client.endpoint(),
-                &self.node_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/Nodes/{}/$/Events", &self.node_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -25796,7 +25665,8 @@ pub mod get_nodes_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/EventsStore/Nodes/Events", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/Nodes/Events",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -25939,11 +25809,8 @@ pub mod get_application_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/EventsStore/Applications/{}/$/Events",
-                self.client.endpoint(),
-                &self.application_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/Applications/{}/$/Events", &self.application_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -26085,7 +25952,8 @@ pub mod get_applications_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/EventsStore/Applications/Events", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/Applications/Events",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -26228,11 +26096,8 @@ pub mod get_service_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/EventsStore/Services/{}/$/Events",
-                self.client.endpoint(),
-                &self.service_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/Services/{}/$/Events", &self.service_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -26374,7 +26239,8 @@ pub mod get_services_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/EventsStore/Services/Events", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/Services/Events",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -26517,11 +26383,8 @@ pub mod get_partition_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/EventsStore/Partitions/{}/$/Events",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/Partitions/{}/$/Events", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -26663,7 +26526,8 @@ pub mod get_partitions_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/EventsStore/Partitions/Events", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/Partitions/Events",));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -26807,12 +26671,11 @@ pub mod get_partition_replica_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/EventsStore/Partitions/{}/$/Replicas/{}/$/Events",
-                self.client.endpoint(),
-                &self.partition_id,
-                &self.replica_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/EventsStore/Partitions/{}/$/Replicas/{}/$/Events",
+                &self.partition_id, &self.replica_id
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -26955,11 +26818,8 @@ pub mod get_partition_replicas_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/EventsStore/Partitions/{}/$/Replicas/Events",
-                self.client.endpoint(),
-                &self.partition_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/Partitions/{}/$/Replicas/Events", &self.partition_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -27063,11 +26923,8 @@ pub mod get_correlated_event_list {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/EventsStore/CorrelatedEvents/{}/$/Events",
-                self.client.endpoint(),
-                &self.event_instance_id
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/EventsStore/CorrelatedEvents/{}/$/Events", &self.event_instance_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -27215,11 +27072,8 @@ pub mod mesh_secret {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Secrets/{}",
-                    self.client.endpoint(),
-                    &self.secret_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Secrets/{}", &self.secret_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -27316,11 +27170,8 @@ pub mod mesh_secret {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Secrets/{}",
-                    self.client.endpoint(),
-                    &self.secret_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Secrets/{}", &self.secret_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -27410,11 +27261,8 @@ pub mod mesh_secret {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Secrets/{}",
-                    self.client.endpoint(),
-                    &self.secret_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Secrets/{}", &self.secret_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -27496,7 +27344,8 @@ pub mod mesh_secret {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/Resources/Secrets", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Secrets",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -27676,12 +27525,11 @@ pub mod mesh_secret_value {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Secrets/{}/values/{}",
-                    self.client.endpoint(),
-                    &self.secret_resource_name,
-                    &self.secret_value_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/Resources/Secrets/{}/values/{}",
+                    &self.secret_resource_name, &self.secret_value_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -27779,12 +27627,11 @@ pub mod mesh_secret_value {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Secrets/{}/values/{}",
-                    self.client.endpoint(),
-                    &self.secret_resource_name,
-                    &self.secret_value_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/Resources/Secrets/{}/values/{}",
+                    &self.secret_resource_name, &self.secret_value_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -27875,12 +27722,11 @@ pub mod mesh_secret_value {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Secrets/{}/values/{}",
-                    self.client.endpoint(),
-                    &self.secret_resource_name,
-                    &self.secret_value_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/Resources/Secrets/{}/values/{}",
+                    &self.secret_resource_name, &self.secret_value_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -27963,11 +27809,8 @@ pub mod mesh_secret_value {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Secrets/{}/values",
-                    self.client.endpoint(),
-                    &self.secret_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Secrets/{}/values", &self.secret_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -28064,12 +27907,11 @@ pub mod mesh_secret_value {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Secrets/{}/values/{}/list_value",
-                    self.client.endpoint(),
-                    &self.secret_resource_name,
-                    &self.secret_value_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/Resources/Secrets/{}/values/{}/list_value",
+                    &self.secret_resource_name, &self.secret_value_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -28218,11 +28060,8 @@ pub mod mesh_volume {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Volumes/{}",
-                    self.client.endpoint(),
-                    &self.volume_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Volumes/{}", &self.volume_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -28319,11 +28158,8 @@ pub mod mesh_volume {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Volumes/{}",
-                    self.client.endpoint(),
-                    &self.volume_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Volumes/{}", &self.volume_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -28413,11 +28249,8 @@ pub mod mesh_volume {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Volumes/{}",
-                    self.client.endpoint(),
-                    &self.volume_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Volumes/{}", &self.volume_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -28499,7 +28332,8 @@ pub mod mesh_volume {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/Resources/Volumes", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Volumes",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -28648,11 +28482,8 @@ pub mod mesh_network {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Networks/{}",
-                    self.client.endpoint(),
-                    &self.network_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Networks/{}", &self.network_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -28749,11 +28580,8 @@ pub mod mesh_network {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Networks/{}",
-                    self.client.endpoint(),
-                    &self.network_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Networks/{}", &self.network_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -28843,11 +28671,8 @@ pub mod mesh_network {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Networks/{}",
-                    self.client.endpoint(),
-                    &self.network_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Networks/{}", &self.network_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -28929,7 +28754,8 @@ pub mod mesh_network {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/Resources/Networks", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Networks",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -29089,11 +28915,8 @@ pub mod mesh_application {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Applications/{}",
-                    self.client.endpoint(),
-                    &self.application_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Applications/{}", &self.application_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -29190,11 +29013,8 @@ pub mod mesh_application {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Applications/{}",
-                    self.client.endpoint(),
-                    &self.application_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Applications/{}", &self.application_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -29284,11 +29104,8 @@ pub mod mesh_application {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Applications/{}",
-                    self.client.endpoint(),
-                    &self.application_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Applications/{}", &self.application_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -29370,7 +29187,8 @@ pub mod mesh_application {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/Resources/Applications", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Applications",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -29465,11 +29283,11 @@ pub mod mesh_application {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Applications/{}/$/GetUpgradeProgress",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/Resources/Applications/{}/$/GetUpgradeProgress",
                     &self.application_resource_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -29599,12 +29417,11 @@ pub mod mesh_service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Applications/{}/Services/{}",
-                    self.client.endpoint(),
-                    &self.application_resource_name,
-                    &self.service_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/Resources/Applications/{}/Services/{}",
+                    &self.application_resource_name, &self.service_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -29699,11 +29516,8 @@ pub mod mesh_service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Applications/{}/Services",
-                    self.client.endpoint(),
-                    &self.application_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Applications/{}/Services", &self.application_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -29844,14 +29658,11 @@ pub mod mesh_code_package {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Applications/{}/Services/{}/Replicas/{}/CodePackages/{}/Logs",
-                    self.client.endpoint(),
-                    &self.application_resource_name,
-                    &self.service_resource_name,
-                    &self.replica_name,
-                    &self.code_package_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/Resources/Applications/{}/Services/{}/Replicas/{}/CodePackages/{}/Logs",
+                    &self.application_resource_name, &self.service_resource_name, &self.replica_name, &self.code_package_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -29991,13 +29802,11 @@ pub mod mesh_service_replica {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Applications/{}/Services/{}/Replicas/{}",
-                    self.client.endpoint(),
-                    &self.application_resource_name,
-                    &self.service_resource_name,
-                    &self.replica_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/Resources/Applications/{}/Services/{}/Replicas/{}",
+                    &self.application_resource_name, &self.service_resource_name, &self.replica_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -30093,12 +29902,11 @@ pub mod mesh_service_replica {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Applications/{}/Services/{}/Replicas",
-                    self.client.endpoint(),
-                    &self.application_resource_name,
-                    &self.service_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/Resources/Applications/{}/Services/{}/Replicas",
+                    &self.application_resource_name, &self.service_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -30247,11 +30055,8 @@ pub mod mesh_gateway {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Gateways/{}",
-                    self.client.endpoint(),
-                    &self.gateway_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Gateways/{}", &self.gateway_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -30348,11 +30153,8 @@ pub mod mesh_gateway {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Gateways/{}",
-                    self.client.endpoint(),
-                    &self.gateway_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Gateways/{}", &self.gateway_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -30442,11 +30244,8 @@ pub mod mesh_gateway {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/Resources/Gateways/{}",
-                    self.client.endpoint(),
-                    &self.gateway_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Gateways/{}", &self.gateway_resource_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");
@@ -30528,7 +30327,8 @@ pub mod mesh_gateway {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/Resources/Gateways", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Resources/Gateways",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "8.1");

@@ -51,6 +51,7 @@ members = [
   "mgmt/customproviders",
   "mgmt/dashboard",
   "mgmt/data",
+  "mgmt/databasewatcher",
   "mgmt/databox",
   "mgmt/databoxedge",
   "mgmt/databricks",
@@ -62,7 +63,7 @@ members = [
   "mgmt/datamigration",
   "mgmt/dataprotection",
   "mgmt/datashare",
-  "mgmt/deploymentmanager",
+  "mgmt/datatransfer",
   "mgmt/desktopvirtualization",
   "mgmt/devcenter",
   "mgmt/developerhub",
@@ -148,6 +149,7 @@ members = [
   "mgmt/migrate",
   "mgmt/migrateprojects",
   "mgmt/mobilenetwork",
+  "mgmt/mobilepacketcore",
   "mgmt/monitor",
   "mgmt/mpcnetworkfunction",
   "mgmt/msi",
@@ -223,6 +225,7 @@ members = [
   "mgmt/sql",
   "mgmt/sqlvirtualmachine",
   "mgmt/stack",
+  "mgmt/standbypool",
   "mgmt/storage",
   "mgmt/storageactions",
   "mgmt/storagecache",
@@ -234,7 +237,6 @@ members = [
   "mgmt/storsimple8000series",
   "mgmt/streamanalytics",
   "mgmt/subscription",
-  "mgmt/support",
   "mgmt/synapse",
   "mgmt/syntex",
   "mgmt/testbase",
@@ -293,5 +295,4 @@ members = [
 
 resolver = "2"
 
-[workspace.lints.clippy]
-empty-docs = "allow"
+[workspace.lints]

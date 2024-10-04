@@ -323,6 +323,9 @@ pub struct AcsChatThreadCreatedEventData {
     #[doc = "The thread properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "The chat thread created metadata"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
     #[doc = "The list of properties of participants who are part of the thread"]
     #[serde(
         default,
@@ -2371,6 +2374,220 @@ impl Serialize for AsyncStatus {
             Self::Failed => serializer.serialize_unit_variant("AsyncStatus", 2u32, "Failed"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterCreated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterCreatedEventData {
+    #[serde(flatten)]
+    pub avs_cluster_event_data: AvsClusterEventData,
+}
+impl AvsClusterCreatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterDeleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterDeletedEventData {
+    #[serde(flatten)]
+    pub avs_cluster_event_data: AvsClusterEventData,
+}
+impl AvsClusterDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for Microsoft.AVS/clusters events."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterEventData {
+    #[doc = "Id of the operation that caused this event."]
+    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
+    pub operation_id: Option<String>,
+    #[doc = "Hosts added to the cluster in this event, if any."]
+    #[serde(
+        rename = "addedHostNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub added_host_names: Vec<String>,
+    #[doc = "Hosts removed to the cluster in this event, if any."]
+    #[serde(
+        rename = "removedHostNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub removed_host_names: Vec<String>,
+    #[doc = "Hosts in Maintenance mode in the cluster, if any."]
+    #[serde(
+        rename = "inMaintenanceHostNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub in_maintenance_host_names: Vec<String>,
+}
+impl AvsClusterEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterFailed event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterFailedEventData {
+    #[serde(flatten)]
+    pub avs_cluster_event_data: AvsClusterEventData,
+    #[doc = "Failure reason of an event."]
+    #[serde(rename = "failureMessage", default, skip_serializing_if = "Option::is_none")]
+    pub failure_message: Option<String>,
+}
+impl AvsClusterFailedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterUpdatedEventData {
+    #[serde(flatten)]
+    pub avs_cluster_event_data: AvsClusterEventData,
+}
+impl AvsClusterUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterUpdating event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterUpdatingEventData {
+    #[serde(flatten)]
+    pub avs_cluster_event_data: AvsClusterEventData,
+}
+impl AvsClusterUpdatingEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for Microsoft.AVS/privateClouds events."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsPrivateCloudEventData {
+    #[doc = "Id of the operation that caused this event."]
+    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
+    pub operation_id: Option<String>,
+}
+impl AvsPrivateCloudEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.PrivateCloudFailed event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsPrivateCloudFailedEventData {
+    #[serde(flatten)]
+    pub avs_private_cloud_event_data: AvsPrivateCloudEventData,
+    #[doc = "Failure reason of an event."]
+    #[serde(rename = "failureMessage", default, skip_serializing_if = "Option::is_none")]
+    pub failure_message: Option<String>,
+}
+impl AvsPrivateCloudFailedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.PrivateCloudUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsPrivateCloudUpdatedEventData {
+    #[serde(flatten)]
+    pub avs_private_cloud_event_data: AvsPrivateCloudEventData,
+}
+impl AvsPrivateCloudUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.PrivateCloudUpdating event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsPrivateCloudUpdatingEventData {
+    #[serde(flatten)]
+    pub avs_private_cloud_event_data: AvsPrivateCloudEventData,
+}
+impl AvsPrivateCloudUpdatingEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionCancelled event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsScriptExecutionCancelledEventData {
+    #[serde(flatten)]
+    pub avs_script_execution_event_data: AvsScriptExecutionEventData,
+}
+impl AvsScriptExecutionCancelledEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for Microsoft.AVS/scriptExecutions events."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsScriptExecutionEventData {
+    #[doc = "Id of the operation that caused this event."]
+    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
+    pub operation_id: Option<String>,
+    #[doc = "Cmdlet referenced in the execution that caused this event."]
+    #[serde(rename = "cmdletId", default, skip_serializing_if = "Option::is_none")]
+    pub cmdlet_id: Option<String>,
+    #[doc = "Stdout outputs from the execution, if any."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub output: Vec<String>,
+}
+impl AvsScriptExecutionEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionFailed event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsScriptExecutionFailedEventData {
+    #[serde(flatten)]
+    pub avs_script_execution_event_data: AvsScriptExecutionEventData,
+    #[doc = "Failure reason of an event."]
+    #[serde(rename = "failureMessage", default, skip_serializing_if = "Option::is_none")]
+    pub failure_message: Option<String>,
+}
+impl AvsScriptExecutionFailedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionFinished event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsScriptExecutionFinishedEventData {
+    #[serde(flatten)]
+    pub avs_script_execution_event_data: AvsScriptExecutionEventData,
+    #[doc = "Named outputs of completed execution, if any."]
+    #[serde(rename = "namedOutputs", default, skip_serializing_if = "Option::is_none")]
+    pub named_outputs: Option<serde_json::Value>,
+}
+impl AvsScriptExecutionFinishedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionStarted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsScriptExecutionStartedEventData {
+    #[serde(flatten)]
+    pub avs_script_execution_event_data: AvsScriptExecutionEventData,
+}
+impl AvsScriptExecutionStartedEventData {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The error object."]
@@ -6658,6 +6875,85 @@ pub struct StorageLifecyclePolicyCompletedEventData {
     pub tier_to_archive_summary: Option<StorageLifecyclePolicyActionSummaryDetail>,
 }
 impl StorageLifecyclePolicyCompletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskAssignmentCompleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageTaskAssignmentCompletedEventData {
+    #[doc = "The status for a storage task."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<storage_task_assignment_completed_event_data::Status>,
+    #[doc = "The time at which a storage task was completed."]
+    #[serde(rename = "completedDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub completed_date_time: Option<time::OffsetDateTime>,
+    #[doc = "The execution id for a storage task."]
+    #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
+    pub task_execution_id: Option<String>,
+    #[doc = "The task name for a storage task."]
+    #[serde(rename = "taskName", default, skip_serializing_if = "Option::is_none")]
+    pub task_name: Option<String>,
+    #[doc = "The summary report blob url for a storage task"]
+    #[serde(rename = "summaryReportBlobUrl", default, skip_serializing_if = "Option::is_none")]
+    pub summary_report_blob_url: Option<String>,
+}
+impl StorageTaskAssignmentCompletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod storage_task_assignment_completed_event_data {
+    use super::*;
+    #[doc = "The status for a storage task."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Succeeded,
+        Failed,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("Status", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("Status", 1u32, "Failed"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskAssignmentQueued event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageTaskAssignmentQueuedEventData {
+    #[doc = "The time at which a storage task was queued."]
+    #[serde(rename = "queuedDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub queued_date_time: Option<time::OffsetDateTime>,
+    #[doc = "The execution id for a storage task."]
+    #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
+    pub task_execution_id: Option<String>,
+}
+impl StorageTaskAssignmentQueuedEventData {
     pub fn new() -> Self {
         Self::default()
     }

@@ -827,6 +827,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_data
 
+  azure_mgmt_databasewatcher:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_databasewatcher
+
   azure_mgmt_databox:
     if: always()
     runs-on: ubuntu-latest
@@ -1003,7 +1019,7 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_datashare
 
-  azure_mgmt_deploymentmanager:
+  azure_mgmt_datatransfer:
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -1017,7 +1033,7 @@ jobs:
     - name: check all features
       run: |
         cd services
-        cargo check --all-features -p azure_mgmt_deploymentmanager
+        cargo check --all-features -p azure_mgmt_datatransfer
 
   azure_mgmt_desktopvirtualization:
     if: always()
@@ -2379,6 +2395,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_mobilenetwork
 
+  azure_mgmt_mobilepacketcore:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_mobilepacketcore
+
   azure_mgmt_monitor:
     if: always()
     runs-on: ubuntu-latest
@@ -3579,6 +3611,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_stack
 
+  azure_mgmt_standbypool:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_standbypool
+
   azure_mgmt_storage:
     if: always()
     runs-on: ubuntu-latest
@@ -3754,22 +3802,6 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_subscription
-
-  azure_mgmt_support:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - uses: Swatinem/rust-cache@v2
-    - name: check all features
-      run: |
-        cd services
-        cargo check --all-features -p azure_mgmt_support
 
   azure_mgmt_synapse:
     if: always()

@@ -8,37 +8,19 @@ use std::str::FromStr;
 pub struct Asset {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[doc = "Asset resource properties."]
+    #[doc = "Defines the asset properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
+    pub properties: Option<AssetProperties>,
     #[doc = "The extended location."]
     #[serde(rename = "extendedLocation")]
-    pub extended_location: asset::ExtendedLocation,
+    pub extended_location: ExtendedLocation,
 }
 impl Asset {
-    pub fn new(tracked_resource: TrackedResource, extended_location: asset::ExtendedLocation) -> Self {
+    pub fn new(tracked_resource: TrackedResource, extended_location: ExtendedLocation) -> Self {
         Self {
             tracked_resource,
             properties: None,
             extended_location,
-        }
-    }
-}
-pub mod asset {
-    use super::*;
-    #[doc = "The extended location."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct ExtendedLocation {
-        #[doc = "The extended location type."]
-        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-        pub type_: Option<String>,
-        #[doc = "The extended location name."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub name: Option<String>,
-    }
-    impl ExtendedLocation {
-        pub fn new() -> Self {
-            Self::default()
         }
     }
 }
@@ -52,10 +34,10 @@ pub struct AssetEndpointProfile {
     pub properties: Option<AssetEndpointProfileProperties>,
     #[doc = "The extended location."]
     #[serde(rename = "extendedLocation")]
-    pub extended_location: asset_endpoint_profile::ExtendedLocation,
+    pub extended_location: ExtendedLocation,
 }
 impl AssetEndpointProfile {
-    pub fn new(tracked_resource: TrackedResource, extended_location: asset_endpoint_profile::ExtendedLocation) -> Self {
+    pub fn new(tracked_resource: TrackedResource, extended_location: ExtendedLocation) -> Self {
         Self {
             tracked_resource,
             properties: None,
@@ -63,37 +45,24 @@ impl AssetEndpointProfile {
         }
     }
 }
-pub mod asset_endpoint_profile {
-    use super::*;
-    #[doc = "The extended location."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct ExtendedLocation {
-        #[doc = "The extended location type."]
-        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-        pub type_: Option<String>,
-        #[doc = "The extended location name."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub name: Option<String>,
-    }
-    impl ExtendedLocation {
-        pub fn new() -> Self {
-            Self::default()
-        }
+#[doc = "The response of a AssetEndpointProfile list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssetEndpointProfileListResult {
+    #[doc = "The AssetEndpointProfile items on this page"]
+    pub value: Vec<AssetEndpointProfile>,
+    #[doc = "The link to the next page of items"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AssetEndpointProfileListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-#[doc = "Asset Endpoint Profile definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AssetEndpointProfilePatchPayload {
-    #[doc = "Resource tags."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[doc = "Defines the Asset Endpoint Profile properties."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AssetEndpointProfileProperties>,
-}
-impl AssetEndpointProfilePatchPayload {
-    pub fn new() -> Self {
-        Self::default()
+impl AssetEndpointProfileListResult {
+    pub fn new(value: Vec<AssetEndpointProfile>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Defines the Asset Endpoint Profile properties."]
@@ -105,18 +74,18 @@ pub struct AssetEndpointProfileProperties {
     #[doc = "The local valid URI specifying the network address/DNS name of a southbound device. The scheme part of the targetAddress URI specifies the type of the device. The additionalConfiguration field holds further connector type specific configuration."]
     #[serde(rename = "targetAddress")]
     pub target_address: String,
-    #[doc = "Defines the client authentication mechanism to the server."]
+    #[doc = "Definition of the client authentication mechanism to the server."]
     #[serde(rename = "userAuthentication", default, skip_serializing_if = "Option::is_none")]
-    pub user_authentication: Option<asset_endpoint_profile_properties::UserAuthentication>,
-    #[doc = "Defines the authentication mechanism for the southbound connector connecting to the shop floor/OT device."]
+    pub user_authentication: Option<UserAuthentication>,
+    #[doc = "Definition of the authentication mechanism for the southbound connector."]
     #[serde(rename = "transportAuthentication", default, skip_serializing_if = "Option::is_none")]
-    pub transport_authentication: Option<asset_endpoint_profile_properties::TransportAuthentication>,
+    pub transport_authentication: Option<TransportAuthentication>,
     #[doc = "Contains connectivity type specific further configuration (e.g. OPC UA, Modbus, ONVIF)."]
     #[serde(rename = "additionalConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub additional_configuration: Option<String>,
-    #[doc = "Provisioning state of the resource."]
+    #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<asset_endpoint_profile_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 impl AssetEndpointProfileProperties {
     pub fn new(target_address: String) -> Self {
@@ -130,200 +99,64 @@ impl AssetEndpointProfileProperties {
         }
     }
 }
-pub mod asset_endpoint_profile_properties {
-    use super::*;
-    #[doc = "Defines the client authentication mechanism to the server."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct UserAuthentication {
-        #[doc = "Defines the mode to authenticate the user of the client at the server."]
-        pub mode: user_authentication::Mode,
-        #[doc = "Defines the username and password references when UsernamePassword user authentication mode is selected."]
-        #[serde(rename = "usernamePasswordCredentials", default, skip_serializing_if = "Option::is_none")]
-        pub username_password_credentials: Option<user_authentication::UsernamePasswordCredentials>,
-        #[doc = "Defines the certificate reference when Certificate user authentication mode is selected."]
-        #[serde(rename = "x509Credentials", default, skip_serializing_if = "Option::is_none")]
-        pub x509_credentials: Option<user_authentication::X509Credentials>,
-    }
-    impl UserAuthentication {
-        pub fn new(mode: user_authentication::Mode) -> Self {
-            Self {
-                mode,
-                username_password_credentials: None,
-                x509_credentials: None,
-            }
-        }
-    }
-    pub mod user_authentication {
-        use super::*;
-        #[doc = "Defines the mode to authenticate the user of the client at the server."]
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        #[serde(remote = "Mode")]
-        pub enum Mode {
-            Anonymous,
-            Certificate,
-            UsernamePassword,
-            #[serde(skip_deserializing)]
-            UnknownValue(String),
-        }
-        impl FromStr for Mode {
-            type Err = value::Error;
-            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-                Self::deserialize(s.into_deserializer())
-            }
-        }
-        impl<'de> Deserialize<'de> for Mode {
-            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-            where
-                D: Deserializer<'de>,
-            {
-                let s = String::deserialize(deserializer)?;
-                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-                Ok(deserialized)
-            }
-        }
-        impl Serialize for Mode {
-            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-            where
-                S: Serializer,
-            {
-                match self {
-                    Self::Anonymous => serializer.serialize_unit_variant("Mode", 0u32, "Anonymous"),
-                    Self::Certificate => serializer.serialize_unit_variant("Mode", 1u32, "Certificate"),
-                    Self::UsernamePassword => serializer.serialize_unit_variant("Mode", 2u32, "UsernamePassword"),
-                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-                }
-            }
-        }
-        impl Default for Mode {
-            fn default() -> Self {
-                Self::Certificate
-            }
-        }
-        #[doc = "Defines the username and password references when UsernamePassword user authentication mode is selected."]
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub struct UsernamePasswordCredentials {
-            #[doc = "A reference to secret containing the username."]
-            #[serde(rename = "usernameReference")]
-            pub username_reference: String,
-            #[doc = "A reference to secret containing the password."]
-            #[serde(rename = "passwordReference")]
-            pub password_reference: String,
-        }
-        impl UsernamePasswordCredentials {
-            pub fn new(username_reference: String, password_reference: String) -> Self {
-                Self {
-                    username_reference,
-                    password_reference,
-                }
-            }
-        }
-        #[doc = "Defines the certificate reference when Certificate user authentication mode is selected."]
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub struct X509Credentials {
-            #[doc = "A reference to secret containing the certificate and private key (e.g. stored as .der/.pem or .der/.pfx)."]
-            #[serde(rename = "certificateReference")]
-            pub certificate_reference: String,
-        }
-        impl X509Credentials {
-            pub fn new(certificate_reference: String) -> Self {
-                Self { certificate_reference }
-            }
-        }
-    }
-    #[doc = "Defines the authentication mechanism for the southbound connector connecting to the shop floor/OT device."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct TransportAuthentication {
-        #[doc = "Defines a reference to a secret which contains all certificates and private keys that can be used by the southbound connector connecting to the shop floor/OT device. The accepted extensions are .der for certificates and .pfx/.pem for private keys."]
-        #[serde(rename = "ownCertificates")]
-        pub own_certificates: Vec<serde_json::Value>,
-    }
-    impl TransportAuthentication {
-        pub fn new(own_certificates: Vec<serde_json::Value>) -> Self {
-            Self { own_certificates }
-        }
-    }
-    #[doc = "Provisioning state of the resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ProvisioningState")]
-    pub enum ProvisioningState {
-        Succeeded,
-        Failed,
-        Canceled,
-        Accepted,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ProvisioningState {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ProvisioningState {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ProvisioningState {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
-                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Canceled"),
-                Self::Accepted => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Accepted"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
+#[doc = "The type used for update operations of the AssetEndpointProfile."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AssetEndpointProfileUpdate {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "The updatable properties of the AssetEndpointProfile."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AssetEndpointProfileUpdateProperties>,
+}
+impl AssetEndpointProfileUpdate {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
-#[doc = "List of Asset Endpoint Profiles."]
+#[doc = "The updatable properties of the AssetEndpointProfile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AssetEndpointProfileResponseList {
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<AssetEndpointProfile>,
+pub struct AssetEndpointProfileUpdateProperties {
+    #[doc = "The local valid URI specifying the network address/DNS name of a southbound device. The scheme part of the targetAddress URI specifies the type of the device. The additionalConfiguration field holds further connector type specific configuration."]
+    #[serde(rename = "targetAddress", default, skip_serializing_if = "Option::is_none")]
+    pub target_address: Option<String>,
+    #[doc = "Definition of the client authentication mechanism to the server."]
+    #[serde(rename = "userAuthentication", default, skip_serializing_if = "Option::is_none")]
+    pub user_authentication: Option<UserAuthenticationUpdate>,
+    #[doc = "Definition of the authentication mechanism for the southbound connector."]
+    #[serde(rename = "transportAuthentication", default, skip_serializing_if = "Option::is_none")]
+    pub transport_authentication: Option<TransportAuthenticationUpdate>,
+    #[doc = "Contains connectivity type specific further configuration (e.g. OPC UA, Modbus, ONVIF)."]
+    #[serde(rename = "additionalConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub additional_configuration: Option<String>,
+}
+impl AssetEndpointProfileUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The response of a Asset list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssetListResult {
+    #[doc = "The Asset items on this page"]
+    pub value: Vec<Asset>,
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for AssetEndpointProfileResponseList {
+impl azure_core::Continuable for AssetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl AssetEndpointProfileResponseList {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Asset definition for Patch operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AssetPatchPayload {
-    #[doc = "Resource tags."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[doc = "Defines the asset properties."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AssetProperties>,
-}
-impl AssetPatchPayload {
-    pub fn new() -> Self {
-        Self::default()
+impl AssetListResult {
+    pub fn new(value: Vec<Asset>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Defines the asset properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssetProperties {
     #[doc = "Globally unique, immutable, non-reusable id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -344,8 +177,8 @@ pub struct AssetProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "A reference to the asset endpoint profile (connection information) used by brokers to connect to an endpoint that provides data points for this asset. Must have the format <ModuleCR.metadata.namespace>/<ModuleCR.metadata.name>."]
-    #[serde(rename = "assetEndpointProfileUri", default, skip_serializing_if = "Option::is_none")]
-    pub asset_endpoint_profile_uri: Option<String>,
+    #[serde(rename = "assetEndpointProfileUri")]
+    pub asset_endpoint_profile_uri: String,
     #[doc = "An integer that is incremented each time the resource is modified."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i32>,
@@ -389,65 +222,224 @@ pub struct AssetProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub data_points: Vec<serde_json::Value>,
+    pub data_points: Vec<DataPoint>,
     #[doc = "Array of events that are part of the asset. Each event can reference an asset type capability and have per-event configuration. See below for more details about the definition of the events element."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub events: Vec<serde_json::Value>,
-    #[doc = "Read only object to reflect changes that have occurred on the Edge. Similar to Kubernetes status property for custom resources."]
+    pub events: Vec<Event>,
+    #[doc = "Defines the asset status properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<asset_properties::Status>,
-    #[doc = "Provisioning state of the resource."]
+    pub status: Option<AssetStatus>,
+    #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<asset_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 impl AssetProperties {
+    pub fn new(asset_endpoint_profile_uri: String) -> Self {
+        Self {
+            uuid: None,
+            asset_type: None,
+            enabled: None,
+            external_asset_id: None,
+            display_name: None,
+            description: None,
+            asset_endpoint_profile_uri,
+            version: None,
+            manufacturer: None,
+            manufacturer_uri: None,
+            model: None,
+            product_code: None,
+            hardware_revision: None,
+            software_revision: None,
+            documentation_uri: None,
+            serial_number: None,
+            attributes: None,
+            default_data_points_configuration: None,
+            default_events_configuration: None,
+            data_points: Vec::new(),
+            events: Vec::new(),
+            status: None,
+            provisioning_state: None,
+        }
+    }
+}
+#[doc = "Defines the asset status properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AssetStatus {
+    #[doc = "Array object to transfer and persist errors that originate from the Edge."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub errors: Vec<AssetStatusError>,
+    #[doc = "A read only incremental counter indicating the number of times the configuration has been modified from the perspective of the current actual (Edge) state of the Asset. Edge would be the only writer of this value and would sync back up to the cloud. In steady state, this should equal version."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<i32>,
+}
+impl AssetStatus {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod asset_properties {
-    use super::*;
-    #[doc = "Read only object to reflect changes that have occurred on the Edge. Similar to Kubernetes status property for custom resources."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Status {
-        #[doc = "Array object to transfer and persist errors that originate from the Edge."]
-        #[serde(
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub errors: Vec<serde_json::Value>,
-        #[doc = "A read only incremental counter indicating the number of times the configuration has been modified from the perspective of the current actual (Edge) state of the Asset. Edge would be the only writer of this value and would sync back up to the cloud. In steady state, this should equal version."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub version: Option<i32>,
+#[doc = "Defines the asset status error properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AssetStatusError {
+    #[doc = "Error code for classification of errors (ex: 400, 404, 500, etc.)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<i32>,
+    #[doc = "Human readable helpful error message to provide additional context for error (ex: “capability Id 'foo' does not exist”)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl AssetStatusError {
+    pub fn new() -> Self {
+        Self::default()
     }
-    impl Status {
-        pub fn new() -> Self {
-            Self::default()
+}
+#[doc = "The type used for update operations of the Asset."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AssetUpdate {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "The updatable properties of the Asset."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AssetUpdateProperties>,
+}
+impl AssetUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The updatable properties of the Asset."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AssetUpdateProperties {
+    #[doc = "Resource path to asset type (model) definition."]
+    #[serde(rename = "assetType", default, skip_serializing_if = "Option::is_none")]
+    pub asset_type: Option<String>,
+    #[doc = "Enabled/Disabled status of the asset."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[doc = "Human-readable display name."]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[doc = "Human-readable description of the asset."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "Asset manufacturer name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub manufacturer: Option<String>,
+    #[doc = "Asset manufacturer URI."]
+    #[serde(rename = "manufacturerUri", default, skip_serializing_if = "Option::is_none")]
+    pub manufacturer_uri: Option<String>,
+    #[doc = "Asset model name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[doc = "Asset product code."]
+    #[serde(rename = "productCode", default, skip_serializing_if = "Option::is_none")]
+    pub product_code: Option<String>,
+    #[doc = "Revision number of the hardware."]
+    #[serde(rename = "hardwareRevision", default, skip_serializing_if = "Option::is_none")]
+    pub hardware_revision: Option<String>,
+    #[doc = "Revision number of the software."]
+    #[serde(rename = "softwareRevision", default, skip_serializing_if = "Option::is_none")]
+    pub software_revision: Option<String>,
+    #[doc = "Reference to the documentation."]
+    #[serde(rename = "documentationUri", default, skip_serializing_if = "Option::is_none")]
+    pub documentation_uri: Option<String>,
+    #[doc = "Asset serial number."]
+    #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
+    pub serial_number: Option<String>,
+    #[doc = "A set of key-value pairs that contain custom attributes set by the customer."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attributes: Option<serde_json::Value>,
+    #[doc = "Protocol-specific default configuration for all data points. Each data point can have its own configuration that overrides the default settings here. This assumes that each asset instance has one protocol."]
+    #[serde(rename = "defaultDataPointsConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub default_data_points_configuration: Option<String>,
+    #[doc = "Protocol-specific default configuration for all events. Each event can have its own configuration that overrides the default settings here. This assumes that each asset instance has one protocol."]
+    #[serde(rename = "defaultEventsConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub default_events_configuration: Option<String>,
+    #[doc = "Array of data points that are part of the asset. Each data point can reference an asset type capability and have per-data point configuration. See below for more details for the definition of the dataPoints element."]
+    #[serde(
+        rename = "dataPoints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub data_points: Vec<DataPoint>,
+    #[doc = "Array of events that are part of the asset. Each event can reference an asset type capability and have per-event configuration. See below for more details about the definition of the events element."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub events: Vec<Event>,
+}
+impl AssetUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Defines the data point properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataPoint {
+    #[doc = "The name of the data point."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The address of the source of the data in the asset (e.g. URL) so that a client can access the data source on the asset."]
+    #[serde(rename = "dataSource")]
+    pub data_source: String,
+    #[doc = "The path to the type definition of the capability (e.g. DTMI, OPC UA information model node id, etc.), for example dtmi:com:example:Robot:_contents:__prop1;1."]
+    #[serde(rename = "capabilityId", default, skip_serializing_if = "Option::is_none")]
+    pub capability_id: Option<String>,
+    #[doc = "An indication of how the data point should be mapped to OpenTelemetry."]
+    #[serde(rename = "observabilityMode", default, skip_serializing_if = "Option::is_none")]
+    pub observability_mode: Option<data_point::ObservabilityMode>,
+    #[doc = "Protocol-specific configuration for the data point. For OPC UA, this could include configuration like, publishingInterval, samplingInterval, and queueSize."]
+    #[serde(rename = "dataPointConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub data_point_configuration: Option<String>,
+}
+impl DataPoint {
+    pub fn new(data_source: String) -> Self {
+        Self {
+            name: None,
+            data_source,
+            capability_id: None,
+            observability_mode: None,
+            data_point_configuration: None,
         }
     }
-    #[doc = "Provisioning state of the resource."]
+}
+pub mod data_point {
+    use super::*;
+    #[doc = "An indication of how the data point should be mapped to OpenTelemetry."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ProvisioningState")]
-    pub enum ProvisioningState {
-        Succeeded,
-        Failed,
-        Canceled,
-        Accepted,
+    #[serde(remote = "ObservabilityMode")]
+    pub enum ObservabilityMode {
+        #[serde(rename = "none")]
+        None,
+        #[serde(rename = "counter")]
+        Counter,
+        #[serde(rename = "gauge")]
+        Gauge,
+        #[serde(rename = "histogram")]
+        Histogram,
+        #[serde(rename = "log")]
+        Log,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
-    impl FromStr for ProvisioningState {
+    impl FromStr for ObservabilityMode {
         type Err = value::Error;
         fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
             Self::deserialize(s.into_deserializer())
         }
     }
-    impl<'de> Deserialize<'de> for ProvisioningState {
+    impl<'de> Deserialize<'de> for ObservabilityMode {
         fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -457,42 +449,73 @@ pub mod asset_properties {
             Ok(deserialized)
         }
     }
-    impl Serialize for ProvisioningState {
+    impl Serialize for ObservabilityMode {
         fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
         where
             S: Serializer,
         {
             match self {
-                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
-                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Canceled"),
-                Self::Accepted => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Accepted"),
+                Self::None => serializer.serialize_unit_variant("ObservabilityMode", 0u32, "none"),
+                Self::Counter => serializer.serialize_unit_variant("ObservabilityMode", 1u32, "counter"),
+                Self::Gauge => serializer.serialize_unit_variant("ObservabilityMode", 2u32, "gauge"),
+                Self::Histogram => serializer.serialize_unit_variant("ObservabilityMode", 3u32, "histogram"),
+                Self::Log => serializer.serialize_unit_variant("ObservabilityMode", 4u32, "log"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
     }
-}
-#[doc = "List of Assets."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AssetResponseList {
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<Asset>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for AssetResponseList {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
+    impl Default for ObservabilityMode {
+        fn default() -> Self {
+            Self::None
+        }
     }
 }
-impl AssetResponseList {
-    pub fn new() -> Self {
-        Self::default()
+#[doc = "Defines the data point observability mode."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "DataPointsObservabilityMode")]
+pub enum DataPointsObservabilityMode {
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "counter")]
+    Counter,
+    #[serde(rename = "gauge")]
+    Gauge,
+    #[serde(rename = "histogram")]
+    Histogram,
+    #[serde(rename = "log")]
+    Log,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for DataPointsObservabilityMode {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for DataPointsObservabilityMode {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for DataPointsObservabilityMode {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::None => serializer.serialize_unit_variant("DataPointsObservabilityMode", 0u32, "none"),
+            Self::Counter => serializer.serialize_unit_variant("DataPointsObservabilityMode", 1u32, "counter"),
+            Self::Gauge => serializer.serialize_unit_variant("DataPointsObservabilityMode", 2u32, "gauge"),
+            Self::Histogram => serializer.serialize_unit_variant("DataPointsObservabilityMode", 3u32, "histogram"),
+            Self::Log => serializer.serialize_unit_variant("DataPointsObservabilityMode", 4u32, "log"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "The resource management error additional info."]
@@ -559,6 +582,136 @@ impl azure_core::Continuable for ErrorResponse {
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Defines the event properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Event {
+    #[doc = "The name of the event."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The address of the notifier of the event in the asset (e.g. URL) so that a client can access the event on the asset."]
+    #[serde(rename = "eventNotifier")]
+    pub event_notifier: String,
+    #[doc = "The path to the type definition of the capability (e.g. DTMI, OPC UA information model node id, etc.), for example dtmi:com:example:Robot:_contents:__prop1;1."]
+    #[serde(rename = "capabilityId", default, skip_serializing_if = "Option::is_none")]
+    pub capability_id: Option<String>,
+    #[doc = "An indication of how the event should be mapped to OpenTelemetry."]
+    #[serde(rename = "observabilityMode", default, skip_serializing_if = "Option::is_none")]
+    pub observability_mode: Option<event::ObservabilityMode>,
+    #[doc = "Protocol-specific configuration for the event. For OPC UA, this could include configuration like, publishingInterval, samplingInterval, and queueSize."]
+    #[serde(rename = "eventConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub event_configuration: Option<String>,
+}
+impl Event {
+    pub fn new(event_notifier: String) -> Self {
+        Self {
+            name: None,
+            event_notifier,
+            capability_id: None,
+            observability_mode: None,
+            event_configuration: None,
+        }
+    }
+}
+pub mod event {
+    use super::*;
+    #[doc = "An indication of how the event should be mapped to OpenTelemetry."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ObservabilityMode")]
+    pub enum ObservabilityMode {
+        #[serde(rename = "none")]
+        None,
+        #[serde(rename = "log")]
+        Log,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ObservabilityMode {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ObservabilityMode {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ObservabilityMode {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::None => serializer.serialize_unit_variant("ObservabilityMode", 0u32, "none"),
+                Self::Log => serializer.serialize_unit_variant("ObservabilityMode", 1u32, "log"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for ObservabilityMode {
+        fn default() -> Self {
+            Self::None
+        }
+    }
+}
+#[doc = "Defines the event observability mode."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "EventsObservabilityMode")]
+pub enum EventsObservabilityMode {
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "log")]
+    Log,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for EventsObservabilityMode {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for EventsObservabilityMode {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for EventsObservabilityMode {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::None => serializer.serialize_unit_variant("EventsObservabilityMode", 0u32, "none"),
+            Self::Log => serializer.serialize_unit_variant("EventsObservabilityMode", 1u32, "log"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The extended location."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtendedLocation {
+    #[doc = "The extended location type."]
+    #[serde(rename = "type")]
+    pub type_: String,
+    #[doc = "The extended location name."]
+    pub name: String,
+}
+impl ExtendedLocation {
+    pub fn new(type_: String, name: String) -> Self {
+        Self { type_, name }
     }
 }
 #[doc = "Details of a REST API operation, returned from the Resource Provider Operations API"]
@@ -756,6 +909,65 @@ impl OperationStatusResult {
         }
     }
 }
+#[doc = "Certificate or private key that can be used by the southbound connector connecting to the shop floor/OT device. The accepted extensions are .der for certificates and .pfx/.pem for private keys."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OwnCertificate {
+    #[doc = "Certificate thumbprint."]
+    #[serde(rename = "certThumbprint", default, skip_serializing_if = "Option::is_none")]
+    pub cert_thumbprint: Option<String>,
+    #[doc = "Secret Reference name (cert and private key)."]
+    #[serde(rename = "certSecretReference", default, skip_serializing_if = "Option::is_none")]
+    pub cert_secret_reference: Option<String>,
+    #[doc = "Secret Reference Name (Pfx or Pem password)."]
+    #[serde(rename = "certPasswordReference", default, skip_serializing_if = "Option::is_none")]
+    pub cert_password_reference: Option<String>,
+}
+impl OwnCertificate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The provisioning status of the resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ProvisioningState")]
+pub enum ProvisioningState {
+    Succeeded,
+    Failed,
+    Canceled,
+    Accepted,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ProvisioningState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ProvisioningState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ProvisioningState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
+            Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
+            Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Canceled"),
+            Self::Accepted => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Accepted"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -795,6 +1007,264 @@ impl TrackedResource {
             tags: None,
             location,
         }
+    }
+}
+#[doc = "Definition of the authentication mechanism for the southbound connector."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransportAuthentication {
+    #[doc = "Defines a reference to a secret which contains all certificates and private keys that can be used by the southbound connector connecting to the shop floor/OT device. The accepted extensions are .der for certificates and .pfx/.pem for private keys."]
+    #[serde(rename = "ownCertificates")]
+    pub own_certificates: Vec<OwnCertificate>,
+}
+impl TransportAuthentication {
+    pub fn new(own_certificates: Vec<OwnCertificate>) -> Self {
+        Self { own_certificates }
+    }
+}
+#[doc = "Definition of the authentication mechanism for the southbound connector."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct TransportAuthenticationUpdate {
+    #[doc = "Defines a reference to a secret which contains all certificates and private keys that can be used by the southbound connector connecting to the shop floor/OT device. The accepted extensions are .der for certificates and .pfx/.pem for private keys."]
+    #[serde(
+        rename = "ownCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub own_certificates: Vec<OwnCertificate>,
+}
+impl TransportAuthenticationUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Definition of the client authentication mechanism to the server."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserAuthentication {
+    #[doc = "Defines the mode to authenticate the user of the client at the server."]
+    pub mode: user_authentication::Mode,
+    #[doc = "The credentials for authentication mode UsernamePassword."]
+    #[serde(rename = "usernamePasswordCredentials", default, skip_serializing_if = "Option::is_none")]
+    pub username_password_credentials: Option<UsernamePasswordCredentials>,
+    #[doc = "The x509 certificate for authentication mode Certificate."]
+    #[serde(rename = "x509Credentials", default, skip_serializing_if = "Option::is_none")]
+    pub x509_credentials: Option<X509Credentials>,
+}
+impl UserAuthentication {
+    pub fn new(mode: user_authentication::Mode) -> Self {
+        Self {
+            mode,
+            username_password_credentials: None,
+            x509_credentials: None,
+        }
+    }
+}
+pub mod user_authentication {
+    use super::*;
+    #[doc = "Defines the mode to authenticate the user of the client at the server."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Mode")]
+    pub enum Mode {
+        Anonymous,
+        Certificate,
+        UsernamePassword,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Mode {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Mode {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Mode {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Anonymous => serializer.serialize_unit_variant("Mode", 0u32, "Anonymous"),
+                Self::Certificate => serializer.serialize_unit_variant("Mode", 1u32, "Certificate"),
+                Self::UsernamePassword => serializer.serialize_unit_variant("Mode", 2u32, "UsernamePassword"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for Mode {
+        fn default() -> Self {
+            Self::Certificate
+        }
+    }
+}
+#[doc = "The mode to authenticate the user of the client at the server."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "UserAuthenticationMode")]
+pub enum UserAuthenticationMode {
+    Anonymous,
+    Certificate,
+    UsernamePassword,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for UserAuthenticationMode {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for UserAuthenticationMode {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for UserAuthenticationMode {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Anonymous => serializer.serialize_unit_variant("UserAuthenticationMode", 0u32, "Anonymous"),
+            Self::Certificate => serializer.serialize_unit_variant("UserAuthenticationMode", 1u32, "Certificate"),
+            Self::UsernamePassword => serializer.serialize_unit_variant("UserAuthenticationMode", 2u32, "UsernamePassword"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Definition of the client authentication mechanism to the server."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserAuthenticationUpdate {
+    #[doc = "Defines the mode to authenticate the user of the client at the server."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<user_authentication_update::Mode>,
+    #[doc = "The credentials for authentication mode UsernamePassword."]
+    #[serde(rename = "usernamePasswordCredentials", default, skip_serializing_if = "Option::is_none")]
+    pub username_password_credentials: Option<UsernamePasswordCredentialsUpdate>,
+    #[doc = "The x509 certificate for authentication mode Certificate."]
+    #[serde(rename = "x509Credentials", default, skip_serializing_if = "Option::is_none")]
+    pub x509_credentials: Option<X509CredentialsUpdate>,
+}
+impl UserAuthenticationUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod user_authentication_update {
+    use super::*;
+    #[doc = "Defines the mode to authenticate the user of the client at the server."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Mode")]
+    pub enum Mode {
+        Anonymous,
+        Certificate,
+        UsernamePassword,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Mode {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Mode {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Mode {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Anonymous => serializer.serialize_unit_variant("Mode", 0u32, "Anonymous"),
+                Self::Certificate => serializer.serialize_unit_variant("Mode", 1u32, "Certificate"),
+                Self::UsernamePassword => serializer.serialize_unit_variant("Mode", 2u32, "UsernamePassword"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for Mode {
+        fn default() -> Self {
+            Self::Certificate
+        }
+    }
+}
+#[doc = "The credentials for authentication mode UsernamePassword."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UsernamePasswordCredentials {
+    #[doc = "A reference to secret containing the username."]
+    #[serde(rename = "usernameReference")]
+    pub username_reference: String,
+    #[doc = "A reference to secret containing the password."]
+    #[serde(rename = "passwordReference")]
+    pub password_reference: String,
+}
+impl UsernamePasswordCredentials {
+    pub fn new(username_reference: String, password_reference: String) -> Self {
+        Self {
+            username_reference,
+            password_reference,
+        }
+    }
+}
+#[doc = "The credentials for authentication mode UsernamePassword."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UsernamePasswordCredentialsUpdate {
+    #[doc = "A reference to secret containing the username."]
+    #[serde(rename = "usernameReference", default, skip_serializing_if = "Option::is_none")]
+    pub username_reference: Option<String>,
+    #[doc = "A reference to secret containing the password."]
+    #[serde(rename = "passwordReference", default, skip_serializing_if = "Option::is_none")]
+    pub password_reference: Option<String>,
+}
+impl UsernamePasswordCredentialsUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The x509 certificate for authentication mode Certificate."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X509Credentials {
+    #[doc = "A reference to secret containing the certificate and private key (e.g. stored as .der/.pem or .der/.pfx)."]
+    #[serde(rename = "certificateReference")]
+    pub certificate_reference: String,
+}
+impl X509Credentials {
+    pub fn new(certificate_reference: String) -> Self {
+        Self { certificate_reference }
+    }
+}
+#[doc = "The x509 certificate for authentication mode Certificate."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct X509CredentialsUpdate {
+    #[doc = "A reference to secret containing the certificate and private key (e.g. stored as .der/.pem or .der/.pfx)."]
+    #[serde(rename = "certificateReference", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_reference: Option<String>,
+}
+impl X509CredentialsUpdate {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Metadata pertaining to creation and last modification of the resource."]

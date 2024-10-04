@@ -271,7 +271,8 @@ pub mod spark_batch {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/batches", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/batches",));
                 Ok(url)
             }
         }
@@ -372,7 +373,8 @@ pub mod spark_batch {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/batches", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/batches",));
                 Ok(url)
             }
         }
@@ -472,7 +474,8 @@ pub mod spark_batch {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/batches/{}", self.client.endpoint(), &self.batch_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/batches/{}", &self.batch_id));
                 Ok(url)
             }
         }
@@ -558,7 +561,8 @@ pub mod spark_batch {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/batches/{}", self.client.endpoint(), &self.batch_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/batches/{}", &self.batch_id));
                 Ok(url)
             }
         }
@@ -777,7 +781,8 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/sessions", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sessions",));
                 Ok(url)
             }
         }
@@ -878,7 +883,8 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/sessions", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sessions",));
                 Ok(url)
             }
         }
@@ -978,7 +984,8 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/sessions/{}", self.client.endpoint(), &self.session_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sessions/{}", &self.session_id));
                 Ok(url)
             }
         }
@@ -1064,7 +1071,8 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/sessions/{}", self.client.endpoint(), &self.session_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sessions/{}", &self.session_id));
                 Ok(url)
             }
         }
@@ -1138,7 +1146,8 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/sessions/{}/reset-timeout", self.client.endpoint(), &self.session_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sessions/{}/reset-timeout", &self.session_id));
                 Ok(url)
             }
         }
@@ -1217,7 +1226,8 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/sessions/{}/statements", self.client.endpoint(), &self.session_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sessions/{}/statements", &self.session_id));
                 Ok(url)
             }
         }
@@ -1310,7 +1320,8 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/sessions/{}/statements", self.client.endpoint(), &self.session_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sessions/{}/statements", &self.session_id));
                 Ok(url)
             }
         }
@@ -1402,12 +1413,8 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/sessions/{}/statements/{}",
-                    self.client.endpoint(),
-                    &self.session_id,
-                    &self.statement_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sessions/{}/statements/{}", &self.session_id, &self.statement_id));
                 Ok(url)
             }
         }
@@ -1500,12 +1507,8 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/sessions/{}/statements/{}/cancel",
-                    self.client.endpoint(),
-                    &self.session_id,
-                    &self.statement_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sessions/{}/statements/{}/cancel", &self.session_id, &self.statement_id));
                 Ok(url)
             }
         }

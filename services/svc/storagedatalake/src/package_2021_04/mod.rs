@@ -296,7 +296,8 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/",));
                 Ok(url)
             }
         }
@@ -545,7 +546,8 @@ pub mod file_system {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}", self.client.endpoint(), &self.filesystem))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}", &self.filesystem));
                 Ok(url)
             }
         }
@@ -694,7 +696,8 @@ pub mod file_system {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}", self.client.endpoint(), &self.filesystem))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}", &self.filesystem));
                 Ok(url)
             }
         }
@@ -826,7 +829,8 @@ pub mod file_system {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}", self.client.endpoint(), &self.filesystem))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}", &self.filesystem));
                 Ok(url)
             }
         }
@@ -957,7 +961,8 @@ pub mod file_system {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}", self.client.endpoint(), &self.filesystem))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}", &self.filesystem));
                 Ok(url)
             }
         }
@@ -1126,7 +1131,8 @@ pub mod file_system {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}?resource=filesystem", self.client.endpoint(), &self.filesystem))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?resource=filesystem", &self.filesystem));
                 Ok(url)
             }
         }
@@ -1310,11 +1316,8 @@ pub mod file_system {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}?restype=container&comp=list&hierarchy",
-                    self.client.endpoint(),
-                    &self.filesystem
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}?restype=container&comp=list&hierarchy", &self.filesystem));
                 Ok(url)
             }
         }
@@ -1945,7 +1948,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/{}", self.client.endpoint(), &self.filesystem, &self.path))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}", &self.filesystem, &self.path));
                 Ok(url)
             }
         }
@@ -2160,7 +2164,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/{}", self.client.endpoint(), &self.filesystem, &self.path))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}", &self.filesystem, &self.path));
                 Ok(url)
             }
         }
@@ -2523,7 +2528,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/{}", self.client.endpoint(), &self.filesystem, &self.path))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}", &self.filesystem, &self.path));
                 Ok(url)
             }
         }
@@ -2909,7 +2915,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/{}", self.client.endpoint(), &self.filesystem, &self.path))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}", &self.filesystem, &self.path));
                 Ok(url)
             }
         }
@@ -3104,7 +3111,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/{}", self.client.endpoint(), &self.filesystem, &self.path))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}", &self.filesystem, &self.path));
                 Ok(url)
             }
         }
@@ -3359,7 +3367,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}/{}", self.client.endpoint(), &self.filesystem, &self.path))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}", &self.filesystem, &self.path));
                 Ok(url)
             }
         }
@@ -3565,12 +3574,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?action=setAccessControl",
-                    self.client.endpoint(),
-                    &self.filesystem,
-                    &self.path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?action=setAccessControl", &self.filesystem, &self.path));
                 Ok(url)
             }
         }
@@ -3735,12 +3740,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?action=setAccessControlRecursive",
-                    self.client.endpoint(),
-                    &self.filesystem,
-                    &self.path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?action=setAccessControlRecursive", &self.filesystem, &self.path));
                 Ok(url)
             }
         }
@@ -4055,12 +4056,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?action=flush",
-                    self.client.endpoint(),
-                    &self.filesystem,
-                    &self.path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?action=flush", &self.filesystem, &self.path));
                 Ok(url)
             }
         }
@@ -4273,12 +4270,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?action=append",
-                    self.client.endpoint(),
-                    &self.filesystem,
-                    &self.path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?action=append", &self.filesystem, &self.path));
                 Ok(url)
             }
         }
@@ -4414,12 +4407,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=expiry",
-                    self.client.endpoint(),
-                    &self.filesystem,
-                    &self.path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=expiry", &self.filesystem, &self.path));
                 Ok(url)
             }
         }
@@ -4549,12 +4538,8 @@ pub mod path {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/{}/{}?comp=undelete",
-                    self.client.endpoint(),
-                    &self.filesystem,
-                    &self.path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/{}?comp=undelete", &self.filesystem, &self.path));
                 Ok(url)
             }
         }

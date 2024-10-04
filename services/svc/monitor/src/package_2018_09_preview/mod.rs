@@ -246,15 +246,15 @@ pub mod metrics {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/metrics",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/metrics",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_provider,
                     &self.resource_type_name,
                     &self.resource_name
-                ))?;
+                ));
                 Ok(url)
             }
         }

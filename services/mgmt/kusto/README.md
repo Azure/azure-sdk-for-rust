@@ -1,14 +1,14 @@
 # azure_mgmt_kusto crate
 
-This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
+This is an unofficial, unsupported generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust/tree/legacy) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/azure-kusto/resource-manager/readme.md
 
-To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/legacy/services/README.md#examples).
 
 The default tag is `schema-2019-09-07`.
 
-The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/legacy/services/tags.md) are available:
 
 - `schema-2019-09-07` has 34 operations from 1 API versions: `2019-09-07`. Use crate feature `schema-2019-09-07` to enable. The operations will be in the `schema_2019_09_07` module.
 - `schema-2019-05-15` has 28 operations from 1 API versions: `2019-05-15`. Use crate feature `schema-2019-05-15` to enable. The operations will be in the `schema_2019_05_15` module.

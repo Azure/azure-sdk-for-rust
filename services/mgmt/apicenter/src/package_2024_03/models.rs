@@ -3,11 +3,46 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
+#[doc = "The type of action"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ActionType")]
+pub enum ActionType {
+    Internal,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ActionType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ActionType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ActionType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Internal => serializer.serialize_unit_variant("ActionType", 0u32, "Internal"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "API entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Api {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "API properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiProperties>,
@@ -17,36 +52,11 @@ impl Api {
         Self::default()
     }
 }
-#[doc = "Paginated collection of APIs."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ApiCollection {
-    #[doc = "Page items."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<Api>,
-    #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for ApiCollection {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl ApiCollection {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "API definition entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiDefinition {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "API definition properties entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiDefinitionProperties>,
@@ -56,29 +66,24 @@ impl ApiDefinition {
         Self::default()
     }
 }
-#[doc = "Paginated collection of API definitions."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ApiDefinitionCollection {
-    #[doc = "Page items."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+#[doc = "The response of a ApiDefinition list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiDefinitionListResult {
+    #[doc = "The ApiDefinition items on this page"]
     pub value: Vec<ApiDefinition>,
     #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for ApiDefinitionCollection {
+impl azure_core::Continuable for ApiDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl ApiDefinitionCollection {
-    pub fn new() -> Self {
-        Self::default()
+impl ApiDefinitionListResult {
+    pub fn new(value: Vec<ApiDefinition>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "API definition properties entity."]
@@ -91,7 +96,7 @@ pub struct ApiDefinitionProperties {
     pub description: Option<String>,
     #[doc = "API specification details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub specification: Option<api_definition_properties::Specification>,
+    pub specification: Option<ApiDefinitionPropertiesSpecification>,
 }
 impl ApiDefinitionProperties {
     pub fn new(title: String) -> Self {
@@ -102,22 +107,98 @@ impl ApiDefinitionProperties {
         }
     }
 }
-pub mod api_definition_properties {
-    use super::*;
-    #[doc = "API specification details."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Specification {
-        #[doc = "Specification name."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub name: Option<String>,
-        #[doc = "Specification version."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub version: Option<String>,
+#[doc = "API specification details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiDefinitionPropertiesSpecification {
+    #[doc = "Specification name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Specification version."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+impl ApiDefinitionPropertiesSpecification {
+    pub fn new() -> Self {
+        Self::default()
     }
-    impl Specification {
-        pub fn new() -> Self {
-            Self::default()
+}
+#[doc = "The API specification was successfully imported."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiImportSuccess {}
+impl ApiImportSuccess {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The kind of the API"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ApiKind")]
+pub enum ApiKind {
+    #[serde(rename = "rest")]
+    Rest,
+    #[serde(rename = "graphql")]
+    Graphql,
+    #[serde(rename = "grpc")]
+    Grpc,
+    #[serde(rename = "soap")]
+    Soap,
+    #[serde(rename = "webhook")]
+    Webhook,
+    #[serde(rename = "websocket")]
+    Websocket,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ApiKind {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ApiKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ApiKind {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Rest => serializer.serialize_unit_variant("ApiKind", 0u32, "rest"),
+            Self::Graphql => serializer.serialize_unit_variant("ApiKind", 1u32, "graphql"),
+            Self::Grpc => serializer.serialize_unit_variant("ApiKind", 2u32, "grpc"),
+            Self::Soap => serializer.serialize_unit_variant("ApiKind", 3u32, "soap"),
+            Self::Webhook => serializer.serialize_unit_variant("ApiKind", 4u32, "webhook"),
+            Self::Websocket => serializer.serialize_unit_variant("ApiKind", 5u32, "websocket"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
+    }
+}
+#[doc = "The response of a Api list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiListResult {
+    #[doc = "The Api items on this page"]
+    pub value: Vec<Api>,
+    #[doc = "The link to the next page of items"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ApiListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl ApiListResult {
+    pub fn new(value: Vec<Api>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "API properties."]
@@ -125,20 +206,21 @@ pub mod api_definition_properties {
 pub struct ApiProperties {
     #[doc = "API title."]
     pub title: String,
-    #[doc = "Kind of API. For example, REST or GraphQL."]
-    pub kind: api_properties::Kind,
+    #[doc = "The kind of the API"]
+    pub kind: ApiKind,
     #[doc = "Description of the API."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Short description of the API."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
-    #[doc = "Current lifecycle stage of the API."]
+    #[doc = "The stage of the Api development lifecycle"]
     #[serde(rename = "lifecycleStage", default, skip_serializing_if = "Option::is_none")]
     pub lifecycle_stage: Option<LifecycleStage>,
     #[doc = "Terms of service for the API."]
     #[serde(rename = "termsOfService", default, skip_serializing_if = "Option::is_none")]
     pub terms_of_service: Option<TermsOfService>,
+    #[doc = "The set of external documentation"]
     #[serde(
         rename = "externalDocumentation",
         default,
@@ -146,6 +228,7 @@ pub struct ApiProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub external_documentation: Vec<ExternalDocumentation>,
+    #[doc = "The set of contacts"]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -160,7 +243,7 @@ pub struct ApiProperties {
     pub custom_properties: Option<CustomProperties>,
 }
 impl ApiProperties {
-    pub fn new(title: String, kind: api_properties::Kind) -> Self {
+    pub fn new(title: String, kind: ApiKind) -> Self {
         Self {
             title,
             kind,
@@ -175,65 +258,12 @@ impl ApiProperties {
         }
     }
 }
-pub mod api_properties {
-    use super::*;
-    #[doc = "Kind of API. For example, REST or GraphQL."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        #[serde(rename = "rest")]
-        Rest,
-        #[serde(rename = "graphql")]
-        Graphql,
-        #[serde(rename = "grpc")]
-        Grpc,
-        #[serde(rename = "soap")]
-        Soap,
-        #[serde(rename = "webhook")]
-        Webhook,
-        #[serde(rename = "websocket")]
-        Websocket,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Rest => serializer.serialize_unit_variant("Kind", 0u32, "rest"),
-                Self::Graphql => serializer.serialize_unit_variant("Kind", 1u32, "graphql"),
-                Self::Grpc => serializer.serialize_unit_variant("Kind", 2u32, "grpc"),
-                Self::Soap => serializer.serialize_unit_variant("Kind", 3u32, "soap"),
-                Self::Webhook => serializer.serialize_unit_variant("Kind", 4u32, "webhook"),
-                Self::Websocket => serializer.serialize_unit_variant("Kind", 5u32, "websocket"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
 #[doc = "The API specification export result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiSpecExportResult {
+    #[doc = "Result format for exported Api spec"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<api_spec_export_result::Format>,
+    pub format: Option<ApiSpecExportResultFormat>,
     #[doc = "The result of the export operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
@@ -243,44 +273,42 @@ impl ApiSpecExportResult {
         Self::default()
     }
 }
-pub mod api_spec_export_result {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Format")]
-    pub enum Format {
-        #[serde(rename = "link")]
-        Link,
-        #[serde(rename = "inline")]
-        Inline,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+#[doc = "Result format for exported Api spec"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ApiSpecExportResultFormat")]
+pub enum ApiSpecExportResultFormat {
+    #[serde(rename = "inline")]
+    Inline,
+    #[serde(rename = "link")]
+    Link,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ApiSpecExportResultFormat {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
     }
-    impl FromStr for Format {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
+}
+impl<'de> Deserialize<'de> for ApiSpecExportResultFormat {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
     }
-    impl<'de> Deserialize<'de> for Format {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Format {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Link => serializer.serialize_unit_variant("Format", 0u32, "link"),
-                Self::Inline => serializer.serialize_unit_variant("Format", 1u32, "inline"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
+}
+impl Serialize for ApiSpecExportResultFormat {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Inline => serializer.serialize_unit_variant("ApiSpecExportResultFormat", 0u32, "inline"),
+            Self::Link => serializer.serialize_unit_variant("ApiSpecExportResultFormat", 1u32, "link"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -290,72 +318,69 @@ pub struct ApiSpecImportRequest {
     #[doc = "Value of the API specification source."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-    #[doc = "Format of the API specification source."]
+    #[doc = "Source format for imported Api spec"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<api_spec_import_request::Format>,
+    pub format: Option<ApiSpecImportSourceFormat>,
     #[doc = "API specification details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub specification: Option<api_spec_import_request::Specification>,
+    pub specification: Option<ApiSpecImportRequestSpecification>,
 }
 impl ApiSpecImportRequest {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod api_spec_import_request {
-    use super::*;
-    #[doc = "Format of the API specification source."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Format")]
-    pub enum Format {
-        #[serde(rename = "inline")]
-        Inline,
-        #[serde(rename = "link")]
-        Link,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+#[doc = "API specification details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiSpecImportRequestSpecification {
+    #[doc = "Specification name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Specification version."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+impl ApiSpecImportRequestSpecification {
+    pub fn new() -> Self {
+        Self::default()
     }
-    impl FromStr for Format {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
+}
+#[doc = "Source format for imported Api spec"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ApiSpecImportSourceFormat")]
+pub enum ApiSpecImportSourceFormat {
+    #[serde(rename = "inline")]
+    Inline,
+    #[serde(rename = "link")]
+    Link,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ApiSpecImportSourceFormat {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
     }
-    impl<'de> Deserialize<'de> for Format {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
+}
+impl<'de> Deserialize<'de> for ApiSpecImportSourceFormat {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
     }
-    impl Serialize for Format {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Inline => serializer.serialize_unit_variant("Format", 0u32, "inline"),
-                Self::Link => serializer.serialize_unit_variant("Format", 1u32, "link"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "API specification details."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Specification {
-        #[doc = "Specification name."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub name: Option<String>,
-        #[doc = "Specification version."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub version: Option<String>,
-    }
-    impl Specification {
-        pub fn new() -> Self {
-            Self::default()
+}
+impl Serialize for ApiSpecImportSourceFormat {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Inline => serializer.serialize_unit_variant("ApiSpecImportSourceFormat", 0u32, "inline"),
+            Self::Link => serializer.serialize_unit_variant("ApiSpecImportSourceFormat", 1u32, "link"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -363,7 +388,7 @@ pub mod api_spec_import_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiVersion {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "API version properties entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiVersionProperties>,
@@ -373,29 +398,24 @@ impl ApiVersion {
         Self::default()
     }
 }
-#[doc = "Paginated collection of API versions."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ApiVersionCollection {
-    #[doc = "Page items."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+#[doc = "The response of a ApiVersion list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiVersionListResult {
+    #[doc = "The ApiVersion items on this page"]
     pub value: Vec<ApiVersion>,
     #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for ApiVersionCollection {
+impl azure_core::Continuable for ApiVersionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl ApiVersionCollection {
-    pub fn new() -> Self {
-        Self::default()
+impl ApiVersionListResult {
+    pub fn new(value: Vec<ApiVersion>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "API version properties entity."]
@@ -403,7 +423,7 @@ impl ApiVersionCollection {
 pub struct ApiVersionProperties {
     #[doc = "API version title."]
     pub title: String,
-    #[doc = "Current lifecycle stage of the API."]
+    #[doc = "The stage of the Api development lifecycle"]
     #[serde(rename = "lifecycleStage")]
     pub lifecycle_stage: LifecycleStage,
 }
@@ -412,6 +432,7 @@ impl ApiVersionProperties {
         Self { title, lifecycle_stage }
     }
 }
+#[doc = "Contact information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Contact {
     #[doc = "Name of the contact."]
@@ -429,6 +450,47 @@ impl Contact {
         Self::default()
     }
 }
+#[doc = "How the resource was created"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "CreatedByType")]
+pub enum CreatedByType {
+    User,
+    Application,
+    ManagedIdentity,
+    Key,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for CreatedByType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for CreatedByType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for CreatedByType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::User => serializer.serialize_unit_variant("CreatedByType", 0u32, "User"),
+            Self::Application => serializer.serialize_unit_variant("CreatedByType", 1u32, "Application"),
+            Self::ManagedIdentity => serializer.serialize_unit_variant("CreatedByType", 2u32, "ManagedIdentity"),
+            Self::Key => serializer.serialize_unit_variant("CreatedByType", 3u32, "Key"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "The custom metadata defined for API catalog entities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomProperties {}
@@ -441,7 +503,7 @@ impl CustomProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Deployment {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "API deployment entity properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeploymentProperties>,
@@ -451,29 +513,24 @@ impl Deployment {
         Self::default()
     }
 }
-#[doc = "Paginated collection of API deployments."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DeploymentCollection {
-    #[doc = "Page items."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+#[doc = "The response of a Deployment list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeploymentListResult {
+    #[doc = "The Deployment items on this page"]
     pub value: Vec<Deployment>,
     #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for DeploymentCollection {
+impl azure_core::Continuable for DeploymentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl DeploymentCollection {
-    pub fn new() -> Self {
-        Self::default()
+impl DeploymentListResult {
+    pub fn new(value: Vec<Deployment>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "API deployment entity properties."]
@@ -491,9 +548,10 @@ pub struct DeploymentProperties {
     #[doc = "API center-scoped definition resource ID."]
     #[serde(rename = "definitionId", default, skip_serializing_if = "Option::is_none")]
     pub definition_id: Option<String>,
-    #[doc = "State of API deployment."]
+    #[doc = "State of the Deployment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<DeploymentState>,
+    #[doc = "Server"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub server: Option<DeploymentServer>,
     #[doc = "The custom metadata defined for API catalog entities."]
@@ -505,6 +563,7 @@ impl DeploymentProperties {
         Self::default()
     }
 }
+#[doc = "Server"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentServer {
     #[doc = "Base runtime URLs for this deployment."]
@@ -514,14 +573,14 @@ pub struct DeploymentServer {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub runtime_uri: Vec<String>,
+    pub runtime_uri: Vec<SmallString>,
 }
 impl DeploymentServer {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "State of API deployment."]
+#[doc = "State of the Deployment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "DeploymentState")]
 pub enum DeploymentState {
@@ -564,7 +623,7 @@ impl Serialize for DeploymentState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Environment {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "Environment properties entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EnvironmentProperties>,
@@ -574,29 +633,69 @@ impl Environment {
         Self::default()
     }
 }
-#[doc = "Paginated collection of environments."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct EnvironmentCollection {
-    #[doc = "Page items."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+#[doc = "The kind of environment"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "EnvironmentKind")]
+pub enum EnvironmentKind {
+    #[serde(rename = "development")]
+    Development,
+    #[serde(rename = "testing")]
+    Testing,
+    #[serde(rename = "staging")]
+    Staging,
+    #[serde(rename = "production")]
+    Production,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for EnvironmentKind {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for EnvironmentKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for EnvironmentKind {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Development => serializer.serialize_unit_variant("EnvironmentKind", 0u32, "development"),
+            Self::Testing => serializer.serialize_unit_variant("EnvironmentKind", 1u32, "testing"),
+            Self::Staging => serializer.serialize_unit_variant("EnvironmentKind", 2u32, "staging"),
+            Self::Production => serializer.serialize_unit_variant("EnvironmentKind", 3u32, "production"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The response of a Environment list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EnvironmentListResult {
+    #[doc = "The Environment items on this page"]
     pub value: Vec<Environment>,
     #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for EnvironmentCollection {
+impl azure_core::Continuable for EnvironmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl EnvironmentCollection {
-    pub fn new() -> Self {
-        Self::default()
+impl EnvironmentListResult {
+    pub fn new(value: Vec<Environment>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Environment properties entity."]
@@ -604,13 +703,15 @@ impl EnvironmentCollection {
 pub struct EnvironmentProperties {
     #[doc = "Environment title."]
     pub title: String,
+    #[doc = "The environment description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[doc = "Environment kind."]
-    pub kind: environment_properties::Kind,
+    #[doc = "The kind of environment"]
+    pub kind: EnvironmentKind,
     #[doc = "Server information of the environment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub server: Option<EnvironmentServer>,
+    #[doc = "Onboarding information"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub onboarding: Option<Onboarding>,
     #[doc = "The custom metadata defined for API catalog entities."]
@@ -618,7 +719,7 @@ pub struct EnvironmentProperties {
     pub custom_properties: Option<CustomProperties>,
 }
 impl EnvironmentProperties {
-    pub fn new(title: String, kind: environment_properties::Kind) -> Self {
+    pub fn new(title: String, kind: EnvironmentKind) -> Self {
         Self {
             title,
             description: None,
@@ -629,60 +730,13 @@ impl EnvironmentProperties {
         }
     }
 }
-pub mod environment_properties {
-    use super::*;
-    #[doc = "Environment kind."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        #[serde(rename = "development")]
-        Development,
-        #[serde(rename = "testing")]
-        Testing,
-        #[serde(rename = "staging")]
-        Staging,
-        #[serde(rename = "production")]
-        Production,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Development => serializer.serialize_unit_variant("Kind", 0u32, "development"),
-                Self::Testing => serializer.serialize_unit_variant("Kind", 1u32, "testing"),
-                Self::Staging => serializer.serialize_unit_variant("Kind", 2u32, "staging"),
-                Self::Production => serializer.serialize_unit_variant("Kind", 3u32, "production"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
 #[doc = "Server information of the environment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentServer {
-    #[doc = "Type of the server that represents the environment."]
+    #[doc = "The type of environment server"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<environment_server::Type>,
+    pub type_: Option<EnvironmentServerType>,
+    #[doc = "The location of the management portal"]
     #[serde(
         rename = "managementPortalUri",
         default,
@@ -696,59 +750,56 @@ impl EnvironmentServer {
         Self::default()
     }
 }
-pub mod environment_server {
-    use super::*;
-    #[doc = "Type of the server that represents the environment."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "Azure API Management")]
-        AzureApiManagement,
-        #[serde(rename = "Azure compute service")]
-        AzureComputeService,
-        #[serde(rename = "Apigee API Management")]
-        ApigeeApiManagement,
-        #[serde(rename = "AWS API Gateway")]
-        AwsApiGateway,
-        #[serde(rename = "Kong API Gateway")]
-        KongApiGateway,
-        Kubernetes,
-        #[serde(rename = "MuleSoft API Management")]
-        MuleSoftApiManagement,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+#[doc = "The type of environment server"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "EnvironmentServerType")]
+pub enum EnvironmentServerType {
+    #[serde(rename = "Azure API Management")]
+    AzureApiManagement,
+    #[serde(rename = "Azure compute service")]
+    AzureComputeService,
+    #[serde(rename = "Apigee API Management")]
+    ApigeeApiManagement,
+    #[serde(rename = "AWS API Gateway")]
+    AwsApiGateway,
+    #[serde(rename = "Kong API Gateway")]
+    KongApiGateway,
+    Kubernetes,
+    #[serde(rename = "MuleSoft API Management")]
+    MuleSoftApiManagement,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for EnvironmentServerType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
     }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
+}
+impl<'de> Deserialize<'de> for EnvironmentServerType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
     }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AzureApiManagement => serializer.serialize_unit_variant("Type", 0u32, "Azure API Management"),
-                Self::AzureComputeService => serializer.serialize_unit_variant("Type", 1u32, "Azure compute service"),
-                Self::ApigeeApiManagement => serializer.serialize_unit_variant("Type", 2u32, "Apigee API Management"),
-                Self::AwsApiGateway => serializer.serialize_unit_variant("Type", 3u32, "AWS API Gateway"),
-                Self::KongApiGateway => serializer.serialize_unit_variant("Type", 4u32, "Kong API Gateway"),
-                Self::Kubernetes => serializer.serialize_unit_variant("Type", 5u32, "Kubernetes"),
-                Self::MuleSoftApiManagement => serializer.serialize_unit_variant("Type", 6u32, "MuleSoft API Management"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
+}
+impl Serialize for EnvironmentServerType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::AzureApiManagement => serializer.serialize_unit_variant("EnvironmentServerType", 0u32, "Azure API Management"),
+            Self::AzureComputeService => serializer.serialize_unit_variant("EnvironmentServerType", 1u32, "Azure compute service"),
+            Self::ApigeeApiManagement => serializer.serialize_unit_variant("EnvironmentServerType", 2u32, "Apigee API Management"),
+            Self::AwsApiGateway => serializer.serialize_unit_variant("EnvironmentServerType", 3u32, "AWS API Gateway"),
+            Self::KongApiGateway => serializer.serialize_unit_variant("EnvironmentServerType", 4u32, "Kong API Gateway"),
+            Self::Kubernetes => serializer.serialize_unit_variant("EnvironmentServerType", 5u32, "Kubernetes"),
+            Self::MuleSoftApiManagement => serializer.serialize_unit_variant("EnvironmentServerType", 6u32, "MuleSoft API Management"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -845,10 +896,10 @@ pub struct License {
     #[doc = "Name of the license."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[doc = "URL pointing to the license details. The URL field is mutually exclusive of the identifier field."]
+    #[doc = "URL pointing to the license details. The URL field is mutually exclusive of the\nidentifier field."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
-    #[doc = "SPDX license information for the API. The identifier field is mutually exclusive of the URL field."]
+    #[doc = "SPDX license information for the API. The identifier field is mutually\nexclusive of the URL field."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identifier: Option<String>,
 }
@@ -857,7 +908,7 @@ impl License {
         Self::default()
     }
 }
-#[doc = "Current lifecycle stage of the API."]
+#[doc = "The stage of the Api development lifecycle"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "LifecycleStage")]
 pub enum LifecycleStage {
@@ -937,7 +988,7 @@ impl ManagedServiceIdentity {
         }
     }
 }
-#[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
+#[doc = "The type of managed service identity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ManagedServiceIdentityType")]
 pub enum ManagedServiceIdentityType {
@@ -981,13 +1032,16 @@ impl Serialize for ManagedServiceIdentityType {
         }
     }
 }
+#[doc = "Assignment metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataAssignment {
-    #[doc = "The entities this metadata schema component gets applied to."]
+    #[doc = "Assignment entity for Metadata"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub entity: Option<metadata_assignment::Entity>,
+    pub entity: Option<MetadataAssignmentEntity>,
+    #[doc = "Required assignment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub required: Option<bool>,
+    #[doc = "Deprecated assignment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deprecated: Option<bool>,
 }
@@ -996,48 +1050,45 @@ impl MetadataAssignment {
         Self::default()
     }
 }
-pub mod metadata_assignment {
-    use super::*;
-    #[doc = "The entities this metadata schema component gets applied to."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Entity")]
-    pub enum Entity {
-        #[serde(rename = "api")]
-        Api,
-        #[serde(rename = "deployment")]
-        Deployment,
-        #[serde(rename = "environment")]
-        Environment,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+#[doc = "Assignment entity for Metadata"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "MetadataAssignmentEntity")]
+pub enum MetadataAssignmentEntity {
+    #[serde(rename = "api")]
+    Api,
+    #[serde(rename = "environment")]
+    Environment,
+    #[serde(rename = "deployment")]
+    Deployment,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for MetadataAssignmentEntity {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
     }
-    impl FromStr for Entity {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
+}
+impl<'de> Deserialize<'de> for MetadataAssignmentEntity {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
     }
-    impl<'de> Deserialize<'de> for Entity {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Entity {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Api => serializer.serialize_unit_variant("Entity", 0u32, "api"),
-                Self::Deployment => serializer.serialize_unit_variant("Entity", 1u32, "deployment"),
-                Self::Environment => serializer.serialize_unit_variant("Entity", 2u32, "environment"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
+}
+impl Serialize for MetadataAssignmentEntity {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Api => serializer.serialize_unit_variant("MetadataAssignmentEntity", 0u32, "api"),
+            Self::Environment => serializer.serialize_unit_variant("MetadataAssignmentEntity", 1u32, "environment"),
+            Self::Deployment => serializer.serialize_unit_variant("MetadataAssignmentEntity", 2u32, "deployment"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -1045,7 +1096,7 @@ pub mod metadata_assignment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataSchema {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata schema properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetadataSchemaProperties>,
@@ -1055,93 +1106,63 @@ impl MetadataSchema {
         Self::default()
     }
 }
-#[doc = "Paginated collection of metadata schemas."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct MetadataSchemaCollection {
-    #[doc = "Page items."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<MetadataSchema>,
-    #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+#[doc = "The format for schema export"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "MetadataSchemaExportFormat")]
+pub enum MetadataSchemaExportFormat {
+    #[serde(rename = "inline")]
+    Inline,
+    #[serde(rename = "link")]
+    Link,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
 }
-impl azure_core::Continuable for MetadataSchemaCollection {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
+impl FromStr for MetadataSchemaExportFormat {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
     }
 }
-impl MetadataSchemaCollection {
-    pub fn new() -> Self {
-        Self::default()
+impl<'de> Deserialize<'de> for MetadataSchemaExportFormat {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for MetadataSchemaExportFormat {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Inline => serializer.serialize_unit_variant("MetadataSchemaExportFormat", 0u32, "inline"),
+            Self::Link => serializer.serialize_unit_variant("MetadataSchemaExportFormat", 1u32, "link"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "The metadata schema export request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataSchemaExportRequest {
-    #[doc = "An entity the metadata schema is requested for."]
+    #[doc = "Assignment entity for Metadata"]
     #[serde(rename = "assignedTo", default, skip_serializing_if = "Option::is_none")]
-    pub assigned_to: Option<metadata_schema_export_request::AssignedTo>,
+    pub assigned_to: Option<MetadataAssignmentEntity>,
 }
 impl MetadataSchemaExportRequest {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod metadata_schema_export_request {
-    use super::*;
-    #[doc = "An entity the metadata schema is requested for."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "AssignedTo")]
-    pub enum AssignedTo {
-        #[serde(rename = "api")]
-        Api,
-        #[serde(rename = "environment")]
-        Environment,
-        #[serde(rename = "deployment")]
-        Deployment,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for AssignedTo {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for AssignedTo {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for AssignedTo {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Api => serializer.serialize_unit_variant("AssignedTo", 0u32, "api"),
-                Self::Environment => serializer.serialize_unit_variant("AssignedTo", 1u32, "environment"),
-                Self::Deployment => serializer.serialize_unit_variant("AssignedTo", 2u32, "deployment"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
 #[doc = "The metadata schema export result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataSchemaExportResult {
+    #[doc = "The format for schema export"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<metadata_schema_export_result::Format>,
+    pub format: Option<MetadataSchemaExportFormat>,
     #[doc = "The result of the export operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
@@ -1151,45 +1172,24 @@ impl MetadataSchemaExportResult {
         Self::default()
     }
 }
-pub mod metadata_schema_export_result {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Format")]
-    pub enum Format {
-        #[serde(rename = "inline")]
-        Inline,
-        #[serde(rename = "link")]
-        Link,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+#[doc = "The response of a MetadataSchema list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataSchemaListResult {
+    #[doc = "The MetadataSchema items on this page"]
+    pub value: Vec<MetadataSchema>,
+    #[doc = "The link to the next page of items"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MetadataSchemaListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
-    impl FromStr for Format {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Format {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Format {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Inline => serializer.serialize_unit_variant("Format", 0u32, "inline"),
-                Self::Link => serializer.serialize_unit_variant("Format", 1u32, "link"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
+}
+impl MetadataSchemaListResult {
+    pub fn new(value: Vec<MetadataSchema>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Metadata schema properties."]
@@ -1197,6 +1197,7 @@ pub mod metadata_schema_export_result {
 pub struct MetadataSchemaProperties {
     #[doc = "The schema defining the type."]
     pub schema: String,
+    #[doc = "The assignees"]
     #[serde(
         rename = "assignedTo",
         default,
@@ -1213,11 +1214,13 @@ impl MetadataSchemaProperties {
         }
     }
 }
+#[doc = "Onboarding information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Onboarding {
     #[doc = "Onboarding guide."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instructions: Option<String>,
+    #[doc = "The location of the development portal"]
     #[serde(
         rename = "developerPortalUri",
         default,
@@ -1381,7 +1384,49 @@ impl OperationListResult {
         Self::default()
     }
 }
-#[doc = "Provisioning state of the service."]
+#[doc = "The expected types of origin"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "Origin")]
+pub enum Origin {
+    #[serde(rename = "user")]
+    User,
+    #[serde(rename = "system")]
+    System,
+    #[serde(rename = "user,system")]
+    UserSystem,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for Origin {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for Origin {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for Origin {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::User => serializer.serialize_unit_variant("Origin", 0u32, "user"),
+            Self::System => serializer.serialize_unit_variant("Origin", 1u32, "system"),
+            Self::UserSystem => serializer.serialize_unit_variant("Origin", 2u32, "user,system"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The provisioning state of the resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ProvisioningState")]
 pub enum ProvisioningState {
@@ -1418,6 +1463,17 @@ impl Serialize for ProvisioningState {
             Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Canceled"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
+    }
+}
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ProxyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
@@ -1464,20 +1520,20 @@ impl Service {
 }
 #[doc = "The response of a Service list operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCollection {
+pub struct ServiceListResult {
     #[doc = "The Service items on this page"]
     pub value: Vec<Service>,
     #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for ServiceCollection {
+impl azure_core::Continuable for ServiceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl ServiceCollection {
+impl ServiceListResult {
     pub fn new(value: Vec<Service>) -> Self {
         Self { value, next_link: None }
     }
@@ -1485,7 +1541,7 @@ impl ServiceCollection {
 #[doc = "The properties of the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceProperties {
-    #[doc = "Provisioning state of the service."]
+    #[doc = "The provisioning state of the resource"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -1494,18 +1550,22 @@ impl ServiceProperties {
         Self::default()
     }
 }
-#[doc = "The service properties to be updated."]
+#[doc = "The type used for update operations of the Service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceUpdate {
-    #[doc = "The properties of the service."]
+    #[doc = "Managed service identity (system assigned and/or user assigned identities)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServiceProperties>,
+    pub identity: Option<ManagedServiceIdentity>,
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 impl ServiceUpdate {
     pub fn new() -> Self {
         Self::default()
     }
 }
+pub type SmallString = String;
 #[doc = "Terms of service for the API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TermsOfService {
@@ -1560,11 +1620,47 @@ impl UserAssignedIdentity {
         Self::default()
     }
 }
+#[doc = "The available API versions."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "Versions")]
+pub enum Versions {
+    #[serde(rename = "2024-03-01")]
+    N2024_03_01,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for Versions {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for Versions {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for Versions {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::N2024_03_01 => serializer.serialize_unit_variant("Versions", 0u32, "2024-03-01"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Workspace entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Workspace {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "Workspace properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceProperties>,
@@ -1574,29 +1670,24 @@ impl Workspace {
         Self::default()
     }
 }
-#[doc = "Paginated collection of workspaces."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct WorkspaceCollection {
-    #[doc = "Page items."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+#[doc = "The response of a Workspace list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceListResult {
+    #[doc = "The Workspace items on this page"]
     pub value: Vec<Workspace>,
     #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for WorkspaceCollection {
+impl azure_core::Continuable for WorkspaceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl WorkspaceCollection {
-    pub fn new() -> Self {
-        Self::default()
+impl WorkspaceListResult {
+    pub fn new(value: Vec<Workspace>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Workspace properties."]

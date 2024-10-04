@@ -199,7 +199,8 @@ pub mod health_api {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/api/health", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/health",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -572,7 +573,8 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/api/hubs/{}/:send", self.client.endpoint(), &self.hub))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/hubs/{}/:send", &self.hub));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -661,12 +663,8 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/connections/{}",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.connection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/hubs/{}/connections/{}", &self.hub, &self.connection_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -746,12 +744,8 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/connections/{}",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.connection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/hubs/{}/connections/{}", &self.hub, &self.connection_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -833,12 +827,8 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/connections/{}/:send",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.connection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/hubs/{}/connections/{}/:send", &self.hub, &self.connection_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -918,7 +908,8 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/api/hubs/{}/groups/{}", self.client.endpoint(), &self.hub, &self.group))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/hubs/{}/groups/{}", &self.hub, &self.group));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1010,12 +1001,8 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/groups/{}/:send",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.group
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/hubs/{}/groups/{}/:send", &self.hub, &self.group));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1096,13 +1083,11 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/groups/{}/connections/{}",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.group,
-                    &self.connection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/api/hubs/{}/groups/{}/connections/{}",
+                    &self.hub, &self.group, &self.connection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1183,13 +1168,11 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/groups/{}/connections/{}",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.group,
-                    &self.connection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/api/hubs/{}/groups/{}/connections/{}",
+                    &self.hub, &self.group, &self.connection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1269,12 +1252,8 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/users/{}",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.user_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/hubs/{}/users/{}", &self.hub, &self.user_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1356,12 +1335,8 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/users/{}/:send",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.user_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/hubs/{}/users/{}/:send", &self.hub, &self.user_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1442,13 +1417,8 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/users/{}/groups/{}",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.user_id,
-                    &self.group
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/hubs/{}/users/{}/groups/{}", &self.hub, &self.user_id, &self.group));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1529,13 +1499,8 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/users/{}/groups/{}",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.user_id,
-                    &self.group
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/hubs/{}/users/{}/groups/{}", &self.hub, &self.user_id, &self.group));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1615,12 +1580,8 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/users/{}/groups",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.user_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/api/hubs/{}/users/{}/groups", &self.hub, &self.user_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1710,13 +1671,11 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/permissions/{}/connections/{}",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.permission,
-                    &self.connection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/api/hubs/{}/permissions/{}/connections/{}",
+                    &self.hub, &self.permission, &self.connection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1806,13 +1765,11 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/permissions/{}/connections/{}",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.permission,
-                    &self.connection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/api/hubs/{}/permissions/{}/connections/{}",
+                    &self.hub, &self.permission, &self.connection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1902,13 +1859,11 @@ pub mod web_pub_sub {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/api/hubs/{}/permissions/{}/connections/{}",
-                    self.client.endpoint(),
-                    &self.hub,
-                    &self.permission,
-                    &self.connection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/api/hubs/{}/permissions/{}/connections/{}",
+                    &self.hub, &self.permission, &self.connection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

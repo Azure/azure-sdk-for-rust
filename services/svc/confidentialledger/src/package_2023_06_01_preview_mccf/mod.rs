@@ -298,7 +298,8 @@ pub mod proposals {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/members/proposals", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/members/proposals",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -395,11 +396,8 @@ pub mod proposals {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/gov/members/proposals/{}:withdraw",
-                    self.client.endpoint(),
-                    &self.proposal_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/members/proposals/{}:withdraw", &self.proposal_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -506,7 +504,8 @@ pub mod proposals {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/members/proposals/{}", self.client.endpoint(), &self.proposal_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/members/proposals/{}", &self.proposal_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -613,11 +612,8 @@ pub mod proposals {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/gov/members/proposals/{}/actions",
-                    self.client.endpoint(),
-                    &self.proposal_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/members/proposals/{}/actions", &self.proposal_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -725,7 +721,8 @@ pub mod proposals {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/members/proposals:create", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/members/proposals:create",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -876,12 +873,11 @@ pub mod ballots {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/gov/members/proposals/{}/ballots/{}:submit",
-                    self.client.endpoint(),
-                    &self.proposal_id,
-                    &self.member_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/gov/members/proposals/{}/ballots/{}:submit",
+                    &self.proposal_id, &self.member_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -989,12 +985,8 @@ pub mod ballots {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/gov/members/proposals/{}/ballots/{}",
-                    self.client.endpoint(),
-                    &self.proposal_id,
-                    &self.member_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/members/proposals/{}/ballots/{}", &self.proposal_id, &self.member_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1147,11 +1139,8 @@ pub mod state_digests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/gov/members/state-digests/{}:update",
-                    self.client.endpoint(),
-                    &self.member_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/members/state-digests/{}:update", &self.member_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1255,11 +1244,8 @@ pub mod state_digests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/gov/members/state-digests/{}:ack",
-                    self.client.endpoint(),
-                    &self.member_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/members/state-digests/{}:ack", &self.member_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1354,7 +1340,8 @@ pub mod state_digests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/members/state-digests/{}", self.client.endpoint(), &self.member_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/members/state-digests/{}", &self.member_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1470,11 +1457,8 @@ pub mod encrypted_shares {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/gov/recovery/encrypted-shares/{}",
-                    self.client.endpoint(),
-                    &self.member_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/recovery/encrypted-shares/{}", &self.member_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1605,11 +1589,8 @@ pub mod shares {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/gov/recovery/members/{}:recover",
-                    self.client.endpoint(),
-                    &self.member_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/recovery/members/{}:recover", &self.member_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1773,7 +1754,8 @@ pub mod service_state {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/service/constitution", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/service/constitution",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1879,7 +1861,8 @@ pub mod service_state {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/service/info", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/service/info",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1985,7 +1968,8 @@ pub mod service_state {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/service/javascript-app", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/service/javascript-app",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2091,7 +2075,8 @@ pub mod service_state {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/service/join-policy", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/service/join-policy",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2197,7 +2182,8 @@ pub mod service_state {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/service/jwk", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/service/jwk",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2329,7 +2315,8 @@ pub mod service_state {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/service/members", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/service/members",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2424,7 +2411,8 @@ pub mod service_state {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/service/members/{}", self.client.endpoint(), &self.member_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/service/members/{}", &self.member_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2556,7 +2544,8 @@ pub mod service_state {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/service/nodes", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/service/nodes",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2651,7 +2640,8 @@ pub mod service_state {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/service/nodes/{}", self.client.endpoint(), &self.node_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/service/nodes/{}", &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2771,11 +2761,8 @@ pub mod transactions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/gov/service/transactions/{}",
-                    self.client.endpoint(),
-                    &self.transaction_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/service/transactions/{}", &self.transaction_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2870,7 +2857,8 @@ pub mod transactions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/gov/service/transactions/commit", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/gov/service/transactions/commit",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

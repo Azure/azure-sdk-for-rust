@@ -2596,6 +2596,12 @@ pub struct RaiContentFilterListResult {
     )]
     pub value: Vec<RaiContentFilter>,
 }
+impl azure_core::Continuable for RaiContentFilterListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
 impl RaiContentFilterListResult {
     pub fn new() -> Self {
         Self::default()
@@ -2628,8 +2634,8 @@ impl RaiPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RaiPolicyContentFilter {
     #[doc = "Name of ContentFilter."]
-    #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
-    pub policy_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[doc = "If the ContentFilter is enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,

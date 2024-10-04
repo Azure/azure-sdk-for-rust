@@ -339,7 +339,8 @@ pub mod guest_configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -440,7 +441,8 @@ pub mod guest_configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -534,7 +536,8 @@ pub mod guest_configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -620,11 +623,11 @@ pub mod guest_configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -711,12 +714,11 @@ pub mod guest_configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -804,7 +806,8 @@ pub mod guest_configuration_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , & self . subscription_id , & self . resource_group_name , & self . vm_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -948,7 +951,8 @@ pub mod guest_configuration_assignment_reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1048,7 +1052,8 @@ pub mod guest_configuration_assignment_reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name , & self . report_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name , & self . report_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1245,7 +1250,8 @@ pub mod guest_configuration_hcrp_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1346,7 +1352,8 @@ pub mod guest_configuration_hcrp_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1440,7 +1447,8 @@ pub mod guest_configuration_hcrp_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1528,7 +1536,8 @@ pub mod guest_configuration_hcrp_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , & self . subscription_id , & self . resource_group_name , & self . machine_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1672,7 +1681,8 @@ pub mod guest_configuration_hcrp_assignment_reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1772,7 +1782,8 @@ pub mod guest_configuration_hcrp_assignment_reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . guest_configuration_assignment_name , & self . report_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . guest_configuration_assignment_name , & self . report_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1969,7 +1980,8 @@ pub mod guest_configuration_assignments_vmss {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vmss_name , & self . name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vmss_name , & self . name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2070,7 +2082,8 @@ pub mod guest_configuration_assignments_vmss {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vmss_name , & self . name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vmss_name , & self . name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2169,7 +2182,8 @@ pub mod guest_configuration_assignments_vmss {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vmss_name , & self . name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vmss_name , & self . name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2269,7 +2283,8 @@ pub mod guest_configuration_assignments_vmss {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vmss_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , & self . subscription_id , & self . resource_group_name , & self . vmss_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2415,7 +2430,8 @@ pub mod guest_configuration_assignment_reports_vmss {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vmss_name , & self . name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , & self . subscription_id , & self . resource_group_name , & self . vmss_name , & self . name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2503,7 +2519,8 @@ pub mod guest_configuration_assignment_reports_vmss {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vmss_name , & self . name , & self . id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , & self . subscription_id , & self . resource_group_name , & self . vmss_name , & self . name , & self . id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2700,7 +2717,8 @@ pub mod guest_configuration_connected_v_mwarev_sphere_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2801,7 +2819,8 @@ pub mod guest_configuration_connected_v_mwarev_sphere_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2895,7 +2914,8 @@ pub mod guest_configuration_connected_v_mwarev_sphere_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2983,7 +3003,8 @@ pub mod guest_configuration_connected_v_mwarev_sphere_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , & self . subscription_id , & self . resource_group_name , & self . vm_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3127,7 +3148,8 @@ pub mod guest_configuration_connected_v_mwarev_sphere_assignments_reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3227,7 +3249,8 @@ pub mod guest_configuration_connected_v_mwarev_sphere_assignments_reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name , & self . report_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ConnectedVMwarevSphere/virtualmachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . guest_configuration_assignment_name , & self . report_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3338,10 +3361,8 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.GuestConfiguration/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/providers/Microsoft.GuestConfiguration/operations",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

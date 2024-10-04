@@ -233,7 +233,8 @@ pub mod fluid_relay_operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.FluidRelay/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/providers/Microsoft.FluidRelay/operations",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -478,13 +479,11 @@ pub mod fluid_relay_servers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group,
-                    &self.fluid_relay_server_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}",
+                    &self.subscription_id, &self.resource_group, &self.fluid_relay_server_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -584,13 +583,11 @@ pub mod fluid_relay_servers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group,
-                    &self.fluid_relay_server_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}",
+                    &self.subscription_id, &self.resource_group, &self.fluid_relay_server_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -690,13 +687,11 @@ pub mod fluid_relay_servers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group,
-                    &self.fluid_relay_server_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}",
+                    &self.subscription_id, &self.resource_group, &self.fluid_relay_server_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -789,13 +784,11 @@ pub mod fluid_relay_servers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group,
-                    &self.fluid_relay_server_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}",
+                    &self.subscription_id, &self.resource_group, &self.fluid_relay_server_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -883,13 +876,11 @@ pub mod fluid_relay_servers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}/regenerateKey",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group,
-                    &self.fluid_relay_server_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}/regenerateKey",
+                    &self.subscription_id, &self.resource_group, &self.fluid_relay_server_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -988,13 +979,11 @@ pub mod fluid_relay_servers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}/listKeys",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group,
-                    &self.fluid_relay_server_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}/listKeys",
+                    &self.subscription_id, &self.resource_group, &self.fluid_relay_server_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1116,11 +1105,11 @@ pub mod fluid_relay_servers {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.FluidRelay/fluidRelayServers",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.FluidRelay/fluidRelayServers",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1231,12 +1220,11 @@ pub mod fluid_relay_servers {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers",
+                    &self.subscription_id, &self.resource_group
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1396,14 +1384,11 @@ pub mod fluid_relay_containers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}/fluidRelayContainers/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group,
-                    &self.fluid_relay_server_name,
-                    &self.fluid_relay_container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}/fluidRelayContainers/{}",
+                    &self.subscription_id, &self.resource_group, &self.fluid_relay_server_name, &self.fluid_relay_container_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1497,14 +1482,11 @@ pub mod fluid_relay_containers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}/fluidRelayContainers/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group,
-                    &self.fluid_relay_server_name,
-                    &self.fluid_relay_container_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}/fluidRelayContainers/{}",
+                    &self.subscription_id, &self.resource_group, &self.fluid_relay_server_name, &self.fluid_relay_container_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1616,13 +1598,11 @@ pub mod fluid_relay_containers {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}/fluidRelayContainers",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group,
-                    &self.fluid_relay_server_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.FluidRelay/fluidRelayServers/{}/fluidRelayContainers",
+                    &self.subscription_id, &self.resource_group, &self.fluid_relay_server_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

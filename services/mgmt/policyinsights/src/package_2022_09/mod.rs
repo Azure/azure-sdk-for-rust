@@ -347,13 +347,11 @@ pub mod policy_tracked_resources {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.management_groups_namespace,
-                    &self.management_group_name,
-                    &self.policy_tracked_resources_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
+                    &self.management_groups_namespace, &self.management_group_name, &self.policy_tracked_resources_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -483,12 +481,11 @@ pub mod policy_tracked_resources {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.policy_tracked_resources_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
+                    &self.subscription_id, &self.policy_tracked_resources_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -619,13 +616,11 @@ pub mod policy_tracked_resources {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.policy_tracked_resources_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
+                    &self.subscription_id, &self.resource_group_name, &self.policy_tracked_resources_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -755,12 +750,11 @@ pub mod policy_tracked_resources {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.policy_tracked_resources_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
+                    &self.resource_id, &self.policy_tracked_resources_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1318,13 +1312,11 @@ pub mod remediations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
-                    self.client.endpoint(),
-                    &self.management_groups_namespace,
-                    &self.management_group_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
+                    &self.management_groups_namespace, &self.management_group_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1411,13 +1403,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
-                    self.client.endpoint(),
-                    &self.management_groups_namespace,
-                    &self.management_group_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
+                    &self.management_groups_namespace, &self.management_group_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1558,12 +1548,11 @@ pub mod remediations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations",
-                    self.client.endpoint(),
-                    &self.management_groups_namespace,
-                    &self.management_group_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations",
+                    &self.management_groups_namespace, &self.management_group_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1649,13 +1638,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.management_groups_namespace,
-                    &self.management_group_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.management_groups_namespace, &self.management_group_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1755,13 +1742,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.management_groups_namespace,
-                    &self.management_group_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.management_groups_namespace, &self.management_group_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1859,13 +1844,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.management_groups_namespace,
-                    &self.management_group_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.management_groups_namespace, &self.management_group_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1998,12 +1981,11 @@ pub mod remediations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
+                    &self.subscription_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2089,12 +2071,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
+                    &self.subscription_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2234,11 +2215,11 @@ pub mod remediations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2323,12 +2304,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.subscription_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2427,12 +2407,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.subscription_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2529,12 +2508,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.subscription_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2668,13 +2646,11 @@ pub mod remediations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
+                    &self.subscription_id, &self.resource_group_name, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2761,13 +2737,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
+                    &self.subscription_id, &self.resource_group_name, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2908,12 +2882,11 @@ pub mod remediations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2999,13 +2972,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3105,13 +3076,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3209,13 +3178,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3348,12 +3315,11 @@ pub mod remediations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
+                    &self.resource_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3439,12 +3405,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
+                    &self.resource_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3584,11 +3549,8 @@ pub mod remediations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/remediations",
-                    self.client.endpoint(),
-                    &self.resource_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.PolicyInsights/remediations", &self.resource_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3673,12 +3635,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.resource_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3777,12 +3738,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.resource_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3879,12 +3839,11 @@ pub mod remediations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.remediation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+                    &self.resource_id, &self.remediation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4237,11 +4196,8 @@ pub mod policy_events {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}{}?Next paging op for policy events",
-                    self.client.endpoint(),
-                    &self.next_link
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("{}?Next paging op for policy events", &self.next_link));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4438,13 +4394,11 @@ pub mod policy_events {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.management_groups_namespace,
-                    &self.management_group_name,
-                    &self.policy_events_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
+                    &self.management_groups_namespace, &self.management_group_name, &self.policy_events_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4628,12 +4582,11 @@ pub mod policy_events {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.policy_events_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
+                    &self.subscription_id, &self.policy_events_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4818,13 +4771,11 @@ pub mod policy_events {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.policy_events_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
+                    &self.subscription_id, &self.resource_group_name, &self.policy_events_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5017,12 +4968,11 @@ pub mod policy_events {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.policy_events_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
+                    &self.resource_id, &self.policy_events_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5208,7 +5158,8 @@ pub mod policy_events {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_events_resource)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_events_resource)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5394,14 +5345,11 @@ pub mod policy_events {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.authorization_namespace,
-                    &self.policy_definition_name,
-                    &self.policy_events_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
+                    &self.subscription_id, &self.authorization_namespace, &self.policy_definition_name, &self.policy_events_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5587,14 +5535,11 @@ pub mod policy_events {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.authorization_namespace,
-                    &self.policy_assignment_name,
-                    &self.policy_events_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
+                    &self.subscription_id, &self.authorization_namespace, &self.policy_assignment_name, &self.policy_events_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5781,7 +5726,8 @@ pub mod policy_events {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_events_resource)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_events_resource)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6344,11 +6290,8 @@ pub mod policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}{}?Next paging op for policy states",
-                    self.client.endpoint(),
-                    &self.next_link
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("{}?Next paging op for policy states", &self.next_link));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6545,13 +6488,11 @@ pub mod policy_states {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.management_groups_namespace,
-                    &self.management_group_name,
-                    &self.policy_states_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
+                    &self.management_groups_namespace, &self.management_group_name, &self.policy_states_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6674,13 +6615,11 @@ pub mod policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
-                    self.client.endpoint(),
-                    &self.management_groups_namespace,
-                    &self.management_group_name,
-                    &self.policy_states_summary_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
+                    &self.management_groups_namespace, &self.management_group_name, &self.policy_states_summary_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6876,12 +6815,11 @@ pub mod policy_states {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.policy_states_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
+                    &self.subscription_id, &self.policy_states_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7003,12 +6941,11 @@ pub mod policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.policy_states_summary_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
+                    &self.subscription_id, &self.policy_states_summary_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7205,13 +7142,11 @@ pub mod policy_states {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.policy_states_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
+                    &self.subscription_id, &self.resource_group_name, &self.policy_states_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7334,13 +7269,11 @@ pub mod policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.policy_states_summary_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
+                    &self.subscription_id, &self.resource_group_name, &self.policy_states_summary_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7545,12 +7478,11 @@ pub mod policy_states {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.policy_states_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
+                    &self.resource_id, &self.policy_states_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7672,12 +7604,11 @@ pub mod policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.policy_states_summary_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
+                    &self.resource_id, &self.policy_states_summary_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7768,11 +7699,11 @@ pub mod policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/latest/triggerEvaluation",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/latest/triggerEvaluation",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7852,12 +7783,11 @@ pub mod policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/latest/triggerEvaluation",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/latest/triggerEvaluation",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8043,7 +7973,8 @@ pub mod policy_states {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_states_resource)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_states_resource)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8167,14 +8098,14 @@ pub mod policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
                     &self.subscription_id,
                     &self.authorization_namespace,
                     &self.policy_set_definition_name,
                     &self.policy_states_summary_resource
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8372,14 +8303,11 @@ pub mod policy_states {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.authorization_namespace,
-                    &self.policy_definition_name,
-                    &self.policy_states_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
+                    &self.subscription_id, &self.authorization_namespace, &self.policy_definition_name, &self.policy_states_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8503,14 +8431,14 @@ pub mod policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
                     &self.subscription_id,
                     &self.authorization_namespace,
                     &self.policy_definition_name,
                     &self.policy_states_summary_resource
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8708,14 +8636,11 @@ pub mod policy_states {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.authorization_namespace,
-                    &self.policy_assignment_name,
-                    &self.policy_states_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
+                    &self.subscription_id, &self.authorization_namespace, &self.policy_assignment_name, &self.policy_states_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8839,14 +8764,14 @@ pub mod policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
                     &self.subscription_id,
                     &self.authorization_namespace,
                     &self.policy_assignment_name,
                     &self.policy_states_summary_resource
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9045,7 +8970,8 @@ pub mod policy_states {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_resource)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_resource)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9170,7 +9096,8 @@ pub mod policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_summary_resource)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_summary_resource)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9293,11 +9220,11 @@ pub mod policy_metadata {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.PolicyInsights/policyMetadata/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.PolicyInsights/policyMetadata/{}",
                     &self.resource_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9427,10 +9354,8 @@ pub mod policy_metadata {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.PolicyInsights/policyMetadata",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/providers/Microsoft.PolicyInsights/policyMetadata",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9580,11 +9505,11 @@ pub mod policy_restrictions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/checkPolicyRestrictions",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/checkPolicyRestrictions",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9683,12 +9608,11 @@ pub mod policy_restrictions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/checkPolicyRestrictions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/checkPolicyRestrictions",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9787,12 +9711,11 @@ pub mod policy_restrictions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/checkPolicyRestrictions",
-                    self.client.endpoint(),
-                    &self.management_groups_namespace,
-                    &self.management_group_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/checkPolicyRestrictions",
+                    &self.management_groups_namespace, &self.management_group_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10126,12 +10049,11 @@ pub mod component_policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.component_policy_states_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults",
+                    &self.subscription_id, &self.component_policy_states_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10293,13 +10215,11 @@ pub mod component_policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.component_policy_states_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults",
+                    &self.subscription_id, &self.resource_group_name, &self.component_policy_states_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10469,12 +10389,11 @@ pub mod component_policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.component_policy_states_resource
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults",
+                    &self.resource_id, &self.component_policy_states_resource
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10637,7 +10556,8 @@ pub mod component_policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_definition_name , & self . component_policy_states_resource)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults" , & self . subscription_id , & self . authorization_namespace , & self . policy_definition_name , & self . component_policy_states_resource)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10800,7 +10720,8 @@ pub mod component_policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_assignment_name , & self . component_policy_states_resource)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults" , & self . subscription_id , & self . authorization_namespace , & self . policy_assignment_name , & self . component_policy_states_resource)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10964,7 +10885,8 @@ pub mod component_policy_states {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . component_policy_states_resource)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults" , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . component_policy_states_resource)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11073,8 +10995,8 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url =
-                    azure_core::Url::parse(&format!("{}/providers/Microsoft.PolicyInsights/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/providers/Microsoft.PolicyInsights/operations",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11428,11 +11350,11 @@ pub mod attestations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11517,12 +11439,11 @@ pub mod attestations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.attestation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+                    &self.subscription_id, &self.attestation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11620,12 +11541,11 @@ pub mod attestations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.attestation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+                    &self.subscription_id, &self.attestation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11745,12 +11665,11 @@ pub mod attestations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.attestation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+                    &self.subscription_id, &self.attestation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11879,12 +11798,11 @@ pub mod attestations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11970,13 +11888,11 @@ pub mod attestations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.attestation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.attestation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12075,13 +11991,11 @@ pub mod attestations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.attestation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.attestation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12202,13 +12116,11 @@ pub mod attestations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.attestation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.attestation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12336,11 +12248,8 @@ pub mod attestations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/attestations",
-                    self.client.endpoint(),
-                    &self.resource_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.PolicyInsights/attestations", &self.resource_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12425,12 +12334,11 @@ pub mod attestations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/attestations/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.attestation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+                    &self.resource_id, &self.attestation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12528,12 +12436,11 @@ pub mod attestations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/attestations/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.attestation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+                    &self.resource_id, &self.attestation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12653,12 +12560,11 @@ pub mod attestations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.PolicyInsights/attestations/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.attestation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+                    &self.resource_id, &self.attestation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

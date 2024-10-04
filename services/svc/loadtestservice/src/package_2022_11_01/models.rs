@@ -635,45 +635,6 @@ impl OptionalLoadTestConfig {
         Self::default()
     }
 }
-#[doc = "Action to take on failure of pass/fail criteria."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "PfAction")]
-pub enum PfAction {
-    #[serde(rename = "continue")]
-    Continue,
-    #[serde(rename = "stop")]
-    Stop,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for PfAction {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for PfAction {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for PfAction {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::Continue => serializer.serialize_unit_variant("PfAction", 0u32, "continue"),
-            Self::Stop => serializer.serialize_unit_variant("PfAction", 1u32, "stop"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-        }
-    }
-}
 #[doc = "Aggregation functions for pass/fail criteria."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "PfAgFunc")]
@@ -956,9 +917,9 @@ pub struct PassFailMetric {
     #[doc = "The value to compare with the client metric. Allowed values - ‘error : [0.0 ,\n100.0] unit- % ’, response_time_ms and latency : any integer value unit- ms."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,
-    #[doc = "Action to take on failure of pass/fail criteria."]
+    #[doc = "Action taken after the threshold is met. Default is ‘continue’."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<PfAction>,
+    pub action: Option<pass_fail_metric::Action>,
     #[doc = "The actual value of the client metric for the test run."]
     #[serde(rename = "actualValue", default, skip_serializing_if = "Option::is_none")]
     pub actual_value: Option<f64>,
@@ -969,6 +930,53 @@ pub struct PassFailMetric {
 impl PassFailMetric {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod pass_fail_metric {
+    use super::*;
+    #[doc = "Action taken after the threshold is met. Default is ‘continue’."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Action")]
+    pub enum Action {
+        #[serde(rename = "continue")]
+        Continue,
+        #[serde(rename = "stop")]
+        Stop,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Action {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Action {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Action {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Continue => serializer.serialize_unit_variant("Action", 0u32, "continue"),
+                Self::Stop => serializer.serialize_unit_variant("Action", 1u32, "stop"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for Action {
+        fn default() -> Self {
+            Self::Continue
+        }
     }
 }
 #[doc = "Associated metric definition for particular metrics of the azure resource (\nRefer :\nhttps://docs.microsoft.com/en-us/rest/api/monitor/metric-definitions/list#metricdefinition)."]

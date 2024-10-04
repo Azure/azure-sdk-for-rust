@@ -2895,7 +2895,7 @@ pub struct AzureFunctionActivityTypeProperties {
     #[doc = "Name of the Function that the Azure Function Activity will call. Type: string (or Expression with resultType string)"]
     #[serde(rename = "functionName")]
     pub function_name: serde_json::Value,
-    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: dictionary (or Expression with resultType dictionary)."]
+    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
     #[doc = "Represents the payload that will be sent to the endpoint. Required for POST/PUT method, not allowed for GET method Type: string (or Expression with resultType string)."]
@@ -7103,6 +7103,7 @@ pub enum DatasetUnion {
     FileShare(FileShareDataset),
     GoogleAdWordsObject(GoogleAdWordsObjectDataset),
     GoogleBigQueryObject(GoogleBigQueryObjectDataset),
+    GoogleBigQueryV2Object(GoogleBigQueryV2ObjectDataset),
     GreenplumTable(GreenplumTableDataset),
     HBaseObject(HBaseObjectDataset),
     HiveObject(HiveObjectDataset),
@@ -7133,6 +7134,7 @@ pub enum DatasetUnion {
     PaypalObject(PaypalObjectDataset),
     PhoenixObject(PhoenixObjectDataset),
     PostgreSqlTable(PostgreSqlTableDataset),
+    PostgreSqlV2Table(PostgreSqlV2TableDataset),
     PrestoObject(PrestoObjectDataset),
     QuickBooksObject(QuickBooksObjectDataset),
     RelationalTable(RelationalTableDataset),
@@ -7151,9 +7153,11 @@ pub enum DatasetUnion {
     SapOpenHubTable(SapOpenHubTableDataset),
     SapTableResource(SapTableResourceDataset),
     ServiceNowObject(ServiceNowObjectDataset),
+    ServiceNowV2Object(ServiceNowV2ObjectDataset),
     SharePointOnlineListResource(SharePointOnlineListResourceDataset),
     ShopifyObject(ShopifyObjectDataset),
     SnowflakeTable(SnowflakeDataset),
+    SnowflakeV2Table(SnowflakeV2Dataset),
     SparkObject(SparkObjectDataset),
     SqlServerTable(SqlServerTableDataset),
     SquareObject(SquareObjectDataset),
@@ -9078,6 +9082,75 @@ pub mod expression {
         Expression,
     }
 }
+#[doc = "Nested representation of a complex expression."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ExpressionV2 {
+    #[doc = "Type of expressions supported by the system. Type: string."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<expression_v2::Type>,
+    #[doc = "Value for Constant/Field Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[doc = "Expression operator value Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operator: Option<String>,
+    #[doc = "List of nested expressions."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub operands: Vec<ExpressionV2>,
+}
+impl ExpressionV2 {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod expression_v2 {
+    use super::*;
+    #[doc = "Type of expressions supported by the system. Type: string."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        Constant,
+        Field,
+        Unary,
+        Binary,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Constant => serializer.serialize_unit_variant("Type", 0u32, "Constant"),
+                Self::Field => serializer.serialize_unit_variant("Type", 1u32, "Field"),
+                Self::Unary => serializer.serialize_unit_variant("Type", 2u32, "Unary"),
+                Self::Binary => serializer.serialize_unit_variant("Type", 3u32, "Binary"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Factory resource type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Factory {
@@ -10518,6 +10591,153 @@ pub struct GoogleBigQuerySource {
     pub query: Option<serde_json::Value>,
 }
 impl GoogleBigQuerySource {
+    pub fn new(tabular_source: TabularSource) -> Self {
+        Self {
+            tabular_source,
+            query: None,
+        }
+    }
+}
+#[doc = "Google BigQuery Dataset Properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GoogleBigQueryV2DatasetTypeProperties {
+    #[doc = "The table name of the Google BigQuery. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub table: Option<serde_json::Value>,
+    #[doc = "The database name of the Google BigQuery. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dataset: Option<serde_json::Value>,
+}
+impl GoogleBigQueryV2DatasetTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Google BigQuery service linked service."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GoogleBigQueryV2LinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Google BigQuery service linked service properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: GoogleBigQueryV2LinkedServiceTypeProperties,
+}
+impl GoogleBigQueryV2LinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: GoogleBigQueryV2LinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Google BigQuery service linked service properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GoogleBigQueryV2LinkedServiceTypeProperties {
+    #[doc = "The default BigQuery project id to query against. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "projectId")]
+    pub project_id: serde_json::Value,
+    #[doc = "The OAuth 2.0 authentication mechanism used for authentication."]
+    #[serde(rename = "authenticationType")]
+    pub authentication_type: google_big_query_v2_linked_service_type_properties::AuthenticationType,
+    #[doc = "The client id of the google application used to acquire the refresh token. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
+    pub client_secret: Option<SecretBaseUnion>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
+    pub refresh_token: Option<SecretBaseUnion>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "keyFileContent", default, skip_serializing_if = "Option::is_none")]
+    pub key_file_content: Option<SecretBaseUnion>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<String>,
+}
+impl GoogleBigQueryV2LinkedServiceTypeProperties {
+    pub fn new(
+        project_id: serde_json::Value,
+        authentication_type: google_big_query_v2_linked_service_type_properties::AuthenticationType,
+    ) -> Self {
+        Self {
+            project_id,
+            authentication_type,
+            client_id: None,
+            client_secret: None,
+            refresh_token: None,
+            key_file_content: None,
+            encrypted_credential: None,
+        }
+    }
+}
+pub mod google_big_query_v2_linked_service_type_properties {
+    use super::*;
+    #[doc = "The OAuth 2.0 authentication mechanism used for authentication."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        ServiceAuthentication,
+        UserAuthentication,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::ServiceAuthentication => serializer.serialize_unit_variant("AuthenticationType", 0u32, "ServiceAuthentication"),
+                Self::UserAuthentication => serializer.serialize_unit_variant("AuthenticationType", 1u32, "UserAuthentication"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Google BigQuery service dataset."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GoogleBigQueryV2ObjectDataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[doc = "Google BigQuery Dataset Properties"]
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<GoogleBigQueryV2DatasetTypeProperties>,
+}
+impl GoogleBigQueryV2ObjectDataset {
+    pub fn new(dataset: Dataset) -> Self {
+        Self {
+            dataset,
+            type_properties: None,
+        }
+    }
+}
+#[doc = "A copy activity Google BigQuery service source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GoogleBigQueryV2Source {
+    #[serde(flatten)]
+    pub tabular_source: TabularSource,
+    #[doc = "A query to retrieve data from source. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<serde_json::Value>,
+}
+impl GoogleBigQueryV2Source {
     pub fn new(tabular_source: TabularSource) -> Self {
         Self {
             tabular_source,
@@ -14171,6 +14391,7 @@ pub enum LinkedServiceUnion {
     FtpServer(FtpServerLinkedService),
     GoogleAdWords(GoogleAdWordsLinkedService),
     GoogleBigQuery(GoogleBigQueryLinkedService),
+    GoogleBigQueryV2(GoogleBigQueryV2LinkedService),
     GoogleCloudStorage(GoogleCloudStorageLinkedService),
     GoogleSheets(GoogleSheetsLinkedService),
     Greenplum(GreenplumLinkedService),
@@ -14206,6 +14427,7 @@ pub enum LinkedServiceUnion {
     Paypal(PaypalLinkedService),
     Phoenix(PhoenixLinkedService),
     PostgreSql(PostgreSqlLinkedService),
+    PostgreSqlV2(PostgreSqlV2LinkedService),
     Presto(PrestoLinkedService),
     QuickBooks(QuickBooksLinkedService),
     Quickbase(QuickbaseLinkedService),
@@ -14225,11 +14447,13 @@ pub enum LinkedServiceUnion {
     SapOpenHub(SapOpenHubLinkedService),
     SapTable(SapTableLinkedService),
     ServiceNow(ServiceNowLinkedService),
+    ServiceNowV2(ServiceNowV2LinkedService),
     Sftp(SftpServerLinkedService),
     SharePointOnlineList(SharePointOnlineListLinkedService),
     Shopify(ShopifyLinkedService),
     Smartsheet(SmartsheetLinkedService),
     Snowflake(SnowflakeLinkedService),
+    SnowflakeV2(SnowflakeV2LinkedService),
     Spark(SparkLinkedService),
     SqlServer(SqlServerLinkedService),
     Square(SquareLinkedService),
@@ -18587,6 +18811,155 @@ impl PostgreSqlTableDatasetTypeProperties {
         Self::default()
     }
 }
+#[doc = "Linked service for PostgreSQLV2 data source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PostgreSqlV2LinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "PostgreSqlV2 linked service properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: PostgreSqlV2LinkedServiceTypeProperties,
+}
+impl PostgreSqlV2LinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: PostgreSqlV2LinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "PostgreSqlV2 linked service properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PostgreSqlV2LinkedServiceTypeProperties {
+    #[doc = "Server name for connection. Type: string."]
+    pub server: serde_json::Value,
+    #[doc = "The port for the connection. Type: integer."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<serde_json::Value>,
+    #[doc = "Username for authentication. Type: string."]
+    pub username: serde_json::Value,
+    #[doc = "Database name for connection. Type: string."]
+    pub database: serde_json::Value,
+    #[doc = "SSL mode for connection. Type: integer. 0: disable, 1:allow, 2: prefer, 3: require, 4: verify-ca, 5: verify-full. Type: integer."]
+    #[serde(rename = "sslMode")]
+    pub ssl_mode: serde_json::Value,
+    #[doc = "Sets the schema search path. Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schema: Option<serde_json::Value>,
+    #[doc = "Whether connection pooling should be used. Type: boolean."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pooling: Option<serde_json::Value>,
+    #[doc = "The time to wait (in seconds) while trying to establish a connection before terminating the attempt and generating an error. Type: integer."]
+    #[serde(rename = "connectionTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub connection_timeout: Option<serde_json::Value>,
+    #[doc = "The time to wait (in seconds) while trying to execute a command before terminating the attempt and generating an error. Set to zero for infinity. Type: integer."]
+    #[serde(rename = "commandTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub command_timeout: Option<serde_json::Value>,
+    #[doc = "Whether to trust the server certificate without validating it. Type: boolean."]
+    #[serde(rename = "trustServerCertificate", default, skip_serializing_if = "Option::is_none")]
+    pub trust_server_certificate: Option<serde_json::Value>,
+    #[doc = "Location of a client certificate to be sent to the server. Type: string."]
+    #[serde(rename = "sslCertificate", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_certificate: Option<serde_json::Value>,
+    #[doc = "Location of a client key for a client certificate to be sent to the server. Type: string."]
+    #[serde(rename = "sslKey", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_key: Option<serde_json::Value>,
+    #[doc = "Password for a key for a client certificate. Type: string."]
+    #[serde(rename = "sslPassword", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_password: Option<serde_json::Value>,
+    #[doc = "Determines the size of the internal buffer uses when reading. Increasing may improve performance if transferring large values from the database. Type: integer."]
+    #[serde(rename = "readBufferSize", default, skip_serializing_if = "Option::is_none")]
+    pub read_buffer_size: Option<serde_json::Value>,
+    #[doc = "When enabled, parameter values are logged when commands are executed. Type: boolean."]
+    #[serde(rename = "logParameters", default, skip_serializing_if = "Option::is_none")]
+    pub log_parameters: Option<serde_json::Value>,
+    #[doc = "Gets or sets the session timezone. Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<serde_json::Value>,
+    #[doc = "Gets or sets the .NET encoding that will be used to encode/decode PostgreSQL string data. Type: string"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encoding: Option<serde_json::Value>,
+    #[doc = "Azure Key Vault secret reference."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<AzureKeyVaultSecretReference>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<String>,
+}
+impl PostgreSqlV2LinkedServiceTypeProperties {
+    pub fn new(server: serde_json::Value, username: serde_json::Value, database: serde_json::Value, ssl_mode: serde_json::Value) -> Self {
+        Self {
+            server,
+            port: None,
+            username,
+            database,
+            ssl_mode,
+            schema: None,
+            pooling: None,
+            connection_timeout: None,
+            command_timeout: None,
+            trust_server_certificate: None,
+            ssl_certificate: None,
+            ssl_key: None,
+            ssl_password: None,
+            read_buffer_size: None,
+            log_parameters: None,
+            timezone: None,
+            encoding: None,
+            password: None,
+            encrypted_credential: None,
+        }
+    }
+}
+#[doc = "A copy activity source for PostgreSQL databases."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PostgreSqlV2Source {
+    #[serde(flatten)]
+    pub tabular_source: TabularSource,
+    #[doc = "Database query. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<serde_json::Value>,
+}
+impl PostgreSqlV2Source {
+    pub fn new(tabular_source: TabularSource) -> Self {
+        Self {
+            tabular_source,
+            query: None,
+        }
+    }
+}
+#[doc = "The PostgreSQLV2 table dataset."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PostgreSqlV2TableDataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[doc = "PostgreSQLV2 table dataset properties."]
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<PostgreSqlV2TableDatasetTypeProperties>,
+}
+impl PostgreSqlV2TableDataset {
+    pub fn new(dataset: Dataset) -> Self {
+        Self {
+            dataset,
+            type_properties: None,
+        }
+    }
+}
+#[doc = "PostgreSQLV2 table dataset properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PostgreSqlV2TableDatasetTypeProperties {
+    #[doc = "The PostgreSQL table name. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub table: Option<serde_json::Value>,
+    #[doc = "The PostgreSQL schema name. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schema: Option<serde_json::Value>,
+}
+impl PostgreSqlV2TableDatasetTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Power query sink."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PowerQuerySink {
@@ -20678,6 +21051,9 @@ pub struct SalesforceServiceCloudV2LinkedServiceTypeProperties {
     #[doc = "The URL of Salesforce Service Cloud instance. For example, 'https://[domain].my.salesforce.com'. Type: string (or Expression with resultType string)."]
     #[serde(rename = "environmentUrl", default, skip_serializing_if = "Option::is_none")]
     pub environment_url: Option<serde_json::Value>,
+    #[doc = "The authentication type to be used to connect to the Salesforce. Currently, we only support OAuth2ClientCredentials, it is also the default value"]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<serde_json::Value>,
     #[doc = "The client Id for OAuth 2.0 Client Credentials Flow authentication of the Salesforce instance. Type: string (or Expression with resultType string)."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<serde_json::Value>,
@@ -20801,9 +21177,9 @@ pub struct SalesforceServiceCloudV2Source {
     #[doc = "Database query. Type: string (or Expression with resultType string)."]
     #[serde(rename = "SOQLQuery", default, skip_serializing_if = "Option::is_none")]
     pub soql_query: Option<serde_json::Value>,
-    #[doc = "The read behavior for the operation. Default is query. Allowed values: query/queryAll. Type: string (or Expression with resultType string)."]
-    #[serde(rename = "readBehavior", default, skip_serializing_if = "Option::is_none")]
-    pub read_behavior: Option<serde_json::Value>,
+    #[doc = "This property control whether query result contains Deleted objects. Default is false. Type: boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "includeDeletedObjects", default, skip_serializing_if = "Option::is_none")]
+    pub include_deleted_objects: Option<serde_json::Value>,
     #[doc = "Specifies the additional columns to be added to source data. Type: array of objects(AdditionalColumns) (or Expression with resultType array of objects)."]
     #[serde(rename = "additionalColumns", default, skip_serializing_if = "Option::is_none")]
     pub additional_columns: Option<serde_json::Value>,
@@ -20813,7 +21189,7 @@ impl SalesforceServiceCloudV2Source {
         Self {
             copy_source,
             soql_query: None,
-            read_behavior: None,
+            include_deleted_objects: None,
             additional_columns: None,
         }
     }
@@ -20964,6 +21340,9 @@ pub struct SalesforceV2LinkedServiceTypeProperties {
     #[doc = "The URL of Salesforce instance. For example, 'https://[domain].my.salesforce.com'. Type: string (or Expression with resultType string)."]
     #[serde(rename = "environmentUrl", default, skip_serializing_if = "Option::is_none")]
     pub environment_url: Option<serde_json::Value>,
+    #[doc = "The authentication type to be used to connect to the Salesforce. Currently, we only support OAuth2ClientCredentials, it is also the default value"]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<serde_json::Value>,
     #[doc = "The client Id for OAuth 2.0 Client Credentials Flow authentication of the Salesforce instance. Type: string (or Expression with resultType string)."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<serde_json::Value>,
@@ -21087,55 +21466,16 @@ pub struct SalesforceV2Source {
     #[doc = "Database query. Type: string (or Expression with resultType string)."]
     #[serde(rename = "SOQLQuery", default, skip_serializing_if = "Option::is_none")]
     pub soql_query: Option<serde_json::Value>,
-    #[doc = "The read behavior for the operation. Default is query. Allowed values: query/queryAll. Type: string (or Expression with resultType string)."]
-    #[serde(rename = "readBehavior", default, skip_serializing_if = "Option::is_none")]
-    pub read_behavior: Option<serde_json::Value>,
+    #[doc = "This property control whether query result contains Deleted objects. Default is false. Type: boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "includeDeletedObjects", default, skip_serializing_if = "Option::is_none")]
+    pub include_deleted_objects: Option<serde_json::Value>,
 }
 impl SalesforceV2Source {
     pub fn new(tabular_source: TabularSource) -> Self {
         Self {
             tabular_source,
             soql_query: None,
-            read_behavior: None,
-        }
-    }
-}
-#[doc = "The Salesforce read behavior for the operation"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "SalesforceV2SourceReadBehavior")]
-pub enum SalesforceV2SourceReadBehavior {
-    #[serde(rename = "query")]
-    Query,
-    #[serde(rename = "queryAll")]
-    QueryAll,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for SalesforceV2SourceReadBehavior {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for SalesforceV2SourceReadBehavior {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for SalesforceV2SourceReadBehavior {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::Query => serializer.serialize_unit_variant("SalesforceV2SourceReadBehavior", 0u32, "query"),
-            Self::QueryAll => serializer.serialize_unit_variant("SalesforceV2SourceReadBehavior", 1u32, "queryAll"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            include_deleted_objects: None,
         }
     }
 }
@@ -23013,6 +23353,141 @@ impl ServiceNowSource {
         }
     }
 }
+#[doc = "ServiceNowV2 server linked service."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceNowV2LinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "ServiceNowV2 server linked service properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: ServiceNowV2LinkedServiceTypeProperties,
+}
+impl ServiceNowV2LinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: ServiceNowV2LinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "ServiceNowV2 server linked service properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceNowV2LinkedServiceTypeProperties {
+    #[doc = "The endpoint of the ServiceNowV2 server. (i.e. <instance>.service-now.com)"]
+    pub endpoint: serde_json::Value,
+    #[doc = "The authentication type to use."]
+    #[serde(rename = "authenticationType")]
+    pub authentication_type: service_now_v2_linked_service_type_properties::AuthenticationType,
+    #[doc = "The user name used to connect to the ServiceNowV2 server for Basic and OAuth2 authentication."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub username: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<SecretBaseUnion>,
+    #[doc = "The client id for OAuth2 authentication."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
+    pub client_secret: Option<SecretBaseUnion>,
+    #[doc = "GrantType for OAuth2 authentication. Default value is password."]
+    #[serde(rename = "grantType", default, skip_serializing_if = "Option::is_none")]
+    pub grant_type: Option<serde_json::Value>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<String>,
+}
+impl ServiceNowV2LinkedServiceTypeProperties {
+    pub fn new(
+        endpoint: serde_json::Value,
+        authentication_type: service_now_v2_linked_service_type_properties::AuthenticationType,
+    ) -> Self {
+        Self {
+            endpoint,
+            authentication_type,
+            username: None,
+            password: None,
+            client_id: None,
+            client_secret: None,
+            grant_type: None,
+            encrypted_credential: None,
+        }
+    }
+}
+pub mod service_now_v2_linked_service_type_properties {
+    use super::*;
+    #[doc = "The authentication type to use."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        Basic,
+        OAuth2,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Basic => serializer.serialize_unit_variant("AuthenticationType", 0u32, "Basic"),
+                Self::OAuth2 => serializer.serialize_unit_variant("AuthenticationType", 1u32, "OAuth2"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "ServiceNowV2 server dataset."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceNowV2ObjectDataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[doc = "Properties specific to this dataset type."]
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<GenericDatasetTypeProperties>,
+}
+impl ServiceNowV2ObjectDataset {
+    pub fn new(dataset: Dataset) -> Self {
+        Self {
+            dataset,
+            type_properties: None,
+        }
+    }
+}
+#[doc = "A copy activity ServiceNowV2 server source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceNowV2Source {
+    #[serde(flatten)]
+    pub tabular_source: TabularSource,
+    #[doc = "Nested representation of a complex expression."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expression: Option<ExpressionV2>,
+}
+impl ServiceNowV2Source {
+    pub fn new(tabular_source: TabularSource) -> Self {
+        Self {
+            tabular_source,
+            expression: None,
+        }
+    }
+}
 #[doc = "All available servicePrincipalCredentialType values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ServicePrincipalCredentialType")]
@@ -23626,6 +24101,114 @@ impl SnowflakeLinkedServiceTypeProperties {
         }
     }
 }
+#[doc = "Snowflake linked service properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SnowflakeLinkedV2ServiceTypeProperties {
+    #[doc = "The account identifier of your Snowflake account, e.g. xy12345.east-us-2.azure"]
+    #[serde(rename = "accountIdentifier")]
+    pub account_identifier: serde_json::Value,
+    #[doc = "The name of the Snowflake user."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<SecretBaseUnion>,
+    #[doc = "The name of the Snowflake database."]
+    pub database: serde_json::Value,
+    #[doc = "The name of the Snowflake warehouse."]
+    pub warehouse: serde_json::Value,
+    #[doc = "The type used for authentication. Type: string."]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<snowflake_linked_v2_service_type_properties::AuthenticationType>,
+    #[doc = "The client ID of the application registered in Azure Active Directory for AADServicePrincipal authentication."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
+    pub client_secret: Option<SecretBaseUnion>,
+    #[doc = "The tenant ID of the application registered in Azure Active Directory for AADServicePrincipal authentication."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<serde_json::Value>,
+    #[doc = "The scope of the application registered in Azure Active Directory for AADServicePrincipal authentication."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "privateKey", default, skip_serializing_if = "Option::is_none")]
+    pub private_key: Option<SecretBaseUnion>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "privateKeyPassphrase", default, skip_serializing_if = "Option::is_none")]
+    pub private_key_passphrase: Option<SecretBaseUnion>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<String>,
+}
+impl SnowflakeLinkedV2ServiceTypeProperties {
+    pub fn new(account_identifier: serde_json::Value, database: serde_json::Value, warehouse: serde_json::Value) -> Self {
+        Self {
+            account_identifier,
+            user: None,
+            password: None,
+            database,
+            warehouse,
+            authentication_type: None,
+            client_id: None,
+            client_secret: None,
+            tenant_id: None,
+            scope: None,
+            private_key: None,
+            private_key_passphrase: None,
+            encrypted_credential: None,
+        }
+    }
+}
+pub mod snowflake_linked_v2_service_type_properties {
+    use super::*;
+    #[doc = "The type used for authentication. Type: string."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        Basic,
+        KeyPair,
+        #[serde(rename = "AADServicePrincipal")]
+        AadServicePrincipal,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Basic => serializer.serialize_unit_variant("AuthenticationType", 0u32, "Basic"),
+                Self::KeyPair => serializer.serialize_unit_variant("AuthenticationType", 1u32, "KeyPair"),
+                Self::AadServicePrincipal => serializer.serialize_unit_variant("AuthenticationType", 2u32, "AADServicePrincipal"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for AuthenticationType {
+        fn default() -> Self {
+            Self::Basic
+        }
+    }
+}
 #[doc = "A copy activity snowflake sink."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnowflakeSink {
@@ -23660,6 +24243,79 @@ pub struct SnowflakeSource {
     pub export_settings: SnowflakeExportCopyCommand,
 }
 impl SnowflakeSource {
+    pub fn new(copy_source: CopySource, export_settings: SnowflakeExportCopyCommand) -> Self {
+        Self {
+            copy_source,
+            query: None,
+            export_settings,
+        }
+    }
+}
+#[doc = "The snowflake dataset."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SnowflakeV2Dataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[doc = "Snowflake dataset properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: SnowflakeDatasetTypeProperties,
+}
+impl SnowflakeV2Dataset {
+    pub fn new(dataset: Dataset, type_properties: SnowflakeDatasetTypeProperties) -> Self {
+        Self { dataset, type_properties }
+    }
+}
+#[doc = "Snowflake linked service."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SnowflakeV2LinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Snowflake linked service properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: SnowflakeLinkedV2ServiceTypeProperties,
+}
+impl SnowflakeV2LinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: SnowflakeLinkedV2ServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "A copy activity snowflake sink."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SnowflakeV2Sink {
+    #[serde(flatten)]
+    pub copy_sink: CopySink,
+    #[doc = "SQL pre-copy script. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "preCopyScript", default, skip_serializing_if = "Option::is_none")]
+    pub pre_copy_script: Option<serde_json::Value>,
+    #[doc = "Snowflake import command settings."]
+    #[serde(rename = "importSettings", default, skip_serializing_if = "Option::is_none")]
+    pub import_settings: Option<SnowflakeImportCopyCommand>,
+}
+impl SnowflakeV2Sink {
+    pub fn new(copy_sink: CopySink) -> Self {
+        Self {
+            copy_sink,
+            pre_copy_script: None,
+            import_settings: None,
+        }
+    }
+}
+#[doc = "A copy activity snowflake source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SnowflakeV2Source {
+    #[serde(flatten)]
+    pub copy_source: CopySource,
+    #[doc = "Snowflake Sql query. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<serde_json::Value>,
+    #[doc = "Snowflake export command settings."]
+    #[serde(rename = "exportSettings")]
+    pub export_settings: SnowflakeExportCopyCommand,
+}
+impl SnowflakeV2Source {
     pub fn new(copy_source: CopySource, export_settings: SnowflakeExportCopyCommand) -> Self {
         Self {
             copy_source,
@@ -27462,7 +28118,7 @@ pub struct WebActivityTypeProperties {
     pub method: WebActivityMethod,
     #[doc = "Web activity target endpoint and path. Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
-    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: dictionary (or Expression with resultType dictionary)."]
+    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
     #[doc = "Represents the payload that will be sent to the endpoint. Required for POST/PUT method, not allowed for GET method Type: string (or Expression with resultType string)."]
@@ -27642,7 +28298,7 @@ pub struct WebHookActivityTypeProperties {
     #[doc = "The timeout within which the webhook should be called back. If there is no value specified, it defaults to 10 minutes. Type: string. Pattern: ((\\d+)\\.)?(\\d\\d):(60|([0-5][0-9])):(60|([0-5][0-9]))."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
-    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: dictionary (or Expression with resultType dictionary)."]
+    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
     #[doc = "Represents the payload that will be sent to the endpoint. Required for POST/PUT method, not allowed for GET method Type: string (or Expression with resultType string)."]

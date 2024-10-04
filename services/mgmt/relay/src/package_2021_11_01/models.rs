@@ -381,6 +381,9 @@ pub mod network_rule_set {
     #[doc = "NetworkRuleSet properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Value that indicates whether Trusted Service Access is Enabled or not."]
+        #[serde(rename = "trustedServiceAccessEnabled", default, skip_serializing_if = "Option::is_none")]
+        pub trusted_service_access_enabled: Option<bool>,
         #[doc = "Default Action for Network Rule Set"]
         #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
         pub default_action: Option<properties::DefaultAction>,

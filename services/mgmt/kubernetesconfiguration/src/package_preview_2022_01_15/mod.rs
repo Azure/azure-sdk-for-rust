@@ -258,7 +258,16 @@ pub mod cluster_extension_type {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensionTypes/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_type_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensionTypes/{}",
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.cluster_rp,
+                    &self.cluster_resource_name,
+                    &self.cluster_name,
+                    &self.extension_type_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -419,15 +428,11 @@ pub mod cluster_extension_types {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensionTypes",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.cluster_rp,
-                    &self.cluster_resource_name,
-                    &self.cluster_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensionTypes",
+                    &self.subscription_id, &self.resource_group_name, &self.cluster_rp, &self.cluster_resource_name, &self.cluster_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -568,13 +573,11 @@ pub mod extension_type_versions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.KubernetesConfiguration/locations/{}/extensionTypes/{}/versions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location,
-                    &self.extension_type_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.KubernetesConfiguration/locations/{}/extensionTypes/{}/versions",
+                    &self.subscription_id, &self.location, &self.extension_type_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -707,12 +710,11 @@ pub mod location_extension_types {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.KubernetesConfiguration/locations/{}/extensionTypes",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.KubernetesConfiguration/locations/{}/extensionTypes",
+                    &self.subscription_id, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -955,16 +957,16 @@ pub mod extensions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.cluster_rp,
                     &self.cluster_resource_name,
                     &self.cluster_name,
                     &self.extension_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1066,16 +1068,16 @@ pub mod extensions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.cluster_rp,
                     &self.cluster_resource_name,
                     &self.cluster_name,
                     &self.extension_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1232,16 +1234,16 @@ pub mod extensions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.cluster_rp,
                     &self.cluster_resource_name,
                     &self.cluster_name,
                     &self.extension_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1402,16 +1404,16 @@ pub mod extensions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.cluster_rp,
                     &self.cluster_resource_name,
                     &self.cluster_name,
                     &self.extension_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1525,15 +1527,11 @@ pub mod extensions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.cluster_rp,
-                    &self.cluster_resource_name,
-                    &self.cluster_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions",
+                    &self.subscription_id, &self.resource_group_name, &self.cluster_rp, &self.cluster_resource_name, &self.cluster_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1689,7 +1687,8 @@ pub mod operation_status {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}/operations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name , & self . operation_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}/operations/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name , & self . operation_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1815,15 +1814,11 @@ pub mod operation_status {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/operations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.cluster_rp,
-                    &self.cluster_resource_name,
-                    &self.cluster_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/operations",
+                    &self.subscription_id, &self.resource_group_name, &self.cluster_rp, &self.cluster_resource_name, &self.cluster_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2066,7 +2061,8 @@ pub mod flux_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . flux_configuration_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . flux_configuration_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2168,7 +2164,8 @@ pub mod flux_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . flux_configuration_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . flux_configuration_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2325,7 +2322,8 @@ pub mod flux_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . flux_configuration_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . flux_configuration_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2486,7 +2484,8 @@ pub mod flux_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . flux_configuration_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . flux_configuration_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2600,7 +2599,11 @@ pub mod flux_configurations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations",
+                    &self.subscription_id, &self.resource_group_name, &self.cluster_rp, &self.cluster_resource_name, &self.cluster_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2731,7 +2734,8 @@ pub mod flux_config_operation_status {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations/{}/operations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . flux_configuration_name , & self . operation_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/fluxConfigurations/{}/operations/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . flux_configuration_name , & self . operation_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2954,7 +2958,8 @@ pub mod source_control_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/sourceControlConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . source_control_configuration_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/sourceControlConfigurations/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . source_control_configuration_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3057,7 +3062,8 @@ pub mod source_control_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/sourceControlConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . source_control_configuration_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/sourceControlConfigurations/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . source_control_configuration_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3152,7 +3158,8 @@ pub mod source_control_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/sourceControlConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . source_control_configuration_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/sourceControlConfigurations/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . source_control_configuration_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3266,7 +3273,8 @@ pub mod source_control_configurations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/sourceControlConfigurations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/sourceControlConfigurations" , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3389,10 +3397,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.KubernetesConfiguration/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/providers/Microsoft.KubernetesConfiguration/operations",));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
