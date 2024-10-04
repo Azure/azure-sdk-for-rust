@@ -14,7 +14,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.20", features = ["xml"] }
+azure_core = { path = "../core", version = "0.21", features = ["xml"] }
 time = "0.3.10"
 tracing = "0.1.40"
 serde = "1.0"

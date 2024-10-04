@@ -15,7 +15,7 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.20" }
+azure_core = { path = "../core", version = "0.21" }
 time = { version = "0.3.10", features = ["serde-well-known"] }
 tracing = "0.1.40"
 url = "2.2"

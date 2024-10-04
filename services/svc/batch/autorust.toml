@@ -1,2 +1,8 @@
 [properties]
 fix_case = ["BatchServiceClient", "BatchService"]
+
+[tags]
+deny = [
+  # header type 'string' format 'Some(\"date-time-rfc7231\")' not matched
+  "package-2024-02.19.0-preview",
+]

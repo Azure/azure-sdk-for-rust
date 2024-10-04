@@ -13,9 +13,9 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.20", features = ["xml"] }
-azure_storage = { path = "../storage", version = "0.20", default-features = false }
-azure_svc_blobstorage = {path="../../services/svc/blobstorage", version = "0.20", default-features=false, features=["default_tag"]}
+azure_core = { path = "../core", version = "0.21", features = ["xml"] }
+azure_storage = { path = "../storage", version = "0.21", default-features = false }
+azure_svc_blobstorage = {path="../../services/svc/blobstorage", version = "0.21", default-features=false, features=["default_tag"]}
 bytes = "1.0"
 time = "0.3.10"
 futures = "0.3"
