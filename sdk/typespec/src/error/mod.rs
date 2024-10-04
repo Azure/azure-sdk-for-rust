@@ -169,6 +169,14 @@ impl Error {
         }
     }
 
+    #[cfg(feature = "http")]
+    pub fn http_status(&self) -> Option<StatusCode> {
+        match &self.kind() {
+            ErrorKind::HttpResponse { status, .. } => Some(*status),
+            _ => None,
+        }
+    }
+
     /// Consumes the `Error`, returning its inner error, if any.
     pub fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self> {
         match self.context {

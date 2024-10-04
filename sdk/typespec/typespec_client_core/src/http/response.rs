@@ -18,6 +18,10 @@ pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send +
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
 /// Trait that represents types that can be deserialized from an HTTP response body.
+///
+/// [`Response<T>`] is designed to work with values that may be serialized in various formats (JSON, XML, etc.).
+/// In order to support that, the `T` provided must implement [`Model`], which provides the [`Model::from_response_body`]
+/// method to deserialize the type from a response body.
 pub trait Model: Sized {
     /// Deserialize the response body into type `Self`.
     ///
@@ -32,6 +36,21 @@ pub trait Model: Sized {
 
     #[cfg(target_arch = "wasm32")]
     fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>>;
+}
+
+// Allow for deserializing into "raw" JSON.
+impl Model for serde_json::Value {
+    #[cfg(not(target_arch = "wasm32"))]
+    fn from_response_body(
+        body: ResponseBody,
+    ) -> impl Future<Output = crate::Result<Self>> + Send + Sync {
+        body.json()
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>> {
+        body.json()
+    }
 }
 
 /// An HTTP response.

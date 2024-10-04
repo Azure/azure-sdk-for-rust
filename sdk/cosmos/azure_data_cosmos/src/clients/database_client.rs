@@ -59,8 +59,7 @@ pub struct DatabaseClient {
 
 impl DatabaseClient {
     pub(crate) fn new(pipeline: CosmosPipeline, base_url: &Url, database_id: &str) -> Self {
-        let mut database_url = base_url.clone();
-        database_url.append_path_segments(["dbs", database_id]);
+        let database_url = base_url.with_path_segments(["dbs", database_id]);
 
         Self {
             database_url,
@@ -74,7 +73,7 @@ impl DatabaseClientMethods for DatabaseClient {
         &self,
 
         #[allow(unused_variables)]
-        // This is a documented public API so prefixing with '_' is undesirable.
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<azure_core::Response<DatabaseProperties>> {
         let mut req = Request::new(self.database_url.clone(), azure_core::Method::Get);

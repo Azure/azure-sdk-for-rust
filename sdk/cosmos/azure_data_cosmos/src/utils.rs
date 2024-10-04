@@ -4,8 +4,14 @@
 use url::Url;
 
 /// Appends new path segments to the target [`Url`].
-pub trait AppendPathSegments {
+pub trait AppendPathSegments: Clone {
     fn append_path_segments<'a>(&mut self, segments: impl IntoIterator<Item = &'a str>);
+
+    fn with_path_segments<'a>(&self, segments: impl IntoIterator<Item = &'a str>) -> Self {
+        let mut new = self.clone();
+        new.append_path_segments(segments);
+        new
+    }
 }
 
 impl AppendPathSegments for Url {

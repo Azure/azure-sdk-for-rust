@@ -3,11 +3,8 @@
 
 //! Model types sent to and received from the Cosmos DB API.
 
-use azure_core::{
-    date::{ComponentRange, OffsetDateTime},
-    Continuable, Model,
-};
-use serde::{Deserialize, Serialize};
+use azure_core::{date::OffsetDateTime, Continuable, Model};
+use serde::{Deserialize, Deserializer};
 
 #[cfg(doc)]
 use crate::{
@@ -15,25 +12,32 @@ use crate::{
     CosmosClientMethods,
 };
 
-/// Represents a timestamp in the format expected by Cosmos DB.
-///
-/// Cosmos DB timestamps are represented as the number of seconds since the Unix epoch.
-/// Use [`CosmosTimestamp::try_into`] implementation to convert this into an [`OffsetDateTime`].
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CosmosTimestamp(i64);
+mod item;
 
-/// Converts a [`CosmosTimestamp`] into a [`OffsetDateTime`].
-impl TryInto<OffsetDateTime> for CosmosTimestamp {
-    type Error = ComponentRange;
+pub use item::*;
 
-    /// Attempts to convert this [`CosmosTimestamp`] into a [`OffsetDateTime`].
-    fn try_into(self) -> Result<OffsetDateTime, Self::Error> {
-        OffsetDateTime::from_unix_timestamp(self.0)
+fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let seconds_since_epoch = Option::<i64>::deserialize(deserializer)?;
+    match seconds_since_epoch {
+        None => Ok(None),
+        Some(seconds) => Ok(Some(OffsetDateTime::from_unix_timestamp(seconds).map_err(
+            |_| {
+                use serde::de::Error;
+                D::Error::invalid_value(
+                    serde::de::Unexpected::Signed(seconds),
+                    &"a valid timestamp",
+                )
+            },
+        )?)),
     }
 }
 
 /// A page of query results, where each item is a document of type `T`.
-#[derive(Debug)]
+#[non_exhaustive]
+#[derive(Clone, Default, Debug)]
 pub struct QueryResults<T> {
     pub items: Vec<T>,
     pub query_metrics: Option<String>,
@@ -50,7 +54,8 @@ impl<T> Continuable for QueryResults<T> {
 }
 
 /// Common system properties returned for most Cosmos DB resources.
-#[derive(Debug, Deserialize)]
+#[non_exhaustive]
+#[derive(Clone, Default, Debug, Deserialize)]
 pub struct SystemProperties {
     /// The entity tag associated with the resource.
     #[serde(rename = "_etag")]
@@ -64,15 +69,17 @@ pub struct SystemProperties {
     #[serde(rename = "_rid")]
     pub resource_id: Option<String>,
 
-    /// A [`CosmosTimestamp`] representing the last modified time of the resource.
+    /// A [`OffsetDateTime`] representing the last modified time of the resource.
     #[serde(rename = "_ts")]
-    pub last_modified: Option<CosmosTimestamp>,
+    #[serde(deserialize_with = "deserialize_cosmos_timestamp")]
+    pub last_modified: Option<OffsetDateTime>,
 }
 
 /// Properties of a Cosmos DB database.
 ///
 /// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
-#[derive(Model, Debug, Deserialize)]
+#[non_exhaustive]
+#[derive(Model, Clone, Default, Debug, Deserialize)]
 pub struct DatabaseProperties {
     /// The ID of the database.
     pub id: String,
@@ -85,7 +92,8 @@ pub struct DatabaseProperties {
 /// Properties of a Cosmos DB container.
 ///
 /// Returned by [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
-#[derive(Model, Debug, Deserialize)]
+#[non_exhaustive]
+#[derive(Model, Clone, Default, Debug, Deserialize)]
 pub struct ContainerProperties {
     /// The ID of the container.
     pub id: String,

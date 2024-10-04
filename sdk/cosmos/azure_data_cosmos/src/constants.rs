@@ -11,5 +11,6 @@ pub const PARTITION_KEY: HeaderName = HeaderName::from_static("x-ms-documentdb-p
 pub const CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
 pub const INDEX_METRICS: HeaderName = HeaderName::from_static("x-ms-cosmos-index-utilization");
 pub const QUERY_METRICS: HeaderName = HeaderName::from_static("x-ms-documentdb-query-metrics");
+pub const IS_UPSERT: HeaderName = HeaderName::from_static("x-ms-documentdb-is-upsert");
 
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
