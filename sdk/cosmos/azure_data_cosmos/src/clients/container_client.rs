@@ -10,7 +10,7 @@ use crate::{
     ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
 };
 
-use azure_core::{Context, Request, Response};
+use azure_core::{Context, Pager, Request, Response};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use url::Url;
 
@@ -444,7 +444,7 @@ impl ContainerClientMethods for ContainerClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryOptions>,
-    ) -> azure_core::Result<azure_core::Pageable<QueryResults<T>, azure_core::Error>> {
+    ) -> azure_core::Result<impl Pager<T>> {
         // Represents the raw response model from the server.
         // We'll use this to deserialize the response body and then convert it to a more user-friendly model.
         #[derive(Deserialize)]
