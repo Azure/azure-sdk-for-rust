@@ -129,6 +129,9 @@ impl DatabaseClientMethods for DatabaseClient {
     fn query_containers(
         &self,
         query: impl Into<Query>,
+
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<Pager<QueryResults<ContainerProperties>>> {
         let mut url = self.database_url.clone();

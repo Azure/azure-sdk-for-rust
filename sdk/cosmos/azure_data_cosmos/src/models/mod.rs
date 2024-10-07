@@ -3,8 +3,6 @@
 
 //! Model types sent to and received from the Cosmos DB API.
 
-use std::time::Duration;
-
 use azure_core::{date::OffsetDateTime, Model};
 use serde::{de::DeserializeOwned, Deserialize, Deserializer};
 

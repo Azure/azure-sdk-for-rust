@@ -151,6 +151,9 @@ impl CosmosClientMethods for CosmosClient {
     fn query_databases(
         &self,
         query: impl Into<Query>,
+
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryDatabasesOptions>,
     ) -> azure_core::Result<azure_core::Pager<QueryResults<DatabaseProperties>>> {
         let mut url = self.endpoint.clone();
