@@ -41,6 +41,7 @@ where
 pub struct QueryResults<T> {
     #[serde(alias = "Documents")]
     #[serde(alias = "Databases")]
+    #[serde(alias = "DocumentCollections")]
     pub items: Vec<T>,
 }
 
