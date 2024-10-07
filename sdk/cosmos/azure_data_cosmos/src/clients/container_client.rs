@@ -50,7 +50,7 @@ pub trait ContainerClientMethods {
     ///
     /// # Arguments
     /// * `partition_key` - The partition key of the new item.
-    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`]
+    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`](serde::Deserialize)
     /// * `options` - Optional parameters for the request
     ///
     /// # Examples
@@ -94,7 +94,7 @@ pub trait ContainerClientMethods {
     /// # Arguments
     /// * `partition_key` - The partition key of the item to replace.
     /// * `item_id` - The id of the item to replace.
-    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`]
+    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`](serde::Deserialize)
     /// * `options` - Optional parameters for the request
     ///
     /// # Examples
@@ -141,7 +141,7 @@ pub trait ContainerClientMethods {
     ///
     /// # Arguments
     /// * `partition_key` - The partition key of the item to create or replace.
-    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`]
+    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`](serde::Deserialize)
     /// * `options` - Optional parameters for the request
     ///
     /// # Examples
