@@ -1,13 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::models::DatabaseProperties;
+use crate::models::{ContainerProperties, DatabaseProperties, QueryResults};
 use crate::options::ReadDatabaseOptions;
 use crate::pipeline::ResourceType;
 use crate::utils::AppendPathSegments;
 use crate::{clients::ContainerClient, pipeline::CosmosPipeline};
+use crate::{Query, QueryContainersOptions};
 
-use azure_core::{Context, Request};
+use azure_core::{Context, Pager, Request, Response};
 use url::Url;
 
 #[cfg(doc)]
@@ -40,13 +41,19 @@ pub trait DatabaseClientMethods {
     async fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
-    ) -> azure_core::Result<azure_core::Response<DatabaseProperties>>;
+    ) -> azure_core::Result<Response<DatabaseProperties>>;
 
     /// Gets a [`ContainerClient`] that can be used to access the collection with the specified name.
     ///
     /// # Arguments
     /// * `name` - The name of the container.
     fn container_client(&self, name: impl AsRef<str>) -> ContainerClient;
+
+    fn query_containers(
+        &self,
+        query: impl Into<Query>,
+        options: Option<QueryContainersOptions>,
+    ) -> azure_core::Result<Pager<QueryResults<ContainerProperties>>>;
 }
 
 /// A client for working with a specific database in a Cosmos DB account.
@@ -75,7 +82,7 @@ impl DatabaseClientMethods for DatabaseClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadDatabaseOptions>,
-    ) -> azure_core::Result<azure_core::Response<DatabaseProperties>> {
+    ) -> azure_core::Result<Response<DatabaseProperties>> {
         let mut req = Request::new(self.database_url.clone(), azure_core::Method::Get);
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Databases)
@@ -84,5 +91,18 @@ impl DatabaseClientMethods for DatabaseClient {
 
     fn container_client(&self, name: impl AsRef<str>) -> ContainerClient {
         ContainerClient::new(self.pipeline.clone(), &self.database_url, name.as_ref())
+    }
+
+    fn query_containers(
+        &self,
+        query: impl Into<Query>,
+        options: Option<QueryContainersOptions>,
+    ) -> azure_core::Result<Pager<QueryResults<ContainerProperties>>> {
+        let mut url = self.database_url.clone();
+        url.append_path_segments(["colls"]);
+        let base_request = Request::new(url, azure_core::Method::Post);
+
+        self.pipeline
+            .send_query_request(query.into(), base_request, ResourceType::Containers)
     }
 }

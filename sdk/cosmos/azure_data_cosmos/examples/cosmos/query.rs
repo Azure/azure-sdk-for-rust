@@ -34,6 +34,13 @@ enum Subcommands {
         /// The query to execute.
         query: String,
     },
+    Containers {
+        /// The database to query.
+        database: String,
+
+        /// The query to execute.
+        query: String,
+    },
 }
 
 impl QueryCommand {
@@ -69,6 +76,20 @@ impl QueryCommand {
                     let page = page?.deserialize_body().await?;
                     println!("Results Page");
                     println!("  Databases:");
+                    for item in page.items {
+                        println!("    * {:#?}", item);
+                    }
+                }
+                Ok(())
+            }
+            Subcommands::Containers { database, query } => {
+                let db_client = client.database_client(&database);
+                let mut dbs = db_client.query_containers(query, None)?;
+
+                while let Some(page) = dbs.next().await {
+                    let page = page?.deserialize_body().await?;
+                    println!("Results Page");
+                    println!("  Containers:");
                     for item in page.items {
                         println!("    * {:#?}", item);
                     }
