@@ -120,10 +120,11 @@ mod tests {
 
     use futures::StreamExt;
     use serde::Deserialize;
+    use typespec_derive::Model;
 
     use crate::http::{
         headers::{HeaderName, HeaderValue},
-        Model, Pager, Response, StatusCode,
+        Pager, Response, StatusCode,
     };
 
     #[tokio::test]
