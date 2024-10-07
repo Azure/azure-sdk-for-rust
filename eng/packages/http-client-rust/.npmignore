@@ -1,0 +1,10 @@
+.scripts/
+.vscode/
+coverage/
+src/
+test/
+.eslint*
+*.log
+test-results.xml
+tsconfig.json
+vitest.config.js

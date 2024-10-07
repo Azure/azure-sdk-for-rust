@@ -1,0 +1,5 @@
+node_modules/
+dist/
+packages/typespec-rust/test/target/
+cadl-ranch-coverage.json
+*.tgz

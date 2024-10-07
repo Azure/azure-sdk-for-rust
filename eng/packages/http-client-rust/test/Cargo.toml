@@ -1,0 +1,21 @@
+[workspace]
+members = [
+    "./cadlranch/**/src/..",
+    "./sdk/**/src/..",
+]
+resolver = "2"
+
+[workspace.package]
+authors = ["Microsoft"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Azure/azure-sdk-for-rust"
+rust-version = "1.76"
+
+[workspace.dependencies]
+async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
+azure_core = { git = "https://github.com/Azure/azure-sdk-for-rust.git", rev = "3eac99ed00591493e92ea0b7cbf36e52ff9d302e", features = ["enable_reqwest"] }
+bytes = { version = "1.5.0" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0.118" }
+time = { version = "0.3.36" }

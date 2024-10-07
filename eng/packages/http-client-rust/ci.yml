@@ -1,0 +1,85 @@
+trigger: none
+pr:
+  branches:
+    include:
+    - main
+    - feature/*
+    - hotfix/*
+    - release/*
+  paths:
+    include:
+    - eng/packages/http-client-rust
+
+variables:
+  - template: /eng/pipelines/templates/variables/image.yml
+
+extends:
+  template: /eng/pipelines/templates/stages/1es-redirect.yml
+  parameters:
+    stages:
+      - stage: 'Build'
+        pool:
+          name: $(LINUXNEXTPOOL)
+          image: $(LINUXNEXTVMIMAGE)
+          os: linux
+        jobs:
+          - job: Build
+            timeoutInMinutes: 30
+            steps:
+              - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+              - task: NodeTool@0
+                displayName: "Install Node 20.x"
+                inputs:
+                  versionSpec: '20.x'
+              - task: Cache@2
+                inputs:
+                  key: 'pnpm | "$(Agent.OS)" | $(Build.SourcesDirectory)/eng/packages/http-client-rust/pnpm-lock.yaml'
+                  path: $(Pipeline.Workspace)/.pnpm-store
+                displayName: Cache pnpm store
+              - script: |
+                  corepack enable
+                  corepack prepare pnpm@latest-9 --activate
+                displayName: Install pnpm
+              - script: pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
+                displayName: Setup pnpm cache dir
+              - script: |
+                  pnpm install
+                displayName: "Install packages"
+                workingDirectory: $(Build.SourcesDirectory)/eng/packages/http-client-rust
+              - script: |
+                  pnpm run eslint
+                displayName: "Emitter linter check"
+                workingDirectory: $(Build.SourcesDirectory)/eng/packages/http-client-rust
+              - script: |
+                  pnpm build
+                displayName: 'Build emitter sources'
+                workingDirectory: $(Build.SourcesDirectory)/eng/packages/http-client-rust
+              - script: |
+                  pnpm run test-ci
+                displayName: 'Run emitter tests'
+                workingDirectory: $(Build.SourcesDirectory)/eng/packages/http-client-rust
+              - task: PublishTestResults@2
+                inputs:
+                  testRunner: JUnit
+                  testResultsFiles: $(Build.SourcesDirectory)/eng/packages/http-client-rust/test-results.xml
+                  failTaskOnFailedTests: true
+              - script: |
+                  pnpm run tspcompile --verbose
+                  git add -A .
+                  git diff --staged 1>&2
+                displayName: Regenerate cadl-ranch tests
+                workingDirectory: $(Build.SourcesDirectory)/eng/packages/http-client-rust/test
+                failOnStderr: true
+              - pwsh: |
+                  cargo build
+                displayName: Compile Tests
+                workingDirectory: $(Build.SourcesDirectory)/eng/packages/http-client-rust/test
+              - pwsh: |
+                  pnpm cadl-ranch --start
+                  cargo test --no-fail-fast
+                  $code = $LASTEXITCODE
+                  pnpm cadl-ranch --stop
+                  exit $code
+                displayName: "Run cadl-ranch tests"
+                timeoutInMinutes: 10
+                workingDirectory: $(System.DefaultWorkingDirectory)/packages/typespec-rust/test/cadlranch
