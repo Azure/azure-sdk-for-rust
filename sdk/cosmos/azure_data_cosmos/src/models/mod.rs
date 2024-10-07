@@ -3,6 +3,8 @@
 
 //! Model types sent to and received from the Cosmos DB API.
 
+use std::time::Duration;
+
 use azure_core::{date::OffsetDateTime, Model};
 use serde::{de::DeserializeOwned, Deserialize, Deserializer};
 
@@ -12,8 +14,10 @@ use crate::{
     CosmosClientMethods,
 };
 
+mod container_properties;
 mod item;
 
+pub use container_properties::*;
 pub use item::*;
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
@@ -85,20 +89,6 @@ pub struct DatabaseProperties {
     pub id: String,
 
     /// A [`SystemProperties`] object containing common system properties for the database.
-    #[serde(flatten)]
-    pub system_properties: SystemProperties,
-}
-
-/// Properties of a Cosmos DB container.
-///
-/// Returned by [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
-#[non_exhaustive]
-#[derive(Model, Clone, Default, Debug, Deserialize)]
-pub struct ContainerProperties {
-    /// The ID of the container.
-    pub id: String,
-
-    /// A [`SystemProperties`] object containing common system properties for the container.
     #[serde(flatten)]
     pub system_properties: SystemProperties,
 }
