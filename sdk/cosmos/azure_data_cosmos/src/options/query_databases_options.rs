@@ -14,7 +14,7 @@ impl QueryDatabasesOptions {
     /// # Examples
     ///
     /// ```rust
-    /// let options = azure_data_cosmos::QueryDatabaseOptions::builder().build();
+    /// let options = azure_data_cosmos::QueryDatabasesOptions::builder().build();
     /// ```
     pub fn builder() -> QueryDatabasesOptionsBuilder {
         QueryDatabasesOptionsBuilder::default()

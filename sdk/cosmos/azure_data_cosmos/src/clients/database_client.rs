@@ -49,6 +49,32 @@ pub trait DatabaseClientMethods {
     /// * `name` - The name of the container.
     fn container_client(&self, name: impl AsRef<str>) -> ContainerClient;
 
+    /// Returns the identifier of the Cosmos database.
+    fn id(&self) -> &str;
+
+    /// Executes a query against containers in the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `query` - The query to execute.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// The `query` parameter accepts anything that can be transformed [`Into`] a [`Query`].
+    /// This allows simple queries without parameters to be expressed easily:
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() {
+    /// # use azure_data_cosmos::clients::{DatabaseClient, DatabaseClientMethods};
+    /// # let db_client: DatabaseClient = panic!("this is a non-running example");
+    /// let containers = db_client.query_containers(
+    ///     "SELECT * FROM dbs",
+    ///     None).unwrap();
+    /// # }
+    /// ```
+    ///
+    /// See [`Query`] for more information on how to specify a query.
     fn query_containers(
         &self,
         query: impl Into<Query>,
@@ -60,15 +86,18 @@ pub trait DatabaseClientMethods {
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
 pub struct DatabaseClient {
+    database_id: String,
     database_url: Url,
     pipeline: CosmosPipeline,
 }
 
 impl DatabaseClient {
     pub(crate) fn new(pipeline: CosmosPipeline, base_url: &Url, database_id: &str) -> Self {
-        let database_url = base_url.with_path_segments(["dbs", database_id]);
+        let database_id = database_id.to_string();
+        let database_url = base_url.with_path_segments(["dbs", &database_id]);
 
         Self {
+            database_id,
             database_url,
             pipeline,
         }
@@ -91,6 +120,10 @@ impl DatabaseClientMethods for DatabaseClient {
 
     fn container_client(&self, name: impl AsRef<str>) -> ContainerClient {
         ContainerClient::new(self.pipeline.clone(), &self.database_url, name.as_ref())
+    }
+
+    fn id(&self) -> &str {
+        &self.database_id
     }
 
     fn query_containers(

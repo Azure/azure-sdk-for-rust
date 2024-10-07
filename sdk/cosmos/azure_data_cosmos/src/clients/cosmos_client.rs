@@ -34,9 +34,32 @@ pub trait CosmosClientMethods {
     /// * `id` - The ID of the database.
     fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient;
 
-    /// Gets the URL of the Cosmos DB Account this client is connected to.
+    /// Returns the endpoint used to create the client.
     fn endpoint(&self) -> &Url;
 
+    /// Executes a query against databases in the account.
+    ///
+    /// # Arguments
+    ///
+    /// * `query` - The query to execute.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// The `query` parameter accepts anything that can be transformed [`Into`] a [`Query`].
+    /// This allows simple queries without parameters to be expressed easily:
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() {
+    /// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods};
+    /// # let client: CosmosClient = panic!("this is a non-running example");
+    /// let dbs = client.query_databases(
+    ///     "SELECT * FROM dbs",
+    ///     None).unwrap();
+    /// # }
+    /// ```
+    ///
+    /// See [`Query`] for more information on how to specify a query.
     fn query_databases(
         &self,
         query: impl Into<Query>,

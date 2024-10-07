@@ -47,6 +47,9 @@ pub trait ContainerClientMethods {
         options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<Response<ContainerProperties>>;
 
+    /// Returns the identifier of the Cosmos container.
+    fn id(&self) -> &str;
+
     /// Creates a new item in the container.
     ///
     /// # Arguments
@@ -312,15 +315,18 @@ pub trait ContainerClientMethods {
 ///
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 pub struct ContainerClient {
+    container_id: String,
     container_url: Url,
     pipeline: CosmosPipeline,
 }
 
 impl ContainerClient {
-    pub(crate) fn new(pipeline: CosmosPipeline, database_url: &Url, container_name: &str) -> Self {
-        let container_url = database_url.with_path_segments(["colls", container_name]);
+    pub(crate) fn new(pipeline: CosmosPipeline, database_url: &Url, container_id: &str) -> Self {
+        let container_id = container_id.to_string();
+        let container_url = database_url.with_path_segments(["colls", &container_id]);
 
         Self {
+            container_id,
             container_url,
             pipeline,
         }
@@ -339,6 +345,10 @@ impl ContainerClientMethods for ContainerClient {
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Containers)
             .await
+    }
+
+    fn id(&self) -> &str {
+        &self.container_id
     }
 
     async fn create_item<T: Serialize>(
