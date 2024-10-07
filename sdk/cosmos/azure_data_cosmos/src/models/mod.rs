@@ -39,7 +39,8 @@ where
 #[non_exhaustive]
 #[derive(Clone, Default, Debug, Deserialize)]
 pub struct QueryResults<T> {
-    #[serde(rename = "Documents")]
+    #[serde(alias = "Documents")]
+    #[serde(alias = "Databases")]
     pub items: Vec<T>,
 }
 

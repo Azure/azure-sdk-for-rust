@@ -448,38 +448,11 @@ impl ContainerClientMethods for ContainerClient {
     ) -> azure_core::Result<Pager<QueryResults<T>>> {
         let mut url = self.container_url.clone();
         url.append_path_segments(["docs"]);
-        let mut base_req = Request::new(url, azure_core::Method::Post);
-
-        base_req.insert_header(constants::QUERY, "True");
-        base_req.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
-
+        let mut base_request = Request::new(url, azure_core::Method::Post);
         let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
-        base_req.insert_headers(&partition_key)?;
+        base_request.insert_headers(&partition_key)?;
 
-        base_req.set_json(&query.into())?;
-
-        // We have to double-clone here.
-        // First we clone the pipeline to pass it in to the closure
-        let pipeline = self.pipeline.clone();
-        Ok(Pager::from_callback(move |continuation| {
-            // Then we have to clone it again to pass it in to the async block.
-            // This is because Pageable can't borrow any data, it has to own it all.
-            // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
-            let pipeline = pipeline.clone();
-            let mut req = base_req.clone();
-            async move {
-                if let Some(continuation) = continuation {
-                    req.insert_header(constants::CONTINUATION, continuation);
-                }
-
-                let response = pipeline
-                    .send(Context::new(), &mut req, ResourceType::Items)
-                    .await?;
-                Ok(PagerResult::from_response_header(
-                    response,
-                    &constants::CONTINUATION,
-                ))
-            }
-        }))
+        self.pipeline
+            .send_query_request(query.into(), base_request, ResourceType::Items)
     }
 }

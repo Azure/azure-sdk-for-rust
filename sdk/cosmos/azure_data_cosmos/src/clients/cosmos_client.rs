@@ -2,10 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::clients::DatabaseClient;
-use crate::pipeline::{AuthorizationPolicy, CosmosPipeline};
-use crate::CosmosClientOptions;
+use crate::models::{DatabaseProperties, QueryResults};
+use crate::pipeline::{AuthorizationPolicy, CosmosPipeline, ResourceType};
+use crate::utils::AppendPathSegments;
+use crate::{CosmosClientOptions, Query, QueryDatabasesOptions};
 use azure_core::credentials::TokenCredential;
-use azure_core::Url;
+use azure_core::{Request, Url};
 use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
@@ -31,6 +33,15 @@ pub trait CosmosClientMethods {
     /// # Arguments
     /// * `id` - The ID of the database.
     fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient;
+
+    /// Gets the URL of the Cosmos DB Account this client is connected to.
+    fn endpoint(&self) -> &Url;
+
+    fn query_databases(
+        &self,
+        query: impl Into<Query>,
+        options: Option<QueryDatabasesOptions>,
+    ) -> azure_core::Result<azure_core::Pager<QueryResults<DatabaseProperties>>>;
 }
 
 impl CosmosClient {
@@ -98,11 +109,6 @@ impl CosmosClient {
             options,
         })
     }
-
-    /// Gets the endpoint of the database account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
 }
 
 impl CosmosClientMethods for CosmosClient {
@@ -112,5 +118,23 @@ impl CosmosClientMethods for CosmosClient {
     /// * `id` - The ID of the database.
     fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient {
         DatabaseClient::new(self.pipeline.clone(), &self.endpoint, id.as_ref())
+    }
+
+    /// Gets the endpoint of the database account this client is connected to.
+    fn endpoint(&self) -> &Url {
+        &self.endpoint
+    }
+
+    fn query_databases(
+        &self,
+        query: impl Into<Query>,
+        options: Option<QueryDatabasesOptions>,
+    ) -> azure_core::Result<azure_core::Pager<QueryResults<DatabaseProperties>>> {
+        let mut url = self.endpoint.clone();
+        url.append_path_segments(["dbs"]);
+        let base_request = Request::new(url, azure_core::Method::Post);
+
+        self.pipeline
+            .send_query_request(query.into(), base_request, ResourceType::Databases)
     }
 }
