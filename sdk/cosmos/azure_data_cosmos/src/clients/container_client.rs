@@ -460,7 +460,7 @@ impl ContainerClientMethods for ContainerClient {
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure
         let pipeline = self.pipeline.clone();
-        Ok(Pager::from_fn(move |continuation| {
+        Ok(Pager::from_callback(move |continuation| {
             // Then we have to clone it again to pass it in to the async block.
             // This is because Pageable can't borrow any data, it has to own it all.
             // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
