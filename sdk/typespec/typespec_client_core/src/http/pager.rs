@@ -24,11 +24,10 @@ impl<T> Pager<T> {
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: Send + 'static,
         #[cfg(target_arch = "wasm32")] C: 'static,
-        E: Into<typespec::Error>,
         #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
         #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
-        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<(Response<T>, Option<C>), E>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<(Response<T>, Option<C>), E>> + 'static,
+        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<(Response<T>, Option<C>), typespec::Error>> + Send + 'static,
+        #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<(Response<T>, Option<C>), typespec::Error>> + 'static,
     >(
         make_request: F,
     ) -> Self {
@@ -41,7 +40,7 @@ impl<T> Pager<T> {
                     State::Done => return None,
                 };
                 let (response, continuation) = match result {
-                    Err(e) => return Some((Err(e.into()), (State::Done, make_request))),
+                    Err(e) => return Some((Err(e), (State::Done, make_request))),
                     Ok(r) => r,
                 };
                 let next_state = continuation.map_or(State::Done, State::Continuation);
@@ -51,6 +50,17 @@ impl<T> Pager<T> {
         Self {
             stream: Box::pin(stream),
         }
+    }
+}
+
+impl<T> futures::Stream for Pager<T> {
+    type Item = Result<Response<T>, Error>;
+
+    fn poll_next(
+        self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        self.project().stream.poll_next(cx)
     }
 }
 

@@ -11,7 +11,7 @@ use crate::{
 };
 
 use azure_core::{Context, Pager, Request, Response};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 use url::Url;
 
 #[cfg(doc)]
@@ -44,7 +44,7 @@ pub trait ContainerClientMethods {
     async fn read(
         &self,
         options: Option<ReadContainerOptions>,
-    ) -> azure_core::Result<azure_core::Response<ContainerProperties>>;
+    ) -> azure_core::Result<Response<ContainerProperties>>;
 
     /// Creates a new item in the container.
     ///
@@ -87,7 +87,7 @@ pub trait ContainerClientMethods {
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<azure_core::Response<Item<T>>>;
+    ) -> azure_core::Result<Response<Item<T>>>;
 
     /// Replaces an existing item in the container.
     ///
@@ -132,7 +132,7 @@ pub trait ContainerClientMethods {
         item_id: impl AsRef<str>,
         item: T,
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<azure_core::Response<Item<T>>>;
+    ) -> azure_core::Result<Response<Item<T>>>;
 
     /// Creates or replaces an item in the container.
     ///
@@ -178,7 +178,7 @@ pub trait ContainerClientMethods {
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<azure_core::Response<Item<T>>>;
+    ) -> azure_core::Result<Response<Item<T>>>;
 
     /// Reads a specific item from the container.
     ///
@@ -216,7 +216,7 @@ pub trait ContainerClientMethods {
         partition_key: impl Into<PartitionKey>,
         item_id: impl AsRef<str>,
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<azure_core::Response<Item<T>>>;
+    ) -> azure_core::Result<Response<Item<T>>>;
 
     /// Deletes an item from the container.
     ///
@@ -243,7 +243,7 @@ pub trait ContainerClientMethods {
         partition_key: impl Into<PartitionKey>,
         item_id: impl AsRef<str>,
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<azure_core::Response>;
+    ) -> azure_core::Result<Response>;
 
     /// Executes a single-partition query against items in the container.
     ///
@@ -304,7 +304,7 @@ pub trait ContainerClientMethods {
         query: impl Into<Query>,
         partition_key: impl Into<QueryPartitionStrategy>,
         options: Option<QueryOptions>,
-    ) -> azure_core::Result<azure_core::Pageable<QueryResults<T>, azure_core::Error>>;
+    ) -> azure_core::Result<Pager<QueryResults<T>>>;
 }
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -333,7 +333,7 @@ impl ContainerClientMethods for ContainerClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadContainerOptions>,
-    ) -> azure_core::Result<azure_core::Response<ContainerProperties>> {
+    ) -> azure_core::Result<Response<ContainerProperties>> {
         let mut req = Request::new(self.container_url.clone(), azure_core::Method::Get);
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Containers)
@@ -348,7 +348,7 @@ impl ContainerClientMethods for ContainerClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<azure_core::Response<Item<T>>> {
+    ) -> azure_core::Result<Response<Item<T>>> {
         let url = self.container_url.with_path_segments(["docs"]);
         let mut req = Request::new(url, azure_core::Method::Post);
         req.insert_headers(&partition_key.into())?;
@@ -367,7 +367,7 @@ impl ContainerClientMethods for ContainerClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<azure_core::Response<Item<T>>> {
+    ) -> azure_core::Result<Response<Item<T>>> {
         let url = self
             .container_url
             .with_path_segments(["docs", item_id.as_ref()]);
@@ -387,7 +387,7 @@ impl ContainerClientMethods for ContainerClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<azure_core::Response<Item<T>>> {
+    ) -> azure_core::Result<Response<Item<T>>> {
         let url = self.container_url.with_path_segments(["docs"]);
         let mut req = Request::new(url, azure_core::Method::Post);
         req.insert_header(constants::IS_UPSERT, "true");
@@ -406,7 +406,7 @@ impl ContainerClientMethods for ContainerClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<azure_core::Response<Item<T>>> {
+    ) -> azure_core::Result<Response<Item<T>>> {
         let url = self
             .container_url
             .with_path_segments(["docs", item_id.as_ref()]);
@@ -425,7 +425,7 @@ impl ContainerClientMethods for ContainerClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ItemOptions>,
-    ) -> azure_core::Result<azure_core::Response> {
+    ) -> azure_core::Result<Response> {
         let url = self
             .container_url
             .with_path_segments(["docs", item_id.as_ref()]);
@@ -444,26 +444,9 @@ impl ContainerClientMethods for ContainerClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryOptions>,
-    ) -> azure_core::Result<impl Pager<T>> {
-        // Represents the raw response model from the server.
-        // We'll use this to deserialize the response body and then convert it to a more user-friendly model.
-        #[derive(Deserialize)]
-        struct QueryResponseModel<M> {
-            #[serde(rename = "Documents")]
-            documents: Vec<M>,
-        }
-
-        // We have to manually implement Model, because the derive macro doesn't support auto-inferring type and lifetime bounds.
-        // See https://github.com/Azure/azure-sdk-for-rust/issues/1803
-        impl<M: DeserializeOwned> azure_core::Model for QueryResponseModel<M> {
-            async fn from_response_body(
-                body: azure_core::ResponseBody,
-            ) -> typespec_client_core::Result<Self> {
-                body.json().await
-            }
-        }
-
-        let url = self.container_url.with_path_segments(["docs"]);
+    ) -> azure_core::Result<Pager<QueryResults<T>>> {
+        let mut url = self.container_url.clone();
+        url.append_path_segments(["docs"]);
         let mut base_req = Request::new(url, azure_core::Method::Post);
 
         base_req.insert_header(constants::QUERY, "True");
@@ -477,7 +460,7 @@ impl ContainerClientMethods for ContainerClient {
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure
         let pipeline = self.pipeline.clone();
-        Ok(azure_core::Pageable::new(move |continuation| {
+        Ok(Pager::from_fn(move |continuation| {
             // Then we have to clone it again to pass it in to the async block.
             // This is because Pageable can't borrow any data, it has to own it all.
             // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
@@ -488,29 +471,13 @@ impl ContainerClientMethods for ContainerClient {
                     req.insert_header(constants::CONTINUATION, continuation);
                 }
 
-                let resp: Response<QueryResponseModel<T>> = pipeline
+                let resp = pipeline
                     .send(Context::new(), &mut req, ResourceType::Items)
                     .await?;
-
-                let query_metrics = resp
-                    .headers()
-                    .get_optional_string(&constants::QUERY_METRICS);
-                let index_metrics = resp
-                    .headers()
-                    .get_optional_string(&constants::INDEX_METRICS);
                 let continuation_token =
                     resp.headers().get_optional_string(&constants::CONTINUATION);
 
-                let query_response: QueryResponseModel<T> = resp.deserialize_body().await?;
-
-                let query_results = QueryResults {
-                    items: query_response.documents,
-                    query_metrics,
-                    index_metrics,
-                    continuation_token,
-                };
-
-                Ok(query_results)
+                Ok((resp, continuation_token))
             }
         }))
     }
