@@ -438,7 +438,7 @@ pub mod get_keys {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/keys",));
+            url.set_path("/keys");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "1.0");
@@ -562,7 +562,7 @@ pub mod check_keys {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/keys",));
+            url.set_path("/keys");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "1.0");
@@ -732,7 +732,7 @@ pub mod get_key_values {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/kv",));
+            url.set_path("/kv");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "1.0");
@@ -871,7 +871,7 @@ pub mod check_key_values {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/kv",));
+            url.set_path("/kv");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "1.0");
@@ -1639,7 +1639,7 @@ pub mod get_labels {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/labels",));
+            url.set_path("/labels");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "1.0");
@@ -1769,7 +1769,7 @@ pub mod check_labels {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/labels",));
+            url.set_path("/labels");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "1.0");
@@ -2231,7 +2231,7 @@ pub mod get_revisions {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/revisions",));
+            url.set_path("/revisions");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "1.0");
@@ -2370,7 +2370,7 @@ pub mod check_revisions {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/revisions",));
+            url.set_path("/revisions");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "1.0");

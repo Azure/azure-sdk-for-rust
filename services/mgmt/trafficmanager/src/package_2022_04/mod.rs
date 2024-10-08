@@ -885,7 +885,7 @@ pub mod profiles {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.Network/checkTrafficManagerNameAvailability",));
+                url.set_path("/providers/Microsoft.Network/checkTrafficManagerNameAvailability");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1690,7 +1690,7 @@ pub mod geographic_hierarchies {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.Network/trafficManagerGeographicHierarchies/default",));
+                url.set_path("/providers/Microsoft.Network/trafficManagerGeographicHierarchies/default");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

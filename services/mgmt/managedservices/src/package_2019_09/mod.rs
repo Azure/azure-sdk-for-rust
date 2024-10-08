@@ -1526,7 +1526,7 @@ pub mod marketplace_registration_definitions_without_scope {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ManagedServices/marketplaceRegistrationDefinitions",));
+                url.set_path("/providers/Microsoft.ManagedServices/marketplaceRegistrationDefinitions");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1724,7 +1724,7 @@ pub mod operations {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ManagedServices/operations",));
+                url.set_path("/providers/Microsoft.ManagedServices/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

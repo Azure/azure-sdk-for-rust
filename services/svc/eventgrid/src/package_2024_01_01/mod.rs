@@ -216,7 +216,7 @@ pub mod publish_event_grid_events {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("?overload=EventGridEvent",));
+            url.set_path("?overload=EventGridEvent");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -306,7 +306,7 @@ pub mod publish_cloud_event_events {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("?overload=cloudEvent",));
+            url.set_path("?overload=cloudEvent");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -387,7 +387,7 @@ pub mod publish_custom_event_events {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("?overload=customEvent",));
+            url.set_path("?overload=customEvent");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()

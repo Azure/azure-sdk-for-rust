@@ -82,7 +82,7 @@ impl ToTokens for SetRequestParamsCode {
                             });
                         } else {
                             tokens.extend(quote! {
-                                req.insert_header(#header_name, &this.#param_name_var.to_string());
+                                req.insert_header(#header_name, this.#param_name_var.to_string());
                             });
                         }
                     } else if param.is_string() {

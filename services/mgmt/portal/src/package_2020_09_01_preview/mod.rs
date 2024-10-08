@@ -237,7 +237,7 @@ pub mod operations {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.Portal/operations",));
+                url.set_path("/providers/Microsoft.Portal/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1139,7 +1139,7 @@ pub mod tenant_configurations {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.Portal/tenantConfigurations",));
+                url.set_path("/providers/Microsoft.Portal/tenantConfigurations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1549,7 +1549,7 @@ pub mod list_tenant_configuration_violations {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.Portal/listTenantConfigurationViolations",));
+                url.set_path("/providers/Microsoft.Portal/listTenantConfigurationViolations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

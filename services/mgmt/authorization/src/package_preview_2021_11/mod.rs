@@ -274,7 +274,7 @@ pub mod operations {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.Authorization/operations",));
+                url.set_path("/providers/Microsoft.Authorization/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3207,7 +3207,7 @@ pub mod access_review_schedule_definitions_assigned_for_my_approval {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.Authorization/accessReviewScheduleDefinitions",));
+                url.set_path("/providers/Microsoft.Authorization/accessReviewScheduleDefinitions");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

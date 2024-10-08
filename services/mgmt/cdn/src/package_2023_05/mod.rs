@@ -420,7 +420,7 @@ pub mod check_name_availability {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/providers/Microsoft.Cdn/checkNameAvailability",));
+            url.set_path("/providers/Microsoft.Cdn/checkNameAvailability");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -15530,7 +15530,7 @@ pub mod operations {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.Cdn/operations",));
+                url.set_path("/providers/Microsoft.Cdn/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15654,7 +15654,7 @@ pub mod edge_nodes {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.Cdn/edgenodes",));
+                url.set_path("/providers/Microsoft.Cdn/edgenodes");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

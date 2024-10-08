@@ -528,7 +528,7 @@ pub mod adds_services {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ADHybridHealthService/addsservices",));
+                url.set_path("/providers/Microsoft.ADHybridHealthService/addsservices");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -614,7 +614,7 @@ pub mod adds_services {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ADHybridHealthService/addsservices",));
+                url.set_path("/providers/Microsoft.ADHybridHealthService/addsservices");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2145,7 +2145,7 @@ pub mod adds_services {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ADHybridHealthService/addsservices/premiumCheck",));
+                url.set_path("/providers/Microsoft.ADHybridHealthService/addsservices/premiumCheck");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2553,7 +2553,7 @@ pub mod configuration {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ADHybridHealthService/configuration",));
+                url.set_path("/providers/Microsoft.ADHybridHealthService/configuration");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2650,7 +2650,7 @@ pub mod configuration {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ADHybridHealthService/configuration",));
+                url.set_path("/providers/Microsoft.ADHybridHealthService/configuration");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2748,7 +2748,7 @@ pub mod configuration {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ADHybridHealthService/configuration",));
+                url.set_path("/providers/Microsoft.ADHybridHealthService/configuration");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4577,7 +4577,7 @@ pub mod operations {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ADHybridHealthService/operations",));
+                url.set_path("/providers/Microsoft.ADHybridHealthService/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4675,7 +4675,7 @@ pub mod reports {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ADHybridHealthService/reports/DevOps/IsDevOps",));
+                url.set_path("/providers/Microsoft.ADHybridHealthService/reports/DevOps/IsDevOps");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5171,7 +5171,7 @@ pub mod services {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ADHybridHealthService/services",));
+                url.set_path("/providers/Microsoft.ADHybridHealthService/services");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5257,7 +5257,7 @@ pub mod services {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ADHybridHealthService/services",));
+                url.set_path("/providers/Microsoft.ADHybridHealthService/services");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5415,7 +5415,7 @@ pub mod services {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.ADHybridHealthService/services/premiumCheck",));
+                url.set_path("/providers/Microsoft.ADHybridHealthService/services/premiumCheck");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

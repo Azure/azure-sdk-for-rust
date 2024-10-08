@@ -1429,7 +1429,7 @@ pub mod v2_support {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/v2/",));
+                url.set_path("/v2/");
                 Ok(url)
             }
         }
@@ -2268,7 +2268,7 @@ pub mod repository {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/acr/v1/_catalog",));
+                url.set_path("/acr/v1/_catalog");
                 Ok(url)
             }
         }
@@ -3125,7 +3125,7 @@ pub mod refresh_tokens {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/oauth2/exchange",));
+                url.set_path("/oauth2/exchange");
                 Ok(url)
             }
         }
@@ -3266,7 +3266,7 @@ pub mod access_tokens {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/oauth2/token",));
+                url.set_path("/oauth2/token");
                 Ok(url)
             }
         }
@@ -3366,7 +3366,7 @@ pub mod access_tokens {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/oauth2/token",));
+                url.set_path("/oauth2/token");
                 Ok(url)
             }
         }

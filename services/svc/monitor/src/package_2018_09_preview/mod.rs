@@ -237,7 +237,7 @@ pub mod metrics {
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", &this.content_type);
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         req.insert_header("authorization", &this.authorization);
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);

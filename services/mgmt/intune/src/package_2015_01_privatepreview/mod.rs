@@ -367,7 +367,7 @@ pub mod get_locations {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/providers/Microsoft.Intune/locations",));
+            url.set_path("/providers/Microsoft.Intune/locations");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -451,7 +451,7 @@ pub mod get_location_by_host_name {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/providers/Microsoft.Intune/locations/hostName",));
+            url.set_path("/providers/Microsoft.Intune/locations/hostName");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()

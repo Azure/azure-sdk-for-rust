@@ -357,7 +357,7 @@ pub mod get_docker_registry_v2_support {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/v2/",));
+            url.set_path("/v2/");
             Ok(url)
         }
     }
@@ -639,7 +639,7 @@ pub mod get_repositories {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/v2/_catalog",));
+            url.set_path("/v2/_catalog");
             Ok(url)
         }
     }
@@ -748,7 +748,7 @@ pub mod get_acr_repositories {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/acr/v1/_catalog",));
+            url.set_path("/acr/v1/_catalog");
             Ok(url)
         }
     }

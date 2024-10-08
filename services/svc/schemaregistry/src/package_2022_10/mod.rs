@@ -232,7 +232,7 @@ pub mod schema_groups {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/$schemaGroups",));
+                url.set_path("/$schemaGroups");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, "2022-10");

@@ -283,7 +283,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?restype=service&comp=properties",));
+                url.set_path("/?restype=service&comp=properties");
                 Ok(url)
             }
         }
@@ -404,7 +404,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?restype=service&comp=properties",));
+                url.set_path("/?restype=service&comp=properties");
                 Ok(url)
             }
         }
@@ -520,7 +520,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?restype=service&comp=stats",));
+                url.set_path("/?restype=service&comp=stats");
                 Ok(url)
             }
         }
@@ -689,7 +689,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?comp=list",));
+                url.set_path("/?comp=list");
                 Ok(url)
             }
         }

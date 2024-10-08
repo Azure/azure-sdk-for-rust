@@ -342,7 +342,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?restype=service&comp=properties",));
+                url.set_path("/?restype=service&comp=properties");
                 Ok(url)
             }
         }
@@ -468,7 +468,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?restype=service&comp=properties",));
+                url.set_path("/?restype=service&comp=properties");
                 Ok(url)
             }
         }
@@ -589,7 +589,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?restype=service&comp=stats",));
+                url.set_path("/?restype=service&comp=stats");
                 Ok(url)
             }
         }
@@ -759,7 +759,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?comp=list",));
+                url.set_path("/?comp=list");
                 Ok(url)
             }
         }
@@ -882,7 +882,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?restype=service&comp=userdelegationkey",));
+                url.set_path("/?restype=service&comp=userdelegationkey");
                 Ok(url)
             }
         }
@@ -1004,7 +1004,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?restype=account&comp=properties",));
+                url.set_path("/?restype=account&comp=properties");
                 Ok(url)
             }
         }
@@ -1110,7 +1110,7 @@ pub mod service {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2021-02-12");
                         let req_body = azure_core::to_json(&this.body)?;
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         req.insert_header("content-type", &this.content_type);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -1125,7 +1125,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?comp=batch",));
+                url.set_path("/?comp=batch");
                 Ok(url)
             }
         }
@@ -1285,7 +1285,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/?comp=blobs",));
+                url.set_path("/?comp=blobs");
                 Ok(url)
             }
         }
@@ -2945,7 +2945,7 @@ pub mod container {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2021-02-12");
                         let req_body = azure_core::to_json(&this.body)?;
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         req.insert_header("content-type", &this.content_type);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -6757,7 +6757,7 @@ pub mod blob {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("x-ms-legal-hold", &this.x_ms_legal_hold.to_string());
+                        req.insert_header("x-ms-legal-hold", this.x_ms_legal_hold.to_string());
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -10533,7 +10533,7 @@ pub mod page_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(x_ms_access_tier) = &this.x_ms_access_tier {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
                         }
@@ -10588,7 +10588,7 @@ pub mod page_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-blob-content-length", &this.x_ms_blob_content_length.to_string());
+                        req.insert_header("x-ms-blob-content-length", this.x_ms_blob_content_length.to_string());
                         if let Some(x_ms_blob_sequence_number) = &this.x_ms_blob_sequence_number {
                             req.insert_header("x-ms-blob-sequence-number", x_ms_blob_sequence_number.to_string());
                         }
@@ -10860,7 +10860,7 @@ pub mod page_blob {
                         req.insert_header("x-ms-page-write", &this.x_ms_page_write);
                         req.insert_header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -11134,7 +11134,7 @@ pub mod page_blob {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2021-02-12");
                         req.insert_header("x-ms-page-write", &this.x_ms_page_write);
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -11460,7 +11460,7 @@ pub mod page_blob {
                         if let Some(x_ms_source_content_crc64) = &this.x_ms_source_content_crc64 {
                             req.insert_header("x-ms-source-content-crc64", x_ms_source_content_crc64);
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -12227,7 +12227,7 @@ pub mod page_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-blob-content-length", &this.x_ms_blob_content_length.to_string());
+                        req.insert_header("x-ms-blob-content-length", this.x_ms_blob_content_length.to_string());
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -13047,7 +13047,7 @@ pub mod append_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(x_ms_blob_content_type) = &this.x_ms_blob_content_type {
                             req.insert_header("x-ms-blob-content-type", x_ms_blob_content_type);
                         }
@@ -13361,7 +13361,7 @@ pub mod append_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -13695,7 +13695,7 @@ pub mod append_blob {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -14491,7 +14491,7 @@ pub mod block_blob {
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(x_ms_blob_content_type) = &this.x_ms_blob_content_type {
                             req.insert_header("x-ms-blob-content-type", x_ms_blob_content_type);
                         }
@@ -14884,7 +14884,7 @@ pub mod block_blob {
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(x_ms_blob_content_type) = &this.x_ms_blob_content_type {
                             req.insert_header("x-ms-blob-content-type", x_ms_blob_content_type);
                         }
@@ -15152,7 +15152,7 @@ pub mod block_blob {
                         req.insert_header(azure_core::headers::VERSION, "2021-02-12");
                         let blockid = &this.blockid;
                         req.url_mut().query_pairs_mut().append_pair("blockid", blockid);
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
                             req.insert_header("content-md5", content_md5);
                         }
@@ -15399,7 +15399,7 @@ pub mod block_blob {
                         req.insert_header(azure_core::headers::VERSION, "2021-02-12");
                         let blockid = &this.blockid;
                         req.url_mut().query_pairs_mut().append_pair("blockid", blockid);
-                        req.insert_header("content-length", &this.content_length.to_string());
+                        req.insert_header("content-length", this.content_length.to_string());
                         req.insert_header("x-ms-copy-source", &this.x_ms_copy_source);
                         if let Some(x_ms_source_range) = &this.x_ms_source_range {
                             req.insert_header("x-ms-source-range", x_ms_source_range);

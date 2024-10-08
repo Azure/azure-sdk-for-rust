@@ -241,7 +241,7 @@ pub mod operations {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.BillingBenefits/operations",));
+                url.set_path("/providers/Microsoft.BillingBenefits/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -903,7 +903,7 @@ pub mod savings_plan_order {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.BillingBenefits/savingsPlanOrders",));
+                url.set_path("/providers/Microsoft.BillingBenefits/savingsPlanOrders");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1264,7 +1264,7 @@ pub mod savings_plan {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.BillingBenefits/savingsPlans",));
+                url.set_path("/providers/Microsoft.BillingBenefits/savingsPlans");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1688,7 +1688,7 @@ pub mod validate_purchase {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/providers/Microsoft.BillingBenefits/validate",));
+            url.set_path("/providers/Microsoft.BillingBenefits/validate");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()

@@ -1028,7 +1028,7 @@ pub mod operations {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.Synapse/operations",));
+                url.set_path("/providers/Microsoft.Synapse/operations");
                 Ok(url)
             }
         }

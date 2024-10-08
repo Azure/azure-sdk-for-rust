@@ -272,7 +272,7 @@ pub mod spark_batch {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/batches",));
+                url.set_path("/batches");
                 Ok(url)
             }
         }
@@ -374,7 +374,7 @@ pub mod spark_batch {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/batches",));
+                url.set_path("/batches");
                 Ok(url)
             }
         }
@@ -782,7 +782,7 @@ pub mod spark_session {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/sessions",));
+                url.set_path("/sessions");
                 Ok(url)
             }
         }
@@ -884,7 +884,7 @@ pub mod spark_session {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/sessions",));
+                url.set_path("/sessions");
                 Ok(url)
             }
         }

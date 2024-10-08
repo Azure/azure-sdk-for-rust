@@ -284,7 +284,7 @@ pub mod list_operations_partner {
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
             let mut url = self.client.endpoint().clone();
-            url.set_path(&format!("/providers/Microsoft.EdgeOrderPartner/operations",));
+            url.set_path("/providers/Microsoft.EdgeOrderPartner/operations");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()

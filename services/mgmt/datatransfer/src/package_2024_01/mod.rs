@@ -244,7 +244,7 @@ pub mod azure_data_transfer {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.AzureDataTransfer/validateSchema",));
+                url.set_path("/providers/Microsoft.AzureDataTransfer/validateSchema");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -342,7 +342,7 @@ pub mod azure_data_transfer {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.AzureDataTransfer/listApprovedSchemas",));
+                url.set_path("/providers/Microsoft.AzureDataTransfer/listApprovedSchemas");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4553,7 +4553,7 @@ pub mod operations {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/providers/Microsoft.AzureDataTransfer/operations",));
+                url.set_path("/providers/Microsoft.AzureDataTransfer/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

@@ -130,7 +130,7 @@ impl TransactionBuilder {
             let mut headers = Headers::new();
             headers.insert(
                 CONTENT_TYPE,
-                &format!(
+                format!(
                     "multipart/mixed; boundary=batch_{}",
                     self.transaction.batch_uuid().hyphenated()
                 ),

@@ -297,7 +297,7 @@ pub mod service {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/",));
+                url.set_path("/");
                 Ok(url)
             }
         }

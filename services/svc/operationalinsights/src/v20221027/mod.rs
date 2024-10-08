@@ -927,7 +927,7 @@ pub mod query {
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = self.client.endpoint().clone();
-                url.set_path(&format!("/$batch",));
+                url.set_path("/$batch");
                 Ok(url)
             }
         }
