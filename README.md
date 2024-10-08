@@ -1,10 +1,12 @@
 # Azure SDK for Rust
 
-This repository is for the development of the [unofficial](https://github.com/Azure/azure-sdk-for-rust/blob/main/FAQ.md#why-is-it-unofficial) Azure SDK for Rust.
+This repository is for the active development of the Azure SDK for Rust. For consumers of the SDK we recommend visiting [Docs.rs](https://docs.rs/) and looking up the docs for any of libraries in the SDK.
 
 ## Getting started
 
-To get started with a library, see the `README.md` file located in the library's project folder. You can find these library folders grouped by service in the `/sdk` directory.
+To get started with a library, see the `README.md` file located in the library's project folder. You can find these library project folders grouped by service in the `/sdk` directory.
+
+For full file code examples, check out the `/examples` directory in any library project folder.
 
 ## Crates
 
@@ -12,7 +14,7 @@ To get started with a library, see the `README.md` file located in the library's
 
 ## Status
 
-🚨 WARNING 🚨: This project is under active development. Be aware that large breaking changes will happen before 1.0 is reached.
+🚨 WARNING 🚨: This project is under active development. Be aware that large breaking changes may happen before 1.0 is reached.
 
 This project is the successor to the `azure_sdk*` crates from [MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust). The crates have been renamed, so those older crates should be considered fully deprecated. See [history](HISTORY.md) for more details.
 
