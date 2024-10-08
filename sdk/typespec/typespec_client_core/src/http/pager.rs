@@ -60,10 +60,10 @@ impl<T> Pager<T> {
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: Send + 'static,
-        #[cfg(target_arch = "wasm32")] C: 'static,
         #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<(Response<T>, Option<C>), typespec::Error>> + Send + 'static,
+        #[cfg(target_arch = "wasm32")] C: 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<(Response<T>, Option<C>), typespec::Error>> + 'static,
     >(
         make_request: F,
