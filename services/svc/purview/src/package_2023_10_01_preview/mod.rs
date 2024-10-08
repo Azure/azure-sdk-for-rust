@@ -251,7 +251,8 @@ pub mod workflows {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/workflows", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/workflows");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -397,7 +398,8 @@ pub mod workflow {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/workflows/{}", self.client.endpoint(), &self.workflow_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workflows/{}", &self.workflow_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -495,7 +497,8 @@ pub mod workflow {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/workflows/{}", self.client.endpoint(), &self.workflow_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workflows/{}", &self.workflow_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -586,7 +589,8 @@ pub mod workflow {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/workflows/{}", self.client.endpoint(), &self.workflow_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workflows/{}", &self.workflow_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -672,7 +676,8 @@ pub mod workflow {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/workflows/{}/validate", self.client.endpoint(), &self.workflow_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workflows/{}/validate", &self.workflow_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -789,7 +794,8 @@ pub mod user_requests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/userrequests", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/userrequests");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -987,7 +993,8 @@ pub mod workflow_runs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/workflowruns", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/workflowruns");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1107,7 +1114,8 @@ pub mod workflow_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/workflowruns/{}", self.client.endpoint(), &self.workflow_run_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workflowruns/{}", &self.workflow_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1200,7 +1208,8 @@ pub mod workflow_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/workflowruns/{}/cancel", self.client.endpoint(), &self.workflow_run_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workflowruns/{}/cancel", &self.workflow_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1412,7 +1421,8 @@ pub mod workflow_tasks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/workflowtasks", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/workflowtasks");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1532,7 +1542,8 @@ pub mod workflow_task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/workflowtasks/{}", self.client.endpoint(), &self.task_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workflowtasks/{}", &self.task_id));
                 Ok(url)
             }
         }
@@ -1620,7 +1631,8 @@ pub mod workflow_task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/workflowtasks/{}/reassign", self.client.endpoint(), &self.task_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workflowtasks/{}/reassign", &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1743,11 +1755,8 @@ pub mod approval {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/workflowtasks/{}/approve-approval",
-                    self.client.endpoint(),
-                    &self.task_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workflowtasks/{}/approve-approval", &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1828,11 +1837,8 @@ pub mod approval {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/workflowtasks/{}/reject-approval",
-                    self.client.endpoint(),
-                    &self.task_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workflowtasks/{}/reject-approval", &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1939,11 +1945,8 @@ pub mod task_status {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/workflowtasks/{}/change-task-status",
-                    self.client.endpoint(),
-                    &self.task_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workflowtasks/{}/change-task-status", &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

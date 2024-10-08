@@ -397,8 +397,8 @@ pub mod load_test_run {
             pub(crate) orderby: Option<String>,
             pub(crate) search: Option<String>,
             pub(crate) test_id: Option<String>,
-            pub(crate) execution_from: Option<time::OffsetDateTime>,
-            pub(crate) execution_to: Option<time::OffsetDateTime>,
+            pub(crate) execution_from: Option<::time::OffsetDateTime>,
+            pub(crate) execution_to: Option<::time::OffsetDateTime>,
             pub(crate) status: Option<String>,
             pub(crate) maxpagesize: Option<i32>,
         }
@@ -419,12 +419,12 @@ pub mod load_test_run {
                 self
             }
             #[doc = "Start DateTime(RFC 3339 literal format) of test-run execution time filter range."]
-            pub fn execution_from(mut self, execution_from: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn execution_from(mut self, execution_from: impl Into<::time::OffsetDateTime>) -> Self {
                 self.execution_from = Some(execution_from.into());
                 self
             }
             #[doc = "End DateTime(RFC 3339 literal format) of test-run execution time filter range."]
-            pub fn execution_to(mut self, execution_to: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn execution_to(mut self, execution_to: impl Into<::time::OffsetDateTime>) -> Self {
                 self.execution_to = Some(execution_to.into());
                 self
             }
@@ -508,7 +508,8 @@ pub mod load_test_run {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/test-runs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/test-runs");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -592,7 +593,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/test-runs/{}", self.client.endpoint(), &self.test_run_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}", &self.test_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -699,7 +701,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/test-runs/{}", self.client.endpoint(), &self.test_run_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}", &self.test_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -790,7 +793,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/test-runs/{}", self.client.endpoint(), &self.test_run_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}", &self.test_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -875,7 +879,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/test-runs/{}:stop", self.client.endpoint(), &self.test_run_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}:stop", &self.test_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -971,11 +976,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/test-runs/{}/app-components",
-                    self.client.endpoint(),
-                    &self.test_run_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}/app-components", &self.test_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1073,11 +1075,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/test-runs/{}/app-components",
-                    self.client.endpoint(),
-                    &self.test_run_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}/app-components", &self.test_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1174,12 +1173,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/test-runs/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.test_run_id,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}/files/{}", &self.test_run_id, &self.file_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1278,11 +1273,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/test-runs/{}/metric-definitions",
-                    self.client.endpoint(),
-                    &self.test_run_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}/metric-definitions", &self.test_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1397,12 +1389,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/test-runs/{}/metric-dimensions/{}/values",
-                    self.client.endpoint(),
-                    &self.test_run_id,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}/metric-dimensions/{}/values", &self.test_run_id, &self.name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1498,11 +1486,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/test-runs/{}/metric-namespaces",
-                    self.client.endpoint(),
-                    &self.test_run_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}/metric-namespaces", &self.test_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1662,7 +1647,8 @@ pub mod load_test_run {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/test-runs/{}/metrics", self.client.endpoint(), &self.test_run_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}/metrics", &self.test_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1746,11 +1732,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/test-runs/{}/server-metrics-config",
-                    self.client.endpoint(),
-                    &self.test_run_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}/server-metrics-config", &self.test_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1848,11 +1831,8 @@ pub mod load_test_run {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/test-runs/{}/server-metrics-config",
-                    self.client.endpoint(),
-                    &self.test_run_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/test-runs/{}/server-metrics-config", &self.test_run_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2103,8 +2083,8 @@ pub mod load_test_administration {
             pub(crate) client: super::super::Client,
             pub(crate) orderby: Option<String>,
             pub(crate) search: Option<String>,
-            pub(crate) last_modified_start_time: Option<time::OffsetDateTime>,
-            pub(crate) last_modified_end_time: Option<time::OffsetDateTime>,
+            pub(crate) last_modified_start_time: Option<::time::OffsetDateTime>,
+            pub(crate) last_modified_end_time: Option<::time::OffsetDateTime>,
             pub(crate) maxpagesize: Option<i32>,
         }
         impl RequestBuilder {
@@ -2119,12 +2099,12 @@ pub mod load_test_administration {
                 self
             }
             #[doc = "Start DateTime(RFC 3339 literal format) of the last updated time range to filter tests."]
-            pub fn last_modified_start_time(mut self, last_modified_start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn last_modified_start_time(mut self, last_modified_start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.last_modified_start_time = Some(last_modified_start_time.into());
                 self
             }
             #[doc = "End DateTime(RFC 3339 literal format) of the last updated time range to filter tests."]
-            pub fn last_modified_end_time(mut self, last_modified_end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn last_modified_end_time(mut self, last_modified_end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.last_modified_end_time = Some(last_modified_end_time.into());
                 self
             }
@@ -2197,7 +2177,8 @@ pub mod load_test_administration {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tests", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/tests");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2281,7 +2262,8 @@ pub mod load_test_administration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tests/{}", self.client.endpoint(), &self.test_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tests/{}", &self.test_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2379,7 +2361,8 @@ pub mod load_test_administration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tests/{}", self.client.endpoint(), &self.test_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tests/{}", &self.test_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2470,7 +2453,8 @@ pub mod load_test_administration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tests/{}", self.client.endpoint(), &self.test_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tests/{}", &self.test_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2554,7 +2538,8 @@ pub mod load_test_administration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tests/{}/app-components", self.client.endpoint(), &self.test_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tests/{}/app-components", &self.test_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2652,7 +2637,8 @@ pub mod load_test_administration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tests/{}/app-components", self.client.endpoint(), &self.test_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tests/{}/app-components", &self.test_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2774,7 +2760,8 @@ pub mod load_test_administration {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tests/{}/files", self.client.endpoint(), &self.test_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tests/{}/files", &self.test_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2859,12 +2846,8 @@ pub mod load_test_administration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/tests/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.test_id,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tests/{}/files/{}", &self.test_id, &self.file_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2972,12 +2955,8 @@ pub mod load_test_administration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/tests/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.test_id,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tests/{}/files/{}", &self.test_id, &self.file_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3069,12 +3048,8 @@ pub mod load_test_administration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/tests/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.test_id,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tests/{}/files/{}", &self.test_id, &self.file_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3158,7 +3133,8 @@ pub mod load_test_administration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tests/{}/server-metrics-config", self.client.endpoint(), &self.test_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tests/{}/server-metrics-config", &self.test_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3256,7 +3232,8 @@ pub mod load_test_administration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tests/{}/server-metrics-config", self.client.endpoint(), &self.test_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tests/{}/server-metrics-config", &self.test_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

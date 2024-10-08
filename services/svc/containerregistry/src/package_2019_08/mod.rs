@@ -368,11 +368,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v2/{}/blobs/uploads/?mode=resumable",
-                    self.client.endpoint(),
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/v2/{}/blobs/uploads/?mode=resumable", &self.name));
                 Ok(url)
             }
         }
@@ -468,12 +465,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v2/{}/blobs/{}?mode=chunk",
-                    self.client.endpoint(),
-                    &self.name,
-                    &self.digest
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/v2/{}/blobs/{}?mode=chunk", &self.name, &self.digest));
                 Ok(url)
             }
         }
@@ -576,12 +569,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v2/{}/blobs/{}?mode=chunk",
-                    self.client.endpoint(),
-                    &self.name,
-                    &self.digest
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/v2/{}/blobs/{}?mode=chunk", &self.name, &self.digest));
                 Ok(url)
             }
         }
@@ -676,7 +665,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/v2/{}/blobs/{}", self.client.endpoint(), &self.name, &self.digest))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/v2/{}/blobs/{}", &self.name, &self.digest));
                 Ok(url)
             }
         }
@@ -779,7 +769,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/v2/{}/blobs/{}", self.client.endpoint(), &self.name, &self.digest))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/v2/{}/blobs/{}", &self.name, &self.digest));
                 Ok(url)
             }
         }
@@ -881,7 +872,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/v2/{}/blobs/{}", self.client.endpoint(), &self.name, &self.digest))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/v2/{}/blobs/{}", &self.name, &self.digest));
                 Ok(url)
             }
         }
@@ -981,7 +973,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/v2/{}/blobs/uploads/", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/v2/{}/blobs/uploads/", &self.name));
                 Ok(url)
             }
         }
@@ -1069,7 +1062,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}", self.client.endpoint(), &self.next_blob_uuid_link))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}", &self.next_blob_uuid_link));
                 Ok(url)
             }
         }
@@ -1176,7 +1170,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}", self.client.endpoint(), &self.next_blob_uuid_link))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}", &self.next_blob_uuid_link));
                 Ok(url)
             }
         }
@@ -1270,7 +1265,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}", self.client.endpoint(), &self.next_blob_uuid_link))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}", &self.next_blob_uuid_link));
                 Ok(url)
             }
         }
@@ -1344,7 +1340,8 @@ pub mod blob {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/{}", self.client.endpoint(), &self.next_blob_uuid_link))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}", &self.next_blob_uuid_link));
                 Ok(url)
             }
         }
@@ -1431,7 +1428,8 @@ pub mod v2_support {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/v2/", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/v2/");
                 Ok(url)
             }
         }
@@ -1612,12 +1610,8 @@ pub mod manifests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v2/{}/manifests/{}",
-                    self.client.endpoint(),
-                    &self.name,
-                    &self.reference
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/v2/{}/manifests/{}", &self.name, &self.reference));
                 Ok(url)
             }
         }
@@ -1730,12 +1724,8 @@ pub mod manifests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v2/{}/manifests/{}",
-                    self.client.endpoint(),
-                    &self.name,
-                    &self.reference
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/v2/{}/manifests/{}", &self.name, &self.reference));
                 Ok(url)
             }
         }
@@ -1822,12 +1812,8 @@ pub mod manifests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v2/{}/manifests/{}",
-                    self.client.endpoint(),
-                    &self.name,
-                    &self.reference
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/v2/{}/manifests/{}", &self.name, &self.reference));
                 Ok(url)
             }
         }
@@ -1933,7 +1919,8 @@ pub mod manifests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/acr/v1/{}/_manifests", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/acr/v1/{}/_manifests", &self.name));
                 Ok(url)
             }
         }
@@ -2025,12 +2012,8 @@ pub mod manifests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/acr/v1/{}/_manifests/{}",
-                    self.client.endpoint(),
-                    &self.name,
-                    &self.reference
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/acr/v1/{}/_manifests/{}", &self.name, &self.reference));
                 Ok(url)
             }
         }
@@ -2128,12 +2111,8 @@ pub mod manifests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/acr/v1/{}/_manifests/{}",
-                    self.client.endpoint(),
-                    &self.name,
-                    &self.reference
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/acr/v1/{}/_manifests/{}", &self.name, &self.reference));
                 Ok(url)
             }
         }
@@ -2288,7 +2267,8 @@ pub mod repository {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/acr/v1/_catalog", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/acr/v1/_catalog");
                 Ok(url)
             }
         }
@@ -2379,7 +2359,8 @@ pub mod repository {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/acr/v1/{}", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/acr/v1/{}", &self.name));
                 Ok(url)
             }
         }
@@ -2476,7 +2457,8 @@ pub mod repository {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/acr/v1/{}", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/acr/v1/{}", &self.name));
                 Ok(url)
             }
         }
@@ -2555,7 +2537,8 @@ pub mod repository {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/acr/v1/{}", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/acr/v1/{}", &self.name));
                 Ok(url)
             }
         }
@@ -2743,7 +2726,8 @@ pub mod tag {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/acr/v1/{}/_tags", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/acr/v1/{}/_tags", &self.name));
                 Ok(url)
             }
         }
@@ -2835,12 +2819,8 @@ pub mod tag {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/acr/v1/{}/_tags/{}",
-                    self.client.endpoint(),
-                    &self.name,
-                    &self.reference
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/acr/v1/{}/_tags/{}", &self.name, &self.reference));
                 Ok(url)
             }
         }
@@ -2938,12 +2918,8 @@ pub mod tag {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/acr/v1/{}/_tags/{}",
-                    self.client.endpoint(),
-                    &self.name,
-                    &self.reference
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/acr/v1/{}/_tags/{}", &self.name, &self.reference));
                 Ok(url)
             }
         }
@@ -3018,12 +2994,8 @@ pub mod tag {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/acr/v1/{}/_tags/{}",
-                    self.client.endpoint(),
-                    &self.name,
-                    &self.reference
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/acr/v1/{}/_tags/{}", &self.name, &self.reference));
                 Ok(url)
             }
         }
@@ -3152,7 +3124,8 @@ pub mod refresh_tokens {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/oauth2/exchange", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/oauth2/exchange");
                 Ok(url)
             }
         }
@@ -3292,7 +3265,8 @@ pub mod access_tokens {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/oauth2/token", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/oauth2/token");
                 Ok(url)
             }
         }
@@ -3391,7 +3365,8 @@ pub mod access_tokens {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/oauth2/token", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/oauth2/token");
                 Ok(url)
             }
         }

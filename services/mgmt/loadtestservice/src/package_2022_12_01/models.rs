@@ -4,17 +4,32 @@ use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 #[doc = "Check quota availability response object."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckQuotaAvailabilityResponse {
-    #[serde(flatten)]
-    pub resource: Resource,
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
+    pub id: String,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
+    #[serde(rename = "type")]
+    pub type_: String,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "The name of the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[doc = "Check quota availability response properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CheckQuotaAvailabilityResponseProperties>,
 }
 impl CheckQuotaAvailabilityResponse {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(id: String, type_: String) -> Self {
+        Self {
+            id,
+            type_,
+            system_data: None,
+            name: None,
+            properties: None,
+        }
     }
 }
 #[doc = "Check quota availability response properties."]
@@ -32,12 +47,12 @@ impl CheckQuotaAvailabilityResponseProperties {
         Self::default()
     }
 }
-#[doc = "Key and identity details for Customer Managed Key encryption of load test resource"]
+#[doc = "Key and identity details for Customer Managed Key encryption of load test resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionProperties {
     #[doc = "All identity configuration for Customer-managed key settings defining which identity should be used to auth to Key Vault."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<encryption_properties::Identity>,
+    pub identity: Option<EncryptionPropertiesIdentity>,
     #[doc = "key encryption key Url, versioned. Ex: https://contosovault.vault.azure.net/keys/contosokek/562a4bb76b524a1493a6afe8e536ee78 or https://contosovault.vault.azure.net/keys/contosokek."]
     #[serde(rename = "keyUrl", default, skip_serializing_if = "Option::is_none")]
     pub key_url: Option<String>,
@@ -47,70 +62,27 @@ impl EncryptionProperties {
         Self::default()
     }
 }
-pub mod encryption_properties {
-    use super::*;
-    #[doc = "All identity configuration for Customer-managed key settings defining which identity should be used to auth to Key Vault."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Identity {
-        #[doc = "Managed identity type to use for accessing encryption key Url"]
-        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-        pub type_: Option<identity::Type>,
-        #[doc = "user assigned identity to use for accessing key encryption key Url. Ex: /subscriptions/fa5fc227-a624-475e-b696-cdd604c735bc/resourceGroups/<resource group>/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myId"]
-        #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-        pub resource_id: Option<String>,
-    }
-    impl Identity {
-        pub fn new() -> Self {
-            Self::default()
-        }
-    }
-    pub mod identity {
-        use super::*;
-        #[doc = "Managed identity type to use for accessing encryption key Url"]
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        #[serde(remote = "Type")]
-        pub enum Type {
-            SystemAssigned,
-            UserAssigned,
-            #[serde(skip_deserializing)]
-            UnknownValue(String),
-        }
-        impl FromStr for Type {
-            type Err = value::Error;
-            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-                Self::deserialize(s.into_deserializer())
-            }
-        }
-        impl<'de> Deserialize<'de> for Type {
-            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-            where
-                D: Deserializer<'de>,
-            {
-                let s = String::deserialize(deserializer)?;
-                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-                Ok(deserialized)
-            }
-        }
-        impl Serialize for Type {
-            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-            where
-                S: Serializer,
-            {
-                match self {
-                    Self::SystemAssigned => serializer.serialize_unit_variant("Type", 0u32, "SystemAssigned"),
-                    Self::UserAssigned => serializer.serialize_unit_variant("Type", 1u32, "UserAssigned"),
-                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-                }
-            }
-        }
+#[doc = "All identity configuration for Customer-managed key settings defining which identity should be used to auth to Key Vault."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EncryptionPropertiesIdentity {
+    #[doc = "Managed identity type to use for accessing encryption key Url."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<Type>,
+    #[doc = "User assigned identity to use for accessing key encryption key Url. Ex: /subscriptions/fa5fc227-a624-475e-b696-cdd604c735bc/resourceGroups/<resource group>/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myId."]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+}
+impl EncryptionPropertiesIdentity {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "A domain name and connection details used to access a dependency."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointDependency {
     #[doc = "The domain name of the dependency. Domain names may be fully qualified or may contain a * wildcard."]
-    #[serde(rename = "domainName", default, skip_serializing_if = "Option::is_none")]
-    pub domain_name: Option<String>,
+    #[serde(rename = "domainName")]
+    pub domain_name: String,
     #[doc = "Human-readable supplemental information about the dependency and when it is applicable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -124,8 +96,12 @@ pub struct EndpointDependency {
     pub endpoint_details: Vec<EndpointDetail>,
 }
 impl EndpointDependency {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(domain_name: String) -> Self {
+        Self {
+            domain_name,
+            description: None,
+            endpoint_details: Vec::new(),
+        }
     }
 }
 #[doc = "Details about the connection between the Batch service and the endpoint."]
@@ -218,7 +194,7 @@ pub struct LoadTestProperties {
     #[doc = "Resource data plane URI."]
     #[serde(rename = "dataPlaneURI", default, skip_serializing_if = "Option::is_none")]
     pub data_plane_uri: Option<String>,
-    #[doc = "Key and identity details for Customer Managed Key encryption of load test resource"]
+    #[doc = "Key and identity details for Customer Managed Key encryption of load test resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<EncryptionProperties>,
 }
@@ -227,7 +203,7 @@ impl LoadTestProperties {
         Self::default()
     }
 }
-#[doc = "LoadTest details"]
+#[doc = "LoadTest details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LoadTestResource {
     #[serde(flatten)]
@@ -248,65 +224,57 @@ impl LoadTestResource {
         }
     }
 }
-#[doc = "List of resources page result."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LoadTestResourcePageList {
-    #[doc = "List of resources in current page."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+#[doc = "The response of a LoadTestResource list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LoadTestResourceListResult {
+    #[doc = "The LoadTestResource items on this page"]
     pub value: Vec<LoadTestResource>,
-    #[doc = "Link to next page of resources."]
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for LoadTestResourcePageList {
+impl azure_core::Continuable for LoadTestResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl LoadTestResourcePageList {
-    pub fn new() -> Self {
-        Self::default()
+impl LoadTestResourceListResult {
+    pub fn new(value: Vec<LoadTestResource>) -> Self {
+        Self { value, next_link: None }
     }
 }
-#[doc = "LoadTest resource patch request body."]
+#[doc = "The type used for update operations of the LoadTestResource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LoadTestResourcePatchRequestBody {
-    #[doc = "Resource tags."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+pub struct LoadTestResourceUpdate {
     #[doc = "Managed service identity (system assigned and/or user assigned identities)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
-    #[doc = "Load Test resource properties"]
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<load_test_resource_patch_request_body::Properties>,
+    pub tags: Option<serde_json::Value>,
+    #[doc = "The updatable properties of the LoadTestResource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<LoadTestResourceUpdateProperties>,
 }
-impl LoadTestResourcePatchRequestBody {
+impl LoadTestResourceUpdate {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod load_test_resource_patch_request_body {
-    use super::*;
-    #[doc = "Load Test resource properties"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Properties {
-        #[doc = "Description of the resource."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub description: Option<String>,
-        #[doc = "Key and identity details for Customer Managed Key encryption of load test resource"]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub encryption: Option<EncryptionProperties>,
-    }
-    impl Properties {
-        pub fn new() -> Self {
-            Self::default()
-        }
+#[doc = "The updatable properties of the LoadTestResource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LoadTestResourceUpdateProperties {
+    #[doc = "Description of the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "Key and identity details for Customer Managed Key encryption of load test resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encryption: Option<EncryptionProperties>,
+}
+impl LoadTestResourceUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Managed service identity (system assigned and/or user assigned identities)"]
@@ -549,26 +517,32 @@ impl OutboundEnvironmentEndpoint {
     }
 }
 #[doc = "Values returned by the List operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct OutboundEnvironmentEndpointCollection {
-    #[doc = "The collection of outbound network dependency endpoints returned by the listing operation."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PagedOutboundEnvironmentEndpoint {
+    #[doc = "The OutboundEnvironmentEndpoint items on this page"]
     pub value: Vec<OutboundEnvironmentEndpoint>,
-    #[doc = "The continuation token."]
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
+impl azure_core::Continuable for PagedOutboundEnvironmentEndpoint {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl OutboundEnvironmentEndpointCollection {
+impl PagedOutboundEnvironmentEndpoint {
+    pub fn new(value: Vec<OutboundEnvironmentEndpoint>) -> Self {
+        Self { value, next_link: None }
+    }
+}
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ProxyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl ProxyResource {
     pub fn new() -> Self {
         Self::default()
     }
@@ -576,8 +550,6 @@ impl OutboundEnvironmentEndpointCollection {
 #[doc = "Request object of new quota for a quota bucket."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaBucketRequest {
-    #[serde(flatten)]
-    pub resource: Resource,
     #[doc = "New quota request request properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QuotaBucketRequestProperties>,
@@ -601,36 +573,33 @@ pub struct QuotaBucketRequestProperties {
     pub new_quota: Option<i32>,
     #[doc = "Dimensions for new quota request."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dimensions: Option<quota_bucket_request_properties::Dimensions>,
+    pub dimensions: Option<QuotaBucketRequestPropertiesDimensions>,
 }
 impl QuotaBucketRequestProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod quota_bucket_request_properties {
-    use super::*;
-    #[doc = "Dimensions for new quota request."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Dimensions {
-        #[doc = "Subscription Id dimension for new quota request of the quota bucket."]
-        #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
-        pub subscription_id: Option<String>,
-        #[doc = "Location dimension for new quota request of the quota bucket."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub location: Option<String>,
-    }
-    impl Dimensions {
-        pub fn new() -> Self {
-            Self::default()
-        }
+#[doc = "Dimensions for new quota request."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct QuotaBucketRequestPropertiesDimensions {
+    #[doc = "Subscription Id dimension for new quota request of the quota bucket."]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+    #[doc = "Location dimension for new quota request of the quota bucket."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+}
+impl QuotaBucketRequestPropertiesDimensions {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Quota bucket details object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaResource {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "Quota bucket resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QuotaResourceProperties>,
@@ -640,29 +609,24 @@ impl QuotaResource {
         Self::default()
     }
 }
-#[doc = "List of quota bucket objects. It contains a URL link to get the next set of results."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct QuotaResourceList {
-    #[doc = "List of quota bucket objects provided by the loadtestservice."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+#[doc = "The response of a QuotaResource list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuotaResourceListResult {
+    #[doc = "The QuotaResource items on this page"]
     pub value: Vec<QuotaResource>,
-    #[doc = "URL to get the next set of quota bucket objects results (if there are any)."]
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for QuotaResourceList {
+impl azure_core::Continuable for QuotaResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl QuotaResourceList {
-    pub fn new() -> Self {
-        Self::default()
+impl QuotaResourceListResult {
+    pub fn new(value: Vec<QuotaResource>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Quota bucket resource properties."]
@@ -686,7 +650,7 @@ impl QuotaResourceProperties {
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
-    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
+    #[doc = "Fully qualified resource ID for the resource. E.g. \"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}\""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The name of the resource"]
@@ -799,7 +763,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -808,7 +772,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {
@@ -897,6 +861,43 @@ pub mod system_data {
                 Self::Key => serializer.serialize_unit_variant("LastModifiedByType", 3u32, "Key"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+}
+#[doc = "Managed identity type to use for accessing encryption key Url."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "Type")]
+pub enum Type {
+    SystemAssigned,
+    UserAssigned,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for Type {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for Type {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for Type {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::SystemAssigned => serializer.serialize_unit_variant("Type", 0u32, "SystemAssigned"),
+            Self::UserAssigned => serializer.serialize_unit_variant("Type", 1u32, "UserAssigned"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }

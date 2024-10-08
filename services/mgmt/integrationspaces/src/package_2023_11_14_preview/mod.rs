@@ -245,10 +245,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.IntegrationSpaces/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.IntegrationSpaces/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -483,11 +481,11 @@ pub mod spaces {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.IntegrationSpaces/spaces",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.IntegrationSpaces/spaces",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -664,12 +662,11 @@ pub mod spaces {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -755,13 +752,11 @@ pub mod spaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -861,13 +856,11 @@ pub mod spaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -967,13 +960,11 @@ pub mod spaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1066,13 +1057,11 @@ pub mod spaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1502,13 +1491,11 @@ pub mod applications {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1595,14 +1582,11 @@ pub mod applications {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.application_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.application_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1703,14 +1687,11 @@ pub mod applications {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.application_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.application_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1811,14 +1792,11 @@ pub mod applications {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.application_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.application_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1912,14 +1890,11 @@ pub mod applications {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.application_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.application_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2003,7 +1978,8 @@ pub mod applications {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/deleteBusinessProcessDevelopmentArtifact" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/deleteBusinessProcessDevelopmentArtifact" , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2092,7 +2068,8 @@ pub mod applications {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/getBusinessProcessDevelopmentArtifact" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/getBusinessProcessDevelopmentArtifact" , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2192,7 +2169,8 @@ pub mod applications {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/listBusinessProcessDevelopmentArtifacts" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/listBusinessProcessDevelopmentArtifacts" , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2293,7 +2271,8 @@ pub mod applications {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/saveBusinessProcessDevelopmentArtifact" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/saveBusinessProcessDevelopmentArtifact" , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2389,7 +2368,8 @@ pub mod applications {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/validateBusinessProcessDevelopmentArtifact" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/validateBusinessProcessDevelopmentArtifact" , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2713,7 +2693,11 @@ pub mod business_processes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.application_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2801,7 +2785,8 @@ pub mod business_processes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}" , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2903,7 +2888,8 @@ pub mod business_processes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}" , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3005,7 +2991,8 @@ pub mod business_processes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}" , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3100,7 +3087,8 @@ pub mod business_processes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}" , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3350,7 +3338,8 @@ pub mod business_process_versions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}/versions" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}/versions" , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3439,7 +3428,8 @@ pub mod business_process_versions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}/versions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name , & self . business_process_version)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/businessProcesses/{}/versions/{}" , & self . subscription_id , & self . resource_group_name , & self . space_name , & self . application_name , & self . business_process_name , & self . business_process_version)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3775,14 +3765,11 @@ pub mod application_resources {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/resources",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.application_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/resources",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.application_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3870,15 +3857,11 @@ pub mod application_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/resources/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.application_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/resources/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.application_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3980,15 +3963,11 @@ pub mod application_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/resources/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.application_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/resources/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.application_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4090,15 +4069,11 @@ pub mod application_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/resources/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.application_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/resources/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.application_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4193,15 +4168,11 @@ pub mod application_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/resources/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.application_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/applications/{}/resources/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.application_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4509,13 +4480,11 @@ pub mod infrastructure_resources {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/infrastructureResources",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/infrastructureResources",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4602,14 +4571,11 @@ pub mod infrastructure_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/infrastructureResources/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.infrastructure_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/infrastructureResources/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.infrastructure_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4710,14 +4676,11 @@ pub mod infrastructure_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/infrastructureResources/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.infrastructure_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/infrastructureResources/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.infrastructure_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4818,14 +4781,11 @@ pub mod infrastructure_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/infrastructureResources/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.infrastructure_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/infrastructureResources/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.infrastructure_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4919,14 +4879,11 @@ pub mod infrastructure_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/infrastructureResources/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.space_name,
-                    &self.infrastructure_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.IntegrationSpaces/spaces/{}/infrastructureResources/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.space_name, &self.infrastructure_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

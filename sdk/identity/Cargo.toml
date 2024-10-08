@@ -1,19 +1,19 @@
 [package]
 name = "azure_identity"
-version = "0.20.0"
+version = "0.21.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure identity helper crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
-homepage = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust/tree/legacy"
 documentation = "https://docs.rs/azure_identity"
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.20" }
+azure_core = { path = "../core", version = "0.21" }
 async-lock = "3.0"
 oauth2 = { version = "4.0.0", default-features = false }
 url = "2.2"

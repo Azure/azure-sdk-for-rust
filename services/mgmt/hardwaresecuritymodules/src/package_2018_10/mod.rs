@@ -206,10 +206,8 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.HardwareSecurityModules/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.HardwareSecurityModules/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -415,13 +413,11 @@ pub mod dedicated_hsm {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -520,13 +516,11 @@ pub mod dedicated_hsm {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -653,13 +647,11 @@ pub mod dedicated_hsm {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -779,13 +771,11 @@ pub mod dedicated_hsm {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -905,12 +895,11 @@ pub mod dedicated_hsm {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1029,11 +1018,11 @@ pub mod dedicated_hsm {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

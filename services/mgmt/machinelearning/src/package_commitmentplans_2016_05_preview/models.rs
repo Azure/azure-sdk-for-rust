@@ -109,7 +109,7 @@ pub struct CommitmentAssociationProperties {
     pub commitment_plan_id: Option<String>,
     #[doc = "The date at which this commitment association was created, in ISO 8601 format."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
 }
 impl CommitmentAssociationProperties {
     pub fn new() -> Self {
@@ -192,7 +192,7 @@ pub struct CommitmentPlanProperties {
     pub charge_for_plan: Option<bool>,
     #[doc = "The date at which this commitment plan was created, in ISO 8601 format."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
     #[doc = "The included resource quantities this plan gives you."]
     #[serde(rename = "includedQuantities", default, skip_serializing_if = "Option::is_none")]
     pub included_quantities: Option<serde_json::Value>,
@@ -334,7 +334,7 @@ pub struct PlanUsageHistory {
     pub usage: Option<serde_json::Value>,
     #[doc = "The date of usage, in ISO 8601 format."]
     #[serde(rename = "usageDate", default, with = "azure_core::date::rfc3339::option")]
-    pub usage_date: Option<time::OffsetDateTime>,
+    pub usage_date: Option<::time::OffsetDateTime>,
 }
 impl PlanUsageHistory {
     pub fn new() -> Self {

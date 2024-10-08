@@ -307,12 +307,11 @@ pub mod spark_batch {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/batches",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/batches",
+                    &self.livy_api_version, &self.spark_pool_name
+                ));
                 Ok(url)
             }
         }
@@ -415,12 +414,11 @@ pub mod spark_batch {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/batches",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/batches",
+                    &self.livy_api_version, &self.spark_pool_name
+                ));
                 Ok(url)
             }
         }
@@ -522,13 +520,11 @@ pub mod spark_batch {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/batches/{}",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name,
-                    &self.batch_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/batches/{}",
+                    &self.livy_api_version, &self.spark_pool_name, &self.batch_id
+                ));
                 Ok(url)
             }
         }
@@ -616,13 +612,11 @@ pub mod spark_batch {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/batches/{}",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name,
-                    &self.batch_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/batches/{}",
+                    &self.livy_api_version, &self.spark_pool_name, &self.batch_id
+                ));
                 Ok(url)
             }
         }
@@ -921,12 +915,11 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/sessions",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/sessions",
+                    &self.livy_api_version, &self.spark_pool_name
+                ));
                 Ok(url)
             }
         }
@@ -1029,12 +1022,11 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/sessions",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/sessions",
+                    &self.livy_api_version, &self.spark_pool_name
+                ));
                 Ok(url)
             }
         }
@@ -1136,13 +1128,11 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name,
-                    &self.session_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/sessions/{}",
+                    &self.livy_api_version, &self.spark_pool_name, &self.session_id
+                ));
                 Ok(url)
             }
         }
@@ -1230,13 +1220,11 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name,
-                    &self.session_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/sessions/{}",
+                    &self.livy_api_version, &self.spark_pool_name, &self.session_id
+                ));
                 Ok(url)
             }
         }
@@ -1312,13 +1300,11 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/reset-timeout",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name,
-                    &self.session_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/sessions/{}/reset-timeout",
+                    &self.livy_api_version, &self.spark_pool_name, &self.session_id
+                ));
                 Ok(url)
             }
         }
@@ -1399,13 +1385,11 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name,
-                    &self.session_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements",
+                    &self.livy_api_version, &self.spark_pool_name, &self.session_id
+                ));
                 Ok(url)
             }
         }
@@ -1500,13 +1484,11 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name,
-                    &self.session_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements",
+                    &self.livy_api_version, &self.spark_pool_name, &self.session_id
+                ));
                 Ok(url)
             }
         }
@@ -1600,14 +1582,11 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements/{}",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name,
-                    &self.session_id,
-                    &self.statement_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements/{}",
+                    &self.livy_api_version, &self.spark_pool_name, &self.session_id, &self.statement_id
+                ));
                 Ok(url)
             }
         }
@@ -1702,14 +1681,11 @@ pub mod spark_session {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements/{}/cancel",
-                    self.client.endpoint(),
-                    &self.livy_api_version,
-                    &self.spark_pool_name,
-                    &self.session_id,
-                    &self.statement_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements/{}/cancel",
+                    &self.livy_api_version, &self.spark_pool_name, &self.session_id, &self.statement_id
+                ));
                 Ok(url)
             }
         }

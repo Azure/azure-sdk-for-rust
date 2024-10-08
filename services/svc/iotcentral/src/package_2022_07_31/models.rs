@@ -45,7 +45,7 @@ pub struct ApiToken {
     pub token: Option<String>,
     #[doc = "String-formatted date representing the time when the token expires."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiry: Option<time::OffsetDateTime>,
+    pub expiry: Option<::time::OffsetDateTime>,
 }
 impl ApiToken {
     pub fn new(permission: Permission) -> Self {
@@ -412,7 +412,7 @@ pub struct DeviceTelemetry {
     pub value: Option<serde_json::Value>,
     #[doc = "String-formatted date representing the time when the telemetry value was sent."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
 }
 impl DeviceTelemetry {
     pub fn new() -> Self {
@@ -590,7 +590,7 @@ pub struct ErrorDetails {
     pub request_id: Option<String>,
     #[doc = "The time that error request failed."]
     #[serde(default, with = "azure_core::date::rfc1123::option")]
-    pub time: Option<time::OffsetDateTime>,
+    pub time: Option<::time::OffsetDateTime>,
 }
 impl ErrorDetails {
     pub fn new(code: String, message: String) -> Self {
@@ -712,10 +712,10 @@ pub struct Job {
     pub data: Vec<JobDataUnion>,
     #[doc = "The start time of the job"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub start: Option<time::OffsetDateTime>,
+    pub start: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the job"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub end: Option<time::OffsetDateTime>,
+    pub end: Option<::time::OffsetDateTime>,
     #[doc = "progress summary for a scheduled job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub progress: Option<JobProgress>,
@@ -899,13 +899,13 @@ pub struct JobSchedule {
     pub recurrence: Option<job_schedule::Recurrence>,
     #[doc = "The start time for the scheduled job"]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub start: time::OffsetDateTime,
+    pub start: ::time::OffsetDateTime,
     #[doc = "The end definition of job schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end: Option<JobScheduleEndUnion>,
 }
 impl JobSchedule {
-    pub fn new(start: time::OffsetDateTime) -> Self {
+    pub fn new(start: ::time::OffsetDateTime) -> Self {
         Self {
             recurrence: None,
             start,

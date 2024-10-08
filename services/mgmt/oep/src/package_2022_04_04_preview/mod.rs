@@ -222,11 +222,11 @@ pub mod locations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.OpenEnergyPlatform/checkNameAvailability",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.OpenEnergyPlatform/checkNameAvailability",
                     &self.subscription_id
-                ))?;
+                ));
                 Ok(url)
             }
         }
@@ -515,12 +515,11 @@ pub mod energy_services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -630,11 +629,11 @@ pub mod energy_services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.OpenEnergyPlatform/energyServices",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.OpenEnergyPlatform/energyServices",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -720,13 +719,11 @@ pub mod energy_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -834,13 +831,11 @@ pub mod energy_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 Ok(url)
             }
         }
@@ -998,13 +993,11 @@ pub mod energy_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1096,13 +1089,11 @@ pub mod energy_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1198,13 +1189,11 @@ pub mod energy_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}/addPartition",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}/addPartition",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1340,13 +1329,11 @@ pub mod energy_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}/removePartition",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}/removePartition",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1473,13 +1460,11 @@ pub mod energy_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}/listPartitions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OpenEnergyPlatform/energyServices/{}/listPartitions",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1588,10 +1573,8 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.OpenEnergyPlatform/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.OpenEnergyPlatform/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

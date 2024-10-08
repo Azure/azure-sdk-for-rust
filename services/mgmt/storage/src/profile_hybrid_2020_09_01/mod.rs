@@ -230,7 +230,8 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Storage/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Storage/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -336,11 +337,11 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Storage/skus",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Storage/skus",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -707,11 +708,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Storage/checkNameAvailability",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Storage/checkNameAvailability",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -818,13 +819,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -923,13 +922,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1057,13 +1054,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1156,13 +1151,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1272,11 +1265,11 @@ pub mod storage_accounts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Storage/storageAccounts",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Storage/storageAccounts",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1363,12 +1356,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1464,13 +1456,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/listKeys",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/listKeys",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1570,13 +1560,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/regenerateKey",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/regenerateKey",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1676,13 +1664,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/ListAccountSas",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/ListAccountSas",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1782,13 +1768,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/ListServiceSas",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/ListServiceSas",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1881,13 +1865,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/failover",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/failover",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1974,13 +1956,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/restoreBlobRanges",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/restoreBlobRanges",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2129,13 +2109,11 @@ pub mod storage_accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/revokeUserDelegationKeys",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/revokeUserDelegationKeys",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2248,12 +2226,11 @@ pub mod usages {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Storage/locations/{}/usages",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Storage/locations/{}/usages",
+                    &self.subscription_id, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2419,14 +2396,11 @@ pub mod management_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/managementPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.management_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/managementPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.management_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2527,14 +2501,11 @@ pub mod management_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/managementPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.management_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/managementPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.management_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2628,14 +2599,11 @@ pub mod management_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/managementPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.management_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/managementPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.management_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2820,14 +2788,11 @@ pub mod blob_inventory_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/inventoryPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.blob_inventory_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/inventoryPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.blob_inventory_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2928,14 +2893,11 @@ pub mod blob_inventory_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/inventoryPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.blob_inventory_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/inventoryPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.blob_inventory_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3029,14 +2991,11 @@ pub mod blob_inventory_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/inventoryPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.blob_inventory_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/inventoryPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.blob_inventory_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3124,13 +3083,11 @@ pub mod blob_inventory_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/inventoryPolicies",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/inventoryPolicies",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3316,13 +3273,11 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/privateEndpointConnections",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/privateEndpointConnections",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3409,14 +3364,11 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/privateEndpointConnections/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.private_endpoint_connection_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/privateEndpointConnections/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.private_endpoint_connection_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3517,14 +3469,11 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/privateEndpointConnections/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.private_endpoint_connection_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/privateEndpointConnections/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.private_endpoint_connection_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3618,14 +3567,11 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/privateEndpointConnections/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.private_endpoint_connection_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/privateEndpointConnections/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.private_endpoint_connection_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3740,13 +3686,11 @@ pub mod private_link_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/privateLinkResources",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/privateLinkResources",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3944,13 +3888,11 @@ pub mod object_replication_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/objectReplicationPolicies",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/objectReplicationPolicies",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4037,14 +3979,11 @@ pub mod object_replication_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/objectReplicationPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.object_replication_policy_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/objectReplicationPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.object_replication_policy_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4145,14 +4084,11 @@ pub mod object_replication_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/objectReplicationPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.object_replication_policy_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/objectReplicationPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.object_replication_policy_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4246,14 +4182,11 @@ pub mod object_replication_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/objectReplicationPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.object_replication_policy_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/objectReplicationPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.object_replication_policy_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4441,14 +4374,11 @@ pub mod encryption_scopes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/encryptionScopes/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.encryption_scope_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/encryptionScopes/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.encryption_scope_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4549,14 +4479,11 @@ pub mod encryption_scopes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/encryptionScopes/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.encryption_scope_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/encryptionScopes/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.encryption_scope_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4657,14 +4584,11 @@ pub mod encryption_scopes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/encryptionScopes/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.encryption_scope_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/encryptionScopes/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.encryption_scope_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4788,13 +4712,11 @@ pub mod encryption_scopes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/encryptionScopes",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/encryptionScopes",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

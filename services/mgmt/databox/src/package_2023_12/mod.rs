@@ -233,7 +233,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.DataBox/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.DataBox/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -559,11 +560,11 @@ pub mod jobs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DataBox/jobs",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DataBox/jobs",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -646,13 +647,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/markDevicesShipped",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.job_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/markDevicesShipped",
+                    &self.subscription_id, &self.resource_group_name, &self.job_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -772,12 +771,11 @@ pub mod jobs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -872,13 +870,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.job_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.job_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -977,13 +973,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.job_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.job_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1129,13 +1123,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.job_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.job_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1265,13 +1257,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.job_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.job_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1359,13 +1349,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/bookShipmentPickUp",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.job_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/bookShipmentPickUp",
+                    &self.subscription_id, &self.resource_group_name, &self.job_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1460,13 +1448,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/cancel",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.job_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/cancel",
+                    &self.subscription_id, &self.resource_group_name, &self.job_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1555,13 +1541,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/listCredentials",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.job_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/listCredentials",
+                    &self.subscription_id, &self.resource_group_name, &self.job_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1669,13 +1653,11 @@ pub mod mitigate {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/mitigate",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.resource_group_name,
-                &self.job_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/mitigate",
+                &self.subscription_id, &self.resource_group_name, &self.job_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1921,13 +1903,11 @@ pub mod service {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/locations/{}/availableSkus",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/locations/{}/availableSkus",
+                    &self.subscription_id, &self.resource_group_name, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2014,12 +1994,11 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DataBox/locations/{}/validateAddress",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DataBox/locations/{}/validateAddress",
+                    &self.subscription_id, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2119,13 +2098,11 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/locations/{}/validateInputs",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/locations/{}/validateInputs",
+                    &self.subscription_id, &self.resource_group_name, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2224,12 +2201,11 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DataBox/locations/{}/validateInputs",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DataBox/locations/{}/validateInputs",
+                    &self.subscription_id, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2328,12 +2304,11 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DataBox/locations/{}/regionConfiguration",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DataBox/locations/{}/regionConfiguration",
+                    &self.subscription_id, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2433,13 +2408,11 @@ pub mod service {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/locations/{}/regionConfiguration",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/locations/{}/regionConfiguration",
+                    &self.subscription_id, &self.resource_group_name, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

@@ -1,5 +1,5 @@
 // cargo run --example resources_mgmt
-// https://github.com/Azure/azure-rest-api-specs/tree/master/specification/resources/resource-manager
+// https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resources/resource-manager
 
 use autorust_codegen::{autorust_toml::PackageConfig, *};
 

@@ -180,7 +180,7 @@ pub struct BillingSubscriptionProperties {
     pub product_type_id: Option<String>,
     #[doc = "The purchase date of the subscription in UTC time."]
     #[serde(rename = "purchaseDate", default, with = "azure_core::date::rfc3339::option")]
-    pub purchase_date: Option<time::OffsetDateTime>,
+    pub purchase_date: Option<::time::OffsetDateTime>,
     #[doc = "The number of licenses purchased for the subscription"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quantity: Option<i64>,
@@ -215,10 +215,10 @@ pub struct BillingSubscriptionProperties {
     pub term_duration: Option<String>,
     #[doc = "The start date of the term in UTC time."]
     #[serde(rename = "termStartDate", default, with = "azure_core::date::rfc3339::option")]
-    pub term_start_date: Option<time::OffsetDateTime>,
+    pub term_start_date: Option<::time::OffsetDateTime>,
     #[doc = "The end date of the term in UTC time."]
     #[serde(rename = "termEndDate", default, with = "azure_core::date::rfc3339::option")]
-    pub term_end_date: Option<time::OffsetDateTime>,
+    pub term_end_date: Option<::time::OffsetDateTime>,
 }
 impl BillingSubscriptionProperties {
     pub fn new() -> Self {
@@ -478,7 +478,7 @@ pub struct EnrollmentAccountSubscriptionDetails {
     pub subscription_enrollment_account_status: Option<enrollment_account_subscription_details::SubscriptionEnrollmentAccountStatus>,
     #[doc = "The enrollment Account and the subscription association start date. This field is available only for the Enterprise Agreement billing accounts."]
     #[serde(rename = "enrollmentAccountStartDate", default, with = "azure_core::date::rfc3339::option")]
-    pub enrollment_account_start_date: Option<time::OffsetDateTime>,
+    pub enrollment_account_start_date: Option<::time::OffsetDateTime>,
 }
 impl EnrollmentAccountSubscriptionDetails {
     pub fn new() -> Self {

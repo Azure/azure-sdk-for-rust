@@ -227,7 +227,7 @@ pub mod application {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -256,7 +256,7 @@ pub mod application {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum number of items to return in the response. A maximum of 1000 applications can be returned."]
@@ -280,7 +280,7 @@ pub mod application {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -344,7 +344,8 @@ pub mod application {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/applications", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/applications");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -403,7 +404,7 @@ pub mod application {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -432,7 +433,7 @@ pub mod application {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -451,7 +452,7 @@ pub mod application {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -486,7 +487,8 @@ pub mod application {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/applications/{}", self.client.endpoint(), &self.application_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/applications/{}", &self.application_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -843,7 +845,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -868,23 +870,23 @@ pub mod pool {
         #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) starttime: Option<time::OffsetDateTime>,
-            pub(crate) endtime: Option<time::OffsetDateTime>,
+            pub(crate) starttime: Option<::time::OffsetDateTime>,
+            pub(crate) endtime: Option<::time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) maxresults: Option<i32>,
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The earliest time from which to include metrics. This must be at least two and a half hours before the current time. If not specified this defaults to the start time of the last aggregation interval currently available."]
-            pub fn starttime(mut self, starttime: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn starttime(mut self, starttime: impl Into<::time::OffsetDateTime>) -> Self {
                 self.starttime = Some(starttime.into());
                 self
             }
             #[doc = "The latest time from which to include metrics. This must be at least two hours before the current time. If not specified this defaults to the end time of the last aggregation interval currently available."]
-            pub fn endtime(mut self, endtime: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn endtime(mut self, endtime: impl Into<::time::OffsetDateTime>) -> Self {
                 self.endtime = Some(endtime.into());
                 self
             }
@@ -914,7 +916,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -987,7 +989,8 @@ pub mod pool {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/poolusagemetrics", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/poolusagemetrics");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1046,7 +1049,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -1078,7 +1081,7 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-pools."]
@@ -1117,7 +1120,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -1190,7 +1193,8 @@ pub mod pool {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/pools");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1244,7 +1248,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -1277,7 +1281,7 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -1296,7 +1300,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -1332,7 +1336,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/pools");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1391,7 +1396,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -1422,11 +1427,11 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $select clause."]
@@ -1455,7 +1460,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -1470,12 +1475,12 @@ pub mod pool {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -1528,7 +1533,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1594,7 +1600,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -1628,11 +1634,11 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -1651,7 +1657,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -1666,12 +1672,12 @@ pub mod pool {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -1719,7 +1725,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1794,11 +1801,11 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -1817,7 +1824,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -1832,12 +1839,12 @@ pub mod pool {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -1884,7 +1891,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1938,7 +1946,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -1967,11 +1975,11 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -1990,7 +1998,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -2005,12 +2013,12 @@ pub mod pool {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -2057,7 +2065,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2111,7 +2120,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -2144,7 +2153,7 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -2163,7 +2172,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -2199,7 +2208,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/disableautoscale", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/disableautoscale", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2253,7 +2263,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -2287,11 +2297,11 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -2310,7 +2320,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -2325,12 +2335,12 @@ pub mod pool {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -2378,7 +2388,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/enableautoscale", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/enableautoscale", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2437,7 +2448,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -2471,7 +2482,7 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -2490,7 +2501,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -2526,7 +2537,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/evaluateautoscale", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/evaluateautoscale", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2592,7 +2604,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -2626,11 +2638,11 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -2649,7 +2661,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -2664,12 +2676,12 @@ pub mod pool {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -2717,7 +2729,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/resize", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/resize", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2771,7 +2784,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -2804,11 +2817,11 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -2827,7 +2840,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -2842,12 +2855,12 @@ pub mod pool {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -2895,7 +2908,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/stopresize", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/stopresize", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2949,7 +2963,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -2983,7 +2997,7 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -3002,7 +3016,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -3038,7 +3052,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/updateproperties", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/updateproperties", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3092,7 +3107,7 @@ pub mod pool {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -3126,11 +3141,11 @@ pub mod pool {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -3149,7 +3164,7 @@ pub mod pool {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -3164,12 +3179,12 @@ pub mod pool {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -3217,7 +3232,8 @@ pub mod pool {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/removenodes", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/removenodes", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3310,7 +3326,7 @@ pub mod account {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -3340,7 +3356,7 @@ pub mod account {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-support-images."]
@@ -3369,7 +3385,7 @@ pub mod account {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -3436,7 +3452,8 @@ pub mod account {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/supportedimages", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/supportedimages");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3517,7 +3534,7 @@ pub mod account {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch."]
@@ -3546,7 +3563,7 @@ pub mod account {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -3613,7 +3630,8 @@ pub mod account {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/nodecounts", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/nodecounts");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3767,7 +3785,7 @@ pub mod certificate {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -3798,7 +3816,7 @@ pub mod certificate {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-certificates."]
@@ -3832,7 +3850,7 @@ pub mod certificate {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -3902,7 +3920,8 @@ pub mod certificate {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/certificates", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/certificates");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3956,7 +3975,7 @@ pub mod certificate {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -3989,7 +4008,7 @@ pub mod certificate {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -4008,7 +4027,7 @@ pub mod certificate {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -4044,7 +4063,8 @@ pub mod certificate {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/certificates", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/certificates");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4098,7 +4118,7 @@ pub mod certificate {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -4132,7 +4152,7 @@ pub mod certificate {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -4151,7 +4171,7 @@ pub mod certificate {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -4187,12 +4207,11 @@ pub mod certificate {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/certificates(thumbprintAlgorithm={},thumbprint={})/canceldelete",
-                    self.client.endpoint(),
-                    &self.thumbprint_algorithm,
-                    &self.thumbprint
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/certificates(thumbprintAlgorithm={},thumbprint={})/canceldelete",
+                    &self.thumbprint_algorithm, &self.thumbprint
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4251,7 +4270,7 @@ pub mod certificate {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -4282,7 +4301,7 @@ pub mod certificate {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $select clause."]
@@ -4306,7 +4325,7 @@ pub mod certificate {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -4344,12 +4363,11 @@ pub mod certificate {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
-                    self.client.endpoint(),
-                    &self.thumbprint_algorithm,
-                    &self.thumbprint
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/certificates(thumbprintAlgorithm={},thumbprint={})",
+                    &self.thumbprint_algorithm, &self.thumbprint
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4415,7 +4433,7 @@ pub mod certificate {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -4445,7 +4463,7 @@ pub mod certificate {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -4464,7 +4482,7 @@ pub mod certificate {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -4499,12 +4517,11 @@ pub mod certificate {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
-                    self.client.endpoint(),
-                    &self.thumbprint_algorithm,
-                    &self.thumbprint
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/certificates(thumbprintAlgorithm={},thumbprint={})",
+                    &self.thumbprint_algorithm, &self.thumbprint
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4765,11 +4782,11 @@ pub mod file {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The file creation time."]
-            pub fn ocp_creation_time(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn ocp_creation_time(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("ocp-creation-time"))?)
             }
             #[doc = "Whether the object represents a directory."]
@@ -4821,10 +4838,10 @@ pub mod file {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) ocp_range: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -4843,7 +4860,7 @@ pub mod file {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -4853,12 +4870,12 @@ pub mod file {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -4902,13 +4919,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/files/{}", &self.job_id, &self.task_id, &self.file_path));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4998,7 +5010,7 @@ pub mod file {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "Whether to delete children of a directory. If the filePath parameter represents a directory instead of a file, you can set recursive to true to delete the directory and all of the files and subdirectories in it. If recursive is false then the directory must be empty or deletion will fail."]
@@ -5022,7 +5034,7 @@ pub mod file {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -5060,13 +5072,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/files/{}", &self.job_id, &self.task_id, &self.file_path));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5120,11 +5127,11 @@ pub mod file {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The file creation time."]
-            pub fn ocp_creation_time(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn ocp_creation_time(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("ocp-creation-time"))?)
             }
             #[doc = "Whether the object represents a directory."]
@@ -5176,9 +5183,9 @@ pub mod file {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -5197,17 +5204,17 @@ pub mod file {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -5248,13 +5255,8 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/files/{}", &self.job_id, &self.task_id, &self.file_path));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5313,11 +5315,11 @@ pub mod file {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The file creation time."]
-            pub fn ocp_creation_time(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn ocp_creation_time(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("ocp-creation-time"))?)
             }
             #[doc = "Whether the object represents a directory."]
@@ -5369,10 +5371,10 @@ pub mod file {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) ocp_range: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -5391,7 +5393,7 @@ pub mod file {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -5401,12 +5403,12 @@ pub mod file {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -5450,13 +5452,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/files/{}",
+                    &self.pool_id, &self.node_id, &self.file_path
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5546,7 +5546,7 @@ pub mod file {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "Whether to delete children of a directory. If the filePath parameter represents a directory instead of a file, you can set recursive to true to delete the directory and all of the files and subdirectories in it. If recursive is false then the directory must be empty or deletion will fail."]
@@ -5570,7 +5570,7 @@ pub mod file {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -5608,13 +5608,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/files/{}",
+                    &self.pool_id, &self.node_id, &self.file_path
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5668,11 +5666,11 @@ pub mod file {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The file creation time."]
-            pub fn ocp_creation_time(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn ocp_creation_time(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("ocp-creation-time"))?)
             }
             #[doc = "Whether the object represents a directory."]
@@ -5724,9 +5722,9 @@ pub mod file {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -5745,17 +5743,17 @@ pub mod file {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -5796,13 +5794,11 @@ pub mod file {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.file_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/files/{}",
+                    &self.pool_id, &self.node_id, &self.file_path
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5861,7 +5857,7 @@ pub mod file {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -5894,7 +5890,7 @@ pub mod file {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-task-files."]
@@ -5928,7 +5924,7 @@ pub mod file {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -5998,12 +5994,8 @@ pub mod file {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/files",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/files", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6062,7 +6054,7 @@ pub mod file {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -6095,7 +6087,7 @@ pub mod file {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-compute-node-files."]
@@ -6129,7 +6121,7 @@ pub mod file {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -6199,12 +6191,8 @@ pub mod file {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/files",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/files", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6463,7 +6451,7 @@ pub mod job_schedule {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -6494,11 +6482,11 @@ pub mod job_schedule {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $select clause."]
@@ -6527,7 +6515,7 @@ pub mod job_schedule {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -6542,12 +6530,12 @@ pub mod job_schedule {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -6600,7 +6588,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6666,7 +6655,7 @@ pub mod job_schedule {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -6700,11 +6689,11 @@ pub mod job_schedule {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -6723,7 +6712,7 @@ pub mod job_schedule {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -6738,12 +6727,12 @@ pub mod job_schedule {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -6791,7 +6780,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6845,7 +6835,7 @@ pub mod job_schedule {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -6879,11 +6869,11 @@ pub mod job_schedule {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -6902,7 +6892,7 @@ pub mod job_schedule {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -6917,12 +6907,12 @@ pub mod job_schedule {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -6970,7 +6960,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7045,11 +7036,11 @@ pub mod job_schedule {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -7068,7 +7059,7 @@ pub mod job_schedule {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -7083,12 +7074,12 @@ pub mod job_schedule {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -7135,7 +7126,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7189,7 +7181,7 @@ pub mod job_schedule {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -7218,11 +7210,11 @@ pub mod job_schedule {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -7241,7 +7233,7 @@ pub mod job_schedule {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -7256,12 +7248,12 @@ pub mod job_schedule {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -7308,7 +7300,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7362,7 +7355,7 @@ pub mod job_schedule {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -7395,11 +7388,11 @@ pub mod job_schedule {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -7418,7 +7411,7 @@ pub mod job_schedule {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -7433,12 +7426,12 @@ pub mod job_schedule {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -7486,11 +7479,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobschedules/{}/disable",
-                    self.client.endpoint(),
-                    &self.job_schedule_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}/disable", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7544,7 +7534,7 @@ pub mod job_schedule {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -7577,11 +7567,11 @@ pub mod job_schedule {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -7600,7 +7590,7 @@ pub mod job_schedule {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -7615,12 +7605,12 @@ pub mod job_schedule {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -7668,7 +7658,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}/enable", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}/enable", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7722,7 +7713,7 @@ pub mod job_schedule {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -7755,11 +7746,11 @@ pub mod job_schedule {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -7778,7 +7769,7 @@ pub mod job_schedule {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -7793,12 +7784,12 @@ pub mod job_schedule {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -7846,11 +7837,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobschedules/{}/terminate",
-                    self.client.endpoint(),
-                    &self.job_schedule_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}/terminate", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7909,7 +7897,7 @@ pub mod job_schedule {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -7941,7 +7929,7 @@ pub mod job_schedule {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-job-schedules."]
@@ -7980,7 +7968,7 @@ pub mod job_schedule {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -8053,7 +8041,8 @@ pub mod job_schedule {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/jobschedules");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8107,7 +8096,7 @@ pub mod job_schedule {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -8140,7 +8129,7 @@ pub mod job_schedule {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -8159,7 +8148,7 @@ pub mod job_schedule {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -8195,7 +8184,8 @@ pub mod job_schedule {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/jobschedules");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8496,7 +8486,7 @@ pub mod job {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -8527,11 +8517,11 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $select clause."]
@@ -8560,7 +8550,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -8575,12 +8565,12 @@ pub mod job {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -8633,7 +8623,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8699,7 +8690,7 @@ pub mod job {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -8733,11 +8724,11 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -8756,7 +8747,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -8771,12 +8762,12 @@ pub mod job {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -8824,7 +8815,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8878,7 +8870,7 @@ pub mod job {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -8912,11 +8904,11 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -8935,7 +8927,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -8950,12 +8942,12 @@ pub mod job {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -9003,7 +8995,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9078,11 +9071,11 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -9101,7 +9094,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -9116,12 +9109,12 @@ pub mod job {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -9168,7 +9161,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9222,7 +9216,7 @@ pub mod job {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -9256,11 +9250,11 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -9279,7 +9273,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -9294,12 +9288,12 @@ pub mod job {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -9347,7 +9341,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/disable", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/disable", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9401,7 +9396,7 @@ pub mod job {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -9434,11 +9429,11 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -9457,7 +9452,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -9472,12 +9467,12 @@ pub mod job {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -9525,7 +9520,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/enable", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/enable", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9579,7 +9575,7 @@ pub mod job {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -9613,11 +9609,11 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The parameters for the request."]
@@ -9641,7 +9637,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -9656,12 +9652,12 @@ pub mod job {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -9713,7 +9709,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/terminate", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/terminate", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9772,7 +9769,7 @@ pub mod job {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -9804,7 +9801,7 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-jobs."]
@@ -9843,7 +9840,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -9916,7 +9913,8 @@ pub mod job {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/jobs");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9970,7 +9968,7 @@ pub mod job {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -10003,7 +10001,7 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -10022,7 +10020,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -10058,7 +10056,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/jobs");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10117,7 +10116,7 @@ pub mod job {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -10150,7 +10149,7 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-jobs-in-a-job-schedule."]
@@ -10189,7 +10188,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -10262,7 +10261,8 @@ pub mod job {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobschedules/{}/jobs", self.client.endpoint(), &self.job_schedule_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobschedules/{}/jobs", &self.job_schedule_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10321,7 +10321,7 @@ pub mod job {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -10353,7 +10353,7 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-job-preparation-and-release-status."]
@@ -10387,7 +10387,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -10459,11 +10459,8 @@ pub mod job {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/jobpreparationandreleasetaskstatus",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/jobpreparationandreleasetaskstatus", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10543,7 +10540,7 @@ pub mod job {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -10562,7 +10559,7 @@ pub mod job {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -10597,7 +10594,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/taskcounts", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/taskcounts", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10866,7 +10864,7 @@ pub mod task {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -10899,7 +10897,7 @@ pub mod task {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-tasks."]
@@ -10938,7 +10936,7 @@ pub mod task {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -11011,7 +11009,8 @@ pub mod task {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/tasks", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11065,7 +11064,7 @@ pub mod task {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -11099,7 +11098,7 @@ pub mod task {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -11118,7 +11117,7 @@ pub mod task {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -11154,7 +11153,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/tasks", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11235,7 +11235,7 @@ pub mod task {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -11254,7 +11254,7 @@ pub mod task {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -11290,7 +11290,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/addtaskcollection", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/addtaskcollection", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11361,7 +11362,7 @@ pub mod task {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -11397,11 +11398,11 @@ pub mod task {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $select clause."]
@@ -11430,7 +11431,7 @@ pub mod task {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -11445,12 +11446,12 @@ pub mod task {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -11503,7 +11504,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11569,7 +11571,7 @@ pub mod task {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -11604,11 +11606,11 @@ pub mod task {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -11627,7 +11629,7 @@ pub mod task {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -11642,12 +11644,12 @@ pub mod task {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -11695,7 +11697,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11771,11 +11774,11 @@ pub mod task {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -11794,7 +11797,7 @@ pub mod task {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -11809,12 +11812,12 @@ pub mod task {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -11861,7 +11864,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11920,7 +11924,7 @@ pub mod task {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -11951,7 +11955,7 @@ pub mod task {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $select clause."]
@@ -11975,7 +11979,7 @@ pub mod task {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -12013,12 +12017,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/subtasksinfo",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/subtasksinfo", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12084,7 +12084,7 @@ pub mod task {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -12118,11 +12118,11 @@ pub mod task {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -12141,7 +12141,7 @@ pub mod task {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -12156,12 +12156,12 @@ pub mod task {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -12209,12 +12209,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/terminate",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/terminate", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12268,7 +12264,7 @@ pub mod task {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -12302,11 +12298,11 @@ pub mod task {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
-            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_modified_since: Option<::time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -12325,7 +12321,7 @@ pub mod task {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -12340,12 +12336,12 @@ pub mod task {
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<::time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -12393,12 +12389,8 @@ pub mod task {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/jobs/{}/tasks/{}/reactivate",
-                    self.client.endpoint(),
-                    &self.job_id,
-                    &self.task_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/tasks/{}/reactivate", &self.job_id, &self.task_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12704,7 +12696,7 @@ pub mod compute_node {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -12739,7 +12731,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -12758,7 +12750,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -12794,12 +12786,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/users",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/users", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12853,7 +12841,7 @@ pub mod compute_node {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -12889,7 +12877,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -12908,7 +12896,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -12944,13 +12932,11 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/users/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.user_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/users/{}",
+                    &self.pool_id, &self.node_id, &self.user_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13027,7 +13013,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -13046,7 +13032,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -13081,13 +13067,11 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/users/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.user_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/users/{}",
+                    &self.pool_id, &self.node_id, &self.user_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13146,7 +13130,7 @@ pub mod compute_node {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -13177,7 +13161,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $select clause."]
@@ -13201,7 +13185,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -13239,12 +13223,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13310,7 +13290,7 @@ pub mod compute_node {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -13345,7 +13325,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The parameters for the request."]
@@ -13369,7 +13349,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -13409,12 +13389,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/reboot",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/reboot", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13468,7 +13444,7 @@ pub mod compute_node {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -13503,7 +13479,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The parameters for the request."]
@@ -13527,7 +13503,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -13567,12 +13543,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/reimage",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/reimage", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13626,7 +13598,7 @@ pub mod compute_node {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -13661,7 +13633,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The parameters for the request."]
@@ -13688,7 +13660,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -13728,12 +13700,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/disablescheduling",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/disablescheduling", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13787,7 +13755,7 @@ pub mod compute_node {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
             #[doc = "The OData ID of the resource to which the request applied."]
@@ -13821,7 +13789,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -13840,7 +13808,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -13876,12 +13844,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/enablescheduling",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/enablescheduling", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13940,7 +13904,7 @@ pub mod compute_node {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -13970,7 +13934,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -13989,7 +13953,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -14024,12 +13988,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/remoteloginsettings",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/remoteloginsettings", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14100,7 +14060,7 @@ pub mod compute_node {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -14130,7 +14090,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -14149,7 +14109,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -14184,12 +14144,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/rdp",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/rdp", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14283,7 +14239,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
@@ -14302,7 +14258,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -14338,12 +14294,8 @@ pub mod compute_node {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/uploadbatchservicelogs",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/uploadbatchservicelogs", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14414,7 +14366,7 @@ pub mod compute_node {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -14446,7 +14398,7 @@ pub mod compute_node {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-nodes-in-a-pool."]
@@ -14480,7 +14432,7 @@ pub mod compute_node {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -14550,7 +14502,8 @@ pub mod compute_node {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pools/{}/nodes", self.client.endpoint(), &self.pool_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes", &self.pool_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14661,7 +14614,7 @@ pub mod compute_node_extension {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -14693,7 +14646,7 @@ pub mod compute_node_extension {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $select clause."]
@@ -14717,7 +14670,7 @@ pub mod compute_node_extension {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -14755,13 +14708,11 @@ pub mod compute_node_extension {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/extensions/{}",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id,
-                    &self.extension_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/pools/{}/nodes/{}/extensions/{}",
+                    &self.pool_id, &self.node_id, &self.extension_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14832,7 +14783,7 @@ pub mod compute_node_extension {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
             #[doc = "The time at which the resource was last modified."]
-            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+            pub fn last_modified(&self) -> azure_core::Result<::time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
         }
@@ -14864,7 +14815,7 @@ pub mod compute_node_extension {
             pub(crate) timeout: Option<i32>,
             pub(crate) client_request_id: Option<String>,
             pub(crate) return_client_request_id: Option<bool>,
-            pub(crate) ocp_date: Option<time::OffsetDateTime>,
+            pub(crate) ocp_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "An OData $select clause."]
@@ -14893,7 +14844,7 @@ pub mod compute_node_extension {
                 self
             }
             #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
-            pub fn ocp_date(mut self, ocp_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn ocp_date(mut self, ocp_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
@@ -14960,12 +14911,8 @@ pub mod compute_node_extension {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/pools/{}/nodes/{}/extensions",
-                    self.client.endpoint(),
-                    &self.pool_id,
-                    &self.node_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pools/{}/nodes/{}/extensions", &self.pool_id, &self.node_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

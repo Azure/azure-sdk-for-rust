@@ -906,7 +906,7 @@ pub struct EventSubscriptionProperties {
     pub labels: Vec<String>,
     #[doc = "Expiration time of the event subscription."]
     #[serde(rename = "expirationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time_utc: Option<time::OffsetDateTime>,
+    pub expiration_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The event delivery schema for the event subscription."]
     #[serde(rename = "eventDeliverySchema", default, skip_serializing_if = "Option::is_none")]
     pub event_delivery_schema: Option<event_subscription_properties::EventDeliverySchema>,
@@ -1041,7 +1041,7 @@ pub struct EventSubscriptionUpdateParameters {
     pub labels: Vec<String>,
     #[doc = "Information about the expiration time for the event subscription."]
     #[serde(rename = "expirationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time_utc: Option<time::OffsetDateTime>,
+    pub expiration_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The event delivery schema for the event subscription."]
     #[serde(rename = "eventDeliverySchema", default, skip_serializing_if = "Option::is_none")]
     pub event_delivery_schema: Option<event_subscription_update_parameters::EventDeliverySchema>,
@@ -2967,7 +2967,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -2976,7 +2976,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

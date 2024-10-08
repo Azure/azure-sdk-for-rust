@@ -296,25 +296,6 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
-        #[doc = "Trigger pending cluster upgrades if any. Bypasses any upgrade preferences set by customer."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
-        #[doc = "* `cluster_name`: The name of the Event Hubs Cluster."]
-        pub fn trigger_upgrade_post(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            cluster_name: impl Into<String>,
-        ) -> trigger_upgrade_post::RequestBuilder {
-            trigger_upgrade_post::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                cluster_name: cluster_name.into(),
-            }
-        }
     }
     pub mod list_available_cluster_region {
         use super::models;
@@ -390,11 +371,11 @@ pub mod clusters {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.EventHub/availableClusterRegions",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.EventHub/availableClusterRegions",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -516,11 +497,11 @@ pub mod clusters {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.EventHub/clusters",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.EventHub/clusters",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -631,12 +612,11 @@ pub mod clusters {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -722,13 +702,11 @@ pub mod clusters {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.cluster_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.cluster_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -827,13 +805,11 @@ pub mod clusters {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.cluster_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.cluster_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -960,13 +936,11 @@ pub mod clusters {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.cluster_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.cluster_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1086,13 +1060,11 @@ pub mod clusters {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.cluster_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.cluster_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1178,13 +1150,11 @@ pub mod clusters {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}/namespaces",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.cluster_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}/namespaces",
+                    &self.subscription_id, &self.resource_group_name, &self.cluster_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1203,94 +1173,6 @@ pub mod clusters {
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod trigger_upgrade_post {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) cluster_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}/triggerUpgrade",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.cluster_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2024-01-01");
-                }
-                Ok(url)
             }
         }
     }
@@ -1723,11 +1605,11 @@ pub mod namespaces {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.EventHub/namespaces",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.EventHub/namespaces",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1838,12 +1720,11 @@ pub mod namespaces {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1929,13 +1810,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2034,13 +1913,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2168,13 +2045,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2266,13 +2141,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2358,13 +2231,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkRuleSets/default",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkRuleSets/default",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2464,13 +2335,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkRuleSets/default",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkRuleSets/default",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2568,13 +2437,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkRuleSets",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkRuleSets",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2698,13 +2565,11 @@ pub mod namespaces {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2791,14 +2656,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.authorization_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.authorization_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2899,14 +2761,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.authorization_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.authorization_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3000,14 +2859,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.authorization_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.authorization_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3095,14 +2951,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules/{}/listKeys",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.authorization_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules/{}/listKeys",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.authorization_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3203,14 +3056,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules/{}/regenerateKeys",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.authorization_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/authorizationRules/{}/regenerateKeys",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.authorization_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3308,11 +3158,11 @@ pub mod namespaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.EventHub/checkNameAvailability",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.EventHub/checkNameAvailability",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3534,13 +3384,11 @@ pub mod private_endpoint_connections {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/privateEndpointConnections",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/privateEndpointConnections",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3627,14 +3475,11 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/privateEndpointConnections/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.private_endpoint_connection_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/privateEndpointConnections/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.private_endpoint_connection_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3735,14 +3580,11 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/privateEndpointConnections/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.private_endpoint_connection_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/privateEndpointConnections/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.private_endpoint_connection_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3835,14 +3677,11 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/privateEndpointConnections/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.private_endpoint_connection_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/privateEndpointConnections/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.private_endpoint_connection_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3957,13 +3796,11 @@ pub mod private_link_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/privateLinkResources",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/privateLinkResources",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4090,7 +3927,11 @@ pub mod network_security_perimeter_configuration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkSecurityPerimeterConfigurations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkSecurityPerimeterConfigurations",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4216,7 +4057,8 @@ pub mod network_security_perimeter_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkSecurityPerimeterConfigurations/{}/reconcile" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . resource_association_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/networkSecurityPerimeterConfigurations/{}/reconcile" , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . resource_association_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4353,13 +4195,11 @@ pub mod configuration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}/quotaConfiguration/default",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.cluster_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}/quotaConfiguration/default",
+                    &self.subscription_id, &self.resource_group_name, &self.cluster_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4459,13 +4299,11 @@ pub mod configuration {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}/quotaConfiguration/default",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.cluster_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/clusters/{}/quotaConfiguration/default",
+                    &self.subscription_id, &self.resource_group_name, &self.cluster_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4826,7 +4664,8 @@ pub mod disaster_recovery_configs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/authorizationRules" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . alias)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/authorizationRules" , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . alias)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4914,7 +4753,8 @@ pub mod disaster_recovery_configs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/authorizationRules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . alias , & self . authorization_rule_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/authorizationRules/{}" , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . alias , & self . authorization_rule_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5015,7 +4855,8 @@ pub mod disaster_recovery_configs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/authorizationRules/{}/listKeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . alias , & self . authorization_rule_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/authorizationRules/{}/listKeys" , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . alias , & self . authorization_rule_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5115,7 +4956,8 @@ pub mod disaster_recovery_configs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/checkNameAvailability" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/checkNameAvailability" , & self . subscription_id , & self . resource_group_name , & self . namespace_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5239,13 +5081,11 @@ pub mod disaster_recovery_configs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5332,14 +5172,11 @@ pub mod disaster_recovery_configs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.alias
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.alias
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5440,14 +5277,11 @@ pub mod disaster_recovery_configs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.alias
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.alias
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5541,14 +5375,11 @@ pub mod disaster_recovery_configs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.alias
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.alias
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5631,7 +5462,8 @@ pub mod disaster_recovery_configs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/breakPairing" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . alias)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/breakPairing" , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . alias)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5714,14 +5546,11 @@ pub mod disaster_recovery_configs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/failover",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.alias
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/disasterRecoveryConfigs/{}/failover",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.alias
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6087,14 +5916,11 @@ pub mod event_hubs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.event_hub_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.event_hub_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6182,15 +6008,15 @@ pub mod event_hubs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.namespace_name,
                     &self.event_hub_name,
                     &self.authorization_rule_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6292,15 +6118,15 @@ pub mod event_hubs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.namespace_name,
                     &self.event_hub_name,
                     &self.authorization_rule_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6395,15 +6221,15 @@ pub mod event_hubs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.namespace_name,
                     &self.event_hub_name,
                     &self.authorization_rule_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6492,7 +6318,8 @@ pub mod event_hubs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}/listKeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . event_hub_name , & self . authorization_rule_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}/listKeys" , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . event_hub_name , & self . authorization_rule_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6594,7 +6421,8 @@ pub mod event_hubs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}/regenerateKeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . event_hub_name , & self . authorization_rule_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}/regenerateKeys" , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . event_hub_name , & self . authorization_rule_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6736,13 +6564,11 @@ pub mod event_hubs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6829,14 +6655,11 @@ pub mod event_hubs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.event_hub_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.event_hub_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6937,14 +6760,11 @@ pub mod event_hubs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.event_hub_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.event_hub_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7038,14 +6858,11 @@ pub mod event_hubs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.event_hub_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.event_hub_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7245,15 +7062,11 @@ pub mod consumer_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/consumergroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.event_hub_name,
-                    &self.consumer_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/consumergroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.event_hub_name, &self.consumer_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7355,15 +7168,11 @@ pub mod consumer_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/consumergroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.event_hub_name,
-                    &self.consumer_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/consumergroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.event_hub_name, &self.consumer_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7458,15 +7267,11 @@ pub mod consumer_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/consumergroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.event_hub_name,
-                    &self.consumer_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/consumergroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.event_hub_name, &self.consumer_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7597,14 +7402,11 @@ pub mod consumer_groups {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/consumergroups",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.event_hub_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/consumergroups",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.event_hub_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7727,7 +7529,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.EventHub/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.EventHub/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7957,13 +7760,11 @@ pub mod schema_registry {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/schemagroups",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/schemagroups",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8050,14 +7851,11 @@ pub mod schema_registry {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/schemagroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.schema_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/schemagroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.schema_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8158,14 +7956,11 @@ pub mod schema_registry {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/schemagroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.schema_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/schemagroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.schema_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8259,14 +8054,11 @@ pub mod schema_registry {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/schemagroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.schema_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/schemagroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.schema_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8476,13 +8268,11 @@ pub mod application_group {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/applicationGroups",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/applicationGroups",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8569,14 +8359,11 @@ pub mod application_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/applicationGroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.application_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/applicationGroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.application_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8677,14 +8464,11 @@ pub mod application_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/applicationGroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.application_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/applicationGroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.application_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8778,14 +8562,11 @@ pub mod application_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/applicationGroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.namespace_name,
-                    &self.application_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/applicationGroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.namespace_name, &self.application_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

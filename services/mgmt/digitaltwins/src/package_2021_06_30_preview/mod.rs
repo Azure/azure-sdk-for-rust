@@ -342,13 +342,11 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -447,13 +445,11 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -580,13 +576,11 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -711,13 +705,11 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -867,11 +859,11 @@ pub mod digital_twins {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -982,12 +974,11 @@ pub mod digital_twins {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1074,12 +1065,11 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DigitalTwins/locations/{}/checkNameAvailability",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DigitalTwins/locations/{}/checkNameAvailability",
+                    &self.subscription_id, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1301,13 +1291,11 @@ pub mod digital_twins_endpoint {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/endpoints",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/endpoints",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1394,14 +1382,11 @@ pub mod digital_twins_endpoint {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/endpoints/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name,
-                    &self.endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/endpoints/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name, &self.endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1501,14 +1486,11 @@ pub mod digital_twins_endpoint {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/endpoints/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name,
-                    &self.endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/endpoints/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name, &self.endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1634,14 +1616,11 @@ pub mod digital_twins_endpoint {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/endpoints/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name,
-                    &self.endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/endpoints/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name, &self.endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1804,7 +1783,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.DigitalTwins/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.DigitalTwins/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1941,13 +1921,11 @@ pub mod private_link_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateLinkResources",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateLinkResources",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2046,7 +2024,11 @@ pub mod private_link_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateLinkResources/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . resource_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateLinkResources/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name, &self.resource_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2242,7 +2224,8 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateEndpointConnections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateEndpointConnections" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2341,7 +2324,8 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2441,7 +2425,8 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2562,7 +2547,8 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2772,7 +2758,8 @@ pub mod time_series_database_connections {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/timeSeriesDatabaseConnections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/timeSeriesDatabaseConnections" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2859,7 +2846,8 @@ pub mod time_series_database_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/timeSeriesDatabaseConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . time_series_database_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/timeSeriesDatabaseConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . time_series_database_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2959,7 +2947,8 @@ pub mod time_series_database_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/timeSeriesDatabaseConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . time_series_database_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/timeSeriesDatabaseConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . time_series_database_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3085,7 +3074,8 @@ pub mod time_series_database_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/timeSeriesDatabaseConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . time_series_database_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/timeSeriesDatabaseConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . time_series_database_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

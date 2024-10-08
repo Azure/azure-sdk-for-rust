@@ -281,10 +281,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.VMwareCloudSimple/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.VMwareCloudSimple/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -384,13 +382,11 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/operationResults/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id,
-                    &self.operation_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/operationResults/{}",
+                    &self.subscription_id, &self.region_id, &self.operation_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -672,11 +668,11 @@ pub mod dedicated_cloud_nodes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -814,12 +810,11 @@ pub mod dedicated_cloud_nodes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -905,13 +900,11 @@ pub mod dedicated_cloud_nodes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.dedicated_cloud_node_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_node_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1028,13 +1021,11 @@ pub mod dedicated_cloud_nodes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.dedicated_cloud_node_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_node_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1162,13 +1153,11 @@ pub mod dedicated_cloud_nodes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.dedicated_cloud_node_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_node_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1261,13 +1250,11 @@ pub mod dedicated_cloud_nodes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.dedicated_cloud_node_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_node_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1534,11 +1521,11 @@ pub mod dedicated_cloud_services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1676,12 +1663,11 @@ pub mod dedicated_cloud_services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1767,13 +1753,11 @@ pub mod dedicated_cloud_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.dedicated_cloud_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1873,13 +1857,11 @@ pub mod dedicated_cloud_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.dedicated_cloud_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1979,13 +1961,11 @@ pub mod dedicated_cloud_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.dedicated_cloud_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2077,13 +2057,11 @@ pub mod dedicated_cloud_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.dedicated_cloud_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2227,12 +2205,11 @@ pub mod skus_availability {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/availabilities",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/availabilities",
+                    &self.subscription_id, &self.region_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2386,12 +2363,11 @@ pub mod private_clouds {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds",
+                    &self.subscription_id, &self.region_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2477,13 +2453,11 @@ pub mod private_clouds {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id,
-                    &self.pc_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}",
+                    &self.subscription_id, &self.region_id, &self.pc_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2670,13 +2644,11 @@ pub mod customization_policies {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/customizationPolicies",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id,
-                    &self.pc_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/customizationPolicies",
+                    &self.subscription_id, &self.region_id, &self.pc_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2763,14 +2735,11 @@ pub mod customization_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/customizationPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id,
-                    &self.pc_name,
-                    &self.customization_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/customizationPolicies/{}",
+                    &self.subscription_id, &self.region_id, &self.pc_name, &self.customization_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2947,13 +2916,11 @@ pub mod resource_pools {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/resourcePools",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id,
-                    &self.pc_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/resourcePools",
+                    &self.subscription_id, &self.region_id, &self.pc_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3040,14 +3007,11 @@ pub mod resource_pools {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/resourcePools/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id,
-                    &self.pc_name,
-                    &self.resource_pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/resourcePools/{}",
+                    &self.subscription_id, &self.region_id, &self.pc_name, &self.resource_pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3230,13 +3194,11 @@ pub mod virtual_machine_templates {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualMachineTemplates",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id,
-                    &self.pc_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualMachineTemplates",
+                    &self.subscription_id, &self.region_id, &self.pc_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3323,14 +3285,11 @@ pub mod virtual_machine_templates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualMachineTemplates/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id,
-                    &self.pc_name,
-                    &self.virtual_machine_template_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualMachineTemplates/{}",
+                    &self.subscription_id, &self.region_id, &self.pc_name, &self.virtual_machine_template_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3513,13 +3472,11 @@ pub mod virtual_networks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualNetworks",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id,
-                    &self.pc_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualNetworks",
+                    &self.subscription_id, &self.region_id, &self.pc_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3606,14 +3563,11 @@ pub mod virtual_networks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualNetworks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id,
-                    &self.pc_name,
-                    &self.virtual_network_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualNetworks/{}",
+                    &self.subscription_id, &self.region_id, &self.pc_name, &self.virtual_network_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3769,12 +3723,11 @@ pub mod usages {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/usages",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.region_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/usages",
+                    &self.subscription_id, &self.region_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4095,11 +4048,11 @@ pub mod virtual_machines {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4237,12 +4190,11 @@ pub mod virtual_machines {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4328,13 +4280,11 @@ pub mod virtual_machines {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.virtual_machine_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4445,13 +4395,11 @@ pub mod virtual_machines {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.virtual_machine_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4578,13 +4526,11 @@ pub mod virtual_machines {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.virtual_machine_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4722,13 +4668,11 @@ pub mod virtual_machines {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.virtual_machine_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4827,13 +4771,11 @@ pub mod virtual_machines {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}/start",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.virtual_machine_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}/start",
+                    &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4951,13 +4893,11 @@ pub mod virtual_machines {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}/stop",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.virtual_machine_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}/stop",
+                    &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

@@ -652,10 +652,10 @@ pub mod consumer_group {
     pub struct Properties {
         #[doc = "Exact time the message was created."]
         #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-        pub created_at: Option<time::OffsetDateTime>,
+        pub created_at: Option<::time::OffsetDateTime>,
         #[doc = "The exact time the message was updated."]
         #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-        pub updated_at: Option<time::OffsetDateTime>,
+        pub updated_at: Option<::time::OffsetDateTime>,
         #[doc = "User Metadata is a placeholder to store user-defined string data with maximum length 1024. e.g. it can be used to store descriptive data, such as list of teams and their contact information also user-defined configuration settings can be stored."]
         #[serde(rename = "userMetadata", default, skip_serializing_if = "Option::is_none")]
         pub user_metadata: Option<String>,
@@ -778,10 +778,10 @@ pub mod eh_namespace {
         pub status: Option<String>,
         #[doc = "The time the Namespace was created."]
         #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-        pub created_at: Option<time::OffsetDateTime>,
+        pub created_at: Option<::time::OffsetDateTime>,
         #[doc = "The time the Namespace was updated."]
         #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-        pub updated_at: Option<time::OffsetDateTime>,
+        pub updated_at: Option<::time::OffsetDateTime>,
         #[doc = "Endpoint you can use to perform Service Bus operations."]
         #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
         pub service_bus_endpoint: Option<String>,
@@ -1135,10 +1135,10 @@ pub mod eventhub {
         pub partition_ids: Vec<String>,
         #[doc = "Exact time the Event Hub was created."]
         #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-        pub created_at: Option<time::OffsetDateTime>,
+        pub created_at: Option<::time::OffsetDateTime>,
         #[doc = "The exact time the message was updated."]
         #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-        pub updated_at: Option<time::OffsetDateTime>,
+        pub updated_at: Option<::time::OffsetDateTime>,
         #[doc = "Number of days to retain the events for this Event Hub, value should be 1 to 7 days"]
         #[serde(rename = "messageRetentionInDays", default, skip_serializing_if = "Option::is_none")]
         pub message_retention_in_days: Option<i64>,
@@ -1192,9 +1192,9 @@ pub struct FailOverProperties {
     #[doc = "Query parameter for the new primary location after failover."]
     #[serde(rename = "primaryLocation", default, skip_serializing_if = "Option::is_none")]
     pub primary_location: Option<String>,
-    #[doc = "Maximum time duration allowed complete data replication from primary to secondary. Use maximumGracePeriodInMins = 0: For Unplanned Geo-Failover, which switches the role between primary and secondary immediately. The data that is not being replicated yet will be discarded. Use maximumGracePeriodInMins > 0: For Planned Geo-Failover/DR Drill, continue replicating data until grace period expires.  Any data that is not replicated during the grace period will be discarded. During the replication the namespace stops accepting any new publishing requests"]
-    #[serde(rename = "maximumGracePeriodInMins", default, skip_serializing_if = "Option::is_none")]
-    pub maximum_grace_period_in_mins: Option<i32>,
+    #[doc = "If Force is false then graceful failover is attempted after ensuring no data loss. If Force flag is set to true, Forced failover is attempted with possible data loss."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub force: Option<bool>,
 }
 impl FailOverProperties {
     pub fn new() -> Self {
@@ -1350,6 +1350,9 @@ pub struct NamespaceReplicaLocation {
     #[doc = "GeoDR Role Types"]
     #[serde(rename = "roleType", default, skip_serializing_if = "Option::is_none")]
     pub role_type: Option<namespace_replica_location::RoleType>,
+    #[doc = "state of Namespace replica."]
+    #[serde(rename = "replicaState", default, skip_serializing_if = "Option::is_none")]
+    pub replica_state: Option<String>,
     #[doc = "Optional property that denotes the ARM ID of the Cluster. This is required, if a namespace replica should be placed in a Dedicated Event Hub Cluster"]
     #[serde(rename = "clusterArmId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_arm_id: Option<String>,
@@ -2347,7 +2350,6 @@ pub mod retention_description {
 pub struct SchemaGroup {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[doc = ""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<schema_group::Properties>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -2361,25 +2363,22 @@ impl SchemaGroup {
 }
 pub mod schema_group {
     use super::*;
-    #[doc = ""]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Exact time the Schema Group was updated"]
         #[serde(rename = "updatedAtUtc", default, with = "azure_core::date::rfc3339::option")]
-        pub updated_at_utc: Option<time::OffsetDateTime>,
+        pub updated_at_utc: Option<::time::OffsetDateTime>,
         #[doc = "Exact time the Schema Group was created."]
         #[serde(rename = "createdAtUtc", default, with = "azure_core::date::rfc3339::option")]
-        pub created_at_utc: Option<time::OffsetDateTime>,
+        pub created_at_utc: Option<::time::OffsetDateTime>,
         #[doc = "The ETag value."]
         #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
         pub e_tag: Option<String>,
         #[doc = "dictionary object for SchemaGroup group properties"]
         #[serde(rename = "groupProperties", default, skip_serializing_if = "Option::is_none")]
         pub group_properties: Option<serde_json::Value>,
-        #[doc = ""]
         #[serde(rename = "schemaCompatibility", default, skip_serializing_if = "Option::is_none")]
         pub schema_compatibility: Option<properties::SchemaCompatibility>,
-        #[doc = ""]
         #[serde(rename = "schemaType", default, skip_serializing_if = "Option::is_none")]
         pub schema_type: Option<properties::SchemaType>,
     }
@@ -2390,7 +2389,6 @@ pub mod schema_group {
     }
     pub mod properties {
         use super::*;
-        #[doc = ""]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         #[serde(remote = "SchemaCompatibility")]
         pub enum SchemaCompatibility {
@@ -2429,7 +2427,6 @@ pub mod schema_group {
                 }
             }
         }
-        #[doc = ""]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         #[serde(remote = "SchemaType")]
         pub enum SchemaType {
@@ -2729,7 +2726,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -2738,7 +2735,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

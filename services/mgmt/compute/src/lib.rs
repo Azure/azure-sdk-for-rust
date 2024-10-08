@@ -7,15 +7,15 @@
 #![allow(rustdoc::bare_urls)]
 #![allow(rustdoc::invalid_html_tags)]
 #![allow(rustdoc::broken_intra_doc_links)]
-#[cfg(feature = "package-2023-03-01")]
-pub mod package_2023_03_01;
-#[cfg(feature = "package-2023-04-02")]
-pub mod package_2023_04_02;
-#[cfg(feature = "package-2023-07-01")]
-pub mod package_2023_07_01;
-#[cfg(feature = "package-2023-09-01")]
-pub mod package_2023_09_01;
-#[cfg(feature = "package-2023-10-02")]
-pub mod package_2023_10_02;
-#[cfg(all(feature = "default_tag", feature = "package-2023-10-02"))]
-pub use package_2023_10_02::*;
+#[cfg(feature = "package-2024-03-01")]
+pub mod package_2024_03_01;
+#[cfg(feature = "package-2024-03-01-preview")]
+pub mod package_2024_03_01_preview;
+#[cfg(feature = "package-2024-03-02")]
+pub mod package_2024_03_02;
+#[cfg(feature = "package-2024-06-01-preview")]
+pub mod package_2024_06_01_preview;
+#[cfg(feature = "package-2024-07-01")]
+pub mod package_2024_07_01;
+#[cfg(all(feature = "default_tag", feature = "package-2024-07-01"))]
+pub use package_2024_07_01::*;

@@ -209,7 +209,8 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.HanaOnAzure/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.HanaOnAzure/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -229,7 +230,7 @@ pub mod sap_monitors {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of SAP monitors in the specified subscription."]
-        #[doc = "Gets a list of SAP monitors in the specified subscription. The operations returns various properties of each SAP monitor."]
+        #[doc = "The product Microsoft.Workloads/sapMonitors (AMS Classic) is officially retired as of May 31, 2023."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
@@ -240,7 +241,7 @@ pub mod sap_monitors {
             }
         }
         #[doc = "Gets properties of a SAP monitor."]
-        #[doc = "Gets properties of a SAP monitor for the specified subscription, resource group, and resource name."]
+        #[doc = "The product Microsoft.Workloads/sapMonitors (AMS Classic) is officially retired as of May 31, 2023."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
@@ -260,7 +261,7 @@ pub mod sap_monitors {
             }
         }
         #[doc = "Creates a SAP monitor."]
-        #[doc = "Creates a SAP monitor for the specified subscription, resource group, and resource name."]
+        #[doc = "The product Microsoft.Workloads/sapMonitors (AMS Classic) is officially retired as of May 31, 2023."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
@@ -283,7 +284,7 @@ pub mod sap_monitors {
             }
         }
         #[doc = "Patches the Tags field of a SAP monitor."]
-        #[doc = "Patches the Tags field of a SAP monitor for the specified subscription, resource group, and monitor name."]
+        #[doc = "The product Microsoft.Workloads/sapMonitors (AMS Classic) is officially retired as of May 31, 2023."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
@@ -306,7 +307,7 @@ pub mod sap_monitors {
             }
         }
         #[doc = "Deletes a SAP monitor."]
-        #[doc = "Deletes a SAP monitor with the specified subscription, resource group, and monitor name."]
+        #[doc = "The product Microsoft.Workloads/sapMonitors (AMS Classic) is officially retired as of May 31, 2023."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
@@ -426,11 +427,11 @@ pub mod sap_monitors {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.HanaOnAzure/sapMonitors",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.HanaOnAzure/sapMonitors",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -516,13 +517,11 @@ pub mod sap_monitors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sap_monitor_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.sap_monitor_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -564,6 +563,9 @@ pub mod sap_monitors {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -573,6 +575,13 @@ pub mod sap_monitors {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
         }
         #[derive(Clone)]
@@ -621,13 +630,11 @@ pub mod sap_monitors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sap_monitor_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.sap_monitor_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -755,13 +762,11 @@ pub mod sap_monitors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sap_monitor_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.sap_monitor_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -798,6 +803,9 @@ pub mod sap_monitors {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -807,6 +815,13 @@ pub mod sap_monitors {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
         }
         #[derive(Clone)]
@@ -853,13 +868,11 @@ pub mod sap_monitors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sap_monitor_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.sap_monitor_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -879,7 +892,7 @@ pub mod provider_instances {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of provider instances in the specified SAP monitor."]
-        #[doc = "Gets a list of provider instances in the specified SAP monitor. The operations returns various properties of each provider instances."]
+        #[doc = "The product Microsoft.Workloads/sapMonitors (AMS Classic) is officially retired as of May 31, 2023."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
@@ -899,7 +912,7 @@ pub mod provider_instances {
             }
         }
         #[doc = "Gets properties of a provider instance."]
-        #[doc = "Gets properties of a provider instance for the specified subscription, resource group, SapMonitor name, and resource name."]
+        #[doc = "The product Microsoft.Workloads/sapMonitors (AMS Classic) is officially retired as of May 31, 2023."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
@@ -922,7 +935,7 @@ pub mod provider_instances {
             }
         }
         #[doc = "Creates a provider instance."]
-        #[doc = "Creates a provider instance for the specified subscription, resource group, SapMonitor name, and resource name."]
+        #[doc = "The product Microsoft.Workloads/sapMonitors (AMS Classic) is officially retired as of May 31, 2023."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
@@ -948,7 +961,7 @@ pub mod provider_instances {
             }
         }
         #[doc = "Deletes a provider instance."]
-        #[doc = "Deletes a provider instance for the specified subscription, resource group, SapMonitor name, and resource name."]
+        #[doc = "The product Microsoft.Workloads/sapMonitors (AMS Classic) is officially retired as of May 31, 2023."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
@@ -1073,13 +1086,11 @@ pub mod provider_instances {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}/providerInstances",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sap_monitor_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}/providerInstances",
+                    &self.subscription_id, &self.resource_group_name, &self.sap_monitor_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1166,14 +1177,11 @@ pub mod provider_instances {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}/providerInstances/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sap_monitor_name,
-                    &self.provider_instance_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}/providerInstances/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.sap_monitor_name, &self.provider_instance_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1215,6 +1223,9 @@ pub mod provider_instances {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1224,6 +1235,13 @@ pub mod provider_instances {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
         }
         #[derive(Clone)]
@@ -1273,14 +1291,11 @@ pub mod provider_instances {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}/providerInstances/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sap_monitor_name,
-                    &self.provider_instance_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}/providerInstances/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.sap_monitor_name, &self.provider_instance_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1345,6 +1360,9 @@ pub mod provider_instances {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1354,6 +1372,13 @@ pub mod provider_instances {
         impl AsRef<azure_core::Response> for Response {
             fn as_ref(&self) -> &azure_core::Response {
                 self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
             }
         }
         #[derive(Clone)]
@@ -1401,14 +1426,11 @@ pub mod provider_instances {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}/providerInstances/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sap_monitor_name,
-                    &self.provider_instance_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HanaOnAzure/sapMonitors/{}/providerInstances/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.sap_monitor_name, &self.provider_instance_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

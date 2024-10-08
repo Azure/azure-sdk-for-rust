@@ -245,8 +245,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url =
-                    azure_core::Url::parse(&format!("{}/providers/Microsoft.ChangeAnalysis/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.ChangeAnalysis/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -274,8 +274,8 @@ pub mod resource_changes {
         pub fn list(
             &self,
             resource_id: impl Into<String>,
-            start_time: impl Into<time::OffsetDateTime>,
-            end_time: impl Into<time::OffsetDateTime>,
+            start_time: impl Into<::time::OffsetDateTime>,
+            end_time: impl Into<::time::OffsetDateTime>,
         ) -> list::RequestBuilder {
             list::RequestBuilder {
                 client: self.0.clone(),
@@ -339,8 +339,8 @@ pub mod resource_changes {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
-            pub(crate) start_time: time::OffsetDateTime,
-            pub(crate) end_time: time::OffsetDateTime,
+            pub(crate) start_time: ::time::OffsetDateTime,
+            pub(crate) end_time: ::time::OffsetDateTime,
             pub(crate) skip_token: Option<String>,
         }
         impl RequestBuilder {
@@ -402,11 +402,11 @@ pub mod resource_changes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ChangeAnalysis/resourceChanges",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ChangeAnalysis/resourceChanges",
                     &self.resource_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -436,8 +436,8 @@ pub mod changes {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            start_time: impl Into<time::OffsetDateTime>,
-            end_time: impl Into<time::OffsetDateTime>,
+            start_time: impl Into<::time::OffsetDateTime>,
+            end_time: impl Into<::time::OffsetDateTime>,
         ) -> list_changes_by_resource_group::RequestBuilder {
             list_changes_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
@@ -457,8 +457,8 @@ pub mod changes {
         pub fn list_changes_by_subscription(
             &self,
             subscription_id: impl Into<String>,
-            start_time: impl Into<time::OffsetDateTime>,
-            end_time: impl Into<time::OffsetDateTime>,
+            start_time: impl Into<::time::OffsetDateTime>,
+            end_time: impl Into<::time::OffsetDateTime>,
         ) -> list_changes_by_subscription::RequestBuilder {
             list_changes_by_subscription::RequestBuilder {
                 client: self.0.clone(),
@@ -523,8 +523,8 @@ pub mod changes {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) start_time: time::OffsetDateTime,
-            pub(crate) end_time: time::OffsetDateTime,
+            pub(crate) start_time: ::time::OffsetDateTime,
+            pub(crate) end_time: ::time::OffsetDateTime,
             pub(crate) skip_token: Option<String>,
         }
         impl RequestBuilder {
@@ -585,12 +585,11 @@ pub mod changes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ChangeAnalysis/changes",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ChangeAnalysis/changes",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -653,8 +652,8 @@ pub mod changes {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
-            pub(crate) start_time: time::OffsetDateTime,
-            pub(crate) end_time: time::OffsetDateTime,
+            pub(crate) start_time: ::time::OffsetDateTime,
+            pub(crate) end_time: ::time::OffsetDateTime,
             pub(crate) skip_token: Option<String>,
         }
         impl RequestBuilder {
@@ -715,11 +714,11 @@ pub mod changes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ChangeAnalysis/changes",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ChangeAnalysis/changes",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

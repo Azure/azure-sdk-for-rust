@@ -28,7 +28,7 @@ pub struct ApplyUpdateProperties {
     pub resource_id: Option<String>,
     #[doc = "Last Update time"]
     #[serde(rename = "lastUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_update_time: Option<time::OffsetDateTime>,
+    pub last_update_time: Option<::time::OffsetDateTime>,
 }
 impl ApplyUpdateProperties {
     pub fn new() -> Self {
@@ -532,10 +532,10 @@ impl MaintenanceError {
 pub struct MaintenanceOverrideProperties {
     #[doc = "Effective start date of the maintenance override window in YYYY-MM-DD hh:mm format. The start date can be set to either the current date or future date. The window will be created in the time zone provided and adjusted to daylight savings according to that time zone."]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Effective end date of the maintenance override window in YYYY-MM-DD hh:mm format. The window will be created in the time zone provided and adjusted to daylight savings according to that time zone. Expiration date must be set to a future date. If not provided, it will be set to the maximum datetime 9999-12-31 23:59:59."]
     #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_date_time: Option<time::OffsetDateTime>,
+    pub end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Name of the timezone. List of timezones can be obtained by executing [System.TimeZoneInfo]::GetSystemTimeZones() in PowerShell. Example: Pacific Standard Time, UTC, W. Europe Standard Time, Korea Standard Time, Cen. Australia Standard Time."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
@@ -677,7 +677,7 @@ pub struct Update {
     pub impact_duration_in_sec: Option<i32>,
     #[doc = "Time when Azure will start force updates if not self-updated by customer before this time"]
     #[serde(rename = "notBefore", default, with = "azure_core::date::rfc3339::option")]
-    pub not_before: Option<time::OffsetDateTime>,
+    pub not_before: Option<::time::OffsetDateTime>,
     #[doc = "Properties for update"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateProperties>,
@@ -872,7 +872,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -881,7 +881,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

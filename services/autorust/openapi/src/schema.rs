@@ -171,17 +171,17 @@ pub struct Schema {
     pub x_ms_secret: Option<bool>,
 
     /// indicates that the Definition Schema Object is a resource as defined by the Resource Manager API
-    /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-azure-resource
+    /// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-azure-resource
     #[serde(rename = "x-ms-azure-resource", skip_serializing_if = "Option::is_none")]
     pub x_ms_azure_resource: Option<bool>,
 
     /// provides insight to Autorest on how to generate code. It doesn't alter the modeling of what is actually sent on the wire
-    /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-mutability
+    /// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-mutability
     #[serde(rename = "x-ms-mutability", default, skip_serializing_if = "Vec::is_empty")]
     pub x_ms_mutability: Vec<MsMutability>,
 
     /// allows specific Definition Objects to be excluded from code generation
-    /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-external
+    /// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-external
     #[serde(rename = "x-ms-external", skip_serializing_if = "Option::is_none")]
     pub x_ms_external: Option<bool>,
 

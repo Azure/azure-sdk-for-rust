@@ -341,13 +341,11 @@ pub mod jobs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                ));
                 Ok(url)
             }
         }
@@ -429,14 +427,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.job_id
+                ));
                 Ok(url)
             }
         }
@@ -532,14 +527,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.job_id
+                ));
                 Ok(url)
             }
         }
@@ -635,14 +627,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.job_id
+                ));
                 Ok(url)
             }
         }
@@ -731,14 +720,11 @@ pub mod jobs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.job_id
+                ));
                 Ok(url)
             }
         }
@@ -867,13 +853,11 @@ pub mod providers {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/providerStatus",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/providerStatus",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                ));
                 Ok(url)
             }
         }
@@ -988,13 +972,11 @@ pub mod storage {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/storage/sasUri",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/storage/sasUri",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                ));
                 Ok(url)
             }
         }
@@ -1135,13 +1117,11 @@ pub mod quotas {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/quotas",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/quotas",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                ));
                 Ok(url)
             }
         }

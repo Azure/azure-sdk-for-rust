@@ -113,38 +113,7 @@ impl Client {
     }
 }
 impl Client {
-    #[doc = "Publishes a batch of events to an Azure Event Grid topic."]
-    #[doc = ""]
-    #[doc = "Arguments:"]
-    #[doc = "* `events`: An array of events to be published to Event Grid."]
-    pub fn publish_event_grid_events(&self, events: Vec<models::EventGridEvent>) -> publish_event_grid_events::RequestBuilder {
-        publish_event_grid_events::RequestBuilder {
-            client: self.clone(),
-            events,
-        }
-    }
-    #[doc = "Publishes a batch of events to an Azure Event Grid topic."]
-    #[doc = ""]
-    #[doc = "Arguments:"]
-    #[doc = "* `events`: An array of events to be published to Event Grid."]
-    pub fn publish_cloud_event_events(&self, events: Vec<models::CloudEventEvent>) -> publish_cloud_event_events::RequestBuilder {
-        publish_cloud_event_events::RequestBuilder {
-            client: self.clone(),
-            events,
-            aeg_channel_name: None,
-        }
-    }
-    #[doc = "Publishes a batch of events to an Azure Event Grid topic."]
-    #[doc = ""]
-    #[doc = "Arguments:"]
-    #[doc = "* `events`: An array of events to be published to Event Grid."]
-    pub fn publish_custom_event_events(&self, events: Vec<models::CustomEventEvent>) -> publish_custom_event_events::RequestBuilder {
-        publish_custom_event_events::RequestBuilder {
-            client: self.clone(),
-            events,
-        }
-    }
-    #[doc = "Publish Batch Cloud Event to namespace topic. In case of success, the server responds with an HTTP 200 status code with an empty JSON object in response. Otherwise, the server can return various error codes. For example, 401: which indicates authorization failure, 403: which indicates quota exceeded or message is too large, 410: which indicates that specific topic is not found, 400: for bad request, and 500: for internal server error. "]
+    #[doc = "Publish a batch of Cloud Events to a namespace topic."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `topic_name`: Topic Name."]
@@ -160,7 +129,7 @@ impl Client {
             events,
         }
     }
-    #[doc = "Publish Single Cloud Event to namespace topic. In case of success, the server responds with an HTTP 200 status code with an empty JSON object in response. Otherwise, the server can return various error codes. For example, 401: which indicates authorization failure, 403: which indicates quota exceeded or message is too large, 410: which indicates that specific topic is not found, 400: for bad request, and 500: for internal server error. "]
+    #[doc = "Publish a single Cloud Event to a namespace topic."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `topic_name`: Topic Name."]
@@ -176,7 +145,7 @@ impl Client {
             event: event.into(),
         }
     }
-    #[doc = "Receive Batch of Cloud Events from the Event Subscription."]
+    #[doc = "Receive a batch of Cloud Events from a subscription."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `topic_name`: Topic Name."]
@@ -194,330 +163,77 @@ impl Client {
             max_wait_time: None,
         }
     }
-    #[doc = "Acknowledge batch of Cloud Events. The server responds with an HTTP 200 status code if the request is successfully accepted. The response body will include the set of successfully acknowledged lockTokens, along with other failed lockTokens with their corresponding error information. Successfully acknowledged events will no longer be available to any consumer."]
+    #[doc = "Acknowledge a batch of Cloud Events. The response will include the set of successfully acknowledged lock tokens, along with other failed lock tokens with their corresponding error information. Successfully acknowledged events will no longer be available to be received by any consumer."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `topic_name`: Topic Name."]
     #[doc = "* `event_subscription_name`: Event Subscription Name."]
-    #[doc = "* `acknowledge_options`: AcknowledgeOptions."]
     pub fn acknowledge_cloud_events(
         &self,
         topic_name: impl Into<String>,
         event_subscription_name: impl Into<String>,
-        acknowledge_options: impl Into<models::AcknowledgeOptions>,
+        body: impl Into<serde_json::Value>,
     ) -> acknowledge_cloud_events::RequestBuilder {
         acknowledge_cloud_events::RequestBuilder {
             client: self.clone(),
             topic_name: topic_name.into(),
             event_subscription_name: event_subscription_name.into(),
-            acknowledge_options: acknowledge_options.into(),
+            body: body.into(),
         }
     }
-    #[doc = "Release batch of Cloud Events. The server responds with an HTTP 200 status code if the request is successfully accepted. The response body will include the set of successfully released lockTokens, along with other failed lockTokens with their corresponding error information."]
+    #[doc = "Release a batch of Cloud Events. The response will include the set of successfully released lock tokens, along with other failed lock tokens with their corresponding error information. Successfully released events can be received by consumers."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `topic_name`: Topic Name."]
     #[doc = "* `event_subscription_name`: Event Subscription Name."]
-    #[doc = "* `release_options`: ReleaseOptions"]
     pub fn release_cloud_events(
         &self,
         topic_name: impl Into<String>,
         event_subscription_name: impl Into<String>,
-        release_options: impl Into<models::ReleaseOptions>,
+        body: impl Into<serde_json::Value>,
     ) -> release_cloud_events::RequestBuilder {
         release_cloud_events::RequestBuilder {
             client: self.clone(),
             topic_name: topic_name.into(),
             event_subscription_name: event_subscription_name.into(),
-            release_options: release_options.into(),
+            body: body.into(),
             release_delay_in_seconds: None,
         }
     }
-    #[doc = "Reject batch of Cloud Events. The server responds with an HTTP 200 status code if the request is successfully accepted. The response body will include the set of successfully rejected lockTokens, along with other failed lockTokens with their corresponding error information."]
+    #[doc = "Reject a batch of Cloud Events. The response will include the set of successfully rejected lock tokens, along with other failed lock tokens with their corresponding error information. Successfully rejected events will be dead-lettered and can no longer be received by a consumer."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `topic_name`: Topic Name."]
     #[doc = "* `event_subscription_name`: Event Subscription Name."]
-    #[doc = "* `reject_options`: RejectOptions"]
     pub fn reject_cloud_events(
         &self,
         topic_name: impl Into<String>,
         event_subscription_name: impl Into<String>,
-        reject_options: impl Into<models::RejectOptions>,
+        body: impl Into<serde_json::Value>,
     ) -> reject_cloud_events::RequestBuilder {
         reject_cloud_events::RequestBuilder {
             client: self.clone(),
             topic_name: topic_name.into(),
             event_subscription_name: event_subscription_name.into(),
-            reject_options: reject_options.into(),
+            body: body.into(),
         }
     }
-    #[doc = "Renew lock for batch of Cloud Events. The server responds with an HTTP 200 status code if the request is successfully accepted. The response body will include the set of successfully renewed lockTokens, along with other failed lockTokens with their corresponding error information."]
+    #[doc = "Renew locks for a batch of Cloud Events. The response will include the set of successfully renewed lock tokens, along with other failed lock tokens with their corresponding error information. Successfully renewed locks will ensure that the associated event is only available to the consumer that holds the renewed lock."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `topic_name`: Topic Name."]
     #[doc = "* `event_subscription_name`: Event Subscription Name."]
-    #[doc = "* `renew_lock_options`: RenewLockOptions"]
     pub fn renew_cloud_event_locks(
         &self,
         topic_name: impl Into<String>,
         event_subscription_name: impl Into<String>,
-        renew_lock_options: impl Into<models::RenewLockOptions>,
+        body: impl Into<serde_json::Value>,
     ) -> renew_cloud_event_locks::RequestBuilder {
         renew_cloud_event_locks::RequestBuilder {
             client: self.clone(),
             topic_name: topic_name.into(),
             event_subscription_name: event_subscription_name.into(),
-            renew_lock_options: renew_lock_options.into(),
-        }
-    }
-}
-pub mod publish_event_grid_events {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    #[derive(Debug)]
-    pub struct Response(azure_core::Response);
-    impl Response {
-        pub fn into_raw_response(self) -> azure_core::Response {
-            self.0
-        }
-        pub fn as_raw_response(&self) -> &azure_core::Response {
-            &self.0
-        }
-    }
-    impl From<Response> for azure_core::Response {
-        fn from(rsp: Response) -> Self {
-            rsp.into_raw_response()
-        }
-    }
-    impl AsRef<azure_core::Response> for Response {
-        fn as_ref(&self) -> &azure_core::Response {
-            self.as_raw_response()
-        }
-    }
-    #[derive(Clone)]
-    #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-    #[doc = r""]
-    #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-    #[doc = r" parameters can be chained."]
-    #[doc = r""]
-    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-    #[doc = r" executes the request and returns a `Result` with the parsed"]
-    #[doc = r" response."]
-    #[doc = r""]
-    #[doc = r" In order to execute the request without polling the service"]
-    #[doc = r" until the operation completes, use `.send().await` instead."]
-    #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details"]
-    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-    #[doc = r" can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-    #[doc = r" that resolves to a lower-level [`Response`] value."]
-    pub struct RequestBuilder {
-        pub(crate) client: super::Client,
-        pub(crate) events: Vec<models::EventGridEvent>,
-    }
-    impl RequestBuilder {
-        #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-        #[doc = ""]
-        #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-        #[doc = "However, this function can provide more flexibility when required."]
-        pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-            Box::pin({
-                let this = self.clone();
-                async move {
-                    let url = this.url()?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let bearer_token = this.client.bearer_token().await?;
-                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                    req.insert_header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&this.events)?;
-                    req.set_body(req_body);
-                    Ok(Response(this.client.send(&mut req).await?))
-                }
-            })
-        }
-        fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}?overload=EventGridEvent", self.client.endpoint(),))?;
-            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-            if !has_api_version_already {
-                url.query_pairs_mut()
-                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01");
-            }
-            Ok(url)
-        }
-    }
-}
-pub mod publish_cloud_event_events {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    #[derive(Debug)]
-    pub struct Response(azure_core::Response);
-    impl Response {
-        pub fn into_raw_response(self) -> azure_core::Response {
-            self.0
-        }
-        pub fn as_raw_response(&self) -> &azure_core::Response {
-            &self.0
-        }
-    }
-    impl From<Response> for azure_core::Response {
-        fn from(rsp: Response) -> Self {
-            rsp.into_raw_response()
-        }
-    }
-    impl AsRef<azure_core::Response> for Response {
-        fn as_ref(&self) -> &azure_core::Response {
-            self.as_raw_response()
-        }
-    }
-    #[derive(Clone)]
-    #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-    #[doc = r""]
-    #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-    #[doc = r" parameters can be chained."]
-    #[doc = r""]
-    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-    #[doc = r" executes the request and returns a `Result` with the parsed"]
-    #[doc = r" response."]
-    #[doc = r""]
-    #[doc = r" In order to execute the request without polling the service"]
-    #[doc = r" until the operation completes, use `.send().await` instead."]
-    #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details"]
-    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-    #[doc = r" can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-    #[doc = r" that resolves to a lower-level [`Response`] value."]
-    pub struct RequestBuilder {
-        pub(crate) client: super::Client,
-        pub(crate) events: Vec<models::CloudEventEvent>,
-        pub(crate) aeg_channel_name: Option<String>,
-    }
-    impl RequestBuilder {
-        #[doc = "Required only when publishing to partner namespaces with partner topic routing mode ChannelNameHeader."]
-        pub fn aeg_channel_name(mut self, aeg_channel_name: impl Into<String>) -> Self {
-            self.aeg_channel_name = Some(aeg_channel_name.into());
-            self
-        }
-        #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-        #[doc = ""]
-        #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-        #[doc = "However, this function can provide more flexibility when required."]
-        pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-            Box::pin({
-                let this = self.clone();
-                async move {
-                    let url = this.url()?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let bearer_token = this.client.bearer_token().await?;
-                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                    req.insert_header("content-type", "application/cloudevents-batch+json; charset=utf-8");
-                    let req_body = azure_core::to_json(&this.events)?;
-                    if let Some(aeg_channel_name) = &this.aeg_channel_name {
-                        req.insert_header("aeg-channel-name", aeg_channel_name);
-                    }
-                    req.set_body(req_body);
-                    Ok(Response(this.client.send(&mut req).await?))
-                }
-            })
-        }
-        fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}?overload=cloudEvent", self.client.endpoint(),))?;
-            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-            if !has_api_version_already {
-                url.query_pairs_mut()
-                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01");
-            }
-            Ok(url)
-        }
-    }
-}
-pub mod publish_custom_event_events {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    #[derive(Debug)]
-    pub struct Response(azure_core::Response);
-    impl Response {
-        pub fn into_raw_response(self) -> azure_core::Response {
-            self.0
-        }
-        pub fn as_raw_response(&self) -> &azure_core::Response {
-            &self.0
-        }
-    }
-    impl From<Response> for azure_core::Response {
-        fn from(rsp: Response) -> Self {
-            rsp.into_raw_response()
-        }
-    }
-    impl AsRef<azure_core::Response> for Response {
-        fn as_ref(&self) -> &azure_core::Response {
-            self.as_raw_response()
-        }
-    }
-    #[derive(Clone)]
-    #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-    #[doc = r""]
-    #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-    #[doc = r" parameters can be chained."]
-    #[doc = r""]
-    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-    #[doc = r" executes the request and returns a `Result` with the parsed"]
-    #[doc = r" response."]
-    #[doc = r""]
-    #[doc = r" In order to execute the request without polling the service"]
-    #[doc = r" until the operation completes, use `.send().await` instead."]
-    #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details"]
-    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-    #[doc = r" can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-    #[doc = r" that resolves to a lower-level [`Response`] value."]
-    pub struct RequestBuilder {
-        pub(crate) client: super::Client,
-        pub(crate) events: Vec<models::CustomEventEvent>,
-    }
-    impl RequestBuilder {
-        #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-        #[doc = ""]
-        #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-        #[doc = "However, this function can provide more flexibility when required."]
-        pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-            Box::pin({
-                let this = self.clone();
-                async move {
-                    let url = this.url()?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let bearer_token = this.client.bearer_token().await?;
-                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                    req.insert_header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&this.events)?;
-                    req.set_body(req_body);
-                    Ok(Response(this.client.send(&mut req).await?))
-                }
-            })
-        }
-        fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}?overload=customEvent", self.client.endpoint(),))?;
-            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-            if !has_api_version_already {
-                url.query_pairs_mut()
-                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-01");
-            }
-            Ok(url)
+            body: body.into(),
         }
     }
 }
@@ -597,11 +313,8 @@ pub mod publish_cloud_events {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}:publish?_overload=publishCloudEvents",
-                self.client.endpoint(),
-                &self.topic_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/topics/{}:publish?_overload=publishCloudEvents", &self.topic_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -699,7 +412,8 @@ pub mod publish_cloud_event {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/topics/{}:publish", self.client.endpoint(), &self.topic_name))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/topics/{}:publish", &self.topic_name));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -817,12 +531,11 @@ pub mod receive_cloud_events {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}/eventsubscriptions/{}:receive",
-                self.client.endpoint(),
-                &self.topic_name,
-                &self.event_subscription_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/topics/{}/eventsubscriptions/{}:receive",
+                &self.topic_name, &self.event_subscription_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -898,7 +611,7 @@ pub mod acknowledge_cloud_events {
         pub(crate) client: super::Client,
         pub(crate) topic_name: String,
         pub(crate) event_subscription_name: String,
-        pub(crate) acknowledge_options: models::AcknowledgeOptions,
+        pub(crate) body: serde_json::Value,
     }
     impl RequestBuilder {
         #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -914,19 +627,18 @@ pub mod acknowledge_cloud_events {
                     let bearer_token = this.client.bearer_token().await?;
                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&this.acknowledge_options)?;
+                    let req_body = azure_core::to_json(&this.body)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}/eventsubscriptions/{}:acknowledge",
-                self.client.endpoint(),
-                &self.topic_name,
-                &self.event_subscription_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/topics/{}/eventsubscriptions/{}:acknowledge",
+                &self.topic_name, &self.event_subscription_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1002,13 +714,13 @@ pub mod release_cloud_events {
         pub(crate) client: super::Client,
         pub(crate) topic_name: String,
         pub(crate) event_subscription_name: String,
-        pub(crate) release_options: models::ReleaseOptions,
-        pub(crate) release_delay_in_seconds: Option<f64>,
+        pub(crate) body: serde_json::Value,
+        pub(crate) release_delay_in_seconds: Option<String>,
     }
     impl RequestBuilder {
         #[doc = "Release cloud events with the specified delay in seconds."]
-        pub fn release_delay_in_seconds(mut self, release_delay_in_seconds: f64) -> Self {
-            self.release_delay_in_seconds = Some(release_delay_in_seconds);
+        pub fn release_delay_in_seconds(mut self, release_delay_in_seconds: impl Into<String>) -> Self {
+            self.release_delay_in_seconds = Some(release_delay_in_seconds.into());
             self
         }
         #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -1026,22 +738,21 @@ pub mod release_cloud_events {
                     if let Some(release_delay_in_seconds) = &this.release_delay_in_seconds {
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair("releaseDelayInSeconds", &release_delay_in_seconds.to_string());
+                            .append_pair("releaseDelayInSeconds", release_delay_in_seconds);
                     }
                     req.insert_header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&this.release_options)?;
+                    let req_body = azure_core::to_json(&this.body)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}/eventsubscriptions/{}:release",
-                self.client.endpoint(),
-                &self.topic_name,
-                &self.event_subscription_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/topics/{}/eventsubscriptions/{}:release",
+                &self.topic_name, &self.event_subscription_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1117,7 +828,7 @@ pub mod reject_cloud_events {
         pub(crate) client: super::Client,
         pub(crate) topic_name: String,
         pub(crate) event_subscription_name: String,
-        pub(crate) reject_options: models::RejectOptions,
+        pub(crate) body: serde_json::Value,
     }
     impl RequestBuilder {
         #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -1133,19 +844,18 @@ pub mod reject_cloud_events {
                     let bearer_token = this.client.bearer_token().await?;
                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&this.reject_options)?;
+                    let req_body = azure_core::to_json(&this.body)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}/eventsubscriptions/{}:reject",
-                self.client.endpoint(),
-                &self.topic_name,
-                &self.event_subscription_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/topics/{}/eventsubscriptions/{}:reject",
+                &self.topic_name, &self.event_subscription_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1221,7 +931,7 @@ pub mod renew_cloud_event_locks {
         pub(crate) client: super::Client,
         pub(crate) topic_name: String,
         pub(crate) event_subscription_name: String,
-        pub(crate) renew_lock_options: models::RenewLockOptions,
+        pub(crate) body: serde_json::Value,
     }
     impl RequestBuilder {
         #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -1237,19 +947,18 @@ pub mod renew_cloud_event_locks {
                     let bearer_token = this.client.bearer_token().await?;
                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&this.renew_lock_options)?;
+                    let req_body = azure_core::to_json(&this.body)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/topics/{}/eventsubscriptions/{}:renewLock",
-                self.client.endpoint(),
-                &self.topic_name,
-                &self.event_subscription_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/topics/{}/eventsubscriptions/{}:renewLock",
+                &self.topic_name, &self.event_subscription_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()

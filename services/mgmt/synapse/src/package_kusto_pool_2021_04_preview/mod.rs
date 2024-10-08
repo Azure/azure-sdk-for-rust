@@ -242,7 +242,8 @@ pub mod kusto_operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Synapse/kustooperations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Synapse/kustooperations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -474,13 +475,11 @@ pub mod kusto_pools {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -579,14 +578,11 @@ pub mod kusto_pools {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.kusto_pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.kusto_pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -704,14 +700,11 @@ pub mod kusto_pools {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.kusto_pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.kusto_pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -848,14 +841,11 @@ pub mod kusto_pools {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.kusto_pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.kusto_pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -976,14 +966,11 @@ pub mod kusto_pools {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.kusto_pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.kusto_pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1070,12 +1057,11 @@ pub mod kusto_pools {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Synapse/locations/{}/kustoPoolCheckNameAvailability",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Synapse/locations/{}/kustoPoolCheckNameAvailability",
+                    &self.subscription_id, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1314,14 +1300,11 @@ pub mod databases {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.kusto_pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.kusto_pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1409,15 +1392,11 @@ pub mod databases {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.kusto_pool_name,
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.kusto_pool_name, &self.database_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1518,15 +1497,11 @@ pub mod databases {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.kusto_pool_name,
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.kusto_pool_name, &self.database_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1655,15 +1630,11 @@ pub mod databases {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.kusto_pool_name,
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.kusto_pool_name, &self.database_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1785,15 +1756,11 @@ pub mod databases {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.kusto_pool_name,
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.kusto_pool_name, &self.database_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2036,7 +2003,8 @@ pub mod data_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2125,7 +2093,8 @@ pub mod data_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . data_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . data_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2227,7 +2196,8 @@ pub mod data_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . data_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . data_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2357,7 +2327,8 @@ pub mod data_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . data_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . data_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2480,7 +2451,8 @@ pub mod data_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . data_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . data_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2679,14 +2651,11 @@ pub mod kusto_pool_principal_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/principalAssignments",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workspace_name,
-                    &self.kusto_pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/principalAssignments",
+                    &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.kusto_pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2774,15 +2743,15 @@ pub mod kusto_pool_principal_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/principalAssignments/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/principalAssignments/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.workspace_name,
                     &self.kusto_pool_name,
                     &self.principal_assignment_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2883,15 +2852,15 @@ pub mod kusto_pool_principal_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/principalAssignments/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/principalAssignments/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.workspace_name,
                     &self.kusto_pool_name,
                     &self.principal_assignment_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3013,15 +2982,15 @@ pub mod kusto_pool_principal_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/principalAssignments/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/principalAssignments/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.workspace_name,
                     &self.kusto_pool_name,
                     &self.principal_assignment_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3233,7 +3202,8 @@ pub mod database_principal_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/principalAssignments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/principalAssignments" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3322,7 +3292,8 @@ pub mod database_principal_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/principalAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . principal_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/principalAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . principal_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3424,7 +3395,8 @@ pub mod database_principal_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/principalAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . principal_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/principalAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . principal_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3547,7 +3519,8 @@ pub mod database_principal_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/principalAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . principal_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/principalAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . kusto_pool_name , & self . database_name , & self . principal_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

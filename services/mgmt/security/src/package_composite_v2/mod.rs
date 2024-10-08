@@ -111,12 +111,6 @@ impl Client {
             pipeline,
         }
     }
-    pub fn adaptive_application_controls_client(&self) -> adaptive_application_controls::Client {
-        adaptive_application_controls::Client(self.clone())
-    }
-    pub fn adaptive_network_hardenings_client(&self) -> adaptive_network_hardenings::Client {
-        adaptive_network_hardenings::Client(self.clone())
-    }
     pub fn advanced_threat_protection_client(&self) -> advanced_threat_protection::Client {
         advanced_threat_protection::Client(self.clone())
     }
@@ -250,430 +244,6 @@ impl Client {
     }
     pub fn workspace_settings_client(&self) -> workspace_settings::Client {
         workspace_settings::Client(self.clone())
-    }
-}
-pub mod adaptive_network_hardenings {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Gets a list of Adaptive Network Hardenings resources in scope of an extended resource."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: Azure subscription ID"]
-        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
-        #[doc = "* `resource_namespace`: The Namespace of the resource."]
-        #[doc = "* `resource_type`: The type of the resource."]
-        #[doc = "* `resource_name`: Name of the resource."]
-        pub fn list_by_extended_resource(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            resource_namespace: impl Into<String>,
-            resource_type: impl Into<String>,
-            resource_name: impl Into<String>,
-        ) -> list_by_extended_resource::RequestBuilder {
-            list_by_extended_resource::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                resource_namespace: resource_namespace.into(),
-                resource_type: resource_type.into(),
-                resource_name: resource_name.into(),
-            }
-        }
-        #[doc = "Gets a single Adaptive Network Hardening resource"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: Azure subscription ID"]
-        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
-        #[doc = "* `resource_namespace`: The Namespace of the resource."]
-        #[doc = "* `resource_type`: The type of the resource."]
-        #[doc = "* `resource_name`: Name of the resource."]
-        #[doc = "* `adaptive_network_hardening_resource_name`: The name of the Adaptive Network Hardening resource."]
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            resource_namespace: impl Into<String>,
-            resource_type: impl Into<String>,
-            resource_name: impl Into<String>,
-            adaptive_network_hardening_resource_name: impl Into<String>,
-        ) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                resource_namespace: resource_namespace.into(),
-                resource_type: resource_type.into(),
-                resource_name: resource_name.into(),
-                adaptive_network_hardening_resource_name: adaptive_network_hardening_resource_name.into(),
-            }
-        }
-        #[doc = "Enforces the given rules on the NSG(s) listed in the request"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: Azure subscription ID"]
-        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
-        #[doc = "* `resource_namespace`: The Namespace of the resource."]
-        #[doc = "* `resource_type`: The type of the resource."]
-        #[doc = "* `resource_name`: Name of the resource."]
-        #[doc = "* `adaptive_network_hardening_resource_name`: The name of the Adaptive Network Hardening resource."]
-        #[doc = "* `adaptive_network_hardening_enforce_action`: Enforces the given rules on the NSG(s) listed in the request"]
-        pub fn enforce(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            resource_namespace: impl Into<String>,
-            resource_type: impl Into<String>,
-            resource_name: impl Into<String>,
-            adaptive_network_hardening_resource_name: impl Into<String>,
-            adaptive_network_hardening_enforce_action: impl Into<String>,
-            body: impl Into<models::AdaptiveNetworkHardeningEnforceRequest>,
-        ) -> enforce::RequestBuilder {
-            enforce::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                resource_namespace: resource_namespace.into(),
-                resource_type: resource_type.into(),
-                resource_name: resource_name.into(),
-                adaptive_network_hardening_resource_name: adaptive_network_hardening_resource_name.into(),
-                adaptive_network_hardening_enforce_action: adaptive_network_hardening_enforce_action.into(),
-                body: body.into(),
-            }
-        }
-    }
-    pub mod list_by_extended_resource {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AdaptiveNetworkHardeningsList> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::AdaptiveNetworkHardeningsList = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) resource_namespace: String,
-            pub(crate) resource_type: String,
-            pub(crate) resource_name: String,
-        }
-        impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::AdaptiveNetworkHardeningsList, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
-                    let this = self.clone();
-                    async move {
-                        let mut url = this.url()?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let bearer_token = this.client.bearer_token().await?;
-                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2015-06-01-preview");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let bearer_token = this.client.bearer_token().await?;
-                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        };
-                        rsp?.into_body().await
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Security/adaptiveNetworkHardenings",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_namespace,
-                    &self.resource_type,
-                    &self.resource_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2015-06-01-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AdaptiveNetworkHardening> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::AdaptiveNetworkHardening = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) resource_namespace: String,
-            pub(crate) resource_type: String,
-            pub(crate) resource_name: String,
-            pub(crate) adaptive_network_hardening_resource_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Security/adaptiveNetworkHardenings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_namespace,
-                    &self.resource_type,
-                    &self.resource_name,
-                    &self.adaptive_network_hardening_resource_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2015-06-01-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::AdaptiveNetworkHardening>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AdaptiveNetworkHardening>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod enforce {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
-        #[doc = r" (LRO)."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the `RequestBuilder` into a future"]
-        #[doc = r" executes the request and polls the service until the"]
-        #[doc = r" operation completes."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use"]
-        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
-        #[doc = r" [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) resource_namespace: String,
-            pub(crate) resource_type: String,
-            pub(crate) resource_name: String,
-            pub(crate) adaptive_network_hardening_resource_name: String,
-            pub(crate) adaptive_network_hardening_enforce_action: String,
-            pub(crate) body: models::AdaptiveNetworkHardeningEnforceRequest,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Security/adaptiveNetworkHardenings/{}/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_namespace,
-                    &self.resource_type,
-                    &self.resource_name,
-                    &self.adaptive_network_hardening_resource_name,
-                    &self.adaptive_network_hardening_enforce_action
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2015-06-01-preview");
-                }
-                Ok(url)
-            }
-        }
     }
 }
 pub mod allowed_connections {
@@ -833,11 +403,11 @@ pub mod allowed_connections {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/allowedConnections",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/allowedConnections",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -948,12 +518,11 @@ pub mod allowed_connections {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/allowedConnections",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/allowedConnections",
+                    &self.subscription_id, &self.asc_location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1040,14 +609,11 @@ pub mod allowed_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/allowedConnections/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.connection_type
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/allowedConnections/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.connection_type
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1066,505 +632,6 @@ pub mod allowed_connections {
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-}
-pub mod adaptive_application_controls {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Gets a list of application control VM/server groups for the subscription."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: Azure subscription ID"]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
-            list::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                include_path_recommendations: None,
-                summary: None,
-            }
-        }
-        #[doc = "Gets an application control VM/server group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: Azure subscription ID"]
-        #[doc = "* `asc_location`: The location where ASC stores the data of the subscription. can be retrieved from Get locations"]
-        #[doc = "* `group_name`: Name of an application control VM/server group"]
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            asc_location: impl Into<String>,
-            group_name: impl Into<String>,
-        ) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                asc_location: asc_location.into(),
-                group_name: group_name.into(),
-            }
-        }
-        #[doc = "Update an application control VM/server group"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: Azure subscription ID"]
-        #[doc = "* `asc_location`: The location where ASC stores the data of the subscription. can be retrieved from Get locations"]
-        #[doc = "* `group_name`: Name of an application control VM/server group"]
-        #[doc = "* `body`: The updated VM/server group data"]
-        pub fn put(
-            &self,
-            subscription_id: impl Into<String>,
-            asc_location: impl Into<String>,
-            group_name: impl Into<String>,
-            body: impl Into<models::AppWhitelistingPutGroupData>,
-        ) -> put::RequestBuilder {
-            put::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                asc_location: asc_location.into(),
-                group_name: group_name.into(),
-                body: body.into(),
-            }
-        }
-        #[doc = "Delete an application control VM/server group"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: Azure subscription ID"]
-        #[doc = "* `asc_location`: The location where ASC stores the data of the subscription. can be retrieved from Get locations"]
-        #[doc = "* `group_name`: Name of an application control VM/server group"]
-        pub fn delete(
-            &self,
-            subscription_id: impl Into<String>,
-            asc_location: impl Into<String>,
-            group_name: impl Into<String>,
-        ) -> delete::RequestBuilder {
-            delete::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                asc_location: asc_location.into(),
-                group_name: group_name.into(),
-            }
-        }
-    }
-    pub mod list {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AppWhitelistingGroups> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::AppWhitelistingGroups = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) include_path_recommendations: Option<bool>,
-            pub(crate) summary: Option<bool>,
-        }
-        impl RequestBuilder {
-            #[doc = "Include the policy rules"]
-            pub fn include_path_recommendations(mut self, include_path_recommendations: bool) -> Self {
-                self.include_path_recommendations = Some(include_path_recommendations);
-                self
-            }
-            #[doc = "Return output in a summarized form"]
-            pub fn summary(mut self, summary: bool) -> Self {
-                self.summary = Some(summary);
-                self
-            }
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        if let Some(include_path_recommendations) = &this.include_path_recommendations {
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair("includePathRecommendations", &include_path_recommendations.to_string());
-                        }
-                        if let Some(summary) = &this.summary {
-                            req.url_mut().query_pairs_mut().append_pair("summary", &summary.to_string());
-                        }
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/applicationWhitelistings",
-                    self.client.endpoint(),
-                    &self.subscription_id
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2015-06-01-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::AppWhitelistingGroups>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AppWhitelistingGroups>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AppWhitelistingGroup> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::AppWhitelistingGroup = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) asc_location: String,
-            pub(crate) group_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/applicationWhitelistings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location,
-                    &self.group_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2015-06-01-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::AppWhitelistingGroup>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AppWhitelistingGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod put {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AppWhitelistingGroup> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::AppWhitelistingGroup = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) asc_location: String,
-            pub(crate) group_name: String,
-            pub(crate) body: models::AppWhitelistingPutGroupData,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/applicationWhitelistings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location,
-                    &self.group_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2015-06-01-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::AppWhitelistingGroup>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AppWhitelistingGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod delete {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) asc_location: String,
-            pub(crate) group_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/applicationWhitelistings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location,
-                    &self.group_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2015-06-01-preview");
-                }
-                Ok(url)
             }
         }
     }
@@ -1726,11 +793,11 @@ pub mod discovered_security_solutions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/discoveredSecuritySolutions",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/discoveredSecuritySolutions",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1841,12 +908,11 @@ pub mod discovered_security_solutions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/discoveredSecuritySolutions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/discoveredSecuritySolutions",
+                    &self.subscription_id, &self.asc_location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1933,14 +999,11 @@ pub mod discovered_security_solutions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/discoveredSecuritySolutions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.discovered_security_solution_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/discoveredSecuritySolutions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.discovered_security_solution_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2120,11 +1183,11 @@ pub mod external_security_solutions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/externalSecuritySolutions",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/externalSecuritySolutions",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2235,12 +1298,11 @@ pub mod external_security_solutions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/ExternalSecuritySolutions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/ExternalSecuritySolutions",
+                    &self.subscription_id, &self.asc_location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2327,14 +1389,11 @@ pub mod external_security_solutions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/ExternalSecuritySolutions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.external_security_solutions_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/ExternalSecuritySolutions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.external_security_solutions_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2622,11 +1681,11 @@ pub mod jit_network_access_policies {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/jitNetworkAccessPolicies",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/jitNetworkAccessPolicies",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2737,12 +1796,11 @@ pub mod jit_network_access_policies {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies",
+                    &self.subscription_id, &self.asc_location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2853,12 +1911,11 @@ pub mod jit_network_access_policies {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/jitNetworkAccessPolicies",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/jitNetworkAccessPolicies",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2970,13 +2027,11 @@ pub mod jit_network_access_policies {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3063,14 +2118,11 @@ pub mod jit_network_access_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.jit_network_access_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.jit_network_access_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3171,14 +2223,11 @@ pub mod jit_network_access_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.jit_network_access_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.jit_network_access_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3272,14 +2321,11 @@ pub mod jit_network_access_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.jit_network_access_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.jit_network_access_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3369,15 +2415,15 @@ pub mod jit_network_access_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies/{}/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/jitNetworkAccessPolicies/{}/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.asc_location,
                     &self.jit_network_access_policy_name,
                     &self.jit_network_access_policy_initiate_type
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3531,11 +2577,11 @@ pub mod locations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3620,12 +2666,11 @@ pub mod locations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}",
+                    &self.subscription_id, &self.asc_location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3760,7 +2805,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Security/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Security/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4025,11 +3071,11 @@ pub mod tasks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/tasks",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/tasks",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4149,12 +3195,11 @@ pub mod tasks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/tasks",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/tasks",
+                    &self.subscription_id, &self.asc_location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4240,13 +3285,11 @@ pub mod tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/tasks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/tasks/{}",
+                    &self.subscription_id, &self.asc_location, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4341,14 +3384,11 @@ pub mod tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/tasks/{}/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location,
-                    &self.task_name,
-                    &self.task_update_action_type
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/tasks/{}/{}",
+                    &self.subscription_id, &self.asc_location, &self.task_name, &self.task_update_action_type
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4469,13 +3509,11 @@ pub mod tasks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/tasks",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/tasks",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4562,14 +3600,11 @@ pub mod tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/tasks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/tasks/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4665,15 +3700,11 @@ pub mod tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/tasks/{}/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.task_name,
-                    &self.task_update_action_type
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/tasks/{}/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.task_name, &self.task_update_action_type
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4841,11 +3872,11 @@ pub mod topology {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/topologies",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/topologies",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4956,12 +3987,11 @@ pub mod topology {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/topologies",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/topologies",
+                    &self.subscription_id, &self.asc_location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5048,14 +4078,11 @@ pub mod topology {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/topologies/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.topology_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/topologies/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.topology_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5193,12 +4220,11 @@ pub mod advanced_threat_protection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/advancedThreatProtectionSettings/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.setting_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/advancedThreatProtectionSettings/{}",
+                    &self.resource_id, &self.setting_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5297,12 +4323,11 @@ pub mod advanced_threat_protection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/advancedThreatProtectionSettings/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.setting_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/advancedThreatProtectionSettings/{}",
+                    &self.resource_id, &self.setting_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5475,11 +4500,11 @@ pub mod auto_provisioning_settings {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/autoProvisioningSettings",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/autoProvisioningSettings",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5564,12 +4589,11 @@ pub mod auto_provisioning_settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/autoProvisioningSettings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.setting_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/autoProvisioningSettings/{}",
+                    &self.subscription_id, &self.setting_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5668,12 +4692,11 @@ pub mod auto_provisioning_settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/autoProvisioningSettings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.setting_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/autoProvisioningSettings/{}",
+                    &self.subscription_id, &self.setting_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5827,11 +4850,8 @@ pub mod compliances {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/compliances",
-                    self.client.endpoint(),
-                    &self.scope
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.Security/compliances", &self.scope));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5916,12 +4936,11 @@ pub mod compliances {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/compliances/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.compliance_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/compliances/{}",
+                    &self.scope, &self.compliance_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6106,11 +5125,8 @@ pub mod device_security_groups {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/deviceSecurityGroups",
-                    self.client.endpoint(),
-                    &self.resource_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.Security/deviceSecurityGroups", &self.resource_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6195,12 +5211,11 @@ pub mod device_security_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/deviceSecurityGroups/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.device_security_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/deviceSecurityGroups/{}",
+                    &self.resource_id, &self.device_security_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6299,12 +5314,11 @@ pub mod device_security_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/deviceSecurityGroups/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.device_security_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/deviceSecurityGroups/{}",
+                    &self.resource_id, &self.device_security_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6396,12 +5410,11 @@ pub mod device_security_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/deviceSecurityGroups/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.device_security_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/deviceSecurityGroups/{}",
+                    &self.resource_id, &self.device_security_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6537,12 +5550,11 @@ pub mod information_protection_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/informationProtectionPolicies/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.information_protection_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/informationProtectionPolicies/{}",
+                    &self.scope, &self.information_protection_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6641,12 +5653,11 @@ pub mod information_protection_policies {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/informationProtectionPolicies/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.information_protection_policy_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/informationProtectionPolicies/{}",
+                    &self.scope, &self.information_protection_policy_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6768,11 +5779,11 @@ pub mod information_protection_policies {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/informationProtectionPolicies",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/informationProtectionPolicies",
                     &self.scope
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6906,13 +5917,11 @@ pub mod io_t_security_solutions_analytics {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.solution_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels",
+                    &self.subscription_id, &self.resource_group_name, &self.solution_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7010,13 +6019,11 @@ pub mod io_t_security_solutions_analytics {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.solution_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default",
+                    &self.subscription_id, &self.resource_group_name, &self.solution_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7179,7 +6186,8 @@ pub mod io_t_security_solutions_analytics_aggregated_alerts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedAlerts" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . solution_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedAlerts" , & self . subscription_id , & self . resource_group_name , & self . solution_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7320,7 +6328,8 @@ pub mod io_t_security_solutions_analytics_aggregated_alert {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedAlerts/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . solution_name , & self . aggregated_alert_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedAlerts/{}" , & self . subscription_id , & self . resource_group_name , & self . solution_name , & self . aggregated_alert_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7415,7 +6424,8 @@ pub mod io_t_security_solutions_analytics_aggregated_alert {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedAlerts/{}/dismiss" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . solution_name , & self . aggregated_alert_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedAlerts/{}/dismiss" , & self . subscription_id , & self . resource_group_name , & self . solution_name , & self . aggregated_alert_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7534,7 +6544,8 @@ pub mod io_t_security_solutions_analytics_recommendation {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedRecommendations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . solution_name , & self . aggregated_recommendation_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedRecommendations/{}" , & self . subscription_id , & self . resource_group_name , & self . solution_name , & self . aggregated_recommendation_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7697,7 +6708,8 @@ pub mod io_t_security_solutions_analytics_recommendations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedRecommendations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . solution_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedRecommendations" , & self . subscription_id , & self . resource_group_name , & self . solution_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7837,11 +6849,11 @@ pub mod io_t_security_solutions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/iotSecuritySolutions",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/iotSecuritySolutions",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7984,12 +6996,11 @@ pub mod io_t_security_solutions_resource_group {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8167,13 +7178,11 @@ pub mod iot_security_solution {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.solution_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.solution_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8273,13 +7282,11 @@ pub mod iot_security_solution {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.solution_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.solution_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8379,13 +7386,11 @@ pub mod iot_security_solution {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.solution_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.solution_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8478,13 +7483,11 @@ pub mod iot_security_solution {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.solution_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.solution_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8645,11 +7648,11 @@ pub mod settings {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/settings",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/settings",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8734,12 +7737,11 @@ pub mod settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/settings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.setting_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/settings/{}",
+                    &self.subscription_id, &self.setting_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8838,12 +7840,11 @@ pub mod settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/settings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.setting_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/settings/{}",
+                    &self.subscription_id, &self.setting_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9047,11 +8048,11 @@ pub mod workspace_settings {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/workspaceSettings",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/workspaceSettings",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9136,12 +8137,11 @@ pub mod workspace_settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/workspaceSettings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.workspace_setting_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/workspaceSettings/{}",
+                    &self.subscription_id, &self.workspace_setting_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9240,12 +8240,11 @@ pub mod workspace_settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/workspaceSettings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.workspace_setting_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/workspaceSettings/{}",
+                    &self.subscription_id, &self.workspace_setting_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9344,12 +8343,11 @@ pub mod workspace_settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/workspaceSettings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.workspace_setting_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/workspaceSettings/{}",
+                    &self.subscription_id, &self.workspace_setting_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9441,12 +8439,11 @@ pub mod workspace_settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/workspaceSettings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.workspace_setting_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/workspaceSettings/{}",
+                    &self.subscription_id, &self.workspace_setting_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9633,11 +8630,11 @@ pub mod alerts_suppression_rules {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/alertsSuppressionRules",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/alertsSuppressionRules",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9722,12 +8719,11 @@ pub mod alerts_suppression_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/alertsSuppressionRules/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.alerts_suppression_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/alertsSuppressionRules/{}",
+                    &self.subscription_id, &self.alerts_suppression_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9826,12 +8822,11 @@ pub mod alerts_suppression_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/alertsSuppressionRules/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.alerts_suppression_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/alertsSuppressionRules/{}",
+                    &self.subscription_id, &self.alerts_suppression_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9923,12 +8918,11 @@ pub mod alerts_suppression_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/alertsSuppressionRules/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.alerts_suppression_rule_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/alertsSuppressionRules/{}",
+                    &self.subscription_id, &self.alerts_suppression_rule_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10156,11 +9150,11 @@ pub mod automations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/automations",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/automations",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10271,12 +9265,11 @@ pub mod automations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/automations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/automations",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10362,13 +9355,11 @@ pub mod automations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/automations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.automation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/automations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.automation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10468,13 +9459,11 @@ pub mod automations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/automations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.automation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/automations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.automation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10567,13 +9556,11 @@ pub mod automations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/automations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.automation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/automations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.automation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10661,13 +9648,11 @@ pub mod automations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/automations/{}/validate",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.automation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/automations/{}/validate",
+                    &self.subscription_id, &self.resource_group_name, &self.automation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10835,11 +9820,11 @@ pub mod regulatory_compliance_standards {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10924,12 +9909,11 @@ pub mod regulatory_compliance_standards {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.regulatory_compliance_standard_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}",
+                    &self.subscription_id, &self.regulatory_compliance_standard_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11107,12 +10091,11 @@ pub mod regulatory_compliance_controls {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}/regulatoryComplianceControls",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.regulatory_compliance_standard_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}/regulatoryComplianceControls",
+                    &self.subscription_id, &self.regulatory_compliance_standard_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11198,13 +10181,11 @@ pub mod regulatory_compliance_controls {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}/regulatoryComplianceControls/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.regulatory_compliance_standard_name,
-                    &self.regulatory_compliance_control_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}/regulatoryComplianceControls/{}",
+                    &self.subscription_id, &self.regulatory_compliance_standard_name, &self.regulatory_compliance_control_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11389,7 +10370,8 @@ pub mod regulatory_compliance_assessments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}/regulatoryComplianceControls/{}/regulatoryComplianceAssessments" , self . client . endpoint () , & self . subscription_id , & self . regulatory_compliance_standard_name , & self . regulatory_compliance_control_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}/regulatoryComplianceControls/{}/regulatoryComplianceAssessments" , & self . subscription_id , & self . regulatory_compliance_standard_name , & self . regulatory_compliance_control_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11476,7 +10458,8 @@ pub mod regulatory_compliance_assessments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}/regulatoryComplianceControls/{}/regulatoryComplianceAssessments/{}" , self . client . endpoint () , & self . subscription_id , & self . regulatory_compliance_standard_name , & self . regulatory_compliance_control_name , & self . regulatory_compliance_assessment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}/regulatoryComplianceControls/{}/regulatoryComplianceAssessments/{}" , & self . subscription_id , & self . regulatory_compliance_standard_name , & self . regulatory_compliance_control_name , & self . regulatory_compliance_assessment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11649,11 +10632,8 @@ pub mod sub_assessments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/subAssessments",
-                    self.client.endpoint(),
-                    &self.scope
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.Security/subAssessments", &self.scope));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11764,12 +10744,11 @@ pub mod sub_assessments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/assessments/{}/subAssessments",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.assessment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/assessments/{}/subAssessments",
+                    &self.scope, &self.assessment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11855,13 +10834,11 @@ pub mod sub_assessments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/assessments/{}/subAssessments/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.assessment_name,
-                    &self.sub_assessment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/assessments/{}/subAssessments/{}",
+                    &self.scope, &self.assessment_name, &self.sub_assessment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12046,11 +11023,11 @@ pub mod connectors {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/connectors",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/connectors",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12135,12 +11112,11 @@ pub mod connectors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/connectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/connectors/{}",
+                    &self.subscription_id, &self.connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12239,12 +11215,11 @@ pub mod connectors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/connectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/connectors/{}",
+                    &self.subscription_id, &self.connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12336,12 +11311,11 @@ pub mod connectors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/connectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/connectors/{}",
+                    &self.subscription_id, &self.connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12483,11 +11457,11 @@ pub mod secure_scores {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/secureScores",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/secureScores",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12572,12 +11546,11 @@ pub mod secure_scores {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/secureScores/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.secure_score_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/secureScores/{}",
+                    &self.subscription_id, &self.secure_score_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12747,12 +11720,11 @@ pub mod secure_score_controls {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/secureScores/{}/secureScoreControls",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.secure_score_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/secureScores/{}/secureScoreControls",
+                    &self.subscription_id, &self.secure_score_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12871,11 +11843,11 @@ pub mod secure_score_controls {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/secureScoreControls",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/secureScoreControls",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13008,10 +11980,8 @@ pub mod secure_score_control_definitions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Security/secureScoreControlDefinitions",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Security/secureScoreControlDefinitions");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13121,11 +12091,11 @@ pub mod secure_score_control_definitions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/secureScoreControlDefinitions",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/secureScoreControlDefinitions",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13298,11 +12268,11 @@ pub mod security_contacts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/securityContacts",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/securityContacts",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13387,12 +12357,11 @@ pub mod security_contacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/securityContacts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.security_contact_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/securityContacts/{}",
+                    &self.subscription_id, &self.security_contact_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13491,12 +12460,11 @@ pub mod security_contacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/securityContacts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.security_contact_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/securityContacts/{}",
+                    &self.subscription_id, &self.security_contact_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13588,12 +12556,11 @@ pub mod security_contacts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/securityContacts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.security_contact_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/securityContacts/{}",
+                    &self.subscription_id, &self.security_contact_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13774,12 +12741,11 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.rule_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules/{}",
+                    &self.resource_id, &self.rule_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13890,12 +12856,11 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.rule_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules/{}",
+                    &self.resource_id, &self.rule_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13990,12 +12955,11 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.rule_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules/{}",
+                    &self.resource_id, &self.rule_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14082,11 +13046,11 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules",
                     &self.resource_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14196,11 +13160,11 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules",
                     &self.resource_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14341,12 +13305,11 @@ pub mod sql_vulnerability_assessment_scans {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.scan_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}",
+                    &self.resource_id, &self.scan_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14445,11 +13408,11 @@ pub mod sql_vulnerability_assessment_scans {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans",
                     &self.resource_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14601,13 +13564,11 @@ pub mod sql_vulnerability_assessment_scan_results {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}/scanResults/{}",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.scan_id,
-                    &self.scan_result_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}/scanResults/{}",
+                    &self.resource_id, &self.scan_id, &self.scan_result_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14707,12 +13668,11 @@ pub mod sql_vulnerability_assessment_scan_results {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}/scanResults",
-                    self.client.endpoint(),
-                    &self.resource_id,
-                    &self.scan_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}/scanResults",
+                    &self.resource_id, &self.scan_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14911,15 +13871,11 @@ pub mod software_inventories {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Security/softwareInventories",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_namespace,
-                    &self.resource_type,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Security/softwareInventories",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_namespace, &self.resource_type, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15029,11 +13985,11 @@ pub mod software_inventories {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/softwareInventories",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/softwareInventories",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15122,16 +14078,16 @@ pub mod software_inventories {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Security/softwareInventories/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Security/softwareInventories/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_namespace,
                     &self.resource_type,
                     &self.resource_name,
                     &self.software_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15330,13 +14286,11 @@ pub mod custom_assessment_automations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customAssessmentAutomations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.custom_assessment_automation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customAssessmentAutomations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.custom_assessment_automation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15436,13 +14390,11 @@ pub mod custom_assessment_automations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customAssessmentAutomations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.custom_assessment_automation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customAssessmentAutomations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.custom_assessment_automation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15535,13 +14487,11 @@ pub mod custom_assessment_automations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customAssessmentAutomations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.custom_assessment_automation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customAssessmentAutomations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.custom_assessment_automation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15652,12 +14602,11 @@ pub mod custom_assessment_automations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customAssessmentAutomations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customAssessmentAutomations",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15767,11 +14716,11 @@ pub mod custom_assessment_automations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/customAssessmentAutomations",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/customAssessmentAutomations",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15958,13 +14907,11 @@ pub mod custom_entity_store_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customEntityStoreAssignments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.custom_entity_store_assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customEntityStoreAssignments/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.custom_entity_store_assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16064,13 +15011,11 @@ pub mod custom_entity_store_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customEntityStoreAssignments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.custom_entity_store_assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customEntityStoreAssignments/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.custom_entity_store_assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16163,13 +15108,11 @@ pub mod custom_entity_store_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customEntityStoreAssignments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.custom_entity_store_assignment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customEntityStoreAssignments/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.custom_entity_store_assignment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16280,12 +15223,11 @@ pub mod custom_entity_store_assignments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customEntityStoreAssignments",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customEntityStoreAssignments",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16395,11 +15337,11 @@ pub mod custom_entity_store_assignments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/customEntityStoreAssignments",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/customEntityStoreAssignments",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16513,11 +15455,11 @@ pub mod mde_onboardings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/mdeOnboardings",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/mdeOnboardings",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16613,11 +15555,11 @@ pub mod mde_onboardings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/mdeOnboardings/default",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/mdeOnboardings/default",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16857,11 +15799,11 @@ pub mod security_connectors {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/securityConnectors",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/securityConnectors",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16972,12 +15914,11 @@ pub mod security_connectors {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/securityConnectors",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/securityConnectors",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17063,13 +16004,11 @@ pub mod security_connectors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/securityConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.security_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/securityConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.security_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17169,13 +16108,11 @@ pub mod security_connectors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/securityConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.security_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/securityConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.security_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17275,13 +16212,11 @@ pub mod security_connectors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/securityConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.security_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/securityConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.security_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17374,13 +16309,11 @@ pub mod security_connectors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/securityConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.security_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/securityConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.security_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17515,11 +16448,11 @@ pub mod pricings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/pricings",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/pricings",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17616,12 +16549,11 @@ pub mod pricings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/pricings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.pricing_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/pricings/{}",
+                    &self.subscription_id, &self.pricing_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17720,12 +16652,11 @@ pub mod pricings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/pricings/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.pricing_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/pricings/{}",
+                    &self.subscription_id, &self.pricing_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18095,11 +17026,11 @@ pub mod alerts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/alerts",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/alerts",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18248,12 +17179,11 @@ pub mod alerts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/alerts",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/alerts",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18402,12 +17332,11 @@ pub mod alerts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts",
+                    &self.subscription_id, &self.asc_location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18557,13 +17486,11 @@ pub mod alerts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18649,13 +17576,11 @@ pub mod alerts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location,
-                    &self.alert_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts/{}",
+                    &self.subscription_id, &self.asc_location, &self.alert_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18754,14 +17679,11 @@ pub mod alerts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.alert_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.alert_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18855,13 +17777,11 @@ pub mod alerts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts/{}/dismiss",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location,
-                    &self.alert_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts/{}/dismiss",
+                    &self.subscription_id, &self.asc_location, &self.alert_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18943,13 +17863,11 @@ pub mod alerts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts/{}/reactivate",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.asc_location,
-                    &self.alert_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts/{}/reactivate",
+                    &self.subscription_id, &self.asc_location, &self.alert_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -19032,14 +17950,11 @@ pub mod alerts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts/{}/dismiss",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.alert_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts/{}/dismiss",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.alert_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -19122,14 +18037,11 @@ pub mod alerts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts/{}/reactivate",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.asc_location,
-                    &self.alert_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts/{}/reactivate",
+                    &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.alert_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

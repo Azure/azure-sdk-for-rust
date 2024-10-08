@@ -7,8 +7,6 @@
 #![allow(rustdoc::bare_urls)]
 #![allow(rustdoc::invalid_html_tags)]
 #![allow(rustdoc::broken_intra_doc_links)]
-#[cfg(feature = "package-managedapplications-2018-09")]
-pub mod package_managedapplications_2018_09;
 #[cfg(feature = "package-managedapplications-2019-07")]
 pub mod package_managedapplications_2019_07;
 #[cfg(feature = "package-managedapplications-2020-08")]
@@ -17,5 +15,7 @@ pub mod package_managedapplications_2020_08;
 pub mod package_managedapplications_2021_02;
 #[cfg(feature = "package-managedapplications-2021-07")]
 pub mod package_managedapplications_2021_07;
+#[cfg(feature = "package-preview-2023-12")]
+pub mod package_preview_2023_12;
 #[cfg(all(feature = "default_tag", feature = "package-managedapplications-2021-07"))]
 pub use package_managedapplications_2021_07::*;

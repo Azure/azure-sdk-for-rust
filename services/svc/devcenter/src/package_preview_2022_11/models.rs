@@ -343,7 +343,7 @@ pub struct DevBox {
     pub image_reference: Option<ImageReference>,
     #[doc = "Creation time of this Dev Box"]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "localAdministrator", default, skip_serializing_if = "Option::is_none")]
     pub local_administrator: Option<LocalAdminStatus>,
 }
@@ -617,7 +617,7 @@ pub struct ImageReference {
     pub os_build_number: Option<String>,
     #[doc = "The datetime that the backing image version was published."]
     #[serde(rename = "publishedDate", default, with = "azure_core::date::rfc3339::option")]
-    pub published_date: Option<time::OffsetDateTime>,
+    pub published_date: Option<::time::OffsetDateTime>,
 }
 impl ImageReference {
     pub fn new() -> Self {
@@ -1011,10 +1011,10 @@ pub struct ScheduledTask {
     pub enabled: Option<EnableStatus>,
     #[doc = "Date/time by which the environment should expire"]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
 }
 impl ScheduledTask {
-    pub fn new(type_: ScheduledTaskType, start_time: time::OffsetDateTime) -> Self {
+    pub fn new(type_: ScheduledTaskType, start_time: ::time::OffsetDateTime) -> Self {
         Self {
             type_,
             enabled: None,
@@ -1118,10 +1118,10 @@ pub struct UpcomingAction {
     pub reason: Option<UpcomingActionReason>,
     #[doc = "The target time the action will be triggered (UTC)."]
     #[serde(rename = "scheduledTime", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_time: Option<time::OffsetDateTime>,
+    pub scheduled_time: Option<::time::OffsetDateTime>,
     #[doc = "The original scheduled time for the action (UTC)."]
     #[serde(rename = "originalScheduledTime", default, with = "azure_core::date::rfc3339::option")]
-    pub original_scheduled_time: Option<time::OffsetDateTime>,
+    pub original_scheduled_time: Option<::time::OffsetDateTime>,
     #[doc = "The id of the resource which triggered this action"]
     #[serde(rename = "sourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_id: Option<String>,

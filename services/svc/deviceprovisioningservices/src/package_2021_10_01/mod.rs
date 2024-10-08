@@ -274,7 +274,8 @@ pub mod individual_enrollment {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollments/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/enrollments/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -381,7 +382,8 @@ pub mod individual_enrollment {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollments/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/enrollments/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -481,7 +483,8 @@ pub mod individual_enrollment {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollments/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/enrollments/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -602,7 +605,8 @@ pub mod individual_enrollment {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollments/query", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/enrollments/query");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -699,7 +703,8 @@ pub mod individual_enrollment {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollments/{}/attestationmechanism", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/enrollments/{}/attestationmechanism", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -796,7 +801,8 @@ pub mod individual_enrollment {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollments", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/enrollments");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -975,7 +981,8 @@ pub mod enrollment_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollmentGroups/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/enrollmentGroups/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1082,7 +1089,8 @@ pub mod enrollment_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollmentGroups/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/enrollmentGroups/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1182,7 +1190,8 @@ pub mod enrollment_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollmentGroups/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/enrollmentGroups/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1303,7 +1312,8 @@ pub mod enrollment_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollmentGroups/query", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/enrollmentGroups/query");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1400,11 +1410,8 @@ pub mod enrollment_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/enrollmentGroups/{}/attestationmechanism",
-                    self.client.endpoint(),
-                    &self.id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/enrollmentGroups/{}/attestationmechanism", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1501,7 +1508,8 @@ pub mod enrollment_group {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollmentGroups", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/enrollmentGroups");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1640,7 +1648,8 @@ pub mod device_registration_state {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/registrations/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/registrations/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1740,7 +1749,8 @@ pub mod device_registration_state {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/registrations/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/registrations/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1861,7 +1871,8 @@ pub mod device_registration_state {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/registrations/{}/query", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/registrations/{}/query", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

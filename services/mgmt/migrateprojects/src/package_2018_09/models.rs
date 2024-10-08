@@ -49,7 +49,7 @@ pub struct AssessmentDetails {
     pub fabric_type: Option<String>,
     #[doc = "Gets or sets the time of the last modification of the machine details."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
+    pub last_updated_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the name of the machine."]
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
@@ -125,7 +125,7 @@ pub struct DatabaseAssessmentDetails {
     pub assessment_target_type: Option<String>,
     #[doc = "Gets or sets the time when the database was last assessed."]
     #[serde(rename = "lastAssessedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_assessed_time: Option<time::OffsetDateTime>,
+    pub last_assessed_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the compatibility level of the database."]
     #[serde(rename = "compatibilityLevel", default, skip_serializing_if = "Option::is_none")]
     pub compatibility_level: Option<String>,
@@ -134,7 +134,7 @@ pub struct DatabaseAssessmentDetails {
     pub database_size_in_mb: Option<String>,
     #[doc = "Gets or sets the time of the last modification of the database details."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
+    pub last_updated_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the time the message was enqueued."]
     #[serde(rename = "enqueueTime", default, skip_serializing_if = "Option::is_none")]
     pub enqueue_time: Option<String>,
@@ -220,7 +220,7 @@ impl DatabaseInstanceCollection {
 pub struct DatabaseInstanceDiscoveryDetails {
     #[doc = "Gets or sets the time of the last modification of the database instance details."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
+    pub last_updated_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the database instance Id."]
     #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
@@ -273,7 +273,7 @@ pub struct DatabaseInstanceProperties {
     pub summary: Option<serde_json::Value>,
     #[doc = "Gets or sets the time of the last modification of the database."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
+    pub last_updated_time: Option<::time::OffsetDateTime>,
 }
 impl DatabaseInstanceProperties {
     pub fn new() -> Self {
@@ -336,7 +336,7 @@ pub struct DatabaseProperties {
     pub assessment_data: Vec<DatabaseAssessmentDetails>,
     #[doc = "Gets or sets the time of the last modification of the database."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
+    pub last_updated_time: Option<::time::OffsetDateTime>,
 }
 impl DatabaseProperties {
     pub fn new() -> Self {
@@ -410,7 +410,7 @@ pub struct DiscoveryDetails {
     pub fabric_type: Option<String>,
     #[doc = "Gets or sets the time of the last modification of the machine details."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
+    pub last_updated_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the name of the machine."]
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
@@ -1098,7 +1098,7 @@ pub struct MachineProperties {
     pub migration_data: Vec<MigrationDetails>,
     #[doc = "Gets or sets the time of the last modification of the machine."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
+    pub last_updated_time: Option<::time::OffsetDateTime>,
 }
 impl MachineProperties {
     pub fn new() -> Self {
@@ -1220,7 +1220,7 @@ pub struct MigrateProjectProperties {
     pub summary: Option<serde_json::Value>,
     #[doc = "Gets the last time the project summary was refreshed."]
     #[serde(rename = "lastSummaryRefreshedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_summary_refreshed_time: Option<time::OffsetDateTime>,
+    pub last_summary_refreshed_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets the refresh summary state."]
     #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
     pub refresh_summary_state: Option<migrate_project_properties::RefreshSummaryState>,
@@ -1321,7 +1321,7 @@ pub struct MigrationDetails {
     pub fabric_type: Option<String>,
     #[doc = "Gets or sets the time of the last modification of the machine details."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
+    pub last_updated_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the name of the machine."]
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
@@ -1519,7 +1519,7 @@ pub struct ProjectSummary {
     pub refresh_summary_state: Option<project_summary::RefreshSummaryState>,
     #[doc = "Gets or sets the time when summary was last refreshed."]
     #[serde(rename = "lastSummaryRefreshedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_summary_refreshed_time: Option<time::OffsetDateTime>,
+    pub last_summary_refreshed_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the extended summary."]
     #[serde(rename = "extendedSummary", default, skip_serializing_if = "Option::is_none")]
     pub extended_summary: Option<serde_json::Value>,

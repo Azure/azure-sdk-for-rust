@@ -501,7 +501,8 @@ fn tp_str() -> TypePath {
 }
 
 fn tp_date_time() -> TypePath {
-    parse_type_path("time::OffsetDateTime").unwrap()
+    // always reference time crate
+    parse_type_path("::time::OffsetDateTime").unwrap()
 }
 
 #[cfg(test)]

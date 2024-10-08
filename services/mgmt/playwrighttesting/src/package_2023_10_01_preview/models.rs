@@ -208,10 +208,10 @@ pub struct FreeTrialProperties {
     pub account_id: String,
     #[doc = "The free-trial createdAt utcDateTime."]
     #[serde(rename = "createdAt", with = "azure_core::date::rfc3339")]
-    pub created_at: time::OffsetDateTime,
+    pub created_at: ::time::OffsetDateTime,
     #[doc = "The free-trial expiryAt utcDateTime."]
     #[serde(rename = "expiryAt", with = "azure_core::date::rfc3339")]
-    pub expiry_at: time::OffsetDateTime,
+    pub expiry_at: ::time::OffsetDateTime,
     #[doc = "The free-trial allocated limit value eg. allocated free minutes."]
     #[serde(rename = "allocatedValue")]
     pub allocated_value: i32,
@@ -227,8 +227,8 @@ pub struct FreeTrialProperties {
 impl FreeTrialProperties {
     pub fn new(
         account_id: String,
-        created_at: time::OffsetDateTime,
-        expiry_at: time::OffsetDateTime,
+        created_at: ::time::OffsetDateTime,
+        expiry_at: ::time::OffsetDateTime,
         allocated_value: i32,
         used_value: i32,
         percentage_used: f64,
@@ -587,7 +587,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -596,7 +596,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

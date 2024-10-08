@@ -891,10 +891,10 @@ pub struct OperationStatusResult {
     pub percent_complete: Option<f64>,
     #[doc = "The start time of the operation."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the operation."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The operations list."]
     #[serde(
         default,
@@ -1050,7 +1050,7 @@ pub struct StageStatus {
     pub status: Option<String>,
     #[doc = "The time of the status."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
+    pub time: Option<::time::OffsetDateTime>,
 }
 impl StageStatus {
     pub fn new() -> Self {
@@ -1119,7 +1119,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1128,7 +1128,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

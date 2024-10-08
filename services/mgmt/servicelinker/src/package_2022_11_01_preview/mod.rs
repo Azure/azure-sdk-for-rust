@@ -509,13 +509,11 @@ pub mod connector {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/dryruns",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/dryruns",
+                    &self.subscription_id, &self.resource_group_name, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -602,14 +600,11 @@ pub mod connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/dryruns/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location,
-                    &self.dryrun_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/dryruns/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.location, &self.dryrun_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -709,14 +704,11 @@ pub mod connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/dryruns/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location,
-                    &self.dryrun_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/dryruns/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.location, &self.dryrun_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -871,14 +863,11 @@ pub mod connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/dryruns/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location,
-                    &self.dryrun_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/dryruns/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.location, &self.dryrun_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1027,14 +1016,11 @@ pub mod connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/dryruns/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location,
-                    &self.dryrun_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/dryruns/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.location, &self.dryrun_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1146,13 +1132,11 @@ pub mod connector {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors",
+                    &self.subscription_id, &self.resource_group_name, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1239,14 +1223,11 @@ pub mod connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location,
-                    &self.connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.location, &self.connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1346,14 +1327,11 @@ pub mod connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location,
-                    &self.connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.location, &self.connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1508,14 +1486,11 @@ pub mod connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location,
-                    &self.connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.location, &self.connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1663,14 +1638,11 @@ pub mod connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location,
-                    &self.connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.location, &self.connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1757,14 +1729,11 @@ pub mod connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}/validate",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.location,
-                    &self.connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}/validate",
+                    &self.subscription_id, &self.resource_group_name, &self.location, &self.connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1929,7 +1898,8 @@ pub mod connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}/generateConfigurations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . location , & self . connector_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourcegroups/{}/providers/Microsoft.ServiceLinker/locations/{}/connectors/{}/generateConfigurations" , & self . subscription_id , & self . resource_group_name , & self . location , & self . connector_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2161,11 +2131,8 @@ pub mod linker {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/linkers",
-                    self.client.endpoint(),
-                    &self.resource_uri
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.ServiceLinker/linkers", &self.resource_uri));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2250,12 +2217,11 @@ pub mod linker {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/linkers/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.linker_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ServiceLinker/linkers/{}",
+                    &self.resource_uri, &self.linker_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2353,12 +2319,11 @@ pub mod linker {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/linkers/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.linker_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ServiceLinker/linkers/{}",
+                    &self.resource_uri, &self.linker_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2511,12 +2476,11 @@ pub mod linker {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/linkers/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.linker_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ServiceLinker/linkers/{}",
+                    &self.resource_uri, &self.linker_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2662,12 +2626,11 @@ pub mod linker {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/linkers/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.linker_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ServiceLinker/linkers/{}",
+                    &self.resource_uri, &self.linker_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2752,12 +2715,11 @@ pub mod linker {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/linkers/{}/validateLinker",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.linker_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ServiceLinker/linkers/{}/validateLinker",
+                    &self.resource_uri, &self.linker_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2910,12 +2872,11 @@ pub mod linker {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/linkers/{}/listConfigurations",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.linker_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ServiceLinker/linkers/{}/listConfigurations",
+                    &self.resource_uri, &self.linker_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3136,11 +3097,8 @@ pub mod linkers {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/dryruns",
-                    self.client.endpoint(),
-                    &self.resource_uri
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.ServiceLinker/dryruns", &self.resource_uri));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3225,12 +3183,11 @@ pub mod linkers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/dryruns/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.dryrun_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ServiceLinker/dryruns/{}",
+                    &self.resource_uri, &self.dryrun_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3328,12 +3285,11 @@ pub mod linkers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/dryruns/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.dryrun_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ServiceLinker/dryruns/{}",
+                    &self.resource_uri, &self.dryrun_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3486,12 +3442,11 @@ pub mod linkers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/dryruns/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.dryrun_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ServiceLinker/dryruns/{}",
+                    &self.resource_uri, &self.dryrun_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3638,12 +3593,11 @@ pub mod linkers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/dryruns/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.dryrun_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ServiceLinker/dryruns/{}",
+                    &self.resource_uri, &self.dryrun_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3739,12 +3693,11 @@ pub mod linkers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.ServiceLinker/linkers/{}/generateConfigurations",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.linker_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.ServiceLinker/linkers/{}/generateConfigurations",
+                    &self.resource_uri, &self.linker_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3879,7 +3832,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.ServiceLinker/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.ServiceLinker/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4024,10 +3978,8 @@ pub mod configuration_names {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.ServiceLinker/configurationNames",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.ServiceLinker/configurationNames");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

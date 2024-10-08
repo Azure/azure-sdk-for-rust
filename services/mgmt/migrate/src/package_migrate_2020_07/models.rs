@@ -727,7 +727,7 @@ pub struct HyperVMachineProperties {
     pub number_of_applications: Option<i32>,
     #[doc = "The last time at which the Guest Details of machine was discovered."]
     #[serde(rename = "guestDetailsDiscoveryTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub guest_details_discovery_timestamp: Option<time::OffsetDateTime>,
+    pub guest_details_discovery_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Whether Refresh Fabric Layout Guest Details has been completed once. Portal will show discovery in progress, if this value is true."]
     #[serde(rename = "isGuestDetailsDiscoveryInProgress", default, skip_serializing_if = "Option::is_none")]
     pub is_guest_details_discovery_in_progress: Option<bool>,
@@ -1023,7 +1023,7 @@ impl JobProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Machine {
     #[serde(rename = "properties.timestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub properties_timestamp: Option<time::OffsetDateTime>,
+    pub properties_timestamp: Option<::time::OffsetDateTime>,
     #[serde(rename = "properties.monitoringState", default, skip_serializing_if = "Option::is_none")]
     pub properties_monitoring_state: Option<machine::PropertiesMonitoringState>,
     #[serde(rename = "properties.virtualizationState", default, skip_serializing_if = "Option::is_none")]
@@ -1035,7 +1035,7 @@ pub struct Machine {
     #[serde(rename = "properties.fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
     pub properties_fully_qualified_domain_name: Option<String>,
     #[serde(rename = "properties.bootTime", default, with = "azure_core::date::rfc3339::option")]
-    pub properties_boot_time: Option<time::OffsetDateTime>,
+    pub properties_boot_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "properties.timezone", default, skip_serializing_if = "Option::is_none")]
     pub properties_timezone: Option<Timezone>,
     #[serde(rename = "properties.agent", default, skip_serializing_if = "Option::is_none")]
@@ -1740,7 +1740,7 @@ pub struct SiteAgentProperties {
     pub version: Option<String>,
     #[doc = "Last heartbeat time of the agent in UTC."]
     #[serde(rename = "lastHeartBeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heart_beat_utc: Option<time::OffsetDateTime>,
+    pub last_heart_beat_utc: Option<::time::OffsetDateTime>,
     #[doc = "Key vault URI."]
     #[serde(rename = "keyVaultUri", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_uri: Option<String>,
@@ -2264,7 +2264,7 @@ pub struct VMwareMachineProperties {
     pub dependency_mapping: Option<String>,
     #[doc = "When dependency mapping collection is last started."]
     #[serde(rename = "dependencyMappingStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub dependency_mapping_start_time: Option<time::OffsetDateTime>,
+    pub dependency_mapping_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Display name of the machine."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -2288,7 +2288,7 @@ pub struct VMwareMachineProperties {
     pub number_of_applications: Option<i32>,
     #[doc = "The last time at which the Guest Details was discovered or the error while discovering guest details based discovery of the machine."]
     #[serde(rename = "guestDetailsDiscoveryTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub guest_details_discovery_timestamp: Option<time::OffsetDateTime>,
+    pub guest_details_discovery_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Whether Refresh Fabric Layout Guest Details has been completed once. Portal will show discovery in progress, if this value is true."]
     #[serde(rename = "isGuestDetailsDiscoveryInProgress", default, skip_serializing_if = "Option::is_none")]
     pub is_guest_details_discovery_in_progress: Option<bool>,
@@ -2531,7 +2531,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -2540,7 +2540,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

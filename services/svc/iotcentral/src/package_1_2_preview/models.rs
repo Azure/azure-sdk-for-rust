@@ -45,7 +45,7 @@ pub struct ApiToken {
     pub token: Option<String>,
     #[doc = "String-formatted date representing the time when the token expires."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiry: Option<time::OffsetDateTime>,
+    pub expiry: Option<::time::OffsetDateTime>,
 }
 impl ApiToken {
     pub fn new(permission: Permission) -> Self {
@@ -299,7 +299,7 @@ pub struct DataExportStatus {
     pub errors: Vec<DataExportError>,
     #[doc = "The timestamp of the last message that was sent to the export or destination."]
     #[serde(rename = "lastExportTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_export_time: Option<time::OffsetDateTime>,
+    pub last_export_time: Option<::time::OffsetDateTime>,
 }
 impl DataExportStatus {
     pub fn new() -> Self {
@@ -625,7 +625,7 @@ pub struct DeviceTelemetry {
     pub value: Option<serde_json::Value>,
     #[doc = "String-formatted date representing the time when the telemetry value was sent."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
 }
 impl DeviceTelemetry {
     pub fn new() -> Self {

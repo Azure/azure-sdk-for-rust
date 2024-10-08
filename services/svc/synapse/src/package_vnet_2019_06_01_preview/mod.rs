@@ -260,12 +260,11 @@ pub mod managed_private_endpoints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}",
-                    self.client.endpoint(),
-                    &self.managed_virtual_network_name,
-                    &self.managed_private_endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/managedVirtualNetworks/{}/managedPrivateEndpoints/{}",
+                    &self.managed_virtual_network_name, &self.managed_private_endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -364,12 +363,11 @@ pub mod managed_private_endpoints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}",
-                    self.client.endpoint(),
-                    &self.managed_virtual_network_name,
-                    &self.managed_private_endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/managedVirtualNetworks/{}/managedPrivateEndpoints/{}",
+                    &self.managed_virtual_network_name, &self.managed_private_endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -461,12 +459,11 @@ pub mod managed_private_endpoints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}",
-                    self.client.endpoint(),
-                    &self.managed_virtual_network_name,
-                    &self.managed_private_endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/managedVirtualNetworks/{}/managedPrivateEndpoints/{}",
+                    &self.managed_virtual_network_name, &self.managed_private_endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -576,11 +573,11 @@ pub mod managed_private_endpoints {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/managedVirtualNetworks/{}/managedPrivateEndpoints",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/managedVirtualNetworks/{}/managedPrivateEndpoints",
                     &self.managed_virtual_network_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

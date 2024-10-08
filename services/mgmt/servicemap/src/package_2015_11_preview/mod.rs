@@ -367,9 +367,9 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) live: Option<bool>,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
-            pub(crate) timestamp: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
+            pub(crate) timestamp: Option<::time::OffsetDateTime>,
             pub(crate) top: Option<i32>,
         }
         impl RequestBuilder {
@@ -379,17 +379,17 @@ pub mod machines {
                 self
             }
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
             #[doc = "UTC date and time specifying a time instance relative to which to evaluate each machine resource. Only applies when `live=false`. When not specified, the service uses DateTime.UtcNow."]
-            pub fn timestamp(mut self, timestamp: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn timestamp(mut self, timestamp: impl Into<::time::OffsetDateTime>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
             }
@@ -458,7 +458,8 @@ pub mod machines {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines" , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -524,11 +525,11 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
-            pub(crate) timestamp: Option<time::OffsetDateTime>,
+            pub(crate) timestamp: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying a time instance relative to which to evaluate the machine resource. When not specified, the service uses DateTime.UtcNow."]
-            pub fn timestamp(mut self, timestamp: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn timestamp(mut self, timestamp: impl Into<::time::OffsetDateTime>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
             }
@@ -554,7 +555,8 @@ pub mod machines {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -632,17 +634,17 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -671,7 +673,8 @@ pub mod machines {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/liveness" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/liveness" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -749,17 +752,17 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -814,7 +817,8 @@ pub mod machines {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/connections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/connections" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -881,9 +885,9 @@ pub mod machines {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) live: Option<bool>,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
-            pub(crate) timestamp: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
+            pub(crate) timestamp: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "Specifies whether to return live resources (true) or inventory resources (false). Defaults to **true**. When retrieving live resources, the start time (`startTime`) and end time (`endTime`) of the desired interval should be included. When retrieving inventory resources, an optional timestamp (`timestamp`) parameter can be specified to return the version of each resource closest (not-after) that timestamp."]
@@ -892,17 +896,17 @@ pub mod machines {
                 self
             }
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
             #[doc = "UTC date and time specifying a time instance relative to which to evaluate all process resource. Only applies when `live=false`. When not specified, the service uses DateTime.UtcNow."]
-            pub fn timestamp(mut self, timestamp: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn timestamp(mut self, timestamp: impl Into<::time::OffsetDateTime>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
             }
@@ -963,7 +967,8 @@ pub mod machines {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/processes" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/processes" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1029,17 +1034,17 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1094,7 +1099,8 @@ pub mod machines {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/ports" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/ports" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1160,17 +1166,17 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1225,7 +1231,8 @@ pub mod machines {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/machineGroups" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/machineGroups" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1409,11 +1416,11 @@ pub mod processes {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) process_name: String,
-            pub(crate) timestamp: Option<time::OffsetDateTime>,
+            pub(crate) timestamp: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying a time instance relative to which to evaluate a resource. When not specified, the service uses DateTime.UtcNow."]
-            pub fn timestamp(mut self, timestamp: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn timestamp(mut self, timestamp: impl Into<::time::OffsetDateTime>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
             }
@@ -1439,7 +1446,8 @@ pub mod processes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/processes/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . process_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/processes/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . process_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1518,17 +1526,17 @@ pub mod processes {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) process_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1557,7 +1565,8 @@ pub mod processes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/processes/{}/liveness" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . process_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/processes/{}/liveness" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . process_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1636,17 +1645,17 @@ pub mod processes {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) process_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1701,7 +1710,8 @@ pub mod processes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/processes/{}/acceptingPorts" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . process_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/processes/{}/acceptingPorts" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . process_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1768,17 +1778,17 @@ pub mod processes {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) process_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1833,7 +1843,8 @@ pub mod processes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/processes/{}/connections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . process_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/processes/{}/connections" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . process_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2018,17 +2029,17 @@ pub mod ports {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) port_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -2057,7 +2068,8 @@ pub mod ports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/ports/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . port_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/ports/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . port_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2136,17 +2148,17 @@ pub mod ports {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) port_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -2175,7 +2187,8 @@ pub mod ports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/ports/{}/liveness" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . port_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/ports/{}/liveness" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . port_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2254,17 +2267,17 @@ pub mod ports {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) port_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -2319,7 +2332,8 @@ pub mod ports {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/ports/{}/acceptingProcesses" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . port_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/ports/{}/acceptingProcesses" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . port_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2386,17 +2400,17 @@ pub mod ports {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) port_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -2451,7 +2465,8 @@ pub mod ports {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/ports/{}/connections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . port_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machines/{}/ports/{}/connections" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_name , & self . port_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2600,17 +2615,17 @@ pub mod client_groups {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) client_group_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -2639,7 +2654,8 @@ pub mod client_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/clientGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . client_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/clientGroups/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . client_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2717,17 +2733,17 @@ pub mod client_groups {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) client_group_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -2756,7 +2772,8 @@ pub mod client_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/clientGroups/{}/membersCount" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . client_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/clientGroups/{}/membersCount" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . client_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2834,18 +2851,18 @@ pub mod client_groups {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) client_group_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
             pub(crate) top: Option<i32>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -2908,7 +2925,8 @@ pub mod client_groups {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/clientGroups/{}/members" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . client_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/clientGroups/{}/members" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . client_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3028,7 +3046,8 @@ pub mod maps {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/generateMap" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/generateMap" , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3136,17 +3155,17 @@ pub mod summaries {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -3175,7 +3194,8 @@ pub mod summaries {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/summaries/machines" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/summaries/machines" , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3376,17 +3396,17 @@ pub mod machine_groups {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -3441,7 +3461,8 @@ pub mod machine_groups {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machineGroups" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machineGroups" , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3529,7 +3550,8 @@ pub mod machine_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machineGroups" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machineGroups" , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3607,17 +3629,17 @@ pub mod machine_groups {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_group_name: String,
-            pub(crate) start_time: Option<time::OffsetDateTime>,
-            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) start_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -3646,7 +3668,8 @@ pub mod machine_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machineGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machineGroups/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3747,7 +3770,8 @@ pub mod machine_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machineGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machineGroups/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3841,7 +3865,8 @@ pub mod machine_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machineGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/features/serviceMap/machineGroups/{}" , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . machine_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

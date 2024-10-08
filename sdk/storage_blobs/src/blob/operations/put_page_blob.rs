@@ -25,7 +25,7 @@ impl PutPageBlobBuilder {
 
             let mut headers = Headers::new();
             headers.insert(BLOB_TYPE, "PageBlob");
-            headers.insert(BLOB_CONTENT_LENGTH, &format!("{}", self.length));
+            headers.insert(BLOB_CONTENT_LENGTH, format!("{}", self.length));
             headers.add(self.content_type);
             headers.add(self.content_encoding);
             headers.add(self.content_language);

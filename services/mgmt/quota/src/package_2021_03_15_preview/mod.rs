@@ -240,12 +240,11 @@ pub mod usages {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Quota/usages/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Quota/usages/{}",
+                    &self.scope, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -377,11 +376,8 @@ pub mod usages {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Quota/usages",
-                    self.client.endpoint(),
-                    &self.scope
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.Quota/usages", &self.scope));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -546,12 +542,11 @@ pub mod quota {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Quota/quotas/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Quota/quotas/{}",
+                    &self.scope, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -652,12 +647,11 @@ pub mod quota {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Quota/quotas/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Quota/quotas/{}",
+                    &self.scope, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -760,12 +754,11 @@ pub mod quota {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Quota/quotas/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Quota/quotas/{}",
+                    &self.scope, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -899,11 +892,8 @@ pub mod quota {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Quota/quotas",
-                    self.client.endpoint(),
-                    &self.scope
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.Quota/quotas", &self.scope));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1023,12 +1013,8 @@ pub mod quota_request_status {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Quota/quotaRequests/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.Quota/quotaRequests/{}", &self.scope, &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1177,11 +1163,8 @@ pub mod quota_request_status {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Quota/quotaRequests",
-                    self.client.endpoint(),
-                    &self.scope
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.Quota/quotaRequests", &self.scope));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1305,7 +1288,8 @@ pub mod quota_operation {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Quota/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Quota/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

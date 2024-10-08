@@ -248,7 +248,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.AzureSphere/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.AzureSphere/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -590,11 +591,11 @@ pub mod catalogs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.AzureSphere/catalogs",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.AzureSphere/catalogs",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -705,12 +706,11 @@ pub mod catalogs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -796,13 +796,11 @@ pub mod catalogs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -911,13 +909,11 @@ pub mod catalogs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1072,13 +1068,11 @@ pub mod catalogs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1131,13 +1125,13 @@ pub mod catalogs {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -1184,13 +1178,11 @@ pub mod catalogs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1277,13 +1269,11 @@ pub mod catalogs {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/countDevices",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/countDevices",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1446,13 +1436,11 @@ pub mod catalogs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/listDeployments",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/listDeployments",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1604,13 +1592,11 @@ pub mod catalogs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/listDeviceGroups",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/listDeviceGroups",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1761,13 +1747,11 @@ pub mod catalogs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/listDeviceInsights",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/listDeviceInsights",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1918,13 +1902,11 @@ pub mod catalogs {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/listDevices",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/listDevices",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2176,13 +2158,11 @@ pub mod certificates {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/certificates",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/certificates",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2269,14 +2249,11 @@ pub mod certificates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/certificates/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.serial_number
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/certificates/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.serial_number
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2376,14 +2353,11 @@ pub mod certificates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/certificates/{}/retrieveCertChain",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.serial_number
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/certificates/{}/retrieveCertChain",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.serial_number
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2484,7 +2458,8 @@ pub mod certificates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/certificates/{}/retrieveProofOfPossessionNonce" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . serial_number)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/certificates/{}/retrieveProofOfPossessionNonce" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . serial_number)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2544,7 +2519,7 @@ pub mod images {
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `catalog_name`: Name of catalog"]
-        #[doc = "* `image_name`: Image name. Use .default for image creation."]
+        #[doc = "* `image_name`: Image name. Use an image GUID for GA versions of the API."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2566,7 +2541,7 @@ pub mod images {
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `catalog_name`: Name of catalog"]
-        #[doc = "* `image_name`: Image name. Use .default for image creation."]
+        #[doc = "* `image_name`: Image name. Use an image GUID for GA versions of the API."]
         #[doc = "* `resource`: Resource create parameters."]
         pub fn create_or_update(
             &self,
@@ -2591,7 +2566,7 @@ pub mod images {
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `catalog_name`: Name of catalog"]
-        #[doc = "* `image_name`: Image name. Use .default for image creation."]
+        #[doc = "* `image_name`: Image name. Use an image GUID for GA versions of the API."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2748,13 +2723,11 @@ pub mod images {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/images",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/images",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2841,14 +2814,11 @@ pub mod images {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/images/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.image_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/images/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.image_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2958,14 +2928,11 @@ pub mod images {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/images/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.image_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/images/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.image_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3073,13 +3040,13 @@ pub mod images {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -3127,14 +3094,11 @@ pub mod images {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/images/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.image_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/images/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.image_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3413,13 +3377,11 @@ pub mod products {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3506,14 +3468,11 @@ pub mod products {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.product_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.product_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3623,14 +3582,11 @@ pub mod products {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.product_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.product_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3743,13 +3699,13 @@ pub mod products {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -3799,14 +3755,11 @@ pub mod products {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.product_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.product_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3914,13 +3867,13 @@ pub mod products {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -3968,14 +3921,11 @@ pub mod products {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.product_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.product_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4063,14 +4013,11 @@ pub mod products {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/countDevices",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.product_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/countDevices",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.product_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4196,7 +4143,8 @@ pub mod products {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/generateDefaultDeviceGroups" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/generateDefaultDeviceGroups" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4542,14 +4490,11 @@ pub mod device_groups {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.product_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.product_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4637,15 +4582,11 @@ pub mod device_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.product_name,
-                    &self.device_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.product_name, &self.device_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4756,15 +4697,11 @@ pub mod device_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.product_name,
-                    &self.device_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.product_name, &self.device_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4877,13 +4814,13 @@ pub mod device_groups {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -4934,15 +4871,11 @@ pub mod device_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.product_name,
-                    &self.device_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.product_name, &self.device_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5050,13 +4983,13 @@ pub mod device_groups {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -5105,15 +5038,11 @@ pub mod device_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.product_name,
-                    &self.device_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.product_name, &self.device_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5207,7 +5136,8 @@ pub mod device_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/claimDevices" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/claimDevices" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5296,7 +5226,8 @@ pub mod device_groups {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/countDevices" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/countDevices" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5586,7 +5517,8 @@ pub mod deployments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/deployments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/deployments" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5675,7 +5607,8 @@ pub mod deployments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/deployments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . deployment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/deployments/{}" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . deployment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5787,7 +5720,8 @@ pub mod deployments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/deployments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . deployment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/deployments/{}" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . deployment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5895,13 +5829,13 @@ pub mod deployments {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -5951,7 +5885,8 @@ pub mod deployments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/deployments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . deployment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/deployments/{}" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . deployment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6249,15 +6184,11 @@ pub mod devices {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.catalog_name,
-                    &self.product_name,
-                    &self.device_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices",
+                    &self.subscription_id, &self.resource_group_name, &self.catalog_name, &self.product_name, &self.device_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6346,7 +6277,8 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . device_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices/{}" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . device_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6458,7 +6390,8 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . device_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices/{}" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . device_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6625,7 +6558,8 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . device_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices/{}" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . device_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6733,13 +6667,13 @@ pub mod devices {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -6789,7 +6723,8 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . device_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices/{}" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . device_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6889,7 +6824,8 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices/{}/generateCapabilityImage" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . device_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureSphere/catalogs/{}/products/{}/deviceGroups/{}/devices/{}/generateCapabilityImage" , & self . subscription_id , & self . resource_group_name , & self . catalog_name , & self . product_name , & self . device_group_name , & self . device_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

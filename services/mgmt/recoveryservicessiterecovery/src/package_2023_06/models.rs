@@ -1373,19 +1373,19 @@ pub struct A2aReplicationDetails {
     pub monitoring_job_type: Option<String>,
     #[doc = "The last heartbeat received from the source server."]
     #[serde(rename = "lastHeartbeat", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat: Option<time::OffsetDateTime>,
+    pub last_heartbeat: Option<::time::OffsetDateTime>,
     #[doc = "The agent version."]
     #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
     #[doc = "Agent expiry date."]
     #[serde(rename = "agentExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub agent_expiry_date: Option<time::OffsetDateTime>,
+    pub agent_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "A value indicating whether replication agent update is required."]
     #[serde(rename = "isReplicationAgentUpdateRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_replication_agent_update_required: Option<bool>,
     #[doc = "Agent certificate expiry date."]
     #[serde(rename = "agentCertificateExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub agent_certificate_expiry_date: Option<time::OffsetDateTime>,
+    pub agent_certificate_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "A value indicating whether agent certificate update is required."]
     #[serde(
         rename = "isReplicationAgentCertificateUpdateRequired",
@@ -1413,7 +1413,7 @@ pub struct A2aReplicationDetails {
     pub rpo_in_seconds: Option<i64>,
     #[doc = "The time (in UTC) when the last RPO value was calculated by Protection Service."]
     #[serde(rename = "lastRpoCalculatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_rpo_calculated_time: Option<time::OffsetDateTime>,
+    pub last_rpo_calculated_time: Option<::time::OffsetDateTime>,
     #[doc = "The primary availability zone."]
     #[serde(rename = "primaryAvailabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub primary_availability_zone: Option<String>,
@@ -2365,10 +2365,10 @@ pub struct AsrTask {
     pub name: Option<String>,
     #[doc = "The start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The state/actions applicable on this task."]
     #[serde(
         rename = "allowedActions",
@@ -3314,7 +3314,7 @@ pub struct CriticalJobHistoryDetails {
     pub job_id: Option<String>,
     #[doc = "The start time of the job."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The job state."]
     #[serde(rename = "jobStatus", default, skip_serializing_if = "Option::is_none")]
     pub job_status: Option<String>,
@@ -3335,7 +3335,7 @@ pub struct CurrentJobDetails {
     pub job_id: Option<String>,
     #[doc = "The start time of the job."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
 }
 impl CurrentJobDetails {
     pub fn new() -> Self {
@@ -3353,7 +3353,7 @@ pub struct CurrentScenarioDetails {
     pub job_id: Option<String>,
     #[doc = "Start time of the workflow."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
 }
 impl CurrentScenarioDetails {
     pub fn new() -> Self {
@@ -3608,7 +3608,7 @@ pub struct DraDetails {
     pub version: Option<String>,
     #[doc = "The last heartbeat received from the DRA."]
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat_utc: Option<time::OffsetDateTime>,
+    pub last_heartbeat_utc: Option<::time::OffsetDateTime>,
     #[doc = "The health."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<dra_details::Health>,
@@ -3765,7 +3765,7 @@ pub struct EncryptionDetails {
     pub kek_cert_thumbprint: Option<String>,
     #[doc = "The key encryption key certificate expiry date."]
     #[serde(rename = "kekCertExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub kek_cert_expiry_date: Option<time::OffsetDateTime>,
+    pub kek_cert_expiry_date: Option<::time::OffsetDateTime>,
 }
 impl EncryptionDetails {
     pub fn new() -> Self {
@@ -3834,7 +3834,7 @@ pub struct EventProperties {
     pub severity: Option<String>,
     #[doc = "The time of occurrence of the event."]
     #[serde(rename = "timeOfOccurrence", default, with = "azure_core::date::rfc3339::option")]
-    pub time_of_occurrence: Option<time::OffsetDateTime>,
+    pub time_of_occurrence: Option<::time::OffsetDateTime>,
     #[doc = "The ARM ID of the fabric."]
     #[serde(rename = "fabricId", default, skip_serializing_if = "Option::is_none")]
     pub fabric_id: Option<String>,
@@ -3896,10 +3896,10 @@ pub struct EventQueryParameter {
     pub affected_object_correlation_id: Option<String>,
     #[doc = "The start time of the time range within which the events are to be queried."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the time range within which the events are to be queried."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
 }
 impl EventQueryParameter {
     pub fn new() -> Self {
@@ -4352,7 +4352,7 @@ pub struct FailoverReplicationProtectedItemDetails {
     pub recovery_point_id: Option<String>,
     #[doc = "The recovery point time."]
     #[serde(rename = "recoveryPointTime", default, with = "azure_core::date::rfc3339::option")]
-    pub recovery_point_time: Option<time::OffsetDateTime>,
+    pub recovery_point_time: Option<::time::OffsetDateTime>,
 }
 impl FailoverReplicationProtectedItemDetails {
     pub fn new() -> Self {
@@ -4461,7 +4461,7 @@ pub struct HealthError {
     pub recommended_action: Option<String>,
     #[doc = "Error creation time (UTC)."]
     #[serde(rename = "creationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time_utc: Option<time::OffsetDateTime>,
+    pub creation_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "DRA error message."]
     #[serde(rename = "recoveryProviderErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub recovery_provider_error_message: Option<String>,
@@ -5267,13 +5267,13 @@ pub struct HyperVReplicaAzureReplicationDetails {
     pub recovery_azure_log_storage_account_id: Option<String>,
     #[doc = "The Last replication time."]
     #[serde(rename = "lastReplicatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_replicated_time: Option<time::OffsetDateTime>,
+    pub last_replicated_time: Option<::time::OffsetDateTime>,
     #[doc = "Last RPO value."]
     #[serde(rename = "rpoInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub rpo_in_seconds: Option<i64>,
     #[doc = "The last RPO calculated time."]
     #[serde(rename = "lastRpoCalculatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_rpo_calculated_time: Option<time::OffsetDateTime>,
+    pub last_rpo_calculated_time: Option<::time::OffsetDateTime>,
     #[doc = "The virtual machine Id."]
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
     pub vm_id: Option<String>,
@@ -5338,7 +5338,7 @@ pub struct HyperVReplicaAzureReplicationDetails {
     pub sql_server_license_type: Option<String>,
     #[doc = "The last recovery point received time."]
     #[serde(rename = "lastRecoveryPointReceived", default, with = "azure_core::date::rfc3339::option")]
-    pub last_recovery_point_received: Option<time::OffsetDateTime>,
+    pub last_recovery_point_received: Option<::time::OffsetDateTime>,
     #[doc = "The target VM tags."]
     #[serde(rename = "targetVmTags", default, skip_serializing_if = "Option::is_none")]
     pub target_vm_tags: Option<serde_json::Value>,
@@ -5680,7 +5680,7 @@ impl HyperVReplicaBasePolicyDetails {
 pub struct HyperVReplicaBaseReplicationDetails {
     #[doc = "The Last replication time."]
     #[serde(rename = "lastReplicatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_replicated_time: Option<time::OffsetDateTime>,
+    pub last_replicated_time: Option<::time::OffsetDateTime>,
     #[doc = "The PE Network details."]
     #[serde(
         rename = "vmNics",
@@ -5803,7 +5803,7 @@ impl HyperVReplicaBluePolicyInput {
 pub struct HyperVReplicaBlueReplicationDetails {
     #[doc = "The Last replication time."]
     #[serde(rename = "lastReplicatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_replicated_time: Option<time::OffsetDateTime>,
+    pub last_replicated_time: Option<::time::OffsetDateTime>,
     #[doc = "The PE Network details."]
     #[serde(
         rename = "vmNics",
@@ -5964,7 +5964,7 @@ pub enum HyperVReplicaPolicyInputUnion {
 pub struct HyperVReplicaReplicationDetails {
     #[doc = "The Last replication time."]
     #[serde(rename = "lastReplicatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_replicated_time: Option<time::OffsetDateTime>,
+    pub last_replicated_time: Option<::time::OffsetDateTime>,
     #[doc = "The PE Network details."]
     #[serde(
         rename = "vmNics",
@@ -6351,7 +6351,7 @@ pub struct InMageAgentDetails {
     pub post_update_reboot_status: Option<String>,
     #[doc = "Agent expiry date."]
     #[serde(rename = "agentExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub agent_expiry_date: Option<time::OffsetDateTime>,
+    pub agent_expiry_date: Option<::time::OffsetDateTime>,
 }
 impl InMageAgentDetails {
     pub fn new() -> Self {
@@ -6887,7 +6887,7 @@ pub struct InMageAzureV2ProtectedDiskDetails {
     pub disk_resized: Option<String>,
     #[doc = "The last RPO calculated time."]
     #[serde(rename = "lastRpoCalculatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_rpo_calculated_time: Option<time::OffsetDateTime>,
+    pub last_rpo_calculated_time: Option<::time::OffsetDateTime>,
     #[doc = "The resync processed bytes."]
     #[serde(rename = "resyncProcessedBytes", default, skip_serializing_if = "Option::is_none")]
     pub resync_processed_bytes: Option<i64>,
@@ -6899,10 +6899,10 @@ pub struct InMageAzureV2ProtectedDiskDetails {
     pub resync_last15_minutes_transferred_bytes: Option<i64>,
     #[doc = "The last data transfer time in UTC."]
     #[serde(rename = "resyncLastDataTransferTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub resync_last_data_transfer_time_utc: Option<time::OffsetDateTime>,
+    pub resync_last_data_transfer_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The resync start time."]
     #[serde(rename = "resyncStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub resync_start_time: Option<time::OffsetDateTime>,
+    pub resync_start_time: Option<::time::OffsetDateTime>,
     #[doc = "The Progress Health."]
     #[serde(rename = "progressHealth", default, skip_serializing_if = "Option::is_none")]
     pub progress_health: Option<String>,
@@ -6973,7 +6973,7 @@ pub struct InMageAzureV2ReplicationDetails {
     pub agent_version: Option<String>,
     #[doc = "Agent expiry date."]
     #[serde(rename = "agentExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub agent_expiry_date: Option<time::OffsetDateTime>,
+    pub agent_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "A value indicating whether installed agent needs to be updated."]
     #[serde(rename = "isAgentUpdateRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_agent_update_required: Option<String>,
@@ -6982,7 +6982,7 @@ pub struct InMageAzureV2ReplicationDetails {
     pub is_reboot_after_update_required: Option<String>,
     #[doc = "The last heartbeat received from the source server."]
     #[serde(rename = "lastHeartbeat", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat: Option<time::OffsetDateTime>,
+    pub last_heartbeat: Option<::time::OffsetDateTime>,
     #[doc = "The process server Id."]
     #[serde(rename = "processServerId", default, skip_serializing_if = "Option::is_none")]
     pub process_server_id: Option<String>,
@@ -7111,10 +7111,10 @@ pub struct InMageAzureV2ReplicationDetails {
     pub validation_errors: Vec<HealthError>,
     #[doc = "The last RPO calculated time."]
     #[serde(rename = "lastRpoCalculatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_rpo_calculated_time: Option<time::OffsetDateTime>,
+    pub last_rpo_calculated_time: Option<::time::OffsetDateTime>,
     #[doc = "The last update time received from on-prem components."]
     #[serde(rename = "lastUpdateReceivedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_update_received_time: Option<time::OffsetDateTime>,
+    pub last_update_received_time: Option<::time::OffsetDateTime>,
     #[doc = "The replica id of the protected item."]
     #[serde(rename = "replicaId", default, skip_serializing_if = "Option::is_none")]
     pub replica_id: Option<String>,
@@ -7131,7 +7131,7 @@ pub struct InMageAzureV2ReplicationDetails {
     pub protected_managed_disks: Vec<InMageAzureV2ManagedDiskDetails>,
     #[doc = "The last recovery point received time."]
     #[serde(rename = "lastRecoveryPointReceived", default, with = "azure_core::date::rfc3339::option")]
-    pub last_recovery_point_received: Option<time::OffsetDateTime>,
+    pub last_recovery_point_received: Option<::time::OffsetDateTime>,
     #[doc = "The firmware type of this protected item."]
     #[serde(rename = "firmwareType", default, skip_serializing_if = "Option::is_none")]
     pub firmware_type: Option<String>,
@@ -7852,7 +7852,7 @@ pub struct InMageProtectedDiskDetails {
     pub disk_resized: Option<String>,
     #[doc = "The last RPO calculated time."]
     #[serde(rename = "lastRpoCalculatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_rpo_calculated_time: Option<time::OffsetDateTime>,
+    pub last_rpo_calculated_time: Option<::time::OffsetDateTime>,
     #[doc = "The resync processed bytes."]
     #[serde(rename = "resyncProcessedBytes", default, skip_serializing_if = "Option::is_none")]
     pub resync_processed_bytes: Option<i64>,
@@ -7864,10 +7864,10 @@ pub struct InMageProtectedDiskDetails {
     pub resync_last15_minutes_transferred_bytes: Option<i64>,
     #[doc = "The last data transfer time in UTC."]
     #[serde(rename = "resyncLastDataTransferTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub resync_last_data_transfer_time_utc: Option<time::OffsetDateTime>,
+    pub resync_last_data_transfer_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The resync start time."]
     #[serde(rename = "resyncStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub resync_start_time: Option<time::OffsetDateTime>,
+    pub resync_start_time: Option<::time::OffsetDateTime>,
     #[doc = "The Progress Health."]
     #[serde(rename = "progressHealth", default, skip_serializing_if = "Option::is_none")]
     pub progress_health: Option<String>,
@@ -8020,16 +8020,16 @@ pub struct InMageRcmDiscoveredProtectedVmDetails {
     pub os_name: Option<String>,
     #[doc = "The SDS created timestamp."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The SDS updated timestamp."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "A value indicating whether the VM is deleted."]
     #[serde(rename = "isDeleted", default, skip_serializing_if = "Option::is_none")]
     pub is_deleted: Option<bool>,
     #[doc = "The last time when SDS information discovered in SRS."]
     #[serde(rename = "lastDiscoveryTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_discovery_time_in_utc: Option<time::OffsetDateTime>,
+    pub last_discovery_time_in_utc: Option<::time::OffsetDateTime>,
 }
 impl InMageRcmDiscoveredProtectedVmDetails {
     pub fn new() -> Self {
@@ -8545,16 +8545,16 @@ pub struct InMageRcmFailbackDiscoveredProtectedVmDetails {
     pub os_name: Option<String>,
     #[doc = "The SDS created timestamp."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The SDS updated timestamp."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "A value indicating whether the VM is deleted."]
     #[serde(rename = "isDeleted", default, skip_serializing_if = "Option::is_none")]
     pub is_deleted: Option<bool>,
     #[doc = "The last time when SDS information discovered in SRS."]
     #[serde(rename = "lastDiscoveryTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_discovery_time_in_utc: Option<time::OffsetDateTime>,
+    pub last_discovery_time_in_utc: Option<::time::OffsetDateTime>,
 }
 impl InMageRcmFailbackDiscoveredProtectedVmDetails {
     pub fn new() -> Self {
@@ -8608,13 +8608,13 @@ pub struct InMageRcmFailbackMobilityAgentDetails {
     pub latest_upgradable_version_without_reboot: Option<String>,
     #[doc = "The agent version expiry date."]
     #[serde(rename = "agentVersionExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub agent_version_expiry_date: Option<time::OffsetDateTime>,
+    pub agent_version_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "The driver version expiry date."]
     #[serde(rename = "driverVersionExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub driver_version_expiry_date: Option<time::OffsetDateTime>,
+    pub driver_version_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "The time of the last heartbeat received from the agent."]
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat_utc: Option<time::OffsetDateTime>,
+    pub last_heartbeat_utc: Option<::time::OffsetDateTime>,
     #[doc = "The whether update is possible or not."]
     #[serde(
         rename = "reasonsBlockingUpgrade",
@@ -8776,7 +8776,7 @@ pub struct InMageRcmFailbackProtectedDiskDetails {
     pub resync_details: Option<InMageRcmFailbackSyncDetails>,
     #[doc = "The last sync time."]
     #[serde(rename = "lastSyncTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_sync_time: Option<time::OffsetDateTime>,
+    pub last_sync_time: Option<::time::OffsetDateTime>,
 }
 impl InMageRcmFailbackProtectedDiskDetails {
     pub fn new() -> Self {
@@ -8867,7 +8867,7 @@ pub struct InMageRcmFailbackReplicationDetails {
     pub vm_nics: Vec<InMageRcmFailbackNicDetails>,
     #[doc = "The last planned failover start time."]
     #[serde(rename = "lastPlannedFailoverStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_planned_failover_start_time: Option<time::OffsetDateTime>,
+    pub last_planned_failover_start_time: Option<::time::OffsetDateTime>,
     #[doc = "The last planned failover status."]
     #[serde(rename = "lastPlannedFailoverStatus", default, skip_serializing_if = "Option::is_none")]
     pub last_planned_failover_status: Option<in_mage_rcm_failback_replication_details::LastPlannedFailoverStatus>,
@@ -9238,13 +9238,13 @@ pub struct InMageRcmMobilityAgentDetails {
     pub latest_upgradable_version_without_reboot: Option<String>,
     #[doc = "The agent version expiry date."]
     #[serde(rename = "agentVersionExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub agent_version_expiry_date: Option<time::OffsetDateTime>,
+    pub agent_version_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "The driver version expiry date."]
     #[serde(rename = "driverVersionExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub driver_version_expiry_date: Option<time::OffsetDateTime>,
+    pub driver_version_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "The time of the last heartbeat received from the agent."]
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat_utc: Option<time::OffsetDateTime>,
+    pub last_heartbeat_utc: Option<::time::OffsetDateTime>,
     #[doc = "The whether update is possible or not."]
     #[serde(
         rename = "reasonsBlockingUpgrade",
@@ -9724,13 +9724,13 @@ pub struct InMageRcmReplicationDetails {
     pub failover_recovery_point_id: Option<String>,
     #[doc = "The last recovery point received time."]
     #[serde(rename = "lastRecoveryPointReceived", default, with = "azure_core::date::rfc3339::option")]
-    pub last_recovery_point_received: Option<time::OffsetDateTime>,
+    pub last_recovery_point_received: Option<::time::OffsetDateTime>,
     #[doc = "The last recovery point objective value."]
     #[serde(rename = "lastRpoInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub last_rpo_in_seconds: Option<i64>,
     #[doc = "The last recovery point objective calculated time."]
     #[serde(rename = "lastRpoCalculatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_rpo_calculated_time: Option<time::OffsetDateTime>,
+    pub last_rpo_calculated_time: Option<::time::OffsetDateTime>,
     #[doc = "The last recovery point Id."]
     #[serde(rename = "lastRecoveryPointId", default, skip_serializing_if = "Option::is_none")]
     pub last_recovery_point_id: Option<String>,
@@ -10348,10 +10348,10 @@ pub struct InMageReplicationDetails {
     pub resync_details: Option<InitialReplicationDetails>,
     #[doc = "The retention window start time."]
     #[serde(rename = "retentionWindowStart", default, with = "azure_core::date::rfc3339::option")]
-    pub retention_window_start: Option<time::OffsetDateTime>,
+    pub retention_window_start: Option<::time::OffsetDateTime>,
     #[doc = "The retention window end time."]
     #[serde(rename = "retentionWindowEnd", default, with = "azure_core::date::rfc3339::option")]
-    pub retention_window_end: Option<time::OffsetDateTime>,
+    pub retention_window_end: Option<::time::OffsetDateTime>,
     #[doc = "The compressed data change rate in MB."]
     #[serde(rename = "compressedDataRateInMB", default, skip_serializing_if = "Option::is_none")]
     pub compressed_data_rate_in_mb: Option<f64>,
@@ -10374,7 +10374,7 @@ pub struct InMageReplicationDetails {
     pub ip_address: Option<String>,
     #[doc = "The last heartbeat received from the source server."]
     #[serde(rename = "lastHeartbeat", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat: Option<time::OffsetDateTime>,
+    pub last_heartbeat: Option<::time::OffsetDateTime>,
     #[doc = "The process server Id."]
     #[serde(rename = "processServerId", default, skip_serializing_if = "Option::is_none")]
     pub process_server_id: Option<String>,
@@ -10439,10 +10439,10 @@ pub struct InMageReplicationDetails {
     pub validation_errors: Vec<HealthError>,
     #[doc = "The last RPO calculated time."]
     #[serde(rename = "lastRpoCalculatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_rpo_calculated_time: Option<time::OffsetDateTime>,
+    pub last_rpo_calculated_time: Option<::time::OffsetDateTime>,
     #[doc = "The last update time received from on-prem components."]
     #[serde(rename = "lastUpdateReceivedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_update_received_time: Option<time::OffsetDateTime>,
+    pub last_update_received_time: Option<::time::OffsetDateTime>,
     #[doc = "The replica id of the protected item."]
     #[serde(rename = "replicaId", default, skip_serializing_if = "Option::is_none")]
     pub replica_id: Option<String>,
@@ -10786,7 +10786,7 @@ pub struct InnerHealthError {
     pub recommended_action: Option<String>,
     #[doc = "Error creation time (UTC)."]
     #[serde(rename = "creationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time_utc: Option<time::OffsetDateTime>,
+    pub creation_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "DRA error message."]
     #[serde(rename = "recoveryProviderErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub recovery_provider_error_message: Option<String>,
@@ -10965,7 +10965,7 @@ pub struct JobErrorDetails {
     pub error_level: Option<String>,
     #[doc = "The creation time of job error."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "The Id of the task."]
     #[serde(rename = "taskId", default, skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
@@ -11009,10 +11009,10 @@ pub struct JobProperties {
     pub errors: Vec<JobErrorDetails>,
     #[doc = "The start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The Allowed action the job."]
     #[serde(
         rename = "allowedActions",
@@ -11278,7 +11278,7 @@ pub struct MarsAgentDetails {
     pub version: Option<String>,
     #[doc = "The last heartbeat received from the Mars agent."]
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat_utc: Option<time::OffsetDateTime>,
+    pub last_heartbeat_utc: Option<::time::OffsetDateTime>,
     #[doc = "The health of the Mars agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<mars_agent_details::Health>,
@@ -11360,7 +11360,7 @@ pub struct MasterTargetServer {
     pub agent_version: Option<String>,
     #[doc = "The last heartbeat received from the server."]
     #[serde(rename = "lastHeartbeat", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat: Option<time::OffsetDateTime>,
+    pub last_heartbeat: Option<::time::OffsetDateTime>,
     #[doc = "Version status."]
     #[serde(rename = "versionStatus", default, skip_serializing_if = "Option::is_none")]
     pub version_status: Option<String>,
@@ -11404,13 +11404,13 @@ pub struct MasterTargetServer {
     pub os_version: Option<String>,
     #[doc = "Agent expiry date."]
     #[serde(rename = "agentExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub agent_expiry_date: Option<time::OffsetDateTime>,
+    pub agent_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "MARS agent version."]
     #[serde(rename = "marsAgentVersion", default, skip_serializing_if = "Option::is_none")]
     pub mars_agent_version: Option<String>,
     #[doc = "MARS agent expiry date."]
     #[serde(rename = "marsAgentExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub mars_agent_expiry_date: Option<time::OffsetDateTime>,
+    pub mars_agent_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "Version related details."]
     #[serde(rename = "agentVersionDetails", default, skip_serializing_if = "Option::is_none")]
     pub agent_version_details: Option<VersionDetails>,
@@ -11517,13 +11517,13 @@ pub struct MigrationItemProperties {
     pub migration_state_description: Option<String>,
     #[doc = "The last test migration time."]
     #[serde(rename = "lastTestMigrationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_test_migration_time: Option<time::OffsetDateTime>,
+    pub last_test_migration_time: Option<::time::OffsetDateTime>,
     #[doc = "The status of the last test migration."]
     #[serde(rename = "lastTestMigrationStatus", default, skip_serializing_if = "Option::is_none")]
     pub last_test_migration_status: Option<String>,
     #[doc = "The last migration time."]
     #[serde(rename = "lastMigrationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_migration_time: Option<time::OffsetDateTime>,
+    pub last_migration_time: Option<::time::OffsetDateTime>,
     #[doc = "The status of the last migration."]
     #[serde(rename = "lastMigrationStatus", default, skip_serializing_if = "Option::is_none")]
     pub last_migration_status: Option<String>,
@@ -11811,7 +11811,7 @@ impl MigrationRecoveryPointCollection {
 pub struct MigrationRecoveryPointProperties {
     #[doc = "The recovery point time."]
     #[serde(rename = "recoveryPointTime", default, with = "azure_core::date::rfc3339::option")]
-    pub recovery_point_time: Option<time::OffsetDateTime>,
+    pub recovery_point_time: Option<::time::OffsetDateTime>,
     #[doc = "The recovery point type."]
     #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<migration_recovery_point_properties::RecoveryPointType>,
@@ -12419,7 +12419,7 @@ pub struct ProcessServer {
     pub agent_version: Option<String>,
     #[doc = "The last heartbeat received from the server."]
     #[serde(rename = "lastHeartbeat", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat: Option<time::OffsetDateTime>,
+    pub last_heartbeat: Option<::time::OffsetDateTime>,
     #[doc = "Version status."]
     #[serde(rename = "versionStatus", default, skip_serializing_if = "Option::is_none")]
     pub version_status: Option<String>,
@@ -12475,7 +12475,7 @@ pub struct ProcessServer {
     pub ps_service_status: Option<String>,
     #[doc = "The PS SSL cert expiry date."]
     #[serde(rename = "sslCertExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub ssl_cert_expiry_date: Option<time::OffsetDateTime>,
+    pub ssl_cert_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "CS SSL cert expiry date."]
     #[serde(rename = "sslCertExpiryRemainingDays", default, skip_serializing_if = "Option::is_none")]
     pub ssl_cert_expiry_remaining_days: Option<i32>,
@@ -12492,7 +12492,7 @@ pub struct ProcessServer {
     pub health_errors: Vec<HealthError>,
     #[doc = "Agent expiry date."]
     #[serde(rename = "agentExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub agent_expiry_date: Option<time::OffsetDateTime>,
+    pub agent_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "Version related details."]
     #[serde(rename = "agentVersionDetails", default, skip_serializing_if = "Option::is_none")]
     pub agent_version_details: Option<VersionDetails>,
@@ -12501,7 +12501,7 @@ pub struct ProcessServer {
     pub health: Option<process_server::Health>,
     #[doc = "The process server stats refresh time."]
     #[serde(rename = "psStatsRefreshTime", default, with = "azure_core::date::rfc3339::option")]
-    pub ps_stats_refresh_time: Option<time::OffsetDateTime>,
+    pub ps_stats_refresh_time: Option<::time::OffsetDateTime>,
     #[doc = "The uploading pending data in bytes."]
     #[serde(rename = "throughputUploadPendingDataInBytes", default, skip_serializing_if = "Option::is_none")]
     pub throughput_upload_pending_data_in_bytes: Option<i64>,
@@ -12601,7 +12601,7 @@ pub struct ProcessServerDetails {
     pub version: Option<String>,
     #[doc = "The last heartbeat received from the process server."]
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat_utc: Option<time::OffsetDateTime>,
+    pub last_heartbeat_utc: Option<::time::OffsetDateTime>,
     #[doc = "The total memory."]
     #[serde(rename = "totalMemoryInBytes", default, skip_serializing_if = "Option::is_none")]
     pub total_memory_in_bytes: Option<i64>,
@@ -13369,7 +13369,7 @@ pub struct PushInstallerDetails {
     pub version: Option<String>,
     #[doc = "The last heartbeat received from the push installer."]
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat_utc: Option<time::OffsetDateTime>,
+    pub last_heartbeat_utc: Option<::time::OffsetDateTime>,
     #[doc = "The health of the push installer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<push_installer_details::Health>,
@@ -13457,7 +13457,7 @@ pub struct RcmProxyDetails {
     pub version: Option<String>,
     #[doc = "The last heartbeat received from the RCM proxy."]
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat_utc: Option<time::OffsetDateTime>,
+    pub last_heartbeat_utc: Option<::time::OffsetDateTime>,
     #[doc = "The health of the RCM proxy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<rcm_proxy_details::Health>,
@@ -14466,13 +14466,13 @@ pub struct RecoveryPlanProperties {
     pub allowed_operations: Vec<String>,
     #[doc = "The start time of the last planned failover."]
     #[serde(rename = "lastPlannedFailoverTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_planned_failover_time: Option<time::OffsetDateTime>,
+    pub last_planned_failover_time: Option<::time::OffsetDateTime>,
     #[doc = "The start time of the last unplanned failover."]
     #[serde(rename = "lastUnplannedFailoverTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_unplanned_failover_time: Option<time::OffsetDateTime>,
+    pub last_unplanned_failover_time: Option<::time::OffsetDateTime>,
     #[doc = "The start time of the last test failover."]
     #[serde(rename = "lastTestFailoverTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_test_failover_time: Option<time::OffsetDateTime>,
+    pub last_test_failover_time: Option<::time::OffsetDateTime>,
     #[doc = "Current scenario details of the protected entity."]
     #[serde(rename = "currentScenario", default, skip_serializing_if = "Option::is_none")]
     pub current_scenario: Option<CurrentScenarioDetails>,
@@ -14886,7 +14886,7 @@ impl RecoveryPointCollection {
 pub struct RecoveryPointProperties {
     #[doc = "The recovery point time."]
     #[serde(rename = "recoveryPointTime", default, with = "azure_core::date::rfc3339::option")]
-    pub recovery_point_time: Option<time::OffsetDateTime>,
+    pub recovery_point_time: Option<::time::OffsetDateTime>,
     #[doc = "The recovery point type: ApplicationConsistent, CrashConsistent."]
     #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<String>,
@@ -14970,13 +14970,13 @@ pub struct RecoveryServicesProviderProperties {
     pub provider_version_state: Option<String>,
     #[doc = "Expiry date of the version."]
     #[serde(rename = "providerVersionExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub provider_version_expiry_date: Option<time::OffsetDateTime>,
+    pub provider_version_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "The fabric friendly name."]
     #[serde(rename = "fabricFriendlyName", default, skip_serializing_if = "Option::is_none")]
     pub fabric_friendly_name: Option<String>,
     #[doc = "Time when last heartbeat was sent by the DRA."]
     #[serde(rename = "lastHeartBeat", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heart_beat: Option<time::OffsetDateTime>,
+    pub last_heart_beat: Option<::time::OffsetDateTime>,
     #[doc = "A value indicating whether DRA is responsive."]
     #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<String>,
@@ -15142,7 +15142,7 @@ pub struct ReplicationAgentDetails {
     pub version: Option<String>,
     #[doc = "The last heartbeat received from the replication agent."]
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat_utc: Option<time::OffsetDateTime>,
+    pub last_heartbeat_utc: Option<::time::OffsetDateTime>,
     #[doc = "The health of the replication agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<replication_agent_details::Health>,
@@ -15447,10 +15447,10 @@ pub struct ReplicationProtectedItemProperties {
     pub policy_friendly_name: Option<String>,
     #[doc = "The Last successful failover time."]
     #[serde(rename = "lastSuccessfulFailoverTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_successful_failover_time: Option<time::OffsetDateTime>,
+    pub last_successful_failover_time: Option<::time::OffsetDateTime>,
     #[doc = "The Last successful test failover time."]
     #[serde(rename = "lastSuccessfulTestFailoverTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_successful_test_failover_time: Option<time::OffsetDateTime>,
+    pub last_successful_test_failover_time: Option<::time::OffsetDateTime>,
     #[doc = "Current scenario details of the protected entity."]
     #[serde(rename = "currentScenario", default, skip_serializing_if = "Option::is_none")]
     pub current_scenario: Option<CurrentScenarioDetails>,
@@ -15623,7 +15623,7 @@ pub struct ReprotectAgentDetails {
     pub version: Option<String>,
     #[doc = "The last heartbeat received from the reprotect agent."]
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat_utc: Option<time::OffsetDateTime>,
+    pub last_heartbeat_utc: Option<::time::OffsetDateTime>,
     #[doc = "The health of the reprotect agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<reprotect_agent_details::Health>,
@@ -15651,7 +15651,7 @@ pub struct ReprotectAgentDetails {
     pub vcenter_id: Option<String>,
     #[doc = "The last time when SDS information discovered in SRS."]
     #[serde(rename = "lastDiscoveryInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_discovery_in_utc: Option<time::OffsetDateTime>,
+    pub last_discovery_in_utc: Option<::time::OffsetDateTime>,
 }
 impl ReprotectAgentDetails {
     pub fn new() -> Self {
@@ -17045,7 +17045,7 @@ pub struct VCenterProperties {
     pub internal_id: Option<String>,
     #[doc = "The time when the last heartbeat was received by vCenter."]
     #[serde(rename = "lastHeartbeat", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat: Option<time::OffsetDateTime>,
+    pub last_heartbeat: Option<::time::OffsetDateTime>,
     #[doc = "The VCenter discovery status."]
     #[serde(rename = "discoveryStatus", default, skip_serializing_if = "Option::is_none")]
     pub discovery_status: Option<String>,
@@ -17657,7 +17657,7 @@ pub struct VMwareCbtMigrationDetails {
     pub migration_recovery_point_id: Option<String>,
     #[doc = "The last recovery point received time."]
     #[serde(rename = "lastRecoveryPointReceived", default, with = "azure_core::date::rfc3339::option")]
-    pub last_recovery_point_received: Option<time::OffsetDateTime>,
+    pub last_recovery_point_received: Option<::time::OffsetDateTime>,
     #[doc = "The last recovery point Id."]
     #[serde(rename = "lastRecoveryPointId", default, skip_serializing_if = "Option::is_none")]
     pub last_recovery_point_id: Option<String>,
@@ -18615,13 +18615,13 @@ pub struct VMwareDetails {
     pub host_name: Option<String>,
     #[doc = "The last heartbeat received from CS server."]
     #[serde(rename = "lastHeartbeat", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat: Option<time::OffsetDateTime>,
+    pub last_heartbeat: Option<::time::OffsetDateTime>,
     #[doc = "Version status."]
     #[serde(rename = "versionStatus", default, skip_serializing_if = "Option::is_none")]
     pub version_status: Option<String>,
     #[doc = "CS SSL cert expiry date."]
     #[serde(rename = "sslCertExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub ssl_cert_expiry_date: Option<time::OffsetDateTime>,
+    pub ssl_cert_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "CS SSL cert expiry date."]
     #[serde(rename = "sslCertExpiryRemainingDays", default, skip_serializing_if = "Option::is_none")]
     pub ssl_cert_expiry_remaining_days: Option<i32>,
@@ -18630,7 +18630,7 @@ pub struct VMwareDetails {
     pub ps_template_version: Option<String>,
     #[doc = "Agent expiry date."]
     #[serde(rename = "agentExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub agent_expiry_date: Option<time::OffsetDateTime>,
+    pub agent_expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "Version related details."]
     #[serde(rename = "agentVersionDetails", default, skip_serializing_if = "Option::is_none")]
     pub agent_version_details: Option<VersionDetails>,
@@ -18935,7 +18935,7 @@ pub struct VersionDetails {
     pub version: Option<String>,
     #[doc = "Version expiry date."]
     #[serde(rename = "expiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_date: Option<time::OffsetDateTime>,
+    pub expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "A value indicating whether security update required."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<version_details::Status>,

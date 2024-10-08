@@ -70,7 +70,7 @@ pub mod multiple_activation_key {
         pub multiple_activation_key: Option<String>,
         #[doc = "End of support of security updates activated by the MAK key."]
         #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-        pub expiration_date: Option<time::OffsetDateTime>,
+        pub expiration_date: Option<::time::OffsetDateTime>,
         #[doc = "Type of OS for which the key is requested."]
         #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
         pub os_type: Option<properties::OsType>,

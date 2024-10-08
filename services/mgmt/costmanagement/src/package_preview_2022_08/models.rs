@@ -577,10 +577,10 @@ pub struct DimensionProperties {
     pub category: Option<String>,
     #[doc = "Usage start."]
     #[serde(rename = "usageStart", default, with = "azure_core::date::rfc3339::option")]
-    pub usage_start: Option<time::OffsetDateTime>,
+    pub usage_start: Option<::time::OffsetDateTime>,
     #[doc = "Usage end."]
     #[serde(rename = "usageEnd", default, with = "azure_core::date::rfc3339::option")]
-    pub usage_end: Option<time::OffsetDateTime>,
+    pub usage_end: Option<::time::OffsetDateTime>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -1530,13 +1530,13 @@ impl QueryResult {
 pub struct QueryTimePeriod {
     #[doc = "The start date to pull data from."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub from: time::OffsetDateTime,
+    pub from: ::time::OffsetDateTime,
     #[doc = "The end date to pull data to."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub to: time::OffsetDateTime,
+    pub to: ::time::OffsetDateTime,
 }
 impl QueryTimePeriod {
-    pub fn new(from: time::OffsetDateTime, to: time::OffsetDateTime) -> Self {
+    pub fn new(from: ::time::OffsetDateTime, to: ::time::OffsetDateTime) -> Self {
         Self { from, to }
     }
 }
@@ -1984,13 +1984,13 @@ pub mod report_config_sorting {
 pub struct ReportConfigTimePeriod {
     #[doc = "The start date to pull data from."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub from: time::OffsetDateTime,
+    pub from: ::time::OffsetDateTime,
     #[doc = "The end date to pull data to."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub to: time::OffsetDateTime,
+    pub to: ::time::OffsetDateTime,
 }
 impl ReportConfigTimePeriod {
-    pub fn new(from: time::OffsetDateTime, to: time::OffsetDateTime) -> Self {
+    pub fn new(from: ::time::OffsetDateTime, to: ::time::OffsetDateTime) -> Self {
         Self { from, to }
     }
 }
@@ -2002,7 +2002,7 @@ pub struct ReportUrl {
     pub report_url: Option<ReservationReportSchema>,
     #[doc = "The time at which report URL becomes invalid."]
     #[serde(rename = "validUntil", default, with = "azure_core::date::rfc3339::option")]
-    pub valid_until: Option<time::OffsetDateTime>,
+    pub valid_until: Option<::time::OffsetDateTime>,
 }
 impl ReportUrl {
     pub fn new() -> Self {
@@ -2148,10 +2148,10 @@ pub struct ViewProperties {
     pub scope: Option<String>,
     #[doc = "Date the user created this view."]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "Date when the user last modified this view."]
     #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_on: Option<time::OffsetDateTime>,
+    pub modified_on: Option<::time::OffsetDateTime>,
     #[doc = "Date range of the current view."]
     #[serde(rename = "dateRange", default, skip_serializing_if = "Option::is_none")]
     pub date_range: Option<String>,

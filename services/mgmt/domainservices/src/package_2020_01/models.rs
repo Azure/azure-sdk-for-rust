@@ -480,10 +480,10 @@ pub struct HealthAlert {
     pub severity: Option<String>,
     #[doc = "Health Alert Raised DateTime"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub raised: Option<time::OffsetDateTime>,
+    pub raised: Option<::time::OffsetDateTime>,
     #[doc = "Health Alert Last Detected DateTime"]
     #[serde(rename = "lastDetected", default, with = "azure_core::date::rfc3339::option")]
-    pub last_detected: Option<time::OffsetDateTime>,
+    pub last_detected: Option<::time::OffsetDateTime>,
     #[doc = "Health Alert TSG Link"]
     #[serde(rename = "resolutionUri", default, skip_serializing_if = "Option::is_none")]
     pub resolution_uri: Option<String>,
@@ -531,7 +531,7 @@ pub struct LdapsSettings {
     pub certificate_thumbprint: Option<String>,
     #[doc = "NotAfter DateTime of configure ldaps certificate."]
     #[serde(rename = "certificateNotAfter", default, with = "azure_core::date::rfc3339::option")]
-    pub certificate_not_after: Option<time::OffsetDateTime>,
+    pub certificate_not_after: Option<::time::OffsetDateTime>,
     #[doc = "A flag to determine whether or not Secure LDAP access over the internet is enabled or disabled."]
     #[serde(rename = "externalAccess", default, skip_serializing_if = "Option::is_none")]
     pub external_access: Option<ldaps_settings::ExternalAccess>,
@@ -932,7 +932,7 @@ pub struct ReplicaSet {
     pub service_status: Option<String>,
     #[doc = "Last domain evaluation run DateTime"]
     #[serde(rename = "healthLastEvaluated", default, with = "azure_core::date::rfc1123::option")]
-    pub health_last_evaluated: Option<time::OffsetDateTime>,
+    pub health_last_evaluated: Option<::time::OffsetDateTime>,
     #[doc = "List of Domain Health Monitors"]
     #[serde(
         rename = "healthMonitors",

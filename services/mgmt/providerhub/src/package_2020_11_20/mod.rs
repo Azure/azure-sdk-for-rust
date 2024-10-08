@@ -275,13 +275,11 @@ pub mod custom_rollouts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/customRollouts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.rollout_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/customRollouts/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -381,13 +379,11 @@ pub mod custom_rollouts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/customRollouts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.rollout_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/customRollouts/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -510,12 +506,11 @@ pub mod custom_rollouts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/customRollouts",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/customRollouts",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -706,13 +701,11 @@ pub mod default_rollouts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.rollout_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -811,13 +804,11 @@ pub mod default_rollouts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.rollout_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -965,13 +956,11 @@ pub mod default_rollouts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.rollout_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1084,12 +1073,11 @@ pub mod default_rollouts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1171,13 +1159,11 @@ pub mod default_rollouts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}/stop",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.rollout_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}/stop",
+                    &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1301,12 +1287,11 @@ pub mod generate_manifest {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/generateManifest",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.provider_namespace
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/generateManifest",
+                &self.subscription_id, &self.provider_namespace
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1405,12 +1390,11 @@ pub mod checkin_manifest {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/checkinManifest",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.provider_namespace
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/checkinManifest",
+                &self.subscription_id, &self.provider_namespace
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -1593,13 +1577,11 @@ pub mod notification_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.notification_registration_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.notification_registration_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1699,13 +1681,11 @@ pub mod notification_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.notification_registration_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.notification_registration_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1798,13 +1778,11 @@ pub mod notification_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.notification_registration_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.notification_registration_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1917,12 +1895,11 @@ pub mod notification_registrations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2087,7 +2064,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/providers/Microsoft.ProviderHub/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.ProviderHub/operations");
                 Ok(url)
             }
         }
@@ -2167,12 +2145,11 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/operations/default",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/operations/default",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2271,12 +2248,11 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/operations/default",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/operations/default",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2368,12 +2344,11 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/operations/default",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/operations/default",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2537,12 +2512,11 @@ pub mod provider_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2640,12 +2614,11 @@ pub mod provider_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2792,12 +2765,11 @@ pub mod provider_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2909,11 +2881,11 @@ pub mod provider_registrations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2999,12 +2971,11 @@ pub mod provider_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/generateOperations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/generateOperations",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3188,13 +3159,11 @@ pub mod resource_type_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.resource_type
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.resource_type
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3293,13 +3262,11 @@ pub mod resource_type_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.resource_type
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.resource_type
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3447,13 +3414,11 @@ pub mod resource_type_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.resource_type
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.resource_type
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3566,12 +3531,11 @@ pub mod resource_type_registrations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4092,14 +4056,11 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.resource_type,
-                    &self.sku
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.resource_type, &self.sku
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4200,14 +4161,11 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.resource_type,
-                    &self.sku
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.resource_type, &self.sku
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4301,14 +4259,11 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.resource_type,
-                    &self.sku
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.resource_type, &self.sku
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4396,7 +4351,8 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4498,7 +4454,8 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4593,7 +4550,8 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4682,7 +4640,8 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4785,7 +4744,8 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4881,7 +4841,8 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4971,7 +4932,8 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5075,7 +5037,8 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5172,7 +5135,8 @@ pub mod skus {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5284,13 +5248,11 @@ pub mod skus {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.resource_type
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus",
+                    &self.subscription_id, &self.provider_namespace, &self.resource_type
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5403,7 +5365,8 @@ pub mod skus {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5517,7 +5480,8 @@ pub mod skus {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5632,7 +5596,8 @@ pub mod skus {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

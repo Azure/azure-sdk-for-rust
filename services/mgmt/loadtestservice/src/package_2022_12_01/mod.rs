@@ -129,7 +129,7 @@ pub mod operations {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Lists all the available API operations for Load Test Resource."]
+        #[doc = "List the operations for the provider"]
         pub fn list(&self) -> list::RequestBuilder {
             list::RequestBuilder { client: self.0.clone() }
         }
@@ -233,405 +233,14 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.LoadTestService/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.LoadTestService/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
                         .append_pair(azure_core::query_param::API_VERSION, "2022-12-01");
                 }
                 Ok(url)
-            }
-        }
-    }
-}
-pub mod quotas {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Lists all the available quota per region per subscription."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `location`: The name of Azure region."]
-        pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::RequestBuilder {
-            list::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                location: location.into(),
-            }
-        }
-        #[doc = "Get the available quota for a quota bucket per region per subscription."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `location`: The name of Azure region."]
-        #[doc = "* `quota_bucket_name`: Quota Bucket name."]
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            location: impl Into<String>,
-            quota_bucket_name: impl Into<String>,
-        ) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                location: location.into(),
-                quota_bucket_name: quota_bucket_name.into(),
-            }
-        }
-        #[doc = "Check Quota Availability on quota bucket per region per subscription."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `location`: The name of Azure region."]
-        #[doc = "* `quota_bucket_name`: Quota Bucket name."]
-        #[doc = "* `quota_bucket_request`: Quota Bucket Request data"]
-        pub fn check_availability(
-            &self,
-            subscription_id: impl Into<String>,
-            location: impl Into<String>,
-            quota_bucket_name: impl Into<String>,
-            quota_bucket_request: impl Into<models::QuotaBucketRequest>,
-        ) -> check_availability::RequestBuilder {
-            check_availability::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                location: location.into(),
-                quota_bucket_name: quota_bucket_name.into(),
-                quota_bucket_request: quota_bucket_request.into(),
-            }
-        }
-    }
-    pub mod list {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::QuotaResourceList> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::QuotaResourceList = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) location: String,
-        }
-        impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::QuotaResourceList, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
-                    let this = self.clone();
-                    async move {
-                        let mut url = this.url()?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let bearer_token = this.client.bearer_token().await?;
-                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-12-01");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let bearer_token = this.client.bearer_token().await?;
-                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        };
-                        rsp?.into_body().await
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.LoadTestService/locations/{}/quotas",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-12-01");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::QuotaResource> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::QuotaResource = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) location: String,
-            pub(crate) quota_bucket_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.LoadTestService/locations/{}/quotas/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location,
-                    &self.quota_bucket_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-12-01");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::QuotaResource>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::QuotaResource>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod check_availability {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::CheckQuotaAvailabilityResponse> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::CheckQuotaAvailabilityResponse = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) location: String,
-            pub(crate) quota_bucket_name: String,
-            pub(crate) quota_bucket_request: models::QuotaBucketRequest,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.quota_bucket_request)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.LoadTestService/locations/{}/quotas/{}/checkAvailability",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location,
-                    &self.quota_bucket_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-12-01");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::CheckQuotaAvailabilityResponse>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::CheckQuotaAvailabilityResponse>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -644,20 +253,20 @@ pub mod load_tests {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Lists loadtests resources in a subscription."]
+        #[doc = "List LoadTestResource resources by subscription ID"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
             list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
-        #[doc = "Lists loadtest resources in a resource group."]
+        #[doc = "List LoadTestResource resources by resource group"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
@@ -670,12 +279,12 @@ pub mod load_tests {
                 resource_group_name: resource_group_name.into(),
             }
         }
-        #[doc = "Get a LoadTest resource."]
+        #[doc = "Get a LoadTestResource"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `load_test_name`: Load Test name."]
+        #[doc = "* `load_test_name`: Load Test name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -689,13 +298,13 @@ pub mod load_tests {
                 load_test_name: load_test_name.into(),
             }
         }
-        #[doc = "Create or update LoadTest resource."]
+        #[doc = "Create a LoadTestResource"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `load_test_name`: Load Test name."]
-        #[doc = "* `load_test_resource`: LoadTest resource data"]
+        #[doc = "* `load_test_name`: Load Test name"]
+        #[doc = "* `load_test_resource`: Resource create parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -711,19 +320,19 @@ pub mod load_tests {
                 load_test_resource: load_test_resource.into(),
             }
         }
-        #[doc = "Update a loadtest resource."]
+        #[doc = "Update a LoadTestResource"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `load_test_name`: Load Test name."]
-        #[doc = "* `load_test_resource_patch_request_body`: LoadTest resource update data"]
+        #[doc = "* `load_test_name`: Load Test name"]
+        #[doc = "* `load_test_resource_patch_request_body`: The resource properties to be updated."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             load_test_name: impl Into<String>,
-            load_test_resource_patch_request_body: impl Into<models::LoadTestResourcePatchRequestBody>,
+            load_test_resource_patch_request_body: impl Into<models::LoadTestResourceUpdate>,
         ) -> update::RequestBuilder {
             update::RequestBuilder {
                 client: self.0.clone(),
@@ -733,12 +342,12 @@ pub mod load_tests {
                 load_test_resource_patch_request_body: load_test_resource_patch_request_body.into(),
             }
         }
-        #[doc = "Delete a LoadTest resource."]
+        #[doc = "Delete a LoadTestResource"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `load_test_name`: Load Test name."]
+        #[doc = "* `load_test_name`: Load Test name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -755,9 +364,9 @@ pub mod load_tests {
         #[doc = "Lists the endpoints that agents may call as part of load testing."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `load_test_name`: Load Test name."]
+        #[doc = "* `load_test_name`: Load Test name"]
         pub fn list_outbound_network_dependencies_endpoints(
             &self,
             subscription_id: impl Into<String>,
@@ -781,9 +390,9 @@ pub mod load_tests {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::LoadTestResourcePageList> {
+            pub async fn into_body(self) -> azure_core::Result<models::LoadTestResourceListResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::LoadTestResourcePageList = serde_json::from_slice(&bytes)?;
+                let body: models::LoadTestResourceListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -827,7 +436,7 @@ pub mod load_tests {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::LoadTestResourcePageList, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::LoadTestResourceListResult, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -872,11 +481,11 @@ pub mod load_tests {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.LoadTestService/loadTests",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.LoadTestService/loadTests",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -895,9 +504,9 @@ pub mod load_tests {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::LoadTestResourcePageList> {
+            pub async fn into_body(self) -> azure_core::Result<models::LoadTestResourceListResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::LoadTestResourcePageList = serde_json::from_slice(&bytes)?;
+                let body: models::LoadTestResourceListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -942,7 +551,7 @@ pub mod load_tests {
             pub(crate) resource_group_name: String,
         }
         impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::LoadTestResourcePageList, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::LoadTestResourceListResult, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -987,12 +596,11 @@ pub mod load_tests {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1078,13 +686,11 @@ pub mod load_tests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.load_test_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.load_test_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1142,10 +748,14 @@ pub mod load_tests {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "URL to query for status of the operation."]
+            #[doc = "A link to the status monitor"]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -1194,13 +804,11 @@ pub mod load_tests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.load_test_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.load_test_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1313,10 +921,18 @@ pub mod load_tests {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "URL to query for status of the operation."]
+            #[doc = "A link to the status monitor"]
             pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
                 self.0
                     .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
+            }
+            #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -1342,7 +958,7 @@ pub mod load_tests {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) load_test_name: String,
-            pub(crate) load_test_resource_patch_request_body: models::LoadTestResourcePatchRequestBody,
+            pub(crate) load_test_resource_patch_request_body: models::LoadTestResourceUpdate,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -1365,13 +981,11 @@ pub mod load_tests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.load_test_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.load_test_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1405,7 +1019,7 @@ pub mod load_tests {
                     let this = self.clone();
                     let response = this.send().await?;
                     let headers = response.as_raw_response().headers();
-                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    let location = get_location(headers, FinalState::Location)?;
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
@@ -1479,9 +1093,13 @@ pub mod load_tests {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "URL to query for status of the operation."]
+            #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -1528,13 +1146,11 @@ pub mod load_tests {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.load_test_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.load_test_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1553,9 +1169,9 @@ pub mod load_tests {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::OutboundEnvironmentEndpointCollection> {
+            pub async fn into_body(self) -> azure_core::Result<models::PagedOutboundEnvironmentEndpoint> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::OutboundEnvironmentEndpointCollection = serde_json::from_slice(&bytes)?;
+                let body: models::PagedOutboundEnvironmentEndpoint = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1601,7 +1217,7 @@ pub mod load_tests {
             pub(crate) load_test_name: String,
         }
         impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::OutboundEnvironmentEndpointCollection, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::PagedOutboundEnvironmentEndpoint, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -1646,13 +1262,398 @@ pub mod load_tests {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests/{}/outboundNetworkDependenciesEndpoints" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . load_test_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LoadTestService/loadTests/{}/outboundNetworkDependenciesEndpoints" , & self . subscription_id , & self . resource_group_name , & self . load_test_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
                         .append_pair(azure_core::query_param::API_VERSION, "2022-12-01");
                 }
                 Ok(url)
+            }
+        }
+    }
+}
+pub mod quotas {
+    use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "List quotas for a given subscription Id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `location`: The name of the Azure region."]
+        pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                location: location.into(),
+            }
+        }
+        #[doc = "Get the available quota for a quota bucket per region per subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `location`: The name of the Azure region."]
+        #[doc = "* `quota_bucket_name`: The quota name."]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            location: impl Into<String>,
+            quota_bucket_name: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                location: location.into(),
+                quota_bucket_name: quota_bucket_name.into(),
+            }
+        }
+        #[doc = "Check Quota Availability on quota bucket per region per subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `location`: The name of the Azure region."]
+        #[doc = "* `quota_bucket_name`: The quota name."]
+        #[doc = "* `quota_bucket_request`: The content of the action request"]
+        pub fn check_availability(
+            &self,
+            subscription_id: impl Into<String>,
+            location: impl Into<String>,
+            quota_bucket_name: impl Into<String>,
+            quota_bucket_request: impl Into<models::QuotaBucketRequest>,
+        ) -> check_availability::RequestBuilder {
+            check_availability::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                location: location.into(),
+                quota_bucket_name: quota_bucket_name.into(),
+                quota_bucket_request: quota_bucket_request.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::QuotaResourceListResult> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::QuotaResourceListResult = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) location: String,
+        }
+        impl RequestBuilder {
+            pub fn into_stream(self) -> azure_core::Pageable<models::QuotaResourceListResult, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = this.url()?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-12-01");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.LoadTestService/locations/{}/quotas",
+                    &self.subscription_id, &self.location
+                ));
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-12-01");
+                }
+                Ok(url)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::QuotaResource> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::QuotaResource = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) location: String,
+            pub(crate) quota_bucket_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.LoadTestService/locations/{}/quotas/{}",
+                    &self.subscription_id, &self.location, &self.quota_bucket_name
+                ));
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-12-01");
+                }
+                Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::QuotaResource>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::QuotaResource>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod check_availability {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::CheckQuotaAvailabilityResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::CheckQuotaAvailabilityResponse = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) location: String,
+            pub(crate) quota_bucket_name: String,
+            pub(crate) quota_bucket_request: models::QuotaBucketRequest,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.quota_bucket_request)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.LoadTestService/locations/{}/quotas/{}/checkAvailability",
+                    &self.subscription_id, &self.location, &self.quota_bucket_name
+                ));
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-12-01");
+                }
+                Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::CheckQuotaAvailabilityResponse>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::CheckQuotaAvailabilityResponse>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

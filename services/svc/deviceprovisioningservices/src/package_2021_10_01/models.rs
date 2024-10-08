@@ -224,7 +224,7 @@ pub struct DeviceRegistrationState {
     pub registration_id: Option<String>,
     #[doc = "Registration create date time (in UTC)."]
     #[serde(rename = "createdDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time_utc: Option<time::OffsetDateTime>,
+    pub created_date_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Assigned Azure IoT Hub."]
     #[serde(rename = "assignedHub", default, skip_serializing_if = "Option::is_none")]
     pub assigned_hub: Option<String>,
@@ -245,7 +245,7 @@ pub struct DeviceRegistrationState {
     pub error_message: Option<String>,
     #[doc = "Last updated date time (in UTC)."]
     #[serde(rename = "lastUpdatedDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_date_time_utc: Option<time::OffsetDateTime>,
+    pub last_updated_date_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The entity tag associated with the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -315,10 +315,10 @@ pub struct EnrollmentGroup {
     pub reprovision_policy: Option<ReprovisionPolicy>,
     #[doc = "The DateTime this resource was created."]
     #[serde(rename = "createdDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time_utc: Option<time::OffsetDateTime>,
+    pub created_date_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The DateTime this resource was last updated."]
     #[serde(rename = "lastUpdatedDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_date_time_utc: Option<time::OffsetDateTime>,
+    pub last_updated_date_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The allocation policy of this resource. This policy overrides the tenant level allocation policy for this individual enrollment or enrollment group. Possible values include 'hashed': Linked IoT hubs are equally likely to have devices provisioned to them, 'geoLatency':  Devices are provisioned to an IoT hub with the lowest latency to the device.If multiple linked IoT hubs would provide the same lowest latency, the provisioning service hashes devices across those hubs, 'static' : Specification of the desired IoT hub in the enrollment list takes priority over the service-level allocation policy, 'custom': Devices are provisioned to an IoT hub based on your own custom logic. The provisioning service passes information about the device to the logic, and the logic returns the desired IoT hub as well as the desired initial configuration. We recommend using Azure Functions to host your logic."]
     #[serde(rename = "allocationPolicy", default, skip_serializing_if = "Option::is_none")]
     pub allocation_policy: Option<enrollment_group::AllocationPolicy>,
@@ -418,10 +418,10 @@ pub struct IndividualEnrollment {
     pub reprovision_policy: Option<ReprovisionPolicy>,
     #[doc = "The DateTime this resource was created."]
     #[serde(rename = "createdDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time_utc: Option<time::OffsetDateTime>,
+    pub created_date_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The DateTime this resource was last updated."]
     #[serde(rename = "lastUpdatedDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_date_time_utc: Option<time::OffsetDateTime>,
+    pub last_updated_date_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The allocation policy of this resource. This policy overrides the tenant level allocation policy for this individual enrollment or enrollment group. Possible values include 'hashed': Linked IoT hubs are equally likely to have devices provisioned to them, 'geoLatency':  Devices are provisioned to an IoT hub with the lowest latency to the device.If multiple linked IoT hubs would provide the same lowest latency, the provisioning service hashes devices across those hubs, 'static' : Specification of the desired IoT hub in the enrollment list takes priority over the service-level allocation policy, 'custom': Devices are provisioned to an IoT hub based on your own custom logic. The provisioning service passes information about the device to the logic, and the logic returns the desired IoT hub as well as the desired initial configuration. We recommend using Azure Functions to host your logic."]
     #[serde(rename = "allocationPolicy", default, skip_serializing_if = "Option::is_none")]
     pub allocation_policy: Option<individual_enrollment::AllocationPolicy>,
@@ -519,7 +519,7 @@ impl InitialTwinProperties {
 pub struct Metadata {
     #[doc = "Last time the TwinCollection was updated"]
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated: Option<time::OffsetDateTime>,
+    pub last_updated: Option<::time::OffsetDateTime>,
     #[doc = "This is null for reported properties metadata and is not null for desired properties metadata."]
     #[serde(rename = "lastUpdatedVersion", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_version: Option<i64>,
@@ -541,7 +541,7 @@ pub struct ProvisioningServiceErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
     #[serde(rename = "timestampUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp_utc: Option<time::OffsetDateTime>,
+    pub timestamp_utc: Option<::time::OffsetDateTime>,
 }
 impl ProvisioningServiceErrorDetails {
     pub fn new() -> Self {
@@ -667,9 +667,9 @@ pub struct X509CertificateInfo {
     #[serde(rename = "issuerName")]
     pub issuer_name: String,
     #[serde(rename = "notBeforeUtc", with = "azure_core::date::rfc3339")]
-    pub not_before_utc: time::OffsetDateTime,
+    pub not_before_utc: ::time::OffsetDateTime,
     #[serde(rename = "notAfterUtc", with = "azure_core::date::rfc3339")]
-    pub not_after_utc: time::OffsetDateTime,
+    pub not_after_utc: ::time::OffsetDateTime,
     #[serde(rename = "serialNumber")]
     pub serial_number: String,
     pub version: i32,
@@ -680,8 +680,8 @@ impl X509CertificateInfo {
         sha1_thumbprint: String,
         sha256_thumbprint: String,
         issuer_name: String,
-        not_before_utc: time::OffsetDateTime,
-        not_after_utc: time::OffsetDateTime,
+        not_before_utc: ::time::OffsetDateTime,
+        not_after_utc: ::time::OffsetDateTime,
         serial_number: String,
         version: i32,
     ) -> Self {

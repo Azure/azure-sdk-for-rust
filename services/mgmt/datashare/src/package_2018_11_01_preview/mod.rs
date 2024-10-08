@@ -382,11 +382,11 @@ pub mod accounts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DataShare/accounts",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DataShare/accounts",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -472,13 +472,11 @@ pub mod accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -577,13 +575,11 @@ pub mod accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -711,13 +707,11 @@ pub mod accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -814,13 +808,11 @@ pub mod accounts {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -980,12 +972,11 @@ pub mod accounts {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1151,8 +1142,8 @@ pub mod consumer_invitations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url =
-                    azure_core::Url::parse(&format!("{}/providers/Microsoft.DataShare/listInvitations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.DataShare/listInvitations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1237,12 +1228,11 @@ pub mod consumer_invitations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.DataShare/locations/{}/consumerInvitations/{}",
-                    self.client.endpoint(),
-                    &self.location,
-                    &self.invitation_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.DataShare/locations/{}/consumerInvitations/{}",
+                    &self.location, &self.invitation_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1340,11 +1330,11 @@ pub mod consumer_invitations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.DataShare/locations/{}/rejectInvitation",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.DataShare/locations/{}/rejectInvitation",
                     &self.location
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1561,15 +1551,11 @@ pub mod data_sets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name,
-                    &self.data_set_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name, &self.data_set_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1671,15 +1657,11 @@ pub mod data_sets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name,
-                    &self.data_set_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name, &self.data_set_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1773,15 +1755,11 @@ pub mod data_sets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name,
-                    &self.data_set_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name, &self.data_set_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1921,14 +1899,11 @@ pub mod data_sets {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2133,7 +2108,8 @@ pub mod data_set_mappings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2235,7 +2211,8 @@ pub mod data_set_mappings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2330,7 +2307,8 @@ pub mod data_set_mappings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2470,14 +2448,11 @@ pub mod data_set_mappings {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2682,15 +2657,11 @@ pub mod invitations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name,
-                    &self.invitation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name, &self.invitation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2792,15 +2763,11 @@ pub mod invitations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name,
-                    &self.invitation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name, &self.invitation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2895,15 +2862,11 @@ pub mod invitations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name,
-                    &self.invitation_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name, &self.invitation_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3043,14 +3006,11 @@ pub mod invitations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3174,7 +3134,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.DataShare/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.DataShare/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3476,14 +3437,11 @@ pub mod shares {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/listSynchronizationDetails",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/listSynchronizationDetails",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3624,14 +3582,11 @@ pub mod shares {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/listSynchronizations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/listSynchronizations",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3718,14 +3673,11 @@ pub mod shares {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3826,14 +3778,11 @@ pub mod shares {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3931,14 +3880,11 @@ pub mod shares {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4117,13 +4063,11 @@ pub mod shares {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4324,7 +4268,8 @@ pub mod provider_share_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}/reinstate" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . provider_share_subscription_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}/reinstate" , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . provider_share_subscription_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4424,7 +4369,8 @@ pub mod provider_share_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}/revoke" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . provider_share_subscription_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}/revoke" , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . provider_share_subscription_id)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4579,7 +4525,15 @@ pub mod provider_share_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . provider_share_subscription_id)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}",
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.share_name,
+                    &self.provider_share_subscription_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4713,14 +4667,11 @@ pub mod provider_share_subscriptions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5044,7 +4995,8 @@ pub mod share_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/cancelSynchronization" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/cancelSynchronization" , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5234,7 +5186,8 @@ pub mod share_subscriptions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSourceShareSynchronizationSettings" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSourceShareSynchronizationSettings" , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5376,7 +5329,8 @@ pub mod share_subscriptions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSynchronizationDetails" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSynchronizationDetails" , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5517,7 +5471,8 @@ pub mod share_subscriptions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSynchronizations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSynchronizations" , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5605,14 +5560,11 @@ pub mod share_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/synchronize",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/synchronize",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5766,14 +5718,11 @@ pub mod share_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5874,14 +5823,11 @@ pub mod share_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5979,14 +5925,11 @@ pub mod share_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6165,13 +6108,11 @@ pub mod share_subscriptions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6327,7 +6268,8 @@ pub mod consumer_source_data_sets {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/consumerSourceDataSets" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/consumerSourceDataSets" , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6530,15 +6472,15 @@ pub mod synchronization_settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.account_name,
                     &self.share_name,
                     &self.synchronization_setting_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6640,15 +6582,15 @@ pub mod synchronization_settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.account_name,
                     &self.share_name,
                     &self.synchronization_setting_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6747,15 +6689,15 @@ pub mod synchronization_settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.account_name,
                     &self.share_name,
                     &self.synchronization_setting_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6917,14 +6859,11 @@ pub mod synchronization_settings {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7127,15 +7066,11 @@ pub mod triggers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_subscription_name,
-                    &self.trigger_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_subscription_name, &self.trigger_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7236,15 +7171,11 @@ pub mod triggers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_subscription_name,
-                    &self.trigger_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_subscription_name, &self.trigger_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7371,15 +7302,11 @@ pub mod triggers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_subscription_name,
-                    &self.trigger_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_subscription_name, &self.trigger_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7541,14 +7468,11 @@ pub mod triggers {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.account_name,
-                    &self.share_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers",
+                    &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

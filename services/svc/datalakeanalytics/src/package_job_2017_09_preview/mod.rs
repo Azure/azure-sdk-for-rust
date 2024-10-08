@@ -382,7 +382,8 @@ pub mod job {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/jobs");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -466,7 +467,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -564,7 +566,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -670,7 +673,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -794,7 +798,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/GetStatistics", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/GetStatistics", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -890,7 +895,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/GetDebugDataPath", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/GetDebugDataPath", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -981,7 +987,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/CancelJob", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/CancelJob", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1060,7 +1067,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/YieldJob", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/jobs/{}/YieldJob", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1145,7 +1153,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/buildJob", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/buildJob");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1249,17 +1258,17 @@ pub mod pipeline {
         #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The start date for when to get the list of pipelines. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get the list of pipelines. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -1318,7 +1327,8 @@ pub mod pipeline {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pipelines", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/pipelines");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1381,17 +1391,17 @@ pub mod pipeline {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pipeline_identity: String,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The start date for when to get the pipeline and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get the pipeline and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -1424,7 +1434,8 @@ pub mod pipeline {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/pipelines/{}", self.client.endpoint(), &self.pipeline_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/pipelines/{}", &self.pipeline_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1528,17 +1539,17 @@ pub mod recurrence {
         #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The start date for when to get the list of recurrences. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get the list of recurrences. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -1597,7 +1608,8 @@ pub mod recurrence {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/recurrences", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/recurrences");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1660,17 +1672,17 @@ pub mod recurrence {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) recurrence_identity: String,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The start date for when to get the recurrence and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get recurrence and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -1703,7 +1715,8 @@ pub mod recurrence {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/recurrences/{}", self.client.endpoint(), &self.recurrence_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/recurrences/{}", &self.recurrence_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

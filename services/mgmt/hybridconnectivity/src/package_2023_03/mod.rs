@@ -233,10 +233,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.HybridConnectivity/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.HybridConnectivity/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -483,11 +481,8 @@ pub mod endpoints {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints",
-                    self.client.endpoint(),
-                    &self.resource_uri
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.HybridConnectivity/endpoints", &self.resource_uri));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -572,12 +567,11 @@ pub mod endpoints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
+                    &self.resource_uri, &self.endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -676,12 +670,11 @@ pub mod endpoints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
+                    &self.resource_uri, &self.endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -780,12 +773,11 @@ pub mod endpoints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
+                    &self.resource_uri, &self.endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -877,12 +869,11 @@ pub mod endpoints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
+                    &self.resource_uri, &self.endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -987,12 +978,11 @@ pub mod endpoints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/listCredentials",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/listCredentials",
+                    &self.resource_uri, &self.endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1113,12 +1103,11 @@ pub mod endpoints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/listIngressGatewayCredentials",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/listIngressGatewayCredentials",
+                    &self.resource_uri, &self.endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1217,12 +1206,11 @@ pub mod endpoints {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/listManagedProxyDetails",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/listManagedProxyDetails",
+                    &self.resource_uri, &self.endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1454,12 +1442,11 @@ pub mod service_configurations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/serviceConfigurations",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/serviceConfigurations",
+                    &self.resource_uri, &self.endpoint_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1545,13 +1532,11 @@ pub mod service_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/serviceConfigurations/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name,
-                    &self.service_configuration_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/serviceConfigurations/{}",
+                    &self.resource_uri, &self.endpoint_name, &self.service_configuration_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1651,13 +1636,11 @@ pub mod service_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/serviceConfigurations/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name,
-                    &self.service_configuration_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/serviceConfigurations/{}",
+                    &self.resource_uri, &self.endpoint_name, &self.service_configuration_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1757,13 +1740,11 @@ pub mod service_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/serviceConfigurations/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name,
-                    &self.service_configuration_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/serviceConfigurations/{}",
+                    &self.resource_uri, &self.endpoint_name, &self.service_configuration_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1856,13 +1837,11 @@ pub mod service_configurations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/serviceConfigurations/{}",
-                    self.client.endpoint(),
-                    &self.resource_uri,
-                    &self.endpoint_name,
-                    &self.service_configuration_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/serviceConfigurations/{}",
+                    &self.resource_uri, &self.endpoint_name, &self.service_configuration_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

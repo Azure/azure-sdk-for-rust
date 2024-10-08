@@ -236,10 +236,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.ContainerStorage/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.ContainerStorage/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -347,7 +345,7 @@ pub mod pools {
                 properties: properties.into(),
             }
         }
-        #[doc = "Compliant create or update template/**"]
+        #[doc = "Delete a Pool"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
@@ -467,11 +465,11 @@ pub mod pools {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ContainerStorage/pools",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ContainerStorage/pools",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -582,12 +580,11 @@ pub mod pools {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -673,13 +670,11 @@ pub mod pools {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -788,13 +783,11 @@ pub mod pools {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -907,13 +900,13 @@ pub mod pools {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -962,13 +955,11 @@ pub mod pools {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1076,13 +1067,13 @@ pub mod pools {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -1129,13 +1120,11 @@ pub mod pools {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1220,7 +1209,7 @@ pub mod snapshots {
                 resource: resource.into(),
             }
         }
-        #[doc = "Compliant create or update template/**"]
+        #[doc = "Delete a Snapshot"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
@@ -1345,13 +1334,11 @@ pub mod snapshots {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/snapshots",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/snapshots",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1438,14 +1425,11 @@ pub mod snapshots {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/snapshots/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name,
-                    &self.snapshot_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/snapshots/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name, &self.snapshot_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1555,14 +1539,11 @@ pub mod snapshots {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/snapshots/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name,
-                    &self.snapshot_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/snapshots/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name, &self.snapshot_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1670,13 +1651,13 @@ pub mod snapshots {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -1724,14 +1705,11 @@ pub mod snapshots {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/snapshots/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name,
-                    &self.snapshot_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/snapshots/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name, &self.snapshot_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1841,7 +1819,7 @@ pub mod volumes {
                 properties: properties.into(),
             }
         }
-        #[doc = "Compliant create or update template/**"]
+        #[doc = "Delete a Volume"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
@@ -1966,13 +1944,11 @@ pub mod volumes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/volumes",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/volumes",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2059,14 +2035,11 @@ pub mod volumes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/volumes/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name,
-                    &self.volume_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/volumes/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name, &self.volume_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2176,14 +2149,11 @@ pub mod volumes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/volumes/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name,
-                    &self.volume_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/volumes/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name, &self.volume_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2296,13 +2266,13 @@ pub mod volumes {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -2352,14 +2322,11 @@ pub mod volumes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/volumes/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name,
-                    &self.volume_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/volumes/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name, &self.volume_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2467,13 +2434,13 @@ pub mod volumes {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
             #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
             pub fn location(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
             }
         }
         #[derive(Clone)]
@@ -2521,14 +2488,11 @@ pub mod volumes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/volumes/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.pool_name,
-                    &self.volume_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerStorage/pools/{}/volumes/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.pool_name, &self.volume_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

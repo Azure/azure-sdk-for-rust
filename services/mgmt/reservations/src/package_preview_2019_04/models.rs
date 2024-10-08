@@ -992,16 +992,16 @@ pub struct ReservationOrderProperties {
     pub display_name: Option<String>,
     #[doc = "This is the DateTime when the reservation was initially requested for purchase."]
     #[serde(rename = "requestDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub request_date_time: Option<time::OffsetDateTime>,
+    pub request_date_time: Option<::time::OffsetDateTime>,
     #[doc = "This is the DateTime when the reservation was created."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "This is the date when the Reservation will expire."]
     #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
     pub expiry_date: Option<String>,
     #[doc = "This is the DateTime when the reservation benefit started."]
     #[serde(rename = "benefitStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub benefit_start_time: Option<time::OffsetDateTime>,
+    pub benefit_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Quantity of the SKUs that are part of the Reservation. Must be greater than zero."]
     #[serde(rename = "originalQuantity", default, skip_serializing_if = "Option::is_none")]
     pub original_quantity: Option<ReservationQuantity>,
@@ -1075,13 +1075,13 @@ pub struct ReservationProperties {
     pub provisioning_state: Option<String>,
     #[doc = "DateTime of the Reservation starting when this version is effective from."]
     #[serde(rename = "effectiveDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub effective_date_time: Option<time::OffsetDateTime>,
+    pub effective_date_time: Option<::time::OffsetDateTime>,
     #[doc = "This is the DateTime when the reservation benefit started."]
     #[serde(rename = "benefitStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub benefit_start_time: Option<time::OffsetDateTime>,
+    pub benefit_start_time: Option<::time::OffsetDateTime>,
     #[doc = "DateTime of the last time the Reservation was updated."]
     #[serde(rename = "lastUpdatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_date_time: Option<time::OffsetDateTime>,
+    pub last_updated_date_time: Option<::time::OffsetDateTime>,
     #[doc = "This is the date when the Reservation will expire."]
     #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
     pub expiry_date: Option<String>,

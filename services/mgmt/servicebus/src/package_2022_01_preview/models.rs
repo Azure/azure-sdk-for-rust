@@ -1533,10 +1533,10 @@ pub struct SbNamespaceProperties {
     pub status: Option<String>,
     #[doc = "The time the namespace was created"]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The time the namespace was updated."]
     #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_at: Option<time::OffsetDateTime>,
+    pub updated_at: Option<::time::OffsetDateTime>,
     #[doc = "Endpoint you can use to perform Service Bus operations."]
     #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub service_bus_endpoint: Option<String>,
@@ -1692,10 +1692,10 @@ pub struct SbNamespaceUpdateProperties {
     pub status: Option<String>,
     #[doc = "The time the namespace was created"]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The time the namespace was updated."]
     #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_at: Option<time::OffsetDateTime>,
+    pub updated_at: Option<::time::OffsetDateTime>,
     #[doc = "Endpoint you can use to perform Service Bus operations."]
     #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub service_bus_endpoint: Option<String>,
@@ -1775,13 +1775,13 @@ pub struct SbQueueProperties {
     pub count_details: Option<MessageCountDetails>,
     #[doc = "The exact time the message was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The exact time the message was updated."]
     #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_at: Option<time::OffsetDateTime>,
+    pub updated_at: Option<::time::OffsetDateTime>,
     #[doc = "Last time a message was sent, or the last time there was a receive request to this queue."]
     #[serde(rename = "accessedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub accessed_at: Option<time::OffsetDateTime>,
+    pub accessed_at: Option<::time::OffsetDateTime>,
     #[doc = "The size of the queue, in bytes."]
     #[serde(rename = "sizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub size_in_bytes: Option<i64>,
@@ -1994,13 +1994,13 @@ pub struct SbSubscriptionProperties {
     pub message_count: Option<i64>,
     #[doc = "Exact time the message was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "Last time there was a receive request to this subscription."]
     #[serde(rename = "accessedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub accessed_at: Option<time::OffsetDateTime>,
+    pub accessed_at: Option<::time::OffsetDateTime>,
     #[doc = "The exact time the message was updated."]
     #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_at: Option<time::OffsetDateTime>,
+    pub updated_at: Option<::time::OffsetDateTime>,
     #[doc = "Message Count Details."]
     #[serde(rename = "countDetails", default, skip_serializing_if = "Option::is_none")]
     pub count_details: Option<MessageCountDetails>,
@@ -2106,13 +2106,13 @@ pub struct SbTopicProperties {
     pub size_in_bytes: Option<i64>,
     #[doc = "Exact time the message was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The exact time the message was updated."]
     #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_at: Option<time::OffsetDateTime>,
+    pub updated_at: Option<::time::OffsetDateTime>,
     #[doc = "Last time the message was sent, or a request was received, for this topic."]
     #[serde(rename = "accessedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub accessed_at: Option<time::OffsetDateTime>,
+    pub accessed_at: Option<::time::OffsetDateTime>,
     #[doc = "Number of subscriptions."]
     #[serde(rename = "subscriptionCount", default, skip_serializing_if = "Option::is_none")]
     pub subscription_count: Option<i32>,
@@ -2300,7 +2300,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -2309,7 +2309,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

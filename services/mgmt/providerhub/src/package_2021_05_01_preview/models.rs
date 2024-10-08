@@ -274,7 +274,7 @@ pub struct DefaultRolloutStatus {
     #[serde(rename = "nextTrafficRegion", default, skip_serializing_if = "Option::is_none")]
     pub next_traffic_region: Option<default_rollout_status::NextTrafficRegion>,
     #[serde(rename = "nextTrafficRegionScheduledTime", default, with = "azure_core::date::rfc3339::option")]
-    pub next_traffic_region_scheduled_time: Option<time::OffsetDateTime>,
+    pub next_traffic_region_scheduled_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "subscriptionReregistrationResult", default, skip_serializing_if = "Option::is_none")]
     pub subscription_reregistration_result: Option<default_rollout_status::SubscriptionReregistrationResult>,
 }

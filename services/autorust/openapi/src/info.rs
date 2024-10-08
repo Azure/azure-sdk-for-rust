@@ -24,7 +24,7 @@ pub struct Info {
 
     /// enables passing code generation settings via OpenAPI definition
     /// (deprecated! Please use configuration files instead.)
-    /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-code-generation-settings
+    /// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-code-generation-settings
     #[serde(rename = "x-ms-code-generation-settings", default, skip_serializing_if = "IndexMap::is_empty")]
     pub x_ms_code_generation_settings: IndexMap<String, MsCodeGenerationSetting>,
 }

@@ -339,7 +339,8 @@ pub mod digital_twin_models {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/models", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/models");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -447,7 +448,8 @@ pub mod digital_twin_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/models", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/models");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -572,7 +574,8 @@ pub mod digital_twin_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/models/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/models/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -683,7 +686,8 @@ pub mod digital_twin_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/models/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/models/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -780,7 +784,8 @@ pub mod digital_twin_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/models/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/models/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -925,7 +930,8 @@ pub mod query {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/query", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/query");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1303,7 +1309,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/digitaltwins/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1438,7 +1445,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/digitaltwins/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1568,7 +1576,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/digitaltwins/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1674,7 +1683,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/digitaltwins/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1787,12 +1797,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/digitaltwins/{}/relationships/{}",
-                    self.client.endpoint(),
-                    &self.id,
-                    &self.relationship_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}/relationships/{}", &self.id, &self.relationship_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1928,12 +1934,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/digitaltwins/{}/relationships/{}",
-                    self.client.endpoint(),
-                    &self.id,
-                    &self.relationship_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}/relationships/{}", &self.id, &self.relationship_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2064,12 +2066,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/digitaltwins/{}/relationships/{}",
-                    self.client.endpoint(),
-                    &self.id,
-                    &self.relationship_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}/relationships/{}", &self.id, &self.relationship_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2176,12 +2174,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/digitaltwins/{}/relationships/{}",
-                    self.client.endpoint(),
-                    &self.id,
-                    &self.relationship_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}/relationships/{}", &self.id, &self.relationship_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2318,7 +2312,8 @@ pub mod digital_twins {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/digitaltwins/{}/relationships", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}/relationships", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2446,11 +2441,8 @@ pub mod digital_twins {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/digitaltwins/{}/incomingrelationships",
-                    self.client.endpoint(),
-                    &self.id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}/incomingrelationships", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2560,7 +2552,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/digitaltwins/{}/telemetry", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}/telemetry", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2671,12 +2664,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/digitaltwins/{}/components/{}/telemetry",
-                    self.client.endpoint(),
-                    &self.id,
-                    &self.component_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}/components/{}/telemetry", &self.id, &self.component_path));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2789,12 +2778,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/digitaltwins/{}/components/{}",
-                    self.client.endpoint(),
-                    &self.id,
-                    &self.component_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}/components/{}", &self.id, &self.component_path));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2925,12 +2910,8 @@ pub mod digital_twins {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/digitaltwins/{}/components/{}",
-                    self.client.endpoint(),
-                    &self.id,
-                    &self.component_path
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/digitaltwins/{}/components/{}", &self.id, &self.component_path));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3122,7 +3103,8 @@ pub mod event_routes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/eventroutes", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/eventroutes");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3224,7 +3206,8 @@ pub mod event_routes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/eventroutes/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/eventroutes/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3344,7 +3327,8 @@ pub mod event_routes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/eventroutes/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/eventroutes/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3441,7 +3425,8 @@ pub mod event_routes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/eventroutes/{}", self.client.endpoint(), &self.id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/eventroutes/{}", &self.id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

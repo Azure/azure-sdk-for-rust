@@ -360,7 +360,7 @@ pub struct BackupSetInfo {
     pub last_lsn: Option<String>,
     #[doc = "Last modified time of the backup file in share location"]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time: Option<time::OffsetDateTime>,
+    pub last_modified_time: Option<::time::OffsetDateTime>,
     #[doc = "Enum of the different backup types."]
     #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
     pub backup_type: Option<BackupType>,
@@ -377,10 +377,10 @@ pub struct BackupSetInfo {
     pub database_name: Option<String>,
     #[doc = "Date and time that the backup operation began"]
     #[serde(rename = "backupStartDate", default, with = "azure_core::date::rfc3339::option")]
-    pub backup_start_date: Option<time::OffsetDateTime>,
+    pub backup_start_date: Option<::time::OffsetDateTime>,
     #[doc = "Date and time that the backup operation finished"]
     #[serde(rename = "backupFinishedDate", default, with = "azure_core::date::rfc3339::option")]
-    pub backup_finished_date: Option<time::OffsetDateTime>,
+    pub backup_finished_date: Option<::time::OffsetDateTime>,
     #[doc = "Whether the backup set is restored or not"]
     #[serde(rename = "isBackupRestored", default, skip_serializing_if = "Option::is_none")]
     pub is_backup_restored: Option<bool>,
@@ -938,7 +938,7 @@ pub struct ConnectToSourceSqlServerTaskOutputAgentJobLevel {
     pub job_owner: Option<String>,
     #[doc = "UTC Date and time when the Agent Job was last executed."]
     #[serde(rename = "lastExecutedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub last_executed_on: Option<time::OffsetDateTime>,
+    pub last_executed_on: Option<::time::OffsetDateTime>,
     #[doc = "Validation errors"]
     #[serde(
         rename = "validationErrors",
@@ -1648,10 +1648,10 @@ pub struct DataItemMigrationSummaryResult {
     pub name: Option<String>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Current state of migration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<MigrationState>,
@@ -1979,7 +1979,7 @@ pub struct DatabaseBackupInfo {
     pub family_count: Option<i64>,
     #[doc = "Date and time when the backup operation finished."]
     #[serde(rename = "backupFinishDate", default, with = "azure_core::date::rfc3339::option")]
-    pub backup_finish_date: Option<time::OffsetDateTime>,
+    pub backup_finish_date: Option<::time::OffsetDateTime>,
 }
 impl DatabaseBackupInfo {
     pub fn new() -> Self {
@@ -2195,10 +2195,10 @@ pub struct DatabaseMigrationProperties {
     pub migration_status: Option<String>,
     #[doc = "Database migration start time."]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Database migration end time."]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Source SQL Connection"]
     #[serde(rename = "sourceSqlConnection", default, skip_serializing_if = "Option::is_none")]
     pub source_sql_connection: Option<SqlConnectionInformation>,
@@ -3476,7 +3476,7 @@ pub struct MigrateMySqlAzureDbForMySqlOfflineTaskInput {
     pub make_source_server_read_only: Option<bool>,
     #[doc = "Parameter to specify when the migration started"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Optional parameters for fine tuning the data transfer rate during migration"]
     #[serde(rename = "optionalAgentSettings", default, skip_serializing_if = "Option::is_none")]
     pub optional_agent_settings: Option<serde_json::Value>,
@@ -3646,10 +3646,10 @@ pub struct MigrateMySqlAzureDbForMySqlSyncTaskOutputDatabaseLevel {
     pub database_name: Option<String>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Enum of the different state of database level online migration."]
     #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
     pub migration_state: Option<SyncDatabaseMigrationReportingState>,
@@ -3731,10 +3731,10 @@ pub struct MigrateMySqlAzureDbForMySqlSyncTaskOutputMigrationLevel {
     pub migrate_my_sql_azure_db_for_my_sql_sync_task_output: MigrateMySqlAzureDbForMySqlSyncTaskOutput,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Source server version"]
     #[serde(rename = "sourceServerVersion", default, skip_serializing_if = "Option::is_none")]
     pub source_server_version: Option<String>,
@@ -3782,13 +3782,13 @@ pub struct MigrateMySqlAzureDbForMySqlSyncTaskOutputTableLevel {
     pub cdc_delete_counter: Option<String>,
     #[doc = "Estimate to finish full load"]
     #[serde(rename = "fullLoadEstFinishTime", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_est_finish_time: Option<time::OffsetDateTime>,
+    pub full_load_est_finish_time: Option<::time::OffsetDateTime>,
     #[doc = "Full load start time"]
     #[serde(rename = "fullLoadStartedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_started_on: Option<time::OffsetDateTime>,
+    pub full_load_started_on: Option<::time::OffsetDateTime>,
     #[doc = "Full load end time"]
     #[serde(rename = "fullLoadEndedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_ended_on: Option<time::OffsetDateTime>,
+    pub full_load_ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Number of rows applied in full load"]
     #[serde(rename = "fullLoadTotalRows", default, skip_serializing_if = "Option::is_none")]
     pub full_load_total_rows: Option<i64>,
@@ -3803,7 +3803,7 @@ pub struct MigrateMySqlAzureDbForMySqlSyncTaskOutputTableLevel {
     pub data_errors_counter: Option<i64>,
     #[doc = "Last modified time on target"]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time: Option<time::OffsetDateTime>,
+    pub last_modified_time: Option<::time::OffsetDateTime>,
 }
 impl MigrateMySqlAzureDbForMySqlSyncTaskOutputTableLevel {
     pub fn new(migrate_my_sql_azure_db_for_my_sql_sync_task_output: MigrateMySqlAzureDbForMySqlSyncTaskOutput) -> Self {
@@ -3989,10 +3989,10 @@ pub struct MigrateOracleAzureDbPostgreSqlSyncTaskOutputDatabaseLevel {
     pub database_name: Option<String>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Enum of the different state of database level online migration."]
     #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
     pub migration_state: Option<SyncDatabaseMigrationReportingState>,
@@ -4074,10 +4074,10 @@ pub struct MigrateOracleAzureDbPostgreSqlSyncTaskOutputMigrationLevel {
     pub migrate_oracle_azure_db_postgre_sql_sync_task_output: MigrateOracleAzureDbPostgreSqlSyncTaskOutput,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Source server version"]
     #[serde(rename = "sourceServerVersion", default, skip_serializing_if = "Option::is_none")]
     pub source_server_version: Option<String>,
@@ -4125,13 +4125,13 @@ pub struct MigrateOracleAzureDbPostgreSqlSyncTaskOutputTableLevel {
     pub cdc_delete_counter: Option<i64>,
     #[doc = "Estimate to finish full load"]
     #[serde(rename = "fullLoadEstFinishTime", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_est_finish_time: Option<time::OffsetDateTime>,
+    pub full_load_est_finish_time: Option<::time::OffsetDateTime>,
     #[doc = "Full load start time"]
     #[serde(rename = "fullLoadStartedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_started_on: Option<time::OffsetDateTime>,
+    pub full_load_started_on: Option<::time::OffsetDateTime>,
     #[doc = "Full load end time"]
     #[serde(rename = "fullLoadEndedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_ended_on: Option<time::OffsetDateTime>,
+    pub full_load_ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Number of rows applied in full load"]
     #[serde(rename = "fullLoadTotalRows", default, skip_serializing_if = "Option::is_none")]
     pub full_load_total_rows: Option<i64>,
@@ -4146,7 +4146,7 @@ pub struct MigrateOracleAzureDbPostgreSqlSyncTaskOutputTableLevel {
     pub data_errors_counter: Option<i64>,
     #[doc = "Last modified time on target"]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time: Option<time::OffsetDateTime>,
+    pub last_modified_time: Option<::time::OffsetDateTime>,
 }
 impl MigrateOracleAzureDbPostgreSqlSyncTaskOutputTableLevel {
     pub fn new(migrate_oracle_azure_db_postgre_sql_sync_task_output: MigrateOracleAzureDbPostgreSqlSyncTaskOutput) -> Self {
@@ -4297,10 +4297,10 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputDatabaseLevel {
     pub database_name: Option<String>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Enum of the different state of database level online migration."]
     #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
     pub migration_state: Option<SyncDatabaseMigrationReportingState>,
@@ -4390,10 +4390,10 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputMigrationLevel {
     pub migrate_postgre_sql_azure_db_for_postgre_sql_sync_task_output: MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutput,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Source server version"]
     #[serde(rename = "sourceServerVersion", default, skip_serializing_if = "Option::is_none")]
     pub source_server_version: Option<String>,
@@ -4457,13 +4457,13 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputTableLevel {
     pub cdc_delete_counter: Option<i64>,
     #[doc = "Estimate to finish full load"]
     #[serde(rename = "fullLoadEstFinishTime", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_est_finish_time: Option<time::OffsetDateTime>,
+    pub full_load_est_finish_time: Option<::time::OffsetDateTime>,
     #[doc = "Full load start time"]
     #[serde(rename = "fullLoadStartedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_started_on: Option<time::OffsetDateTime>,
+    pub full_load_started_on: Option<::time::OffsetDateTime>,
     #[doc = "Full load end time"]
     #[serde(rename = "fullLoadEndedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_ended_on: Option<time::OffsetDateTime>,
+    pub full_load_ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Number of rows applied in full load"]
     #[serde(rename = "fullLoadTotalRows", default, skip_serializing_if = "Option::is_none")]
     pub full_load_total_rows: Option<i64>,
@@ -4478,7 +4478,7 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputTableLevel {
     pub data_errors_counter: Option<i64>,
     #[doc = "Last modified time on target"]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time: Option<time::OffsetDateTime>,
+    pub last_modified_time: Option<::time::OffsetDateTime>,
 }
 impl MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputTableLevel {
     pub fn new(migrate_postgre_sql_azure_db_for_postgre_sql_sync_task_output: MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutput) -> Self {
@@ -4615,10 +4615,10 @@ pub struct MigrateSchemaSqlServerSqlDbTaskOutputDatabaseLevel {
     pub stage: Option<SchemaMigrationStage>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Prefix string to use for querying errors for this database"]
     #[serde(rename = "databaseErrorResultPrefix", default, skip_serializing_if = "Option::is_none")]
     pub database_error_result_prefix: Option<String>,
@@ -4681,10 +4681,10 @@ pub struct MigrateSchemaSqlServerSqlDbTaskOutputMigrationLevel {
     pub state: Option<MigrationState>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Source server version"]
     #[serde(rename = "sourceServerVersion", default, skip_serializing_if = "Option::is_none")]
     pub source_server_version: Option<String>,
@@ -4897,10 +4897,10 @@ pub struct MigrateSqlServerSqlDbSyncTaskOutputDatabaseLevel {
     pub database_name: Option<String>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Enum of the different state of database level online migration."]
     #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
     pub migration_state: Option<SyncDatabaseMigrationReportingState>,
@@ -4982,10 +4982,10 @@ pub struct MigrateSqlServerSqlDbSyncTaskOutputMigrationLevel {
     pub migrate_sql_server_sql_db_sync_task_output: MigrateSqlServerSqlDbSyncTaskOutput,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Source server version"]
     #[serde(rename = "sourceServerVersion", default, skip_serializing_if = "Option::is_none")]
     pub source_server_version: Option<String>,
@@ -5037,13 +5037,13 @@ pub struct MigrateSqlServerSqlDbSyncTaskOutputTableLevel {
     pub cdc_delete_counter: Option<i64>,
     #[doc = "Estimate to finish full load"]
     #[serde(rename = "fullLoadEstFinishTime", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_est_finish_time: Option<time::OffsetDateTime>,
+    pub full_load_est_finish_time: Option<::time::OffsetDateTime>,
     #[doc = "Full load start time"]
     #[serde(rename = "fullLoadStartedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_started_on: Option<time::OffsetDateTime>,
+    pub full_load_started_on: Option<::time::OffsetDateTime>,
     #[doc = "Full load end time"]
     #[serde(rename = "fullLoadEndedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub full_load_ended_on: Option<time::OffsetDateTime>,
+    pub full_load_ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Number of rows applied in full load"]
     #[serde(rename = "fullLoadTotalRows", default, skip_serializing_if = "Option::is_none")]
     pub full_load_total_rows: Option<i64>,
@@ -5058,7 +5058,7 @@ pub struct MigrateSqlServerSqlDbSyncTaskOutputTableLevel {
     pub data_errors_counter: Option<i64>,
     #[doc = "Last modified time on target"]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time: Option<time::OffsetDateTime>,
+    pub last_modified_time: Option<::time::OffsetDateTime>,
 }
 impl MigrateSqlServerSqlDbSyncTaskOutputTableLevel {
     pub fn new(migrate_sql_server_sql_db_sync_task_output: MigrateSqlServerSqlDbSyncTaskOutput) -> Self {
@@ -5166,10 +5166,10 @@ pub struct MigrateSqlServerSqlDbTaskOutputDatabaseLevel {
     pub database_name: Option<String>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Current state of migration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<MigrationState>,
@@ -5271,10 +5271,10 @@ pub struct MigrateSqlServerSqlDbTaskOutputMigrationLevel {
     pub migrate_sql_server_sql_db_task_output: MigrateSqlServerSqlDbTaskOutput,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Duration of task execution in seconds."]
     #[serde(rename = "durationInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_seconds: Option<i64>,
@@ -5351,10 +5351,10 @@ pub struct MigrateSqlServerSqlDbTaskOutputTableLevel {
     pub object_name: Option<String>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Current state of migration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<MigrationState>,
@@ -5517,10 +5517,10 @@ pub struct MigrateSqlServerSqlMiSyncTaskOutputDatabaseLevel {
     pub migration_state: Option<DatabaseMigrationState>,
     #[doc = "Database migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Database migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Information of backup set"]
     #[serde(rename = "fullBackupSetInfo", default, skip_serializing_if = "Option::is_none")]
     pub full_backup_set_info: Option<BackupSetInfo>,
@@ -5603,10 +5603,10 @@ pub struct MigrateSqlServerSqlMiSyncTaskOutputMigrationLevel {
     pub state: Option<MigrationState>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Source server name"]
     #[serde(rename = "sourceServerName", default, skip_serializing_if = "Option::is_none")]
     pub source_server_name: Option<String>,
@@ -5768,10 +5768,10 @@ pub struct MigrateSqlServerSqlMiTaskOutputAgentJobLevel {
     pub state: Option<MigrationState>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration progress message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -5816,10 +5816,10 @@ pub struct MigrateSqlServerSqlMiTaskOutputDatabaseLevel {
     pub stage: Option<DatabaseMigrationStage>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration progress message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -5882,10 +5882,10 @@ pub struct MigrateSqlServerSqlMiTaskOutputLoginLevel {
     pub stage: Option<LoginMigrationStage>,
     #[doc = "Login migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Login migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Login migration progress message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -5918,10 +5918,10 @@ pub struct MigrateSqlServerSqlMiTaskOutputMigrationLevel {
     pub migrate_sql_server_sql_mi_task_output: MigrateSqlServerSqlMiTaskOutput,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Current status of migration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<MigrationStatus>,
@@ -6091,10 +6091,10 @@ pub struct MigrateSsisTaskOutputMigrationLevel {
     pub migrate_ssis_task_output: MigrateSsisTaskOutput,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Current status of migration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<MigrationStatus>,
@@ -6160,10 +6160,10 @@ pub struct MigrateSsisTaskOutputProjectLevel {
     pub stage: Option<SsisMigrationStage>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration progress message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -6224,7 +6224,7 @@ pub struct MigrateSyncCompleteCommandInput {
     pub database_name: String,
     #[doc = "Time stamp to complete"]
     #[serde(rename = "commitTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub commit_time_stamp: Option<time::OffsetDateTime>,
+    pub commit_time_stamp: Option<::time::OffsetDateTime>,
 }
 impl MigrateSyncCompleteCommandInput {
     pub fn new(database_name: String) -> Self {
@@ -6516,10 +6516,10 @@ pub struct MigrationValidationDatabaseLevelResult {
     pub target_database_name: Option<String>,
     #[doc = "Validation start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Validation end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Results for checksum based Data Integrity validation results"]
     #[serde(rename = "dataIntegrityValidationResult", default, skip_serializing_if = "Option::is_none")]
     pub data_integrity_validation_result: Option<DataIntegrityValidationResult>,
@@ -6555,10 +6555,10 @@ pub struct MigrationValidationDatabaseSummaryResult {
     pub target_database_name: Option<String>,
     #[doc = "Validation start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Validation end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Current status of the validation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ValidationStatus>,
@@ -7110,10 +7110,10 @@ pub struct MongoDbProgress {
     pub events_replayed: i64,
     #[doc = "The timestamp of the last oplog event received, or null if no oplog event has been received yet"]
     #[serde(rename = "lastEventTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_event_time: Option<time::OffsetDateTime>,
+    pub last_event_time: Option<::time::OffsetDateTime>,
     #[doc = "The timestamp of the last oplog event replayed, or null if no oplog event has been replayed yet"]
     #[serde(rename = "lastReplayTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_replay_time: Option<time::OffsetDateTime>,
+    pub last_replay_time: Option<::time::OffsetDateTime>,
     #[doc = "The name of the progress object. For a collection, this is the unqualified collection name. For a database, this is the database name. For the overall migration, this is null."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -7652,10 +7652,10 @@ pub struct NonSqlMigrationTaskOutput {
     pub id: Option<String>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "Migration end time"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Current status of migration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<MigrationStatus>,
@@ -7966,7 +7966,7 @@ pub struct ProjectFileProperties {
     pub file_path: Option<String>,
     #[doc = "Modification DateTime."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[doc = "File content type. This property can be modified to reflect the file content type."]
     #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
     pub media_type: Option<String>,
@@ -8018,7 +8018,7 @@ pub struct ProjectProperties {
     pub target_platform: ProjectTargetPlatform,
     #[doc = "UTC Date and time when project was created"]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "Defines the connection properties of a server"]
     #[serde(rename = "sourceConnectionInfo", default, skip_serializing_if = "Option::is_none")]
     pub source_connection_info: Option<ConnectionInfoUnion>,
@@ -9416,10 +9416,10 @@ pub struct SqlBackupSetInfo {
     pub list_of_backup_files: Vec<SqlBackupFileInfo>,
     #[doc = "Backup start date."]
     #[serde(rename = "backupStartDate", default, with = "azure_core::date::rfc3339::option")]
-    pub backup_start_date: Option<time::OffsetDateTime>,
+    pub backup_start_date: Option<::time::OffsetDateTime>,
     #[doc = "Backup end time."]
     #[serde(rename = "backupFinishDate", default, with = "azure_core::date::rfc3339::option")]
-    pub backup_finish_date: Option<time::OffsetDateTime>,
+    pub backup_finish_date: Option<::time::OffsetDateTime>,
     #[doc = "Whether this backup set has been restored or not."]
     #[serde(rename = "isBackupRestored", default, skip_serializing_if = "Option::is_none")]
     pub is_backup_restored: Option<bool>,
@@ -10016,13 +10016,13 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

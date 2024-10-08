@@ -275,7 +275,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/Jobs/{}/GetStatistics", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Jobs/{}/GetStatistics", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -372,7 +373,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/Jobs/{}/GetDebugDataPath", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Jobs/{}/GetDebugDataPath", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -469,7 +471,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/BuildJob", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/BuildJob");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -561,7 +564,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/Jobs/{}/CancelJob", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Jobs/{}/CancelJob", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -645,7 +649,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/Jobs/{}", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Jobs/{}", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -743,7 +748,8 @@ pub mod job {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/Jobs/{}", self.client.endpoint(), &self.job_identity))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/Jobs/{}", &self.job_identity));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -945,7 +951,8 @@ pub mod job {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/Jobs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/Jobs");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

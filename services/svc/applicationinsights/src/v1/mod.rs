@@ -309,12 +309,8 @@ pub mod metrics {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/apps/{}/metrics/{}",
-                    self.client.endpoint(),
-                    &self.app_id,
-                    &self.metric_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/apps/{}/metrics/{}", &self.app_id, &self.metric_id));
                 Ok(url)
             }
         }
@@ -407,7 +403,8 @@ pub mod metrics {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/apps/{}/metrics", self.client.endpoint(), &self.app_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/apps/{}/metrics", &self.app_id));
                 Ok(url)
             }
         }
@@ -498,7 +495,8 @@ pub mod metrics {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/apps/{}/metrics/metadata", self.client.endpoint(), &self.app_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/apps/{}/metrics/metadata", &self.app_id));
                 Ok(url)
             }
         }
@@ -740,12 +738,8 @@ pub mod events {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/apps/{}/events/{}",
-                    self.client.endpoint(),
-                    &self.app_id,
-                    &self.event_type
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/apps/{}/events/{}", &self.app_id, &self.event_type));
                 Ok(url)
             }
         }
@@ -847,13 +841,8 @@ pub mod events {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/apps/{}/events/{}/{}",
-                    self.client.endpoint(),
-                    &self.app_id,
-                    &self.event_type,
-                    &self.event_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/apps/{}/events/{}/{}", &self.app_id, &self.event_type, &self.event_id));
                 Ok(url)
             }
         }
@@ -944,7 +933,8 @@ pub mod events {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/apps/{}/events/$metadata", self.client.endpoint(), &self.app_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/apps/{}/events/$metadata", &self.app_id));
                 Ok(url)
             }
         }
@@ -1084,7 +1074,8 @@ pub mod query {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/apps/{}/query", self.client.endpoint(), &self.app_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/apps/{}/query", &self.app_id));
                 Ok(url)
             }
         }
@@ -1177,7 +1168,8 @@ pub mod query {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/apps/{}/query", self.client.endpoint(), &self.app_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/apps/{}/query", &self.app_id));
                 Ok(url)
             }
         }
@@ -1300,7 +1292,8 @@ pub mod metadata {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/apps/{}/metadata", self.client.endpoint(), &self.app_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/apps/{}/metadata", &self.app_id));
                 Ok(url)
             }
         }
@@ -1392,7 +1385,8 @@ pub mod metadata {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/apps/{}/metadata", self.client.endpoint(), &self.app_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/apps/{}/metadata", &self.app_id));
                 Ok(url)
             }
         }

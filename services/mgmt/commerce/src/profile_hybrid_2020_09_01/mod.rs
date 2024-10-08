@@ -134,8 +134,8 @@ pub mod usage_aggregates {
         #[doc = "* `subscription_id`: It uniquely identifies Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
-            reported_start_time: impl Into<time::OffsetDateTime>,
-            reported_end_time: impl Into<time::OffsetDateTime>,
+            reported_start_time: impl Into<::time::OffsetDateTime>,
+            reported_end_time: impl Into<::time::OffsetDateTime>,
             subscription_id: impl Into<String>,
         ) -> list::RequestBuilder {
             list::RequestBuilder {
@@ -201,8 +201,8 @@ pub mod usage_aggregates {
         #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) reported_start_time: time::OffsetDateTime,
-            pub(crate) reported_end_time: time::OffsetDateTime,
+            pub(crate) reported_start_time: ::time::OffsetDateTime,
+            pub(crate) reported_end_time: ::time::OffsetDateTime,
             pub(crate) subscription_id: String,
             pub(crate) show_details: Option<bool>,
             pub(crate) aggregation_granularity: Option<String>,
@@ -291,11 +291,11 @@ pub mod usage_aggregates {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Commerce/UsageAggregates",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Commerce/UsageAggregates",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -404,11 +404,11 @@ pub mod rate_card {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Commerce/RateCard",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Commerce/RateCard",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

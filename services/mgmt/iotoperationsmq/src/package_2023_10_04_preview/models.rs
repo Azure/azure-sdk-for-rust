@@ -622,9 +622,9 @@ pub struct BrokerListenerProperties {
     #[doc = "The service name to expose Listener port on."]
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
-    #[doc = "Kubernetes Service Types supported by Listener"]
+    #[doc = "The Kubernetes Service type to deploy for Listener."]
     #[serde(rename = "serviceType", default, skip_serializing_if = "Option::is_none")]
-    pub service_type: Option<ServiceType>,
+    pub service_type: Option<broker_listener_properties::ServiceType>,
     #[doc = "Collection of different TLS types, NOTE- Enum at a time only one of them needs to be supported"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tls: Option<TlsCertMethod>,
@@ -644,6 +644,56 @@ impl BrokerListenerProperties {
             service_type: None,
             tls: None,
             provisioning_state: None,
+        }
+    }
+}
+pub mod broker_listener_properties {
+    use super::*;
+    #[doc = "The Kubernetes Service type to deploy for Listener."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ServiceType")]
+    pub enum ServiceType {
+        #[serde(rename = "clusterIp")]
+        ClusterIp,
+        #[serde(rename = "loadBalancer")]
+        LoadBalancer,
+        #[serde(rename = "nodePort")]
+        NodePort,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ServiceType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ServiceType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ServiceType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::ClusterIp => serializer.serialize_unit_variant("ServiceType", 0u32, "clusterIp"),
+                Self::LoadBalancer => serializer.serialize_unit_variant("ServiceType", 1u32, "loadBalancer"),
+                Self::NodePort => serializer.serialize_unit_variant("ServiceType", 2u32, "nodePort"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for ServiceType {
+        fn default() -> Self {
+            Self::ClusterIp
         }
     }
 }
@@ -724,9 +774,9 @@ pub struct BrokerListenerResourceUpdateProperties {
     #[doc = "The service name to expose Listener port on."]
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
-    #[doc = "Kubernetes Service Types supported by Listener"]
+    #[doc = "The Kubernetes Service type to deploy for Listener."]
     #[serde(rename = "serviceType", default, skip_serializing_if = "Option::is_none")]
-    pub service_type: Option<ServiceType>,
+    pub service_type: Option<broker_listener_resource_update_properties::ServiceType>,
     #[doc = "Collection of different TLS types, NOTE- Enum at a time only one of them needs to be supported"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tls: Option<TlsCertMethodUpdate>,
@@ -734,6 +784,56 @@ pub struct BrokerListenerResourceUpdateProperties {
 impl BrokerListenerResourceUpdateProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod broker_listener_resource_update_properties {
+    use super::*;
+    #[doc = "The Kubernetes Service type to deploy for Listener."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ServiceType")]
+    pub enum ServiceType {
+        #[serde(rename = "clusterIp")]
+        ClusterIp,
+        #[serde(rename = "loadBalancer")]
+        LoadBalancer,
+        #[serde(rename = "nodePort")]
+        NodePort,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ServiceType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ServiceType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ServiceType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::ClusterIp => serializer.serialize_unit_variant("ServiceType", 0u32, "clusterIp"),
+                Self::LoadBalancer => serializer.serialize_unit_variant("ServiceType", 1u32, "loadBalancer"),
+                Self::NodePort => serializer.serialize_unit_variant("ServiceType", 2u32, "nodePort"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for ServiceType {
+        fn default() -> Self {
+            Self::ClusterIp
+        }
     }
 }
 #[doc = "The memory profile settings of the Broker"]
@@ -814,9 +914,9 @@ pub struct BrokerProperties {
     #[doc = "Cert Manager CA Cert properties"]
     #[serde(rename = "internalCerts", default, skip_serializing_if = "Option::is_none")]
     pub internal_certs: Option<CertManagerCertOptions>,
-    #[doc = "The memory profile settings of the Broker"]
+    #[doc = "Memory profile of broker."]
     #[serde(rename = "memoryProfile", default, skip_serializing_if = "Option::is_none")]
-    pub memory_profile: Option<BrokerMemoryProfile>,
+    pub memory_profile: Option<broker_properties::MemoryProfile>,
     #[doc = "The enum defining run mode of the broker deployment"]
     pub mode: RunMode,
     #[doc = "The enum defining status of resource."]
@@ -839,6 +939,59 @@ impl BrokerProperties {
             memory_profile: None,
             mode,
             provisioning_state: None,
+        }
+    }
+}
+pub mod broker_properties {
+    use super::*;
+    #[doc = "Memory profile of broker."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "MemoryProfile")]
+    pub enum MemoryProfile {
+        #[serde(rename = "tiny")]
+        Tiny,
+        #[serde(rename = "low")]
+        Low,
+        #[serde(rename = "medium")]
+        Medium,
+        #[serde(rename = "high")]
+        High,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for MemoryProfile {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for MemoryProfile {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for MemoryProfile {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Tiny => serializer.serialize_unit_variant("MemoryProfile", 0u32, "tiny"),
+                Self::Low => serializer.serialize_unit_variant("MemoryProfile", 1u32, "low"),
+                Self::Medium => serializer.serialize_unit_variant("MemoryProfile", 2u32, "medium"),
+                Self::High => serializer.serialize_unit_variant("MemoryProfile", 3u32, "high"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for MemoryProfile {
+        fn default() -> Self {
+            Self::Medium
         }
     }
 }
@@ -931,9 +1084,9 @@ pub struct BrokerResourceUpdateProperties {
     #[doc = "Cert Manager CA Cert properties"]
     #[serde(rename = "internalCerts", default, skip_serializing_if = "Option::is_none")]
     pub internal_certs: Option<CertManagerCertOptionsUpdate>,
-    #[doc = "The memory profile settings of the Broker"]
+    #[doc = "Memory profile of broker."]
     #[serde(rename = "memoryProfile", default, skip_serializing_if = "Option::is_none")]
-    pub memory_profile: Option<BrokerMemoryProfile>,
+    pub memory_profile: Option<broker_resource_update_properties::MemoryProfile>,
     #[doc = "The enum defining run mode of the broker deployment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<RunMode>,
@@ -941,6 +1094,59 @@ pub struct BrokerResourceUpdateProperties {
 impl BrokerResourceUpdateProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod broker_resource_update_properties {
+    use super::*;
+    #[doc = "Memory profile of broker."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "MemoryProfile")]
+    pub enum MemoryProfile {
+        #[serde(rename = "tiny")]
+        Tiny,
+        #[serde(rename = "low")]
+        Low,
+        #[serde(rename = "medium")]
+        Medium,
+        #[serde(rename = "high")]
+        High,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for MemoryProfile {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for MemoryProfile {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for MemoryProfile {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Tiny => serializer.serialize_unit_variant("MemoryProfile", 0u32, "tiny"),
+                Self::Low => serializer.serialize_unit_variant("MemoryProfile", 1u32, "low"),
+                Self::Medium => serializer.serialize_unit_variant("MemoryProfile", 2u32, "medium"),
+                Self::High => serializer.serialize_unit_variant("MemoryProfile", 3u32, "high"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for MemoryProfile {
+        fn default() -> Self {
+            Self::Medium
+        }
     }
 }
 #[doc = "Cardinality properties"]
@@ -2806,9 +3012,9 @@ pub struct KafkaTopicMapProperties {
     #[doc = "Kafka TopicMap Batching properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub batching: Option<KafkaTopicMapBatching>,
-    #[doc = "Kafka Message compression enum properties"]
+    #[doc = "The compression to use for kafka messages."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub compression: Option<KafkaMessageCompressionType>,
+    pub compression: Option<kafka_topic_map_properties::Compression>,
     #[doc = "The flag to copy Mqtt properties."]
     #[serde(rename = "copyMqttProperties", default, skip_serializing_if = "Option::is_none")]
     pub copy_mqtt_properties: Option<String>,
@@ -2818,9 +3024,9 @@ pub struct KafkaTopicMapProperties {
     #[doc = "The partition to use for Kafka."]
     #[serde(rename = "partitionKeyProperty", default, skip_serializing_if = "Option::is_none")]
     pub partition_key_property: Option<String>,
-    #[doc = "Kafka Partition Strategy enum properties"]
+    #[doc = "The partition strategy to use for Kafka."]
     #[serde(rename = "partitionStrategy", default, skip_serializing_if = "Option::is_none")]
-    pub partition_strategy: Option<KafkaPartitionStrategy>,
+    pub partition_strategy: Option<kafka_topic_map_properties::PartitionStrategy>,
     #[doc = "The route details for Kafka connector."]
     pub routes: Vec<KafkaRoutes>,
     #[doc = "The enum defining status of resource."]
@@ -2838,6 +3044,109 @@ impl KafkaTopicMapProperties {
             partition_strategy: None,
             routes,
             provisioning_state: None,
+        }
+    }
+}
+pub mod kafka_topic_map_properties {
+    use super::*;
+    #[doc = "The compression to use for kafka messages."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Compression")]
+    pub enum Compression {
+        #[serde(rename = "none")]
+        None,
+        #[serde(rename = "gzip")]
+        Gzip,
+        #[serde(rename = "snappy")]
+        Snappy,
+        #[serde(rename = "lz4")]
+        Lz4,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Compression {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Compression {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Compression {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::None => serializer.serialize_unit_variant("Compression", 0u32, "none"),
+                Self::Gzip => serializer.serialize_unit_variant("Compression", 1u32, "gzip"),
+                Self::Snappy => serializer.serialize_unit_variant("Compression", 2u32, "snappy"),
+                Self::Lz4 => serializer.serialize_unit_variant("Compression", 3u32, "lz4"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for Compression {
+        fn default() -> Self {
+            Self::None
+        }
+    }
+    #[doc = "The partition strategy to use for Kafka."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "PartitionStrategy")]
+    pub enum PartitionStrategy {
+        #[serde(rename = "default")]
+        Default,
+        #[serde(rename = "static")]
+        Static,
+        #[serde(rename = "topic")]
+        Topic,
+        #[serde(rename = "property")]
+        Property,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for PartitionStrategy {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for PartitionStrategy {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for PartitionStrategy {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Default => serializer.serialize_unit_variant("PartitionStrategy", 0u32, "default"),
+                Self::Static => serializer.serialize_unit_variant("PartitionStrategy", 1u32, "static"),
+                Self::Topic => serializer.serialize_unit_variant("PartitionStrategy", 2u32, "topic"),
+                Self::Property => serializer.serialize_unit_variant("PartitionStrategy", 3u32, "property"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for PartitionStrategy {
+        fn default() -> Self {
+            Self::Default
         }
     }
 }
@@ -2903,9 +3212,9 @@ pub struct KafkaTopicMapResourceUpdateProperties {
     #[doc = "Kafka TopicMap Batching properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub batching: Option<KafkaTopicMapBatching>,
-    #[doc = "Kafka Message compression enum properties"]
+    #[doc = "The compression to use for kafka messages."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub compression: Option<KafkaMessageCompressionType>,
+    pub compression: Option<kafka_topic_map_resource_update_properties::Compression>,
     #[doc = "The flag to copy Mqtt properties."]
     #[serde(rename = "copyMqttProperties", default, skip_serializing_if = "Option::is_none")]
     pub copy_mqtt_properties: Option<String>,
@@ -2915,9 +3224,9 @@ pub struct KafkaTopicMapResourceUpdateProperties {
     #[doc = "The partition to use for Kafka."]
     #[serde(rename = "partitionKeyProperty", default, skip_serializing_if = "Option::is_none")]
     pub partition_key_property: Option<String>,
-    #[doc = "Kafka Partition Strategy enum properties"]
+    #[doc = "The partition strategy to use for Kafka."]
     #[serde(rename = "partitionStrategy", default, skip_serializing_if = "Option::is_none")]
-    pub partition_strategy: Option<KafkaPartitionStrategy>,
+    pub partition_strategy: Option<kafka_topic_map_resource_update_properties::PartitionStrategy>,
     #[doc = "The route details for Kafka connector."]
     #[serde(
         default,
@@ -2929,6 +3238,109 @@ pub struct KafkaTopicMapResourceUpdateProperties {
 impl KafkaTopicMapResourceUpdateProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod kafka_topic_map_resource_update_properties {
+    use super::*;
+    #[doc = "The compression to use for kafka messages."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Compression")]
+    pub enum Compression {
+        #[serde(rename = "none")]
+        None,
+        #[serde(rename = "gzip")]
+        Gzip,
+        #[serde(rename = "snappy")]
+        Snappy,
+        #[serde(rename = "lz4")]
+        Lz4,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Compression {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Compression {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Compression {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::None => serializer.serialize_unit_variant("Compression", 0u32, "none"),
+                Self::Gzip => serializer.serialize_unit_variant("Compression", 1u32, "gzip"),
+                Self::Snappy => serializer.serialize_unit_variant("Compression", 2u32, "snappy"),
+                Self::Lz4 => serializer.serialize_unit_variant("Compression", 3u32, "lz4"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for Compression {
+        fn default() -> Self {
+            Self::None
+        }
+    }
+    #[doc = "The partition strategy to use for Kafka."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "PartitionStrategy")]
+    pub enum PartitionStrategy {
+        #[serde(rename = "default")]
+        Default,
+        #[serde(rename = "static")]
+        Static,
+        #[serde(rename = "topic")]
+        Topic,
+        #[serde(rename = "property")]
+        Property,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for PartitionStrategy {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for PartitionStrategy {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for PartitionStrategy {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Default => serializer.serialize_unit_variant("PartitionStrategy", 0u32, "default"),
+                Self::Static => serializer.serialize_unit_variant("PartitionStrategy", 1u32, "static"),
+                Self::Topic => serializer.serialize_unit_variant("PartitionStrategy", 2u32, "topic"),
+                Self::Property => serializer.serialize_unit_variant("PartitionStrategy", 3u32, "property"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for PartitionStrategy {
+        fn default() -> Self {
+            Self::Default
+        }
     }
 }
 #[doc = "Kafka RemoteBrokerConnection X509 Authentication properties."]
@@ -3498,7 +3910,7 @@ pub struct MqttBridgeRemoteBrokerConnectionSpec {
     pub endpoint: String,
     #[doc = "Protocol for remote connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub protocol: Option<MqttBridgeRemoteBrokerProtocol>,
+    pub protocol: Option<mqtt_bridge_remote_broker_connection_spec::Protocol>,
     #[doc = "MqttBridge RemoteBrokerConnection TLS details"]
     pub tls: MqttBridgeRemoteBrokerConnectionTls,
 }
@@ -3516,6 +3928,53 @@ impl MqttBridgeRemoteBrokerConnectionSpec {
         }
     }
 }
+pub mod mqtt_bridge_remote_broker_connection_spec {
+    use super::*;
+    #[doc = "Protocol for remote connection."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Protocol")]
+    pub enum Protocol {
+        #[serde(rename = "mqtt")]
+        Mqtt,
+        #[serde(rename = "webSocket")]
+        WebSocket,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Protocol {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Protocol {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Protocol {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Mqtt => serializer.serialize_unit_variant("Protocol", 0u32, "mqtt"),
+                Self::WebSocket => serializer.serialize_unit_variant("Protocol", 1u32, "webSocket"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for Protocol {
+        fn default() -> Self {
+            Self::Mqtt
+        }
+    }
+}
 #[doc = "MqttBridge RemoteBrokerConnectionSpec details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MqttBridgeRemoteBrokerConnectionSpecUpdate {
@@ -3527,7 +3986,7 @@ pub struct MqttBridgeRemoteBrokerConnectionSpecUpdate {
     pub endpoint: Option<String>,
     #[doc = "Protocol for remote connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub protocol: Option<MqttBridgeRemoteBrokerProtocol>,
+    pub protocol: Option<mqtt_bridge_remote_broker_connection_spec_update::Protocol>,
     #[doc = "MqttBridge RemoteBrokerConnection TLS details"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tls: Option<MqttBridgeRemoteBrokerConnectionTlsUpdate>,
@@ -3535,6 +3994,53 @@ pub struct MqttBridgeRemoteBrokerConnectionSpecUpdate {
 impl MqttBridgeRemoteBrokerConnectionSpecUpdate {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod mqtt_bridge_remote_broker_connection_spec_update {
+    use super::*;
+    #[doc = "Protocol for remote connection."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Protocol")]
+    pub enum Protocol {
+        #[serde(rename = "mqtt")]
+        Mqtt,
+        #[serde(rename = "webSocket")]
+        WebSocket,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Protocol {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Protocol {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Protocol {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Mqtt => serializer.serialize_unit_variant("Protocol", 0u32, "mqtt"),
+                Self::WebSocket => serializer.serialize_unit_variant("Protocol", 1u32, "webSocket"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for Protocol {
+        fn default() -> Self {
+            Self::Mqtt
+        }
     }
 }
 #[doc = "MqttBridge RemoteBrokerConnection TLS details"]
@@ -4780,7 +5286,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -4789,7 +5295,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

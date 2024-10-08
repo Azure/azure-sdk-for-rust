@@ -50,7 +50,7 @@ pub struct ChangeProperties {
     pub resource_id: Option<String>,
     #[doc = "The time when the change is detected."]
     #[serde(rename = "timeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub time_stamp: Option<time::OffsetDateTime>,
+    pub time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "The list of identities who might initiated the change.\r\nThe identity could be user name (email address) or the object ID of the Service Principal."]
     #[serde(
         rename = "initiatedByList",
@@ -366,13 +366,13 @@ pub struct ResourceGraphSnapshotData {
     pub snapshot_id: Option<String>,
     #[doc = "The time when the snapshot was created.\nThe snapshot timestamp provides an approximation as to when a modification to a resource was detected.  There can be a difference between the actual modification time and the detection time.  This is due to differences in how operations that modify a resource are processed, versus how operation that record resource snapshots are processed."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub timestamp: time::OffsetDateTime,
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The resource snapshot content (in resourceChangeDetails response only)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<serde_json::Value>,
 }
 impl ResourceGraphSnapshotData {
-    pub fn new(timestamp: time::OffsetDateTime) -> Self {
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
         Self {
             snapshot_id: None,
             timestamp,

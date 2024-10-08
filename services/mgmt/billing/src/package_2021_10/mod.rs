@@ -366,11 +366,11 @@ pub mod billing_subscriptions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions",
                     &self.billing_account_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -455,12 +455,11 @@ pub mod billing_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.billing_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}",
+                    &self.billing_account_name, &self.billing_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -572,12 +571,11 @@ pub mod billing_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.billing_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}",
+                    &self.billing_account_name, &self.billing_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -737,12 +735,11 @@ pub mod billing_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.billing_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}",
+                    &self.billing_account_name, &self.billing_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -842,12 +839,11 @@ pub mod billing_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}/move",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.billing_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}/move",
+                    &self.billing_account_name, &self.billing_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1001,12 +997,11 @@ pub mod billing_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}/validateMoveEligibility",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.billing_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}/validateMoveEligibility",
+                    &self.billing_account_name, &self.billing_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1118,12 +1113,11 @@ pub mod billing_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}/merge",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.billing_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}/merge",
+                    &self.billing_account_name, &self.billing_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1290,12 +1284,11 @@ pub mod billing_subscriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}/split",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.billing_subscription_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions/{}/split",
+                    &self.billing_account_name, &self.billing_subscription_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1523,11 +1516,11 @@ pub mod billing_subscriptions_aliases {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptionAliases",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptionAliases",
                     &self.billing_account_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1612,12 +1605,11 @@ pub mod billing_subscriptions_aliases {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptionAliases/{}",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.alias_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptionAliases/{}",
+                    &self.billing_account_name, &self.alias_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1729,12 +1721,11 @@ pub mod billing_subscriptions_aliases {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptionAliases/{}",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.alias_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptionAliases/{}",
+                    &self.billing_account_name, &self.alias_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1997,7 +1988,8 @@ pub mod payment_methods {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Billing/paymentMethods", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Billing/paymentMethods");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2081,11 +2073,11 @@ pub mod payment_methods {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/paymentMethods/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/paymentMethods/{}",
                     &self.payment_method_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2176,11 +2168,11 @@ pub mod payment_methods {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/paymentMethods/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/paymentMethods/{}",
                     &self.payment_method_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2290,11 +2282,11 @@ pub mod payment_methods {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/paymentMethods",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/paymentMethods",
                     &self.billing_account_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2379,12 +2371,11 @@ pub mod payment_methods {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/paymentMethods/{}",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.payment_method_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/paymentMethods/{}",
+                    &self.billing_account_name, &self.payment_method_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2507,12 +2498,11 @@ pub mod payment_methods {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/paymentMethodLinks",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.billing_profile_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/paymentMethodLinks",
+                    &self.billing_account_name, &self.billing_profile_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2598,13 +2588,11 @@ pub mod payment_methods {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/paymentMethodLinks/{}",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.billing_profile_name,
-                    &self.payment_method_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/paymentMethodLinks/{}",
+                    &self.billing_account_name, &self.billing_profile_name, &self.payment_method_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2710,13 +2698,11 @@ pub mod payment_methods {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/paymentMethodLinks/{}",
-                    self.client.endpoint(),
-                    &self.billing_account_name,
-                    &self.billing_profile_name,
-                    &self.payment_method_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/paymentMethodLinks/{}",
+                    &self.billing_account_name, &self.billing_profile_name, &self.payment_method_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2839,7 +2825,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Billing/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Billing/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

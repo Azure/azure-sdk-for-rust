@@ -14,53 +14,11 @@ pub struct AadMember {
     pub object_id: Option<String>,
     #[doc = "The objectType of the member."]
     #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
-    pub object_type: Option<aad_member::ObjectType>,
+    pub object_type: Option<ObjectType>,
 }
 impl AadMember {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-pub mod aad_member {
-    use super::*;
-    #[doc = "The objectType of the member."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ObjectType")]
-    pub enum ObjectType {
-        User,
-        Group,
-        ServicePrincipal,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ObjectType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ObjectType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ObjectType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::User => serializer.serialize_unit_variant("ObjectType", 0u32, "User"),
-                Self::Group => serializer.serialize_unit_variant("ObjectType", 1u32, "Group"),
-                Self::ServicePrincipal => serializer.serialize_unit_variant("ObjectType", 2u32, "ServicePrincipal"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }
 #[doc = "Attribute predicate for a policy permission"]
@@ -81,6 +39,43 @@ pub struct AttributePredicate {
 impl AttributePredicate {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The effect for rule"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "Decision")]
+pub enum Decision {
+    Permit,
+    Deny,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for Decision {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for Decision {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for Decision {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Permit => serializer.serialize_unit_variant("Decision", 0u32, "Permit"),
+            Self::Deny => serializer.serialize_unit_variant("Decision", 1u32, "Deny"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "The resource management error additional info."]
@@ -167,6 +162,45 @@ pub struct FabricItemMember {
 impl FabricItemMember {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The objectType of the member."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ObjectType")]
+pub enum ObjectType {
+    User,
+    Group,
+    ServicePrincipal,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ObjectType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ObjectType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ObjectType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::User => serializer.serialize_unit_variant("ObjectType", 0u32, "User"),
+            Self::Group => serializer.serialize_unit_variant("ObjectType", 1u32, "Group"),
+            Self::ServicePrincipal => serializer.serialize_unit_variant("ObjectType", 2u32, "ServicePrincipal"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "Details of a REST API operation, returned from the Resource Provider Operations API"]
@@ -340,7 +374,7 @@ pub struct Policy {
     pub decision_rules: Vec<PolicyDecisionRule>,
     #[doc = "The timestamp of the expiry time of the policy (UTC)."]
     #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_time: Option<time::OffsetDateTime>,
+    pub expiry_time: Option<::time::OffsetDateTime>,
     #[doc = "The AAD member who requested the policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub requestor: Option<String>,
@@ -364,7 +398,7 @@ impl Policy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyDecisionRule {
     #[doc = "The effect for rule"]
-    pub effect: policy_decision_rule::Effect,
+    pub effect: Decision,
     #[doc = "Array of attribute predicates"]
     #[serde(
         default,
@@ -374,69 +408,29 @@ pub struct PolicyDecisionRule {
     pub permission: Vec<AttributePredicate>,
 }
 impl PolicyDecisionRule {
-    pub fn new(effect: policy_decision_rule::Effect) -> Self {
+    pub fn new(effect: Decision) -> Self {
         Self {
             effect,
             permission: Vec::new(),
         }
     }
 }
-pub mod policy_decision_rule {
-    use super::*;
-    #[doc = "The effect for rule"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Effect")]
-    pub enum Effect {
-        Permit,
-        Deny,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Effect {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Effect {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Effect {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Permit => serializer.serialize_unit_variant("Effect", 0u32, "Permit"),
-                Self::Deny => serializer.serialize_unit_variant("Effect", 1u32, "Deny"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "A paginated list of purview RBAC policies"]
+#[doc = "The response of a Policy list operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyList {
-    #[doc = "A list of purview RBAC policies"]
+pub struct PolicyListResult {
+    #[doc = "The Policy items on this page"]
     pub value: Vec<Policy>,
-    #[doc = "Pagination link"]
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for PolicyList {
+impl azure_core::Continuable for PolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl PolicyList {
+impl PolicyListResult {
     pub fn new(value: Vec<Policy>) -> Self {
         Self { value, next_link: None }
     }
@@ -509,7 +503,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -518,7 +512,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

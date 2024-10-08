@@ -628,7 +628,7 @@ pub struct CommonExportProperties {
     pub partition_data: Option<bool>,
     #[doc = "If the export has an active schedule, provides an estimate of the next execution time."]
     #[serde(rename = "nextRunTimeEstimate", default, with = "azure_core::date::rfc3339::option")]
-    pub next_run_time_estimate: Option<time::OffsetDateTime>,
+    pub next_run_time_estimate: Option<::time::OffsetDateTime>,
 }
 impl CommonExportProperties {
     pub fn new(delivery_info: ExportDeliveryInfo, definition: ExportDefinition) -> Self {
@@ -768,10 +768,10 @@ pub struct DimensionProperties {
     pub category: Option<String>,
     #[doc = "Usage start."]
     #[serde(rename = "usageStart", default, with = "azure_core::date::rfc3339::option")]
-    pub usage_start: Option<time::OffsetDateTime>,
+    pub usage_start: Option<::time::OffsetDateTime>,
     #[doc = "Usage end."]
     #[serde(rename = "usageEnd", default, with = "azure_core::date::rfc3339::option")]
-    pub usage_end: Option<time::OffsetDateTime>,
+    pub usage_end: Option<::time::OffsetDateTime>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -1127,13 +1127,13 @@ pub struct ExportExecutionProperties {
     pub submitted_by: Option<String>,
     #[doc = "The time when export was queued to be executed."]
     #[serde(rename = "submittedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub submitted_time: Option<time::OffsetDateTime>,
+    pub submitted_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when export was picked up to be executed."]
     #[serde(rename = "processingStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub processing_start_time: Option<time::OffsetDateTime>,
+    pub processing_start_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the export execution finished."]
     #[serde(rename = "processingEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub processing_end_time: Option<time::OffsetDateTime>,
+    pub processing_end_time: Option<::time::OffsetDateTime>,
     #[doc = "The name of the exported file."]
     #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
     pub file_name: Option<String>,
@@ -1274,13 +1274,13 @@ impl ExportProperties {
 pub struct ExportRecurrencePeriod {
     #[doc = "The start date of recurrence."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub from: time::OffsetDateTime,
+    pub from: ::time::OffsetDateTime,
     #[doc = "The end date of recurrence."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub to: Option<time::OffsetDateTime>,
+    pub to: Option<::time::OffsetDateTime>,
 }
 impl ExportRecurrencePeriod {
-    pub fn new(from: time::OffsetDateTime) -> Self {
+    pub fn new(from: ::time::OffsetDateTime) -> Self {
         Self { from, to: None }
     }
 }
@@ -1388,13 +1388,13 @@ pub mod export_schedule {
 pub struct ExportTimePeriod {
     #[doc = "The start date for export data."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub from: time::OffsetDateTime,
+    pub from: ::time::OffsetDateTime,
     #[doc = "The end date for export data."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub to: time::OffsetDateTime,
+    pub to: ::time::OffsetDateTime,
 }
 impl ExportTimePeriod {
-    pub fn new(from: time::OffsetDateTime, to: time::OffsetDateTime) -> Self {
+    pub fn new(from: ::time::OffsetDateTime, to: ::time::OffsetDateTime) -> Self {
         Self { from, to }
     }
 }
@@ -1759,13 +1759,13 @@ impl ForecastResult {
 pub struct ForecastTimePeriod {
     #[doc = "The start date to pull data from."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub from: time::OffsetDateTime,
+    pub from: ::time::OffsetDateTime,
     #[doc = "The end date to pull data to."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub to: time::OffsetDateTime,
+    pub to: ::time::OffsetDateTime,
 }
 impl ForecastTimePeriod {
-    pub fn new(from: time::OffsetDateTime, to: time::OffsetDateTime) -> Self {
+    pub fn new(from: ::time::OffsetDateTime, to: ::time::OffsetDateTime) -> Self {
         Self { from, to }
     }
 }
@@ -2593,13 +2593,13 @@ impl QueryResult {
 pub struct QueryTimePeriod {
     #[doc = "The start date to pull data from."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub from: time::OffsetDateTime,
+    pub from: ::time::OffsetDateTime,
     #[doc = "The end date to pull data to."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub to: time::OffsetDateTime,
+    pub to: ::time::OffsetDateTime,
 }
 impl QueryTimePeriod {
-    pub fn new(from: time::OffsetDateTime, to: time::OffsetDateTime) -> Self {
+    pub fn new(from: ::time::OffsetDateTime, to: ::time::OffsetDateTime) -> Self {
         Self { from, to }
     }
 }
@@ -3047,13 +3047,13 @@ pub mod report_config_sorting {
 pub struct ReportConfigTimePeriod {
     #[doc = "The start date to pull data from."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub from: time::OffsetDateTime,
+    pub from: ::time::OffsetDateTime,
     #[doc = "The end date to pull data to."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub to: time::OffsetDateTime,
+    pub to: ::time::OffsetDateTime,
 }
 impl ReportConfigTimePeriod {
-    pub fn new(from: time::OffsetDateTime, to: time::OffsetDateTime) -> Self {
+    pub fn new(from: ::time::OffsetDateTime, to: ::time::OffsetDateTime) -> Self {
         Self { from, to }
     }
 }
@@ -3065,7 +3065,7 @@ pub struct ReportUrl {
     pub report_url: Option<ReservationReportSchema>,
     #[doc = "The time at which report URL becomes invalid."]
     #[serde(rename = "validUntil", default, with = "azure_core::date::rfc3339::option")]
-    pub valid_until: Option<time::OffsetDateTime>,
+    pub valid_until: Option<::time::OffsetDateTime>,
 }
 impl ReportUrl {
     pub fn new() -> Self {
@@ -3229,13 +3229,13 @@ pub struct ScheduleProperties {
     pub day_of_month: Option<i32>,
     #[doc = "The start date and time of the scheduled action (UTC)."]
     #[serde(rename = "startDate", with = "azure_core::date::rfc3339")]
-    pub start_date: time::OffsetDateTime,
+    pub start_date: ::time::OffsetDateTime,
     #[doc = "The end date and time of the scheduled action (UTC)."]
     #[serde(rename = "endDate", with = "azure_core::date::rfc3339")]
-    pub end_date: time::OffsetDateTime,
+    pub end_date: ::time::OffsetDateTime,
 }
 impl ScheduleProperties {
-    pub fn new(frequency: ScheduleFrequency, start_date: time::OffsetDateTime, end_date: time::OffsetDateTime) -> Self {
+    pub fn new(frequency: ScheduleFrequency, start_date: ::time::OffsetDateTime, end_date: ::time::OffsetDateTime) -> Self {
         Self {
             frequency,
             hour_of_day: None,
@@ -3476,10 +3476,10 @@ pub struct ViewProperties {
     pub scope: Option<String>,
     #[doc = "Date the user created this view."]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "Date when the user last modified this view."]
     #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_on: Option<time::OffsetDateTime>,
+    pub modified_on: Option<::time::OffsetDateTime>,
     #[doc = "Date range of the current view."]
     #[serde(rename = "dateRange", default, skip_serializing_if = "Option::is_none")]
     pub date_range: Option<String>,
@@ -3697,7 +3697,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -3706,7 +3706,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

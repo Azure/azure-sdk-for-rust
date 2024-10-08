@@ -205,7 +205,8 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.DevHub/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.DevHub/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -384,12 +385,11 @@ pub mod git_hub_o_auth {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/subscriptions/{}/providers/Microsoft.DevHub/locations/{}/githuboauth/default/getGitHubOAuthInfo",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.location
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/subscriptions/{}/providers/Microsoft.DevHub/locations/{}/githuboauth/default/getGitHubOAuthInfo",
+                &self.subscription_id, &self.location
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -492,12 +492,11 @@ pub mod git_hub_o_auth_callback {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/subscriptions/{}/providers/Microsoft.DevHub/locations/{}/githuboauth/default",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.location
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/subscriptions/{}/providers/Microsoft.DevHub/locations/{}/githuboauth/default",
+                &self.subscription_id, &self.location
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -594,12 +593,11 @@ pub mod list_git_hub_o_auth {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/subscriptions/{}/providers/Microsoft.DevHub/locations/{}/githuboauth",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.location
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/subscriptions/{}/providers/Microsoft.DevHub/locations/{}/githuboauth",
+                &self.subscription_id, &self.location
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -698,12 +696,11 @@ pub mod generate_preview_artifacts {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/subscriptions/{}/providers/Microsoft.DevHub/locations/{}/generatePreviewArtifacts",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.location
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/subscriptions/{}/providers/Microsoft.DevHub/locations/{}/generatePreviewArtifacts",
+                &self.subscription_id, &self.location
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -942,11 +939,11 @@ pub mod workflow {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DevHub/workflows",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DevHub/workflows",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1068,12 +1065,11 @@ pub mod workflow {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevHub/workflows",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevHub/workflows",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1159,13 +1155,11 @@ pub mod workflow {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevHub/workflows/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workflow_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevHub/workflows/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workflow_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1265,13 +1259,11 @@ pub mod workflow {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevHub/workflows/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workflow_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevHub/workflows/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workflow_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1371,13 +1363,11 @@ pub mod workflow {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevHub/workflows/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workflow_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevHub/workflows/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workflow_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1475,13 +1465,11 @@ pub mod workflow {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevHub/workflows/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.workflow_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DevHub/workflows/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.workflow_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

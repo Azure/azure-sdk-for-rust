@@ -1,20 +1,20 @@
 [package]
 name = "azure_data_tables"
-version = "0.20.0"
+version = "0.21.0"
 description = "Azure Table storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
-homepage = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust/tree/legacy"
 documentation = "https://docs.rs/azure_data_tables"
 keywords = ["sdk", "azure", "storage", "data-tables"]
 categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.20" }
-azure_storage = { path = "../storage", version = "0.20", default-features = false }
+azure_core = { path = "../core", version = "0.21" }
+azure_storage = { path = "../storage", version = "0.21", default-features = false }
 bytes = "1.0"
 time = "0.3.10"
 futures = "0.3"

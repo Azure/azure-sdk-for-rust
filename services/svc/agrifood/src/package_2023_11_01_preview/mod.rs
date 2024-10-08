@@ -414,7 +414,8 @@ pub mod application_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/application-data:search", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/application-data:search");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -510,11 +511,8 @@ pub mod application_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/application-data/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/application-data/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -617,11 +615,8 @@ pub mod application_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/application-data/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/application-data/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -773,12 +768,11 @@ pub mod application_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/application-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.application_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/application-data/{}",
+                    &self.party_id, &self.application_data_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -877,12 +871,11 @@ pub mod application_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/application-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.application_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/application-data/{}",
+                    &self.party_id, &self.application_data_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -974,12 +967,11 @@ pub mod application_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/application-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.application_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/application-data/{}",
+                    &self.party_id, &self.application_data_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1142,10 +1134,10 @@ pub mod attachments {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -1181,22 +1173,22 @@ pub mod attachments {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -1307,7 +1299,8 @@ pub mod attachments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties/{}/attachments", self.client.endpoint(), &self.party_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/attachments", &self.party_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1392,12 +1385,8 @@ pub mod attachments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/attachments/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.attachment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/attachments/{}", &self.party_id, &self.attachment_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1479,8 +1468,8 @@ pub mod attachments {
             pub(crate) original_file_name: Option<String>,
             pub(crate) id: Option<String>,
             pub(crate) status: Option<String>,
-            pub(crate) created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) source: Option<String>,
             pub(crate) name: Option<String>,
             pub(crate) description: Option<String>,
@@ -1520,12 +1509,12 @@ pub mod attachments {
                 self
             }
             #[doc = "Date when resource was created."]
-            pub fn created_date_time(mut self, created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn created_date_time(mut self, created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.created_date_time = Some(created_date_time.into());
                 self
             }
             #[doc = "Date when resource was last modified."]
-            pub fn modified_date_time(mut self, modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn modified_date_time(mut self, modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.modified_date_time = Some(modified_date_time.into());
                 self
             }
@@ -1592,12 +1581,8 @@ pub mod attachments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/attachments/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.attachment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/attachments/{}", &self.party_id, &self.attachment_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1689,12 +1674,8 @@ pub mod attachments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/attachments/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.attachment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/attachments/{}", &self.party_id, &self.attachment_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1779,12 +1760,8 @@ pub mod attachments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/attachments/{}/file",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.attachment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/attachments/{}/file", &self.party_id, &self.attachment_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1954,10 +1931,10 @@ pub mod chemical_products {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -2058,22 +2035,22 @@ pub mod chemical_products {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -2242,7 +2219,8 @@ pub mod chemical_products {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/chemical-products", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/chemical-products");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2326,11 +2304,8 @@ pub mod chemical_products {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/chemical-products/{}",
-                    self.client.endpoint(),
-                    &self.chemical_product_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/chemical-products/{}", &self.chemical_product_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2428,11 +2403,8 @@ pub mod chemical_products {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/chemical-products/{}",
-                    self.client.endpoint(),
-                    &self.chemical_product_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/chemical-products/{}", &self.chemical_product_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2523,11 +2495,8 @@ pub mod chemical_products {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/chemical-products/{}",
-                    self.client.endpoint(),
-                    &self.chemical_product_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/chemical-products/{}", &self.chemical_product_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2675,10 +2644,10 @@ pub mod crop_products {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -2754,22 +2723,22 @@ pub mod crop_products {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -2916,7 +2885,8 @@ pub mod crop_products {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/crop-products", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/crop-products");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3000,7 +2970,8 @@ pub mod crop_products {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/crop-products/{}", self.client.endpoint(), &self.crop_product_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/crop-products/{}", &self.crop_product_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3098,7 +3069,8 @@ pub mod crop_products {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/crop-products/{}", self.client.endpoint(), &self.crop_product_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/crop-products/{}", &self.crop_product_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3189,7 +3161,8 @@ pub mod crop_products {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/crop-products/{}", self.client.endpoint(), &self.crop_product_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/crop-products/{}", &self.crop_product_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3323,10 +3296,10 @@ pub mod crops {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -3377,22 +3350,22 @@ pub mod crops {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -3519,7 +3492,8 @@ pub mod crops {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/crops", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/crops");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3603,7 +3577,8 @@ pub mod crops {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/crops/{}", self.client.endpoint(), &self.crop_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/crops/{}", &self.crop_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3701,7 +3676,8 @@ pub mod crops {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/crops/{}", self.client.endpoint(), &self.crop_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/crops/{}", &self.crop_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3792,7 +3768,8 @@ pub mod crops {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/crops/{}", self.client.endpoint(), &self.crop_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/crops/{}", &self.crop_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3934,10 +3911,10 @@ pub mod dataset_records {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -3968,22 +3945,22 @@ pub mod dataset_records {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -4090,7 +4067,8 @@ pub mod dataset_records {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/datasets/{}/records", self.client.endpoint(), &self.dataset_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/datasets/{}/records", &self.dataset_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4175,12 +4153,8 @@ pub mod dataset_records {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/datasets/{}/records/{}",
-                    self.client.endpoint(),
-                    &self.dataset_id,
-                    &self.record_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/datasets/{}/records/{}", &self.dataset_id, &self.record_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4279,12 +4253,8 @@ pub mod dataset_records {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/datasets/{}/records/{}",
-                    self.client.endpoint(),
-                    &self.dataset_id,
-                    &self.record_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/datasets/{}/records/{}", &self.dataset_id, &self.record_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4376,12 +4346,8 @@ pub mod dataset_records {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/datasets/{}/records/{}",
-                    self.client.endpoint(),
-                    &self.dataset_id,
-                    &self.record_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/datasets/{}/records/{}", &self.dataset_id, &self.record_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4557,10 +4523,10 @@ pub mod datasets {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -4591,22 +4557,22 @@ pub mod datasets {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -4712,7 +4678,8 @@ pub mod datasets {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/datasets", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/datasets");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4796,7 +4763,8 @@ pub mod datasets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/datasets/{}", self.client.endpoint(), &self.dataset_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/datasets/{}", &self.dataset_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4894,7 +4862,8 @@ pub mod datasets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/datasets/{}", self.client.endpoint(), &self.dataset_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/datasets/{}", &self.dataset_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4985,7 +4954,8 @@ pub mod datasets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/datasets/{}", self.client.endpoint(), &self.dataset_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/datasets/{}", &self.dataset_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5135,7 +5105,8 @@ pub mod datasets {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/datasets/{}/access", self.client.endpoint(), &self.dataset_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/datasets/{}/access", &self.dataset_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5221,7 +5192,8 @@ pub mod datasets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/datasets/{}/access:grant", self.client.endpoint(), &self.dataset_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/datasets/{}/access:grant", &self.dataset_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5314,7 +5286,8 @@ pub mod datasets {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/datasets/{}/access:remove", self.client.endpoint(), &self.dataset_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/datasets/{}/access:remove", &self.dataset_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5454,10 +5427,10 @@ pub mod device_data_models {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -5483,22 +5456,22 @@ pub mod device_data_models {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -5601,11 +5574,8 @@ pub mod device_data_models {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/device-data-models",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-partners/{}/device-data-models", &self.sensor_partner_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5690,12 +5660,11 @@ pub mod device_data_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/device-data-models/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.device_data_model_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/device-data-models/{}",
+                    &self.sensor_partner_id, &self.device_data_model_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5794,12 +5763,11 @@ pub mod device_data_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/device-data-models/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.device_data_model_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/device-data-models/{}",
+                    &self.sensor_partner_id, &self.device_data_model_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5891,12 +5859,11 @@ pub mod device_data_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/device-data-models/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.device_data_model_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/device-data-models/{}",
+                    &self.sensor_partner_id, &self.device_data_model_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6040,10 +6007,10 @@ pub mod devices {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -6079,22 +6046,22 @@ pub mod devices {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -6207,11 +6174,8 @@ pub mod devices {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/devices",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-partners/{}/devices", &self.sensor_partner_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6296,12 +6260,8 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/devices/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.device_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-partners/{}/devices/{}", &self.sensor_partner_id, &self.device_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6400,12 +6360,8 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/devices/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.device_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-partners/{}/devices/{}", &self.sensor_partner_id, &self.device_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6497,12 +6453,8 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/devices/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.device_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-partners/{}/devices/{}", &self.sensor_partner_id, &self.device_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6652,10 +6604,10 @@ pub mod farm_equipments {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -6736,22 +6688,22 @@ pub mod farm_equipments {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -6902,7 +6854,8 @@ pub mod farm_equipments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/farm-equipments", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/farm-equipments");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6986,7 +6939,8 @@ pub mod farm_equipments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/farm-equipments/{}", self.client.endpoint(), &self.farm_equipment_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/farm-equipments/{}", &self.farm_equipment_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7084,7 +7038,8 @@ pub mod farm_equipments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/farm-equipments/{}", self.client.endpoint(), &self.farm_equipment_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/farm-equipments/{}", &self.farm_equipment_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7175,7 +7130,8 @@ pub mod farm_equipments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/farm-equipments/{}", self.client.endpoint(), &self.farm_equipment_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/farm-equipments/{}", &self.farm_equipment_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7295,7 +7251,8 @@ pub mod farm_operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/farm-operations/ingest-data/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/farm-operations/ingest-data/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7392,7 +7349,8 @@ pub mod farm_operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/farm-operations/ingest-data/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/farm-operations/ingest-data/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7643,10 +7601,10 @@ pub mod farms {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -7672,22 +7630,22 @@ pub mod farms {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -7790,7 +7748,8 @@ pub mod farms {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/farms", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/farms");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7874,7 +7833,8 @@ pub mod farms {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/farms/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/farms/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7975,7 +7935,8 @@ pub mod farms {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/farms/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/farms/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8109,10 +8070,10 @@ pub mod farms {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -8138,22 +8099,22 @@ pub mod farms {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -8256,7 +8217,8 @@ pub mod farms {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties/{}/farms", self.client.endpoint(), &self.party_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/farms", &self.party_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8341,12 +8303,8 @@ pub mod farms {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/farms/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.farm_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/farms/{}", &self.party_id, &self.farm_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8445,12 +8403,8 @@ pub mod farms {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/farms/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.farm_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/farms/{}", &self.party_id, &self.farm_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8542,12 +8496,8 @@ pub mod farms {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/farms/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.farm_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/farms/{}", &self.party_id, &self.farm_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8746,7 +8696,8 @@ pub mod fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/fields:search", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/fields:search");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8842,7 +8793,8 @@ pub mod fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/fields/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/fields/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8943,7 +8895,8 @@ pub mod fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/fields/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/fields/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9095,12 +9048,8 @@ pub mod fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/fields/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.field_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/fields/{}", &self.party_id, &self.field_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9199,12 +9148,8 @@ pub mod fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/fields/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.field_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/fields/{}", &self.party_id, &self.field_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9296,12 +9241,8 @@ pub mod fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/fields/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.field_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/fields/{}", &self.party_id, &self.field_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9500,7 +9441,8 @@ pub mod harvest_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/harvest-data:search", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/harvest-data:search");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9596,7 +9538,8 @@ pub mod harvest_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/harvest-data/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/harvest-data/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9697,7 +9640,8 @@ pub mod harvest_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/harvest-data/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/harvest-data/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9849,12 +9793,8 @@ pub mod harvest_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/harvest-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.harvest_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/harvest-data/{}", &self.party_id, &self.harvest_data_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9953,12 +9893,8 @@ pub mod harvest_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/harvest-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.harvest_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/harvest-data/{}", &self.party_id, &self.harvest_data_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10050,12 +9986,8 @@ pub mod harvest_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/harvest-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.harvest_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/harvest-data/{}", &self.party_id, &self.harvest_data_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10175,7 +10107,8 @@ pub mod image_processing {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/image-processing/rasterize/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/image-processing/rasterize/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10272,7 +10205,8 @@ pub mod image_processing {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/image-processing/rasterize/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/image-processing/rasterize/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10568,10 +10502,10 @@ pub mod insight_attachments {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -10602,22 +10536,22 @@ pub mod insight_attachments {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -10724,14 +10658,11 @@ pub mod insight_attachments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/models/{}/resource-types/{}/resources/{}/insight-attachments",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.model_id,
-                    &self.resource_type,
-                    &self.resource_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/models/{}/resource-types/{}/resources/{}/insight-attachments",
+                    &self.party_id, &self.model_id, &self.resource_type, &self.resource_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10819,15 +10750,11 @@ pub mod insight_attachments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/models/{}/resource-types/{}/resources/{}/insight-attachments/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.model_id,
-                    &self.resource_type,
-                    &self.resource_id,
-                    &self.insight_attachment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/models/{}/resource-types/{}/resources/{}/insight-attachments/{}",
+                    &self.party_id, &self.model_id, &self.resource_type, &self.resource_id, &self.insight_attachment_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10911,8 +10838,8 @@ pub mod insight_attachments {
             pub(crate) original_file_name: Option<String>,
             pub(crate) id: Option<String>,
             pub(crate) status: Option<String>,
-            pub(crate) created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) source: Option<String>,
             pub(crate) name: Option<String>,
             pub(crate) description: Option<String>,
@@ -10942,12 +10869,12 @@ pub mod insight_attachments {
                 self
             }
             #[doc = "Date when resource was created."]
-            pub fn created_date_time(mut self, created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn created_date_time(mut self, created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.created_date_time = Some(created_date_time.into());
                 self
             }
             #[doc = "Date when resource was last modified."]
-            pub fn modified_date_time(mut self, modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn modified_date_time(mut self, modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.modified_date_time = Some(modified_date_time.into());
                 self
             }
@@ -11013,15 +10940,11 @@ pub mod insight_attachments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/models/{}/resource-types/{}/resources/{}/insight-attachments/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.model_id,
-                    &self.resource_type,
-                    &self.resource_id,
-                    &self.insight_attachment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/models/{}/resource-types/{}/resources/{}/insight-attachments/{}",
+                    &self.party_id, &self.model_id, &self.resource_type, &self.resource_id, &self.insight_attachment_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11116,15 +11039,11 @@ pub mod insight_attachments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/models/{}/resource-types/{}/resources/{}/insight-attachments/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.model_id,
-                    &self.resource_type,
-                    &self.resource_id,
-                    &self.insight_attachment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/models/{}/resource-types/{}/resources/{}/insight-attachments/{}",
+                    &self.party_id, &self.model_id, &self.resource_type, &self.resource_id, &self.insight_attachment_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11212,15 +11131,11 @@ pub mod insight_attachments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/models/{}/resource-types/{}/resources/{}/insight-attachments/{}/file",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.model_id,
-                    &self.resource_type,
-                    &self.resource_id,
-                    &self.insight_attachment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/models/{}/resource-types/{}/resources/{}/insight-attachments/{}/file",
+                    &self.party_id, &self.model_id, &self.resource_type, &self.resource_id, &self.insight_attachment_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11479,7 +11394,8 @@ pub mod insights {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/insights/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/insights/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11589,7 +11505,8 @@ pub mod insights {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/insights/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/insights/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11722,40 +11639,40 @@ pub mod insights {
             pub(crate) model_id: String,
             pub(crate) resource_type: String,
             pub(crate) resource_id: String,
-            pub(crate) min_insight_start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_insight_start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_insight_end_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_insight_end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_insight_start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_insight_start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_insight_end_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_insight_end_date_time: Option<::time::OffsetDateTime>,
             pub(crate) measurement_filters: Vec<String>,
             pub(crate) ids: Vec<String>,
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
         impl RequestBuilder {
             #[doc = "Minimum insightStartDateTime time of insight resources (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn min_insight_start_date_time(mut self, min_insight_start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_insight_start_date_time(mut self, min_insight_start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_insight_start_date_time = Some(min_insight_start_date_time.into());
                 self
             }
             #[doc = "Maximum insightStartDateTime time of insight resources (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn max_insight_start_date_time(mut self, max_insight_start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_insight_start_date_time(mut self, max_insight_start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_insight_start_date_time = Some(max_insight_start_date_time.into());
                 self
             }
             #[doc = "Minimum insightEndDateTime time of insight resources (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn min_insight_end_date_time(mut self, min_insight_end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_insight_end_date_time(mut self, min_insight_end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_insight_end_date_time = Some(min_insight_end_date_time.into());
                 self
             }
             #[doc = "Maximum insightEndDateTime time of insight resources (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn max_insight_end_date_time(mut self, max_insight_end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_insight_end_date_time(mut self, max_insight_end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_insight_end_date_time = Some(max_insight_end_date_time.into());
                 self
             }
@@ -11785,22 +11702,22 @@ pub mod insights {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -11929,14 +11846,11 @@ pub mod insights {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/models/{}/resource-types/{}/resources/{}/insights",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.model_id,
-                    &self.resource_type,
-                    &self.resource_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/models/{}/resource-types/{}/resources/{}/insights",
+                    &self.party_id, &self.model_id, &self.resource_type, &self.resource_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12024,15 +11938,11 @@ pub mod insights {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/models/{}/resource-types/{}/resources/{}/insights/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.model_id,
-                    &self.resource_type,
-                    &self.resource_id,
-                    &self.insight_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/models/{}/resource-types/{}/resources/{}/insights/{}",
+                    &self.party_id, &self.model_id, &self.resource_type, &self.resource_id, &self.insight_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12134,15 +12044,11 @@ pub mod insights {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/models/{}/resource-types/{}/resources/{}/insights/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.model_id,
-                    &self.resource_type,
-                    &self.resource_id,
-                    &self.insight_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/models/{}/resource-types/{}/resources/{}/insights/{}",
+                    &self.party_id, &self.model_id, &self.resource_type, &self.resource_id, &self.insight_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12237,15 +12143,11 @@ pub mod insights {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/models/{}/resource-types/{}/resources/{}/insights/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.model_id,
-                    &self.resource_type,
-                    &self.resource_id,
-                    &self.insight_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/models/{}/resource-types/{}/resources/{}/insights/{}",
+                    &self.party_id, &self.model_id, &self.resource_type, &self.resource_id, &self.insight_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12444,10 +12346,10 @@ pub mod management_zones {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -12498,22 +12400,22 @@ pub mod management_zones {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -12636,7 +12538,8 @@ pub mod management_zones {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/management-zones", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/management-zones");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12720,11 +12623,8 @@ pub mod management_zones {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/management-zones/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/management-zones/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12825,11 +12725,8 @@ pub mod management_zones {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/management-zones/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/management-zones/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12968,10 +12865,10 @@ pub mod management_zones {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -13022,22 +12919,22 @@ pub mod management_zones {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -13160,7 +13057,8 @@ pub mod management_zones {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties/{}/management-zones", self.client.endpoint(), &self.party_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/management-zones", &self.party_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13245,12 +13143,11 @@ pub mod management_zones {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/management-zones/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.management_zone_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/management-zones/{}",
+                    &self.party_id, &self.management_zone_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13349,12 +13246,11 @@ pub mod management_zones {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/management-zones/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.management_zone_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/management-zones/{}",
+                    &self.party_id, &self.management_zone_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13446,12 +13342,11 @@ pub mod management_zones {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/management-zones/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.management_zone_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/management-zones/{}",
+                    &self.party_id, &self.management_zone_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13615,10 +13510,10 @@ pub mod nutrient_analyses {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -13659,22 +13554,22 @@ pub mod nutrient_analyses {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -13788,7 +13683,8 @@ pub mod nutrient_analyses {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/nutrient-analyses", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/nutrient-analyses");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -13858,10 +13754,10 @@ pub mod nutrient_analyses {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -13902,22 +13798,22 @@ pub mod nutrient_analyses {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -14031,7 +13927,8 @@ pub mod nutrient_analyses {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties/{}/nutrient-analyses", self.client.endpoint(), &self.party_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/nutrient-analyses", &self.party_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14116,12 +14013,11 @@ pub mod nutrient_analyses {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/nutrient-analyses/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.nutrient_analysis_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/nutrient-analyses/{}",
+                    &self.party_id, &self.nutrient_analysis_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14220,12 +14116,11 @@ pub mod nutrient_analyses {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/nutrient-analyses/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.nutrient_analysis_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/nutrient-analyses/{}",
+                    &self.party_id, &self.nutrient_analysis_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14317,12 +14212,11 @@ pub mod nutrient_analyses {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/nutrient-analyses/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.nutrient_analysis_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/nutrient-analyses/{}",
+                    &self.party_id, &self.nutrient_analysis_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14476,10 +14370,10 @@ pub mod o_auth_providers {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -14505,22 +14399,22 @@ pub mod o_auth_providers {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -14623,7 +14517,8 @@ pub mod o_auth_providers {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/oauth/providers", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/oauth/providers");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14707,7 +14602,8 @@ pub mod o_auth_providers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/oauth/providers/{}", self.client.endpoint(), &self.oauth_provider_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/oauth/providers/{}", &self.oauth_provider_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14805,7 +14701,8 @@ pub mod o_auth_providers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/oauth/providers/{}", self.client.endpoint(), &self.oauth_provider_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/oauth/providers/{}", &self.oauth_provider_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14896,7 +14793,8 @@ pub mod o_auth_providers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/oauth/providers/{}", self.client.endpoint(), &self.oauth_provider_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/oauth/providers/{}", &self.oauth_provider_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -14980,11 +14878,8 @@ pub mod o_auth_providers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/oauth/providers/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/oauth/providers/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15082,11 +14977,8 @@ pub mod o_auth_providers {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/oauth/providers/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/oauth/providers/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15285,10 +15177,10 @@ pub mod o_auth_tokens {
             pub(crate) auth_provider_ids: Vec<String>,
             pub(crate) party_ids: Vec<String>,
             pub(crate) is_valid: Option<bool>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -15309,22 +15201,22 @@ pub mod o_auth_tokens {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -15422,7 +15314,8 @@ pub mod o_auth_tokens {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/oauth/tokens", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/oauth/tokens");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15507,7 +15400,8 @@ pub mod o_auth_tokens {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/oauth/tokens/:connect", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/oauth/tokens/:connect");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15603,7 +15497,8 @@ pub mod o_auth_tokens {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/oauth/tokens/remove/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/oauth/tokens/remove/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15704,7 +15599,8 @@ pub mod o_auth_tokens {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/oauth/tokens/remove/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/oauth/tokens/remove/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -15931,10 +15827,10 @@ pub mod parties {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -15960,22 +15856,22 @@ pub mod parties {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -16078,7 +15974,8 @@ pub mod parties {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/parties");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16163,7 +16060,8 @@ pub mod parties {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties:overlap", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/parties:overlap");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16259,7 +16157,8 @@ pub mod parties {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties/{}", self.client.endpoint(), &self.party_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}", &self.party_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16357,7 +16256,8 @@ pub mod parties {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties/{}", self.client.endpoint(), &self.party_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}", &self.party_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16448,7 +16348,8 @@ pub mod parties {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties/{}", self.client.endpoint(), &self.party_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}", &self.party_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16532,7 +16433,8 @@ pub mod parties {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16630,7 +16532,8 @@ pub mod parties {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16876,12 +16779,8 @@ pub mod planting_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/planting-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.planting_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/planting-data/{}", &self.party_id, &self.planting_data_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -16980,12 +16879,8 @@ pub mod planting_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/planting-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.planting_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/planting-data/{}", &self.party_id, &self.planting_data_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17077,12 +16972,8 @@ pub mod planting_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/planting-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.planting_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/planting-data/{}", &self.party_id, &self.planting_data_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17187,7 +17078,8 @@ pub mod planting_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/planting-data:search", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/planting-data:search");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17283,7 +17175,8 @@ pub mod planting_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/planting-data/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/planting-data/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17384,7 +17277,8 @@ pub mod planting_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/planting-data/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/planting-data/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17633,12 +17527,11 @@ pub mod plant_tissue_analyses {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/plant-tissue-analyses/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.plant_tissue_analysis_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/plant-tissue-analyses/{}",
+                    &self.party_id, &self.plant_tissue_analysis_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17737,12 +17630,11 @@ pub mod plant_tissue_analyses {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/plant-tissue-analyses/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.plant_tissue_analysis_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/plant-tissue-analyses/{}",
+                    &self.party_id, &self.plant_tissue_analysis_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17834,12 +17726,11 @@ pub mod plant_tissue_analyses {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/plant-tissue-analyses/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.plant_tissue_analysis_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/plant-tissue-analyses/{}",
+                    &self.party_id, &self.plant_tissue_analysis_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -17944,7 +17835,8 @@ pub mod plant_tissue_analyses {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/plant-tissue-analyses:search", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/plant-tissue-analyses:search");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18040,11 +17932,8 @@ pub mod plant_tissue_analyses {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/plant-tissue-analyses/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/plant-tissue-analyses/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18147,11 +18036,8 @@ pub mod plant_tissue_analyses {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/plant-tissue-analyses/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/plant-tissue-analyses/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18418,10 +18304,10 @@ pub mod prescription_maps {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -18472,22 +18358,22 @@ pub mod prescription_maps {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -18610,7 +18496,8 @@ pub mod prescription_maps {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/parties/{}/prescription-maps", self.client.endpoint(), &self.party_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/prescription-maps", &self.party_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18695,12 +18582,11 @@ pub mod prescription_maps {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/prescription-maps/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.prescription_map_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/prescription-maps/{}",
+                    &self.party_id, &self.prescription_map_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18799,12 +18685,11 @@ pub mod prescription_maps {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/prescription-maps/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.prescription_map_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/prescription-maps/{}",
+                    &self.party_id, &self.prescription_map_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18896,12 +18781,11 @@ pub mod prescription_maps {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/prescription-maps/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.prescription_map_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/parties/{}/prescription-maps/{}",
+                    &self.party_id, &self.prescription_map_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -18972,10 +18856,10 @@ pub mod prescription_maps {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -19026,22 +18910,22 @@ pub mod prescription_maps {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -19164,7 +19048,8 @@ pub mod prescription_maps {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/prescription-maps", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/prescription-maps");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -19248,11 +19133,8 @@ pub mod prescription_maps {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/prescription-maps/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/prescription-maps/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -19355,11 +19237,8 @@ pub mod prescription_maps {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/prescription-maps/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/prescription-maps/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -19605,12 +19484,8 @@ pub mod prescriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/prescriptions/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.prescription_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/prescriptions/{}", &self.party_id, &self.prescription_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -19709,12 +19584,8 @@ pub mod prescriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/prescriptions/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.prescription_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/prescriptions/{}", &self.party_id, &self.prescription_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -19806,12 +19677,8 @@ pub mod prescriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/prescriptions/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.prescription_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/prescriptions/{}", &self.party_id, &self.prescription_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -19916,7 +19783,8 @@ pub mod prescriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/prescription:search", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/prescription:search");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -20012,7 +19880,8 @@ pub mod prescriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/prescriptions/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/prescriptions/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -20113,7 +19982,8 @@ pub mod prescriptions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/prescriptions/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/prescriptions/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -20350,8 +20220,8 @@ pub mod scenes {
             pub(crate) associated_resource_type: String,
             pub(crate) collection: String,
             pub(crate) item_id: Option<String>,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_cloud_coverage_percentage: Option<f64>,
             pub(crate) max_dark_pixel_coverage_percentage: Option<f64>,
             pub(crate) image_names: Vec<String>,
@@ -20367,12 +20237,12 @@ pub mod scenes {
                 self
             }
             #[doc = "Scene start UTC datetime (inclusive), sample format: yyyy-MM-ddThh:mm:ssZ."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "Scene end UTC datetime (inclusive), sample format: yyyy-MM-dThh:mm:ssZ."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -20513,7 +20383,8 @@ pub mod scenes {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/scenes", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/scenes");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -20599,7 +20470,8 @@ pub mod scenes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/scenes/downloadFiles", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/scenes/downloadFiles");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -20695,7 +20567,8 @@ pub mod scenes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/scenes/satellite/ingest-data/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/scenes/satellite/ingest-data/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -20792,7 +20665,8 @@ pub mod scenes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/scenes/satellite/ingest-data/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/scenes/satellite/ingest-data/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -20963,11 +20837,8 @@ pub mod scenes {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/scenes/stac-collections/{}:search",
-                    self.client.endpoint(),
-                    &self.collection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/scenes/stac-collections/{}:search", &self.collection_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -21158,12 +21029,8 @@ pub mod seasonal_fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/seasonal-fields/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.seasonal_field_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/seasonal-fields/{}", &self.party_id, &self.seasonal_field_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -21262,12 +21129,8 @@ pub mod seasonal_fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/seasonal-fields/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.seasonal_field_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/seasonal-fields/{}", &self.party_id, &self.seasonal_field_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -21359,12 +21222,8 @@ pub mod seasonal_fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/seasonal-fields/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.seasonal_field_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/seasonal-fields/{}", &self.party_id, &self.seasonal_field_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -21469,7 +21328,8 @@ pub mod seasonal_fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/seasonal-fields:search", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/seasonal-fields:search");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -21565,11 +21425,8 @@ pub mod seasonal_fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/seasonal-fields/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/seasonal-fields/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -21670,11 +21527,8 @@ pub mod seasonal_fields {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/seasonal-fields/cascade-delete/{}",
-                    self.client.endpoint(),
-                    &self.job_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/seasonal-fields/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -21870,40 +21724,40 @@ pub mod seasons {
         #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) min_start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_end_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_end_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_end_date_time: Option<::time::OffsetDateTime>,
             pub(crate) years: Vec<i32>,
             pub(crate) ids: Vec<String>,
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
         impl RequestBuilder {
             #[doc = "Minimum season start datetime, sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn min_start_date_time(mut self, min_start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_start_date_time(mut self, min_start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_start_date_time = Some(min_start_date_time.into());
                 self
             }
             #[doc = "Maximum season start datetime, sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn max_start_date_time(mut self, max_start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_start_date_time(mut self, max_start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_start_date_time = Some(max_start_date_time.into());
                 self
             }
             #[doc = "Minimum season end datetime, sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn min_end_date_time(mut self, min_end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_end_date_time(mut self, min_end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_end_date_time = Some(min_end_date_time.into());
                 self
             }
             #[doc = "Maximum season end datetime, sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn max_end_date_time(mut self, max_end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_end_date_time(mut self, max_end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_end_date_time = Some(max_end_date_time.into());
                 self
             }
@@ -21933,22 +21787,22 @@ pub mod seasons {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -22075,7 +21929,8 @@ pub mod seasons {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/seasons", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/seasons");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -22159,7 +22014,8 @@ pub mod seasons {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/seasons/{}", self.client.endpoint(), &self.season_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/seasons/{}", &self.season_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -22257,7 +22113,8 @@ pub mod seasons {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/seasons/{}", self.client.endpoint(), &self.season_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/seasons/{}", &self.season_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -22348,7 +22205,8 @@ pub mod seasons {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/seasons/{}", self.client.endpoint(), &self.season_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/seasons/{}", &self.season_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -22488,10 +22346,10 @@ pub mod sensor_data_models {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -22517,22 +22375,22 @@ pub mod sensor_data_models {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -22635,11 +22493,8 @@ pub mod sensor_data_models {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/sensor-data-models",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-partners/{}/sensor-data-models", &self.sensor_partner_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -22724,12 +22579,11 @@ pub mod sensor_data_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/sensor-data-models/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.sensor_data_model_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/sensor-data-models/{}",
+                    &self.sensor_partner_id, &self.sensor_data_model_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -22828,12 +22682,11 @@ pub mod sensor_data_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/sensor-data-models/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.sensor_data_model_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/sensor-data-models/{}",
+                    &self.sensor_partner_id, &self.sensor_data_model_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -22925,12 +22778,11 @@ pub mod sensor_data_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/sensor-data-models/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.sensor_data_model_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/sensor-data-models/{}",
+                    &self.sensor_partner_id, &self.sensor_data_model_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -23019,18 +22871,18 @@ pub mod sensor_events {
             pub(crate) client: super::super::Client,
             pub(crate) sensor_id: String,
             pub(crate) sensor_partner_id: String,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
             pub(crate) exclude_duplicate_events: Option<bool>,
         }
         impl RequestBuilder {
             #[doc = "Search span start time of sensor events (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nIt is truncated upto seconds if fraction is provided."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "Search span end time of sensor events (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nIt is truncated upto seconds if fraction is provided."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -23077,7 +22929,8 @@ pub mod sensor_events {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/sensor-events", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/sensor-events");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -23227,10 +23080,10 @@ pub mod sensor_mappings {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -23281,22 +23134,22 @@ pub mod sensor_mappings {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -23422,7 +23275,8 @@ pub mod sensor_mappings {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/sensor-mappings", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/sensor-mappings");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -23506,7 +23360,8 @@ pub mod sensor_mappings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/sensor-mappings/{}", self.client.endpoint(), &self.sensor_mapping_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-mappings/{}", &self.sensor_mapping_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -23604,7 +23459,8 @@ pub mod sensor_mappings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/sensor-mappings/{}", self.client.endpoint(), &self.sensor_mapping_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-mappings/{}", &self.sensor_mapping_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -23695,7 +23551,8 @@ pub mod sensor_mappings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/sensor-mappings/{}", self.client.endpoint(), &self.sensor_mapping_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-mappings/{}", &self.sensor_mapping_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -23872,10 +23729,10 @@ pub mod sensor_partner_integrations {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -23906,22 +23763,22 @@ pub mod sensor_partner_integrations {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -24028,11 +23885,8 @@ pub mod sensor_partner_integrations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/integrations",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-partners/{}/integrations", &self.sensor_partner_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -24117,12 +23971,11 @@ pub mod sensor_partner_integrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/integrations/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.integration_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/integrations/{}",
+                    &self.sensor_partner_id, &self.integration_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -24221,12 +24074,11 @@ pub mod sensor_partner_integrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/integrations/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.integration_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/integrations/{}",
+                    &self.sensor_partner_id, &self.integration_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -24318,12 +24170,11 @@ pub mod sensor_partner_integrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/integrations/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.integration_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/integrations/{}",
+                    &self.sensor_partner_id, &self.integration_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -24412,12 +24263,11 @@ pub mod sensor_partner_integrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/integrations/{}/:check-consent",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.integration_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/integrations/{}/:check-consent",
+                    &self.sensor_partner_id, &self.integration_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -24515,12 +24365,11 @@ pub mod sensor_partner_integrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/integrations/{}/:generate-consent-link",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.integration_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/integrations/{}/:generate-consent-link",
+                    &self.sensor_partner_id, &self.integration_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -24713,10 +24562,10 @@ pub mod sensors {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -24757,22 +24606,22 @@ pub mod sensors {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -24889,11 +24738,8 @@ pub mod sensors {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/sensors",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-partners/{}/sensors", &self.sensor_partner_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -24978,12 +24824,8 @@ pub mod sensors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/sensors/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.sensor_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-partners/{}/sensors/{}", &self.sensor_partner_id, &self.sensor_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -25082,12 +24924,8 @@ pub mod sensors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/sensors/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.sensor_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-partners/{}/sensors/{}", &self.sensor_partner_id, &self.sensor_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -25179,12 +25017,8 @@ pub mod sensors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/sensors/{}",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.sensor_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/sensor-partners/{}/sensors/{}", &self.sensor_partner_id, &self.sensor_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -25269,12 +25103,11 @@ pub mod sensors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/sensors/{}/connection-strings",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.sensor_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/sensors/{}/connection-strings",
+                    &self.sensor_partner_id, &self.sensor_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -25373,12 +25206,11 @@ pub mod sensors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/sensor-partners/{}/sensors/{}/connection-strings/:renew",
-                    self.client.endpoint(),
-                    &self.sensor_partner_id,
-                    &self.sensor_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/sensor-partners/{}/sensors/{}/connection-strings/:renew",
+                    &self.sensor_partner_id, &self.sensor_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -25534,7 +25366,8 @@ pub mod solution_inference {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/solutions/{}:cancel", self.client.endpoint(), &self.solution_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/solutions/{}:cancel", &self.solution_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -25631,7 +25464,8 @@ pub mod solution_inference {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/solutions/{}:create", self.client.endpoint(), &self.solution_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/solutions/{}:create", &self.solution_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -25784,7 +25618,8 @@ pub mod solution_inference {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/solutions/{}:fetch", self.client.endpoint(), &self.solution_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/solutions/{}:fetch", &self.solution_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -25975,12 +25810,8 @@ pub mod tillage_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/tillage-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.tillage_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/tillage-data/{}", &self.party_id, &self.tillage_data_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -26079,12 +25910,8 @@ pub mod tillage_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/tillage-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.tillage_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/tillage-data/{}", &self.party_id, &self.tillage_data_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -26176,12 +26003,8 @@ pub mod tillage_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/tillage-data/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.tillage_data_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/tillage-data/{}", &self.party_id, &self.tillage_data_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -26286,7 +26109,8 @@ pub mod tillage_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tillage-data:search", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/tillage-data:search");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -26382,7 +26206,8 @@ pub mod tillage_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tillage-data/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tillage-data/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -26483,7 +26308,8 @@ pub mod tillage_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/tillage-data/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/tillage-data/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -26655,7 +26481,8 @@ pub mod weather_data {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/weather-data:fetch", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/weather-data:fetch");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -26846,12 +26673,8 @@ pub mod zones {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/zones/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.zone_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/zones/{}", &self.party_id, &self.zone_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -26950,12 +26773,8 @@ pub mod zones {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/zones/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.zone_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/zones/{}", &self.party_id, &self.zone_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -27047,12 +26866,8 @@ pub mod zones {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/parties/{}/zones/{}",
-                    self.client.endpoint(),
-                    &self.party_id,
-                    &self.zone_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/parties/{}/zones/{}", &self.party_id, &self.zone_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -27157,7 +26972,8 @@ pub mod zones {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/zone:search", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/zone:search");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -27253,7 +27069,8 @@ pub mod zones {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/zones/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/zones/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -27354,7 +27171,8 @@ pub mod zones {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/zones/cascade-delete/{}", self.client.endpoint(), &self.job_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/zones/cascade-delete/{}", &self.job_id));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

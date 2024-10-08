@@ -1,14 +1,14 @@
 # azure_mgmt_policyinsights crate
 
-This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
+This is an unofficial, unsupported generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust/tree/legacy) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/policyinsights/resource-manager/readme.md
 
-To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/legacy/services/README.md#examples).
 
 The default tag is `package-2023-03`.
 
-The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/legacy/services/tags.md) are available:
 
 - `package-2023-03` has 80 operations from 6 API versions: `2018-07-01-preview`, `2019-10-01`, `2021-10-01`, `2022-04-01`, `2022-09-01`, `2023-03-01`. Use crate feature `package-2023-03` to enable. The operations will be in the `package_2023_03` module.
 - `package-2022-09` has 80 operations from 6 API versions: `2018-07-01-preview`, `2019-10-01`, `2021-10-01`, `2022-03-01`, `2022-04-01`, `2022-09-01`. Use crate feature `package-2022-09` to enable. The operations will be in the `package_2022_09` module.

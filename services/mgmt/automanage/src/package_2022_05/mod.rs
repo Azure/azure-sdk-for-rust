@@ -245,11 +245,11 @@ pub mod best_practices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Automanage/bestPractices/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Automanage/bestPractices/{}",
                     &self.best_practice_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -346,7 +346,8 @@ pub mod best_practices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Automanage/bestPractices", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Automanage/bestPractices");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -463,12 +464,11 @@ pub mod best_practices_versions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Automanage/bestPractices/{}/versions/{}",
-                    self.client.endpoint(),
-                    &self.best_practice_name,
-                    &self.version_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Automanage/bestPractices/{}/versions/{}",
+                    &self.best_practice_name, &self.version_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -566,11 +566,11 @@ pub mod best_practices_versions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Automanage/bestPractices/{}/versions",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Automanage/bestPractices/{}/versions",
                     &self.best_practice_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -774,13 +774,11 @@ pub mod configuration_profiles {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_profile_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -880,13 +878,11 @@ pub mod configuration_profiles {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_profile_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -986,13 +982,11 @@ pub mod configuration_profiles {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_profile_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1085,13 +1079,11 @@ pub mod configuration_profiles {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_profile_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1178,12 +1170,11 @@ pub mod configuration_profiles {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1269,11 +1260,11 @@ pub mod configuration_profiles {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Automanage/configurationProfiles",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Automanage/configurationProfiles",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1458,14 +1449,11 @@ pub mod configuration_profiles_versions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_profile_name,
-                    &self.version_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name, &self.version_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1566,14 +1554,11 @@ pub mod configuration_profiles_versions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_profile_name,
-                    &self.version_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name, &self.version_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1667,14 +1652,11 @@ pub mod configuration_profiles_versions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_profile_name,
-                    &self.version_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name, &self.version_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1762,13 +1744,11 @@ pub mod configuration_profiles_versions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.configuration_profile_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions",
+                    &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2013,7 +1993,8 @@ pub mod configuration_profile_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2114,7 +2095,8 @@ pub mod configuration_profile_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2208,7 +2190,8 @@ pub mod configuration_profile_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2296,7 +2279,8 @@ pub mod configuration_profile_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments" , & self . subscription_id , & self . resource_group_name , & self . vm_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2383,12 +2367,11 @@ pub mod configuration_profile_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfileAssignments",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfileAssignments",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2474,11 +2457,11 @@ pub mod configuration_profile_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Automanage/configurationProfileAssignments",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Automanage/configurationProfileAssignments",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2566,7 +2549,8 @@ pub mod configuration_profile_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments" , & self . subscription_id , & self . resource_group_name , & self . machine_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2654,7 +2638,8 @@ pub mod configuration_profile_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments" , & self . subscription_id , & self . resource_group_name , & self . cluster_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2753,7 +2738,8 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Automanage/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Automanage/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2898,7 +2884,8 @@ pub mod reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name , & self . report_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports/{}" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name , & self . report_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2999,7 +2986,8 @@ pub mod reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports" , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3115,11 +3103,11 @@ pub mod service_principals {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Automanage/servicePrincipals",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Automanage/servicePrincipals",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3203,11 +3191,11 @@ pub mod service_principals {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Automanage/servicePrincipals/default",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Automanage/servicePrincipals/default",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3385,7 +3373,8 @@ pub mod configuration_profile_hcrp_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3486,7 +3475,8 @@ pub mod configuration_profile_hcrp_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3580,7 +3570,8 @@ pub mod configuration_profile_hcrp_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3725,7 +3716,8 @@ pub mod hcrp_reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . configuration_profile_assignment_name , & self . report_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports/{}" , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . configuration_profile_assignment_name , & self . report_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3826,7 +3818,8 @@ pub mod hcrp_reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports" , & self . subscription_id , & self . resource_group_name , & self . machine_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3992,7 +3985,8 @@ pub mod configuration_profile_hci_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4093,7 +4087,8 @@ pub mod configuration_profile_hci_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4187,7 +4182,8 @@ pub mod configuration_profile_hci_assignments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4332,7 +4328,8 @@ pub mod hci_reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . configuration_profile_assignment_name , & self . report_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports/{}" , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . configuration_profile_assignment_name , & self . report_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4433,7 +4430,8 @@ pub mod hci_reports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . configuration_profile_assignment_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStackHci/clusters/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports" , & self . subscription_id , & self . resource_group_name , & self . cluster_name , & self . configuration_profile_assignment_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

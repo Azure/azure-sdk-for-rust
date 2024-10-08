@@ -128,7 +128,7 @@ pub struct KeyValue {
     pub value: Option<String>,
     #[doc = "A date representing the last time the key-value was modified."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[doc = "The tags of the key-value"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -265,10 +265,10 @@ pub struct Snapshot {
     pub composition_type: Option<snapshot::CompositionType>,
     #[doc = "The time that the snapshot was created."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The time that the snapshot will expire."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expires: Option<time::OffsetDateTime>,
+    pub expires: Option<::time::OffsetDateTime>,
     #[doc = "The amount of time, in seconds, that a snapshot will remain in the archived state before expiring. This property is only writable during the creation of a snapshot. If not specified, the default lifetime of key-value revisions will be used."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retention_period: Option<i64>,

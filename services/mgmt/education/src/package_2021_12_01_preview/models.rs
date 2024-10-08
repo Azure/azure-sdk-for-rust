@@ -59,13 +59,13 @@ pub struct GrantDetailProperties {
     pub offer_cap: Option<Amount>,
     #[doc = "Grant Effective Date"]
     #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
-    pub effective_date: Option<time::OffsetDateTime>,
+    pub effective_date: Option<::time::OffsetDateTime>,
     #[doc = "Grant Offer Type"]
     #[serde(rename = "offerType", default, skip_serializing_if = "Option::is_none")]
     pub offer_type: Option<grant_detail_properties::OfferType>,
     #[doc = "Expiration Date"]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Grant status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<grant_detail_properties::Status>,
@@ -358,10 +358,10 @@ pub struct LabProperties {
     pub description: String,
     #[doc = "Default expiration date for each student in this lab"]
     #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339")]
-    pub expiration_date: time::OffsetDateTime,
+    pub expiration_date: ::time::OffsetDateTime,
     #[doc = "Lab creation date"]
     #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
-    pub effective_date: Option<time::OffsetDateTime>,
+    pub effective_date: Option<::time::OffsetDateTime>,
     #[doc = "The status of this lab"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<lab_properties::Status>,
@@ -379,7 +379,7 @@ pub struct LabProperties {
     pub total_allocated_budget: Option<Amount>,
 }
 impl LabProperties {
-    pub fn new(display_name: String, budget_per_student: Amount, description: String, expiration_date: time::OffsetDateTime) -> Self {
+    pub fn new(display_name: String, budget_per_student: Amount, description: String, expiration_date: ::time::OffsetDateTime) -> Self {
         Self {
             display_name,
             budget_per_student,
@@ -687,7 +687,7 @@ pub struct StudentLabProperties {
     pub description: Option<String>,
     #[doc = "Date the lab will expire and by default will be the expiration date for each student in this lab"]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Student Role"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<student_lab_properties::Role>,
@@ -702,7 +702,7 @@ pub struct StudentLabProperties {
     pub status: Option<student_lab_properties::Status>,
     #[doc = "User Added Date"]
     #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
-    pub effective_date: Option<time::OffsetDateTime>,
+    pub effective_date: Option<::time::OffsetDateTime>,
     #[doc = "Lab Scope. /providers/Microsoft.Billing/billingAccounts/{billingAccountName}/billingProfiles/{billingProfileName}/invoiceSections/{invoiceSectionName}/providers/Microsoft.Education/labs/default"]
     #[serde(rename = "labScope", default, skip_serializing_if = "Option::is_none")]
     pub lab_scope: Option<String>,
@@ -840,19 +840,19 @@ pub struct StudentProperties {
     pub subscription_id: Option<String>,
     #[doc = "Date this student is set to expire from the lab."]
     #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339")]
-    pub expiration_date: time::OffsetDateTime,
+    pub expiration_date: ::time::OffsetDateTime,
     #[doc = "Student Lab Status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<student_properties::Status>,
     #[doc = "Date student was added to the lab"]
     #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
-    pub effective_date: Option<time::OffsetDateTime>,
+    pub effective_date: Option<::time::OffsetDateTime>,
     #[doc = "Subscription alias"]
     #[serde(rename = "subscriptionAlias", default, skip_serializing_if = "Option::is_none")]
     pub subscription_alias: Option<String>,
     #[doc = "subscription invite last sent date"]
     #[serde(rename = "subscriptionInviteLastSentDate", default, with = "azure_core::date::rfc3339::option")]
-    pub subscription_invite_last_sent_date: Option<time::OffsetDateTime>,
+    pub subscription_invite_last_sent_date: Option<::time::OffsetDateTime>,
 }
 impl StudentProperties {
     pub fn new(
@@ -861,7 +861,7 @@ impl StudentProperties {
         email: String,
         role: student_properties::Role,
         budget: Amount,
-        expiration_date: time::OffsetDateTime,
+        expiration_date: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             first_name,
@@ -972,7 +972,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -981,7 +981,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

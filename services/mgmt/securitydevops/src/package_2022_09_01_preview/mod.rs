@@ -356,12 +356,11 @@ pub mod azure_dev_ops_connector {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -447,13 +446,11 @@ pub mod azure_dev_ops_connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.azure_dev_ops_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.azure_dev_ops_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -552,13 +549,11 @@ pub mod azure_dev_ops_connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.azure_dev_ops_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.azure_dev_ops_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -721,13 +716,11 @@ pub mod azure_dev_ops_connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.azure_dev_ops_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.azure_dev_ops_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -847,13 +840,11 @@ pub mod azure_dev_ops_connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.azure_dev_ops_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.azure_dev_ops_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -963,11 +954,11 @@ pub mod azure_dev_ops_connector {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1217,13 +1208,11 @@ pub mod azure_dev_ops_repo {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/repos",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.azure_dev_ops_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/repos",
+                    &self.subscription_id, &self.resource_group_name, &self.azure_dev_ops_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1337,7 +1326,8 @@ pub mod azure_dev_ops_repo {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}/repos" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . azure_dev_ops_connector_name , & self . azure_dev_ops_org_name , & self . azure_dev_ops_project_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}/repos" , & self . subscription_id , & self . resource_group_name , & self . azure_dev_ops_connector_name , & self . azure_dev_ops_org_name , & self . azure_dev_ops_project_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1426,7 +1416,8 @@ pub mod azure_dev_ops_repo {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}/repos/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . azure_dev_ops_connector_name , & self . azure_dev_ops_org_name , & self . azure_dev_ops_project_name , & self . azure_dev_ops_repo_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}/repos/{}" , & self . subscription_id , & self . resource_group_name , & self . azure_dev_ops_connector_name , & self . azure_dev_ops_org_name , & self . azure_dev_ops_project_name , & self . azure_dev_ops_repo_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1528,7 +1519,8 @@ pub mod azure_dev_ops_repo {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}/repos/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . azure_dev_ops_connector_name , & self . azure_dev_ops_org_name , & self . azure_dev_ops_project_name , & self . azure_dev_ops_repo_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}/repos/{}" , & self . subscription_id , & self . resource_group_name , & self . azure_dev_ops_connector_name , & self . azure_dev_ops_org_name , & self . azure_dev_ops_project_name , & self . azure_dev_ops_repo_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1694,7 +1686,8 @@ pub mod azure_dev_ops_repo {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}/repos/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . azure_dev_ops_connector_name , & self . azure_dev_ops_org_name , & self . azure_dev_ops_project_name , & self . azure_dev_ops_repo_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}/repos/{}" , & self . subscription_id , & self . resource_group_name , & self . azure_dev_ops_connector_name , & self . azure_dev_ops_org_name , & self . azure_dev_ops_project_name , & self . azure_dev_ops_repo_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1849,13 +1842,11 @@ pub mod azure_dev_ops_connector_stats {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/stats",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.azure_dev_ops_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/stats",
+                    &self.subscription_id, &self.resource_group_name, &self.azure_dev_ops_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2076,13 +2067,11 @@ pub mod azure_dev_ops_org {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.azure_dev_ops_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs",
+                    &self.subscription_id, &self.resource_group_name, &self.azure_dev_ops_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2169,14 +2158,11 @@ pub mod azure_dev_ops_org {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.azure_dev_ops_connector_name,
-                    &self.azure_dev_ops_org_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.azure_dev_ops_connector_name, &self.azure_dev_ops_org_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2276,14 +2262,11 @@ pub mod azure_dev_ops_org {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.azure_dev_ops_connector_name,
-                    &self.azure_dev_ops_org_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.azure_dev_ops_connector_name, &self.azure_dev_ops_org_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2447,14 +2430,11 @@ pub mod azure_dev_ops_org {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.azure_dev_ops_connector_name,
-                    &self.azure_dev_ops_org_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.azure_dev_ops_connector_name, &self.azure_dev_ops_org_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2716,14 +2696,11 @@ pub mod azure_dev_ops_project {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.azure_dev_ops_connector_name,
-                    &self.azure_dev_ops_org_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects",
+                    &self.subscription_id, &self.resource_group_name, &self.azure_dev_ops_connector_name, &self.azure_dev_ops_org_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2811,15 +2788,15 @@ pub mod azure_dev_ops_project {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.azure_dev_ops_connector_name,
                     &self.azure_dev_ops_org_name,
                     &self.azure_dev_ops_project_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2920,15 +2897,15 @@ pub mod azure_dev_ops_project {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.azure_dev_ops_connector_name,
                     &self.azure_dev_ops_org_name,
                     &self.azure_dev_ops_project_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3093,15 +3070,15 @@ pub mod azure_dev_ops_project {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/azureDevOpsConnectors/{}/orgs/{}/projects/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.azure_dev_ops_connector_name,
                     &self.azure_dev_ops_org_name,
                     &self.azure_dev_ops_project_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3366,12 +3343,11 @@ pub mod git_hub_connector {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3457,13 +3433,11 @@ pub mod git_hub_connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.git_hub_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.git_hub_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3562,13 +3536,11 @@ pub mod git_hub_connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.git_hub_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.git_hub_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3731,13 +3703,11 @@ pub mod git_hub_connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.git_hub_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.git_hub_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3857,13 +3827,11 @@ pub mod git_hub_connector {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.git_hub_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.git_hub_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3973,11 +3941,11 @@ pub mod git_hub_connector {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4219,13 +4187,11 @@ pub mod git_hub_repo {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/repos",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.git_hub_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/repos",
+                    &self.subscription_id, &self.resource_group_name, &self.git_hub_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4338,14 +4304,11 @@ pub mod git_hub_repo {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}/repos",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.git_hub_connector_name,
-                    &self.git_hub_owner_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}/repos",
+                    &self.subscription_id, &self.resource_group_name, &self.git_hub_connector_name, &self.git_hub_owner_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4433,15 +4396,15 @@ pub mod git_hub_repo {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}/repos/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}/repos/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.git_hub_connector_name,
                     &self.git_hub_owner_name,
                     &self.git_hub_repo_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4542,15 +4505,15 @@ pub mod git_hub_repo {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}/repos/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}/repos/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.git_hub_connector_name,
                     &self.git_hub_owner_name,
                     &self.git_hub_repo_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4715,15 +4678,15 @@ pub mod git_hub_repo {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}/repos/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}/repos/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.git_hub_connector_name,
                     &self.git_hub_owner_name,
                     &self.git_hub_repo_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4878,13 +4841,11 @@ pub mod git_hub_connector_stats {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/stats",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.git_hub_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/stats",
+                    &self.subscription_id, &self.resource_group_name, &self.git_hub_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5107,13 +5068,11 @@ pub mod git_hub_owner {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.git_hub_connector_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners",
+                    &self.subscription_id, &self.resource_group_name, &self.git_hub_connector_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5200,14 +5159,11 @@ pub mod git_hub_owner {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.git_hub_connector_name,
-                    &self.git_hub_owner_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.git_hub_connector_name, &self.git_hub_owner_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5307,14 +5263,11 @@ pub mod git_hub_owner {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.git_hub_connector_name,
-                    &self.git_hub_owner_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.git_hub_connector_name, &self.git_hub_owner_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5478,14 +5431,11 @@ pub mod git_hub_owner {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.git_hub_connector_name,
-                    &self.git_hub_owner_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityDevOps/gitHubConnectors/{}/owners/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.git_hub_connector_name, &self.git_hub_owner_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5648,8 +5598,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url =
-                    azure_core::Url::parse(&format!("{}/providers/Microsoft.SecurityDevOps/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.SecurityDevOps/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

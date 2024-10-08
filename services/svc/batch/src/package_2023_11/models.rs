@@ -143,7 +143,7 @@ pub mod auto_pool_specification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScaleRun {
     #[serde(with = "azure_core::date::rfc3339")]
-    pub timestamp: time::OffsetDateTime,
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "Each variable value is returned in the form $variable=value, and variables are separated by semicolons."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub results: Option<String>,
@@ -151,7 +151,7 @@ pub struct AutoScaleRun {
     pub error: Option<AutoScaleRunError>,
 }
 impl AutoScaleRun {
-    pub fn new(timestamp: time::OffsetDateTime) -> Self {
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
         Self {
             timestamp,
             results: None,
@@ -389,7 +389,7 @@ pub struct Certificate {
     )]
     pub state: Option<CertificateState>,
     #[serde(rename = "stateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub state_transition_time: Option<time::OffsetDateTime>,
+    pub state_transition_time: Option<::time::OffsetDateTime>,
     #[serde(
         rename = "previousState",
         default,
@@ -399,7 +399,7 @@ pub struct Certificate {
     pub previous_state: Option<CertificateState>,
     #[doc = "This property is not set if the Certificate is in its initial Active state."]
     #[serde(rename = "previousStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub previous_state_transition_time: Option<time::OffsetDateTime>,
+    pub previous_state_transition_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "publicData", default, skip_serializing_if = "Option::is_none")]
     pub public_data: Option<String>,
     #[serde(rename = "deleteCertificateError", default, skip_serializing_if = "Option::is_none")]
@@ -542,9 +542,9 @@ pub struct CloudJob {
     pub e_tag: Option<String>,
     #[doc = "This is the last time at which the Job level data, such as the Job state or priority, changed. It does not factor in task-level changes such as adding new Tasks or Tasks changing state."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -552,7 +552,7 @@ pub struct CloudJob {
     )]
     pub state: Option<JobState>,
     #[serde(rename = "stateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub state_transition_time: Option<time::OffsetDateTime>,
+    pub state_transition_time: Option<::time::OffsetDateTime>,
     #[serde(
         rename = "previousState",
         default,
@@ -562,7 +562,7 @@ pub struct CloudJob {
     pub previous_state: Option<JobState>,
     #[doc = "This property is not set if the Job is in its initial Active state."]
     #[serde(rename = "previousStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub previous_state_transition_time: Option<time::OffsetDateTime>,
+    pub previous_state_transition_time: Option<::time::OffsetDateTime>,
     #[doc = "Priority values can range from -1000 to 1000, with -1000 being the lowest priority and 1000 being the highest priority. The default value is 0."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
@@ -684,9 +684,9 @@ pub struct CloudJobSchedule {
     pub e_tag: Option<String>,
     #[doc = "This is the last time at which the schedule level data, such as the Job specification or recurrence information, changed. It does not factor in job-level changes such as new Jobs being created or Jobs changing state."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -694,7 +694,7 @@ pub struct CloudJobSchedule {
     )]
     pub state: Option<JobScheduleState>,
     #[serde(rename = "stateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub state_transition_time: Option<time::OffsetDateTime>,
+    pub state_transition_time: Option<::time::OffsetDateTime>,
     #[serde(
         rename = "previousState",
         default,
@@ -704,7 +704,7 @@ pub struct CloudJobSchedule {
     pub previous_state: Option<JobScheduleState>,
     #[doc = "This property is not present if the Job Schedule is in its initial active state."]
     #[serde(rename = "previousStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub previous_state_transition_time: Option<time::OffsetDateTime>,
+    pub previous_state_transition_time: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<Schedule>,
     #[serde(rename = "jobSpecification", default, skip_serializing_if = "Option::is_none")]
@@ -763,9 +763,9 @@ pub struct CloudPool {
     pub e_tag: Option<String>,
     #[doc = "This is the last time at which the Pool level data, such as the targetDedicatedNodes or enableAutoscale settings, changed. It does not factor in node-level changes such as a Compute Node changing state."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -773,7 +773,7 @@ pub struct CloudPool {
     )]
     pub state: Option<cloud_pool::State>,
     #[serde(rename = "stateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub state_transition_time: Option<time::OffsetDateTime>,
+    pub state_transition_time: Option<::time::OffsetDateTime>,
     #[serde(
         rename = "allocationState",
         default,
@@ -782,7 +782,7 @@ pub struct CloudPool {
     )]
     pub allocation_state: Option<cloud_pool::AllocationState>,
     #[serde(rename = "allocationStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub allocation_state_transition_time: Option<time::OffsetDateTime>,
+    pub allocation_state_transition_time: Option<::time::OffsetDateTime>,
     #[doc = "For information about available sizes of virtual machines in Pools, see Choose a VM size for Compute Nodes in an Azure Batch Pool (https://docs.microsoft.com/azure/batch/batch-pool-vm-sizes)."]
     #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<String>,
@@ -981,9 +981,9 @@ pub struct CloudTask {
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "exitConditions", default, skip_serializing_if = "Option::is_none")]
     pub exit_conditions: Option<ExitConditions>,
     #[serde(
@@ -993,7 +993,7 @@ pub struct CloudTask {
     )]
     pub state: Option<TaskState>,
     #[serde(rename = "stateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub state_transition_time: Option<time::OffsetDateTime>,
+    pub state_transition_time: Option<::time::OffsetDateTime>,
     #[serde(
         rename = "previousState",
         default,
@@ -1003,7 +1003,7 @@ pub struct CloudTask {
     pub previous_state: Option<TaskState>,
     #[doc = "This property is not set if the Task is in its initial Active state."]
     #[serde(rename = "previousStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub previous_state_transition_time: Option<time::OffsetDateTime>,
+    pub previous_state_transition_time: Option<::time::OffsetDateTime>,
     #[doc = "For multi-instance Tasks, the command line is executed as the primary Task, after the primary Task and all subtasks have finished executing the coordination command line. The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using \"cmd /c MyCommand\" in Windows or \"/bin/sh -c MyCommand\" in Linux. If the command line refers to file paths, it should use a relative path (relative to the Task working directory), or use the Batch provided environment variable (https://docs.microsoft.com/en-us/azure/batch/batch-compute-node-environment-variables)."]
     #[serde(rename = "commandLine", default, skip_serializing_if = "Option::is_none")]
     pub command_line: Option<String>,
@@ -1127,13 +1127,13 @@ pub struct ComputeNode {
     )]
     pub scheduling_state: Option<compute_node::SchedulingState>,
     #[serde(rename = "stateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub state_transition_time: Option<time::OffsetDateTime>,
+    pub state_transition_time: Option<::time::OffsetDateTime>,
     #[doc = "This property may not be present if the Compute Node state is unusable."]
     #[serde(rename = "lastBootTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_boot_time: Option<time::OffsetDateTime>,
+    pub last_boot_time: Option<::time::OffsetDateTime>,
     #[doc = "This is the time when the Compute Node was initially allocated and doesn't change once set. It is not updated when the Compute Node is service healed or preempted."]
     #[serde(rename = "allocationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub allocation_time: Option<time::OffsetDateTime>,
+    pub allocation_time: Option<::time::OffsetDateTime>,
     #[doc = "Every Compute Node that is added to a Pool is assigned a unique IP address. Whenever a Compute Node is removed from a Pool, all of its local files are deleted, and the IP address is reclaimed and could be reused for new Compute Nodes."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
@@ -1351,7 +1351,7 @@ pub struct ComputeNodeUser {
     pub is_admin: Option<bool>,
     #[doc = "If omitted, the default is 1 day from the current time. For Linux Compute Nodes, the expiryTime has a precision up to a day."]
     #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_time: Option<time::OffsetDateTime>,
+    pub expiry_time: Option<::time::OffsetDateTime>,
     #[doc = "The password is required for Windows Compute Nodes (those created with 'cloudServiceConfiguration', or created with 'virtualMachineConfiguration' using a Windows Image reference). For Linux Compute Nodes, the password can optionally be specified along with the sshPublicKey property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
@@ -1682,9 +1682,9 @@ pub mod exit_options {
 pub struct FileProperties {
     #[doc = "The creation time is not returned for files on Linux Compute Nodes."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "lastModified", with = "azure_core::date::rfc3339")]
-    pub last_modified: time::OffsetDateTime,
+    pub last_modified: ::time::OffsetDateTime,
     #[serde(rename = "contentLength")]
     pub content_length: i64,
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
@@ -1694,7 +1694,7 @@ pub struct FileProperties {
     pub file_mode: Option<String>,
 }
 impl FileProperties {
-    pub fn new(last_modified: time::OffsetDateTime, content_length: i64) -> Self {
+    pub fn new(last_modified: ::time::OffsetDateTime, content_length: i64) -> Self {
         Self {
             creation_time: None,
             last_modified,
@@ -1740,7 +1740,7 @@ pub struct ImageInformation {
     )]
     pub capabilities: Vec<String>,
     #[serde(rename = "batchSupportEndOfLife", default, with = "azure_core::date::rfc3339::option")]
-    pub batch_support_end_of_life: Option<time::OffsetDateTime>,
+    pub batch_support_end_of_life: Option<::time::OffsetDateTime>,
     #[serde(rename = "verificationType", deserialize_with = "case_insensitive_deserialize")]
     pub verification_type: image_information::VerificationType,
 }
@@ -2044,10 +2044,10 @@ pub mod job_disable_parameter {
 pub struct JobExecutionInformation {
     #[doc = "This is the time at which the Job was created."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "This property is set only if the Job is in the completed state."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "This element contains the actual Pool where the Job is assigned. When you get Job details from the service, they also contain a poolInfo element, which contains the Pool configuration data from when the Job was added or updated. That poolInfo element may also contain a poolId element. If it does, the two IDs are the same. If it does not, it means the Job ran on an auto Pool, and this property contains the ID of that auto Pool."]
     #[serde(rename = "poolId", default, skip_serializing_if = "Option::is_none")]
     pub pool_id: Option<String>,
@@ -2058,7 +2058,7 @@ pub struct JobExecutionInformation {
     pub terminate_reason: Option<String>,
 }
 impl JobExecutionInformation {
-    pub fn new(start_time: time::OffsetDateTime) -> Self {
+    pub fn new(start_time: ::time::OffsetDateTime) -> Self {
         Self {
             start_time,
             end_time: None,
@@ -2274,10 +2274,10 @@ impl JobPreparationTask {
 pub struct JobPreparationTaskExecutionInformation {
     #[doc = "If the Task has been restarted or retried, this is the most recent time at which the Task started running."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "This property is set only if the Task is in the Completed state."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[serde(deserialize_with = "case_insensitive_deserialize")]
     pub state: job_preparation_task_execution_information::State,
     #[serde(rename = "taskRootDirectory", default, skip_serializing_if = "Option::is_none")]
@@ -2296,7 +2296,7 @@ pub struct JobPreparationTaskExecutionInformation {
     pub retry_count: i32,
     #[doc = "This property is set only if the Task was retried (i.e. retryCount is nonzero). If present, this is typically the same as startTime, but may be different if the Task has been restarted for reasons other than retry; for example, if the Compute Node was rebooted during a retry, then the startTime is updated but the lastRetryTime is not."]
     #[serde(rename = "lastRetryTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_retry_time: Option<time::OffsetDateTime>,
+    pub last_retry_time: Option<::time::OffsetDateTime>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -2305,7 +2305,7 @@ pub struct JobPreparationTaskExecutionInformation {
     pub result: Option<TaskExecutionResult>,
 }
 impl JobPreparationTaskExecutionInformation {
-    pub fn new(start_time: time::OffsetDateTime, state: job_preparation_task_execution_information::State, retry_count: i32) -> Self {
+    pub fn new(start_time: ::time::OffsetDateTime, state: job_preparation_task_execution_information::State, retry_count: i32) -> Self {
         Self {
             start_time,
             end_time: None,
@@ -2384,10 +2384,10 @@ impl JobReleaseTask {
 pub struct JobReleaseTaskExecutionInformation {
     #[doc = "If the Task has been restarted or retried, this is the most recent time at which the Task started running."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "This property is set only if the Task is in the Completed state."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[serde(deserialize_with = "case_insensitive_deserialize")]
     pub state: job_release_task_execution_information::State,
     #[serde(rename = "taskRootDirectory", default, skip_serializing_if = "Option::is_none")]
@@ -2409,7 +2409,7 @@ pub struct JobReleaseTaskExecutionInformation {
     pub result: Option<TaskExecutionResult>,
 }
 impl JobReleaseTaskExecutionInformation {
-    pub fn new(start_time: time::OffsetDateTime, state: job_release_task_execution_information::State) -> Self {
+    pub fn new(start_time: ::time::OffsetDateTime, state: job_release_task_execution_information::State) -> Self {
         Self {
             start_time,
             end_time: None,
@@ -2466,12 +2466,12 @@ impl JobScheduleAddParameter {
 pub struct JobScheduleExecutionInformation {
     #[doc = "This property is meaningful only if the schedule is in the active state when the time comes around. For example, if the schedule is disabled, no Job will be created at nextRunTime unless the Job is enabled before then."]
     #[serde(rename = "nextRunTime", default, with = "azure_core::date::rfc3339::option")]
-    pub next_run_time: Option<time::OffsetDateTime>,
+    pub next_run_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "recentJob", default, skip_serializing_if = "Option::is_none")]
     pub recent_job: Option<RecentJob>,
     #[doc = "This property is set only if the Job Schedule is in the completed state."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
 }
 impl JobScheduleExecutionInformation {
     pub fn new() -> Self {
@@ -2514,9 +2514,9 @@ pub enum JobScheduleState {
 pub struct JobScheduleStatistics {
     pub url: String,
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[serde(rename = "lastUpdateTime", with = "azure_core::date::rfc3339")]
-    pub last_update_time: time::OffsetDateTime,
+    pub last_update_time: ::time::OffsetDateTime,
     #[serde(rename = "userCPUTime")]
     pub user_cpu_time: String,
     #[serde(rename = "kernelCPUTime")]
@@ -2545,8 +2545,8 @@ pub struct JobScheduleStatistics {
 impl JobScheduleStatistics {
     pub fn new(
         url: String,
-        start_time: time::OffsetDateTime,
-        last_update_time: time::OffsetDateTime,
+        start_time: ::time::OffsetDateTime,
+        last_update_time: ::time::OffsetDateTime,
         user_cpu_time: String,
         kernel_cpu_time: String,
         wall_clock_time: String,
@@ -2728,9 +2728,9 @@ pub enum JobState {
 pub struct JobStatistics {
     pub url: String,
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[serde(rename = "lastUpdateTime", with = "azure_core::date::rfc3339")]
-    pub last_update_time: time::OffsetDateTime,
+    pub last_update_time: ::time::OffsetDateTime,
     #[serde(rename = "userCPUTime")]
     pub user_cpu_time: String,
     #[serde(rename = "kernelCPUTime")]
@@ -2761,8 +2761,8 @@ pub struct JobStatistics {
 impl JobStatistics {
     pub fn new(
         url: String,
-        start_time: time::OffsetDateTime,
-        last_update_time: time::OffsetDateTime,
+        start_time: ::time::OffsetDateTime,
+        last_update_time: ::time::OffsetDateTime,
         user_cpu_time: String,
         kernel_cpu_time: String,
         wall_clock_time: String,
@@ -3045,10 +3045,10 @@ pub struct NodeAgentInformation {
     pub version: String,
     #[doc = "This is the most recent time that the Compute Node agent was updated to a new version."]
     #[serde(rename = "lastUpdateTime", with = "azure_core::date::rfc3339")]
-    pub last_update_time: time::OffsetDateTime,
+    pub last_update_time: ::time::OffsetDateTime,
 }
 impl NodeAgentInformation {
-    pub fn new(version: String, last_update_time: time::OffsetDateTime) -> Self {
+    pub fn new(version: String, last_update_time: ::time::OffsetDateTime) -> Self {
         Self { version, last_update_time }
     }
 }
@@ -3302,7 +3302,7 @@ pub struct NodeUpdateUserParameter {
     pub password: Option<String>,
     #[doc = "If omitted, the default is 1 day from the current time. For Linux Compute Nodes, the expiryTime has a precision up to a day."]
     #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_time: Option<time::OffsetDateTime>,
+    pub expiry_time: Option<::time::OffsetDateTime>,
     #[doc = "The public key should be compatible with OpenSSH encoding and should be base 64 encoded. This property can be specified only for Linux Compute Nodes. If this is specified for a Windows Compute Node, then the Batch service rejects the request; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request). If omitted, any existing SSH public key is removed."]
     #[serde(rename = "sshPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub ssh_public_key: Option<String>,
@@ -3907,16 +3907,16 @@ impl PoolSpecification {
 pub struct PoolStatistics {
     pub url: String,
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[serde(rename = "lastUpdateTime", with = "azure_core::date::rfc3339")]
-    pub last_update_time: time::OffsetDateTime,
+    pub last_update_time: ::time::OffsetDateTime,
     #[serde(rename = "usageStats", default, skip_serializing_if = "Option::is_none")]
     pub usage_stats: Option<UsageStatistics>,
     #[serde(rename = "resourceStats", default, skip_serializing_if = "Option::is_none")]
     pub resource_stats: Option<ResourceStatistics>,
 }
 impl PoolStatistics {
-    pub fn new(url: String, start_time: time::OffsetDateTime, last_update_time: time::OffsetDateTime) -> Self {
+    pub fn new(url: String, start_time: ::time::OffsetDateTime, last_update_time: ::time::OffsetDateTime) -> Self {
         Self {
             url,
             start_time,
@@ -3967,9 +3967,9 @@ pub struct PoolUsageMetrics {
     #[serde(rename = "poolId")]
     pub pool_id: String,
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[serde(rename = "endTime", with = "azure_core::date::rfc3339")]
-    pub end_time: time::OffsetDateTime,
+    pub end_time: ::time::OffsetDateTime,
     #[doc = "For information about available sizes of virtual machines in Pools, see Choose a VM size for Compute Nodes in an Azure Batch Pool (https://docs.microsoft.com/azure/batch/batch-pool-vm-sizes)."]
     #[serde(rename = "vmSize")]
     pub vm_size: String,
@@ -3979,8 +3979,8 @@ pub struct PoolUsageMetrics {
 impl PoolUsageMetrics {
     pub fn new(
         pool_id: String,
-        start_time: time::OffsetDateTime,
-        end_time: time::OffsetDateTime,
+        start_time: ::time::OffsetDateTime,
+        end_time: ::time::OffsetDateTime,
         vm_size: String,
         total_core_hours: f64,
     ) -> Self {
@@ -4078,9 +4078,9 @@ impl ResourceFile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceStatistics {
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[serde(rename = "lastUpdateTime", with = "azure_core::date::rfc3339")]
-    pub last_update_time: time::OffsetDateTime,
+    pub last_update_time: ::time::OffsetDateTime,
     #[serde(rename = "avgCPUPercentage")]
     pub avg_cpu_percentage: f64,
     #[serde(rename = "avgMemoryGiB")]
@@ -4106,8 +4106,8 @@ pub struct ResourceStatistics {
 }
 impl ResourceStatistics {
     pub fn new(
-        start_time: time::OffsetDateTime,
-        last_update_time: time::OffsetDateTime,
+        start_time: ::time::OffsetDateTime,
+        last_update_time: ::time::OffsetDateTime,
         avg_cpu_percentage: f64,
         avg_memory_gi_b: f64,
         peak_memory_gi_b: f64,
@@ -4141,10 +4141,10 @@ impl ResourceStatistics {
 pub struct Schedule {
     #[doc = "If you do not specify a doNotRunUntil time, the schedule becomes ready to create Jobs immediately."]
     #[serde(rename = "doNotRunUntil", default, with = "azure_core::date::rfc3339::option")]
-    pub do_not_run_until: Option<time::OffsetDateTime>,
+    pub do_not_run_until: Option<::time::OffsetDateTime>,
     #[doc = "If you do not specify a doNotRunAfter time, and you are creating a recurring Job Schedule, the Job Schedule will remain active until you explicitly terminate it."]
     #[serde(rename = "doNotRunAfter", default, with = "azure_core::date::rfc3339::option")]
-    pub do_not_run_after: Option<time::OffsetDateTime>,
+    pub do_not_run_after: Option<::time::OffsetDateTime>,
     #[doc = "If a Job is not created within the startWindow interval, then the 'opportunity' is lost; no Job will be created until the next recurrence of the schedule. If the schedule is recurring, and the startWindow is longer than the recurrence interval, then this is equivalent to an infinite startWindow, because the Job that is 'due' in one recurrenceInterval is not carried forward into the next recurrence interval. The default is infinite. The minimum value is 1 minute. If you specify a lower value, the Batch service rejects the schedule with an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "startWindow", default, skip_serializing_if = "Option::is_none")]
     pub start_window: Option<String>,
@@ -4250,10 +4250,10 @@ pub struct StartTaskInformation {
     pub state: start_task_information::State,
     #[doc = "This value is reset every time the Task is restarted or retried (that is, this is the most recent time at which the StartTask started running)."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "This is the end time of the most recent run of the StartTask, if that run has completed (even if that run failed and a retry is pending). This element is not present if the StartTask is currently running."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "This property is set only if the StartTask is in the completed state. In general, the exit code for a process reflects the specific convention implemented by the application developer for that process. If you use the exit code value to make decisions in your code, be sure that you know the exit code convention used by the application process. However, if the Batch service terminates the StartTask (due to timeout, or user termination via the API) you may see an operating system-defined exit code."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
@@ -4266,7 +4266,7 @@ pub struct StartTaskInformation {
     pub retry_count: i32,
     #[doc = "This element is present only if the Task was retried (i.e. retryCount is nonzero). If present, this is typically the same as startTime, but may be different if the Task has been restarted for reasons other than retry; for example, if the Compute Node was rebooted during a retry, then the startTime is updated but the lastRetryTime is not."]
     #[serde(rename = "lastRetryTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_retry_time: Option<time::OffsetDateTime>,
+    pub last_retry_time: Option<::time::OffsetDateTime>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -4275,7 +4275,7 @@ pub struct StartTaskInformation {
     pub result: Option<TaskExecutionResult>,
 }
 impl StartTaskInformation {
-    pub fn new(state: start_task_information::State, start_time: time::OffsetDateTime, retry_count: i32) -> Self {
+    pub fn new(state: start_task_information::State, start_time: ::time::OffsetDateTime, retry_count: i32) -> Self {
         Self {
             state,
             start_time,
@@ -4315,10 +4315,10 @@ pub struct SubtaskInformation {
     #[serde(rename = "nodeInfo", default, skip_serializing_if = "Option::is_none")]
     pub node_info: Option<ComputeNodeInformation>,
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "This property is set only if the subtask is in the Completed state."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "This property is set only if the subtask is in the completed state. In general, the exit code for a process reflects the specific convention implemented by the application developer for that process. If you use the exit code value to make decisions in your code, be sure that you know the exit code convention used by the application process. However, if the Batch service terminates the subtask (due to timeout, or user termination via the API) you may see an operating system-defined exit code."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
@@ -4333,7 +4333,7 @@ pub struct SubtaskInformation {
     )]
     pub state: Option<SubtaskState>,
     #[serde(rename = "stateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub state_transition_time: Option<time::OffsetDateTime>,
+    pub state_transition_time: Option<::time::OffsetDateTime>,
     #[serde(
         rename = "previousState",
         default,
@@ -4343,7 +4343,7 @@ pub struct SubtaskInformation {
     pub previous_state: Option<SubtaskState>,
     #[doc = "This property is not set if the subtask is in its initial running state."]
     #[serde(rename = "previousStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub previous_state_transition_time: Option<time::OffsetDateTime>,
+    pub previous_state_transition_time: Option<::time::OffsetDateTime>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -4485,7 +4485,7 @@ pub struct TaskAddResult {
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4649,10 +4649,10 @@ impl TaskDependencies {
 pub struct TaskExecutionInformation {
     #[doc = "'Running' corresponds to the running state, so if the Task specifies resource files or Packages, then the start time reflects the time at which the Task started downloading or deploying these. If the Task has been restarted or retried, this is the most recent time at which the Task started running. This property is present only for Tasks that are in the running or completed state."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "This property is set only if the Task is in the Completed state."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "This property is set only if the Task is in the completed state. In general, the exit code for a process reflects the specific convention implemented by the application developer for that process. If you use the exit code value to make decisions in your code, be sure that you know the exit code convention used by the application process. However, if the Batch service terminates the Task (due to timeout, or user termination via the API) you may see an operating system-defined exit code."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
@@ -4665,13 +4665,13 @@ pub struct TaskExecutionInformation {
     pub retry_count: i32,
     #[doc = "This element is present only if the Task was retried (i.e. retryCount is nonzero). If present, this is typically the same as startTime, but may be different if the Task has been restarted for reasons other than retry; for example, if the Compute Node was rebooted during a retry, then the startTime is updated but the lastRetryTime is not."]
     #[serde(rename = "lastRetryTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_retry_time: Option<time::OffsetDateTime>,
+    pub last_retry_time: Option<::time::OffsetDateTime>,
     #[doc = "When the user removes Compute Nodes from a Pool (by resizing/shrinking the pool) or when the Job is being disabled, the user can specify that running Tasks on the Compute Nodes be requeued for execution. This count tracks how many times the Task has been requeued for these reasons."]
     #[serde(rename = "requeueCount")]
     pub requeue_count: i32,
     #[doc = "This property is set only if the requeueCount is nonzero."]
     #[serde(rename = "lastRequeueTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_requeue_time: Option<time::OffsetDateTime>,
+    pub last_requeue_time: Option<::time::OffsetDateTime>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -4821,9 +4821,9 @@ pub enum TaskState {
 pub struct TaskStatistics {
     pub url: String,
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[serde(rename = "lastUpdateTime", with = "azure_core::date::rfc3339")]
-    pub last_update_time: time::OffsetDateTime,
+    pub last_update_time: ::time::OffsetDateTime,
     #[serde(rename = "userCPUTime")]
     pub user_cpu_time: String,
     #[serde(rename = "kernelCPUTime")]
@@ -4845,8 +4845,8 @@ pub struct TaskStatistics {
 impl TaskStatistics {
     pub fn new(
         url: String,
-        start_time: time::OffsetDateTime,
-        last_update_time: time::OffsetDateTime,
+        start_time: ::time::OffsetDateTime,
+        last_update_time: ::time::OffsetDateTime,
         user_cpu_time: String,
         kernel_cpu_time: String,
         wall_clock_time: String,
@@ -4903,16 +4903,16 @@ pub struct UploadBatchServiceLogsConfiguration {
     pub container_url: String,
     #[doc = "Any log file containing a log message in the time range will be uploaded. This means that the operation might retrieve more logs than have been requested since the entire log file is always uploaded, but the operation should not retrieve fewer logs than have been requested."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "Any log file containing a log message in the time range will be uploaded. This means that the operation might retrieve more logs than have been requested since the entire log file is always uploaded, but the operation should not retrieve fewer logs than have been requested. If omitted, the default is to upload all logs available after the startTime."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The reference to a user assigned identity associated with the Batch pool which a compute node will use."]
     #[serde(rename = "identityReference", default, skip_serializing_if = "Option::is_none")]
     pub identity_reference: Option<ComputeNodeIdentityReference>,
 }
 impl UploadBatchServiceLogsConfiguration {
-    pub fn new(container_url: String, start_time: time::OffsetDateTime) -> Self {
+    pub fn new(container_url: String, start_time: ::time::OffsetDateTime) -> Self {
         Self {
             container_url,
             start_time,
@@ -4940,14 +4940,14 @@ impl UploadBatchServiceLogsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageStatistics {
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[serde(rename = "lastUpdateTime", with = "azure_core::date::rfc3339")]
-    pub last_update_time: time::OffsetDateTime,
+    pub last_update_time: ::time::OffsetDateTime,
     #[serde(rename = "dedicatedCoreTime")]
     pub dedicated_core_time: String,
 }
 impl UsageStatistics {
-    pub fn new(start_time: time::OffsetDateTime, last_update_time: time::OffsetDateTime, dedicated_core_time: String) -> Self {
+    pub fn new(start_time: ::time::OffsetDateTime, last_update_time: ::time::OffsetDateTime, dedicated_core_time: String) -> Self {
         Self {
             start_time,
             last_update_time,

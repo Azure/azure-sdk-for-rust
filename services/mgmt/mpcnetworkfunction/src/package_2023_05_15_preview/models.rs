@@ -598,42 +598,6 @@ impl TrackedResource {
         }
     }
 }
-#[doc = "API Versions"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "Versions")]
-pub enum Versions {
-    #[serde(rename = "2023-05-15-preview")]
-    N2023_05_15_preview,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for Versions {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for Versions {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for Versions {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::N2023_05_15_preview => serializer.serialize_unit_variant("Versions", 0u32, "2023-05-15-preview"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-        }
-    }
-}
 #[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -645,7 +609,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -654,7 +618,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

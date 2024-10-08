@@ -76,10 +76,10 @@ pub struct ActivityRun {
     pub status: Option<String>,
     #[doc = "The start time of the activity run in 'ISO 8601' format."]
     #[serde(rename = "activityRunStart", default, with = "azure_core::date::rfc3339::option")]
-    pub activity_run_start: Option<time::OffsetDateTime>,
+    pub activity_run_start: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the activity run in 'ISO 8601' format."]
     #[serde(rename = "activityRunEnd", default, with = "azure_core::date::rfc3339::option")]
-    pub activity_run_end: Option<time::OffsetDateTime>,
+    pub activity_run_end: Option<::time::OffsetDateTime>,
     #[doc = "The duration of the activity run."]
     #[serde(rename = "durationInMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_ms: Option<i64>,
@@ -386,7 +386,7 @@ pub struct FactoryProperties {
     pub provisioning_state: Option<String>,
     #[doc = "Time the factory was created in ISO8601 format."]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    pub create_time: Option<::time::OffsetDateTime>,
     #[doc = "Version of the factory."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
@@ -1361,13 +1361,13 @@ pub struct PipelineRun {
     pub invoked_by: Option<PipelineRunInvokedBy>,
     #[doc = "The last updated timestamp for the pipeline run event in ISO8601 format."]
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated: Option<time::OffsetDateTime>,
+    pub last_updated: Option<::time::OffsetDateTime>,
     #[doc = "The start time of a pipeline run in ISO8601 format."]
     #[serde(rename = "runStart", default, with = "azure_core::date::rfc3339::option")]
-    pub run_start: Option<time::OffsetDateTime>,
+    pub run_start: Option<::time::OffsetDateTime>,
     #[doc = "The end time of a pipeline run in ISO8601 format."]
     #[serde(rename = "runEnd", default, with = "azure_core::date::rfc3339::option")]
-    pub run_end: Option<time::OffsetDateTime>,
+    pub run_end: Option<::time::OffsetDateTime>,
     #[doc = "The duration of a pipeline run."]
     #[serde(rename = "durationInMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_ms: Option<i64>,
@@ -1391,10 +1391,10 @@ pub struct PipelineRunFilterParameters {
     pub continuation_token: Option<String>,
     #[doc = "The time at or after which the pipeline run event was updated in 'ISO 8601' format."]
     #[serde(rename = "lastUpdatedAfter", with = "azure_core::date::rfc3339")]
-    pub last_updated_after: time::OffsetDateTime,
+    pub last_updated_after: ::time::OffsetDateTime,
     #[doc = "The time at or before which the pipeline run event was updated in 'ISO 8601' format."]
     #[serde(rename = "lastUpdatedBefore", with = "azure_core::date::rfc3339")]
-    pub last_updated_before: time::OffsetDateTime,
+    pub last_updated_before: ::time::OffsetDateTime,
     #[doc = "List of filters."]
     #[serde(
         default,
@@ -1412,7 +1412,7 @@ pub struct PipelineRunFilterParameters {
     pub order_by: Vec<PipelineRunQueryOrderBy>,
 }
 impl PipelineRunFilterParameters {
-    pub fn new(last_updated_after: time::OffsetDateTime, last_updated_before: time::OffsetDateTime) -> Self {
+    pub fn new(last_updated_after: ::time::OffsetDateTime, last_updated_before: ::time::OffsetDateTime) -> Self {
         Self {
             continuation_token: None,
             last_updated_after,
@@ -1715,28 +1715,28 @@ pub struct SelfHostedIntegrationRuntimeNode {
     pub version: Option<String>,
     #[doc = "The time at which the integration runtime node was registered in ISO8601 format."]
     #[serde(rename = "registerTime", default, with = "azure_core::date::rfc3339::option")]
-    pub register_time: Option<time::OffsetDateTime>,
+    pub register_time: Option<::time::OffsetDateTime>,
     #[doc = "The most recent time at which the integration runtime was connected in ISO8601 format."]
     #[serde(rename = "lastConnectTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_connect_time: Option<time::OffsetDateTime>,
+    pub last_connect_time: Option<::time::OffsetDateTime>,
     #[doc = "The time at which the integration runtime will expire in ISO8601 format."]
     #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_time: Option<time::OffsetDateTime>,
+    pub expiry_time: Option<::time::OffsetDateTime>,
     #[doc = "The time the node last started up."]
     #[serde(rename = "lastStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_start_time: Option<time::OffsetDateTime>,
+    pub last_start_time: Option<::time::OffsetDateTime>,
     #[doc = "The integration runtime node last stop time."]
     #[serde(rename = "lastStopTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_stop_time: Option<time::OffsetDateTime>,
+    pub last_stop_time: Option<::time::OffsetDateTime>,
     #[doc = "The result of the last integration runtime node update."]
     #[serde(rename = "lastUpdateResult", default, skip_serializing_if = "Option::is_none")]
     pub last_update_result: Option<self_hosted_integration_runtime_node::LastUpdateResult>,
     #[doc = "The last time for the integration runtime node update start."]
     #[serde(rename = "lastStartUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_start_update_time: Option<time::OffsetDateTime>,
+    pub last_start_update_time: Option<::time::OffsetDateTime>,
     #[doc = "The last time for the integration runtime node update end."]
     #[serde(rename = "lastEndUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_end_update_time: Option<time::OffsetDateTime>,
+    pub last_end_update_time: Option<::time::OffsetDateTime>,
     #[doc = "Indicates whether this node is the active dispatcher for integration runtime requests."]
     #[serde(rename = "isActiveDispatcher", default, skip_serializing_if = "Option::is_none")]
     pub is_active_dispatcher: Option<bool>,
@@ -1947,7 +1947,7 @@ pub struct TriggerRun {
     pub trigger_type: Option<String>,
     #[doc = "Trigger run start time."]
     #[serde(rename = "triggerRunTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub trigger_run_timestamp: Option<time::OffsetDateTime>,
+    pub trigger_run_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Trigger run status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<trigger_run::Status>,

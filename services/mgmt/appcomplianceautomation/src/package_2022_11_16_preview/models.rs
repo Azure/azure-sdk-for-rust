@@ -946,13 +946,13 @@ pub struct ReportProperties {
     pub time_zone: String,
     #[doc = "Report collection trigger time."]
     #[serde(rename = "triggerTime", with = "azure_core::date::rfc3339")]
-    pub trigger_time: time::OffsetDateTime,
+    pub trigger_time: ::time::OffsetDateTime,
     #[doc = "Report next collection trigger time."]
     #[serde(rename = "nextTriggerTime", default, with = "azure_core::date::rfc3339::option")]
-    pub next_trigger_time: Option<time::OffsetDateTime>,
+    pub next_trigger_time: Option<::time::OffsetDateTime>,
     #[doc = "Report last collection trigger time."]
     #[serde(rename = "lastTriggerTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_trigger_time: Option<time::OffsetDateTime>,
+    pub last_trigger_time: Option<::time::OffsetDateTime>,
     #[doc = "List of subscription Ids."]
     #[serde(
         default,
@@ -970,7 +970,7 @@ pub struct ReportProperties {
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ReportProperties {
-    pub fn new(time_zone: String, trigger_time: time::OffsetDateTime, resources: Vec<ResourceMetadata>) -> Self {
+    pub fn new(time_zone: String, trigger_time: ::time::OffsetDateTime, resources: Vec<ResourceMetadata>) -> Self {
         Self {
             id: None,
             status: None,
@@ -1271,7 +1271,7 @@ pub struct SnapshotProperties {
     pub snapshot_name: Option<String>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "Resource provisioning states."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -1345,7 +1345,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1354,7 +1354,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

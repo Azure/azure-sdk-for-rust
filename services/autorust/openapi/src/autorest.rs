@@ -1,11 +1,11 @@
 //! AutoRest Extensions for OpenAPI 2.0
-//! https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md
+//! https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md
 
 use crate::*;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
-/// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-enum
+/// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-enum
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct MsEnum {
@@ -26,7 +26,7 @@ pub struct MsEnumValue {
 }
 
 /// provides insight to Autorest on how to generate code. It doesn't alter the modeling of what is actually sent on the wire
-/// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-mutability
+/// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-mutability
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum MsMutability {
@@ -36,7 +36,7 @@ pub enum MsMutability {
 }
 
 /// allows paging through lists of data
-/// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-pageable
+/// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-pageable
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct MsPageable {
@@ -49,10 +49,10 @@ pub struct MsPageable {
 }
 
 /// describes the format for specifying examples for request and response of an operation
-/// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-examples
+/// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-examples
 pub type MsExamples = IndexMap<String, ReferenceOr<Operation>>;
 
-/// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-long-running-operation-options
+/// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-long-running-operation-options
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MsLongRunningOperationOptions {
@@ -69,7 +69,7 @@ pub enum MsLongRunningOperationOptionsFinalStateVia {
     OriginalUri,
 }
 
-/// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-parameter-location
+/// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-parameter-location
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum MsParameterLocation {
@@ -85,7 +85,7 @@ pub enum MsCodeGenerationSetting {
 }
 
 /// replaces the fixed host with a host template that can be replaced with variable parameters
-/// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-parameterized-host
+/// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-parameterized-host
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MsParameterizedHost {
@@ -99,7 +99,7 @@ pub struct MsParameterizedHost {
 }
 
 /// groups method parameters in generated clients
-/// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-parameter-grouping
+/// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-parameter-grouping
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct MsParameterGrouping {
     #[serde(skip_serializing_if = "Option::is_none")]

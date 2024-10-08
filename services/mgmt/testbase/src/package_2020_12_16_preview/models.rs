@@ -455,7 +455,7 @@ pub struct DownloadUrlResponse {
     pub download_url: Option<String>,
     #[doc = "Expiry date of the download URL."]
     #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time: Option<time::OffsetDateTime>,
+    pub expiration_time: Option<::time::OffsetDateTime>,
 }
 impl DownloadUrlResponse {
     pub fn new() -> Self {
@@ -893,7 +893,7 @@ pub struct OsUpdateProperties {
     pub type_: Option<os_update_properties::Type>,
     #[doc = "The release version date the tested release (OS update)"]
     #[serde(rename = "releaseVersionDate", default, with = "azure_core::date::rfc3339::option")]
-    pub release_version_date: Option<time::OffsetDateTime>,
+    pub release_version_date: Option<::time::OffsetDateTime>,
 }
 impl OsUpdateProperties {
     pub fn new() -> Self {
@@ -974,7 +974,7 @@ pub struct OsUpdateTestSummary {
     pub build_revision: Option<String>,
     #[doc = "The release version date."]
     #[serde(rename = "releaseVersionDate", default, with = "azure_core::date::rfc3339::option")]
-    pub release_version_date: Option<time::OffsetDateTime>,
+    pub release_version_date: Option<::time::OffsetDateTime>,
     #[doc = "The flighting ring, only for release of feature updates."]
     #[serde(rename = "flightingRing", default, skip_serializing_if = "Option::is_none")]
     pub flighting_ring: Option<String>,
@@ -1185,7 +1185,7 @@ pub struct PackageProperties {
     pub package_status: Option<package_properties::PackageStatus>,
     #[doc = "The UTC timestamp when the package was last modified."]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time: Option<time::OffsetDateTime>,
+    pub last_modified_time: Option<::time::OffsetDateTime>,
     #[doc = "The flighting ring for feature update."]
     #[serde(rename = "flightingRing")]
     pub flighting_ring: String,
@@ -1555,10 +1555,10 @@ pub struct ScriptExecutionResult {
     pub script_name: Option<String>,
     #[doc = "Start time of script execution."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "End time of script execution."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Exit code."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
@@ -1622,7 +1622,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1631,7 +1631,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {
@@ -2378,7 +2378,7 @@ pub struct TestResultProperties {
     pub release_name: Option<String>,
     #[doc = "The release version date of the tested release."]
     #[serde(rename = "releaseVersionDate", default, with = "azure_core::date::rfc3339::option")]
-    pub release_version_date: Option<time::OffsetDateTime>,
+    pub release_version_date: Option<::time::OffsetDateTime>,
     #[doc = "The flighting ring, only for release of feature updates."]
     #[serde(rename = "flightingRing", default, skip_serializing_if = "Option::is_none")]
     pub flighting_ring: Option<String>,
@@ -2728,7 +2728,7 @@ impl UtilizationBound {
 pub struct UtilizationEntry {
     #[doc = "The timestamp."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,

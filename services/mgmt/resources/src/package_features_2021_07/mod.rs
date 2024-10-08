@@ -223,7 +223,8 @@ pub mod list_operations {
             azure_core::Pageable::new(make_request)
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Features/operations", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path("/providers/Microsoft.Features/operations");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -421,11 +422,11 @@ pub mod features {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Features/features",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Features/features",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -536,12 +537,11 @@ pub mod features {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Features/providers/{}/features",
+                    &self.subscription_id, &self.resource_provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -627,13 +627,11 @@ pub mod features {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_provider_namespace,
-                    &self.feature_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}",
+                    &self.subscription_id, &self.resource_provider_namespace, &self.feature_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -732,13 +730,11 @@ pub mod features {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/register",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_provider_namespace,
-                    &self.feature_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/register",
+                    &self.subscription_id, &self.resource_provider_namespace, &self.feature_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -837,13 +833,11 @@ pub mod features {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/unregister",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_provider_namespace,
-                    &self.feature_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/unregister",
+                    &self.subscription_id, &self.resource_provider_namespace, &self.feature_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1035,13 +1029,11 @@ pub mod subscription_feature_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.feature_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.feature_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1153,13 +1145,11 @@ pub mod subscription_feature_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.feature_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.feature_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1252,13 +1242,11 @@ pub mod subscription_feature_registrations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace,
-                    &self.feature_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
+                    &self.subscription_id, &self.provider_namespace, &self.feature_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1369,12 +1357,11 @@ pub mod subscription_feature_registrations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.provider_namespace
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations",
+                    &self.subscription_id, &self.provider_namespace
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1484,11 +1471,11 @@ pub mod subscription_feature_registrations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Features/subscriptionFeatureRegistrations",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.Features/subscriptionFeatureRegistrations",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

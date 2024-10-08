@@ -242,7 +242,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Help/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Help/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -361,11 +362,8 @@ pub mod check_name_availability {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/checkNameAvailability",
-                    self.client.endpoint(),
-                    &self.scope
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.Help/checkNameAvailability", &self.scope));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -497,12 +495,11 @@ pub mod diagnostics {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/diagnostics/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.diagnostics_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Help/diagnostics/{}",
+                    &self.scope, &self.diagnostics_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -609,12 +606,11 @@ pub mod diagnostics {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/diagnostics/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.diagnostics_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Help/diagnostics/{}",
+                    &self.scope, &self.diagnostics_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -831,11 +827,8 @@ pub mod discovery_solution {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/discoverySolutions",
-                    self.client.endpoint(),
-                    &self.scope
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.Help/discoverySolutions", &self.scope));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -968,12 +961,11 @@ pub mod solution {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/solutions/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.solution_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Help/solutions/{}",
+                    &self.scope, &self.solution_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1080,12 +1072,11 @@ pub mod solution {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/solutions/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.solution_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Help/solutions/{}",
+                    &self.scope, &self.solution_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1256,12 +1247,11 @@ pub mod solution {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/solutions/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.solution_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Help/solutions/{}",
+                    &self.scope, &self.solution_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1485,12 +1475,11 @@ pub mod troubleshooters {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/troubleshooters/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.troubleshooter_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Help/troubleshooters/{}",
+                    &self.scope, &self.troubleshooter_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1601,12 +1590,11 @@ pub mod troubleshooters {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/troubleshooters/{}",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.troubleshooter_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Help/troubleshooters/{}",
+                    &self.scope, &self.troubleshooter_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1718,12 +1706,11 @@ pub mod troubleshooters {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/troubleshooters/{}/continue",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.troubleshooter_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Help/troubleshooters/{}/continue",
+                    &self.scope, &self.troubleshooter_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1813,12 +1800,11 @@ pub mod troubleshooters {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/troubleshooters/{}/end",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.troubleshooter_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Help/troubleshooters/{}/end",
+                    &self.scope, &self.troubleshooter_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1913,12 +1899,11 @@ pub mod troubleshooters {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Help/troubleshooters/{}/restart",
-                    self.client.endpoint(),
-                    &self.scope,
-                    &self.troubleshooter_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/{}/providers/Microsoft.Help/troubleshooters/{}/restart",
+                    &self.scope, &self.troubleshooter_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

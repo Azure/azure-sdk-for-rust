@@ -294,7 +294,6 @@ impl PlanMetadataDto {
         Self::default()
     }
 }
-#[doc = ""]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "PricingType")]
 pub enum PricingType {
@@ -337,7 +336,6 @@ impl Serialize for PricingType {
         }
     }
 }
-#[doc = ""]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "PrivateStoreAllow")]
 pub enum PrivateStoreAllow {
@@ -694,7 +692,6 @@ impl SearchResponseDto {
         Self::default()
     }
 }
-#[doc = ""]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "Store")]
 pub enum Store {

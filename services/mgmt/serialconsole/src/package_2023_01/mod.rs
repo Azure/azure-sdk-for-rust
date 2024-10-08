@@ -233,7 +233,8 @@ pub mod list_operations {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.SerialConsole/operations", self.client.endpoint(),))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path("/providers/Microsoft.SerialConsole/operations");
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -330,12 +331,11 @@ pub mod get_console_status {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.default
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}",
+                &self.subscription_id, &self.default
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -433,12 +433,11 @@ pub mod disable_console {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/disableConsole",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.default
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/disableConsole",
+                &self.subscription_id, &self.default
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -536,12 +535,11 @@ pub mod enable_console {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/enableConsole",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.default
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/enableConsole",
+                &self.subscription_id, &self.default
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()
@@ -772,15 +770,15 @@ pub mod serial_ports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_provider_namespace,
                     &self.parent_resource_type,
                     &self.parent_resource
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -881,16 +879,16 @@ pub mod serial_ports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_provider_namespace,
                     &self.parent_resource_type,
                     &self.parent_resource,
                     &self.serial_port
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -993,16 +991,16 @@ pub mod serial_ports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_provider_namespace,
                     &self.parent_resource_type,
                     &self.parent_resource,
                     &self.serial_port
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1098,11 +1096,11 @@ pub mod serial_ports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.SerialConsole/serialPorts",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.SerialConsole/serialPorts",
                     &self.subscription_id
-                ))?;
+                ));
                 Ok(url)
             }
         }
@@ -1199,16 +1197,16 @@ pub mod serial_ports {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}/connect",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}/connect",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_provider_namespace,
                     &self.parent_resource_type,
                     &self.parent_resource,
                     &self.serial_port
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

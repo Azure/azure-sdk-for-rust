@@ -252,7 +252,8 @@ pub mod query {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/workspaces/{}/query", self.client.endpoint(), &self.workspace_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workspaces/{}/query", &self.workspace_id));
                 Ok(url)
             }
         }
@@ -354,7 +355,8 @@ pub mod query {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/workspaces/{}/query", self.client.endpoint(), &self.workspace_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workspaces/{}/query", &self.workspace_id));
                 Ok(url)
             }
         }
@@ -446,7 +448,8 @@ pub mod query {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/$batch", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/$batch");
                 Ok(url)
             }
         }
@@ -569,7 +572,8 @@ pub mod metadata {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/workspaces/{}/metadata", self.client.endpoint(), &self.workspace_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workspaces/{}/metadata", &self.workspace_id));
                 Ok(url)
             }
         }
@@ -661,7 +665,8 @@ pub mod metadata {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/workspaces/{}/metadata", self.client.endpoint(), &self.workspace_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/workspaces/{}/metadata", &self.workspace_id));
                 Ok(url)
             }
         }

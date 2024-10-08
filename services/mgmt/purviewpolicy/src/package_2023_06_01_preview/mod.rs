@@ -130,7 +130,7 @@ pub mod purview_policies {
         #[doc = "The API lists the Azure purview RBAC policies affecting the scope. The scope can be any valid ARM resource id"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: The scope of the operation or resource. Valid scopes are: subscription (format: '/subscriptions/{subscriptionId}'), or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `scope`: The scope at which the operation is performed."]
         pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
             list::RequestBuilder {
                 client: self.0.clone(),
@@ -149,9 +149,9 @@ pub mod purview_policies {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::PolicyList> {
+            pub async fn into_body(self) -> azure_core::Result<models::PolicyListResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::PolicyList = serde_json::from_slice(&bytes)?;
+                let body: models::PolicyListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -207,7 +207,7 @@ pub mod purview_policies {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<models::PolicyList, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::PolicyListResult, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -258,11 +258,8 @@ pub mod purview_policies {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/{}/providers/Microsoft.Purview/policies",
-                    self.client.endpoint(),
-                    &self.scope
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/{}/providers/Microsoft.Purview/policies", &self.scope));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -281,8 +278,7 @@ pub mod operations {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Lists the available operations"]
-        #[doc = "List of available operations"]
+        #[doc = "List the operations for the provider"]
         pub fn list(&self) -> list::RequestBuilder {
             list::RequestBuilder { client: self.0.clone() }
         }
@@ -386,7 +382,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Purview/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Purview/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

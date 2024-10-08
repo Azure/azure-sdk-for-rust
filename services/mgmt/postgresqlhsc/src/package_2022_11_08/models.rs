@@ -161,7 +161,7 @@ pub struct ClusterProperties {
     pub source_location: Option<String>,
     #[doc = "Date and time in UTC (ISO8601 format) for cluster restore."]
     #[serde(rename = "pointInTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub point_in_time_utc: Option<time::OffsetDateTime>,
+    pub point_in_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The array of read replica clusters."]
     #[serde(
         rename = "readReplicas",
@@ -172,7 +172,7 @@ pub struct ClusterProperties {
     pub read_replicas: Vec<String>,
     #[doc = "The earliest restore point time (ISO8601 format) for the cluster."]
     #[serde(rename = "earliestRestoreTime", default, with = "azure_core::date::rfc3339::option")]
-    pub earliest_restore_time: Option<time::OffsetDateTime>,
+    pub earliest_restore_time: Option<::time::OffsetDateTime>,
     #[doc = "The private endpoint connections for a cluster."]
     #[serde(
         rename = "privateEndpointConnections",
@@ -1388,7 +1388,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1397,7 +1397,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

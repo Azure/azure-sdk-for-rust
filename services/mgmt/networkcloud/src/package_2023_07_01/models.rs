@@ -772,7 +772,7 @@ impl BareMetalMachineKeySetPatchParameters {
 pub struct BareMetalMachineKeySetPatchProperties {
     #[doc = "The date and time after which the users in this key set will be removed from the bare metal machines."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiration: Option<time::OffsetDateTime>,
+    pub expiration: Option<::time::OffsetDateTime>,
     #[doc = "The list of IP addresses of jump hosts with management network access from which a login will be allowed for the users."]
     #[serde(
         rename = "jumpHostsAllowed",
@@ -808,13 +808,13 @@ pub struct BareMetalMachineKeySetProperties {
     pub detailed_status_message: Option<String>,
     #[doc = "The date and time after which the users in this key set will be removed from the bare metal machines."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub expiration: time::OffsetDateTime,
+    pub expiration: ::time::OffsetDateTime,
     #[doc = "The list of IP addresses of jump hosts with management network access from which a login will be allowed for the users."]
     #[serde(rename = "jumpHostsAllowed")]
     pub jump_hosts_allowed: Vec<String>,
     #[doc = "The last time this key set was validated."]
     #[serde(rename = "lastValidation", default, with = "azure_core::date::rfc3339::option")]
-    pub last_validation: Option<time::OffsetDateTime>,
+    pub last_validation: Option<::time::OffsetDateTime>,
     #[doc = "The name of the group that users will be assigned to on the operating system of the machines."]
     #[serde(rename = "osGroupName", default, skip_serializing_if = "Option::is_none")]
     pub os_group_name: Option<String>,
@@ -839,7 +839,7 @@ pub struct BareMetalMachineKeySetProperties {
 impl BareMetalMachineKeySetProperties {
     pub fn new(
         azure_group_id: String,
-        expiration: time::OffsetDateTime,
+        expiration: ::time::OffsetDateTime,
         jump_hosts_allowed: Vec<String>,
         privilege_level: bare_metal_machine_key_set_properties::PrivilegeLevel,
         user_list: Vec<KeySetUser>,
@@ -1727,7 +1727,7 @@ impl BmcKeySetPatchParameters {
 pub struct BmcKeySetPatchProperties {
     #[doc = "The date and time after which the users in this key set will be removed from the baseboard management controllers."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiration: Option<time::OffsetDateTime>,
+    pub expiration: Option<::time::OffsetDateTime>,
     #[doc = "The unique list of permitted users."]
     #[serde(
         rename = "userList",
@@ -1755,10 +1755,10 @@ pub struct BmcKeySetProperties {
     pub detailed_status_message: Option<String>,
     #[doc = "The date and time after which the users in this key set will be removed from the baseboard management controllers."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub expiration: time::OffsetDateTime,
+    pub expiration: ::time::OffsetDateTime,
     #[doc = "The last time this key set was validated."]
     #[serde(rename = "lastValidation", default, with = "azure_core::date::rfc3339::option")]
-    pub last_validation: Option<time::OffsetDateTime>,
+    pub last_validation: Option<::time::OffsetDateTime>,
     #[doc = "The access level allowed for the users in this key set."]
     #[serde(rename = "privilegeLevel")]
     pub privilege_level: bmc_key_set_properties::PrivilegeLevel,
@@ -1780,7 +1780,7 @@ pub struct BmcKeySetProperties {
 impl BmcKeySetProperties {
     pub fn new(
         azure_group_id: String,
-        expiration: time::OffsetDateTime,
+        expiration: ::time::OffsetDateTime,
         privilege_level: bmc_key_set_properties::PrivilegeLevel,
         user_list: Vec<KeySetUser>,
     ) -> Self {
@@ -3278,7 +3278,7 @@ pub struct ConsolePatchProperties {
     pub enabled: Option<console_patch_properties::Enabled>,
     #[doc = "The date and time after which the key will be disallowed access."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiration: Option<time::OffsetDateTime>,
+    pub expiration: Option<::time::OffsetDateTime>,
     #[serde(rename = "sshPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub ssh_public_key: Option<SshPublicKey>,
 }
@@ -3339,7 +3339,7 @@ pub struct ConsoleProperties {
     pub enabled: console_properties::Enabled,
     #[doc = "The date and time after which the key will be disallowed access."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiration: Option<time::OffsetDateTime>,
+    pub expiration: Option<::time::OffsetDateTime>,
     #[doc = "The resource ID of the private link service that is used to provide virtual machine console access."]
     #[serde(rename = "privateLinkServiceId", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_id: Option<String>,
@@ -3741,7 +3741,7 @@ impl HardwareInventoryNetworkInterface {
 pub struct HardwareValidationStatus {
     #[doc = "The timestamp of the hardware validation execution."]
     #[serde(rename = "lastValidationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_validation_time: Option<time::OffsetDateTime>,
+    pub last_validation_time: Option<::time::OffsetDateTime>,
     #[doc = "The outcome of the hardware validation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<hardware_validation_status::Result>,
@@ -8462,7 +8462,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -8471,7 +8471,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

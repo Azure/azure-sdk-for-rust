@@ -412,7 +412,7 @@ pub struct DeploymentOperationProperties {
     pub provisioning_state: Option<String>,
     #[doc = "The date and time of the operation."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The duration of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<String>,
@@ -543,7 +543,7 @@ pub struct DeploymentPropertiesExtended {
     pub correlation_id: Option<String>,
     #[doc = "The timestamp of the template deployment."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The duration of the template deployment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<String>,
@@ -956,10 +956,10 @@ pub struct GenericResourceExpanded {
     pub generic_resource: GenericResource,
     #[doc = "The created time of the resource. This is only present if requested via the $expand query parameter."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "The changed time of the resource. This is only present if requested via the $expand query parameter."]
     #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub changed_time: Option<time::OffsetDateTime>,
+    pub changed_time: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource. This is only present if requested via the $expand query parameter."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,

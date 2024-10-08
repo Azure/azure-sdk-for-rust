@@ -663,7 +663,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/entity");
                 Ok(url)
             }
         }
@@ -790,7 +791,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/bulk", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/entity/bulk");
                 Ok(url)
             }
         }
@@ -893,7 +895,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/bulk", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/entity/bulk");
                 Ok(url)
             }
         }
@@ -988,7 +991,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/bulk", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/entity/bulk");
                 Ok(url)
             }
         }
@@ -1075,7 +1079,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/bulk/classification", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/entity/bulk/classification");
                 Ok(url)
             }
         }
@@ -1174,7 +1179,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/guid/{}", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -1270,7 +1276,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/guid/{}", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -1361,7 +1368,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/guid/{}", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -1453,12 +1461,11 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/guid/{}/classification/{}",
-                    self.client.endpoint(),
-                    &self.guid,
-                    &self.classification_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/atlas/v2/entity/guid/{}/classification/{}",
+                    &self.guid, &self.classification_name
+                ));
                 Ok(url)
             }
         }
@@ -1545,12 +1552,11 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/guid/{}/classification/{}",
-                    self.client.endpoint(),
-                    &self.guid,
-                    &self.classification_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/atlas/v2/entity/guid/{}/classification/{}",
+                    &self.guid, &self.classification_name
+                ));
                 Ok(url)
             }
         }
@@ -1629,11 +1635,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/guid/{}/classifications",
-                    self.client.endpoint(),
-                    &self.guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}/classifications", &self.guid));
                 Ok(url)
             }
         }
@@ -1721,11 +1724,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/guid/{}/classifications",
-                    self.client.endpoint(),
-                    &self.guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}/classifications", &self.guid));
                 Ok(url)
             }
         }
@@ -1801,11 +1801,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/guid/{}/classifications",
-                    self.client.endpoint(),
-                    &self.guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}/classifications", &self.guid));
                 Ok(url)
             }
         }
@@ -1915,11 +1912,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/uniqueAttribute/type/{}",
-                    self.client.endpoint(),
-                    &self.type_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/uniqueAttribute/type/{}", &self.type_name));
                 Ok(url)
             }
         }
@@ -2023,11 +2017,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/uniqueAttribute/type/{}",
-                    self.client.endpoint(),
-                    &self.type_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/uniqueAttribute/type/{}", &self.type_name));
                 Ok(url)
             }
         }
@@ -2129,11 +2120,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/uniqueAttribute/type/{}",
-                    self.client.endpoint(),
-                    &self.type_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/uniqueAttribute/type/{}", &self.type_name));
                 Ok(url)
             }
         }
@@ -2231,12 +2219,11 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/uniqueAttribute/type/{}/classification/{}",
-                    self.client.endpoint(),
-                    &self.type_name,
-                    &self.classification_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/atlas/v2/entity/uniqueAttribute/type/{}/classification/{}",
+                    &self.type_name, &self.classification_name
+                ));
                 Ok(url)
             }
         }
@@ -2323,11 +2310,11 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/uniqueAttribute/type/{}/classifications",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/atlas/v2/entity/uniqueAttribute/type/{}/classifications",
                     &self.type_name
-                ))?;
+                ));
                 Ok(url)
             }
         }
@@ -2414,11 +2401,11 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/uniqueAttribute/type/{}/classifications",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/atlas/v2/entity/uniqueAttribute/type/{}/classifications",
                     &self.type_name
-                ))?;
+                ));
                 Ok(url)
             }
         }
@@ -2498,7 +2485,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/bulk/setClassifications", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/entity/bulk/setClassifications");
                 Ok(url)
             }
         }
@@ -2620,11 +2608,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/bulk/uniqueAttribute/type/{}",
-                    self.client.endpoint(),
-                    &self.type_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/bulk/uniqueAttribute/type/{}", &self.type_name));
                 Ok(url)
             }
         }
@@ -2715,7 +2700,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/guid/{}/header", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}/header", &self.guid));
                 Ok(url)
             }
         }
@@ -2823,11 +2809,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/guid/{}/businessmetadata",
-                    self.client.endpoint(),
-                    &self.guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}/businessmetadata", &self.guid));
                 Ok(url)
             }
         }
@@ -2912,11 +2895,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/guid/{}/businessmetadata",
-                    self.client.endpoint(),
-                    &self.guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}/businessmetadata", &self.guid));
                 Ok(url)
             }
         }
@@ -3002,12 +2982,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/guid/{}/businessmetadata/{}",
-                    self.client.endpoint(),
-                    &self.guid,
-                    &self.bm_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}/businessmetadata/{}", &self.guid, &self.bm_name));
                 Ok(url)
             }
         }
@@ -3093,12 +3069,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/guid/{}/businessmetadata/{}",
-                    self.client.endpoint(),
-                    &self.guid,
-                    &self.bm_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}/businessmetadata/{}", &self.guid, &self.bm_name));
                 Ok(url)
             }
         }
@@ -3176,10 +3148,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/businessmetadata/import/template",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/entity/businessmetadata/import/template");
                 Ok(url)
             }
         }
@@ -3277,7 +3247,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/businessmetadata/import", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/entity/businessmetadata/import");
                 Ok(url)
             }
         }
@@ -3370,7 +3341,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/guid/{}/labels", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}/labels", &self.guid));
                 Ok(url)
             }
         }
@@ -3451,7 +3423,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/guid/{}/labels", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}/labels", &self.guid));
                 Ok(url)
             }
         }
@@ -3532,7 +3505,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/entity/guid/{}/labels", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/guid/{}/labels", &self.guid));
                 Ok(url)
             }
         }
@@ -3624,11 +3598,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/uniqueAttribute/type/{}/labels",
-                    self.client.endpoint(),
-                    &self.type_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/uniqueAttribute/type/{}/labels", &self.type_name));
                 Ok(url)
             }
         }
@@ -3720,11 +3691,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/uniqueAttribute/type/{}/labels",
-                    self.client.endpoint(),
-                    &self.type_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/uniqueAttribute/type/{}/labels", &self.type_name));
                 Ok(url)
             }
         }
@@ -3816,11 +3784,8 @@ pub mod entity {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/entity/uniqueAttribute/type/{}/labels",
-                    self.client.endpoint(),
-                    &self.type_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/entity/uniqueAttribute/type/{}/labels", &self.type_name));
                 Ok(url)
             }
         }
@@ -4472,7 +4437,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/glossary");
                 Ok(url)
             }
         }
@@ -4564,7 +4530,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/glossary");
                 Ok(url)
             }
         }
@@ -4656,7 +4623,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary/categories", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/glossary/categories");
                 Ok(url)
             }
         }
@@ -4748,7 +4716,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary/category", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/glossary/category");
                 Ok(url)
             }
         }
@@ -4839,11 +4808,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/category/{}",
-                    self.client.endpoint(),
-                    &self.category_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/category/{}", &self.category_guid));
                 Ok(url)
             }
         }
@@ -4936,11 +4902,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/category/{}",
-                    self.client.endpoint(),
-                    &self.category_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/category/{}", &self.category_guid));
                 Ok(url)
             }
         }
@@ -5026,11 +4989,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/category/{}",
-                    self.client.endpoint(),
-                    &self.category_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/category/{}", &self.category_guid));
                 Ok(url)
             }
         }
@@ -5111,11 +5071,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/category/{}/partial",
-                    self.client.endpoint(),
-                    &self.category_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/category/{}/partial", &self.category_guid));
                 Ok(url)
             }
         }
@@ -5233,11 +5190,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/category/{}/related",
-                    self.client.endpoint(),
-                    &self.category_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/category/{}/related", &self.category_guid));
                 Ok(url)
             }
         }
@@ -5355,11 +5309,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/category/{}/terms",
-                    self.client.endpoint(),
-                    &self.category_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/category/{}/terms", &self.category_guid));
                 Ok(url)
             }
         }
@@ -5462,7 +5413,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary/term", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/glossary/term");
                 Ok(url)
             }
         }
@@ -5576,7 +5528,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary/term/{}", self.client.endpoint(), &self.term_guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/term/{}", &self.term_guid));
                 Ok(url)
             }
         }
@@ -5680,7 +5633,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary/term/{}", self.client.endpoint(), &self.term_guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/term/{}", &self.term_guid));
                 Ok(url)
             }
         }
@@ -5766,7 +5720,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary/term/{}", self.client.endpoint(), &self.term_guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/term/{}", &self.term_guid));
                 Ok(url)
             }
         }
@@ -5858,11 +5813,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/term/{}/partial",
-                    self.client.endpoint(),
-                    &self.term_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/term/{}/partial", &self.term_guid));
                 Ok(url)
             }
         }
@@ -5965,7 +5917,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary/terms", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/glossary/terms");
                 Ok(url)
             }
         }
@@ -6083,11 +6036,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/terms/{}/assignedEntities",
-                    self.client.endpoint(),
-                    &self.term_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/terms/{}/assignedEntities", &self.term_guid));
                 Ok(url)
             }
         }
@@ -6175,11 +6125,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/terms/{}/assignedEntities",
-                    self.client.endpoint(),
-                    &self.term_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/terms/{}/assignedEntities", &self.term_guid));
                 Ok(url)
             }
         }
@@ -6255,11 +6202,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/terms/{}/assignedEntities",
-                    self.client.endpoint(),
-                    &self.term_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/terms/{}/assignedEntities", &self.term_guid));
                 Ok(url)
             }
         }
@@ -6335,11 +6279,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/terms/{}/assignedEntities",
-                    self.client.endpoint(),
-                    &self.term_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/terms/{}/assignedEntities", &self.term_guid));
                 Ok(url)
             }
         }
@@ -6456,11 +6397,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/terms/{}/related",
-                    self.client.endpoint(),
-                    &self.term_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/terms/{}/related", &self.term_guid));
                 Ok(url)
             }
         }
@@ -6551,7 +6489,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary/{}", self.client.endpoint(), &self.glossary_guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/{}", &self.glossary_guid));
                 Ok(url)
             }
         }
@@ -6655,7 +6594,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary/{}", self.client.endpoint(), &self.glossary_guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/{}", &self.glossary_guid));
                 Ok(url)
             }
         }
@@ -6741,7 +6681,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/glossary/{}", self.client.endpoint(), &self.glossary_guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/{}", &self.glossary_guid));
                 Ok(url)
             }
         }
@@ -6847,11 +6788,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/{}/categories",
-                    self.client.endpoint(),
-                    &self.glossary_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/{}/categories", &self.glossary_guid));
                 Ok(url)
             }
         }
@@ -6969,11 +6907,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/{}/categories/headers",
-                    self.client.endpoint(),
-                    &self.glossary_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/{}/categories/headers", &self.glossary_guid));
                 Ok(url)
             }
         }
@@ -7075,11 +7010,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/{}/detailed",
-                    self.client.endpoint(),
-                    &self.glossary_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/{}/detailed", &self.glossary_guid));
                 Ok(url)
             }
         }
@@ -7183,11 +7115,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/{}/partial",
-                    self.client.endpoint(),
-                    &self.glossary_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/{}/partial", &self.glossary_guid));
                 Ok(url)
             }
         }
@@ -7316,11 +7245,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/{}/terms",
-                    self.client.endpoint(),
-                    &self.glossary_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/{}/terms", &self.glossary_guid));
                 Ok(url)
             }
         }
@@ -7438,11 +7364,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/glossary/{}/terms/headers",
-                    self.client.endpoint(),
-                    &self.glossary_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/glossary/{}/terms/headers", &self.glossary_guid));
                 Ok(url)
             }
         }
@@ -7562,7 +7485,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/glossary/{}/terms/import", self.client.endpoint(), &self.glossary_guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/glossary/{}/terms/import", &self.glossary_guid));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7675,11 +7599,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/glossary/name/{}/terms/import",
-                    self.client.endpoint(),
-                    &self.glossary_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/glossary/name/{}/terms/import", &self.glossary_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7763,11 +7684,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/glossary/terms/import/{}",
-                    self.client.endpoint(),
-                    &self.operation_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/glossary/terms/import/{}", &self.operation_guid));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7898,7 +7816,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/glossary/{}/terms/export", self.client.endpoint(), &self.glossary_guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/glossary/{}/terms/export", &self.glossary_guid));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8032,7 +7951,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/glossary/name/{}/terms", self.client.endpoint(), &self.glossary_name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/glossary/name/{}/terms", &self.glossary_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8128,11 +8048,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/glossary/terms/bulkDeletion/{}",
-                    self.client.endpoint(),
-                    &self.operation_guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/glossary/terms/bulkDeletion/{}", &self.operation_guid));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8255,7 +8172,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/glossary/terms:delete", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/glossary/terms:delete");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8355,7 +8273,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/glossary/terms", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/glossary/terms");
                 Ok(url)
             }
         }
@@ -8447,7 +8366,8 @@ pub mod glossary {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/glossary/terms", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/glossary/terms");
                 Ok(url)
             }
         }
@@ -8589,7 +8509,8 @@ pub mod discovery {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/search/query", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/search/query");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8686,7 +8607,8 @@ pub mod discovery {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/search/suggest", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/search/suggest");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8783,7 +8705,8 @@ pub mod discovery {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/browse", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/browse");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8880,7 +8803,8 @@ pub mod discovery {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/search/autocomplete", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/search/autocomplete");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9081,7 +9005,8 @@ pub mod lineage {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/lineage/{}", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/lineage/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -9204,7 +9129,8 @@ pub mod lineage {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/lineage/{}/next/", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/lineage/{}/next/", &self.guid));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9354,11 +9280,8 @@ pub mod lineage {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/lineage/uniqueAttribute/type/{}",
-                    self.client.endpoint(),
-                    &self.type_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/lineage/uniqueAttribute/type/{}", &self.type_name));
                 Ok(url)
             }
         }
@@ -9501,7 +9424,8 @@ pub mod relationship {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/relationship", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/relationship");
                 Ok(url)
             }
         }
@@ -9593,7 +9517,8 @@ pub mod relationship {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/relationship", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/relationship");
                 Ok(url)
             }
         }
@@ -9695,7 +9620,8 @@ pub mod relationship {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/relationship/guid/{}", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/relationship/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -9781,7 +9707,8 @@ pub mod relationship {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/relationship/guid/{}", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/relationship/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -10089,11 +10016,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/types/businessmetadatadef/guid/{}",
-                    self.client.endpoint(),
-                    &self.guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/businessmetadatadef/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -10184,11 +10108,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/types/businessmetadatadef/name/{}",
-                    self.client.endpoint(),
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/businessmetadatadef/name/{}", &self.name));
                 Ok(url)
             }
         }
@@ -10279,11 +10200,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/types/classificationdef/guid/{}",
-                    self.client.endpoint(),
-                    &self.guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/classificationdef/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -10374,11 +10292,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/types/classificationdef/name/{}",
-                    self.client.endpoint(),
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/classificationdef/name/{}", &self.name));
                 Ok(url)
             }
         }
@@ -10469,7 +10384,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/entitydef/guid/{}", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/entitydef/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -10560,7 +10476,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/entitydef/name/{}", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/entitydef/name/{}", &self.name));
                 Ok(url)
             }
         }
@@ -10651,7 +10568,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/enumdef/guid/{}", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/enumdef/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -10742,7 +10660,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/enumdef/name/{}", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/enumdef/name/{}", &self.name));
                 Ok(url)
             }
         }
@@ -10833,11 +10752,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/types/relationshipdef/guid/{}",
-                    self.client.endpoint(),
-                    &self.guid
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/relationshipdef/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -10928,11 +10844,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/atlas/v2/types/relationshipdef/name/{}",
-                    self.client.endpoint(),
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/relationshipdef/name/{}", &self.name));
                 Ok(url)
             }
         }
@@ -11023,7 +10936,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/structdef/guid/{}", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/structdef/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -11114,7 +11028,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/structdef/name/{}", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/structdef/name/{}", &self.name));
                 Ok(url)
             }
         }
@@ -11205,7 +11120,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/typedef/guid/{}", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/typedef/guid/{}", &self.guid));
                 Ok(url)
             }
         }
@@ -11296,7 +11212,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/typedef/name/{}", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/typedef/name/{}", &self.name));
                 Ok(url)
             }
         }
@@ -11382,7 +11299,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/typedef/name/{}", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/atlas/v2/types/typedef/name/{}", &self.name));
                 Ok(url)
             }
         }
@@ -11480,7 +11398,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/typedefs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/types/typedefs");
                 Ok(url)
             }
         }
@@ -11572,7 +11491,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/typedefs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/types/typedefs");
                 Ok(url)
             }
         }
@@ -11664,7 +11584,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/typedefs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/types/typedefs");
                 Ok(url)
             }
         }
@@ -11751,7 +11672,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/typedefs", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/types/typedefs");
                 Ok(url)
             }
         }
@@ -11849,7 +11771,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/atlas/v2/types/typedefs/headers", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/atlas/v2/types/typedefs/headers");
                 Ok(url)
             }
         }
@@ -11940,7 +11863,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/types/termtemplatedef/guid/{}", self.client.endpoint(), &self.guid))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/types/termtemplatedef/guid/{}", &self.guid));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12036,7 +11960,8 @@ pub mod types {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/types/termtemplatedef/name/{}", self.client.endpoint(), &self.name))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/types/termtemplatedef/name/{}", &self.name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12192,7 +12117,8 @@ pub mod collection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/collections/{}/entity", self.client.endpoint(), &self.collection))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/collections/{}/entity", &self.collection));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12290,7 +12216,8 @@ pub mod collection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/collections/{}/entity/bulk", self.client.endpoint(), &self.collection))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/collections/{}/entity/bulk", &self.collection));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -12388,11 +12315,8 @@ pub mod collection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/collections/{}/entity/moveHere",
-                    self.client.endpoint(),
-                    &self.collection
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/collections/{}/entity/moveHere", &self.collection));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

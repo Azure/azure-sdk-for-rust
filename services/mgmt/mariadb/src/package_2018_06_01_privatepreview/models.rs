@@ -310,10 +310,10 @@ pub struct LogFileProperties {
     pub size_in_kb: Option<i64>,
     #[doc = "Creation timestamp of the log file."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "Last modified timestamp of the log file."]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time: Option<time::OffsetDateTime>,
+    pub last_modified_time: Option<::time::OffsetDateTime>,
     #[doc = "Type of the log file."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -757,10 +757,10 @@ pub struct QueryStatisticProperties {
     pub query_id: Option<String>,
     #[doc = "Observation start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Observation end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Aggregation function name."]
     #[serde(rename = "aggregationFunction", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_function: Option<String>,
@@ -875,10 +875,10 @@ pub struct RecommendationActionProperties {
     pub action_id: Option<i32>,
     #[doc = "Recommendation action creation time."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "Recommendation action expiration time."]
     #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time: Option<time::OffsetDateTime>,
+    pub expiration_time: Option<::time::OffsetDateTime>,
     #[doc = "Recommendation action reason."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
@@ -927,7 +927,7 @@ pub struct RecommendedActionSessionsOperationStatus {
     pub name: Option<String>,
     #[doc = "Operation start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Operation status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -1161,7 +1161,7 @@ pub struct ServerProperties {
     pub fully_qualified_domain_name: Option<String>,
     #[doc = "Earliest restore point creation time (ISO8601 format)"]
     #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
-    pub earliest_restore_date: Option<time::OffsetDateTime>,
+    pub earliest_restore_date: Option<::time::OffsetDateTime>,
     #[doc = "Storage Profile properties of a server"]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<StorageProfile>,
@@ -1326,13 +1326,13 @@ pub struct ServerPropertiesForRestore {
     pub source_server_id: String,
     #[doc = "Restore point creation time (ISO8601 format), specifying the time to restore from."]
     #[serde(rename = "restorePointInTime", with = "azure_core::date::rfc3339")]
-    pub restore_point_in_time: time::OffsetDateTime,
+    pub restore_point_in_time: ::time::OffsetDateTime,
 }
 impl ServerPropertiesForRestore {
     pub fn new(
         server_properties_for_create: ServerPropertiesForCreate,
         source_server_id: String,
-        restore_point_in_time: time::OffsetDateTime,
+        restore_point_in_time: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             server_properties_for_create,
@@ -1654,10 +1654,10 @@ pub struct TopQueryStatisticsInputProperties {
     pub observed_metric: String,
     #[doc = "Observation start time."]
     #[serde(rename = "observationStartTime", with = "azure_core::date::rfc3339")]
-    pub observation_start_time: time::OffsetDateTime,
+    pub observation_start_time: ::time::OffsetDateTime,
     #[doc = "Observation end time."]
     #[serde(rename = "observationEndTime", with = "azure_core::date::rfc3339")]
-    pub observation_end_time: time::OffsetDateTime,
+    pub observation_end_time: ::time::OffsetDateTime,
     #[doc = "Aggregation interval type in ISO 8601 format."]
     #[serde(rename = "aggregationWindow")]
     pub aggregation_window: String,
@@ -1667,8 +1667,8 @@ impl TopQueryStatisticsInputProperties {
         number_of_top_queries: i32,
         aggregation_function: String,
         observed_metric: String,
-        observation_start_time: time::OffsetDateTime,
-        observation_end_time: time::OffsetDateTime,
+        observation_start_time: ::time::OffsetDateTime,
+        observation_end_time: ::time::OffsetDateTime,
         aggregation_window: String,
     ) -> Self {
         Self {
@@ -1852,10 +1852,10 @@ impl WaitStatistic {
 pub struct WaitStatisticProperties {
     #[doc = "Observation start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Observation end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Wait event name."]
     #[serde(rename = "eventName", default, skip_serializing_if = "Option::is_none")]
     pub event_name: Option<String>,
@@ -1899,18 +1899,18 @@ impl WaitStatisticsInput {
 pub struct WaitStatisticsInputProperties {
     #[doc = "Observation start time."]
     #[serde(rename = "observationStartTime", with = "azure_core::date::rfc3339")]
-    pub observation_start_time: time::OffsetDateTime,
+    pub observation_start_time: ::time::OffsetDateTime,
     #[doc = "Observation end time."]
     #[serde(rename = "observationEndTime", with = "azure_core::date::rfc3339")]
-    pub observation_end_time: time::OffsetDateTime,
+    pub observation_end_time: ::time::OffsetDateTime,
     #[doc = "Aggregation interval type in ISO 8601 format."]
     #[serde(rename = "aggregationWindow")]
     pub aggregation_window: String,
 }
 impl WaitStatisticsInputProperties {
     pub fn new(
-        observation_start_time: time::OffsetDateTime,
-        observation_end_time: time::OffsetDateTime,
+        observation_start_time: ::time::OffsetDateTime,
+        observation_end_time: ::time::OffsetDateTime,
         aggregation_window: String,
     ) -> Self {
         Self {

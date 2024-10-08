@@ -1165,7 +1165,7 @@ pub struct ProductDetails {
     pub applicable_products: Vec<String>,
     #[doc = "Latest update date of the product"]
     #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_date_time: Option<time::OffsetDateTime>,
+    pub last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The product language"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
@@ -1481,7 +1481,7 @@ pub struct ProductSummary {
     pub applicable_products: Vec<String>,
     #[doc = "Latest update date of the product"]
     #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_date_time: Option<time::OffsetDateTime>,
+    pub last_modified_date_time: Option<::time::OffsetDateTime>,
 }
 impl ProductSummary {
     pub fn new(product_type: serde_json::Value) -> Self {
@@ -1913,7 +1913,7 @@ impl SearchResponse {
 pub struct StopSellInfo {
     #[doc = "A value indicating when the sale of this item is going to be stopped"]
     #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date: Option<time::OffsetDateTime>,
+    pub start_date: Option<::time::OffsetDateTime>,
     #[doc = "A value indicating the reason for stopping to sell this item. Possible values are: EndOfSupport, SecurityIssue, Other"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<serde_json::Value>,

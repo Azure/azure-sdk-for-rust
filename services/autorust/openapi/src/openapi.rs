@@ -48,7 +48,7 @@ pub struct OpenAPI {
     pub external_docs: Option<ExternalDocumentation>,
 
     /// replaces the fixed host with a host template that can be replaced with variable parameters
-    /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-parameterized-host
+    /// https://github.com/Azure/autorest/blob/main/docs/extensions/readme.md#x-ms-parameterized-host
     #[serde(rename = "x-ms-parameterized-host", skip_serializing_if = "Option::is_none")]
     pub x_ms_parameterized_host: Option<MsParameterizedHost>,
 }

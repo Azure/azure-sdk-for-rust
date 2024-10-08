@@ -967,7 +967,7 @@ impl AccountList {
 pub struct AccountProperties {
     #[doc = "Time at which the account was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of the Account"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<account_properties::ProvisioningState>,
@@ -1915,7 +1915,7 @@ pub struct ConsumerInvitationProperties {
     pub description: Option<String>,
     #[doc = "The expiration date for the share subscription created by accepting the invitation."]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Unique id of the invitation."]
     #[serde(rename = "invitationId")]
     pub invitation_id: String,
@@ -1936,10 +1936,10 @@ pub struct ConsumerInvitationProperties {
     pub provider_tenant_name: Option<String>,
     #[doc = "The time the recipient responded to the invitation."]
     #[serde(rename = "respondedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub responded_at: Option<time::OffsetDateTime>,
+    pub responded_at: Option<::time::OffsetDateTime>,
     #[doc = "Gets the time at which the invitation was sent."]
     #[serde(rename = "sentAt", default, with = "azure_core::date::rfc3339::option")]
-    pub sent_at: Option<time::OffsetDateTime>,
+    pub sent_at: Option<::time::OffsetDateTime>,
     #[doc = "Gets the source share Name."]
     #[serde(rename = "shareName", default, skip_serializing_if = "Option::is_none")]
     pub share_name: Option<String>,
@@ -2426,7 +2426,7 @@ impl InvitationList {
 pub struct InvitationProperties {
     #[doc = "The expiration date for the invitation and share subscription."]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "unique invitation id"]
     #[serde(rename = "invitationId", default, skip_serializing_if = "Option::is_none")]
     pub invitation_id: Option<String>,
@@ -2435,10 +2435,10 @@ pub struct InvitationProperties {
     pub invitation_status: Option<invitation_properties::InvitationStatus>,
     #[doc = "The time the recipient responded to the invitation."]
     #[serde(rename = "respondedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub responded_at: Option<time::OffsetDateTime>,
+    pub responded_at: Option<::time::OffsetDateTime>,
     #[doc = "Gets the time at which the invitation was sent."]
     #[serde(rename = "sentAt", default, with = "azure_core::date::rfc3339::option")]
-    pub sent_at: Option<time::OffsetDateTime>,
+    pub sent_at: Option<::time::OffsetDateTime>,
     #[doc = "The target Azure AD Id. Can't be combined with email."]
     #[serde(rename = "targetActiveDirectoryId", default, skip_serializing_if = "Option::is_none")]
     pub target_active_directory_id: Option<String>,
@@ -3113,13 +3113,13 @@ impl OperationModelProperties {
 pub struct OperationResponse {
     #[doc = "start time"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The data share error body model."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<DataShareErrorInfo>,
     #[doc = "start time"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Operation state of the long running operation."]
     pub status: operation_response::Status,
 }
@@ -3229,10 +3229,10 @@ pub struct ProviderShareSubscriptionProperties {
     pub consumer_tenant_name: Option<String>,
     #[doc = "created at"]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "Expiration date of the share subscription in UTC format"]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Email of the provider who created the share"]
     #[serde(rename = "providerEmail", default, skip_serializing_if = "Option::is_none")]
     pub provider_email: Option<String>,
@@ -3241,7 +3241,7 @@ pub struct ProviderShareSubscriptionProperties {
     pub provider_name: Option<String>,
     #[doc = "Shared at"]
     #[serde(rename = "sharedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub shared_at: Option<time::OffsetDateTime>,
+    pub shared_at: Option<::time::OffsetDateTime>,
     #[doc = "share Subscription Object Id"]
     #[serde(rename = "shareSubscriptionObjectId", default, skip_serializing_if = "Option::is_none")]
     pub share_subscription_object_id: Option<String>,
@@ -3327,7 +3327,7 @@ pub struct ScheduledSourceShareSynchronizationSettingProperties {
     pub recurrence_interval: Option<scheduled_source_share_synchronization_setting_properties::RecurrenceInterval>,
     #[doc = "Synchronization time"]
     #[serde(rename = "synchronizationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub synchronization_time: Option<time::OffsetDateTime>,
+    pub synchronization_time: Option<::time::OffsetDateTime>,
 }
 impl ScheduledSourceShareSynchronizationSettingProperties {
     pub fn new() -> Self {
@@ -3407,7 +3407,7 @@ impl ScheduledSynchronizationSetting {
 pub struct ScheduledSynchronizationSettingProperties {
     #[doc = "Time at which the synchronization setting was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the provisioning state"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<scheduled_synchronization_setting_properties::ProvisioningState>,
@@ -3416,7 +3416,7 @@ pub struct ScheduledSynchronizationSettingProperties {
     pub recurrence_interval: scheduled_synchronization_setting_properties::RecurrenceInterval,
     #[doc = "Synchronization time"]
     #[serde(rename = "synchronizationTime", with = "azure_core::date::rfc3339")]
-    pub synchronization_time: time::OffsetDateTime,
+    pub synchronization_time: ::time::OffsetDateTime,
     #[doc = "Name of the user who created the synchronization setting."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
@@ -3424,7 +3424,7 @@ pub struct ScheduledSynchronizationSettingProperties {
 impl ScheduledSynchronizationSettingProperties {
     pub fn new(
         recurrence_interval: scheduled_synchronization_setting_properties::RecurrenceInterval,
-        synchronization_time: time::OffsetDateTime,
+        synchronization_time: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             created_at: None,
@@ -3536,7 +3536,7 @@ impl ScheduledTrigger {
 pub struct ScheduledTriggerProperties {
     #[doc = "Time at which the trigger was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "Gets the provisioning state"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<scheduled_trigger_properties::ProvisioningState>,
@@ -3548,7 +3548,7 @@ pub struct ScheduledTriggerProperties {
     pub synchronization_mode: Option<scheduled_trigger_properties::SynchronizationMode>,
     #[doc = "Synchronization time"]
     #[serde(rename = "synchronizationTime", with = "azure_core::date::rfc3339")]
-    pub synchronization_time: time::OffsetDateTime,
+    pub synchronization_time: ::time::OffsetDateTime,
     #[doc = "Gets the trigger state"]
     #[serde(rename = "triggerStatus", default, skip_serializing_if = "Option::is_none")]
     pub trigger_status: Option<scheduled_trigger_properties::TriggerStatus>,
@@ -3557,7 +3557,10 @@ pub struct ScheduledTriggerProperties {
     pub user_name: Option<String>,
 }
 impl ScheduledTriggerProperties {
-    pub fn new(recurrence_interval: scheduled_trigger_properties::RecurrenceInterval, synchronization_time: time::OffsetDateTime) -> Self {
+    pub fn new(
+        recurrence_interval: scheduled_trigger_properties::RecurrenceInterval,
+        synchronization_time: ::time::OffsetDateTime,
+    ) -> Self {
         Self {
             created_at: None,
             provisioning_state: None,
@@ -3769,7 +3772,7 @@ impl ShareList {
 pub struct ShareProperties {
     #[doc = "Time at which the share was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "Share description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -3918,10 +3921,10 @@ impl ShareSubscriptionList {
 pub struct ShareSubscriptionProperties {
     #[doc = "Time at which the share subscription was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The expiration date of the share subscription."]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "The invitation id."]
     #[serde(rename = "invitationId")]
     pub invitation_id: String,
@@ -4115,13 +4118,13 @@ pub struct ShareSubscriptionSynchronization {
     pub duration_ms: Option<i32>,
     #[doc = "End time of synchronization"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "message of Synchronization"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "start time of synchronization"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Raw Status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -4222,13 +4225,13 @@ pub struct ShareSynchronization {
     pub duration_ms: Option<i32>,
     #[doc = "End time of synchronization"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "message of synchronization"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "start time of synchronization"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Raw Status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -4880,7 +4883,7 @@ pub struct SynchronizationDetails {
     pub duration_ms: Option<i32>,
     #[doc = "End time of data set level copy"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The number of files read from the source data set"]
     #[serde(rename = "filesRead", default, skip_serializing_if = "Option::is_none")]
     pub files_read: Option<i64>,
@@ -4907,7 +4910,7 @@ pub struct SynchronizationDetails {
     pub size_written: Option<i64>,
     #[doc = "Start time of data set level copy"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Raw Status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -5106,7 +5109,7 @@ pub mod synchronize {
 pub struct SystemData {
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -5115,7 +5118,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,

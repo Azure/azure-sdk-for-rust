@@ -20,7 +20,7 @@ pub struct ApiKey {
     pub connection_string: Option<String>,
     #[doc = "The last time any of the key's properties were modified."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[doc = "Whether this key can only be used for read operations."]
     #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
     pub read_only: Option<bool>,
@@ -171,7 +171,7 @@ pub struct ConfigurationStoreProperties {
     pub provisioning_state: Option<configuration_store_properties::ProvisioningState>,
     #[doc = "The creation date of configuration store."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
     #[doc = "The DNS endpoint where the configuration store API will be available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
@@ -536,10 +536,10 @@ pub struct DeletedConfigurationStoreProperties {
     pub location: Option<String>,
     #[doc = "The deleted date."]
     #[serde(rename = "deletionDate", default, with = "azure_core::date::rfc3339::option")]
-    pub deletion_date: Option<time::OffsetDateTime>,
+    pub deletion_date: Option<::time::OffsetDateTime>,
     #[doc = "The scheduled purged date."]
     #[serde(rename = "scheduledPurgeDate", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_purge_date: Option<time::OffsetDateTime>,
+    pub scheduled_purge_date: Option<::time::OffsetDateTime>,
     #[doc = "Tags of the original configuration store."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -727,7 +727,7 @@ pub struct KeyValueProperties {
     pub e_tag: Option<String>,
     #[doc = "The last time a modifying operation was performed on the given key-value."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[doc = "A value indicating whether the key-value is locked.\r\nA locked key-value may not be modified until it is unlocked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locked: Option<bool>,
@@ -1532,10 +1532,10 @@ pub struct SnapshotProperties {
     pub composition_type: Option<snapshot_properties::CompositionType>,
     #[doc = "The time that the snapshot was created."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The time that the snapshot will expire."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expires: Option<time::OffsetDateTime>,
+    pub expires: Option<::time::OffsetDateTime>,
     #[doc = "The amount of time, in seconds, that a snapshot will remain in the archived state before expiring. This property is only writable during the creation of a snapshot. If not specified, the default lifetime of key-value revisions will be used."]
     #[serde(rename = "retentionPeriod", default, skip_serializing_if = "Option::is_none")]
     pub retention_period: Option<i64>,
@@ -1742,7 +1742,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1751,7 +1751,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

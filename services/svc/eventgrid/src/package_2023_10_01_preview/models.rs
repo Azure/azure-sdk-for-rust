@@ -3,18 +3,6 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Array of lock tokens for the corresponding received Cloud Events to be acknowledged."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AcknowledgeOptions {
-    #[doc = "Array of lock tokens."]
-    #[serde(rename = "lockTokens")]
-    pub lock_tokens: Vec<String>,
-}
-impl AcknowledgeOptions {
-    pub fn new(lock_tokens: Vec<String>) -> Self {
-        Self { lock_tokens }
-    }
-}
 #[doc = "The result of the Acknowledge operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcknowledgeResult {
@@ -36,7 +24,7 @@ impl AcknowledgeResult {
 #[doc = "Schema of common properties of all chat events"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatEventBaseProperties {
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "recipientCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub recipient_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The transaction id will be used as co-relation vector"]
@@ -73,7 +61,7 @@ pub struct AcsChatMessageDeletedEventData {
     pub acs_chat_message_event_base_properties: AcsChatMessageEventBaseProperties,
     #[doc = "The time at which the message was deleted"]
     #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
-    pub delete_time: Option<time::OffsetDateTime>,
+    pub delete_time: Option<::time::OffsetDateTime>,
 }
 impl AcsChatMessageDeletedEventData {
     pub fn new() -> Self {
@@ -87,7 +75,7 @@ pub struct AcsChatMessageDeletedInThreadEventData {
     pub acs_chat_message_event_in_thread_base_properties: AcsChatMessageEventInThreadBaseProperties,
     #[doc = "The time at which the message was deleted"]
     #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
-    pub delete_time: Option<time::OffsetDateTime>,
+    pub delete_time: Option<::time::OffsetDateTime>,
 }
 impl AcsChatMessageDeletedInThreadEventData {
     pub fn new() -> Self {
@@ -107,7 +95,7 @@ pub struct AcsChatMessageEditedEventData {
     pub metadata: Option<serde_json::Value>,
     #[doc = "The time at which the message was edited"]
     #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
-    pub edit_time: Option<time::OffsetDateTime>,
+    pub edit_time: Option<::time::OffsetDateTime>,
 }
 impl AcsChatMessageEditedEventData {
     pub fn new() -> Self {
@@ -127,7 +115,7 @@ pub struct AcsChatMessageEditedInThreadEventData {
     pub metadata: Option<serde_json::Value>,
     #[doc = "The time at which the message was edited"]
     #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
-    pub edit_time: Option<time::OffsetDateTime>,
+    pub edit_time: Option<::time::OffsetDateTime>,
 }
 impl AcsChatMessageEditedInThreadEventData {
     pub fn new() -> Self {
@@ -142,7 +130,7 @@ pub struct AcsChatMessageEventBaseProperties {
     #[doc = "The chat message id"]
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "senderCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub sender_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The display name of the sender"]
@@ -150,7 +138,7 @@ pub struct AcsChatMessageEventBaseProperties {
     pub sender_display_name: Option<String>,
     #[doc = "The original compose time of the message"]
     #[serde(rename = "composeTime", default, with = "azure_core::date::rfc3339::option")]
-    pub compose_time: Option<time::OffsetDateTime>,
+    pub compose_time: Option<::time::OffsetDateTime>,
     #[doc = "The type of the message"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -171,7 +159,7 @@ pub struct AcsChatMessageEventInThreadBaseProperties {
     #[doc = "The chat message id"]
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "senderCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub sender_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The display name of the sender"]
@@ -179,7 +167,7 @@ pub struct AcsChatMessageEventInThreadBaseProperties {
     pub sender_display_name: Option<String>,
     #[doc = "The original compose time of the message"]
     #[serde(rename = "composeTime", default, with = "azure_core::date::rfc3339::option")]
-    pub compose_time: Option<time::OffsetDateTime>,
+    pub compose_time: Option<::time::OffsetDateTime>,
     #[doc = "The type of the message"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -233,8 +221,8 @@ pub struct AcsChatParticipantAddedToThreadEventData {
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
     #[doc = "The time at which the user was added to the thread"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    pub time: Option<::time::OffsetDateTime>,
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "addedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub added_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "Schema of the chat thread participant"]
@@ -256,8 +244,8 @@ pub struct AcsChatParticipantAddedToThreadWithUserEventData {
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
     #[doc = "The time at which the user was added to the thread"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    pub time: Option<::time::OffsetDateTime>,
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "addedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub added_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "Schema of the chat thread participant"]
@@ -276,8 +264,8 @@ pub struct AcsChatParticipantRemovedFromThreadEventData {
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
     #[doc = "The time at which the user was removed to the thread"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    pub time: Option<::time::OffsetDateTime>,
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "removedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub removed_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "Schema of the chat thread participant"]
@@ -299,8 +287,8 @@ pub struct AcsChatParticipantRemovedFromThreadWithUserEventData {
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
     #[doc = "The time at which the user was removed to the thread"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    pub time: Option<::time::OffsetDateTime>,
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "removedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub removed_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "Schema of the chat thread participant"]
@@ -317,12 +305,15 @@ impl AcsChatParticipantRemovedFromThreadWithUserEventData {
 pub struct AcsChatThreadCreatedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "createdByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub created_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The thread properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "The chat thread created metadata"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
     #[doc = "The list of properties of participants who are part of the thread"]
     #[serde(
         default,
@@ -341,7 +332,7 @@ impl AcsChatThreadCreatedEventData {
 pub struct AcsChatThreadCreatedWithUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "createdByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub created_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The thread properties"]
@@ -368,12 +359,12 @@ impl AcsChatThreadCreatedWithUserEventData {
 pub struct AcsChatThreadDeletedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "deletedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub deleted_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The deletion time of the thread"]
     #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
-    pub delete_time: Option<time::OffsetDateTime>,
+    pub delete_time: Option<::time::OffsetDateTime>,
 }
 impl AcsChatThreadDeletedEventData {
     pub fn new() -> Self {
@@ -387,7 +378,7 @@ pub struct AcsChatThreadEventBaseProperties {
     pub acs_chat_event_base_properties: AcsChatEventBaseProperties,
     #[doc = "The original creation time of the thread"]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    pub create_time: Option<::time::OffsetDateTime>,
     #[doc = "The version of the thread"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
@@ -404,7 +395,7 @@ pub struct AcsChatThreadEventInThreadBaseProperties {
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
     #[doc = "The original creation time of the thread"]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    pub create_time: Option<::time::OffsetDateTime>,
     #[doc = "The version of the thread"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
@@ -420,7 +411,7 @@ pub struct AcsChatThreadParticipantProperties {
     #[doc = "The name of the user"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "participantCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub participant_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The metadata of the user"]
@@ -437,12 +428,12 @@ impl AcsChatThreadParticipantProperties {
 pub struct AcsChatThreadPropertiesUpdatedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "editedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub edited_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The time at which the properties of the thread were updated"]
     #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
-    pub edit_time: Option<time::OffsetDateTime>,
+    pub edit_time: Option<::time::OffsetDateTime>,
     #[doc = "The updated thread properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
@@ -460,12 +451,12 @@ impl AcsChatThreadPropertiesUpdatedEventData {
 pub struct AcsChatThreadPropertiesUpdatedPerUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "editedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub edited_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The time at which the properties of the thread were updated"]
     #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
-    pub edit_time: Option<time::OffsetDateTime>,
+    pub edit_time: Option<::time::OffsetDateTime>,
     #[doc = "The thread metadata"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
@@ -483,12 +474,12 @@ impl AcsChatThreadPropertiesUpdatedPerUserEventData {
 pub struct AcsChatThreadWithUserDeletedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "deletedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub deleted_by_communication_identifier: Option<CommunicationIdentifierModel>,
     #[doc = "The deletion time of the thread"]
     #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
-    pub delete_time: Option<time::OffsetDateTime>,
+    pub delete_time: Option<::time::OffsetDateTime>,
 }
 impl AcsChatThreadWithUserDeletedEventData {
     pub fn new() -> Self {
@@ -514,8 +505,8 @@ pub struct AcsEmailDeliveryReportReceivedEventData {
     #[serde(rename = "deliveryStatusDetails", default, skip_serializing_if = "Option::is_none")]
     pub delivery_status_details: Option<AcsEmailDeliveryReportStatusDetails>,
     #[doc = "The time at which the email delivery report received timestamp"]
-    #[serde(rename = "deliveryAttemptTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub delivery_attempt_time_stamp: Option<time::OffsetDateTime>,
+    #[serde(rename = "deliveryAttemptTimestamp", default, with = "azure_core::date::rfc3339::option")]
+    pub delivery_attempt_timestamp: Option<::time::OffsetDateTime>,
 }
 impl AcsEmailDeliveryReportReceivedEventData {
     pub fn new() -> Self {
@@ -595,8 +586,8 @@ pub struct AcsEmailEngagementTrackingReportReceivedEventData {
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
     #[doc = "The time at which the user interacted with the email"]
-    #[serde(rename = "userActionTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub user_action_time_stamp: Option<time::OffsetDateTime>,
+    #[serde(rename = "userActionTimestamp", default, with = "azure_core::date::rfc3339::option")]
+    pub user_action_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The context of the type of engagement user had with email"]
     #[serde(rename = "engagementContext", default, skip_serializing_if = "Option::is_none")]
     pub engagement_context: Option<String>,
@@ -672,10 +663,10 @@ impl AcsIncomingCallCustomContext {
 #[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Communication.IncomingCall event"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsIncomingCallEventData {
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub to: Option<CommunicationIdentifierModel>,
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub from: Option<CommunicationIdentifierModel>,
     #[doc = "The Id of the server call"]
@@ -690,6 +681,9 @@ pub struct AcsIncomingCallEventData {
     #[doc = "Signed incoming call context."]
     #[serde(rename = "incomingCallContext", default, skip_serializing_if = "Option::is_none")]
     pub incoming_call_context: Option<String>,
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
+    #[serde(rename = "onBehalfOfCallee", default, skip_serializing_if = "Option::is_none")]
+    pub on_behalf_of_callee: Option<CommunicationIdentifierModel>,
     #[doc = "CorrelationId (CallId)."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
@@ -697,6 +691,361 @@ pub struct AcsIncomingCallEventData {
 impl AcsIncomingCallEventData {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Message Button Content"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageButtonContent {
+    #[doc = "The Text of the button"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[doc = "The Payload of the button which was clicked by the user, setup by the business"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub payload: Option<String>,
+}
+impl AcsMessageButtonContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Message Channel Event Error"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageChannelEventError {
+    #[doc = "The channel error code"]
+    #[serde(rename = "channelCode", default, skip_serializing_if = "Option::is_none")]
+    pub channel_code: Option<String>,
+    #[doc = "The channel error message"]
+    #[serde(rename = "channelMessage", default, skip_serializing_if = "Option::is_none")]
+    pub channel_message: Option<String>,
+}
+impl AcsMessageChannelEventError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Message Context"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageContext {
+    #[doc = "The WhatsApp ID for the customer who replied to an inbound message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[doc = "The message ID for the sent message for an inbound reply"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl AcsMessageContext {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.AdvancedMessageDeliveryStatusUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageDeliveryStatusUpdatedEventData {
+    #[serde(flatten)]
+    pub acs_message_event_data: AcsMessageEventData,
+    #[doc = "The message id"]
+    #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
+    #[doc = "The updated message status"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<acs_message_delivery_status_updated_event_data::Status>,
+    #[doc = "The updated message channel type"]
+    #[serde(rename = "channelType", default, skip_serializing_if = "Option::is_none")]
+    pub channel_type: Option<acs_message_delivery_status_updated_event_data::ChannelType>,
+}
+impl AcsMessageDeliveryStatusUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod acs_message_delivery_status_updated_event_data {
+    use super::*;
+    #[doc = "The updated message status"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Read,
+        Delivered,
+        Failed,
+        Sent,
+        Warning,
+        Unknown,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Read => serializer.serialize_unit_variant("Status", 0u32, "Read"),
+                Self::Delivered => serializer.serialize_unit_variant("Status", 1u32, "Delivered"),
+                Self::Failed => serializer.serialize_unit_variant("Status", 2u32, "Failed"),
+                Self::Sent => serializer.serialize_unit_variant("Status", 3u32, "Sent"),
+                Self::Warning => serializer.serialize_unit_variant("Status", 4u32, "Warning"),
+                Self::Unknown => serializer.serialize_unit_variant("Status", 5u32, "Unknown"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "The updated message channel type"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ChannelType")]
+    pub enum ChannelType {
+        #[serde(rename = "whatsapp")]
+        Whatsapp,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ChannelType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ChannelType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ChannelType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Whatsapp => serializer.serialize_unit_variant("ChannelType", 0u32, "whatsapp"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Schema of common properties of all chat thread events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageEventData {
+    #[doc = "The message sender"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[doc = "The message recipient"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub to: Option<String>,
+    #[doc = "The time message was received"]
+    #[serde(rename = "receivedTimestamp", default, with = "azure_core::date::rfc3339::option")]
+    pub received_timestamp: Option<::time::OffsetDateTime>,
+    #[doc = "Message Channel Event Error"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<AcsMessageChannelEventError>,
+}
+impl AcsMessageEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Message Interactive button reply content for a user to business message"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageInteractiveButtonReplyContent {
+    #[doc = "The ID of the button"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The title of the button"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+}
+impl AcsMessageInteractiveButtonReplyContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Message Interactive Content"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageInteractiveContent {
+    #[doc = "The Message interactive reply type"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<acs_message_interactive_content::Type>,
+    #[doc = "Message Interactive button reply content for a user to business message"]
+    #[serde(rename = "buttonReply", default, skip_serializing_if = "Option::is_none")]
+    pub button_reply: Option<AcsMessageInteractiveButtonReplyContent>,
+    #[doc = "Message Interactive list reply content for a user to business message"]
+    #[serde(rename = "listReply", default, skip_serializing_if = "Option::is_none")]
+    pub list_reply: Option<AcsMessageInteractiveListReplyContent>,
+}
+impl AcsMessageInteractiveContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod acs_message_interactive_content {
+    use super::*;
+    #[doc = "The Message interactive reply type"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        #[serde(rename = "buttonReply")]
+        ButtonReply,
+        #[serde(rename = "listReply")]
+        ListReply,
+        #[serde(rename = "unknown")]
+        Unknown,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::ButtonReply => serializer.serialize_unit_variant("Type", 0u32, "buttonReply"),
+                Self::ListReply => serializer.serialize_unit_variant("Type", 1u32, "listReply"),
+                Self::Unknown => serializer.serialize_unit_variant("Type", 2u32, "unknown"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Message Interactive list reply content for a user to business message"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageInteractiveListReplyContent {
+    #[doc = "The ID of the selected list item"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The title of the selected list item"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[doc = "The description of the selected row"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+impl AcsMessageInteractiveListReplyContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Message Media Content"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageMediaContent {
+    #[doc = "The MIME type of the file this media represents"]
+    #[serde(rename = "mimeType", default, skip_serializing_if = "Option::is_none")]
+    pub mime_type: Option<String>,
+    #[doc = "The media identifier"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The filename of the underlying media file as specified when uploaded"]
+    #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
+    pub file_name: Option<String>,
+    #[doc = "The caption for the media object, if supported and provided"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub caption: Option<String>,
+}
+impl AcsMessageMediaContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.AdvancedMessageReceived event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageReceivedEventData {
+    #[serde(flatten)]
+    pub acs_message_event_data: AcsMessageEventData,
+    #[doc = "The received message content"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[doc = "The received message channel Kind"]
+    #[serde(rename = "channelType", default, skip_serializing_if = "Option::is_none")]
+    pub channel_type: Option<acs_message_received_event_data::ChannelType>,
+    #[doc = "Message Media Content"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub media: Option<AcsMessageMediaContent>,
+    #[doc = "Message Context"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context: Option<AcsMessageContext>,
+    #[doc = "Message Button Content"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub button: Option<AcsMessageButtonContent>,
+    #[doc = "Message Interactive Content"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interactive: Option<AcsMessageInteractiveContent>,
+}
+impl AcsMessageReceivedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod acs_message_received_event_data {
+    use super::*;
+    #[doc = "The received message channel Kind"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ChannelType")]
+    pub enum ChannelType {
+        #[serde(rename = "whatsapp")]
+        Whatsapp,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ChannelType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ChannelType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ChannelType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Whatsapp => serializer.serialize_unit_variant("ChannelType", 0u32, "whatsapp"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Schema for all properties of  Recording Chunk Information."]
@@ -734,7 +1083,7 @@ pub struct AcsRecordingFileStatusUpdatedEventData {
     pub recording_storage_info: Option<AcsRecordingStorageInfoProperties>,
     #[doc = "The time at which the recording started"]
     #[serde(rename = "recordingStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub recording_start_time: Option<time::OffsetDateTime>,
+    pub recording_start_time: Option<::time::OffsetDateTime>,
     #[doc = "The recording duration in milliseconds"]
     #[serde(rename = "recordingDurationMs", default, skip_serializing_if = "Option::is_none")]
     pub recording_duration_ms: Option<i64>,
@@ -1158,7 +1507,7 @@ pub struct AcsRouterJobReceivedEventData {
     pub requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
     #[doc = "Router Job Received Scheduled Time in UTC"]
     #[serde(rename = "scheduledOn", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_on: Option<time::OffsetDateTime>,
+    pub scheduled_on: Option<::time::OffsetDateTime>,
     #[doc = "Unavailable For Matching for Router Job Received"]
     #[serde(rename = "unavailableForMatching")]
     pub unavailable_for_matching: bool,
@@ -1262,7 +1611,7 @@ pub struct AcsRouterJobSchedulingFailedEventData {
     pub expired_requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
     #[doc = "Router Job Scheduling Failed Scheduled Time in UTC"]
     #[serde(rename = "scheduledOn", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_on: Option<time::OffsetDateTime>,
+    pub scheduled_on: Option<::time::OffsetDateTime>,
     #[doc = "Router Job Scheduling Failed Reason"]
     #[serde(rename = "failureReason", default, skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
@@ -1315,7 +1664,7 @@ pub struct AcsRouterJobWaitingForActivationEventData {
     pub expired_requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
     #[doc = "Router Job Waiting For Activation Scheduled Time in UTC"]
     #[serde(rename = "scheduledOn", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_on: Option<time::OffsetDateTime>,
+    pub scheduled_on: Option<::time::OffsetDateTime>,
     #[doc = "Router Job Waiting For Activation Unavailable For Matching"]
     #[serde(rename = "unavailableForMatching")]
     pub unavailable_for_matching: bool,
@@ -1502,10 +1851,10 @@ pub struct AcsRouterWorkerOfferIssuedEventData {
     pub worker_labels: Option<serde_json::Value>,
     #[doc = "Router Worker Offer Issued Time in UTC"]
     #[serde(rename = "offeredOn", default, with = "azure_core::date::rfc3339::option")]
-    pub offered_on: Option<time::OffsetDateTime>,
+    pub offered_on: Option<::time::OffsetDateTime>,
     #[doc = "Router Worker Offer Issued Expiration Time in UTC"]
     #[serde(rename = "expiresOn", default, with = "azure_core::date::rfc3339::option")]
-    pub expires_on: Option<time::OffsetDateTime>,
+    pub expires_on: Option<::time::OffsetDateTime>,
     #[doc = "Router Worker Offer Issued Worker Tags"]
     #[serde(rename = "workerTags", default, skip_serializing_if = "Option::is_none")]
     pub worker_tags: Option<serde_json::Value>,
@@ -1585,8 +1934,8 @@ pub struct AcsRouterWorkerSelector {
     #[serde(rename = "labelOperator", default, skip_serializing_if = "Option::is_none")]
     pub label_operator: Option<acs_router_worker_selector::LabelOperator>,
     #[doc = "Router Job Worker Selector Value"]
-    #[serde(rename = "labelValue", default, skip_serializing_if = "Option::is_none")]
-    pub label_value: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
     #[doc = "Router Job Worker Selector Time to Live in Seconds"]
     #[serde(rename = "ttlSeconds", default, skip_serializing_if = "Option::is_none")]
     pub ttl_seconds: Option<f64>,
@@ -1595,7 +1944,7 @@ pub struct AcsRouterWorkerSelector {
     pub state: Option<acs_router_worker_selector::State>,
     #[doc = "Router Job Worker Selector Expiration Time"]
     #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time: Option<time::OffsetDateTime>,
+    pub expiration_time: Option<::time::OffsetDateTime>,
 }
 impl AcsRouterWorkerSelector {
     pub fn new() -> Self {
@@ -1689,12 +2038,57 @@ pub mod acs_router_worker_selector {
         }
     }
 }
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerUpdated event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterWorkerUpdatedEventData {
+    #[doc = "Router Worker Updated Worker Id"]
+    #[serde(rename = "workerId", default, skip_serializing_if = "Option::is_none")]
+    pub worker_id: Option<String>,
+    #[doc = "Router Worker Updated Queue Info"]
+    #[serde(
+        rename = "queueAssignments",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub queue_assignments: Vec<AcsRouterQueueDetails>,
+    #[doc = "Router Worker Updated Channel Configuration"]
+    #[serde(
+        rename = "channelConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub channel_configurations: Vec<AcsRouterChannelConfiguration>,
+    #[doc = "Router Worker Updated Total Capacity"]
+    #[serde(rename = "totalCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub total_capacity: Option<i32>,
+    #[doc = "Router Worker Updated Labels"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub labels: Option<serde_json::Value>,
+    #[doc = "Router Worker Updated Tags"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "Router Worker Properties Updated"]
+    #[serde(
+        rename = "updatedWorkerProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub updated_worker_properties: Vec<String>,
+}
+impl AcsRouterWorkerUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Schema for details of a delivery attempt"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsSmsDeliveryAttemptProperties {
     #[doc = "TimeStamp when delivery was attempted"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Number of segments that were successfully delivered"]
     #[serde(rename = "segmentsSucceeded", default, skip_serializing_if = "Option::is_none")]
     pub segments_succeeded: Option<i64>,
@@ -1728,7 +2122,7 @@ pub struct AcsSmsDeliveryReportReceivedEventData {
     pub delivery_attempts: Vec<AcsSmsDeliveryAttemptProperties>,
     #[doc = "The time at which the SMS delivery report was received"]
     #[serde(rename = "receivedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub received_timestamp: Option<time::OffsetDateTime>,
+    pub received_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Customer Content"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
@@ -1766,7 +2160,7 @@ pub struct AcsSmsReceivedEventData {
     pub message: Option<String>,
     #[doc = "The time at which the SMS was received"]
     #[serde(rename = "receivedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub received_timestamp: Option<time::OffsetDateTime>,
+    pub received_timestamp: Option<::time::OffsetDateTime>,
 }
 impl AcsSmsReceivedEventData {
     pub fn new() -> Self {
@@ -1776,7 +2170,7 @@ impl AcsSmsReceivedEventData {
 #[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Communication.UserDisconnected event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsUserDisconnectedEventData {
-    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
     #[serde(rename = "userCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub user_communication_identifier: Option<CommunicationIdentifierModel>,
 }
@@ -2373,6 +2767,220 @@ impl Serialize for AsyncStatus {
         }
     }
 }
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterCreated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterCreatedEventData {
+    #[serde(flatten)]
+    pub avs_cluster_event_data: AvsClusterEventData,
+}
+impl AvsClusterCreatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterDeleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterDeletedEventData {
+    #[serde(flatten)]
+    pub avs_cluster_event_data: AvsClusterEventData,
+}
+impl AvsClusterDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for Microsoft.AVS/clusters events."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterEventData {
+    #[doc = "Id of the operation that caused this event."]
+    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
+    pub operation_id: Option<String>,
+    #[doc = "Hosts added to the cluster in this event, if any."]
+    #[serde(
+        rename = "addedHostNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub added_host_names: Vec<String>,
+    #[doc = "Hosts removed to the cluster in this event, if any."]
+    #[serde(
+        rename = "removedHostNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub removed_host_names: Vec<String>,
+    #[doc = "Hosts in Maintenance mode in the cluster, if any."]
+    #[serde(
+        rename = "inMaintenanceHostNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub in_maintenance_host_names: Vec<String>,
+}
+impl AvsClusterEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterFailed event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterFailedEventData {
+    #[serde(flatten)]
+    pub avs_cluster_event_data: AvsClusterEventData,
+    #[doc = "Failure reason of an event."]
+    #[serde(rename = "failureMessage", default, skip_serializing_if = "Option::is_none")]
+    pub failure_message: Option<String>,
+}
+impl AvsClusterFailedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterUpdatedEventData {
+    #[serde(flatten)]
+    pub avs_cluster_event_data: AvsClusterEventData,
+}
+impl AvsClusterUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterUpdating event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsClusterUpdatingEventData {
+    #[serde(flatten)]
+    pub avs_cluster_event_data: AvsClusterEventData,
+}
+impl AvsClusterUpdatingEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for Microsoft.AVS/privateClouds events."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsPrivateCloudEventData {
+    #[doc = "Id of the operation that caused this event."]
+    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
+    pub operation_id: Option<String>,
+}
+impl AvsPrivateCloudEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.PrivateCloudFailed event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsPrivateCloudFailedEventData {
+    #[serde(flatten)]
+    pub avs_private_cloud_event_data: AvsPrivateCloudEventData,
+    #[doc = "Failure reason of an event."]
+    #[serde(rename = "failureMessage", default, skip_serializing_if = "Option::is_none")]
+    pub failure_message: Option<String>,
+}
+impl AvsPrivateCloudFailedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.PrivateCloudUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsPrivateCloudUpdatedEventData {
+    #[serde(flatten)]
+    pub avs_private_cloud_event_data: AvsPrivateCloudEventData,
+}
+impl AvsPrivateCloudUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.PrivateCloudUpdating event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsPrivateCloudUpdatingEventData {
+    #[serde(flatten)]
+    pub avs_private_cloud_event_data: AvsPrivateCloudEventData,
+}
+impl AvsPrivateCloudUpdatingEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionCancelled event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsScriptExecutionCancelledEventData {
+    #[serde(flatten)]
+    pub avs_script_execution_event_data: AvsScriptExecutionEventData,
+}
+impl AvsScriptExecutionCancelledEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for Microsoft.AVS/scriptExecutions events."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsScriptExecutionEventData {
+    #[doc = "Id of the operation that caused this event."]
+    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
+    pub operation_id: Option<String>,
+    #[doc = "Cmdlet referenced in the execution that caused this event."]
+    #[serde(rename = "cmdletId", default, skip_serializing_if = "Option::is_none")]
+    pub cmdlet_id: Option<String>,
+    #[doc = "Stdout outputs from the execution, if any."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub output: Vec<String>,
+}
+impl AvsScriptExecutionEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionFailed event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsScriptExecutionFailedEventData {
+    #[serde(flatten)]
+    pub avs_script_execution_event_data: AvsScriptExecutionEventData,
+    #[doc = "Failure reason of an event."]
+    #[serde(rename = "failureMessage", default, skip_serializing_if = "Option::is_none")]
+    pub failure_message: Option<String>,
+}
+impl AvsScriptExecutionFailedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionFinished event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsScriptExecutionFinishedEventData {
+    #[serde(flatten)]
+    pub avs_script_execution_event_data: AvsScriptExecutionEventData,
+    #[doc = "Named outputs of completed execution, if any."]
+    #[serde(rename = "namedOutputs", default, skip_serializing_if = "Option::is_none")]
+    pub named_outputs: Option<serde_json::Value>,
+}
+impl AvsScriptExecutionFinishedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionStarted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvsScriptExecutionStartedEventData {
+    #[serde(flatten)]
+    pub avs_script_execution_event_data: AvsScriptExecutionEventData,
+}
+impl AvsScriptExecutionStartedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The error object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureCoreFoundationsError {
@@ -2467,7 +3075,7 @@ pub struct CloudEvent {
     pub type_: String,
     #[doc = "The time (in UTC) the event was generated, in RFC3339 format."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
+    pub time: Option<::time::OffsetDateTime>,
     #[doc = "The version of the CloudEvents specification which the event uses."]
     pub specversion: String,
     #[doc = "Identifies the schema that data adheres to."]
@@ -2481,53 +3089,6 @@ pub struct CloudEvent {
     pub subject: Option<String>,
 }
 impl CloudEvent {
-    pub fn new(id: String, source: String, type_: String, specversion: String) -> Self {
-        Self {
-            id,
-            source,
-            data: None,
-            data_base64: None,
-            type_,
-            time: None,
-            specversion,
-            dataschema: None,
-            datacontenttype: None,
-            subject: None,
-        }
-    }
-}
-#[doc = "Properties of an event published to an Event Grid topic using the CloudEvent 1.0 Schema"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudEventEvent {
-    #[doc = "An identifier for the event. The combination of id and source must be unique for each distinct event."]
-    pub id: String,
-    #[doc = "Identifies the context in which an event happened. The combination of id and source must be unique for each distinct event."]
-    pub source: String,
-    #[doc = "Event data specific to the event type."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub data: Option<serde_json::Value>,
-    #[doc = "Event data specific to the event type, encoded as a base64 string."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub data_base64: Option<String>,
-    #[doc = "Type of event related to the originating occurrence."]
-    #[serde(rename = "type")]
-    pub type_: String,
-    #[doc = "The time (in UTC) the event was generated, in RFC3339 format."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
-    #[doc = "The version of the CloudEvents specification which the event uses."]
-    pub specversion: String,
-    #[doc = "Identifies the schema that data adheres to."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dataschema: Option<String>,
-    #[doc = "Content type of data value."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub datacontenttype: Option<String>,
-    #[doc = "This describes the subject of the event in the context of the event producer (identified by source)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subject: Option<String>,
-}
-impl CloudEventEvent {
     pub fn new(id: String, source: String, type_: String, specversion: String) -> Self {
         Self {
             id,
@@ -2585,9 +3146,12 @@ impl Serialize for CommunicationCloudEnvironmentModel {
         }
     }
 }
-#[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+#[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model is polymorphic: Apart from kind and rawId, at most one further property may be set which must match the kind enum value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CommunicationIdentifierModel {
+    #[doc = "The identifier kind, for example 'communicationUser' or 'phoneNumber'."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<CommunicationIdentifierModelKind>,
     #[doc = "Raw Id of the identifier. Optional in requests, required in responses."]
     #[serde(rename = "rawId", default, skip_serializing_if = "Option::is_none")]
     pub raw_id: Option<String>,
@@ -2600,10 +3164,61 @@ pub struct CommunicationIdentifierModel {
     #[doc = "A Microsoft Teams user."]
     #[serde(rename = "microsoftTeamsUser", default, skip_serializing_if = "Option::is_none")]
     pub microsoft_teams_user: Option<MicrosoftTeamsUserIdentifierModel>,
+    #[doc = "A Microsoft Teams application."]
+    #[serde(rename = "microsoftTeamsApp", default, skip_serializing_if = "Option::is_none")]
+    pub microsoft_teams_app: Option<MicrosoftTeamsAppIdentifierModel>,
 }
 impl CommunicationIdentifierModel {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The identifier kind, for example 'communicationUser' or 'phoneNumber'."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "CommunicationIdentifierModelKind")]
+pub enum CommunicationIdentifierModelKind {
+    #[serde(rename = "unknown")]
+    Unknown,
+    #[serde(rename = "communicationUser")]
+    CommunicationUser,
+    #[serde(rename = "phoneNumber")]
+    PhoneNumber,
+    #[serde(rename = "microsoftTeamsUser")]
+    MicrosoftTeamsUser,
+    #[serde(rename = "microsoftTeamsApp")]
+    MicrosoftTeamsApp,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for CommunicationIdentifierModelKind {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for CommunicationIdentifierModelKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for CommunicationIdentifierModelKind {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Unknown => serializer.serialize_unit_variant("CommunicationIdentifierModelKind", 0u32, "unknown"),
+            Self::CommunicationUser => serializer.serialize_unit_variant("CommunicationIdentifierModelKind", 1u32, "communicationUser"),
+            Self::PhoneNumber => serializer.serialize_unit_variant("CommunicationIdentifierModelKind", 2u32, "phoneNumber"),
+            Self::MicrosoftTeamsUser => serializer.serialize_unit_variant("CommunicationIdentifierModelKind", 3u32, "microsoftTeamsUser"),
+            Self::MicrosoftTeamsApp => serializer.serialize_unit_variant("CommunicationIdentifierModelKind", 4u32, "microsoftTeamsApp"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "A user that got created with an Azure Communication Services resource."]
@@ -2625,7 +3240,7 @@ pub struct ContainerRegistryArtifactEventData {
     pub id: Option<String>,
     #[doc = "The time at which the event occurred."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The action that encompasses the provided event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
@@ -2728,7 +3343,7 @@ pub struct ContainerRegistryEventData {
     pub id: Option<String>,
     #[doc = "The time at which the event occurred."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The action that encompasses the provided event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
@@ -2947,14 +3562,6 @@ impl ContainerServiceNodePoolRollingSucceededEventData {
         Self::default()
     }
 }
-#[doc = "Properties of an event published to an Event Grid topic using a custom schema"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct CustomEventEvent {}
-impl CustomEventEvent {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.DataBox.CopyCompleted event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataBoxCopyCompletedEventData {
@@ -2966,7 +3573,7 @@ pub struct DataBoxCopyCompletedEventData {
     pub stage_name: Option<DataBoxStageName>,
     #[doc = "The time at which the stage happened."]
     #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
-    pub stage_time: Option<time::OffsetDateTime>,
+    pub stage_time: Option<::time::OffsetDateTime>,
 }
 impl DataBoxCopyCompletedEventData {
     pub fn new() -> Self {
@@ -2984,7 +3591,7 @@ pub struct DataBoxCopyStartedEventData {
     pub stage_name: Option<DataBoxStageName>,
     #[doc = "The time at which the stage happened."]
     #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
-    pub stage_time: Option<time::OffsetDateTime>,
+    pub stage_time: Option<::time::OffsetDateTime>,
 }
 impl DataBoxCopyStartedEventData {
     pub fn new() -> Self {
@@ -3002,7 +3609,7 @@ pub struct DataBoxOrderCompletedEventData {
     pub stage_name: Option<DataBoxStageName>,
     #[doc = "The time at which the stage happened."]
     #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
-    pub stage_time: Option<time::OffsetDateTime>,
+    pub stage_time: Option<::time::OffsetDateTime>,
 }
 impl DataBoxOrderCompletedEventData {
     pub fn new() -> Self {
@@ -3219,49 +3826,198 @@ impl DeviceTwinProperties {
         Self::default()
     }
 }
-#[doc = "Properties of an event published to an Event Grid topic using the EventGrid Schema."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventGridEvent {
-    #[doc = "An unique identifier for the event."]
-    pub id: String,
-    #[doc = "The resource path of the event source."]
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientCreatedOrUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventGridMqttClientCreatedOrUpdatedEventData {
+    #[serde(flatten)]
+    pub event_grid_mqtt_client_event_data: EventGridMqttClientEventData,
+    #[doc = "Configured state of the client. The value could be Enabled or Disabled"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub topic: Option<String>,
-    #[doc = "A resource path relative to the topic path."]
-    pub subject: String,
-    #[doc = "Event data specific to the event type."]
-    pub data: serde_json::Value,
-    #[doc = "The type of the event that occurred."]
-    #[serde(rename = "eventType")]
-    pub event_type: String,
-    #[doc = "The time (in UTC) the event was generated."]
-    #[serde(rename = "eventTime", with = "azure_core::date::rfc3339")]
-    pub event_time: time::OffsetDateTime,
-    #[doc = "The schema version of the event metadata."]
-    #[serde(rename = "metadataVersion", default, skip_serializing_if = "Option::is_none")]
-    pub metadata_version: Option<String>,
-    #[doc = "The schema version of the data object."]
-    #[serde(rename = "dataVersion")]
-    pub data_version: String,
+    pub state: Option<event_grid_mqtt_client_created_or_updated_event_data::State>,
+    #[doc = "Time the client resource is created based on the provider's UTC time."]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
+    pub created_on: Option<::time::OffsetDateTime>,
+    #[doc = "Time the client resource is last updated based on the provider's UTC time. If the client resource was never updated, this value is identical to the value of the 'createdOn' property."]
+    #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
+    pub updated_on: Option<::time::OffsetDateTime>,
+    #[doc = "The key-value attributes that are assigned to the client resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attributes: Option<serde_json::Value>,
 }
-impl EventGridEvent {
-    pub fn new(
-        id: String,
-        subject: String,
-        data: serde_json::Value,
-        event_type: String,
-        event_time: time::OffsetDateTime,
-        data_version: String,
-    ) -> Self {
-        Self {
-            id,
-            topic: None,
-            subject,
-            data,
-            event_type,
-            event_time,
-            metadata_version: None,
-            data_version,
+impl EventGridMqttClientCreatedOrUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod event_grid_mqtt_client_created_or_updated_event_data {
+    use super::*;
+    #[doc = "Configured state of the client. The value could be Enabled or Disabled"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        Enabled,
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("State", 0u32, "Enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("State", 1u32, "Disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientDeleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventGridMqttClientDeletedEventData {
+    #[serde(flatten)]
+    pub event_grid_mqtt_client_event_data: EventGridMqttClientEventData,
+}
+impl EventGridMqttClientDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for MQTT Client state changes."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventGridMqttClientEventData {
+    #[doc = "Unique identifier for the MQTT client that the client presents to the service for authentication. This case-sensitive string can be up to 128 characters long, and supports UTF-8 characters."]
+    #[serde(rename = "clientAuthenticationName", default, skip_serializing_if = "Option::is_none")]
+    pub client_authentication_name: Option<String>,
+    #[doc = "Name of the client resource in the Event Grid namespace."]
+    #[serde(rename = "clientName", default, skip_serializing_if = "Option::is_none")]
+    pub client_name: Option<String>,
+    #[doc = "Name of the Event Grid namespace where the MQTT client was created or updated."]
+    #[serde(rename = "namespaceName", default, skip_serializing_if = "Option::is_none")]
+    pub namespace_name: Option<String>,
+}
+impl EventGridMqttClientEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientSessionConnected event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventGridMqttClientSessionConnectedEventData {
+    #[serde(flatten)]
+    pub event_grid_mqtt_client_event_data: EventGridMqttClientEventData,
+    #[doc = "Unique identifier for the MQTT client's session. This case-sensitive string can be up to 128 characters long, and supports UTF-8 characters."]
+    #[serde(rename = "clientSessionName", default, skip_serializing_if = "Option::is_none")]
+    pub client_session_name: Option<String>,
+    #[doc = "A number that helps indicate order of MQTT client session connected or disconnected events. Latest event will have a sequence number that is higher than the previous event."]
+    #[serde(rename = "sequenceNumber", default, skip_serializing_if = "Option::is_none")]
+    pub sequence_number: Option<f64>,
+}
+impl EventGridMqttClientSessionConnectedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientSessionDisconnected event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventGridMqttClientSessionDisconnectedEventData {
+    #[serde(flatten)]
+    pub event_grid_mqtt_client_event_data: EventGridMqttClientEventData,
+    #[doc = "Unique identifier for the MQTT client's session. This case-sensitive string can be up to 128 characters long, and supports UTF-8 characters."]
+    #[serde(rename = "clientSessionName", default, skip_serializing_if = "Option::is_none")]
+    pub client_session_name: Option<String>,
+    #[doc = "A number that helps indicate order of MQTT client session connected or disconnected events. Latest event will have a sequence number that is higher than the previous event."]
+    #[serde(rename = "sequenceNumber", default, skip_serializing_if = "Option::is_none")]
+    pub sequence_number: Option<i64>,
+    #[doc = "Reason for the disconnection of the MQTT client's session. The value could be one of the values in the disconnection reasons table."]
+    #[serde(rename = "disconnectionReason", default, skip_serializing_if = "Option::is_none")]
+    pub disconnection_reason: Option<event_grid_mqtt_client_session_disconnected_event_data::DisconnectionReason>,
+}
+impl EventGridMqttClientSessionDisconnectedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod event_grid_mqtt_client_session_disconnected_event_data {
+    use super::*;
+    #[doc = "Reason for the disconnection of the MQTT client's session. The value could be one of the values in the disconnection reasons table."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "DisconnectionReason")]
+    pub enum DisconnectionReason {
+        ClientAuthenticationError,
+        ClientAuthorizationError,
+        ClientError,
+        ClientInitiatedDisconnect,
+        ConnectionLost,
+        IpForbidden,
+        QuotaExceeded,
+        ServerError,
+        ServerInitiatedDisconnect,
+        SessionOverflow,
+        SessionTakenOver,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for DisconnectionReason {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for DisconnectionReason {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for DisconnectionReason {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::ClientAuthenticationError => {
+                    serializer.serialize_unit_variant("DisconnectionReason", 0u32, "ClientAuthenticationError")
+                }
+                Self::ClientAuthorizationError => {
+                    serializer.serialize_unit_variant("DisconnectionReason", 1u32, "ClientAuthorizationError")
+                }
+                Self::ClientError => serializer.serialize_unit_variant("DisconnectionReason", 2u32, "ClientError"),
+                Self::ClientInitiatedDisconnect => {
+                    serializer.serialize_unit_variant("DisconnectionReason", 3u32, "ClientInitiatedDisconnect")
+                }
+                Self::ConnectionLost => serializer.serialize_unit_variant("DisconnectionReason", 4u32, "ConnectionLost"),
+                Self::IpForbidden => serializer.serialize_unit_variant("DisconnectionReason", 5u32, "IpForbidden"),
+                Self::QuotaExceeded => serializer.serialize_unit_variant("DisconnectionReason", 6u32, "QuotaExceeded"),
+                Self::ServerError => serializer.serialize_unit_variant("DisconnectionReason", 7u32, "ServerError"),
+                Self::ServerInitiatedDisconnect => {
+                    serializer.serialize_unit_variant("DisconnectionReason", 8u32, "ServerInitiatedDisconnect")
+                }
+                Self::SessionOverflow => serializer.serialize_unit_variant("DisconnectionReason", 9u32, "SessionOverflow"),
+                Self::SessionTakenOver => serializer.serialize_unit_variant("DisconnectionReason", 10u32, "SessionTakenOver"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -3291,10 +4047,10 @@ pub struct EventHubCaptureFileCreatedEventData {
     pub last_sequence_number: Option<i64>,
     #[doc = "The first time from the queue."]
     #[serde(rename = "firstEnqueueTime", default, with = "azure_core::date::rfc3339::option")]
-    pub first_enqueue_time: Option<time::OffsetDateTime>,
+    pub first_enqueue_time: Option<::time::OffsetDateTime>,
     #[doc = "The last time from the queue."]
     #[serde(rename = "lastEnqueueTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_enqueue_time: Option<time::OffsetDateTime>,
+    pub last_enqueue_time: Option<::time::OffsetDateTime>,
 }
 impl EventHubCaptureFileCreatedEventData {
     pub fn new() -> Self {
@@ -4236,10 +4992,10 @@ pub struct MachineLearningServicesDatasetDriftDetectedEventData {
     pub drift_coefficient: Option<f64>,
     #[doc = "The start time of the target dataset time series that resulted in drift detection."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the target dataset time series that resulted in drift detection."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
 }
 impl MachineLearningServicesDatasetDriftDetectedEventData {
     pub fn new() -> Self {
@@ -5115,6 +5871,21 @@ impl MediaLiveEventTrackDiscontinuityDetectedEventData {
         Self::default()
     }
 }
+#[doc = "A Microsoft Teams application."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MicrosoftTeamsAppIdentifierModel {
+    #[doc = "The Id of the Microsoft Teams application."]
+    #[serde(rename = "appId")]
+    pub app_id: String,
+    #[doc = "The cloud that the identifier belongs to."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cloud: Option<CommunicationCloudEnvironmentModel>,
+}
+impl MicrosoftTeamsAppIdentifierModel {
+    pub fn new(app_id: String) -> Self {
+        Self { app_id, cloud: None }
+    }
+}
 #[doc = "A Microsoft Teams user."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftTeamsUserIdentifierModel {
@@ -5153,7 +5924,7 @@ impl PhoneNumberIdentifierModel {
 pub struct PolicyInsightsPolicyStateChangedEventData {
     #[doc = "The time that the resource was scanned by Azure Policy in the Universal ISO 8601 DateTime format yyyy-MM-ddTHH:mm:ss.fffffffZ."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The resource ID of the policy assignment."]
     #[serde(rename = "policyAssignmentId", default, skip_serializing_if = "Option::is_none")]
     pub policy_assignment_id: Option<String>,
@@ -5183,7 +5954,7 @@ impl PolicyInsightsPolicyStateChangedEventData {
 pub struct PolicyInsightsPolicyStateCreatedEventData {
     #[doc = "The time that the resource was scanned by Azure Policy in the Universal ISO 8601 DateTime format yyyy-MM-ddTHH:mm:ss.fffffffZ."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The resource ID of the policy assignment."]
     #[serde(rename = "policyAssignmentId", default, skip_serializing_if = "Option::is_none")]
     pub policy_assignment_id: Option<String>,
@@ -5213,7 +5984,7 @@ impl PolicyInsightsPolicyStateCreatedEventData {
 pub struct PolicyInsightsPolicyStateDeletedEventData {
     #[doc = "The time that the resource was scanned by Azure Policy in the Universal ISO 8601 DateTime format yyyy-MM-ddTHH:mm:ss.fffffffZ."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The resource ID of the policy assignment."]
     #[serde(rename = "policyAssignmentId", default, skip_serializing_if = "Option::is_none")]
     pub policy_assignment_id: Option<String>,
@@ -5276,7 +6047,7 @@ impl ReceiveResult {
 pub struct RedisExportRdbCompletedEventData {
     #[doc = "The time at which the event occurred."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -5294,7 +6065,7 @@ impl RedisExportRdbCompletedEventData {
 pub struct RedisImportRdbCompletedEventData {
     #[doc = "The time at which the event occurred."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -5312,7 +6083,7 @@ impl RedisImportRdbCompletedEventData {
 pub struct RedisPatchingCompletedEventData {
     #[doc = "The time at which the event occurred."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -5330,7 +6101,7 @@ impl RedisPatchingCompletedEventData {
 pub struct RedisScalingCompletedEventData {
     #[doc = "The time at which the event occurred."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -5341,18 +6112,6 @@ pub struct RedisScalingCompletedEventData {
 impl RedisScalingCompletedEventData {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Array of lock tokens for the corresponding received Cloud Events to be rejected."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RejectOptions {
-    #[doc = "Array of lock tokens."]
-    #[serde(rename = "lockTokens")]
-    pub lock_tokens: Vec<String>,
-}
-impl RejectOptions {
-    pub fn new(lock_tokens: Vec<String>) -> Self {
-        Self { lock_tokens }
     }
 }
 #[doc = "The result of the Reject operation."]
@@ -5371,18 +6130,6 @@ impl RejectResult {
             failed_lock_tokens,
             succeeded_lock_tokens,
         }
-    }
-}
-#[doc = "Array of lock tokens for the corresponding received Cloud Events to be released."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReleaseOptions {
-    #[doc = "Array of lock tokens."]
-    #[serde(rename = "lockTokens")]
-    pub lock_tokens: Vec<String>,
-}
-impl ReleaseOptions {
-    pub fn new(lock_tokens: Vec<String>) -> Self {
-        Self { lock_tokens }
     }
 }
 #[doc = "The result of the Release operation."]
@@ -5419,18 +6166,6 @@ impl RenewCloudEventLocksResult {
             failed_lock_tokens,
             succeeded_lock_tokens,
         }
-    }
-}
-#[doc = "Array of lock tokens for the corresponding received Cloud Events to be renewed."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RenewLockOptions {
-    #[doc = "Array of lock tokens."]
-    #[serde(rename = "lockTokens")]
-    pub lock_tokens: Vec<String>,
-}
-impl RenewLockOptions {
-    pub fn new(lock_tokens: Vec<String>) -> Self {
-        Self { lock_tokens }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Resources.ResourceActionCancel event. This is raised when a resource action operation is canceled."]
@@ -5963,7 +6698,7 @@ impl ServiceBusDeadletterMessagesAvailableWithNoListenersEventData {
 pub struct SignalRServiceClientConnectionConnectedEventData {
     #[doc = "The time at which the event occurred."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The hub of connected client connection."]
     #[serde(rename = "hubName", default, skip_serializing_if = "Option::is_none")]
     pub hub_name: Option<String>,
@@ -5984,7 +6719,7 @@ impl SignalRServiceClientConnectionConnectedEventData {
 pub struct SignalRServiceClientConnectionDisconnectedEventData {
     #[doc = "The time at which the event occurred."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The hub of connected client connection."]
     #[serde(rename = "hubName", default, skip_serializing_if = "Option::is_none")]
     pub hub_name: Option<String>,
@@ -6042,8 +6777,51 @@ impl StorageAsyncOperationInitiatedEventData {
         Self::default()
     }
 }
+#[doc = "The access tier of the blob."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "StorageBlobAccessTier")]
+pub enum StorageBlobAccessTier {
+    Hot,
+    Cool,
+    Cold,
+    Archive,
+    Default,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for StorageBlobAccessTier {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for StorageBlobAccessTier {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for StorageBlobAccessTier {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Hot => serializer.serialize_unit_variant("StorageBlobAccessTier", 0u32, "Hot"),
+            Self::Cool => serializer.serialize_unit_variant("StorageBlobAccessTier", 1u32, "Cool"),
+            Self::Cold => serializer.serialize_unit_variant("StorageBlobAccessTier", 2u32, "Cold"),
+            Self::Archive => serializer.serialize_unit_variant("StorageBlobAccessTier", 3u32, "Archive"),
+            Self::Default => serializer.serialize_unit_variant("StorageBlobAccessTier", 4u32, "Default"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.BlobCreated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageBlobCreatedEventData {
     #[doc = "The name of the API/operation that triggered this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6069,6 +6847,9 @@ pub struct StorageBlobCreatedEventData {
     #[doc = "The type of blob."]
     #[serde(rename = "blobType", default, skip_serializing_if = "Option::is_none")]
     pub blob_type: Option<String>,
+    #[doc = "The access tier of the blob."]
+    #[serde(rename = "accessTier")]
+    pub access_tier: StorageBlobAccessTier,
     #[doc = "The path to the blob."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
@@ -6083,8 +6864,22 @@ pub struct StorageBlobCreatedEventData {
     pub storage_diagnostics: Option<serde_json::Value>,
 }
 impl StorageBlobCreatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(access_tier: StorageBlobAccessTier) -> Self {
+        Self {
+            api: None,
+            client_request_id: None,
+            request_id: None,
+            e_tag: None,
+            content_type: None,
+            content_length: None,
+            content_offset: None,
+            blob_type: None,
+            access_tier,
+            url: None,
+            sequencer: None,
+            identity: None,
+            storage_diagnostics: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.BlobDeleted event."]
@@ -6128,7 +6923,7 @@ impl StorageBlobDeletedEventData {
 pub struct StorageBlobInventoryPolicyCompletedEventData {
     #[doc = "The time at which inventory policy was scheduled."]
     #[serde(rename = "scheduleDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub schedule_date_time: Option<time::OffsetDateTime>,
+    pub schedule_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The account name for which inventory policy is registered."]
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
@@ -6187,7 +6982,7 @@ impl StorageBlobRenamedEventData {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.BlobTierChanged event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageBlobTierChangedEventData {
     #[doc = "The name of the API/operation that triggered this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6207,6 +7002,12 @@ pub struct StorageBlobTierChangedEventData {
     #[doc = "The type of blob."]
     #[serde(rename = "blobType", default, skip_serializing_if = "Option::is_none")]
     pub blob_type: Option<String>,
+    #[doc = "The access tier of the blob."]
+    #[serde(rename = "accessTier")]
+    pub access_tier: StorageBlobAccessTier,
+    #[doc = "The access tier of the blob."]
+    #[serde(rename = "previousTier")]
+    pub previous_tier: StorageBlobAccessTier,
     #[doc = "The path to the blob."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
@@ -6221,8 +7022,21 @@ pub struct StorageBlobTierChangedEventData {
     pub storage_diagnostics: Option<serde_json::Value>,
 }
 impl StorageBlobTierChangedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(access_tier: StorageBlobAccessTier, previous_tier: StorageBlobAccessTier) -> Self {
+        Self {
+            api: None,
+            client_request_id: None,
+            request_id: None,
+            content_type: None,
+            content_length: None,
+            blob_type: None,
+            access_tier,
+            previous_tier,
+            url: None,
+            sequencer: None,
+            identity: None,
+            storage_diagnostics: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.DirectoryCreated event."]
@@ -6355,10 +7169,92 @@ pub struct StorageLifecyclePolicyCompletedEventData {
     #[serde(rename = "tierToCoolSummary", default, skip_serializing_if = "Option::is_none")]
     pub tier_to_cool_summary: Option<StorageLifecyclePolicyActionSummaryDetail>,
     #[doc = "Execution statistics of a specific policy action in a Blob Management cycle."]
+    #[serde(rename = "tierToColdSummary", default, skip_serializing_if = "Option::is_none")]
+    pub tier_to_cold_summary: Option<StorageLifecyclePolicyActionSummaryDetail>,
+    #[doc = "Execution statistics of a specific policy action in a Blob Management cycle."]
     #[serde(rename = "tierToArchiveSummary", default, skip_serializing_if = "Option::is_none")]
     pub tier_to_archive_summary: Option<StorageLifecyclePolicyActionSummaryDetail>,
 }
 impl StorageLifecyclePolicyCompletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskAssignmentCompleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageTaskAssignmentCompletedEventData {
+    #[doc = "The status for a storage task."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<storage_task_assignment_completed_event_data::Status>,
+    #[doc = "The time at which a storage task was completed."]
+    #[serde(rename = "completedDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub completed_date_time: Option<::time::OffsetDateTime>,
+    #[doc = "The execution id for a storage task."]
+    #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
+    pub task_execution_id: Option<String>,
+    #[doc = "The task name for a storage task."]
+    #[serde(rename = "taskName", default, skip_serializing_if = "Option::is_none")]
+    pub task_name: Option<String>,
+    #[doc = "The summary report blob url for a storage task"]
+    #[serde(rename = "summaryReportBlobUrl", default, skip_serializing_if = "Option::is_none")]
+    pub summary_report_blob_url: Option<String>,
+}
+impl StorageTaskAssignmentCompletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod storage_task_assignment_completed_event_data {
+    use super::*;
+    #[doc = "The status for a storage task."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Succeeded,
+        Failed,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("Status", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("Status", 1u32, "Failed"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskAssignmentQueued event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageTaskAssignmentQueuedEventData {
+    #[doc = "The time at which a storage task was queued."]
+    #[serde(rename = "queuedDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub queued_date_time: Option<::time::OffsetDateTime>,
+    #[doc = "The execution id for a storage task."]
+    #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
+    pub task_execution_id: Option<String>,
+}
+impl StorageTaskAssignmentQueuedEventData {
     pub fn new() -> Self {
         Self::default()
     }
@@ -6371,7 +7267,7 @@ pub struct StorageTaskCompletedEventData {
     pub status: Option<storage_task_completed_event_data::Status>,
     #[doc = "The time at which a storage task was completed."]
     #[serde(rename = "completedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub completed_date_time: Option<time::OffsetDateTime>,
+    pub completed_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The execution id for a storage task."]
     #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
     pub task_execution_id: Option<String>,
@@ -6432,12 +7328,51 @@ pub mod storage_task_completed_event_data {
 pub struct StorageTaskQueuedEventData {
     #[doc = "The time at which a storage task was queued."]
     #[serde(rename = "queuedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub queued_date_time: Option<time::OffsetDateTime>,
+    pub queued_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The execution id for a storage task."]
     #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
     pub task_execution_id: Option<String>,
 }
 impl StorageTaskQueuedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.EventGrid.SubscriptionDeletedEvent event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SubscriptionDeletedEventData {
+    #[doc = "The Azure resource ID of the deleted event subscription."]
+    #[serde(rename = "eventSubscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub event_subscription_id: Option<String>,
+}
+impl SubscriptionDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.EventGrid.SubscriptionValidationEvent event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SubscriptionValidationEventData {
+    #[doc = "The validation code sent by Azure Event Grid to validate an event subscription. To complete the validation handshake, the subscriber must either respond with this validation code as part of the validation response, or perform a GET request on the validationUrl (available starting version 2018-05-01-preview)."]
+    #[serde(rename = "validationCode", default, skip_serializing_if = "Option::is_none")]
+    pub validation_code: Option<String>,
+    #[doc = "The validation URL sent by Azure Event Grid (available starting version 2018-05-01-preview). To complete the validation handshake, the subscriber must either respond with the validationCode as part of the validation response, or perform a GET request on the validationUrl (available starting version 2018-05-01-preview)."]
+    #[serde(rename = "validationUrl", default, skip_serializing_if = "Option::is_none")]
+    pub validation_url: Option<String>,
+}
+impl SubscriptionValidationEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "To complete an event subscription validation handshake, a subscriber can use either the validationCode or the validationUrl received in a SubscriptionValidationEvent. When the validationCode is used, the SubscriptionValidationResponse can be used to build the response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SubscriptionValidationResponse {
+    #[doc = "The validation response sent by the subscriber to Azure Event Grid to complete the validation of an event subscription."]
+    #[serde(rename = "validationResponse", default, skip_serializing_if = "Option::is_none")]
+    pub validation_response: Option<String>,
+}
+impl SubscriptionValidationResponse {
     pub fn new() -> Self {
         Self::default()
     }

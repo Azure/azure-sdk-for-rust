@@ -1,0 +1,5 @@
+[tags]
+deny = [
+    # the name `list` is defined multiple times
+    "package-2024-04-01-preview",
+]

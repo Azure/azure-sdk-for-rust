@@ -196,10 +196,10 @@ impl ImageTemplateIsoSource {
 pub struct ImageTemplateLastRunStatus {
     #[doc = "Start time of the last run (UTC)"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "End time of the last run (UTC)"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "State of the last run"]
     #[serde(rename = "runState", default, skip_serializing_if = "Option::is_none")]
     pub run_state: Option<image_template_last_run_status::RunState>,

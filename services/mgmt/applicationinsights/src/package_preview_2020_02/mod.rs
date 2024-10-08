@@ -228,7 +228,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/microsoft.insights/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/microsoft.insights/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -377,13 +378,11 @@ pub mod get_test_result_file {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!(
-                "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/webtests/{}/getTestResultFile",
-                self.client.endpoint(),
-                &self.subscription_id,
-                &self.resource_group_name,
-                &self.web_test_name
-            ))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!(
+                "/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/webtests/{}/getTestResultFile",
+                &self.subscription_id, &self.resource_group_name, &self.web_test_name
+            ));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()

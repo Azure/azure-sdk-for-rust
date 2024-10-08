@@ -210,7 +210,7 @@ pub struct AzureResource {
     #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[doc = "The location of the resource. Since Azure Activity Log Alerts is a global service, the location of the rules should always be 'global'."]
+    #[doc = "The location of the resource. Azure Activity Log Alert rules are supported on Global, West Europe and North Europe regions."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The tags of the resource."]

@@ -142,7 +142,7 @@ pub struct ApproverResponse {
     pub comment: Option<String>,
     #[doc = "The reply time of approver to a workflow task."]
     #[serde(rename = "responseTime", default, with = "azure_core::date::rfc3339::option")]
-    pub response_time: Option<time::OffsetDateTime>,
+    pub response_time: Option<::time::OffsetDateTime>,
 }
 impl ApproverResponse {
     pub fn new(reply: approver_response::Reply) -> Self {
@@ -195,7 +195,7 @@ pub mod approver_response {
         }
     }
 }
-pub type CreatedTime = time::OffsetDateTime;
+pub type CreatedTime = ::time::OffsetDateTime;
 #[doc = "Default error model"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorModel {
@@ -241,7 +241,7 @@ impl ErrorResponse {
         Self { error }
     }
 }
-pub type LastUpdateTime = time::OffsetDateTime;
+pub type LastUpdateTime = ::time::OffsetDateTime;
 #[doc = "The operation user wants to perform."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -455,7 +455,7 @@ impl Serialize for Status {
         }
     }
 }
-pub type SubmittedTime = time::OffsetDateTime;
+pub type SubmittedTime = ::time::OffsetDateTime;
 #[doc = "History of changes made on task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskChangeEvent {}
@@ -783,13 +783,13 @@ pub struct WorkflowMetadata {
     pub triggers: Triggers,
     #[doc = "The created time of workflow."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "The person who created the workflow."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The last update time."]
     #[serde(rename = "lastUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_update_time: Option<time::OffsetDateTime>,
+    pub last_update_time: Option<::time::OffsetDateTime>,
     #[doc = "The person who updated the workflow."]
     #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<String>,
@@ -847,7 +847,7 @@ pub struct WorkflowRun {
     pub workflow_id: Option<WorkflowId>,
     #[doc = "Workflow run start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The person who submitted the user request."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub requestor: Option<RequestorId>,
@@ -862,10 +862,10 @@ pub struct WorkflowRun {
     pub status: Option<Status>,
     #[doc = "The time of workflow run completed."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The time of workflow run be canceled."]
     #[serde(rename = "cancelTime", default, with = "azure_core::date::rfc3339::option")]
-    pub cancel_time: Option<time::OffsetDateTime>,
+    pub cancel_time: Option<::time::OffsetDateTime>,
     #[doc = "The comment when cancel a workflow run."]
     #[serde(rename = "cancelComment", default, skip_serializing_if = "Option::is_none")]
     pub cancel_comment: Option<String>,
@@ -971,7 +971,7 @@ pub struct WorkflowRunMetadata {
     pub workflow_id: WorkflowId,
     #[doc = "Workflow run start time."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "The person who submitted the user request."]
     pub requestor: RequestorId,
     #[doc = "The user request id."]
@@ -984,10 +984,10 @@ pub struct WorkflowRunMetadata {
     pub status: Status,
     #[doc = "The time of workflow run completed."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The time of workflow run be canceled."]
     #[serde(rename = "cancelTime", default, with = "azure_core::date::rfc3339::option")]
-    pub cancel_time: Option<time::OffsetDateTime>,
+    pub cancel_time: Option<::time::OffsetDateTime>,
     #[doc = "The comment when cancel a workflow run."]
     #[serde(rename = "cancelComment", default, skip_serializing_if = "Option::is_none")]
     pub cancel_comment: Option<String>,
@@ -996,7 +996,7 @@ impl WorkflowRunMetadata {
     pub fn new(
         id: WorkflowRunId,
         workflow_id: WorkflowId,
-        start_time: time::OffsetDateTime,
+        start_time: ::time::OffsetDateTime,
         requestor: RequestorId,
         run_payload: WorkflowRunPayload,
         status: Status,
@@ -1137,16 +1137,16 @@ pub mod workflow_task {
     pub struct ReminderInfo {
         #[doc = "The last update time."]
         #[serde(rename = "lastRemindTime", default, with = "azure_core::date::rfc3339::option")]
-        pub last_remind_time: Option<time::OffsetDateTime>,
+        pub last_remind_time: Option<::time::OffsetDateTime>,
         #[doc = "The next remind time."]
         #[serde(rename = "nextRemindTime", with = "azure_core::date::rfc3339")]
-        pub next_remind_time: time::OffsetDateTime,
+        pub next_remind_time: ::time::OffsetDateTime,
         #[doc = "The reminder settings."]
         #[serde(rename = "reminderSettings")]
         pub reminder_settings: serde_json::Value,
     }
     impl ReminderInfo {
-        pub fn new(next_remind_time: time::OffsetDateTime, reminder_settings: serde_json::Value) -> Self {
+        pub fn new(next_remind_time: ::time::OffsetDateTime, reminder_settings: serde_json::Value) -> Self {
             Self {
                 last_remind_time: None,
                 next_remind_time,
@@ -1159,20 +1159,20 @@ pub mod workflow_task {
     pub struct ExpiryInfo {
         #[doc = "The last expiry notification time."]
         #[serde(rename = "lastExpiryNotificationTime", default, with = "azure_core::date::rfc3339::option")]
-        pub last_expiry_notification_time: Option<time::OffsetDateTime>,
+        pub last_expiry_notification_time: Option<::time::OffsetDateTime>,
         #[doc = "The next expiry notification time."]
         #[serde(rename = "nextExpiryNotificationTime", with = "azure_core::date::rfc3339")]
-        pub next_expiry_notification_time: time::OffsetDateTime,
+        pub next_expiry_notification_time: ::time::OffsetDateTime,
         #[doc = "The expiry time."]
         #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339")]
-        pub expiry_time: time::OffsetDateTime,
+        pub expiry_time: ::time::OffsetDateTime,
         #[serde(rename = "expirySettings")]
         pub expiry_settings: expiry_info::ExpirySettings,
     }
     impl ExpiryInfo {
         pub fn new(
-            next_expiry_notification_time: time::OffsetDateTime,
-            expiry_time: time::OffsetDateTime,
+            next_expiry_notification_time: ::time::OffsetDateTime,
+            expiry_time: ::time::OffsetDateTime,
             expiry_settings: expiry_info::ExpirySettings,
         ) -> Self {
             Self {

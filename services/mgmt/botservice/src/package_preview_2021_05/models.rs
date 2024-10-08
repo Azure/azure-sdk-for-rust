@@ -1207,7 +1207,7 @@ pub struct OperationResultsDescription {
     pub status: Option<operation_results_description::Status>,
     #[doc = "The time that the operation was started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
 }
 impl OperationResultsDescription {
     pub fn new() -> Self {

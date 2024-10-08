@@ -33,7 +33,7 @@ pub struct ClientCertAuthentication {
     pub certificate_thumbprint: Option<String>,
     #[doc = "Gets or sets the certificate expiration date."]
     #[serde(rename = "certificateExpirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub certificate_expiration_date: Option<time::OffsetDateTime>,
+    pub certificate_expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the certificate subject name."]
     #[serde(rename = "certificateSubjectName", default, skip_serializing_if = "Option::is_none")]
     pub certificate_subject_name: Option<String>,
@@ -287,13 +287,13 @@ impl JobHistoryDefinition {
 pub struct JobHistoryDefinitionProperties {
     #[doc = "Gets the start time for this job."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets the end time for this job."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets the expected execution time for this job."]
     #[serde(rename = "expectedExecutionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expected_execution_time: Option<time::OffsetDateTime>,
+    pub expected_execution_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets the job history action name."]
     #[serde(rename = "actionName", default, skip_serializing_if = "Option::is_none")]
     pub action_name: Option<job_history_definition_properties::ActionName>,
@@ -413,7 +413,7 @@ pub mod job_max_recurrence {
 pub struct JobProperties {
     #[doc = "Gets or sets the job start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<JobAction>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -442,7 +442,7 @@ pub struct JobRecurrence {
     pub count: Option<i64>,
     #[doc = "Gets or sets the time at which the job will complete."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<JobRecurrenceSchedule>,
 }
@@ -569,10 +569,10 @@ pub struct JobStatus {
     pub faulted_count: Option<i64>,
     #[doc = "Gets the time the last occurrence executed in ISO-8601 format.  Could be empty if job has not run yet."]
     #[serde(rename = "lastExecutionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_execution_time: Option<time::OffsetDateTime>,
+    pub last_execution_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets the time of the next occurrence in ISO-8601 format. Could be empty if the job is completed."]
     #[serde(rename = "nextExecutionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub next_execution_time: Option<time::OffsetDateTime>,
+    pub next_execution_time: Option<::time::OffsetDateTime>,
 }
 impl JobStatus {
     pub fn new() -> Self {
@@ -693,7 +693,7 @@ pub struct ServiceBusBrokeredMessageProperties {
     pub reply_to_session_id: Option<String>,
     #[doc = "Gets or sets the scheduled enqueue time UTC."]
     #[serde(rename = "scheduledEnqueueTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_enqueue_time_utc: Option<time::OffsetDateTime>,
+    pub scheduled_enqueue_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the session ID."]
     #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,

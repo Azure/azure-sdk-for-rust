@@ -329,12 +329,11 @@ pub mod deployments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deployments/{}?action=cancel",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.deployment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/deployments/{}?action=cancel",
+                    &self.instance_id, &self.deployment_id
+                ));
                 Ok(url)
             }
         }
@@ -427,12 +426,11 @@ pub mod deployments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deployments/{}?action=retry",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.deployment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/deployments/{}?action=retry",
+                    &self.instance_id, &self.deployment_id
+                ));
                 Ok(url)
             }
         }
@@ -551,11 +549,8 @@ pub mod deployments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deployments",
-                    self.client.endpoint(),
-                    &self.instance_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/deviceupdate/{}/v2/management/deployments", &self.instance_id));
                 Ok(url)
             }
         }
@@ -635,12 +630,11 @@ pub mod deployments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deployments/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.deployment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/deployments/{}",
+                    &self.instance_id, &self.deployment_id
+                ));
                 Ok(url)
             }
         }
@@ -734,12 +728,11 @@ pub mod deployments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deployments/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.deployment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/deployments/{}",
+                    &self.instance_id, &self.deployment_id
+                ));
                 Ok(url)
             }
         }
@@ -826,12 +819,11 @@ pub mod deployments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deployments/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.deployment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/deployments/{}",
+                    &self.instance_id, &self.deployment_id
+                ));
                 Ok(url)
             }
         }
@@ -911,12 +903,11 @@ pub mod deployments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deployments/{}/status",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.deployment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/deployments/{}/status",
+                    &self.instance_id, &self.deployment_id
+                ));
                 Ok(url)
             }
         }
@@ -1036,12 +1027,11 @@ pub mod deployments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deployments/{}/devicestates",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.deployment_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/deployments/{}/devicestates",
+                    &self.instance_id, &self.deployment_id
+                ));
                 Ok(url)
             }
         }
@@ -1322,7 +1312,8 @@ pub mod updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!("{}/deviceupdate/{}/v2/updates", self.client.endpoint(), &self.instance_id))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/deviceupdate/{}/v2/updates", &self.instance_id));
                 Ok(url)
             }
         }
@@ -1413,14 +1404,11 @@ pub mod updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.provider,
-                    &self.name,
-                    &self.version
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}",
+                    &self.instance_id, &self.provider, &self.name, &self.version
+                ));
                 Ok(url)
             }
         }
@@ -1523,14 +1511,11 @@ pub mod updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.provider,
-                    &self.name,
-                    &self.version
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}",
+                    &self.instance_id, &self.provider, &self.name, &self.version
+                ));
                 Ok(url)
             }
         }
@@ -1628,11 +1613,8 @@ pub mod updates {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/updates/providers",
-                    self.client.endpoint(),
-                    &self.instance_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/deviceupdate/{}/v2/updates/providers", &self.instance_id));
                 Ok(url)
             }
         }
@@ -1731,12 +1713,11 @@ pub mod updates {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/updates/providers/{}/names",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.provider
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/updates/providers/{}/names",
+                    &self.instance_id, &self.provider
+                ));
                 Ok(url)
             }
         }
@@ -1836,13 +1817,11 @@ pub mod updates {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.provider,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions",
+                    &self.instance_id, &self.provider, &self.name
+                ));
                 Ok(url)
             }
         }
@@ -1943,14 +1922,11 @@ pub mod updates {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}/files",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.provider,
-                    &self.name,
-                    &self.version
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}/files",
+                    &self.instance_id, &self.provider, &self.name, &self.version
+                ));
                 Ok(url)
             }
         }
@@ -2042,15 +2018,11 @@ pub mod updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.provider,
-                    &self.name,
-                    &self.version,
-                    &self.file_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/updates/providers/{}/names/{}/versions/{}/files/{}",
+                    &self.instance_id, &self.provider, &self.name, &self.version, &self.file_id
+                ));
                 Ok(url)
             }
         }
@@ -2178,11 +2150,8 @@ pub mod updates {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/updates/operations",
-                    self.client.endpoint(),
-                    &self.instance_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/deviceupdate/{}/v2/updates/operations", &self.instance_id));
                 Ok(url)
             }
         }
@@ -2281,12 +2250,11 @@ pub mod updates {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/updates/operations/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.operation_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/updates/operations/{}",
+                    &self.instance_id, &self.operation_id
+                ));
                 Ok(url)
             }
         }
@@ -2605,11 +2573,8 @@ pub mod devices {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deviceclasses",
-                    self.client.endpoint(),
-                    &self.instance_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/deviceupdate/{}/v2/management/deviceclasses", &self.instance_id));
                 Ok(url)
             }
         }
@@ -2689,12 +2654,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deviceclasses/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.device_class_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/deviceclasses/{}",
+                    &self.instance_id, &self.device_class_id
+                ));
                 Ok(url)
             }
         }
@@ -2805,12 +2769,11 @@ pub mod devices {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deviceclasses/{}/deviceids",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.device_class_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/deviceclasses/{}/deviceids",
+                    &self.instance_id, &self.device_class_id
+                ));
                 Ok(url)
             }
         }
@@ -2909,12 +2872,11 @@ pub mod devices {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/deviceclasses/{}/installableupdates",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.device_class_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/deviceclasses/{}/installableupdates",
+                    &self.instance_id, &self.device_class_id
+                ));
                 Ok(url)
             }
         }
@@ -3021,11 +2983,8 @@ pub mod devices {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/devices",
-                    self.client.endpoint(),
-                    &self.instance_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/deviceupdate/{}/v2/management/devices", &self.instance_id));
                 Ok(url)
             }
         }
@@ -3105,12 +3064,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/devices/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.device_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/devices/{}",
+                    &self.instance_id, &self.device_id
+                ));
                 Ok(url)
             }
         }
@@ -3201,11 +3159,8 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/updatecompliance",
-                    self.client.endpoint(),
-                    &self.instance_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/deviceupdate/{}/v2/management/updatecompliance", &self.instance_id));
                 Ok(url)
             }
         }
@@ -3315,11 +3270,8 @@ pub mod devices {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/devicetags",
-                    self.client.endpoint(),
-                    &self.instance_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/deviceupdate/{}/v2/management/devicetags", &self.instance_id));
                 Ok(url)
             }
         }
@@ -3399,12 +3351,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/devicetags/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.tag_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/devicetags/{}",
+                    &self.instance_id, &self.tag_name
+                ));
                 Ok(url)
             }
         }
@@ -3514,11 +3465,8 @@ pub mod devices {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/groups",
-                    self.client.endpoint(),
-                    &self.instance_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/deviceupdate/{}/v2/management/groups", &self.instance_id));
                 Ok(url)
             }
         }
@@ -3598,12 +3546,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/groups/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.group_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/groups/{}",
+                    &self.instance_id, &self.group_id
+                ));
                 Ok(url)
             }
         }
@@ -3697,12 +3644,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/groups/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.group_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/groups/{}",
+                    &self.instance_id, &self.group_id
+                ));
                 Ok(url)
             }
         }
@@ -3789,12 +3735,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/groups/{}",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.group_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/groups/{}",
+                    &self.instance_id, &self.group_id
+                ));
                 Ok(url)
             }
         }
@@ -3874,12 +3819,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/groups/{}/updateCompliance",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.group_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/groups/{}/updateCompliance",
+                    &self.instance_id, &self.group_id
+                ));
                 Ok(url)
             }
         }
@@ -3999,12 +3943,11 @@ pub mod devices {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let url = azure_core::Url::parse(&format!(
-                    "{}/deviceupdate/{}/v2/management/groups/{}/bestUpdates",
-                    self.client.endpoint(),
-                    &self.instance_id,
-                    &self.group_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/deviceupdate/{}/v2/management/groups/{}/bestUpdates",
+                    &self.instance_id, &self.group_id
+                ));
                 Ok(url)
             }
         }

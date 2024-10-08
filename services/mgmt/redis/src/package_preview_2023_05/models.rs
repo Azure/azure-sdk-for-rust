@@ -328,10 +328,10 @@ pub struct OperationStatusResult {
     pub percent_complete: Option<f64>,
     #[doc = "The start time of the operation."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the operation."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The operations list."]
     #[serde(
         default,
@@ -950,6 +950,9 @@ pub mod redis_common_properties {
         #[doc = "The max clients config"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub maxclients: Option<String>,
+        #[doc = "The keyspace events which should be monitored."]
+        #[serde(rename = "notify-keyspace-events", default, skip_serializing_if = "Option::is_none")]
+        pub notify_keyspace_events: Option<String>,
         #[doc = "Preferred auth method to communicate to storage account used for data archive, specify SAS or ManagedIdentity, default value is SAS"]
         #[serde(rename = "preferred-data-archive-auth-method", default, skip_serializing_if = "Option::is_none")]
         pub preferred_data_archive_auth_method: Option<String>,
@@ -1874,7 +1877,7 @@ pub struct UpgradeNotification {
     pub name: Option<String>,
     #[doc = "Timestamp when upgrade notification occurred."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Details about this upgrade notification"]
     #[serde(rename = "upsellNotification", default, skip_serializing_if = "Option::is_none")]
     pub upsell_notification: Option<serde_json::Value>,

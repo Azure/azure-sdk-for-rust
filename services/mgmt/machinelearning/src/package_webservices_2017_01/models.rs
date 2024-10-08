@@ -127,10 +127,10 @@ pub struct AsyncOperationStatus {
     pub provisioning_state: Option<async_operation_status::ProvisioningState>,
     #[doc = "The date time that the async operation started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The date time that the async operation finished."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Async operation progress."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<f64>,
@@ -367,7 +367,7 @@ pub struct DiagnosticsConfiguration {
     pub level: diagnostics_configuration::Level,
     #[doc = "Specifies the date and time when the logging will cease. If null, diagnostic collection is not time limited."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiry: Option<time::OffsetDateTime>,
+    pub expiry: Option<::time::OffsetDateTime>,
 }
 impl DiagnosticsConfiguration {
     pub fn new(level: diagnostics_configuration::Level) -> Self {
@@ -1035,10 +1035,10 @@ pub struct WebServiceProperties {
     pub description: Option<String>,
     #[doc = "Read Only: The date and time when the web service was created."]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "Read Only: The date and time when the web service was last modified."]
     #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_on: Option<time::OffsetDateTime>,
+    pub modified_on: Option<::time::OffsetDateTime>,
     #[doc = "Read Only: The provision state of the web service. Valid values are Unknown, Provisioning, Succeeded, and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<web_service_properties::ProvisioningState>,

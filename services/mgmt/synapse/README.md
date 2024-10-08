@@ -1,14 +1,14 @@
 # azure_mgmt_synapse crate
 
-This is a generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate from the Azure REST API specifications listed in:
+This is an unofficial, unsupported generated [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust/tree/legacy) crate from the Azure REST API specifications listed in:
 
 https://github.com/Azure/azure-rest-api-specs/blob/main/specification/synapse/resource-manager/readme.md
 
-To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
+To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/legacy/services/README.md#examples).
 
 The default tag is `package-composite-v2`.
 
-The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
+The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/legacy/services/tags.md) are available:
 
 - `package-sqlGen3-2020-04-01-preview` has 15 operations from 1 API versions: `2020-04-01-preview`. Use crate feature `package-sqlGen3-2020-04-01-preview` to enable. The operations will be in the `package_sqlgen3_2020_04_01_preview` module.
 - `package-preview-2021-06` has 188 operations from 1 API versions: `2021-06-01-preview`. Use crate feature `package-preview-2021-06` to enable. The operations will be in the `package_preview_2021_06` module.

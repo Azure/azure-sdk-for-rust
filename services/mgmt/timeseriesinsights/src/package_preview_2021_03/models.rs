@@ -1988,7 +1988,7 @@ pub struct ResourceProperties {
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The time the resource was created."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
 }
 impl ResourceProperties {
     pub fn new() -> Self {

@@ -215,10 +215,10 @@ pub mod aml_filesystem_archive {
         pub state: Option<status::State>,
         #[doc = "The time of the last completed archive operation"]
         #[serde(rename = "lastCompletionTime", default, with = "azure_core::date::rfc3339::option")]
-        pub last_completion_time: Option<time::OffsetDateTime>,
+        pub last_completion_time: Option<::time::OffsetDateTime>,
         #[doc = "The time the latest archive operation started"]
         #[serde(rename = "lastStartedTime", default, with = "azure_core::date::rfc3339::option")]
-        pub last_started_time: Option<time::OffsetDateTime>,
+        pub last_started_time: Option<::time::OffsetDateTime>,
         #[doc = "The completion percentage of the archive operation"]
         #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
         pub percent_complete: Option<i32>,
@@ -1245,7 +1245,7 @@ pub struct CacheUpgradeSettings {
     pub upgrade_schedule_enabled: Option<bool>,
     #[doc = "When upgradeScheduleEnabled is true, this field holds the user-chosen upgrade time. At the user-chosen time, the firmware update will automatically be installed on the cache."]
     #[serde(rename = "scheduledTime", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_time: Option<time::OffsetDateTime>,
+    pub scheduled_time: Option<::time::OffsetDateTime>,
 }
 impl CacheUpgradeSettings {
     pub fn new() -> Self {
@@ -1263,10 +1263,10 @@ pub struct CacheUpgradeStatus {
     pub firmware_update_status: Option<cache_upgrade_status::FirmwareUpdateStatus>,
     #[doc = "Time at which the pending firmware update will automatically be installed on the cache."]
     #[serde(rename = "firmwareUpdateDeadline", default, with = "azure_core::date::rfc3339::option")]
-    pub firmware_update_deadline: Option<time::OffsetDateTime>,
+    pub firmware_update_deadline: Option<::time::OffsetDateTime>,
     #[doc = "Time of the last successful firmware update."]
     #[serde(rename = "lastFirmwareUpdate", default, with = "azure_core::date::rfc3339::option")]
-    pub last_firmware_update: Option<time::OffsetDateTime>,
+    pub last_firmware_update: Option<::time::OffsetDateTime>,
     #[doc = "When firmwareUpdateAvailable is true, this field holds the version string for the update."]
     #[serde(rename = "pendingFirmwareVersion", default, skip_serializing_if = "Option::is_none")]
     pub pending_firmware_version: Option<String>,
@@ -1553,7 +1553,7 @@ impl CloudErrorBody {
 pub struct Condition {
     #[doc = "The time when the condition was raised."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The issue requiring attention."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -2636,7 +2636,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -2645,7 +2645,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

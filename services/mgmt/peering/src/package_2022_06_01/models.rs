@@ -1989,7 +1989,7 @@ impl PeeringServicePrefix {
 pub struct PeeringServicePrefixEvent {
     #[doc = "The timestamp of the event associated with a prefix."]
     #[serde(rename = "eventTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub event_timestamp: Option<time::OffsetDateTime>,
+    pub event_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The type of the event associated with a prefix."]
     #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<String>,

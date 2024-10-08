@@ -114,7 +114,7 @@ pub struct CreateManagementGroupDetails {
     pub version: Option<f64>,
     #[doc = "The date and time when this object was last updated."]
     #[serde(rename = "updatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_time: Option<time::OffsetDateTime>,
+    pub updated_time: Option<::time::OffsetDateTime>,
     #[doc = "The identity of the principal or process that updated the object."]
     #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<String>,
@@ -648,7 +648,7 @@ pub struct ManagementGroupDetails {
     pub version: Option<f64>,
     #[doc = "The date and time when this object was last updated."]
     #[serde(rename = "updatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_time: Option<time::OffsetDateTime>,
+    pub updated_time: Option<::time::OffsetDateTime>,
     #[doc = "The identity of the principal or process that updated the object."]
     #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<String>,

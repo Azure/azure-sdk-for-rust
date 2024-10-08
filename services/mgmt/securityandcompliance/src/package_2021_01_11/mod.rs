@@ -280,10 +280,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.SecurityAndCompliance/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.SecurityAndCompliance/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -398,13 +396,11 @@ pub mod operation_results {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/locations/{}/operationresults/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location_name,
-                    &self.operation_result_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/locations/{}/operationresults/{}",
+                    &self.subscription_id, &self.location_name, &self.operation_result_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -601,13 +597,11 @@ pub mod private_link_services_for_edm_upload {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -706,13 +700,11 @@ pub mod private_link_services_for_edm_upload {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -866,13 +858,11 @@ pub mod private_link_services_for_edm_upload {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1051,11 +1041,11 @@ pub mod private_link_services_for_edm_upload {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1168,12 +1158,11 @@ pub mod private_link_services_for_edm_upload {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1282,13 +1271,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1498,7 +1485,8 @@ pub mod private_endpoint_connections_for_edm {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateEndpointConnections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateEndpointConnections" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1585,7 +1573,8 @@ pub mod private_endpoint_connections_for_edm {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1685,7 +1674,8 @@ pub mod private_endpoint_connections_for_edm {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1833,7 +1823,8 @@ pub mod private_endpoint_connections_for_edm {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1970,7 +1961,8 @@ pub mod private_link_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateLinkResources" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateLinkResources" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2069,7 +2061,8 @@ pub mod private_link_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateLinkResources/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateLinkResources/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2288,7 +2281,8 @@ pub mod private_link_services_for_m365_compliance_center {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2388,7 +2382,8 @@ pub mod private_link_services_for_m365_compliance_center {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2542,7 +2537,8 @@ pub mod private_link_services_for_m365_compliance_center {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2689,7 +2685,8 @@ pub mod private_link_services_for_m365_compliance_center {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2802,11 +2799,11 @@ pub mod private_link_services_for_m365_compliance_center {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2920,7 +2917,8 @@ pub mod private_link_services_for_m365_compliance_center {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter" , & self . subscription_id , & self . resource_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3130,7 +3128,8 @@ pub mod private_endpoint_connections_comp {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateEndpointConnections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateEndpointConnections" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3217,7 +3216,8 @@ pub mod private_endpoint_connections_comp {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3317,7 +3317,8 @@ pub mod private_endpoint_connections_comp {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3465,7 +3466,8 @@ pub mod private_endpoint_connections_comp {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3602,7 +3604,8 @@ pub mod private_link_resources_comp {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateLinkResources" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateLinkResources" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3701,7 +3704,8 @@ pub mod private_link_resources_comp {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateLinkResources/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateLinkResources/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3918,7 +3922,8 @@ pub mod private_link_services_for_m365_security_center {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4018,7 +4023,8 @@ pub mod private_link_services_for_m365_security_center {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4172,7 +4178,8 @@ pub mod private_link_services_for_m365_security_center {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4319,7 +4326,8 @@ pub mod private_link_services_for_m365_security_center {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4432,11 +4440,11 @@ pub mod private_link_services_for_m365_security_center {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4550,7 +4558,8 @@ pub mod private_link_services_for_m365_security_center {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter" , & self . subscription_id , & self . resource_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4760,7 +4769,8 @@ pub mod private_endpoint_connections_sec {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateEndpointConnections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateEndpointConnections" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4847,7 +4857,8 @@ pub mod private_endpoint_connections_sec {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4947,7 +4958,8 @@ pub mod private_endpoint_connections_sec {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5095,7 +5107,8 @@ pub mod private_endpoint_connections_sec {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5232,7 +5245,8 @@ pub mod private_link_resources_sec {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateLinkResources" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateLinkResources" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5331,7 +5345,8 @@ pub mod private_link_resources_sec {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateLinkResources/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateLinkResources/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5550,7 +5565,8 @@ pub mod private_link_services_for_o365_management_activity_api {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5650,7 +5666,8 @@ pub mod private_link_services_for_o365_management_activity_api {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5804,7 +5821,8 @@ pub mod private_link_services_for_o365_management_activity_api {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5951,7 +5969,8 @@ pub mod private_link_services_for_o365_management_activity_api {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6066,11 +6085,11 @@ pub mod private_link_services_for_o365_management_activity_api {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6186,7 +6205,8 @@ pub mod private_link_services_for_o365_management_activity_api {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI" , & self . subscription_id , & self . resource_group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6396,7 +6416,8 @@ pub mod private_endpoint_connections_adt_api {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateEndpointConnections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateEndpointConnections" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6483,7 +6504,8 @@ pub mod private_endpoint_connections_adt_api {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6583,7 +6605,8 @@ pub mod private_endpoint_connections_adt_api {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6731,7 +6754,8 @@ pub mod private_endpoint_connections_adt_api {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6868,7 +6892,8 @@ pub mod private_link_resources_adt_api {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateLinkResources" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateLinkResources" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6967,7 +6992,8 @@ pub mod private_link_resources_adt_api {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateLinkResources/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateLinkResources/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7183,7 +7209,11 @@ pub mod private_link_services_for_scc_powershell {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7282,7 +7312,11 @@ pub mod private_link_services_for_scc_powershell {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7436,7 +7470,11 @@ pub mod private_link_services_for_scc_powershell {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7583,7 +7621,11 @@ pub mod private_link_services_for_scc_powershell {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7696,11 +7738,11 @@ pub mod private_link_services_for_scc_powershell {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7814,12 +7856,11 @@ pub mod private_link_services_for_scc_powershell {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8029,7 +8070,8 @@ pub mod private_endpoint_connections_for_scc_powershell {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateEndpointConnections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateEndpointConnections" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8116,7 +8158,8 @@ pub mod private_endpoint_connections_for_scc_powershell {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8216,7 +8259,8 @@ pub mod private_endpoint_connections_for_scc_powershell {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8364,7 +8408,8 @@ pub mod private_endpoint_connections_for_scc_powershell {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateEndpointConnections/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . private_endpoint_connection_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8501,7 +8546,8 @@ pub mod private_link_resources_for_scc_powershell {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateLinkResources" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateLinkResources" , & self . subscription_id , & self . resource_group_name , & self . resource_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8600,7 +8646,8 @@ pub mod private_link_resources_for_scc_powershell {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateLinkResources/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . group_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateLinkResources/{}" , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . group_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

@@ -557,8 +557,8 @@ pub mod private_store {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url =
-                    azure_core::Url::parse(&format!("{}/providers/Microsoft.Marketplace/privateStores", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Marketplace/privateStores");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -642,11 +642,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -747,11 +747,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -830,11 +830,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -919,11 +919,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/anyExistingOffersInTheCollections",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/anyExistingOffersInTheCollections",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1020,11 +1020,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/queryOffers",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/queryOffers",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1130,11 +1130,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/queryUserOffers",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/queryUserOffers",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1231,11 +1231,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/billingAccounts",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/billingAccounts",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1341,11 +1341,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collectionsToSubscriptionsMapping",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collectionsToSubscriptionsMapping",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1451,11 +1451,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/queryApprovedPlans",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/queryApprovedPlans",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1561,11 +1561,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/bulkCollectionsAction",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/bulkCollectionsAction",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1661,11 +1661,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/requestApprovals",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/requestApprovals",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1762,12 +1762,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/requestApprovals/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.request_approval_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/requestApprovals/{}",
+                    &self.private_store_id, &self.request_approval_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1874,12 +1873,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/requestApprovals/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.request_approval_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/requestApprovals/{}",
+                    &self.private_store_id, &self.request_approval_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1986,12 +1984,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/requestApprovals/{}/query",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.request_approval_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/requestApprovals/{}/query",
+                    &self.private_store_id, &self.request_approval_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2087,11 +2084,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/adminRequestApprovals",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/adminRequestApprovals",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2191,12 +2188,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/adminRequestApprovals/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.admin_request_approval_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/adminRequestApprovals/{}",
+                    &self.private_store_id, &self.admin_request_approval_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2303,12 +2299,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/adminRequestApprovals/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.admin_request_approval_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/adminRequestApprovals/{}",
+                    &self.private_store_id, &self.admin_request_approval_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2405,11 +2400,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/queryNotificationsState",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/queryNotificationsState",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2511,12 +2506,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/offers/{}/acknowledgeNotification",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.offer_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/offers/{}/acknowledgeNotification",
+                    &self.private_store_id, &self.offer_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2606,12 +2600,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/requestApprovals/{}/withdrawPlan",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.request_approval_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/requestApprovals/{}/withdrawPlan",
+                    &self.private_store_id, &self.request_approval_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2705,11 +2698,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/fetchAllSubscriptionsInTenant",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/fetchAllSubscriptionsInTenant",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2806,11 +2799,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/listNewPlansNotifications",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/listNewPlansNotifications",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2916,11 +2909,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/listStopSellOffersPlansNotifications",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/listStopSellOffersPlansNotifications",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3017,11 +3010,11 @@ pub mod private_store {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/listSubscriptionsContext",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/listSubscriptionsContext",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3240,11 +3233,11 @@ pub mod private_store_collection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections",
                     &self.private_store_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3341,12 +3334,11 @@ pub mod private_store_collection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}",
+                    &self.private_store_id, &self.collection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3448,12 +3440,11 @@ pub mod private_store_collection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}",
+                    &self.private_store_id, &self.collection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3548,12 +3539,11 @@ pub mod private_store_collection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}",
+                    &self.private_store_id, &self.collection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3645,12 +3635,11 @@ pub mod private_store_collection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}",
+                    &self.private_store_id, &self.collection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3745,12 +3734,11 @@ pub mod private_store_collection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/transferOffers",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/transferOffers",
+                    &self.private_store_id, &self.collection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3848,12 +3836,11 @@ pub mod private_store_collection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/approveAllItems",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/approveAllItems",
+                    &self.private_store_id, &self.collection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3951,12 +3938,11 @@ pub mod private_store_collection {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/disableApproveAllItems",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/disableApproveAllItems",
+                    &self.private_store_id, &self.collection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4199,12 +4185,11 @@ pub mod private_store_collection_offer {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers",
+                    &self.private_store_id, &self.collection_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4290,13 +4275,11 @@ pub mod private_store_collection_offer {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id,
-                    &self.offer_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers/{}",
+                    &self.private_store_id, &self.collection_id, &self.offer_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4399,13 +4382,11 @@ pub mod private_store_collection_offer {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id,
-                    &self.offer_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers/{}",
+                    &self.private_store_id, &self.collection_id, &self.offer_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4501,13 +4482,11 @@ pub mod private_store_collection_offer {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id,
-                    &self.offer_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers/{}",
+                    &self.private_store_id, &self.collection_id, &self.offer_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4600,13 +4579,11 @@ pub mod private_store_collection_offer {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers/{}",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id,
-                    &self.offer_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers/{}",
+                    &self.private_store_id, &self.collection_id, &self.offer_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4702,13 +4679,11 @@ pub mod private_store_collection_offer {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers/{}/upsertOfferWithMultiContext",
-                    self.client.endpoint(),
-                    &self.private_store_id,
-                    &self.collection_id,
-                    &self.offer_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.Marketplace/privateStores/{}/collections/{}/offers/{}/upsertOfferWithMultiContext",
+                    &self.private_store_id, &self.collection_id, &self.offer_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4817,7 +4792,8 @@ pub mod operations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Marketplace/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.Marketplace/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

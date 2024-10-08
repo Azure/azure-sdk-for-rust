@@ -282,7 +282,7 @@ pub struct PredictionResponseProperties {
     pub impacted_field: Option<String>,
     #[doc = "The most recent time that Advisor checked the validity of the recommendation."]
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated: Option<time::OffsetDateTime>,
+    pub last_updated: Option<::time::OffsetDateTime>,
     #[doc = "A summary of the recommendation."]
     #[serde(rename = "shortDescription", default, skip_serializing_if = "Option::is_none")]
     pub short_description: Option<ShortDescription>,

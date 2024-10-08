@@ -29,10 +29,10 @@ pub struct AcceptorProperties {
     pub destination: ProcessReference,
     #[doc = "Relationship start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Relationship end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
 }
 impl AcceptorProperties {
     pub fn new(source: PortReference, destination: ProcessReference) -> Self {
@@ -350,10 +350,10 @@ impl ClientGroupMembersCollection {
 pub struct ClientGroupMembersCount {
     #[doc = "Membership interval start time."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "Membership interval start time."]
     #[serde(rename = "endTime", with = "azure_core::date::rfc3339")]
-    pub end_time: time::OffsetDateTime,
+    pub end_time: ::time::OffsetDateTime,
     #[doc = "Client Group URI."]
     #[serde(rename = "groupId")]
     pub group_id: String,
@@ -363,7 +363,13 @@ pub struct ClientGroupMembersCount {
     pub accuracy: Accuracy,
 }
 impl ClientGroupMembersCount {
-    pub fn new(start_time: time::OffsetDateTime, end_time: time::OffsetDateTime, group_id: String, count: i32, accuracy: Accuracy) -> Self {
+    pub fn new(
+        start_time: ::time::OffsetDateTime,
+        end_time: ::time::OffsetDateTime,
+        group_id: String,
+        count: i32,
+        accuracy: Accuracy,
+    ) -> Self {
         Self {
             start_time,
             end_time,
@@ -627,15 +633,15 @@ impl Ipv6NetworkInterface {
 pub struct Liveness {
     #[doc = "Liveness interval start time."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "Liveness interval end time."]
     #[serde(rename = "endTime", with = "azure_core::date::rfc3339")]
-    pub end_time: time::OffsetDateTime,
+    pub end_time: ::time::OffsetDateTime,
     #[doc = "`true` if the resource is live during [startTime, endTime], `false` otherwise"]
     pub live: bool,
 }
 impl Liveness {
-    pub fn new(start_time: time::OffsetDateTime, end_time: time::OffsetDateTime, live: bool) -> Self {
+    pub fn new(start_time: ::time::OffsetDateTime, end_time: ::time::OffsetDateTime, live: bool) -> Self {
         Self {
             start_time,
             end_time,
@@ -667,7 +673,7 @@ pub mod machine {
     pub struct Properties {
         #[doc = "UTC date and time when this resource was updated in the system."]
         #[serde(default, with = "azure_core::date::rfc3339::option")]
-        pub timestamp: Option<time::OffsetDateTime>,
+        pub timestamp: Option<::time::OffsetDateTime>,
         #[doc = "Used to specify if a resources is monitored or discovered."]
         #[serde(rename = "monitoringState", default, skip_serializing_if = "Option::is_none")]
         pub monitoring_state: Option<MonitoringState>,
@@ -685,7 +691,7 @@ pub mod machine {
         pub fully_qualified_domain_name: Option<String>,
         #[doc = "UTC date and time when the machine last booted"]
         #[serde(rename = "bootTime", default, with = "azure_core::date::rfc3339::option")]
-        pub boot_time: Option<time::OffsetDateTime>,
+        pub boot_time: Option<::time::OffsetDateTime>,
         #[doc = "Describes a timezone."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub timezone: Option<Timezone>,
@@ -1111,10 +1117,10 @@ impl MapNodes {
 pub struct MapRequest {
     #[doc = "Map interval start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Map interval end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
 }
 impl MapRequest {
     pub fn new() -> Self {
@@ -1140,15 +1146,15 @@ pub enum MapRequestUnion {
 pub struct MapResponse {
     #[doc = "Map interval start time."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "Map interval end time."]
     #[serde(rename = "endTime", with = "azure_core::date::rfc3339")]
-    pub end_time: time::OffsetDateTime,
+    pub end_time: ::time::OffsetDateTime,
     #[doc = "A map of resources and relationships between them."]
     pub map: Map,
 }
 impl MapResponse {
-    pub fn new(start_time: time::OffsetDateTime, end_time: time::OffsetDateTime, map: Map) -> Self {
+    pub fn new(start_time: ::time::OffsetDateTime, end_time: ::time::OffsetDateTime, map: Map) -> Self {
         Self { start_time, end_time, map }
     }
 }
@@ -1391,7 +1397,7 @@ pub mod process {
     pub struct Properties {
         #[doc = "UTC date and time when this process resource was updated in the system"]
         #[serde(default, with = "azure_core::date::rfc3339::option")]
-        pub timestamp: Option<time::OffsetDateTime>,
+        pub timestamp: Option<::time::OffsetDateTime>,
         #[doc = "Used to specify if a resources is monitored or discovered."]
         #[serde(rename = "monitoringState", default, skip_serializing_if = "Option::is_none")]
         pub monitoring_state: Option<MonitoringState>,
@@ -1406,7 +1412,7 @@ pub mod process {
         pub display_name: Option<String>,
         #[doc = "UTC date and time when the process started"]
         #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-        pub start_time: Option<time::OffsetDateTime>,
+        pub start_time: Option<::time::OffsetDateTime>,
         #[doc = "The inferred role of this process based on its name, command line, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub role: Option<properties::Role>,
@@ -1687,10 +1693,10 @@ pub struct RelationshipProperties {
     pub destination: ResourceReferenceUnion,
     #[doc = "Relationship start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Relationship end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
 }
 impl RelationshipProperties {
     pub fn new(source: ResourceReferenceUnion, destination: ResourceReferenceUnion) -> Self {
@@ -1786,13 +1792,13 @@ impl Summary {
 pub struct SummaryProperties {
     #[doc = "Summary interval start time."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "Summary interval end time."]
     #[serde(rename = "endTime", with = "azure_core::date::rfc3339")]
-    pub end_time: time::OffsetDateTime,
+    pub end_time: ::time::OffsetDateTime,
 }
 impl SummaryProperties {
-    pub fn new(start_time: time::OffsetDateTime, end_time: time::OffsetDateTime) -> Self {
+    pub fn new(start_time: ::time::OffsetDateTime, end_time: ::time::OffsetDateTime) -> Self {
         Self { start_time, end_time }
     }
 }

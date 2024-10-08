@@ -22,13 +22,13 @@ pub struct DeleteJob {
     pub status: Option<delete_job::Status>,
     #[doc = "Start time of the job. The timestamp is in RFC3339 format: `yyyy-MM-ddTHH:mm:ssZ`."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End time of the job. The timestamp is in RFC3339 format: `yyyy-MM-ddTHH:mm:ssZ`."]
     #[serde(rename = "finishedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub finished_date_time: Option<time::OffsetDateTime>,
+    pub finished_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Time at which job will be purged by the service from the system. The timestamp is in RFC3339 format: `yyyy-MM-ddTHH:mm:ssZ`."]
     #[serde(rename = "purgeDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub purge_date_time: Option<time::OffsetDateTime>,
+    pub purge_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
@@ -94,7 +94,7 @@ pub struct DigitalTwinsModelData {
     pub id: String,
     #[doc = "The time the model was uploaded to the service."]
     #[serde(rename = "uploadTime", default, with = "azure_core::date::rfc3339::option")]
-    pub upload_time: Option<time::OffsetDateTime>,
+    pub upload_time: Option<::time::OffsetDateTime>,
     #[doc = "Indicates if the model is decommissioned. Decommissioned models cannot be referenced by newly created digital twins."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub decommissioned: Option<bool>,
@@ -214,16 +214,16 @@ pub struct ImportJob {
     pub status: Option<import_job::Status>,
     #[doc = "Start time of the job. The timestamp is in RFC3339 format: `yyyy-MM-ddTHH:mm:ssZ`."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Last time service performed any action from the job. The timestamp is in RFC3339 format: `yyyy-MM-ddTHH:mm:ssZ`."]
     #[serde(rename = "lastActionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_action_date_time: Option<time::OffsetDateTime>,
+    pub last_action_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End time of the job. The timestamp is in RFC3339 format: `yyyy-MM-ddTHH:mm:ssZ`."]
     #[serde(rename = "finishedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub finished_date_time: Option<time::OffsetDateTime>,
+    pub finished_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Time at which job will be purged by the service from the system. The timestamp is in RFC3339 format: `yyyy-MM-ddTHH:mm:ssZ`."]
     #[serde(rename = "purgeDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub purge_date_time: Option<time::OffsetDateTime>,
+    pub purge_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,

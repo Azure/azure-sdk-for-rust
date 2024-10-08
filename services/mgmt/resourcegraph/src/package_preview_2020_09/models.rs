@@ -36,13 +36,13 @@ pub enum ColumnDataType {
 pub struct DateTimeInterval {
     #[doc = "A datetime indicating the inclusive/closed start of the time interval, i.e. `[`**`start`**`, end)`. Specifying a `start` that occurs chronologically after `end` will result in an error."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub start: time::OffsetDateTime,
+    pub start: ::time::OffsetDateTime,
     #[doc = "A datetime indicating the exclusive/open end of the time interval, i.e. `[start, `**`end`**`)`. Specifying an `end` that occurs chronologically before `start` will result in an error."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub end: time::OffsetDateTime,
+    pub end: ::time::OffsetDateTime,
 }
 impl DateTimeInterval {
-    pub fn new(start: time::OffsetDateTime, end: time::OffsetDateTime) -> Self {
+    pub fn new(start: ::time::OffsetDateTime, end: ::time::OffsetDateTime) -> Self {
         Self { start, end }
     }
 }
@@ -572,13 +572,13 @@ pub struct ResourceSnapshotData {
     pub snapshot_id: Option<String>,
     #[doc = "The time when the snapshot was created.\nThe snapshot timestamp provides an approximation as to when a modification to a resource was detected.  There can be a difference between the actual modification time and the detection time.  This is due to differences in how operations that modify a resource are processed, versus how operation that record resource snapshots are processed."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub timestamp: time::OffsetDateTime,
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The resource snapshot content (in resourceChangeDetails response only)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<serde_json::Value>,
 }
 impl ResourceSnapshotData {
-    pub fn new(timestamp: time::OffsetDateTime) -> Self {
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
         Self {
             snapshot_id: None,
             timestamp,

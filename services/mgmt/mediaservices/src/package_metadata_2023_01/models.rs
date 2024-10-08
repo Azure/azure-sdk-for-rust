@@ -262,7 +262,7 @@ pub struct AkamaiSignatureHeaderAuthenticationKey {
     pub base64_key: Option<String>,
     #[doc = "The expiration time of the authentication key."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiration: Option<time::OffsetDateTime>,
+    pub expiration: Option<::time::OffsetDateTime>,
 }
 impl AkamaiSignatureHeaderAuthenticationKey {
     pub fn new() -> Self {
@@ -463,10 +463,10 @@ pub struct AssetProperties {
     pub asset_id: Option<String>,
     #[doc = "The creation date of the Asset."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The last modified date of the Asset."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[doc = "The alternate ID of the Asset."]
     #[serde(rename = "alternateId", default, skip_serializing_if = "Option::is_none")]
     pub alternate_id: Option<String>,
@@ -544,13 +544,13 @@ pub struct AssetStreamingLocator {
     pub asset_name: Option<String>,
     #[doc = "The creation time of the Streaming Locator."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The start time of the Streaming Locator."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the Streaming Locator."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "StreamingLocatorId of the Streaming Locator."]
     #[serde(rename = "streamingLocatorId", default, skip_serializing_if = "Option::is_none")]
     pub streaming_locator_id: Option<String>,
@@ -612,10 +612,10 @@ pub struct AssetTrackOperationStatus {
     pub id: Option<String>,
     #[doc = "Operation start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Operation end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Operation status."]
     pub status: String,
     #[doc = "The error detail."]
@@ -1486,10 +1486,10 @@ pub struct ContentKeyPolicyPlayReadyLicense {
     pub security_level: Option<content_key_policy_play_ready_license::SecurityLevel>,
     #[doc = "The begin date of license"]
     #[serde(rename = "beginDate", default, with = "azure_core::date::rfc3339::option")]
-    pub begin_date: Option<time::OffsetDateTime>,
+    pub begin_date: Option<::time::OffsetDateTime>,
     #[doc = "The expiration date of license."]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "The relative begin date of license."]
     #[serde(rename = "relativeBeginDate", default, skip_serializing_if = "Option::is_none")]
     pub relative_begin_date: Option<String>,
@@ -1786,10 +1786,10 @@ pub struct ContentKeyPolicyProperties {
     pub policy_id: Option<String>,
     #[doc = "The creation date of the Policy"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The last modified date of the Policy"]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[doc = "A description for the Policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -3715,10 +3715,10 @@ pub struct JobOutput {
     pub label: Option<String>,
     #[doc = "The UTC date and time at which this Job Output began processing."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The UTC date and time at which this Job Output finished processing."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
 }
 impl JobOutput {
     pub fn new() -> Self {
@@ -3809,7 +3809,7 @@ impl JobOutputAsset {
 pub struct JobProperties {
     #[doc = "The UTC date and time when the customer has created the Job, in 'YYYY-MM-DDThh:mm:ssZ' format."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The current state of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<job_properties::State>,
@@ -3820,7 +3820,7 @@ pub struct JobProperties {
     pub input: JobInputUnion,
     #[doc = "The UTC date and time when the customer has last updated the Job, in 'YYYY-MM-DDThh:mm:ssZ' format."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[doc = "The outputs for the Job."]
     pub outputs: Vec<JobOutputUnion>,
     #[doc = "Priority with which the job should be processed. Higher priority jobs are processed before lower priority jobs. If not set, the default is normal."]
@@ -3831,10 +3831,10 @@ pub struct JobProperties {
     pub correlation_data: Option<serde_json::Value>,
     #[doc = "The UTC date and time at which this Job began processing."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The UTC date and time at which this Job finished processing."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
 }
 impl JobProperties {
     pub fn new(input: JobInputUnion, outputs: Vec<JobOutputUnion>) -> Self {
@@ -4041,7 +4041,7 @@ pub struct ListContainerSasInput {
     pub permissions: Option<list_container_sas_input::Permissions>,
     #[doc = "The SAS URL expiration time.  This must be less than 24 hours from the current time."]
     #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_time: Option<time::OffsetDateTime>,
+    pub expiry_time: Option<::time::OffsetDateTime>,
 }
 impl ListContainerSasInput {
     pub fn new() -> Self {
@@ -4385,10 +4385,10 @@ impl LiveEventGetTrackIngestHeartbeatsResult {
 pub struct LiveEventIngestInterruption {
     #[doc = "UTC time of interruption start, encoder disconnected."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub begin: Option<time::OffsetDateTime>,
+    pub begin: Option<::time::OffsetDateTime>,
     #[doc = "UTC time of interruption end, encoder re-connected."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub end: Option<time::OffsetDateTime>,
+    pub end: Option<::time::OffsetDateTime>,
     #[doc = "Duration of interruption in ISO 8601 time. For example, use PT1H30M to indicate 1 hour and 30 minutes."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<String>,
@@ -4409,10 +4409,10 @@ pub struct LiveEventIngestion {
     pub stream_name: Option<String>,
     #[doc = "Ingestion begin time in UTC."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub begin: Option<time::OffsetDateTime>,
+    pub begin: Option<::time::OffsetDateTime>,
     #[doc = "Ingestion end time in UTC. Empty if it's not stopped yet."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub end: Option<time::OffsetDateTime>,
+    pub end: Option<::time::OffsetDateTime>,
     #[doc = "Reason why ingestion stops. Empty if it's not stopped yet. E.g) Service Stopped. No Ingestion."]
     #[serde(rename = "endReason", default, skip_serializing_if = "Option::is_none")]
     pub end_reason: Option<String>,
@@ -4671,10 +4671,10 @@ pub struct LiveEventProperties {
     pub stream_options: Vec<String>,
     #[doc = "The creation time for the live event"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The last modified time of the live event."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
 }
 impl LiveEventProperties {
     pub fn new(input: LiveEventInput) -> Self {
@@ -4764,7 +4764,7 @@ pub struct LiveEventStatus {
     pub health_descriptions: Vec<String>,
     #[doc = "Last updated UTC time of this status."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
+    pub last_updated_time: Option<::time::OffsetDateTime>,
     #[doc = "The live event ingestion telemetry data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ingestion: Option<LiveEventIngestion>,
@@ -4869,7 +4869,7 @@ pub struct LiveEventStreamEvent {
     pub event_type: Option<live_event_stream_event::EventType>,
     #[doc = "The time event raised."]
     #[serde(rename = "eventTime", default, with = "azure_core::date::rfc3339::option")]
-    pub event_time: Option<time::OffsetDateTime>,
+    pub event_time: Option<::time::OffsetDateTime>,
     #[doc = "Event level."]
     #[serde(rename = "eventLevel", default, skip_serializing_if = "Option::is_none")]
     pub event_level: Option<live_event_stream_event::EventLevel>,
@@ -5221,7 +5221,7 @@ pub struct LiveEventTrackEvent {
     pub event_type: Option<live_event_track_event::EventType>,
     #[doc = "The time event raised."]
     #[serde(rename = "eventTime", default, with = "azure_core::date::rfc3339::option")]
-    pub event_time: Option<time::OffsetDateTime>,
+    pub event_time: Option<::time::OffsetDateTime>,
     #[doc = "The live event track ingest heart beat event data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<LiveEventTrackEventData>,
@@ -5311,7 +5311,7 @@ pub struct LiveEventTrackEventData {
     pub healthy: Option<bool>,
     #[doc = "The last timestamp in UTC that a fragment arrived at the ingest endpoint."]
     #[serde(rename = "lastFragmentArrivalTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_fragment_arrival_time: Option<time::OffsetDateTime>,
+    pub last_fragment_arrival_time: Option<::time::OffsetDateTime>,
     #[doc = "Indicates the speed of delay, in seconds-per-minute, of the incoming audio or video data during the last minute. The value is greater than zero if data is arriving to the live event slower than expected in the last minute; zero if data arrived with no delay; and \"n/a\" if no audio or video data was received. For example, if you have a contribution encoder sending in live content, and it is slowing down due to processing issues, or network latency, it may be only able to deliver a total of 58 seconds of audio or video in a one-minute period. This would be reported as two seconds-per-minute of drift. If the encoder is able to catch up and send all 60 seconds or more of data every minute, you will see this value reported as 0. If there was a disconnection or discontinuity from the encoder, this value may still display as 0, as it does not account for breaks in the data - only data that is delayed in timestamps."]
     #[serde(rename = "ingestDriftValue", default, skip_serializing_if = "Option::is_none")]
     pub ingest_drift_value: Option<String>,
@@ -5490,10 +5490,10 @@ pub struct LiveOutputProperties {
     pub output_snap_time: Option<i64>,
     #[doc = "The creation time the live output."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The time the live output was last modified."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning state of the live output."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -5684,10 +5684,10 @@ pub struct MediaServiceOperationStatus {
     pub id: Option<String>,
     #[doc = "Operation start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Operation end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Operation status."]
     pub status: String,
     #[doc = "The error detail."]
@@ -7325,13 +7325,13 @@ pub struct StreamingEndpointProperties {
     pub cross_site_access_policies: Option<CrossSiteAccessPolicies>,
     #[doc = "The free trial expiration time."]
     #[serde(rename = "freeTrialEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub free_trial_end_time: Option<time::OffsetDateTime>,
+    pub free_trial_end_time: Option<::time::OffsetDateTime>,
     #[doc = "The exact time the streaming endpoint was created."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The exact time the streaming endpoint was last modified."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
 }
 impl StreamingEndpointProperties {
     pub fn new(scale_units: i32) -> Self {
@@ -7559,13 +7559,13 @@ pub struct StreamingLocatorProperties {
     pub asset_name: String,
     #[doc = "The creation time of the Streaming Locator."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The start time of the Streaming Locator."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the Streaming Locator."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The StreamingLocatorId of the Streaming Locator."]
     #[serde(rename = "streamingLocatorId", default, skip_serializing_if = "Option::is_none")]
     pub streaming_locator_id: Option<String>,
@@ -7843,7 +7843,7 @@ impl StreamingPolicyPlayReadyConfiguration {
 pub struct StreamingPolicyProperties {
     #[doc = "Creation time of Streaming Policy"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "Default ContentKey used by current Streaming Policy"]
     #[serde(rename = "defaultContentKeyPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub default_content_key_policy_name: Option<String>,
@@ -8269,13 +8269,13 @@ pub mod transform_output {
 pub struct TransformProperties {
     #[doc = "The UTC date and time when the Transform was created, in 'YYYY-MM-DDThh:mm:ssZ' format."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "An optional verbose description of the Transform."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The UTC date and time when the Transform was last updated, in 'YYYY-MM-DDThh:mm:ssZ' format."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[doc = "An array of one or more TransformOutputs that the Transform should generate."]
     pub outputs: Vec<TransformOutput>,
 }
@@ -8327,10 +8327,10 @@ impl UserAssignedManagedIdentity {
 pub struct UtcClipTime {
     #[doc = "The time position on the timeline of the input media based on Utc time."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub time: time::OffsetDateTime,
+    pub time: ::time::OffsetDateTime,
 }
 impl UtcClipTime {
-    pub fn new(time: time::OffsetDateTime) -> Self {
+    pub fn new(time: ::time::OffsetDateTime) -> Self {
         Self { time }
     }
 }
@@ -8589,7 +8589,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -8598,7 +8598,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

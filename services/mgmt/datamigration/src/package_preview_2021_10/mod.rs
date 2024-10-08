@@ -346,7 +346,8 @@ pub mod database_migrations_sql_mi {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/providers/Microsoft.DataMigration/databaseMigrations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . managed_instance_name , & self . target_db_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/providers/Microsoft.DataMigration/databaseMigrations/{}" , & self . subscription_id , & self . resource_group_name , & self . managed_instance_name , & self . target_db_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -446,7 +447,8 @@ pub mod database_migrations_sql_mi {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/providers/Microsoft.DataMigration/databaseMigrations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . managed_instance_name , & self . target_db_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/providers/Microsoft.DataMigration/databaseMigrations/{}" , & self . subscription_id , & self . resource_group_name , & self . managed_instance_name , & self . target_db_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -569,7 +571,8 @@ pub mod database_migrations_sql_mi {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/providers/Microsoft.DataMigration/databaseMigrations/{}/cancel" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . managed_instance_name , & self . target_db_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/providers/Microsoft.DataMigration/databaseMigrations/{}/cancel" , & self . subscription_id , & self . resource_group_name , & self . managed_instance_name , & self . target_db_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -652,7 +655,8 @@ pub mod database_migrations_sql_mi {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/providers/Microsoft.DataMigration/databaseMigrations/{}/cutover" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . managed_instance_name , & self . target_db_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/providers/Microsoft.DataMigration/databaseMigrations/{}/cutover" , & self . subscription_id , & self . resource_group_name , & self . managed_instance_name , & self . target_db_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -862,7 +866,8 @@ pub mod database_migrations_sql_vm {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}/providers/Microsoft.DataMigration/databaseMigrations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_name , & self . target_db_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}/providers/Microsoft.DataMigration/databaseMigrations/{}" , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_name , & self . target_db_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -962,7 +967,8 @@ pub mod database_migrations_sql_vm {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}/providers/Microsoft.DataMigration/databaseMigrations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_name , & self . target_db_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}/providers/Microsoft.DataMigration/databaseMigrations/{}" , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_name , & self . target_db_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1085,7 +1091,8 @@ pub mod database_migrations_sql_vm {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}/providers/Microsoft.DataMigration/databaseMigrations/{}/cancel" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_name , & self . target_db_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}/providers/Microsoft.DataMigration/databaseMigrations/{}/cancel" , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_name , & self . target_db_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1168,7 +1175,8 @@ pub mod database_migrations_sql_vm {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}/providers/Microsoft.DataMigration/databaseMigrations/{}/cutover" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_name , & self . target_db_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}/providers/Microsoft.DataMigration/databaseMigrations/{}/cutover" , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_name , & self . target_db_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1291,7 +1299,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.DataMigration/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.DataMigration/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1596,13 +1605,11 @@ pub mod sql_migration_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sql_migration_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.sql_migration_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1701,13 +1708,11 @@ pub mod sql_migration_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sql_migration_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.sql_migration_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1834,13 +1839,11 @@ pub mod sql_migration_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sql_migration_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.sql_migration_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1960,13 +1963,11 @@ pub mod sql_migration_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sql_migration_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.sql_migration_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2077,12 +2078,11 @@ pub mod sql_migration_services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2169,13 +2169,11 @@ pub mod sql_migration_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}/listAuthKeys",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sql_migration_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}/listAuthKeys",
+                    &self.subscription_id, &self.resource_group_name, &self.sql_migration_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2275,13 +2273,11 @@ pub mod sql_migration_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}/regenerateAuthKeys",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sql_migration_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}/regenerateAuthKeys",
+                    &self.subscription_id, &self.resource_group_name, &self.sql_migration_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2381,13 +2377,11 @@ pub mod sql_migration_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}/deleteNode",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sql_migration_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}/deleteNode",
+                    &self.subscription_id, &self.resource_group_name, &self.sql_migration_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2511,13 +2505,11 @@ pub mod sql_migration_services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}/listMigrations",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sql_migration_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}/listMigrations",
+                    &self.subscription_id, &self.resource_group_name, &self.sql_migration_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2604,13 +2596,11 @@ pub mod sql_migration_services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}/listMonitoringData",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.sql_migration_service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/sqlMigrationServices/{}/listMonitoringData",
+                    &self.subscription_id, &self.resource_group_name, &self.sql_migration_service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2732,11 +2722,11 @@ pub mod sql_migration_services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DataMigration/sqlMigrationServices",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DataMigration/sqlMigrationServices",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2867,11 +2857,11 @@ pub mod resource_skus {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DataMigration/skus",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DataMigration/skus",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3205,13 +3195,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3310,13 +3298,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3443,13 +3429,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3580,13 +3564,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3673,13 +3655,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/checkStatus",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/checkStatus",
+                    &self.subscription_id, &self.group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3772,13 +3752,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/start",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/start",
+                    &self.subscription_id, &self.group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3859,13 +3837,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/stop",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/stop",
+                    &self.subscription_id, &self.group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3977,13 +3953,11 @@ pub mod services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/skus",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/skus",
+                    &self.subscription_id, &self.group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4071,13 +4045,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/checkNameAvailability",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/checkNameAvailability",
+                    &self.subscription_id, &self.group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4200,12 +4172,11 @@ pub mod services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services",
+                    &self.subscription_id, &self.group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4315,11 +4286,11 @@ pub mod services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DataMigration/services",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DataMigration/services",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4406,12 +4377,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DataMigration/locations/{}/checkNameAvailability",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DataMigration/locations/{}/checkNameAvailability",
+                    &self.subscription_id, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4746,14 +4716,11 @@ pub mod tasks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4850,15 +4817,11 @@ pub mod tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4960,15 +4923,11 @@ pub mod tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5070,15 +5029,11 @@ pub mod tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5184,15 +5139,11 @@ pub mod tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5281,15 +5232,11 @@ pub mod tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}/cancel",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}/cancel",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5391,15 +5338,11 @@ pub mod tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}/command",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/tasks/{}/command",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5686,13 +5629,11 @@ pub mod service_tasks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks",
+                    &self.subscription_id, &self.group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5788,14 +5729,11 @@ pub mod service_tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5896,14 +5834,11 @@ pub mod service_tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6004,14 +5939,11 @@ pub mod service_tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6116,14 +6048,11 @@ pub mod service_tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6211,14 +6140,11 @@ pub mod service_tasks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks/{}/cancel",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.task_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/serviceTasks/{}/cancel",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.task_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6471,13 +6397,11 @@ pub mod projects {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects",
+                    &self.subscription_id, &self.group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6564,14 +6488,11 @@ pub mod projects {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6672,14 +6593,11 @@ pub mod projects {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6780,14 +6698,11 @@ pub mod projects {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6892,14 +6807,11 @@ pub mod projects {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7033,12 +6945,11 @@ pub mod usages {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.DataMigration/locations/{}/usages",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.DataMigration/locations/{}/usages",
+                    &self.subscription_id, &self.location
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7346,14 +7257,11 @@ pub mod files {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7441,15 +7349,11 @@ pub mod files {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.file_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7551,15 +7455,11 @@ pub mod files {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.file_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7661,15 +7561,11 @@ pub mod files {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.file_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7764,15 +7660,11 @@ pub mod files {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.file_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7861,15 +7753,11 @@ pub mod files {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}/read",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}/read",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.file_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7970,15 +7858,11 @@ pub mod files {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}/readwrite",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.group_name,
-                    &self.service_name,
-                    &self.project_name,
-                    &self.file_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataMigration/services/{}/projects/{}/files/{}/readwrite",
+                    &self.subscription_id, &self.group_name, &self.service_name, &self.project_name, &self.file_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

@@ -599,7 +599,7 @@ pub struct StageDetails {
     pub display_name: Option<String>,
     #[doc = "Stage start time"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
 }
 impl StageDetails {
     pub fn new() -> Self {

@@ -218,7 +218,8 @@ pub mod get_token {
             })
         }
         fn url(&self) -> azure_core::Result<azure_core::Url> {
-            let mut url = azure_core::Url::parse(&format!("{}/Accounts/{}/token", self.client.endpoint(), &self.account_id))?;
+            let mut url = self.client.endpoint().clone();
+            url.set_path(&format!("/Accounts/{}/token", &self.account_id));
             let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
             if !has_api_version_already {
                 url.query_pairs_mut()

@@ -350,15 +350,11 @@ pub mod monitors {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_namespace,
-                    &self.resource_type,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_namespace, &self.resource_type, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -447,16 +443,16 @@ pub mod monitors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_namespace,
                     &self.resource_type,
                     &self.resource_name,
                     &self.monitor_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -559,16 +555,16 @@ pub mod monitors {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_namespace,
                     &self.resource_type,
                     &self.resource_name,
                     &self.monitor_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -829,15 +825,11 @@ pub mod components {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/components",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_namespace,
-                    &self.resource_type,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/components",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_namespace, &self.resource_type, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -944,16 +936,16 @@ pub mod components {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/components/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/components/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_namespace,
                     &self.resource_type,
                     &self.resource_name,
                     &self.component_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1214,15 +1206,11 @@ pub mod monitor_instances {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitorInstances",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_namespace,
-                    &self.resource_type,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitorInstances",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_namespace, &self.resource_type, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1329,16 +1317,16 @@ pub mod monitor_instances {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitorInstances/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitorInstances/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_namespace,
                     &self.resource_type,
                     &self.resource_name,
                     &self.monitor_instance_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1568,15 +1556,11 @@ pub mod notification_settings {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/notificationSettings",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.resource_namespace,
-                    &self.resource_type,
-                    &self.resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/notificationSettings",
+                    &self.subscription_id, &self.resource_group_name, &self.resource_namespace, &self.resource_type, &self.resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1665,16 +1649,16 @@ pub mod notification_settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/notificationSettings/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/notificationSettings/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_namespace,
                     &self.resource_type,
                     &self.resource_name,
                     &self.notification_setting_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1777,16 +1761,16 @@ pub mod notification_settings {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/notificationSettings/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/notificationSettings/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.resource_namespace,
                     &self.resource_type,
                     &self.resource_name,
                     &self.notification_setting_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1998,11 +1982,11 @@ pub mod components_summary {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.WorkloadMonitor/componentsSummary",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.WorkloadMonitor/componentsSummary",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2202,11 +2186,11 @@ pub mod monitor_instances_summary {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.WorkloadMonitor/monitorInstancesSummary",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.WorkloadMonitor/monitorInstancesSummary",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2341,10 +2325,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.WorkloadMonitor/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.WorkloadMonitor/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

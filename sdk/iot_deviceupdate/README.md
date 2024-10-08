@@ -8,5 +8,5 @@ To set this crate as a dependency, add this to your Cargo.toml
 
 ```toml
 [dependencies]
-azure_iot_deviceupdate = { version = "0.20.0", git = "https://github.com/Azure/azure-sdk-for-rust" }
+azure_iot_deviceupdate = { version = "0.21.0", git = "https://github.com/Azure/azure-sdk-for-rust" }
 ```

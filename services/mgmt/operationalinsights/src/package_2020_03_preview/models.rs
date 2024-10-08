@@ -1044,10 +1044,10 @@ pub struct ManagementGroupProperties {
     pub id: Option<String>,
     #[doc = "The datetime that the management group was created."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The last datetime that the management group received data."]
     #[serde(rename = "dataReceived", default, with = "azure_core::date::rfc3339::option")]
-    pub data_received: Option<time::OffsetDateTime>,
+    pub data_received: Option<::time::OffsetDateTime>,
     #[doc = "The version of System Center that is managing the management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
@@ -1386,10 +1386,10 @@ pub struct SearchMetadata {
     pub status: Option<String>,
     #[doc = "The start time for the search."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The time of last update."]
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated: Option<time::OffsetDateTime>,
+    pub last_updated: Option<::time::OffsetDateTime>,
     #[doc = "The ETag of the search results."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -1797,7 +1797,7 @@ pub struct UsageMetric {
     pub limit: Option<f64>,
     #[doc = "The time that the metric's value will reset."]
     #[serde(rename = "nextResetTime", default, with = "azure_core::date::rfc3339::option")]
-    pub next_reset_time: Option<time::OffsetDateTime>,
+    pub next_reset_time: Option<::time::OffsetDateTime>,
     #[doc = "The quota period that determines the length of time between value resets."]
     #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
     pub quota_period: Option<String>,

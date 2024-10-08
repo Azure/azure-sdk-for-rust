@@ -36,7 +36,7 @@ pub struct Deployment {
     pub device_class_id: Option<String>,
     #[doc = "Gets or sets the Deployment start datetime."]
     #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339")]
-    pub start_date_time: time::OffsetDateTime,
+    pub start_date_time: ::time::OffsetDateTime,
     #[doc = "Supported deployment group types."]
     #[serde(rename = "deviceGroupType")]
     pub device_group_type: DeviceGroupType,
@@ -60,7 +60,7 @@ impl Deployment {
     pub fn new(
         deployment_id: String,
         deployment_type: DeploymentType,
-        start_date_time: time::OffsetDateTime,
+        start_date_time: ::time::OffsetDateTime,
         device_group_type: DeviceGroupType,
         device_group_definition: Vec<String>,
         update_id: UpdateId,
@@ -504,7 +504,7 @@ pub struct Error {
     pub innererror: Option<InnerError>,
     #[doc = "Date and time in UTC when the error occurred."]
     #[serde(rename = "occurredDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub occurred_date_time: Option<time::OffsetDateTime>,
+    pub occurred_date_time: Option<::time::OffsetDateTime>,
 }
 impl Error {
     pub fn new(code: String, message: String) -> Self {
@@ -727,10 +727,10 @@ pub struct Operation {
     pub trace_id: Option<String>,
     #[doc = "Date and time in UTC when the operation status was last updated."]
     #[serde(rename = "lastActionDateTime", with = "azure_core::date::rfc3339")]
-    pub last_action_date_time: time::OffsetDateTime,
+    pub last_action_date_time: ::time::OffsetDateTime,
     #[doc = "Date and time in UTC when the operation was created."]
     #[serde(rename = "createdDateTime", with = "azure_core::date::rfc3339")]
-    pub created_date_time: time::OffsetDateTime,
+    pub created_date_time: ::time::OffsetDateTime,
     #[doc = "Operation ETag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -739,8 +739,8 @@ impl Operation {
     pub fn new(
         operation_id: String,
         status: OperationStatus,
-        last_action_date_time: time::OffsetDateTime,
-        created_date_time: time::OffsetDateTime,
+        last_action_date_time: ::time::OffsetDateTime,
+        created_date_time: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             operation_id,
@@ -1131,10 +1131,10 @@ pub struct Update {
     pub manifest_version: String,
     #[doc = "Date and time in UTC when the update was imported."]
     #[serde(rename = "importedDateTime", with = "azure_core::date::rfc3339")]
-    pub imported_date_time: time::OffsetDateTime,
+    pub imported_date_time: ::time::OffsetDateTime,
     #[doc = "Date and time in UTC when the update was created."]
     #[serde(rename = "createdDateTime", with = "azure_core::date::rfc3339")]
-    pub created_date_time: time::OffsetDateTime,
+    pub created_date_time: ::time::OffsetDateTime,
     #[doc = "Update ETag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -1146,8 +1146,8 @@ impl Update {
         installed_criteria: String,
         compatibility: Vec<Compatibility>,
         manifest_version: String,
-        imported_date_time: time::OffsetDateTime,
-        created_date_time: time::OffsetDateTime,
+        imported_date_time: ::time::OffsetDateTime,
+        created_date_time: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             update_id,

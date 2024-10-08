@@ -318,14 +318,11 @@ pub mod extensions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name,
-                    &self.extension_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name, &self.extension_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -435,14 +432,11 @@ pub mod extensions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name,
-                    &self.extension_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name, &self.extension_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -536,14 +530,11 @@ pub mod extensions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name,
-                    &self.extension_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name, &self.extension_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -697,13 +688,11 @@ pub mod extensions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -900,10 +889,8 @@ pub mod farm_beats_extensions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.AgFoodPlatform/farmBeatsExtensionDefinitions",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.AgFoodPlatform/farmBeatsExtensionDefinitions");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -987,11 +974,11 @@ pub mod farm_beats_extensions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.AgFoodPlatform/farmBeatsExtensionDefinitions/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.AgFoodPlatform/farmBeatsExtensionDefinitions/{}",
                     &self.farm_beats_extension_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1211,13 +1198,11 @@ pub mod farm_beats_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1317,13 +1302,11 @@ pub mod farm_beats_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1431,13 +1414,11 @@ pub mod farm_beats_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1585,13 +1566,11 @@ pub mod farm_beats_models {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1721,11 +1700,11 @@ pub mod farm_beats_models {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.AgFoodPlatform/farmBeats",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.AgFoodPlatform/farmBeats",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1856,12 +1835,11 @@ pub mod farm_beats_models {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1976,13 +1954,11 @@ pub mod operation_results {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.AgFoodPlatform/locations/{}/operationResults/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.locations,
-                    &self.operation_results_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.AgFoodPlatform/locations/{}/operationResults/{}",
+                    &self.subscription_id, &self.locations, &self.operation_results_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2106,11 +2082,11 @@ pub mod locations {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.AgFoodPlatform/checkNameAvailability",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.AgFoodPlatform/checkNameAvailability",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2245,8 +2221,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url =
-                    azure_core::Url::parse(&format!("{}/providers/Microsoft.AgFoodPlatform/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.AgFoodPlatform/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2431,14 +2407,14 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateEndpointConnections/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateEndpointConnections/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.farm_beats_resource_name,
                     &self.private_endpoint_connection_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2539,14 +2515,14 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateEndpointConnections/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateEndpointConnections/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.farm_beats_resource_name,
                     &self.private_endpoint_connection_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2648,14 +2624,14 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateEndpointConnections/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateEndpointConnections/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.farm_beats_resource_name,
                     &self.private_endpoint_connection_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2743,13 +2719,11 @@ pub mod private_endpoint_connections {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateEndpointConnections",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateEndpointConnections",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2888,13 +2862,11 @@ pub mod private_link_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateLinkResources",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateLinkResources",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2981,14 +2953,11 @@ pub mod private_link_resources {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateLinkResources/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name,
-                    &self.sub_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/privateLinkResources/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name, &self.sub_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3194,14 +3163,11 @@ pub mod solutions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name,
-                    &self.solution_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name, &self.solution_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3311,14 +3277,11 @@ pub mod solutions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name,
-                    &self.solution_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name, &self.solution_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3412,14 +3375,11 @@ pub mod solutions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name,
-                    &self.solution_id
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name, &self.solution_id
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3489,10 +3449,10 @@ pub mod solutions {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -3523,22 +3483,22 @@ pub mod solutions {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -3645,13 +3605,11 @@ pub mod solutions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.farm_beats_resource_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions",
+                    &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3824,10 +3782,8 @@ pub mod solutions_discoverability {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.AgFoodPlatform/farmBeatsSolutionDefinitions",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.AgFoodPlatform/farmBeatsSolutionDefinitions");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3911,11 +3867,11 @@ pub mod solutions_discoverability {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/Microsoft.AgFoodPlatform/farmBeatsSolutionDefinitions/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/Microsoft.AgFoodPlatform/farmBeatsSolutionDefinitions/{}",
                     &self.farm_beats_solution_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

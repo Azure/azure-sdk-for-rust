@@ -147,8 +147,7 @@ pub mod operations {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "List resource provider operations"]
-        #[doc = "Returns a collection of resource provider operations."]
+        #[doc = "List the operations for the provider"]
         pub fn list(&self) -> list::RequestBuilder {
             list::RequestBuilder { client: self.0.clone() }
         }
@@ -252,7 +251,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.ApiCenter/operations", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/Microsoft.ApiCenter/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -297,7 +297,6 @@ pub mod services {
                 resource_group_name: resource_group_name.into(),
             }
         }
-        #[doc = "Get service"]
         #[doc = "Returns details of the service."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -317,49 +316,50 @@ pub mod services {
                 service_name: service_name.into(),
             }
         }
-        #[doc = "Create or update service"]
         #[doc = "Creates new or updates existing API."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `service_name`: The name of Azure API Center service."]
+        #[doc = "* `resource`: Resource create parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             service_name: impl Into<String>,
+            resource: impl Into<models::Service>,
         ) -> create_or_update::RequestBuilder {
             create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 service_name: service_name.into(),
-                payload: None,
+                resource: resource.into(),
             }
         }
-        #[doc = "Update service"]
         #[doc = "Updates existing service."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `service_name`: The name of Azure API Center service."]
+        #[doc = "* `payload`: The resource properties to be updated."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             service_name: impl Into<String>,
+            payload: impl Into<models::ServiceUpdate>,
         ) -> update::RequestBuilder {
             update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 service_name: service_name.into(),
-                payload: None,
+                payload: payload.into(),
             }
         }
-        #[doc = "Delete service"]
         #[doc = "Deletes specified service."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -379,14 +379,13 @@ pub mod services {
                 service_name: service_name.into(),
             }
         }
-        #[doc = "Export effective metadata schema"]
         #[doc = "Exports the effective metadata schema."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `service_name`: The name of Azure API Center service."]
-        #[doc = "* `payload`: The metadata schema request details."]
+        #[doc = "* `payload`: The content of the action request"]
         pub fn export_metadata_schema(
             &self,
             subscription_id: impl Into<String>,
@@ -412,9 +411,9 @@ pub mod services {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ServiceCollection> {
+            pub async fn into_body(self) -> azure_core::Result<models::ServiceListResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ServiceCollection = serde_json::from_slice(&bytes)?;
+                let body: models::ServiceListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -458,7 +457,7 @@ pub mod services {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::ServiceCollection, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ServiceListResult, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -503,11 +502,11 @@ pub mod services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.ApiCenter/services",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/Microsoft.ApiCenter/services",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -526,9 +525,9 @@ pub mod services {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ServiceCollection> {
+            pub async fn into_body(self) -> azure_core::Result<models::ServiceListResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ServiceCollection = serde_json::from_slice(&bytes)?;
+                let body: models::ServiceListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -573,7 +572,7 @@ pub mod services {
             pub(crate) resource_group_name: String,
         }
         impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::ServiceCollection, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ServiceListResult, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -618,12 +617,11 @@ pub mod services {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -709,13 +707,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -792,14 +788,9 @@ pub mod services {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) service_name: String,
-            pub(crate) payload: Option<models::Service>,
+            pub(crate) resource: models::Service,
         }
         impl RequestBuilder {
-            #[doc = "The service entity."]
-            pub fn payload(mut self, payload: impl Into<models::Service>) -> Self {
-                self.payload = Some(payload.into());
-                self
-            }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -812,25 +803,19 @@ pub mod services {
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = if let Some(payload) = &this.payload {
-                            req.insert_header("content-type", "application/json");
-                            azure_core::to_json(payload)?
-                        } else {
-                            azure_core::EMPTY_BODY
-                        };
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.resource)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -907,14 +892,9 @@ pub mod services {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) service_name: String,
-            pub(crate) payload: Option<models::ServiceUpdate>,
+            pub(crate) payload: models::ServiceUpdate,
         }
         impl RequestBuilder {
-            #[doc = "The service properties to be updated."]
-            pub fn payload(mut self, payload: impl Into<models::ServiceUpdate>) -> Self {
-                self.payload = Some(payload.into());
-                self
-            }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -927,25 +907,19 @@ pub mod services {
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let bearer_token = this.client.bearer_token().await?;
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = if let Some(payload) = &this.payload {
-                            req.insert_header("content-type", "application/json");
-                            azure_core::to_json(payload)?
-                        } else {
-                            azure_core::EMPTY_BODY
-                        };
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.payload)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1038,13 +1012,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1074,6 +1046,9 @@ pub mod services {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -1085,25 +1060,35 @@ pub mod services {
                 self.as_raw_response()
             }
         }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
+        #[doc = r""]
         #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
         #[doc = r""]
         #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1132,13 +1117,11 @@ pub mod services {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/exportMetadataSchema",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/exportMetadataSchema",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1150,13 +1133,68 @@ pub mod services {
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::MetadataSchemaExportResult>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::MetadataSchemaExportResult>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::Location)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -1169,7 +1207,6 @@ pub mod metadata_schemas {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "List metadata schemas"]
         #[doc = "Returns a collection of metadata schemas."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -1190,7 +1227,6 @@ pub mod metadata_schemas {
                 filter: None,
             }
         }
-        #[doc = "Get metadata schema"]
         #[doc = "Returns details of the metadata schema."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -1213,7 +1249,6 @@ pub mod metadata_schemas {
                 metadata_schema_name: metadata_schema_name.into(),
             }
         }
-        #[doc = "Create or update metadata schema"]
         #[doc = "Creates new or updates existing metadata schema."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -1221,7 +1256,7 @@ pub mod metadata_schemas {
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `service_name`: The name of Azure API Center service."]
         #[doc = "* `metadata_schema_name`: The name of the metadata schema."]
-        #[doc = "* `payload`: Metadata schema entity."]
+        #[doc = "* `payload`: Resource create parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1239,7 +1274,6 @@ pub mod metadata_schemas {
                 payload: payload.into(),
             }
         }
-        #[doc = "Delete metadata schema"]
         #[doc = "Deletes specified metadata schema."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -1262,7 +1296,6 @@ pub mod metadata_schemas {
                 metadata_schema_name: metadata_schema_name.into(),
             }
         }
-        #[doc = "Check if metadata schema exists"]
         #[doc = "Checks if specified metadata schema exists."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -1295,9 +1328,9 @@ pub mod metadata_schemas {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::MetadataSchemaCollection> {
+            pub async fn into_body(self) -> azure_core::Result<models::MetadataSchemaListResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::MetadataSchemaCollection = serde_json::from_slice(&bytes)?;
+                let body: models::MetadataSchemaListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1349,7 +1382,7 @@ pub mod metadata_schemas {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<models::MetadataSchemaCollection, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::MetadataSchemaListResult, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -1397,13 +1430,11 @@ pub mod metadata_schemas {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/metadataSchemas",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/metadataSchemas",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1449,7 +1480,7 @@ pub mod metadata_schemas {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -1500,14 +1531,11 @@ pub mod metadata_schemas {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/metadataSchemas/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.metadata_schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/metadataSchemas/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.metadata_schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1565,7 +1593,7 @@ pub mod metadata_schemas {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -1618,14 +1646,11 @@ pub mod metadata_schemas {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/metadataSchemas/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.metadata_schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/metadataSchemas/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.metadata_schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1719,14 +1744,11 @@ pub mod metadata_schemas {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/metadataSchemas/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.metadata_schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/metadataSchemas/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.metadata_schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1808,14 +1830,11 @@ pub mod metadata_schemas {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/metadataSchemas/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.metadata_schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/metadataSchemas/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.metadata_schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1834,7 +1853,6 @@ pub mod workspaces {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "List workspaces"]
         #[doc = "Returns a collection of workspaces."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -1855,7 +1873,6 @@ pub mod workspaces {
                 filter: None,
             }
         }
-        #[doc = "Get workspace"]
         #[doc = "Returns details of the workspace."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -1878,7 +1895,6 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
-        #[doc = "Create or update workspace"]
         #[doc = "Creates new or updates existing workspace."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -1886,7 +1902,7 @@ pub mod workspaces {
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `service_name`: The name of Azure API Center service."]
         #[doc = "* `workspace_name`: The name of the workspace."]
-        #[doc = "* `payload`: Workspace entity."]
+        #[doc = "* `payload`: Resource create parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1904,7 +1920,6 @@ pub mod workspaces {
                 payload: payload.into(),
             }
         }
-        #[doc = "Delete workspace"]
         #[doc = "Deletes specified workspace."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -1927,7 +1942,6 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
-        #[doc = "Check if workspace exists"]
         #[doc = "Checks if specified workspace exists."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -1960,9 +1974,9 @@ pub mod workspaces {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceCollection> {
+            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceListResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::WorkspaceCollection = serde_json::from_slice(&bytes)?;
+                let body: models::WorkspaceListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2014,7 +2028,7 @@ pub mod workspaces {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<models::WorkspaceCollection, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::WorkspaceListResult, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -2062,13 +2076,11 @@ pub mod workspaces {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2114,7 +2126,7 @@ pub mod workspaces {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -2165,14 +2177,11 @@ pub mod workspaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2230,7 +2239,7 @@ pub mod workspaces {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -2283,14 +2292,11 @@ pub mod workspaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2384,14 +2390,11 @@ pub mod workspaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2473,14 +2476,11 @@ pub mod workspaces {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2499,7 +2499,6 @@ pub mod apis {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "List APIs"]
         #[doc = "Returns a collection of APIs."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -2523,7 +2522,6 @@ pub mod apis {
                 filter: None,
             }
         }
-        #[doc = "Get API"]
         #[doc = "Returns details of the API."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -2549,7 +2547,6 @@ pub mod apis {
                 api_name: api_name.into(),
             }
         }
-        #[doc = "Create or update API"]
         #[doc = "Creates new or updates existing API."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -2558,7 +2555,7 @@ pub mod apis {
         #[doc = "* `service_name`: The name of Azure API Center service."]
         #[doc = "* `workspace_name`: The name of the workspace."]
         #[doc = "* `api_name`: The name of the API."]
-        #[doc = "* `payload`: API entity."]
+        #[doc = "* `payload`: Resource create parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2578,7 +2575,6 @@ pub mod apis {
                 payload: payload.into(),
             }
         }
-        #[doc = "Delete API"]
         #[doc = "Deletes specified API."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -2604,7 +2600,6 @@ pub mod apis {
                 api_name: api_name.into(),
             }
         }
-        #[doc = "Check if API exists"]
         #[doc = "Checks if specified API exists."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -2640,9 +2635,9 @@ pub mod apis {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ApiCollection> {
+            pub async fn into_body(self) -> azure_core::Result<models::ApiListResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ApiCollection = serde_json::from_slice(&bytes)?;
+                let body: models::ApiListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2695,7 +2690,7 @@ pub mod apis {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<models::ApiCollection, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ApiListResult, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -2743,14 +2738,11 @@ pub mod apis {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2796,7 +2788,7 @@ pub mod apis {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -2848,15 +2840,11 @@ pub mod apis {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.api_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name, &self.api_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2914,7 +2902,7 @@ pub mod apis {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -2968,15 +2956,11 @@ pub mod apis {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.api_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name, &self.api_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3071,15 +3055,11 @@ pub mod apis {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.api_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name, &self.api_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3162,15 +3142,11 @@ pub mod apis {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.api_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name, &self.api_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3181,7 +3157,7 @@ pub mod apis {
         }
     }
 }
-pub mod api_versions {
+pub mod deployments {
     use super::models;
     #[cfg(not(target_arch = "wasm32"))]
     use futures::future::BoxFuture;
@@ -3189,8 +3165,7 @@ pub mod api_versions {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "List API versions"]
-        #[doc = "Returns a collection of API versions."]
+        #[doc = "Returns a collection of API deployments."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
@@ -3216,8 +3191,7 @@ pub mod api_versions {
                 filter: None,
             }
         }
-        #[doc = "Get API version"]
-        #[doc = "Returns details of the API version."]
+        #[doc = "Returns details of the API deployment."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
@@ -3225,7 +3199,7 @@ pub mod api_versions {
         #[doc = "* `service_name`: The name of Azure API Center service."]
         #[doc = "* `workspace_name`: The name of the workspace."]
         #[doc = "* `api_name`: The name of the API."]
-        #[doc = "* `version_name`: The name of the API version."]
+        #[doc = "* `deployment_name`: The name of the API deployment."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3233,7 +3207,7 @@ pub mod api_versions {
             service_name: impl Into<String>,
             workspace_name: impl Into<String>,
             api_name: impl Into<String>,
-            version_name: impl Into<String>,
+            deployment_name: impl Into<String>,
         ) -> get::RequestBuilder {
             get::RequestBuilder {
                 client: self.0.clone(),
@@ -3242,11 +3216,10 @@ pub mod api_versions {
                 service_name: service_name.into(),
                 workspace_name: workspace_name.into(),
                 api_name: api_name.into(),
-                version_name: version_name.into(),
+                deployment_name: deployment_name.into(),
             }
         }
-        #[doc = "Create or update API version"]
-        #[doc = "Creates new or updates existing API version."]
+        #[doc = "Creates new or updates existing API deployment."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
@@ -3254,8 +3227,8 @@ pub mod api_versions {
         #[doc = "* `service_name`: The name of Azure API Center service."]
         #[doc = "* `workspace_name`: The name of the workspace."]
         #[doc = "* `api_name`: The name of the API."]
-        #[doc = "* `version_name`: The name of the API version."]
-        #[doc = "* `payload`: API version entity."]
+        #[doc = "* `deployment_name`: The name of the API deployment."]
+        #[doc = "* `payload`: Resource create parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3263,8 +3236,8 @@ pub mod api_versions {
             service_name: impl Into<String>,
             workspace_name: impl Into<String>,
             api_name: impl Into<String>,
-            version_name: impl Into<String>,
-            payload: impl Into<models::ApiVersion>,
+            deployment_name: impl Into<String>,
+            payload: impl Into<models::Deployment>,
         ) -> create_or_update::RequestBuilder {
             create_or_update::RequestBuilder {
                 client: self.0.clone(),
@@ -3273,12 +3246,11 @@ pub mod api_versions {
                 service_name: service_name.into(),
                 workspace_name: workspace_name.into(),
                 api_name: api_name.into(),
-                version_name: version_name.into(),
+                deployment_name: deployment_name.into(),
                 payload: payload.into(),
             }
         }
-        #[doc = "Delete API version"]
-        #[doc = "Deletes specified API version"]
+        #[doc = "Deletes API deployment."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
@@ -3286,7 +3258,7 @@ pub mod api_versions {
         #[doc = "* `service_name`: The name of Azure API Center service."]
         #[doc = "* `workspace_name`: The name of the workspace."]
         #[doc = "* `api_name`: The name of the API."]
-        #[doc = "* `version_name`: The name of the API version."]
+        #[doc = "* `deployment_name`: The name of the API deployment."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3294,7 +3266,7 @@ pub mod api_versions {
             service_name: impl Into<String>,
             workspace_name: impl Into<String>,
             api_name: impl Into<String>,
-            version_name: impl Into<String>,
+            deployment_name: impl Into<String>,
         ) -> delete::RequestBuilder {
             delete::RequestBuilder {
                 client: self.0.clone(),
@@ -3303,11 +3275,10 @@ pub mod api_versions {
                 service_name: service_name.into(),
                 workspace_name: workspace_name.into(),
                 api_name: api_name.into(),
-                version_name: version_name.into(),
+                deployment_name: deployment_name.into(),
             }
         }
-        #[doc = "Check if API version exists"]
-        #[doc = "Checks if specified API version exists."]
+        #[doc = "Checks if specified API deployment exists."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
@@ -3315,7 +3286,7 @@ pub mod api_versions {
         #[doc = "* `service_name`: The name of Azure API Center service."]
         #[doc = "* `workspace_name`: The name of the workspace."]
         #[doc = "* `api_name`: The name of the API."]
-        #[doc = "* `version_name`: The name of the API version."]
+        #[doc = "* `deployment_name`: The name of the API deployment."]
         pub fn head(
             &self,
             subscription_id: impl Into<String>,
@@ -3323,7 +3294,7 @@ pub mod api_versions {
             service_name: impl Into<String>,
             workspace_name: impl Into<String>,
             api_name: impl Into<String>,
-            version_name: impl Into<String>,
+            deployment_name: impl Into<String>,
         ) -> head::RequestBuilder {
             head::RequestBuilder {
                 client: self.0.clone(),
@@ -3332,7 +3303,7 @@ pub mod api_versions {
                 service_name: service_name.into(),
                 workspace_name: workspace_name.into(),
                 api_name: api_name.into(),
-                version_name: version_name.into(),
+                deployment_name: deployment_name.into(),
             }
         }
     }
@@ -3345,9 +3316,9 @@ pub mod api_versions {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ApiVersionCollection> {
+            pub async fn into_body(self) -> azure_core::Result<models::DeploymentListResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ApiVersionCollection = serde_json::from_slice(&bytes)?;
+                let body: models::DeploymentListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -3401,7 +3372,7 @@ pub mod api_versions {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<models::ApiVersionCollection, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::DeploymentListResult, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -3449,15 +3420,717 @@ pub mod api_versions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/deployments",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name, &self.api_name
+                ));
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
+                }
+                Ok(url)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::Deployment> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::Deployment = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The entity tag for the response."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) service_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) api_name: String,
+            pub(crate) deployment_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/deployments/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.service_name,
                     &self.workspace_name,
-                    &self.api_name
-                ))?;
+                    &self.api_name,
+                    &self.deployment_name
+                ));
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
+                }
+                Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Deployment>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Deployment>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::Deployment> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::Deployment = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The entity tag for the response."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) service_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) api_name: String,
+            pub(crate) deployment_name: String,
+            pub(crate) payload: models::Deployment,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.payload)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/deployments/{}",
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.service_name,
+                    &self.workspace_name,
+                    &self.api_name,
+                    &self.deployment_name
+                ));
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
+                }
+                Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Deployment>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Deployment>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) service_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) api_name: String,
+            pub(crate) deployment_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/deployments/{}",
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.service_name,
+                    &self.workspace_name,
+                    &self.api_name,
+                    &self.deployment_name
+                ));
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
+                }
+                Ok(url)
+            }
+        }
+    }
+    pub mod head {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) service_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) api_name: String,
+            pub(crate) deployment_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Head);
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/deployments/{}",
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.service_name,
+                    &self.workspace_name,
+                    &self.api_name,
+                    &self.deployment_name
+                ));
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
+                }
+                Ok(url)
+            }
+        }
+    }
+}
+pub mod api_versions {
+    use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Returns a collection of API versions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_name`: The name of Azure API Center service."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `api_name`: The name of the API."]
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            service_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            api_name: impl Into<String>,
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                service_name: service_name.into(),
+                workspace_name: workspace_name.into(),
+                api_name: api_name.into(),
+                filter: None,
+            }
+        }
+        #[doc = "Returns details of the API version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_name`: The name of Azure API Center service."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `api_name`: The name of the API."]
+        #[doc = "* `version_name`: The name of the API version."]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            service_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            api_name: impl Into<String>,
+            version_name: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                service_name: service_name.into(),
+                workspace_name: workspace_name.into(),
+                api_name: api_name.into(),
+                version_name: version_name.into(),
+            }
+        }
+        #[doc = "Creates new or updates existing API version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_name`: The name of Azure API Center service."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `api_name`: The name of the API."]
+        #[doc = "* `version_name`: The name of the API version."]
+        #[doc = "* `payload`: Resource create parameters."]
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            service_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            api_name: impl Into<String>,
+            version_name: impl Into<String>,
+            payload: impl Into<models::ApiVersion>,
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                service_name: service_name.into(),
+                workspace_name: workspace_name.into(),
+                api_name: api_name.into(),
+                version_name: version_name.into(),
+                payload: payload.into(),
+            }
+        }
+        #[doc = "Deletes specified API version"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_name`: The name of Azure API Center service."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `api_name`: The name of the API."]
+        #[doc = "* `version_name`: The name of the API version."]
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            service_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            api_name: impl Into<String>,
+            version_name: impl Into<String>,
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                service_name: service_name.into(),
+                workspace_name: workspace_name.into(),
+                api_name: api_name.into(),
+                version_name: version_name.into(),
+            }
+        }
+        #[doc = "Checks if specified API version exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_name`: The name of Azure API Center service."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `api_name`: The name of the API."]
+        #[doc = "* `version_name`: The name of the API version."]
+        pub fn head(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            service_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            api_name: impl Into<String>,
+            version_name: impl Into<String>,
+        ) -> head::RequestBuilder {
+            head::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                service_name: service_name.into(),
+                workspace_name: workspace_name.into(),
+                api_name: api_name.into(),
+                version_name: version_name.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ApiVersionListResult> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ApiVersionListResult = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) service_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) api_name: String,
+            pub(crate) filter: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "OData filter parameter."]
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn into_stream(self) -> azure_core::Pageable<models::ApiVersionListResult, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = this.url()?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                                if let Some(filter) = &this.filter {
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name, &self.api_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3503,7 +4176,7 @@ pub mod api_versions {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -3556,16 +4229,16 @@ pub mod api_versions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.service_name,
                     &self.workspace_name,
                     &self.api_name,
                     &self.version_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3623,7 +4296,7 @@ pub mod api_versions {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -3678,16 +4351,16 @@ pub mod api_versions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.service_name,
                     &self.workspace_name,
                     &self.api_name,
                     &self.version_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3783,16 +4456,16 @@ pub mod api_versions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.service_name,
                     &self.workspace_name,
                     &self.api_name,
                     &self.version_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3876,16 +4549,16 @@ pub mod api_versions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}",
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.service_name,
                     &self.workspace_name,
                     &self.api_name,
                     &self.version_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3904,7 +4577,6 @@ pub mod api_definitions {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "List API definitions"]
         #[doc = "Returns a collection of API definitions."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -3934,7 +4606,6 @@ pub mod api_definitions {
                 filter: None,
             }
         }
-        #[doc = "Get API definition"]
         #[doc = "Returns details of the API definition."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -3966,7 +4637,6 @@ pub mod api_definitions {
                 definition_name: definition_name.into(),
             }
         }
-        #[doc = "Create or update API definition"]
         #[doc = "Creates new or updates existing API definition."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -3977,7 +4647,7 @@ pub mod api_definitions {
         #[doc = "* `api_name`: The name of the API."]
         #[doc = "* `version_name`: The name of the API version."]
         #[doc = "* `definition_name`: The name of the API definition."]
-        #[doc = "* `payload`: API definition entity."]
+        #[doc = "* `payload`: Resource create parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4001,7 +4671,6 @@ pub mod api_definitions {
                 payload: payload.into(),
             }
         }
-        #[doc = "Delete API definition"]
         #[doc = "Deletes specified API definition."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -4033,7 +4702,6 @@ pub mod api_definitions {
                 definition_name: definition_name.into(),
             }
         }
-        #[doc = "Check if API definition exists"]
         #[doc = "Checks if specified API definition exists."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -4065,42 +4733,6 @@ pub mod api_definitions {
                 definition_name: definition_name.into(),
             }
         }
-        #[doc = "Import API specification"]
-        #[doc = "Imports the API specification."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `service_name`: The name of Azure API Center service."]
-        #[doc = "* `workspace_name`: The name of the workspace."]
-        #[doc = "* `api_name`: The name of the API."]
-        #[doc = "* `version_name`: The name of the API version."]
-        #[doc = "* `definition_name`: The name of the API definition."]
-        #[doc = "* `payload`: The API specification source entity."]
-        pub fn import_specification(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            service_name: impl Into<String>,
-            workspace_name: impl Into<String>,
-            api_name: impl Into<String>,
-            version_name: impl Into<String>,
-            definition_name: impl Into<String>,
-            payload: impl Into<models::ApiSpecImportRequest>,
-        ) -> import_specification::RequestBuilder {
-            import_specification::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                service_name: service_name.into(),
-                workspace_name: workspace_name.into(),
-                api_name: api_name.into(),
-                version_name: version_name.into(),
-                definition_name: definition_name.into(),
-                payload: payload.into(),
-            }
-        }
-        #[doc = "Export API specification"]
         #[doc = "Exports the API specification."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -4132,6 +4764,40 @@ pub mod api_definitions {
                 definition_name: definition_name.into(),
             }
         }
+        #[doc = "Imports the API specification."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_name`: The name of Azure API Center service."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `api_name`: The name of the API."]
+        #[doc = "* `version_name`: The name of the API version."]
+        #[doc = "* `definition_name`: The name of the API definition."]
+        #[doc = "* `payload`: The content of the action request"]
+        pub fn import_specification(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            service_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            api_name: impl Into<String>,
+            version_name: impl Into<String>,
+            definition_name: impl Into<String>,
+            payload: impl Into<models::ApiSpecImportRequest>,
+        ) -> import_specification::RequestBuilder {
+            import_specification::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                service_name: service_name.into(),
+                workspace_name: workspace_name.into(),
+                api_name: api_name.into(),
+                version_name: version_name.into(),
+                definition_name: definition_name.into(),
+                payload: payload.into(),
+            }
+        }
     }
     pub mod list {
         use super::models;
@@ -4142,9 +4808,9 @@ pub mod api_definitions {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ApiDefinitionCollection> {
+            pub async fn into_body(self) -> azure_core::Result<models::ApiDefinitionListResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ApiDefinitionCollection = serde_json::from_slice(&bytes)?;
+                let body: models::ApiDefinitionListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -4199,7 +4865,7 @@ pub mod api_definitions {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<models::ApiDefinitionCollection, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ApiDefinitionListResult, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -4247,7 +4913,8 @@ pub mod api_definitions {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions" , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4293,7 +4960,7 @@ pub mod api_definitions {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state definition. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -4347,7 +5014,8 @@ pub mod api_definitions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}" , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4405,7 +5073,7 @@ pub mod api_definitions {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state definition. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -4461,7 +5129,8 @@ pub mod api_definitions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}" , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4558,7 +5227,8 @@ pub mod api_definitions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}" , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4643,13 +5313,186 @@ pub mod api_definitions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}" , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
                         .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
                 }
                 Ok(url)
+            }
+        }
+    }
+    pub mod export_specification {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ApiSpecExportResult> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ApiSpecExportResult = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
+        #[doc = r" [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) service_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) api_name: String,
+            pub(crate) version_name: String,
+            pub(crate) definition_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}/exportSpecification" , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
+                }
+                Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ApiSpecExportResult>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ApiSpecExportResult>>;
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::Location)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -4668,6 +5511,9 @@ pub mod api_definitions {
             pub fn as_raw_response(&self) -> &azure_core::Response {
                 &self.0
             }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
         }
         impl From<Response> for azure_core::Response {
             fn from(rsp: Response) -> Self {
@@ -4679,25 +5525,35 @@ pub mod api_definitions {
                 self.as_raw_response()
             }
         }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The Location header contains the URL where the status of the long running operation can be checked."]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+            #[doc = "The Retry-After header can indicate how long the client should wait before polling the operation status."]
+            pub fn retry_after(&self) -> azure_core::Result<i32> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
+        #[doc = r""]
         #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
         #[doc = r""]
         #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -4730,825 +5586,8 @@ pub mod api_definitions {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}/importSpecification" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ? ;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod export_specification {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ApiSpecExportResult> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::ApiSpecExportResult = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) service_name: String,
-            pub(crate) workspace_name: String,
-            pub(crate) api_name: String,
-            pub(crate) version_name: String,
-            pub(crate) definition_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}/exportSpecification" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ? ;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ApiSpecExportResult>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ApiSpecExportResult>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-}
-pub mod deployments {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "List deployments"]
-        #[doc = "Returns a collection of API deployments."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `service_name`: The name of Azure API Center service."]
-        #[doc = "* `workspace_name`: The name of the workspace."]
-        #[doc = "* `api_name`: The name of the API."]
-        pub fn list(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            service_name: impl Into<String>,
-            workspace_name: impl Into<String>,
-            api_name: impl Into<String>,
-        ) -> list::RequestBuilder {
-            list::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                service_name: service_name.into(),
-                workspace_name: workspace_name.into(),
-                api_name: api_name.into(),
-                filter: None,
-            }
-        }
-        #[doc = "Get API deployment"]
-        #[doc = "Returns details of the API deployment."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `service_name`: The name of Azure API Center service."]
-        #[doc = "* `workspace_name`: The name of the workspace."]
-        #[doc = "* `api_name`: The name of the API."]
-        #[doc = "* `deployment_name`: The name of the API deployment."]
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            service_name: impl Into<String>,
-            workspace_name: impl Into<String>,
-            api_name: impl Into<String>,
-            deployment_name: impl Into<String>,
-        ) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                service_name: service_name.into(),
-                workspace_name: workspace_name.into(),
-                api_name: api_name.into(),
-                deployment_name: deployment_name.into(),
-            }
-        }
-        #[doc = "Create or update API deployment"]
-        #[doc = "Creates new or updates existing API deployment."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `service_name`: The name of Azure API Center service."]
-        #[doc = "* `workspace_name`: The name of the workspace."]
-        #[doc = "* `api_name`: The name of the API."]
-        #[doc = "* `deployment_name`: The name of the API deployment."]
-        #[doc = "* `payload`: API deployment entity."]
-        pub fn create_or_update(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            service_name: impl Into<String>,
-            workspace_name: impl Into<String>,
-            api_name: impl Into<String>,
-            deployment_name: impl Into<String>,
-            payload: impl Into<models::Deployment>,
-        ) -> create_or_update::RequestBuilder {
-            create_or_update::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                service_name: service_name.into(),
-                workspace_name: workspace_name.into(),
-                api_name: api_name.into(),
-                deployment_name: deployment_name.into(),
-                payload: payload.into(),
-            }
-        }
-        #[doc = "Delete API deployment"]
-        #[doc = "Deletes API deployment."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `service_name`: The name of Azure API Center service."]
-        #[doc = "* `workspace_name`: The name of the workspace."]
-        #[doc = "* `api_name`: The name of the API."]
-        #[doc = "* `deployment_name`: The name of the API deployment."]
-        pub fn delete(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            service_name: impl Into<String>,
-            workspace_name: impl Into<String>,
-            api_name: impl Into<String>,
-            deployment_name: impl Into<String>,
-        ) -> delete::RequestBuilder {
-            delete::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                service_name: service_name.into(),
-                workspace_name: workspace_name.into(),
-                api_name: api_name.into(),
-                deployment_name: deployment_name.into(),
-            }
-        }
-        #[doc = "Check if API deployment exists"]
-        #[doc = "Checks if specified API deployment exists."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `service_name`: The name of Azure API Center service."]
-        #[doc = "* `workspace_name`: The name of the workspace."]
-        #[doc = "* `api_name`: The name of the API."]
-        #[doc = "* `deployment_name`: The name of the API deployment."]
-        pub fn head(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            service_name: impl Into<String>,
-            workspace_name: impl Into<String>,
-            api_name: impl Into<String>,
-            deployment_name: impl Into<String>,
-        ) -> head::RequestBuilder {
-            head::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                service_name: service_name.into(),
-                workspace_name: workspace_name.into(),
-                api_name: api_name.into(),
-                deployment_name: deployment_name.into(),
-            }
-        }
-    }
-    pub mod list {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DeploymentCollection> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::DeploymentCollection = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) service_name: String,
-            pub(crate) workspace_name: String,
-            pub(crate) api_name: String,
-            pub(crate) filter: Option<String>,
-        }
-        impl RequestBuilder {
-            #[doc = "OData filter parameter."]
-            pub fn filter(mut self, filter: impl Into<String>) -> Self {
-                self.filter = Some(filter.into());
-                self
-            }
-            pub fn into_stream(self) -> azure_core::Pageable<models::DeploymentCollection, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
-                    let this = self.clone();
-                    async move {
-                        let mut url = this.url()?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let bearer_token = this.client.bearer_token().await?;
-                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let bearer_token = this.client.bearer_token().await?;
-                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                                if let Some(filter) = &this.filter {
-                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        };
-                        rsp?.into_body().await
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/deployments",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.api_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Deployment> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::Deployment = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-            pub fn headers(&self) -> Headers {
-                Headers(self.0.headers())
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        pub struct Headers<'a>(&'a azure_core::headers::Headers);
-        impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
-            pub fn e_tag(&self) -> azure_core::Result<&str> {
-                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) service_name: String,
-            pub(crate) workspace_name: String,
-            pub(crate) api_name: String,
-            pub(crate) deployment_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/deployments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.api_name,
-                    &self.deployment_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Deployment>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Deployment>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod create_or_update {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Deployment> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::Deployment = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-            pub fn headers(&self) -> Headers {
-                Headers(self.0.headers())
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        pub struct Headers<'a>(&'a azure_core::headers::Headers);
-        impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
-            pub fn e_tag(&self) -> azure_core::Result<&str> {
-                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) service_name: String,
-            pub(crate) workspace_name: String,
-            pub(crate) api_name: String,
-            pub(crate) deployment_name: String,
-            pub(crate) payload: models::Deployment,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.payload)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/deployments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.api_name,
-                    &self.deployment_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Deployment>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Deployment>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod delete {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) service_name: String,
-            pub(crate) workspace_name: String,
-            pub(crate) api_name: String,
-            pub(crate) deployment_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/deployments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.api_name,
-                    &self.deployment_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2024-03-01");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod head {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) service_name: String,
-            pub(crate) workspace_name: String,
-            pub(crate) api_name: String,
-            pub(crate) deployment_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Head);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/deployments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.api_name,
-                    &self.deployment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/apis/{}/versions/{}/definitions/{}/importSpecification" , & self . subscription_id , & self . resource_group_name , & self . service_name , & self . workspace_name , & self . api_name , & self . version_name , & self . definition_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5567,7 +5606,6 @@ pub mod environments {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "List environments"]
         #[doc = "Returns a collection of environments."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -5591,7 +5629,6 @@ pub mod environments {
                 filter: None,
             }
         }
-        #[doc = "Get environment"]
         #[doc = "Returns details of the environment."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -5617,7 +5654,6 @@ pub mod environments {
                 environment_name: environment_name.into(),
             }
         }
-        #[doc = "Create or update environment"]
         #[doc = "Creates new or updates existing environment."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -5626,7 +5662,7 @@ pub mod environments {
         #[doc = "* `service_name`: The name of Azure API Center service."]
         #[doc = "* `workspace_name`: The name of the workspace."]
         #[doc = "* `environment_name`: The name of the environment."]
-        #[doc = "* `payload`: Environment entity."]
+        #[doc = "* `payload`: Resource create parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5646,7 +5682,6 @@ pub mod environments {
                 payload: payload.into(),
             }
         }
-        #[doc = "Delete environment"]
         #[doc = "Deletes the environment."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -5672,7 +5707,6 @@ pub mod environments {
                 environment_name: environment_name.into(),
             }
         }
-        #[doc = "Check if environment exists"]
         #[doc = "Checks if specified environment exists."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -5708,9 +5742,9 @@ pub mod environments {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::EnvironmentCollection> {
+            pub async fn into_body(self) -> azure_core::Result<models::EnvironmentListResult> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::EnvironmentCollection = serde_json::from_slice(&bytes)?;
+                let body: models::EnvironmentListResult = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -5763,7 +5797,7 @@ pub mod environments {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<models::EnvironmentCollection, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::EnvironmentListResult, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -5811,14 +5845,11 @@ pub mod environments {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/environments",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/environments",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5864,7 +5895,7 @@ pub mod environments {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -5916,15 +5947,11 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/environments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.environment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/environments/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name, &self.environment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5982,7 +6009,7 @@ pub mod environments {
         }
         pub struct Headers<'a>(&'a azure_core::headers::Headers);
         impl<'a> Headers<'a> {
-            #[doc = "Current entity state version. Should be treated as opaque and used to make conditional HTTP requests."]
+            #[doc = "The entity tag for the response."]
             pub fn e_tag(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
             }
@@ -6036,15 +6063,11 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/environments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.environment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/environments/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name, &self.environment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6139,15 +6162,11 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/environments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.environment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/environments/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name, &self.environment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6230,15 +6249,11 @@ pub mod environments {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/environments/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.service_name,
-                    &self.workspace_name,
-                    &self.environment_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiCenter/services/{}/workspaces/{}/environments/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.service_name, &self.workspace_name, &self.environment_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

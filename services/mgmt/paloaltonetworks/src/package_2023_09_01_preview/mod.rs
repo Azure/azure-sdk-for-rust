@@ -433,10 +433,8 @@ pub mod global_rulestack {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -520,11 +518,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -621,11 +619,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -778,11 +776,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -872,11 +870,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -955,11 +953,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/commit",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/commit",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1044,11 +1042,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/getChangeLog",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/getChangeLog",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1164,11 +1162,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listAdvancedSecurityObjects",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listAdvancedSecurityObjects",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1297,11 +1295,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listAppIds",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listAppIds",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1414,11 +1412,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listCountries",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listCountries",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1515,11 +1513,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listFirewalls",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listFirewalls",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1632,11 +1630,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listPredefinedUrlCategories",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listPredefinedUrlCategories",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1752,11 +1750,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listSecurityServices",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/listSecurityServices",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1848,11 +1846,11 @@ pub mod global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/revert",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/revert",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2027,11 +2025,11 @@ pub mod certificate_object_global_rulestack {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/certificates",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/certificates",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2116,12 +2114,11 @@ pub mod certificate_object_global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/certificates/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/certificates/{}",
+                    &self.global_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2219,12 +2216,11 @@ pub mod certificate_object_global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/certificates/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/certificates/{}",
+                    &self.global_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2370,12 +2366,11 @@ pub mod certificate_object_global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/certificates/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/certificates/{}",
+                    &self.global_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2548,11 +2543,11 @@ pub mod fqdn_list_global_rulestack {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/fqdnlists",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/fqdnlists",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2637,12 +2632,11 @@ pub mod fqdn_list_global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/fqdnlists/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/fqdnlists/{}",
+                    &self.global_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2740,12 +2734,11 @@ pub mod fqdn_list_global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/fqdnlists/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/fqdnlists/{}",
+                    &self.global_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2891,12 +2884,11 @@ pub mod fqdn_list_global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/fqdnlists/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/fqdnlists/{}",
+                    &self.global_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3116,11 +3108,11 @@ pub mod post_rules {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3205,12 +3197,11 @@ pub mod post_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3308,12 +3299,11 @@ pub mod post_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3459,12 +3449,11 @@ pub mod post_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3558,12 +3547,11 @@ pub mod post_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}/getCounters",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}/getCounters",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3664,12 +3652,11 @@ pub mod post_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}/refreshCounters",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}/refreshCounters",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3763,12 +3750,11 @@ pub mod post_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}/resetCounters",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/postRules/{}/resetCounters",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3955,11 +3941,11 @@ pub mod prefix_list_global_rulestack {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/prefixlists",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/prefixlists",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4044,12 +4030,11 @@ pub mod prefix_list_global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/prefixlists/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/prefixlists/{}",
+                    &self.global_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4147,12 +4132,11 @@ pub mod prefix_list_global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/prefixlists/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/prefixlists/{}",
+                    &self.global_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4298,12 +4282,11 @@ pub mod prefix_list_global_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/prefixlists/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/prefixlists/{}",
+                    &self.global_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4523,11 +4506,11 @@ pub mod pre_rules {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules",
                     &self.global_rulestack_name
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4612,12 +4595,11 @@ pub mod pre_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4715,12 +4697,11 @@ pub mod pre_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4866,12 +4847,11 @@ pub mod pre_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4965,12 +4945,11 @@ pub mod pre_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}/getCounters",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}/getCounters",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5071,12 +5050,11 @@ pub mod pre_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}/refreshCounters",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}/refreshCounters",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5170,12 +5148,11 @@ pub mod pre_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}/resetCounters",
-                    self.client.endpoint(),
-                    &self.global_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/providers/PaloAltoNetworks.Cloudngfw/globalRulestacks/{}/preRules/{}/resetCounters",
+                    &self.global_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5310,10 +5287,8 @@ pub mod operations {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/providers/PaloAltoNetworks.Cloudngfw/operations",
-                    self.client.endpoint(),
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/providers/PaloAltoNetworks.Cloudngfw/operations");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5619,11 +5594,11 @@ pub mod firewalls {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5734,12 +5709,11 @@ pub mod firewalls {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5825,13 +5799,11 @@ pub mod firewalls {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.firewall_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.firewall_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5930,13 +5902,11 @@ pub mod firewalls {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.firewall_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.firewall_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6091,13 +6061,11 @@ pub mod firewalls {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.firewall_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.firewall_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6189,13 +6157,11 @@ pub mod firewalls {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.firewall_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.firewall_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6282,13 +6248,11 @@ pub mod firewalls {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/getGlobalRulestack",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.firewall_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/getGlobalRulestack",
+                    &self.subscription_id, &self.resource_group_name, &self.firewall_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6387,13 +6351,11 @@ pub mod firewalls {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/getLogProfile",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.firewall_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/getLogProfile",
+                    &self.subscription_id, &self.resource_group_name, &self.firewall_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6501,13 +6463,11 @@ pub mod firewalls {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/getSupportInfo",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.firewall_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/getSupportInfo",
+                    &self.subscription_id, &self.resource_group_name, &self.firewall_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6610,13 +6570,11 @@ pub mod firewalls {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/saveLogProfile",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.firewall_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/saveLogProfile",
+                    &self.subscription_id, &self.resource_group_name, &self.firewall_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7051,11 +7009,11 @@ pub mod local_rulestacks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks",
-                    self.client.endpoint(),
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks",
                     &self.subscription_id
-                ))?;
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7166,12 +7124,11 @@ pub mod local_rulestacks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks",
+                    &self.subscription_id, &self.resource_group_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7257,13 +7214,11 @@ pub mod local_rulestacks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7362,13 +7317,11 @@ pub mod local_rulestacks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7523,13 +7476,11 @@ pub mod local_rulestacks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7621,13 +7572,11 @@ pub mod local_rulestacks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7708,13 +7657,11 @@ pub mod local_rulestacks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/commit",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/commit",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7801,13 +7748,11 @@ pub mod local_rulestacks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/getChangeLog",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/getChangeLog",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7915,13 +7860,11 @@ pub mod local_rulestacks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/getSupportInfo",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/getSupportInfo",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8039,7 +7982,8 @@ pub mod local_rulestacks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listAdvancedSecurityObjects" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . local_rulestack_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listAdvancedSecurityObjects" , & self . subscription_id , & self . resource_group_name , & self . local_rulestack_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8196,13 +8140,11 @@ pub mod local_rulestacks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listAppIds",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listAppIds",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8331,13 +8273,11 @@ pub mod local_rulestacks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listCountries",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listCountries",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8424,13 +8364,11 @@ pub mod local_rulestacks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listFirewalls",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listFirewalls",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8571,7 +8509,8 @@ pub mod local_rulestacks {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listPredefinedUrlCategories" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . local_rulestack_name)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listPredefinedUrlCategories" , & self . subscription_id , & self . resource_group_name , & self . local_rulestack_name)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8677,13 +8616,11 @@ pub mod local_rulestacks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listSecurityServices",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/listSecurityServices",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8777,13 +8714,11 @@ pub mod local_rulestacks {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/revert",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/revert",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -8943,13 +8878,11 @@ pub mod firewall_status {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/statuses",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.firewall_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/statuses",
+                    &self.subscription_id, &self.resource_group_name, &self.firewall_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9035,13 +8968,11 @@ pub mod firewall_status {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/statuses/default",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.firewall_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/firewalls/{}/statuses/default",
+                    &self.subscription_id, &self.resource_group_name, &self.firewall_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9265,13 +9196,11 @@ pub mod certificate_object_local_rulestack {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/certificates",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/certificates",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9358,14 +9287,11 @@ pub mod certificate_object_local_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/certificates/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/certificates/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9465,14 +9391,11 @@ pub mod certificate_object_local_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/certificates/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/certificates/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9620,14 +9543,11 @@ pub mod certificate_object_local_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/certificates/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/certificates/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9837,13 +9757,11 @@ pub mod fqdn_list_local_rulestack {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/fqdnlists",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/fqdnlists",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -9930,14 +9848,11 @@ pub mod fqdn_list_local_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/fqdnlists/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/fqdnlists/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10037,14 +9952,11 @@ pub mod fqdn_list_local_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/fqdnlists/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/fqdnlists/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10192,14 +10104,11 @@ pub mod fqdn_list_local_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/fqdnlists/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/fqdnlists/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10478,13 +10387,11 @@ pub mod local_rules {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10571,14 +10478,11 @@ pub mod local_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10678,14 +10582,11 @@ pub mod local_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10833,14 +10734,11 @@ pub mod local_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.priority
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -10936,7 +10834,11 @@ pub mod local_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}/getCounters" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . local_rulestack_name , & self . priority)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}/getCounters",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.priority
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11039,7 +10941,8 @@ pub mod local_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}/refreshCounters" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . local_rulestack_name , & self . priority)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}/refreshCounters" , & self . subscription_id , & self . resource_group_name , & self . local_rulestack_name , & self . priority)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11135,7 +11038,8 @@ pub mod local_rules {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}/resetCounters" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . local_rulestack_name , & self . priority)) ? ;
+                let mut url = self.client.endpoint().clone();
+                url . set_path (& format ! ("/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/localRules/{}/resetCounters" , & self . subscription_id , & self . resource_group_name , & self . local_rulestack_name , & self . priority)) ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11357,13 +11261,11 @@ pub mod prefix_list_local_rulestack {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/prefixlists",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/prefixlists",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11450,14 +11352,11 @@ pub mod prefix_list_local_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/prefixlists/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/prefixlists/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11557,14 +11456,11 @@ pub mod prefix_list_local_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/prefixlists/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/prefixlists/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -11712,14 +11608,11 @@ pub mod prefix_list_local_rulestack {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/prefixlists/{}",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.resource_group_name,
-                    &self.local_rulestack_name,
-                    &self.name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/subscriptions/{}/resourceGroups/{}/providers/PaloAltoNetworks.Cloudngfw/localRulestacks/{}/prefixlists/{}",
+                    &self.subscription_id, &self.resource_group_name, &self.local_rulestack_name, &self.name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()

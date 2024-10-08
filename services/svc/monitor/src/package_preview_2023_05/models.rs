@@ -133,7 +133,7 @@ impl MetricResultsResponse {
 pub struct MetricValue {
     #[doc = "The timestamp for the metric value in ISO 8601 format."]
     #[serde(rename = "timeStamp", with = "azure_core::date::rfc3339")]
-    pub time_stamp: time::OffsetDateTime,
+    pub time_stamp: ::time::OffsetDateTime,
     #[doc = "The average value in the time range."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub average: Option<f64>,
@@ -151,7 +151,7 @@ pub struct MetricValue {
     pub count: Option<f64>,
 }
 impl MetricValue {
-    pub fn new(time_stamp: time::OffsetDateTime) -> Self {
+    pub fn new(time_stamp: ::time::OffsetDateTime) -> Self {
         Self {
             time_stamp,
             average: None,

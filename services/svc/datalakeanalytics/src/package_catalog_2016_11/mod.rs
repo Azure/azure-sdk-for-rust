@@ -1050,7 +1050,8 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/catalog/usql/acl?op=GRANTACE", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/catalog/usql/acl?op=GRANTACE");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1131,11 +1132,8 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/acl?op=GRANTACE",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/acl?op=GRANTACE", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1215,7 +1213,8 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/catalog/usql/acl?op=REVOKEACE", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/catalog/usql/acl?op=REVOKEACE");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1296,11 +1295,8 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/acl?op=REVOKEACE",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/acl?op=REVOKEACE", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1385,12 +1381,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/secrets/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.secret_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/secrets/{}",
+                    &self.database_name, &self.secret_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1484,12 +1479,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/secrets/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.secret_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/secrets/{}",
+                    &self.database_name, &self.secret_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1571,12 +1565,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/secrets/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.secret_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/secrets/{}",
+                    &self.database_name, &self.secret_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1656,12 +1649,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/secrets/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.secret_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/secrets/{}",
+                    &self.database_name, &self.secret_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1740,11 +1732,8 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/secrets",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/secrets", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1829,12 +1818,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/credentials/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.credential_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/credentials/{}",
+                    &self.database_name, &self.credential_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -1946,12 +1934,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/credentials/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.credential_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/credentials/{}",
+                    &self.database_name, &self.credential_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2033,12 +2020,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/credentials/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.credential_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/credentials/{}",
+                    &self.database_name, &self.credential_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2120,12 +2106,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/credentials/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.credential_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/credentials/{}",
+                    &self.database_name, &self.credential_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2289,11 +2274,8 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/credentials",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/credentials", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2378,12 +2360,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/externaldatasources/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.external_data_source_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/externaldatasources/{}",
+                    &self.database_name, &self.external_data_source_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2559,11 +2540,8 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/externaldatasources",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/externaldatasources", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2649,13 +2627,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/procedures/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.procedure_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/procedures/{}",
+                    &self.database_name, &self.schema_name, &self.procedure_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2832,12 +2808,11 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/procedures",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/procedures",
+                    &self.database_name, &self.schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -2923,13 +2898,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.table_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tables/{}",
+                    &self.database_name, &self.schema_name, &self.table_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3107,13 +3080,11 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/tablefragments",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.table_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tables/{}/tablefragments",
+                    &self.database_name, &self.schema_name, &self.table_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3287,12 +3258,11 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tables",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tables",
+                    &self.database_name, &self.schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3457,12 +3427,11 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/statistics",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/statistics",
+                    &self.database_name, &self.schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3548,13 +3517,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tabletypes/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.table_type_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tabletypes/{}",
+                    &self.database_name, &self.schema_name, &self.table_type_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3731,12 +3698,11 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tabletypes",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tabletypes",
+                    &self.database_name, &self.schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -3822,13 +3788,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/packages/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.package_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/packages/{}",
+                    &self.database_name, &self.schema_name, &self.package_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4005,12 +3969,11 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/packages",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/packages",
+                    &self.database_name, &self.schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4096,13 +4059,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/views/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.view_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/views/{}",
+                    &self.database_name, &self.schema_name, &self.view_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4279,12 +4240,11 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/views",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/views",
+                    &self.database_name, &self.schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4371,14 +4331,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.table_name,
-                    &self.statistics_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics/{}",
+                    &self.database_name, &self.schema_name, &self.table_name, &self.statistics_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4556,13 +4513,11 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.table_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics",
+                    &self.database_name, &self.schema_name, &self.table_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4667,14 +4622,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}/previewrows",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.table_name,
-                    &self.partition_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}/previewrows",
+                    &self.database_name, &self.schema_name, &self.table_name, &self.partition_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4773,14 +4725,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.table_name,
-                    &self.partition_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}",
+                    &self.database_name, &self.schema_name, &self.table_name, &self.partition_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -4896,13 +4845,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/previewrows",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.table_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tables/{}/previewrows",
+                    &self.database_name, &self.schema_name, &self.table_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5080,13 +5027,11 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.table_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions",
+                    &self.database_name, &self.schema_name, &self.table_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5251,12 +5196,11 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/types",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/types",
+                    &self.database_name, &self.schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5342,13 +5286,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name,
-                    &self.table_valued_function_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions/{}",
+                    &self.database_name, &self.schema_name, &self.table_valued_function_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5525,12 +5467,11 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions",
+                    &self.database_name, &self.schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5615,12 +5556,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/assemblies/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.assembly_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/assemblies/{}",
+                    &self.database_name, &self.assembly_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5796,11 +5736,8 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/assemblies",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/assemblies", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -5885,12 +5822,11 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas/{}",
-                    self.client.endpoint(),
-                    &self.database_name,
-                    &self.schema_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!(
+                    "/catalog/usql/databases/{}/schemas/{}",
+                    &self.database_name, &self.schema_name
+                ));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6066,11 +6002,8 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/schemas",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/schemas", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6234,11 +6167,8 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/statistics",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/statistics", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6411,11 +6341,8 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/tables",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/tables", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6579,11 +6506,8 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/tablevaluedfunctions",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/tablevaluedfunctions", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6747,11 +6671,8 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/views",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/views", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -6915,11 +6836,8 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}/acl",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}/acl", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7082,7 +7000,8 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/catalog/usql/acl", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/catalog/usql/acl");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7166,11 +7085,8 @@ pub mod catalog {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/catalog/usql/databases/{}",
-                    self.client.endpoint(),
-                    &self.database_name
-                ))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path(&format!("/catalog/usql/databases/{}", &self.database_name));
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
@@ -7345,7 +7261,8 @@ pub mod catalog {
                 azure_core::Pageable::new(make_request)
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/catalog/usql/databases", self.client.endpoint(),))?;
+                let mut url = self.client.endpoint().clone();
+                url.set_path("/catalog/usql/databases");
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
