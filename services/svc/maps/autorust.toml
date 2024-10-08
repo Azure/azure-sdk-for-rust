@@ -11,4 +11,7 @@ deny = [
     "package-stable-1.0",
     "package-stable-2023-06-01",
     "package-stable-2023-07-01",
+
+    # data did not match any variant of untagged enum ReferenceOr
+    "package-2024-04-01-preview",
 ]

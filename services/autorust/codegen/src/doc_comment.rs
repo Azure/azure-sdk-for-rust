@@ -43,7 +43,9 @@ impl From<&Option<String>> for DocCommentCode {
 impl ToTokens for DocCommentCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         if let Some(comment) = &self.comment {
-            tokens.extend(quote! { #[doc = #comment] })
+            if !comment.is_empty() {
+                tokens.extend(quote! { #[doc = #comment] })
+            }
         }
     }
 }

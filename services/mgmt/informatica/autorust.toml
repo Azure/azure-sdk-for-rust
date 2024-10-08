@@ -1,0 +1,5 @@
+[properties]
+boxed = [
+    ["../../../azure-rest-api-specs/specification/informatica/resource-manager/Informatica.DataManagement/stable/2024-05-08/openapi.json", "InformaticaOrganizationResourceUpdate" , "properties"],
+    ["../../../azure-rest-api-specs/specification/informatica/resource-manager/Informatica.DataManagement/stable/2024-05-08/openapi.json", "OrganizationPropertiesCustomUpdate" , "informaticaOrganizationProperties"],
+]

@@ -1,0 +1,7 @@
+[tags]
+deny = [
+  # data did not match any variant of untagged enum ReferenceOr
+  "package-preview-2024-05",
+  "package-preview-2023-11",
+  "package-2024-11-01",
+]

@@ -1,0 +1,6 @@
+[tags]
+deny = [
+    # no field `blob` on type `&blob::get_account_info::RequestBuilder`
+    "package-2024-08",
+    "package-2025-01",
+]
