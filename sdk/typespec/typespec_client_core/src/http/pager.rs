@@ -6,7 +6,33 @@ use std::{future::Future, pin::Pin};
 use futures::{stream::unfold, Stream};
 use typespec::Error;
 
-use crate::http::Response;
+use crate::http::{headers::HeaderName, Response};
+
+pub enum PagerResult<T, C> {
+    Continue {
+        response: Response<T>,
+        continuation: C,
+    },
+    Finish {
+        response: Response<T>,
+    },
+}
+
+impl<T> PagerResult<T, String> {
+    /// Creates a [`PagerResult<T, C>`] from the provided response, extracting the continuation value from the provided header.
+    ///
+    /// If the provided response has a header with the matching name, this returns [`PagerResult::Continue`], using the value from the header as the continuation.
+    /// If the provided response does not have a header with the matching name, this returns [`PagerResult::Finish`].
+    pub fn from_response_header(response: Response<T>, header_name: &HeaderName) -> Self {
+        match response.headers().get_optional_string(header_name) {
+            Some(continuation) => PagerResult::Continue {
+                response,
+                continuation,
+            },
+            None => PagerResult::Finish { response },
+        }
+    }
+}
 
 /// Represents a paginated result across multiple requests.
 #[pin_project::pin_project]
@@ -36,7 +62,7 @@ impl<T> Pager<T> {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// # use typespec_client_core::http::{Context, Pager, Pipeline, Request, Response, Method, headers::HeaderName};
+    /// # use typespec_client_core::http::{Context, Pager, PagerResult, Pipeline, Request, Response, Method, headers::HeaderName};
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// # struct MyModel;
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
@@ -52,8 +78,7 @@ impl<T> Pager<T> {
     ///         let resp: Response<MyModel> = pipeline
     ///           .send(&Context::new(), &mut req)
     ///           .await?;
-    ///         let continuation_token = resp.headers().get_optional_string(&HeaderName::from_static("x-next-continuation"));
-    ///         Ok((resp, continuation_token))
+    ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-next-continuation")))
     ///     }
     /// });
     /// ```
@@ -61,14 +86,15 @@ impl<T> Pager<T> {
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<(Response<T>, Option<C>), typespec::Error>> + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<PagerResult<T, C>, typespec::Error>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: 'static,
         #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
-        #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<(Response<T>, Option<C>), typespec::Error>> + 'static,
+        #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<PagerResult<T, C>, typespec::Error>> + 'static,
     >(
         make_request: F,
     ) -> Self {
         let stream = unfold(
+            // We flow the `make_request` callback through the state value so that we can avoid cloning.
             (State::Init, make_request),
             |(state, make_request)| async move {
                 let result = match state {
@@ -76,12 +102,17 @@ impl<T> Pager<T> {
                     State::Continuation(c) => make_request(Some(c)).await,
                     State::Done => return None,
                 };
-                let (response, continuation) = match result {
+                let (response, next_state) = match result {
                     Err(e) => return Some((Err(e), (State::Done, make_request))),
-                    Ok(r) => r,
+                    Ok(PagerResult::Continue {
+                        response,
+                        continuation,
+                    }) => (Ok(response), State::Continuation(continuation)),
+                    Ok(PagerResult::Finish { response }) => (Ok(response), State::Done),
                 };
-                let next_state = continuation.map_or(State::Done, State::Continuation);
-                Some((Ok(response), (next_state, make_request)))
+
+                // Flow 'make_request' through to avoid cloning
+                Some((response, (next_state, make_request)))
             },
         );
         Self {
@@ -124,7 +155,7 @@ mod tests {
 
     use crate::http::{
         headers::{HeaderName, HeaderValue},
-        Pager, Response, StatusCode,
+        Pager, PagerResult, Response, StatusCode,
     };
 
     #[tokio::test]
@@ -137,8 +168,8 @@ mod tests {
 
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
-                None => Ok((
-                    Response::from_bytes(
+                None => Ok(PagerResult::Continue {
+                    response: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -147,10 +178,10 @@ mod tests {
                         .into(),
                         r#"{"page":1}"#,
                     ),
-                    Some("1"),
-                )),
-                Some("1") => Ok((
-                    Response::from_bytes(
+                    continuation: "1",
+                }),
+                Some("1") => Ok(PagerResult::Continue {
+                    response: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -159,10 +190,10 @@ mod tests {
                         .into(),
                         r#"{"page":2}"#,
                     ),
-                    Some("2"),
-                )),
-                Some("2") => Ok((
-                    Response::from_bytes(
+                    continuation: "2",
+                }),
+                Some("2") => Ok(PagerResult::Finish {
+                    response: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -171,8 +202,7 @@ mod tests {
                         .into(),
                         r#"{"page":3}"#,
                     ),
-                    None,
-                )),
+                }),
                 _ => {
                     panic!("Unexpected continuation value")
                 }
@@ -210,8 +240,8 @@ mod tests {
 
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
-                None => Ok((
-                    Response::from_bytes(
+                None => Ok(PagerResult::Continue {
+                    response: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -220,8 +250,8 @@ mod tests {
                         .into(),
                         r#"{"page":1}"#,
                     ),
-                    Some("1"),
-                )),
+                    continuation: "1",
+                }),
                 Some("1") => Err(typespec::Error::message(
                     typespec::error::ErrorKind::Other,
                     "yon request didst fail",

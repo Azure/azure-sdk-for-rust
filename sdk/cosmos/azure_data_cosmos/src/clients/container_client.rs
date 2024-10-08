@@ -12,6 +12,7 @@ use crate::{
 
 use azure_core::{Context, Pager, Request, Response};
 use serde::{de::DeserializeOwned, Serialize};
+use typespec_client_core::http::PagerResult;
 use url::Url;
 
 #[cfg(doc)]
@@ -471,13 +472,13 @@ impl ContainerClientMethods for ContainerClient {
                     req.insert_header(constants::CONTINUATION, continuation);
                 }
 
-                let resp = pipeline
+                let response = pipeline
                     .send(Context::new(), &mut req, ResourceType::Items)
                     .await?;
-                let continuation_token =
-                    resp.headers().get_optional_string(&constants::CONTINUATION);
-
-                Ok((resp, continuation_token))
+                Ok(PagerResult::from_response_header(
+                    response,
+                    &constants::CONTINUATION,
+                ))
             }
         }))
     }
