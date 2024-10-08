@@ -11,5 +11,9 @@
 pub mod package_2023_08_01;
 #[cfg(feature = "package-2023-08-01-preview")]
 pub mod package_2023_08_01_preview;
-#[cfg(all(feature = "default_tag", feature = "package-2023-08-01"))]
-pub use package_2023_08_01::*;
+#[cfg(feature = "package-2024-08-27")]
+pub mod package_2024_08_27;
+#[cfg(feature = "package-2024-08-27-preview")]
+pub mod package_2024_08_27_preview;
+#[cfg(all(feature = "default_tag", feature = "package-2024-08-27"))]
+pub use package_2024_08_27::*;

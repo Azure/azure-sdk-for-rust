@@ -423,7 +423,7 @@ pub struct Artifact {
     pub etag: Option<String>,
     #[doc = "The Date and Time at which the Artifact is created. The DateTime is in UTC."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "dataPath", default, skip_serializing_if = "Option::is_none")]
     pub data_path: Option<DataPath>,
 }
@@ -565,7 +565,7 @@ pub struct Asset {
     pub meta: Option<serde_json::Value>,
     #[doc = "The time the Asset was created in UTC."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
 }
 impl Asset {
     pub fn new(name: String) -> Self {
@@ -611,10 +611,10 @@ pub struct AsyncOperationStatus {
     pub state: Option<async_operation_status::State>,
     #[doc = "The async operation creation time (UTC)."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "The async operation end time (UTC)l"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The Model Management Service Error object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ModelErrorResponse>,
@@ -892,7 +892,7 @@ pub mod azure_storage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaseEvent {
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1253,10 +1253,10 @@ pub struct CreateRun {
     pub status: Option<String>,
     #[doc = "The start time of the run in UTC."]
     #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time_utc: Option<time::OffsetDateTime>,
+    pub start_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the run in UTC."]
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time_utc: Option<time::OffsetDateTime>,
+    pub end_time_utc: Option<::time::OffsetDateTime>,
     #[serde(rename = "heartbeatEnabled", default, skip_serializing_if = "Option::is_none")]
     pub heartbeat_enabled: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1717,7 +1717,7 @@ pub struct ErrorResponse {
     pub location: Option<String>,
     #[doc = "The time in UTC."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
+    pub time: Option<::time::OffsetDateTime>,
 }
 impl azure_core::Continuable for ErrorResponse {
     type Continuation = String;
@@ -1739,13 +1739,13 @@ pub struct Experiment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(rename = "createdUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_utc: Option<time::OffsetDateTime>,
+    pub created_utc: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(rename = "archivedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub archived_time: Option<time::OffsetDateTime>,
+    pub archived_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "latestCreatedRunCreatedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub latest_created_run_created_utc: Option<time::OffsetDateTime>,
+    pub latest_created_run_created_utc: Option<::time::OffsetDateTime>,
     #[serde(rename = "latestCreatedRunId", default, skip_serializing_if = "Option::is_none")]
     pub latest_created_run_id: Option<String>,
 }
@@ -1917,7 +1917,7 @@ pub struct HyperDriveExperiment {
     pub cancellation_requested: Option<bool>,
     #[doc = "Hyperdrive run creation time."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "Id of the user who created the Hyperdrive run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_by_user_id: Option<i32>,
@@ -1929,7 +1929,7 @@ pub struct HyperDriveExperiment {
     pub experiment_uri: Option<String>,
     #[doc = "Hyperdrive run modification time."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub modified: Option<time::OffsetDateTime>,
+    pub modified: Option<::time::OffsetDateTime>,
     #[doc = "Hyperdrive run status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -2274,10 +2274,10 @@ pub struct ImageResponseBase {
     pub properties: Option<serde_json::Value>,
     #[doc = "The time the image was created."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "The time the image was last modified."]
     #[serde(rename = "modifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_time: Option<time::OffsetDateTime>,
+    pub modified_time: Option<::time::OffsetDateTime>,
     #[doc = "Whether the image will be automatically deleted with the last service using it."]
     #[serde(rename = "autoDelete", default, skip_serializing_if = "Option::is_none")]
     pub auto_delete: Option<bool>,
@@ -2521,7 +2521,7 @@ pub struct Metric {
     #[serde(rename = "metricType", default, skip_serializing_if = "Option::is_none")]
     pub metric_type: Option<String>,
     #[serde(rename = "createdUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_utc: Option<time::OffsetDateTime>,
+    pub created_utc: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2610,10 +2610,10 @@ pub struct Model {
     pub description: Option<String>,
     #[doc = "The Model creation time (UTC)."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "The Model last modified time (UTC)."]
     #[serde(rename = "modifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_time: Option<time::OffsetDateTime>,
+    pub modified_time: Option<::time::OffsetDateTime>,
     #[doc = "Indicates whether we need to unpack the Model during docker Image creation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unpack: Option<bool>,
@@ -3166,7 +3166,7 @@ pub struct ProfileResponse {
     pub state: Option<String>,
     #[doc = "The profile creation time (UTC)."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "The profile tags dictionary. Tags are mutable."]
     #[serde(rename = "kvTags", default, skip_serializing_if = "Option::is_none")]
     pub kv_tags: Option<serde_json::Value>,
@@ -3314,7 +3314,7 @@ pub struct Run {
     pub experiment_id: Option<String>,
     #[doc = "The time the run was created in UTC."]
     #[serde(rename = "createdUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_utc: Option<time::OffsetDateTime>,
+    pub created_utc: Option<::time::OffsetDateTime>,
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<CreatedBy>,
     #[doc = "The Id of the user that created the run."]
@@ -3325,7 +3325,7 @@ pub struct Run {
     pub token: Option<String>,
     #[doc = "The Token expiration time in UTC."]
     #[serde(rename = "tokenExpiryTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub token_expiry_time_utc: Option<time::OffsetDateTime>,
+    pub token_expiry_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
@@ -3349,10 +3349,10 @@ pub struct Run {
     pub status: Option<String>,
     #[doc = "The start time of the run in UTC."]
     #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time_utc: Option<time::OffsetDateTime>,
+    pub start_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the run in UTC."]
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time_utc: Option<time::OffsetDateTime>,
+    pub end_time_utc: Option<::time::OffsetDateTime>,
     #[serde(rename = "heartbeatEnabled", default, skip_serializing_if = "Option::is_none")]
     pub heartbeat_enabled: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3497,10 +3497,10 @@ pub struct RunDetails {
     pub parent_run_id: Option<String>,
     #[doc = "The start time of the run in UTC."]
     #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time_utc: Option<time::OffsetDateTime>,
+    pub start_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the run in UTC."]
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time_utc: Option<time::OffsetDateTime>,
+    pub end_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
@@ -3553,7 +3553,7 @@ pub struct RunMetric {
     #[serde(rename = "metricType", default, skip_serializing_if = "Option::is_none")]
     pub metric_type: Option<String>,
     #[serde(rename = "createdUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_utc: Option<time::OffsetDateTime>,
+    pub created_utc: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3614,10 +3614,10 @@ pub struct ServiceResponseBase {
     pub state: Option<service_response_base::State>,
     #[doc = "The time the service was created."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "The time the service was updated."]
     #[serde(rename = "updatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_time: Option<time::OffsetDateTime>,
+    pub updated_time: Option<::time::OffsetDateTime>,
     #[doc = "The Model Management Service Error object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ModelErrorResponse>,

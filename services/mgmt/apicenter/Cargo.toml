@@ -39,6 +39,7 @@ default = ["default_tag", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 default_tag = ["package-2024-03"]
+"package-2024-03-15-preview" = []
 "package-2024-03" = []
 "package-2023-07-01-preview" = []
 

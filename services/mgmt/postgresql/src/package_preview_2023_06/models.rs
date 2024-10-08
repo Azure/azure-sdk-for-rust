@@ -312,7 +312,7 @@ pub struct Backup {
     pub geo_redundant_backup: Option<backup::GeoRedundantBackup>,
     #[doc = "The earliest restore point time (ISO8601 format) for server."]
     #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
-    pub earliest_restore_date: Option<time::OffsetDateTime>,
+    pub earliest_restore_date: Option<::time::OffsetDateTime>,
 }
 impl Backup {
     pub fn new() -> Self {
@@ -867,10 +867,10 @@ pub struct DbLevelValidationStatus {
     pub database_name: Option<String>,
     #[doc = "Start date-time of a database level validation"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "End date-time of a database level validation"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Summary of database level validations"]
     #[serde(
         default,
@@ -898,10 +898,10 @@ pub struct DbMigrationStatus {
     pub migration_operation: Option<String>,
     #[doc = "Start date-time of a migration state"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub started_on: Option<time::OffsetDateTime>,
+    pub started_on: Option<::time::OffsetDateTime>,
     #[doc = "End date-time of a migration state"]
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub ended_on: Option<time::OffsetDateTime>,
+    pub ended_on: Option<::time::OffsetDateTime>,
     #[doc = "Number of tables queued for the migration of a DB"]
     #[serde(rename = "fullLoadQueuedTables", default, skip_serializing_if = "Option::is_none")]
     pub full_load_queued_tables: Option<i32>,
@@ -1684,10 +1684,10 @@ impl LogFileListResult {
 pub struct LogFileProperties {
     #[doc = "Creation timestamp of the log file."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "Last modified timestamp of the log file."]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time: Option<time::OffsetDateTime>,
+    pub last_modified_time: Option<::time::OffsetDateTime>,
     #[doc = "The size in kb of the logFile."]
     #[serde(rename = "sizeInKb", default, skip_serializing_if = "Option::is_none")]
     pub size_in_kb: Option<i64>,
@@ -1722,10 +1722,10 @@ pub struct LtrBackupOperationResponseProperties {
     pub status: ltr_backup_operation_response_properties::Status,
     #[doc = "Start time of the operation."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "End time of the operation."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "PercentageCompleted"]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<f64>,
@@ -1737,7 +1737,7 @@ pub struct LtrBackupOperationResponseProperties {
     pub error_message: Option<String>,
 }
 impl LtrBackupOperationResponseProperties {
-    pub fn new(status: ltr_backup_operation_response_properties::Status, start_time: time::OffsetDateTime) -> Self {
+    pub fn new(status: ltr_backup_operation_response_properties::Status, start_time: ::time::OffsetDateTime) -> Self {
         Self {
             datasource_size_in_bytes: None,
             data_transferred_in_bytes: None,
@@ -2230,10 +2230,10 @@ pub struct MigrationResourceProperties {
     pub overwrite_dbs_in_target: Option<migration_resource_properties::OverwriteDbsInTarget>,
     #[doc = "Start time in UTC for migration window"]
     #[serde(rename = "migrationWindowStartTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub migration_window_start_time_in_utc: Option<time::OffsetDateTime>,
+    pub migration_window_start_time_in_utc: Option<::time::OffsetDateTime>,
     #[doc = "End time in UTC for migration window"]
     #[serde(rename = "migrationWindowEndTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub migration_window_end_time_in_utc: Option<time::OffsetDateTime>,
+    pub migration_window_end_time_in_utc: Option<::time::OffsetDateTime>,
     #[doc = "Indicates whether the data migration should start right away"]
     #[serde(rename = "startDataMigration", default, skip_serializing_if = "Option::is_none")]
     pub start_data_migration: Option<migration_resource_properties::StartDataMigration>,
@@ -2497,7 +2497,7 @@ pub struct MigrationResourcePropertiesForPatch {
     pub overwrite_dbs_in_target: Option<migration_resource_properties_for_patch::OverwriteDbsInTarget>,
     #[doc = "Start time in UTC for migration window"]
     #[serde(rename = "migrationWindowStartTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub migration_window_start_time_in_utc: Option<time::OffsetDateTime>,
+    pub migration_window_start_time_in_utc: Option<::time::OffsetDateTime>,
     #[doc = "Indicates whether the data migration should start right away"]
     #[serde(rename = "startDataMigration", default, skip_serializing_if = "Option::is_none")]
     pub start_data_migration: Option<migration_resource_properties_for_patch::StartDataMigration>,
@@ -3747,7 +3747,7 @@ pub struct ServerBackupProperties {
     pub backup_type: Option<server_backup_properties::BackupType>,
     #[doc = "Backup completed time (ISO8601 format)."]
     #[serde(rename = "completedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub completed_time: Option<time::OffsetDateTime>,
+    pub completed_time: Option<::time::OffsetDateTime>,
     #[doc = "Backup source"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -3887,7 +3887,7 @@ pub struct ServerProperties {
     pub source_server_resource_id: Option<String>,
     #[doc = "Restore point creation time (ISO8601 format), specifying the time to restore from. It's required when 'createMode' is 'PointInTimeRestore' or 'GeoRestore' or 'ReviveDropped'."]
     #[serde(rename = "pointInTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub point_in_time_utc: Option<time::OffsetDateTime>,
+    pub point_in_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "availability zone information of the server."]
     #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub availability_zone: Option<String>,
@@ -4226,7 +4226,7 @@ pub struct ServerThreatProtectionProperties {
     pub state: server_threat_protection_properties::State,
     #[doc = "Specifies the UTC creation time of the policy."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
 }
 impl ServerThreatProtectionProperties {
     pub fn new(state: server_threat_protection_properties::State) -> Self {
@@ -4835,10 +4835,10 @@ pub struct ValidationDetails {
     pub status: Option<ValidationState>,
     #[doc = "Validation Start date-time in UTC"]
     #[serde(rename = "validationStartTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub validation_start_time_in_utc: Option<time::OffsetDateTime>,
+    pub validation_start_time_in_utc: Option<::time::OffsetDateTime>,
     #[doc = "Validation End date-time in UTC"]
     #[serde(rename = "validationEndTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub validation_end_time_in_utc: Option<time::OffsetDateTime>,
+    pub validation_end_time_in_utc: Option<::time::OffsetDateTime>,
     #[doc = "Details of server level validations"]
     #[serde(
         rename = "serverLevelValidationDetails",
@@ -5097,7 +5097,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -5106,7 +5106,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

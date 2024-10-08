@@ -119,13 +119,13 @@ impl CategoricalVariable {
 pub struct DateTimeRange {
     #[doc = "Start timestamp of the time range. Start timestamp is inclusive when used in time series query requests. Events that have this timestamp are included."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub from: time::OffsetDateTime,
+    pub from: ::time::OffsetDateTime,
     #[doc = "End timestamp of the time range. End timestamp is exclusive when used in time series query requests. Events that match this timestamp are excluded. Note that end timestamp is inclusive when returned by Get Availability (meaning that there is an event with this exact \"to\" timestamp)."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub to: time::OffsetDateTime,
+    pub to: ::time::OffsetDateTime,
 }
 impl DateTimeRange {
-    pub fn new(from: time::OffsetDateTime, to: time::OffsetDateTime) -> Self {
+    pub fn new(from: ::time::OffsetDateTime, to: ::time::OffsetDateTime) -> Self {
         Self { from, to }
     }
 }
@@ -996,7 +996,7 @@ pub struct QueryResultPage {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub timestamps: Vec<time::OffsetDateTime>,
+    pub timestamps: Vec<::time::OffsetDateTime>,
     #[doc = "Collection of time series properties and values for each of the timestamps.  Can be null if server was unable to fill the page in this request, or can be empty if there are no more objects when continuation token is null."]
     #[serde(
         default,

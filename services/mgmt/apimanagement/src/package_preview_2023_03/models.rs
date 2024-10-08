@@ -968,7 +968,7 @@ pub struct ApiManagementServiceBaseProperties {
     pub target_provisioning_state: Option<String>,
     #[doc = "Creation UTC date of the API Management service.The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard."]
     #[serde(rename = "createdAtUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at_utc: Option<time::OffsetDateTime>,
+    pub created_at_utc: Option<::time::OffsetDateTime>,
     #[doc = "Gateway URL of the API Management service."]
     #[serde(rename = "gatewayUrl", default, skip_serializing_if = "Option::is_none")]
     pub gateway_url: Option<String>,
@@ -1991,10 +1991,10 @@ pub struct ApiReleaseContractProperties {
     pub api_id: Option<String>,
     #[doc = "The time the API was released. The date conforms to the following format: yyyy-MM-ddTHH:mm:ssZ as specified by the ISO 8601 standard."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The time the API release was updated."]
     #[serde(rename = "updatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_date_time: Option<time::OffsetDateTime>,
+    pub updated_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Release Notes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
@@ -2043,10 +2043,10 @@ pub struct ApiRevisionContract {
     pub api_revision: Option<String>,
     #[doc = "The time the API Revision was created. The date conforms to the following format: yyyy-MM-ddTHH:mm:ssZ as specified by the ISO 8601 standard."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The time the API Revision were updated. The date conforms to the following format: yyyy-MM-ddTHH:mm:ssZ as specified by the ISO 8601 standard."]
     #[serde(rename = "updatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_date_time: Option<time::OffsetDateTime>,
+    pub updated_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Description of the API Revision."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -3691,13 +3691,13 @@ pub struct CertificateContractProperties {
     pub thumbprint: String,
     #[doc = "Expiration date of the certificate. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339")]
-    pub expiration_date: time::OffsetDateTime,
+    pub expiration_date: ::time::OffsetDateTime,
     #[doc = "KeyVault contract details."]
     #[serde(rename = "keyVault", default, skip_serializing_if = "Option::is_none")]
     pub key_vault: Option<KeyVaultContractProperties>,
 }
 impl CertificateContractProperties {
-    pub fn new(subject: String, thumbprint: String, expiration_date: time::OffsetDateTime) -> Self {
+    pub fn new(subject: String, thumbprint: String, expiration_date: ::time::OffsetDateTime) -> Self {
         Self {
             subject,
             thumbprint,
@@ -3741,14 +3741,14 @@ impl CertificateCreateOrUpdateProperties {
 pub struct CertificateInformation {
     #[doc = "Expiration date of the certificate. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub expiry: time::OffsetDateTime,
+    pub expiry: ::time::OffsetDateTime,
     #[doc = "Thumbprint of the certificate."]
     pub thumbprint: String,
     #[doc = "Subject of the certificate."]
     pub subject: String,
 }
 impl CertificateInformation {
-    pub fn new(expiry: time::OffsetDateTime, thumbprint: String, subject: String) -> Self {
+    pub fn new(expiry: ::time::OffsetDateTime, thumbprint: String, subject: String) -> Self {
         Self {
             expiry,
             thumbprint,
@@ -4377,10 +4377,10 @@ pub struct ConnectivityStatusContract {
     pub error: Option<String>,
     #[doc = "The date when the resource connectivity status was last updated. This status should be updated every 15 minutes. If this status has not been updated, then it means that the service has lost network connectivity to the resource, from inside the Virtual Network.The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "lastUpdated", with = "azure_core::date::rfc3339")]
-    pub last_updated: time::OffsetDateTime,
+    pub last_updated: ::time::OffsetDateTime,
     #[doc = "The date when the resource connectivity status last Changed from success to failure or vice-versa. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "lastStatusChange", with = "azure_core::date::rfc3339")]
-    pub last_status_change: time::OffsetDateTime,
+    pub last_status_change: ::time::OffsetDateTime,
     #[doc = "Resource Type."]
     #[serde(rename = "resourceType")]
     pub resource_type: String,
@@ -4392,8 +4392,8 @@ impl ConnectivityStatusContract {
     pub fn new(
         name: String,
         status: connectivity_status_contract::Status,
-        last_updated: time::OffsetDateTime,
-        last_status_change: time::OffsetDateTime,
+        last_updated: ::time::OffsetDateTime,
+        last_status_change: ::time::OffsetDateTime,
         resource_type: String,
         is_optional: bool,
     ) -> Self {
@@ -4659,10 +4659,10 @@ pub struct DeletedServiceContractProperties {
     pub service_id: Option<String>,
     #[doc = "UTC Date and Time when the service will be automatically purged. The date conforms to the following format: yyyy-MM-ddTHH:mm:ssZ as specified by the ISO 8601 standard."]
     #[serde(rename = "scheduledPurgeDate", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_purge_date: Option<time::OffsetDateTime>,
+    pub scheduled_purge_date: Option<::time::OffsetDateTime>,
     #[doc = "UTC Timestamp when the service was soft-deleted. The date conforms to the following format: yyyy-MM-ddTHH:mm:ssZ as specified by the ISO 8601 standard."]
     #[serde(rename = "deletionDate", default, with = "azure_core::date::rfc3339::option")]
-    pub deletion_date: Option<time::OffsetDateTime>,
+    pub deletion_date: Option<::time::OffsetDateTime>,
 }
 impl DeletedServiceContractProperties {
     pub fn new() -> Self {
@@ -5557,10 +5557,10 @@ pub struct GatewayTokenRequestContract {
     pub key_type: gateway_token_request_contract::KeyType,
     #[doc = "The Expiry time of the Token. Maximum token expiry time is set to 30 days. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub expiry: time::OffsetDateTime,
+    pub expiry: ::time::OffsetDateTime,
 }
 impl GatewayTokenRequestContract {
-    pub fn new(key_type: gateway_token_request_contract::KeyType, expiry: time::OffsetDateTime) -> Self {
+    pub fn new(key_type: gateway_token_request_contract::KeyType, expiry: ::time::OffsetDateTime) -> Self {
         Self { key_type, expiry }
     }
 }
@@ -6477,7 +6477,7 @@ pub struct IssueCommentContractProperties {
     pub text: String,
     #[doc = "Date and time when the comment was created."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "A resource identifier for the user who left the comment."]
     #[serde(rename = "userId")]
     pub user_id: String,
@@ -6518,7 +6518,7 @@ impl IssueContract {
 pub struct IssueContractBaseProperties {
     #[doc = "Date and time when the issue was created."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "Status of the issue."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<issue_contract_base_properties::State>,
@@ -6677,7 +6677,7 @@ pub struct KeyVaultLastAccessStatusContractProperties {
     pub message: Option<String>,
     #[doc = "Last time secret was accessed. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "timeStampUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub time_stamp_utc: Option<time::OffsetDateTime>,
+    pub time_stamp_utc: Option<::time::OffsetDateTime>,
 }
 impl KeyVaultLastAccessStatusContractProperties {
     pub fn new() -> Self {
@@ -7548,10 +7548,10 @@ pub struct OperationResultContractProperties {
     pub status: Option<operation_result_contract_properties::Status>,
     #[doc = "Start time of an async operation. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub started: Option<time::OffsetDateTime>,
+    pub started: Option<::time::OffsetDateTime>,
     #[doc = "Last update time of an async operation. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub updated: Option<time::OffsetDateTime>,
+    pub updated: Option<::time::OffsetDateTime>,
     #[doc = "Optional result info."]
     #[serde(rename = "resultInfo", default, skip_serializing_if = "Option::is_none")]
     pub result_info: Option<String>,
@@ -8366,10 +8366,10 @@ pub struct PortalRevisionContractProperties {
     pub is_current: Option<bool>,
     #[doc = "Portal's revision creation date and time."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Last updated date and time."]
     #[serde(rename = "updatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_date_time: Option<time::OffsetDateTime>,
+    pub updated_date_time: Option<::time::OffsetDateTime>,
 }
 impl PortalRevisionContractProperties {
     pub fn new() -> Self {
@@ -9133,10 +9133,10 @@ pub struct QuotaCounterContract {
     pub period_key: String,
     #[doc = "The date of the start of Counter Period. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "periodStartTime", with = "azure_core::date::rfc3339")]
-    pub period_start_time: time::OffsetDateTime,
+    pub period_start_time: ::time::OffsetDateTime,
     #[doc = "The date of the end of Counter Period. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "periodEndTime", with = "azure_core::date::rfc3339")]
-    pub period_end_time: time::OffsetDateTime,
+    pub period_end_time: ::time::OffsetDateTime,
     #[doc = "Quota counter value details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<QuotaCounterValueContractProperties>,
@@ -9145,8 +9145,8 @@ impl QuotaCounterContract {
     pub fn new(
         counter_key: String,
         period_key: String,
-        period_start_time: time::OffsetDateTime,
-        period_end_time: time::OffsetDateTime,
+        period_start_time: ::time::OffsetDateTime,
+        period_end_time: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             counter_key,
@@ -9430,7 +9430,7 @@ pub struct ReportRecordContract {
     pub name: Option<String>,
     #[doc = "Start of aggregation period. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Length of aggregation period.  Interval must be multiple of 15 minutes and may not be zero. The value should be in ISO 8601 format (http://en.wikipedia.org/wiki/ISO_8601#Durations)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<String>,
@@ -9638,7 +9638,7 @@ pub struct RequestReportRecordContract {
     pub response_size: Option<i32>,
     #[doc = "The date and time when this request was received by the gateway in ISO 8601 format."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Specifies if response cache was involved in generating the response. If the value is none, the cache was not used. If the value is hit, cached response was returned. If the value is miss, the cache was used but lookup resulted in a miss and request was fulfilled by the backend."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cache: Option<String>,
@@ -9751,10 +9751,10 @@ pub struct ResolverResultContractProperties {
     pub status: Option<resolver_result_contract_properties::Status>,
     #[doc = "Start time of an async resolver. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub started: Option<time::OffsetDateTime>,
+    pub started: Option<::time::OffsetDateTime>,
     #[doc = "Last update time of an async resolver. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub updated: Option<time::OffsetDateTime>,
+    pub updated: Option<::time::OffsetDateTime>,
     #[doc = "Optional result info."]
     #[serde(rename = "resultInfo", default, skip_serializing_if = "Option::is_none")]
     pub result_info: Option<String>,
@@ -10308,19 +10308,19 @@ pub struct SubscriptionContractProperties {
     pub state: subscription_contract_properties::State,
     #[doc = "Subscription creation date. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "Subscription activation date. The setting is for audit purposes only and the subscription is not automatically activated. The subscription lifecycle can be managed by using the `state` property. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date: Option<time::OffsetDateTime>,
+    pub start_date: Option<::time::OffsetDateTime>,
     #[doc = "Subscription expiration date. The setting is for audit purposes only and the subscription is not automatically expired. The subscription lifecycle can be managed by using the `state` property. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Date when subscription was cancelled or expired. The setting is for audit purposes only and the subscription is not automatically cancelled. The subscription lifecycle can be managed by using the `state` property. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
-    pub end_date: Option<time::OffsetDateTime>,
+    pub end_date: Option<::time::OffsetDateTime>,
     #[doc = "Upcoming subscription expiration notification date. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "notificationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub notification_date: Option<time::OffsetDateTime>,
+    pub notification_date: Option<::time::OffsetDateTime>,
     #[doc = "Subscription primary key. This property will not be filled on 'GET' operations! Use '/listSecrets' POST request to get the value."]
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
@@ -10481,7 +10481,7 @@ pub struct SubscriptionUpdateParameterProperties {
     pub scope: Option<String>,
     #[doc = "Subscription expiration date. The setting is for audit purposes only and the subscription is not automatically expired. The subscription lifecycle can be managed by using the `state` property. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard."]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Subscription name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -10968,10 +10968,10 @@ pub struct TenantConfigurationSyncStateContractProperties {
     pub is_git_enabled: Option<bool>,
     #[doc = "The date of the latest synchronization. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "syncDate", default, with = "azure_core::date::rfc3339::option")]
-    pub sync_date: Option<time::OffsetDateTime>,
+    pub sync_date: Option<::time::OffsetDateTime>,
     #[doc = "The date of the latest configuration change. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "configurationChangeDate", default, with = "azure_core::date::rfc3339::option")]
-    pub configuration_change_date: Option<time::OffsetDateTime>,
+    pub configuration_change_date: Option<::time::OffsetDateTime>,
     #[doc = "Most recent tenant configuration operation identifier"]
     #[serde(rename = "lastOperationId", default, skip_serializing_if = "Option::is_none")]
     pub last_operation_id: Option<String>,
@@ -11121,7 +11121,7 @@ pub struct UserContractProperties {
     pub email: Option<String>,
     #[doc = "Date of user registration. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(rename = "registrationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub registration_date: Option<time::OffsetDateTime>,
+    pub registration_date: Option<::time::OffsetDateTime>,
     #[doc = "Collection of groups user is part of."]
     #[serde(
         default,
@@ -11404,10 +11404,10 @@ pub struct UserTokenParameterProperties {
     pub key_type: user_token_parameter_properties::KeyType,
     #[doc = "The Expiry time of the Token. Maximum token expiry time is set to 30 days. The date conforms to the following format: `yyyy-MM-ddTHH:mm:ssZ` as specified by the ISO 8601 standard.\n"]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub expiry: time::OffsetDateTime,
+    pub expiry: ::time::OffsetDateTime,
 }
 impl UserTokenParameterProperties {
-    pub fn new(key_type: user_token_parameter_properties::KeyType, expiry: time::OffsetDateTime) -> Self {
+    pub fn new(key_type: user_token_parameter_properties::KeyType, expiry: ::time::OffsetDateTime) -> Self {
         Self { key_type, expiry }
     }
 }
@@ -11669,7 +11669,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -11678,7 +11678,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

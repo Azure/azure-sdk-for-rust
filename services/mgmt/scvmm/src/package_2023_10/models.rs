@@ -3,7 +3,7 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Allocation method."]
+#[doc = "Network address allocation method."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AllocationMethod")]
 pub enum AllocationMethod {
@@ -46,32 +46,42 @@ pub struct AvailabilitySet {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[doc = "Defines the resource properties."]
-    pub properties: AvailabilitySetProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AvailabilitySetProperties>,
     #[doc = "The extended location."]
     #[serde(rename = "extendedLocation")]
     pub extended_location: ExtendedLocation,
 }
 impl AvailabilitySet {
-    pub fn new(tracked_resource: TrackedResource, properties: AvailabilitySetProperties, extended_location: ExtendedLocation) -> Self {
+    pub fn new(tracked_resource: TrackedResource, extended_location: ExtendedLocation) -> Self {
         Self {
             tracked_resource,
-            properties,
+            properties: None,
             extended_location,
         }
     }
 }
-pub type AvailabilitySetList = Vec<serde_json::Value>;
-#[doc = "List of AvailabilitySets."]
+#[doc = "Availability Set model"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvailabilitySetListItem {
+    #[doc = "Gets the ARM Id of the microsoft.scvmm/availabilitySets resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Gets or sets the name of the availability set."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl AvailabilitySetListItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The response of a AvailabilitySet list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailabilitySetListResult {
-    #[doc = "List of AvailabilitySets."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[doc = "The AvailabilitySet items on this page"]
     pub value: Vec<AvailabilitySet>,
-    #[doc = "Url to follow for getting next page of resources."]
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -82,8 +92,8 @@ impl azure_core::Continuable for AvailabilitySetListResult {
     }
 }
 impl AvailabilitySetListResult {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(value: Vec<AvailabilitySet>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Defines the resource properties."]
@@ -95,11 +105,23 @@ pub struct AvailabilitySetProperties {
     #[doc = "ARM Id of the vmmServer resource in which this resource resides."]
     #[serde(rename = "vmmServerId", default, skip_serializing_if = "Option::is_none")]
     pub vmm_server_id: Option<String>,
-    #[doc = "The provisioning state of a resource."]
+    #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ResourceProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 impl AvailabilitySetProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The type used for updating tags in AvailabilitySet resources."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvailabilitySetTagsUpdate {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl AvailabilitySetTagsUpdate {
     pub fn new() -> Self {
         Self::default()
     }
@@ -131,16 +153,17 @@ pub struct Cloud {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[doc = "Defines the resource properties."]
-    pub properties: CloudProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CloudProperties>,
     #[doc = "The extended location."]
     #[serde(rename = "extendedLocation")]
     pub extended_location: ExtendedLocation,
 }
 impl Cloud {
-    pub fn new(tracked_resource: TrackedResource, properties: CloudProperties, extended_location: ExtendedLocation) -> Self {
+    pub fn new(tracked_resource: TrackedResource, extended_location: ExtendedLocation) -> Self {
         Self {
             tracked_resource,
-            properties,
+            properties: None,
             extended_location,
         }
     }
@@ -174,17 +197,12 @@ impl CloudInventoryItem {
         Self { inventory_item_properties }
     }
 }
-#[doc = "List of Clouds."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "The response of a Cloud list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudListResult {
-    #[doc = "List of Clouds."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[doc = "The Cloud items on this page"]
     pub value: Vec<Cloud>,
-    #[doc = "Url to follow for getting next page of resources."]
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -195,8 +213,8 @@ impl azure_core::Continuable for CloudListResult {
     }
 }
 impl CloudListResult {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(value: Vec<Cloud>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Defines the resource properties."]
@@ -211,7 +229,7 @@ pub struct CloudProperties {
     #[doc = "ARM Id of the vmmServer resource in which this resource resides."]
     #[serde(rename = "vmmServerId", default, skip_serializing_if = "Option::is_none")]
     pub vmm_server_id: Option<String>,
-    #[doc = "Name of the cloud in VMMServer."]
+    #[doc = "Name of the cloud in VmmServer."]
     #[serde(rename = "cloudName", default, skip_serializing_if = "Option::is_none")]
     pub cloud_name: Option<String>,
     #[doc = "Cloud Capacity model"]
@@ -224,14 +242,104 @@ pub struct CloudProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub storage_qo_s_policies: Vec<StorageQoSPolicy>,
-    #[doc = "The provisioning state of a resource."]
+    pub storage_qo_s_policies: Vec<StorageQosPolicy>,
+    #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ResourceProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 impl CloudProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The type used for updating tags in Cloud resources."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CloudTagsUpdate {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl CloudTagsUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Create diff disk."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "CreateDiffDisk")]
+pub enum CreateDiffDisk {
+    #[serde(rename = "true")]
+    True,
+    #[serde(rename = "false")]
+    False,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for CreateDiffDisk {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for CreateDiffDisk {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for CreateDiffDisk {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::True => serializer.serialize_unit_variant("CreateDiffDisk", 0u32, "true"),
+            Self::False => serializer.serialize_unit_variant("CreateDiffDisk", 1u32, "false"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Dynamic memory enabled."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "DynamicMemoryEnabled")]
+pub enum DynamicMemoryEnabled {
+    #[serde(rename = "true")]
+    True,
+    #[serde(rename = "false")]
+    False,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for DynamicMemoryEnabled {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for DynamicMemoryEnabled {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for DynamicMemoryEnabled {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::True => serializer.serialize_unit_variant("DynamicMemoryEnabled", 0u32, "true"),
+            Self::False => serializer.serialize_unit_variant("DynamicMemoryEnabled", 1u32, "false"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "The resource management error additional info."]
@@ -316,39 +424,37 @@ impl ExtendedLocation {
     }
 }
 #[doc = "Defines the GuestAgent."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestAgent {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
-    pub properties: GuestAgentProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GuestAgentProperties>,
 }
 impl GuestAgent {
-    pub fn new(properties: GuestAgentProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
-#[doc = "List of GuestAgent."]
+#[doc = "The response of a GuestAgent list operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestAgentList {
-    #[doc = "Url to follow for getting next page of GuestAgent."]
+pub struct GuestAgentListResult {
+    #[doc = "The GuestAgent items on this page"]
+    pub value: Vec<GuestAgent>,
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[doc = "Array of GuestAgent"]
-    pub value: Vec<GuestAgent>,
 }
-impl azure_core::Continuable for GuestAgentList {
+impl azure_core::Continuable for GuestAgentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl GuestAgentList {
+impl GuestAgentListResult {
     pub fn new(value: Vec<GuestAgent>) -> Self {
-        Self { next_link: None, value }
+        Self { value, next_link: None }
     }
 }
 #[doc = "Defines the resource properties."]
@@ -363,7 +469,7 @@ pub struct GuestAgentProperties {
     #[doc = "HTTP Proxy configuration for the VM."]
     #[serde(rename = "httpProxyConfig", default, skip_serializing_if = "Option::is_none")]
     pub http_proxy_config: Option<HttpProxyConfiguration>,
-    #[doc = "Defines the different types of operations for guest agent."]
+    #[doc = "Guest agent provisioning action."]
     #[serde(rename = "provisioningAction", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_action: Option<ProvisioningAction>,
     #[doc = "Gets the guest agent status."]
@@ -372,9 +478,9 @@ pub struct GuestAgentProperties {
     #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
     pub custom_resource_name: Option<String>,
-    #[doc = "The provisioning state of a resource."]
+    #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ResourceProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 impl GuestAgentProperties {
     pub fn new() -> Self {
@@ -403,148 +509,28 @@ pub struct HardwareProfile {
     #[doc = "Gets or sets the number of vCPUs for the vm."]
     #[serde(rename = "cpuCount", default, skip_serializing_if = "Option::is_none")]
     pub cpu_count: Option<i32>,
-    #[doc = "Gets or sets a value indicating whether to enable processor compatibility mode for live migration of VMs."]
+    #[doc = "Limit CPU for migration."]
     #[serde(rename = "limitCpuForMigration", default, skip_serializing_if = "Option::is_none")]
-    pub limit_cpu_for_migration: Option<hardware_profile::LimitCpuForMigration>,
-    #[doc = "Gets or sets a value indicating whether to enable dynamic memory or not."]
+    pub limit_cpu_for_migration: Option<LimitCpuForMigration>,
+    #[doc = "Dynamic memory enabled."]
     #[serde(rename = "dynamicMemoryEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub dynamic_memory_enabled: Option<hardware_profile::DynamicMemoryEnabled>,
+    pub dynamic_memory_enabled: Option<DynamicMemoryEnabled>,
     #[doc = "Gets or sets the max dynamic memory for the vm."]
     #[serde(rename = "dynamicMemoryMaxMB", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_memory_max_mb: Option<i32>,
     #[doc = "Gets or sets the min dynamic memory for the vm."]
     #[serde(rename = "dynamicMemoryMinMB", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_memory_min_mb: Option<i32>,
-    #[doc = "Gets highly available property."]
+    #[doc = "Highly available."]
     #[serde(rename = "isHighlyAvailable", default, skip_serializing_if = "Option::is_none")]
-    pub is_highly_available: Option<hardware_profile::IsHighlyAvailable>,
+    pub is_highly_available: Option<IsHighlyAvailable>,
 }
 impl HardwareProfile {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod hardware_profile {
-    use super::*;
-    #[doc = "Gets or sets a value indicating whether to enable processor compatibility mode for live migration of VMs."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "LimitCpuForMigration")]
-    pub enum LimitCpuForMigration {
-        #[serde(rename = "false")]
-        False,
-        #[serde(rename = "true")]
-        True,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for LimitCpuForMigration {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for LimitCpuForMigration {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for LimitCpuForMigration {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::False => serializer.serialize_unit_variant("LimitCpuForMigration", 0u32, "false"),
-                Self::True => serializer.serialize_unit_variant("LimitCpuForMigration", 1u32, "true"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Gets or sets a value indicating whether to enable dynamic memory or not."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "DynamicMemoryEnabled")]
-    pub enum DynamicMemoryEnabled {
-        #[serde(rename = "false")]
-        False,
-        #[serde(rename = "true")]
-        True,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for DynamicMemoryEnabled {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for DynamicMemoryEnabled {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for DynamicMemoryEnabled {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::False => serializer.serialize_unit_variant("DynamicMemoryEnabled", 0u32, "false"),
-                Self::True => serializer.serialize_unit_variant("DynamicMemoryEnabled", 1u32, "true"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Gets highly available property."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "IsHighlyAvailable")]
-    pub enum IsHighlyAvailable {
-        #[serde(rename = "false")]
-        False,
-        #[serde(rename = "true")]
-        True,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for IsHighlyAvailable {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for IsHighlyAvailable {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for IsHighlyAvailable {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::False => serializer.serialize_unit_variant("IsHighlyAvailable", 0u32, "false"),
-                Self::True => serializer.serialize_unit_variant("IsHighlyAvailable", 1u32, "true"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "Defines the resource properties."]
+#[doc = "Defines the resource update properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HardwareProfileUpdate {
     #[doc = "MemoryMB is the size of a virtual machine's memory, in MB."]
@@ -553,12 +539,12 @@ pub struct HardwareProfileUpdate {
     #[doc = "Gets or sets the number of vCPUs for the vm."]
     #[serde(rename = "cpuCount", default, skip_serializing_if = "Option::is_none")]
     pub cpu_count: Option<i32>,
-    #[doc = "Gets or sets a value indicating whether to enable processor compatibility mode for live migration of VMs."]
+    #[doc = "Limit CPU for migration."]
     #[serde(rename = "limitCpuForMigration", default, skip_serializing_if = "Option::is_none")]
-    pub limit_cpu_for_migration: Option<hardware_profile_update::LimitCpuForMigration>,
-    #[doc = "Gets or sets a value indicating whether to enable dynamic memory or not."]
+    pub limit_cpu_for_migration: Option<LimitCpuForMigration>,
+    #[doc = "Dynamic memory enabled."]
     #[serde(rename = "dynamicMemoryEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub dynamic_memory_enabled: Option<hardware_profile_update::DynamicMemoryEnabled>,
+    pub dynamic_memory_enabled: Option<DynamicMemoryEnabled>,
     #[doc = "Gets or sets the max dynamic memory for the vm."]
     #[serde(rename = "dynamicMemoryMaxMB", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_memory_max_mb: Option<i32>,
@@ -571,87 +557,6 @@ impl HardwareProfileUpdate {
         Self::default()
     }
 }
-pub mod hardware_profile_update {
-    use super::*;
-    #[doc = "Gets or sets a value indicating whether to enable processor compatibility mode for live migration of VMs."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "LimitCpuForMigration")]
-    pub enum LimitCpuForMigration {
-        #[serde(rename = "false")]
-        False,
-        #[serde(rename = "true")]
-        True,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for LimitCpuForMigration {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for LimitCpuForMigration {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for LimitCpuForMigration {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::False => serializer.serialize_unit_variant("LimitCpuForMigration", 0u32, "false"),
-                Self::True => serializer.serialize_unit_variant("LimitCpuForMigration", 1u32, "true"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Gets or sets a value indicating whether to enable dynamic memory or not."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "DynamicMemoryEnabled")]
-    pub enum DynamicMemoryEnabled {
-        #[serde(rename = "false")]
-        False,
-        #[serde(rename = "true")]
-        True,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for DynamicMemoryEnabled {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for DynamicMemoryEnabled {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for DynamicMemoryEnabled {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::False => serializer.serialize_unit_variant("DynamicMemoryEnabled", 0u32, "false"),
-                Self::True => serializer.serialize_unit_variant("DynamicMemoryEnabled", 1u32, "true"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
 #[doc = "HTTP Proxy configuration for the VM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HttpProxyConfiguration {
@@ -662,68 +567,6 @@ pub struct HttpProxyConfiguration {
 impl HttpProxyConfiguration {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Managed service identity."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Identity {
-    #[doc = "The principal id of managed service identity."]
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[doc = "The tenant of managed service identity."]
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[doc = "The type of managed service identity."]
-    #[serde(rename = "type")]
-    pub type_: identity::Type,
-}
-impl Identity {
-    pub fn new(type_: identity::Type) -> Self {
-        Self {
-            principal_id: None,
-            tenant_id: None,
-            type_,
-        }
-    }
-}
-pub mod identity {
-    use super::*;
-    #[doc = "The type of managed service identity."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        None,
-        SystemAssigned,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::None => serializer.serialize_unit_variant("Type", 0u32, "None"),
-                Self::SystemAssigned => serializer.serialize_unit_variant("Type", 1u32, "SystemAssigned"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }
 #[doc = "Specifies the vmmServer infrastructure specific settings for the virtual machine instance."]
@@ -741,7 +584,7 @@ pub struct InfrastructureProfile {
     #[doc = "ARM Id of the template resource to use for deploying the vm."]
     #[serde(rename = "templateId", default, skip_serializing_if = "Option::is_none")]
     pub template_id: Option<String>,
-    #[doc = "VMName is the name of VM on the SCVMM server."]
+    #[doc = "VMName is the name of VM on the SCVmm server."]
     #[serde(rename = "vmName", default, skip_serializing_if = "Option::is_none")]
     pub vm_name: Option<String>,
     #[doc = "Unique ID of the virtual machine."]
@@ -772,7 +615,7 @@ impl InfrastructureProfile {
         Self::default()
     }
 }
-#[doc = "Specifies the vmmServer infrastructure specific settings for the virtual machine instance for update."]
+#[doc = "Specifies the vmmServer infrastructure specific update settings for the virtual machine instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InfrastructureProfileUpdate {
     #[doc = "Type of checkpoint supported for the vm."]
@@ -785,23 +628,20 @@ impl InfrastructureProfileUpdate {
     }
 }
 #[doc = "Defines the inventory item."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InventoryItem {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
-    pub properties: InventoryItemPropertiesUnion,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<InventoryItemPropertiesUnion>,
     #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
 impl InventoryItem {
-    pub fn new(properties: InventoryItemPropertiesUnion) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-            kind: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Defines the resource properties."]
@@ -810,7 +650,7 @@ pub struct InventoryItemDetails {
     #[doc = "Gets or sets the inventory Item ID for the resource."]
     #[serde(rename = "inventoryItemId", default, skip_serializing_if = "Option::is_none")]
     pub inventory_item_id: Option<String>,
-    #[doc = "Gets or sets the Managed Object name in VMM for the resource."]
+    #[doc = "Gets or sets the Managed Object name in Vmm for the resource."]
     #[serde(rename = "inventoryItemName", default, skip_serializing_if = "Option::is_none")]
     pub inventory_item_name: Option<String>,
 }
@@ -819,21 +659,41 @@ impl InventoryItemDetails {
         Self::default()
     }
 }
+#[doc = "The response of a InventoryItem list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InventoryItemListResult {
+    #[doc = "The InventoryItem items on this page"]
+    pub value: Vec<InventoryItem>,
+    #[doc = "The link to the next page of items"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for InventoryItemListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl InventoryItemListResult {
+    pub fn new(value: Vec<InventoryItem>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InventoryItemProperties {
     #[doc = "Gets the tracked resource id corresponding to the inventory resource."]
     #[serde(rename = "managedResourceId", default, skip_serializing_if = "Option::is_none")]
     pub managed_resource_id: Option<String>,
-    #[doc = "Gets the UUID (which is assigned by VMM) for the inventory item."]
+    #[doc = "Gets the UUID (which is assigned by Vmm) for the inventory item."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
-    #[doc = "Gets the Managed Object name in VMM for the inventory item."]
+    #[doc = "Gets the Managed Object name in Vmm for the inventory item."]
     #[serde(rename = "inventoryItemName", default, skip_serializing_if = "Option::is_none")]
     pub inventory_item_name: Option<String>,
-    #[doc = "The provisioning state of a resource."]
+    #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ResourceProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 impl InventoryItemProperties {
     pub fn new() -> Self {
@@ -845,7 +705,7 @@ impl InventoryItemProperties {
         }
     }
 }
-#[doc = "The inventory type."]
+#[doc = "The inventory type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "inventoryType")]
 pub enum InventoryItemPropertiesUnion {
@@ -854,34 +714,14 @@ pub enum InventoryItemPropertiesUnion {
     VirtualMachineTemplate(VirtualMachineTemplateInventoryItem),
     VirtualNetwork(VirtualNetworkInventoryItem),
 }
-#[doc = "List of InventoryItems."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InventoryItemsList {
-    #[doc = "Url to follow for getting next page of InventoryItems."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[doc = "Array of InventoryItems"]
-    pub value: Vec<InventoryItem>,
-}
-impl azure_core::Continuable for InventoryItemsList {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl InventoryItemsList {
-    pub fn new(value: Vec<InventoryItem>) -> Self {
-        Self { next_link: None, value }
-    }
-}
-#[doc = "The inventory type."]
+#[doc = "The inventory type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "InventoryType")]
 pub enum InventoryType {
     Cloud,
     VirtualNetwork,
-    VirtualMachineTemplate,
     VirtualMachine,
+    VirtualMachineTemplate,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -909,8 +749,125 @@ impl Serialize for InventoryType {
         match self {
             Self::Cloud => serializer.serialize_unit_variant("InventoryType", 0u32, "Cloud"),
             Self::VirtualNetwork => serializer.serialize_unit_variant("InventoryType", 1u32, "VirtualNetwork"),
-            Self::VirtualMachineTemplate => serializer.serialize_unit_variant("InventoryType", 2u32, "VirtualMachineTemplate"),
-            Self::VirtualMachine => serializer.serialize_unit_variant("InventoryType", 3u32, "VirtualMachine"),
+            Self::VirtualMachine => serializer.serialize_unit_variant("InventoryType", 2u32, "VirtualMachine"),
+            Self::VirtualMachineTemplate => serializer.serialize_unit_variant("InventoryType", 3u32, "VirtualMachineTemplate"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Customizable."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "IsCustomizable")]
+pub enum IsCustomizable {
+    #[serde(rename = "true")]
+    True,
+    #[serde(rename = "false")]
+    False,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for IsCustomizable {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for IsCustomizable {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for IsCustomizable {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::True => serializer.serialize_unit_variant("IsCustomizable", 0u32, "true"),
+            Self::False => serializer.serialize_unit_variant("IsCustomizable", 1u32, "false"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Highly available."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "IsHighlyAvailable")]
+pub enum IsHighlyAvailable {
+    #[serde(rename = "true")]
+    True,
+    #[serde(rename = "false")]
+    False,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for IsHighlyAvailable {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for IsHighlyAvailable {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for IsHighlyAvailable {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::True => serializer.serialize_unit_variant("IsHighlyAvailable", 0u32, "true"),
+            Self::False => serializer.serialize_unit_variant("IsHighlyAvailable", 1u32, "false"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Limit CPU for migration."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "LimitCpuForMigration")]
+pub enum LimitCpuForMigration {
+    #[serde(rename = "true")]
+    True,
+    #[serde(rename = "false")]
+    False,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for LimitCpuForMigration {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for LimitCpuForMigration {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for LimitCpuForMigration {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::True => serializer.serialize_unit_variant("LimitCpuForMigration", 0u32, "true"),
+            Self::False => serializer.serialize_unit_variant("LimitCpuForMigration", 1u32, "false"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -949,13 +906,13 @@ pub struct NetworkInterface {
     #[doc = "Gets the name of the virtual network in vmmServer that the nic is connected to."]
     #[serde(rename = "networkName", default, skip_serializing_if = "Option::is_none")]
     pub network_name: Option<String>,
-    #[doc = "Allocation method."]
+    #[doc = "Network address allocation method."]
     #[serde(rename = "ipv4AddressType", default, skip_serializing_if = "Option::is_none")]
     pub ipv4_address_type: Option<AllocationMethod>,
-    #[doc = "Allocation method."]
+    #[doc = "Network address allocation method."]
     #[serde(rename = "ipv6AddressType", default, skip_serializing_if = "Option::is_none")]
     pub ipv6_address_type: Option<AllocationMethod>,
-    #[doc = "Allocation method."]
+    #[doc = "Network address allocation method."]
     #[serde(rename = "macAddressType", default, skip_serializing_if = "Option::is_none")]
     pub mac_address_type: Option<AllocationMethod>,
     #[doc = "Gets or sets the nic id."]
@@ -967,7 +924,7 @@ impl NetworkInterface {
         Self::default()
     }
 }
-#[doc = "Network Interface model"]
+#[doc = "Network Interface Update model"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceUpdate {
     #[doc = "Gets or sets the name of the network interface."]
@@ -979,13 +936,13 @@ pub struct NetworkInterfaceUpdate {
     #[doc = "Gets or sets the ARM Id of the Microsoft.ScVmm/virtualNetwork resource to connect the nic."]
     #[serde(rename = "virtualNetworkId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network_id: Option<String>,
-    #[doc = "Allocation method."]
+    #[doc = "Network address allocation method."]
     #[serde(rename = "ipv4AddressType", default, skip_serializing_if = "Option::is_none")]
     pub ipv4_address_type: Option<AllocationMethod>,
-    #[doc = "Allocation method."]
+    #[doc = "Network address allocation method."]
     #[serde(rename = "ipv6AddressType", default, skip_serializing_if = "Option::is_none")]
     pub ipv6_address_type: Option<AllocationMethod>,
-    #[doc = "Allocation method."]
+    #[doc = "Network address allocation method."]
     #[serde(rename = "macAddressType", default, skip_serializing_if = "Option::is_none")]
     pub mac_address_type: Option<AllocationMethod>,
     #[doc = "Gets or sets the nic id."]
@@ -1014,7 +971,7 @@ impl NetworkProfile {
         Self::default()
     }
 }
-#[doc = "Defines the resource properties."]
+#[doc = "Defines the resource update properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfileUpdate {
     #[doc = "Gets or sets the list of network interfaces associated with the virtual machine."]
@@ -1190,7 +1147,7 @@ pub struct OsProfileForVmInstance {
     #[doc = "Gets or sets computer name."]
     #[serde(rename = "computerName", default, skip_serializing_if = "Option::is_none")]
     pub computer_name: Option<String>,
-    #[doc = "Defines the different types of VM guest operating systems."]
+    #[doc = "Virtual machine operating system type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
     #[doc = "Gets os sku."]
@@ -1205,7 +1162,7 @@ impl OsProfileForVmInstance {
         Self::default()
     }
 }
-#[doc = "Defines the different types of VM guest operating systems."]
+#[doc = "Virtual machine operating system type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "OsType")]
 pub enum OsType {
@@ -1244,7 +1201,7 @@ impl Serialize for OsType {
         }
     }
 }
-#[doc = "Defines the different types of operations for guest agent."]
+#[doc = "Guest agent provisioning action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ProvisioningAction")]
 pub enum ProvisioningAction {
@@ -1286,6 +1243,55 @@ impl Serialize for ProvisioningAction {
         }
     }
 }
+#[doc = "The provisioning state of the resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ProvisioningState")]
+pub enum ProvisioningState {
+    Succeeded,
+    Failed,
+    Canceled,
+    Provisioning,
+    Updating,
+    Deleting,
+    Accepted,
+    Created,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ProvisioningState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ProvisioningState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ProvisioningState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
+            Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
+            Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Canceled"),
+            Self::Provisioning => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Provisioning"),
+            Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Updating"),
+            Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Deleting"),
+            Self::Accepted => serializer.serialize_unit_variant("ProvisioningState", 6u32, "Accepted"),
+            Self::Created => serializer.serialize_unit_variant("ProvisioningState", 7u32, "Created"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
@@ -1318,67 +1324,6 @@ impl Resource {
         Self::default()
     }
 }
-#[doc = "Object containing tags updates for patch operations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourcePatch {
-    #[doc = "Resource tags."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-impl ResourcePatch {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The provisioning state of a resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "ResourceProvisioningState")]
-pub enum ResourceProvisioningState {
-    Succeeded,
-    Failed,
-    Canceled,
-    Provisioning,
-    Updating,
-    Deleting,
-    Accepted,
-    Created,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for ResourceProvisioningState {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for ResourceProvisioningState {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for ResourceProvisioningState {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::Succeeded => serializer.serialize_unit_variant("ResourceProvisioningState", 0u32, "Succeeded"),
-            Self::Failed => serializer.serialize_unit_variant("ResourceProvisioningState", 1u32, "Failed"),
-            Self::Canceled => serializer.serialize_unit_variant("ResourceProvisioningState", 2u32, "Canceled"),
-            Self::Provisioning => serializer.serialize_unit_variant("ResourceProvisioningState", 3u32, "Provisioning"),
-            Self::Updating => serializer.serialize_unit_variant("ResourceProvisioningState", 4u32, "Updating"),
-            Self::Deleting => serializer.serialize_unit_variant("ResourceProvisioningState", 5u32, "Deleting"),
-            Self::Accepted => serializer.serialize_unit_variant("ResourceProvisioningState", 6u32, "Accepted"),
-            Self::Created => serializer.serialize_unit_variant("ResourceProvisioningState", 7u32, "Created"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-        }
-    }
-}
 #[doc = "Defines the stop action properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StopVirtualMachineOptions {
@@ -1397,10 +1342,10 @@ pub mod stop_virtual_machine_options {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "SkipShutdown")]
     pub enum SkipShutdown {
-        #[serde(rename = "false")]
-        False,
         #[serde(rename = "true")]
         True,
+        #[serde(rename = "false")]
+        False,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -1426,8 +1371,8 @@ pub mod stop_virtual_machine_options {
             S: Serializer,
         {
             match self {
-                Self::False => serializer.serialize_unit_variant("SkipShutdown", 0u32, "false"),
-                Self::True => serializer.serialize_unit_variant("SkipShutdown", 1u32, "true"),
+                Self::True => serializer.serialize_unit_variant("SkipShutdown", 0u32, "true"),
+                Self::False => serializer.serialize_unit_variant("SkipShutdown", 1u32, "false"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -1454,7 +1399,7 @@ impl StorageProfile {
         Self::default()
     }
 }
-#[doc = "Defines the resource properties."]
+#[doc = "Defines the resource update properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageProfileUpdate {
     #[doc = "Gets or sets the list of virtual disks associated with the virtual machine."]
@@ -1472,7 +1417,7 @@ impl StorageProfileUpdate {
 }
 #[doc = "The StorageQoSPolicy definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct StorageQoSPolicy {
+pub struct StorageQosPolicy {
     #[doc = "The name of the policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1492,14 +1437,14 @@ pub struct StorageQoSPolicy {
     #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
     pub policy_id: Option<String>,
 }
-impl StorageQoSPolicy {
+impl StorageQosPolicy {
     pub fn new() -> Self {
         Self::default()
     }
 }
 #[doc = "The StorageQoSPolicyDetails definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct StorageQoSPolicyDetails {
+pub struct StorageQosPolicyDetails {
     #[doc = "The name of the policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1507,7 +1452,7 @@ pub struct StorageQoSPolicyDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-impl StorageQoSPolicyDetails {
+impl StorageQosPolicyDetails {
     pub fn new() -> Self {
         Self::default()
     }
@@ -1529,107 +1474,6 @@ impl TrackedResource {
             resource: Resource::default(),
             tags: None,
             location,
-        }
-    }
-}
-#[doc = "Credentials to connect to VMMServer."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct VmmCredential {
-    #[doc = "Username to use to connect to VMMServer."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub username: Option<String>,
-    #[doc = "Password to use to connect to VMMServer."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
-}
-impl VmmCredential {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The VmmServers resource definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmmServer {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[doc = "Defines the resource properties."]
-    pub properties: VmmServerProperties,
-    #[doc = "The extended location."]
-    #[serde(rename = "extendedLocation")]
-    pub extended_location: ExtendedLocation,
-}
-impl VmmServer {
-    pub fn new(tracked_resource: TrackedResource, properties: VmmServerProperties, extended_location: ExtendedLocation) -> Self {
-        Self {
-            tracked_resource,
-            properties,
-            extended_location,
-        }
-    }
-}
-#[doc = "List of VmmServers."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct VmmServerListResult {
-    #[doc = "List of VmmServers."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<VmmServer>,
-    #[doc = "Url to follow for getting next page of resources."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for VmmServerListResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl VmmServerListResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Defines the resource properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmmServerProperties {
-    #[doc = "Credentials to connect to VMMServer."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub credentials: Option<VmmCredential>,
-    #[doc = "Fqdn is the hostname/ip of the vmmServer."]
-    pub fqdn: String,
-    #[doc = "Port is the port on which the vmmServer is listening."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub port: Option<i32>,
-    #[doc = "Gets the connection status to the vmmServer."]
-    #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
-    pub connection_status: Option<String>,
-    #[doc = "Gets any error message if connection to vmmServer is having any issue."]
-    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
-    pub error_message: Option<String>,
-    #[doc = "Unique ID of vmmServer."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub uuid: Option<String>,
-    #[doc = "Version is the version of the vmmSever."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-    #[doc = "The provisioning state of a resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ResourceProvisioningState>,
-}
-impl VmmServerProperties {
-    pub fn new(fqdn: String) -> Self {
-        Self {
-            credentials: None,
-            fqdn,
-            port: None,
-            connection_status: None,
-            error_message: None,
-            uuid: None,
-            version: None,
-            provisioning_state: None,
         }
     }
 }
@@ -1674,59 +1518,17 @@ pub struct VirtualDisk {
     pub template_disk_id: Option<String>,
     #[doc = "The StorageQoSPolicyDetails definition."]
     #[serde(rename = "storageQoSPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub storage_qo_s_policy: Option<StorageQoSPolicyDetails>,
-    #[doc = "Gets or sets a value indicating diff disk."]
+    pub storage_qo_s_policy: Option<StorageQosPolicyDetails>,
+    #[doc = "Create diff disk."]
     #[serde(rename = "createDiffDisk", default, skip_serializing_if = "Option::is_none")]
-    pub create_diff_disk: Option<virtual_disk::CreateDiffDisk>,
+    pub create_diff_disk: Option<CreateDiffDisk>,
 }
 impl VirtualDisk {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod virtual_disk {
-    use super::*;
-    #[doc = "Gets or sets a value indicating diff disk."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "CreateDiffDisk")]
-    pub enum CreateDiffDisk {
-        #[serde(rename = "false")]
-        False,
-        #[serde(rename = "true")]
-        True,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for CreateDiffDisk {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for CreateDiffDisk {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for CreateDiffDisk {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::False => serializer.serialize_unit_variant("CreateDiffDisk", 0u32, "false"),
-                Self::True => serializer.serialize_unit_variant("CreateDiffDisk", 1u32, "true"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "Virtual disk model"]
+#[doc = "Virtual Disk Update model"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualDiskUpdate {
     #[doc = "Gets or sets the name of the disk."]
@@ -1752,7 +1554,7 @@ pub struct VirtualDiskUpdate {
     pub vhd_type: Option<String>,
     #[doc = "The StorageQoSPolicyDetails definition."]
     #[serde(rename = "storageQoSPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub storage_qo_s_policy: Option<StorageQoSPolicyDetails>,
+    pub storage_qo_s_policy: Option<StorageQosPolicyDetails>,
 }
 impl VirtualDiskUpdate {
     pub fn new() -> Self {
@@ -1792,31 +1594,27 @@ pub struct VirtualMachineInstance {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
-    pub properties: VirtualMachineInstanceProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineInstanceProperties>,
     #[doc = "The extended location."]
     #[serde(rename = "extendedLocation")]
     pub extended_location: ExtendedLocation,
 }
 impl VirtualMachineInstance {
-    pub fn new(properties: VirtualMachineInstanceProperties, extended_location: ExtendedLocation) -> Self {
+    pub fn new(extended_location: ExtendedLocation) -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
-            properties,
+            properties: None,
             extended_location,
         }
     }
 }
-#[doc = "List of VirtualMachineInstances."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "The response of a VirtualMachineInstance list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineInstanceListResult {
-    #[doc = "Array of VirtualMachineInstances."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[doc = "The VirtualMachineInstance items on this page"]
     pub value: Vec<VirtualMachineInstance>,
-    #[doc = "Url to follow for getting next page of resources."]
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1827,16 +1625,21 @@ impl azure_core::Continuable for VirtualMachineInstanceListResult {
     }
 }
 impl VirtualMachineInstanceListResult {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(value: Vec<VirtualMachineInstance>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Defines the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineInstanceProperties {
     #[doc = "Availability Sets in vm."]
-    #[serde(rename = "availabilitySets", default, skip_serializing_if = "Option::is_none")]
-    pub availability_sets: Option<AvailabilitySetList>,
+    #[serde(
+        rename = "availabilitySets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub availability_sets: Vec<AvailabilitySetListItem>,
     #[doc = "Defines the resource properties."]
     #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
     pub os_profile: Option<OsProfileForVmInstance>,
@@ -1855,19 +1658,19 @@ pub struct VirtualMachineInstanceProperties {
     #[doc = "Gets the power state of the virtual machine."]
     #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
     pub power_state: Option<String>,
-    #[doc = "The provisioning state of a resource."]
+    #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ResourceProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 impl VirtualMachineInstanceProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "Defines the virtualMachineInstanceUpdate."]
+#[doc = "The type used for update operations of the VirtualMachineInstance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineInstanceUpdate {
-    #[doc = "Defines the resource properties."]
+    #[doc = "Virtual Machine Instance Properties Update model"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineInstanceUpdateProperties>,
 }
@@ -1876,22 +1679,27 @@ impl VirtualMachineInstanceUpdate {
         Self::default()
     }
 }
-#[doc = "Defines the resource properties."]
+#[doc = "Virtual Machine Instance Properties Update model"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineInstanceUpdateProperties {
-    #[doc = "Defines the resource properties."]
+    #[doc = "Availability Sets in vm."]
+    #[serde(
+        rename = "availabilitySets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub availability_sets: Vec<AvailabilitySetListItem>,
+    #[doc = "Defines the resource update properties."]
     #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
     pub hardware_profile: Option<HardwareProfileUpdate>,
-    #[doc = "Defines the resource properties."]
-    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
-    pub storage_profile: Option<StorageProfileUpdate>,
-    #[doc = "Defines the resource properties."]
+    #[doc = "Defines the resource update properties."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfileUpdate>,
-    #[doc = "Availability Sets in vm."]
-    #[serde(rename = "availabilitySets", default, skip_serializing_if = "Option::is_none")]
-    pub availability_sets: Option<AvailabilitySetList>,
-    #[doc = "Specifies the vmmServer infrastructure specific settings for the virtual machine instance for update."]
+    #[doc = "Defines the resource update properties."]
+    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
+    pub storage_profile: Option<StorageProfileUpdate>,
+    #[doc = "Specifies the vmmServer infrastructure specific update settings for the virtual machine instance."]
     #[serde(rename = "infrastructureProfile", default, skip_serializing_if = "Option::is_none")]
     pub infrastructure_profile: Option<InfrastructureProfileUpdate>,
 }
@@ -1905,7 +1713,7 @@ impl VirtualMachineInstanceUpdateProperties {
 pub struct VirtualMachineInventoryItem {
     #[serde(flatten)]
     pub inventory_item_properties: InventoryItemProperties,
-    #[doc = "Defines the different types of VM guest operating systems."]
+    #[doc = "Virtual machine operating system type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
     #[doc = "Gets os name."]
@@ -1968,20 +1776,17 @@ pub struct VirtualMachineTemplate {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[doc = "Defines the resource properties."]
-    pub properties: VirtualMachineTemplateProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineTemplateProperties>,
     #[doc = "The extended location."]
     #[serde(rename = "extendedLocation")]
     pub extended_location: ExtendedLocation,
 }
 impl VirtualMachineTemplate {
-    pub fn new(
-        tracked_resource: TrackedResource,
-        properties: VirtualMachineTemplateProperties,
-        extended_location: ExtendedLocation,
-    ) -> Self {
+    pub fn new(tracked_resource: TrackedResource, extended_location: ExtendedLocation) -> Self {
         Self {
             tracked_resource,
-            properties,
+            properties: None,
             extended_location,
         }
     }
@@ -1997,7 +1802,7 @@ pub struct VirtualMachineTemplateInventoryItem {
     #[doc = "MemoryMB is the desired size of a virtual machine's memory, in MB."]
     #[serde(rename = "memoryMB", default, skip_serializing_if = "Option::is_none")]
     pub memory_mb: Option<i32>,
-    #[doc = "Defines the different types of VM guest operating systems."]
+    #[doc = "Virtual machine operating system type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
     #[doc = "Gets os name."]
@@ -2015,17 +1820,12 @@ impl VirtualMachineTemplateInventoryItem {
         }
     }
 }
-#[doc = "List of VirtualMachineTemplates."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "The response of a VirtualMachineTemplate list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineTemplateListResult {
-    #[doc = "List of VirtualMachineTemplates."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[doc = "The VirtualMachineTemplate items on this page"]
     pub value: Vec<VirtualMachineTemplate>,
-    #[doc = "Url to follow for getting next page of resources."]
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2036,8 +1836,8 @@ impl azure_core::Continuable for VirtualMachineTemplateListResult {
     }
 }
 impl VirtualMachineTemplateListResult {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(value: Vec<VirtualMachineTemplate>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Defines the resource properties."]
@@ -2052,7 +1852,7 @@ pub struct VirtualMachineTemplateProperties {
     #[doc = "ARM Id of the vmmServer resource in which this resource resides."]
     #[serde(rename = "vmmServerId", default, skip_serializing_if = "Option::is_none")]
     pub vmm_server_id: Option<String>,
-    #[doc = "Defines the different types of VM guest operating systems."]
+    #[doc = "Virtual machine operating system type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
     #[doc = "Gets os name."]
@@ -2067,24 +1867,24 @@ pub struct VirtualMachineTemplateProperties {
     #[doc = "Gets the desired number of vCPUs for the vm."]
     #[serde(rename = "cpuCount", default, skip_serializing_if = "Option::is_none")]
     pub cpu_count: Option<i32>,
-    #[doc = "Gets a value indicating whether to enable processor compatibility mode for live migration of VMs."]
+    #[doc = "Limit CPU for migration."]
     #[serde(rename = "limitCpuForMigration", default, skip_serializing_if = "Option::is_none")]
-    pub limit_cpu_for_migration: Option<virtual_machine_template_properties::LimitCpuForMigration>,
-    #[doc = "Gets a value indicating whether to enable dynamic memory or not."]
+    pub limit_cpu_for_migration: Option<LimitCpuForMigration>,
+    #[doc = "Dynamic memory enabled."]
     #[serde(rename = "dynamicMemoryEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub dynamic_memory_enabled: Option<virtual_machine_template_properties::DynamicMemoryEnabled>,
-    #[doc = "Gets a value indicating whether the vm template is customizable or not."]
+    pub dynamic_memory_enabled: Option<DynamicMemoryEnabled>,
+    #[doc = "Customizable."]
     #[serde(rename = "isCustomizable", default, skip_serializing_if = "Option::is_none")]
-    pub is_customizable: Option<virtual_machine_template_properties::IsCustomizable>,
+    pub is_customizable: Option<IsCustomizable>,
     #[doc = "Gets the max dynamic memory for the vm."]
     #[serde(rename = "dynamicMemoryMaxMB", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_memory_max_mb: Option<i32>,
     #[doc = "Gets the min dynamic memory for the vm."]
     #[serde(rename = "dynamicMemoryMinMB", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_memory_min_mb: Option<i32>,
-    #[doc = "Gets highly available property."]
+    #[doc = "Highly available."]
     #[serde(rename = "isHighlyAvailable", default, skip_serializing_if = "Option::is_none")]
-    pub is_highly_available: Option<virtual_machine_template_properties::IsHighlyAvailable>,
+    pub is_highly_available: Option<IsHighlyAvailable>,
     #[doc = "Gets the generation for the vm."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub generation: Option<i32>,
@@ -2103,172 +1903,25 @@ pub struct VirtualMachineTemplateProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub disks: Vec<VirtualDisk>,
-    #[doc = "The provisioning state of a resource."]
+    #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ResourceProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 impl VirtualMachineTemplateProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod virtual_machine_template_properties {
-    use super::*;
-    #[doc = "Gets a value indicating whether to enable processor compatibility mode for live migration of VMs."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "LimitCpuForMigration")]
-    pub enum LimitCpuForMigration {
-        #[serde(rename = "false")]
-        False,
-        #[serde(rename = "true")]
-        True,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for LimitCpuForMigration {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for LimitCpuForMigration {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for LimitCpuForMigration {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::False => serializer.serialize_unit_variant("LimitCpuForMigration", 0u32, "false"),
-                Self::True => serializer.serialize_unit_variant("LimitCpuForMigration", 1u32, "true"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Gets a value indicating whether to enable dynamic memory or not."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "DynamicMemoryEnabled")]
-    pub enum DynamicMemoryEnabled {
-        #[serde(rename = "false")]
-        False,
-        #[serde(rename = "true")]
-        True,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for DynamicMemoryEnabled {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for DynamicMemoryEnabled {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for DynamicMemoryEnabled {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::False => serializer.serialize_unit_variant("DynamicMemoryEnabled", 0u32, "false"),
-                Self::True => serializer.serialize_unit_variant("DynamicMemoryEnabled", 1u32, "true"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Gets a value indicating whether the vm template is customizable or not."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "IsCustomizable")]
-    pub enum IsCustomizable {
-        #[serde(rename = "false")]
-        False,
-        #[serde(rename = "true")]
-        True,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for IsCustomizable {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for IsCustomizable {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for IsCustomizable {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::False => serializer.serialize_unit_variant("IsCustomizable", 0u32, "false"),
-                Self::True => serializer.serialize_unit_variant("IsCustomizable", 1u32, "true"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Gets highly available property."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "IsHighlyAvailable")]
-    pub enum IsHighlyAvailable {
-        #[serde(rename = "false")]
-        False,
-        #[serde(rename = "true")]
-        True,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for IsHighlyAvailable {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for IsHighlyAvailable {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for IsHighlyAvailable {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::False => serializer.serialize_unit_variant("IsHighlyAvailable", 0u32, "false"),
-                Self::True => serializer.serialize_unit_variant("IsHighlyAvailable", 1u32, "true"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
+#[doc = "The type used for updating tags in VirtualMachineTemplate resources."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VirtualMachineTemplateTagsUpdate {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl VirtualMachineTemplateTagsUpdate {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The VirtualNetworks resource definition."]
@@ -2277,16 +1930,17 @@ pub struct VirtualNetwork {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[doc = "Defines the resource properties."]
-    pub properties: VirtualNetworkProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualNetworkProperties>,
     #[doc = "The extended location."]
     #[serde(rename = "extendedLocation")]
     pub extended_location: ExtendedLocation,
 }
 impl VirtualNetwork {
-    pub fn new(tracked_resource: TrackedResource, properties: VirtualNetworkProperties, extended_location: ExtendedLocation) -> Self {
+    pub fn new(tracked_resource: TrackedResource, extended_location: ExtendedLocation) -> Self {
         Self {
             tracked_resource,
-            properties,
+            properties: None,
             extended_location,
         }
     }
@@ -2302,17 +1956,12 @@ impl VirtualNetworkInventoryItem {
         Self { inventory_item_properties }
     }
 }
-#[doc = "List of VirtualNetworks."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "The response of a VirtualNetwork list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkListResult {
-    #[doc = "List of VirtualNetworks."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[doc = "The VirtualNetwork items on this page"]
     pub value: Vec<VirtualNetwork>,
-    #[doc = "Url to follow for getting next page of resources."]
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2323,8 +1972,8 @@ impl azure_core::Continuable for VirtualNetworkListResult {
     }
 }
 impl VirtualNetworkListResult {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(value: Vec<VirtualNetwork>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Defines the resource properties."]
@@ -2342,49 +1991,59 @@ pub struct VirtualNetworkProperties {
     #[doc = "Name of the virtual network in vmmServer."]
     #[serde(rename = "networkName", default, skip_serializing_if = "Option::is_none")]
     pub network_name: Option<String>,
-    #[doc = "The provisioning state of a resource."]
+    #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ResourceProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 impl VirtualNetworkProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
+#[doc = "The type used for updating tags in VirtualNetwork resources."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VirtualNetworkTagsUpdate {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl VirtualNetworkTagsUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Defines the HybridIdentityMetadata."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmInstanceHybridIdentityMetadata {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of Hybrid Identity Metadata for a Virtual Machine."]
-    pub properties: VmInstanceHybridIdentityMetadataProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VmInstanceHybridIdentityMetadataProperties>,
 }
 impl VmInstanceHybridIdentityMetadata {
-    pub fn new(properties: VmInstanceHybridIdentityMetadataProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
-#[doc = "List of HybridIdentityMetadata."]
+#[doc = "The response of a VmInstanceHybridIdentityMetadata list operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmInstanceHybridIdentityMetadataList {
-    #[doc = "Url to follow for getting next page of HybridIdentityMetadata."]
+pub struct VmInstanceHybridIdentityMetadataListResult {
+    #[doc = "The VmInstanceHybridIdentityMetadata items on this page"]
+    pub value: Vec<VmInstanceHybridIdentityMetadata>,
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[doc = "Array of HybridIdentityMetadata"]
-    pub value: Vec<VmInstanceHybridIdentityMetadata>,
 }
-impl azure_core::Continuable for VmInstanceHybridIdentityMetadataList {
+impl azure_core::Continuable for VmInstanceHybridIdentityMetadataListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl VmInstanceHybridIdentityMetadataList {
+impl VmInstanceHybridIdentityMetadataListResult {
     pub fn new(value: Vec<VmInstanceHybridIdentityMetadata>) -> Self {
-        Self { next_link: None, value }
+        Self { value, next_link: None }
     }
 }
 #[doc = "Describes the properties of Hybrid Identity Metadata for a Virtual Machine."]
@@ -2396,11 +2055,120 @@ pub struct VmInstanceHybridIdentityMetadataProperties {
     #[doc = "Gets or sets the Public Key."]
     #[serde(rename = "publicKey", default, skip_serializing_if = "Option::is_none")]
     pub public_key: Option<String>,
-    #[doc = "The provisioning state of a resource."]
+    #[doc = "The provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ResourceProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
 }
 impl VmInstanceHybridIdentityMetadataProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Credentials to connect to VmmServer."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VmmCredential {
+    #[doc = "Username to use to connect to VmmServer."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
+    #[doc = "Password to use to connect to VmmServer."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+}
+impl VmmCredential {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The VmmServers resource definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmmServer {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[doc = "Defines the resource properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VmmServerProperties>,
+    #[doc = "The extended location."]
+    #[serde(rename = "extendedLocation")]
+    pub extended_location: ExtendedLocation,
+}
+impl VmmServer {
+    pub fn new(tracked_resource: TrackedResource, extended_location: ExtendedLocation) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+            extended_location,
+        }
+    }
+}
+#[doc = "The response of a VmmServer list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmmServerListResult {
+    #[doc = "The VmmServer items on this page"]
+    pub value: Vec<VmmServer>,
+    #[doc = "The link to the next page of items"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for VmmServerListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl VmmServerListResult {
+    pub fn new(value: Vec<VmmServer>) -> Self {
+        Self { value, next_link: None }
+    }
+}
+#[doc = "Defines the resource properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmmServerProperties {
+    #[doc = "Credentials to connect to VmmServer."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credentials: Option<VmmCredential>,
+    #[doc = "Fqdn is the hostname/ip of the vmmServer."]
+    pub fqdn: String,
+    #[doc = "Port is the port on which the vmmServer is listening."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<i32>,
+    #[doc = "Gets the connection status to the vmmServer."]
+    #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
+    pub connection_status: Option<String>,
+    #[doc = "Gets any error message if connection to vmmServer is having any issue."]
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+    #[doc = "Unique ID of vmmServer."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uuid: Option<String>,
+    #[doc = "Version is the version of the vmmSever."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[doc = "The provisioning state of the resource."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+}
+impl VmmServerProperties {
+    pub fn new(fqdn: String) -> Self {
+        Self {
+            credentials: None,
+            fqdn,
+            port: None,
+            connection_status: None,
+            error_message: None,
+            uuid: None,
+            version: None,
+            provisioning_state: None,
+        }
+    }
+}
+#[doc = "The type used for updating tags in VmmServer resources."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VmmServerTagsUpdate {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl VmmServerTagsUpdate {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2416,7 +2184,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -2425,7 +2193,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

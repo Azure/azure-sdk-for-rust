@@ -198,7 +198,7 @@ pub struct AppAttachPackageInfoProperties {
     pub version: Option<String>,
     #[doc = "Date Package was last updated, found in the appxmanifest.xml. "]
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated: Option<time::OffsetDateTime>,
+    pub last_updated: Option<::time::OffsetDateTime>,
     #[doc = "List of package applications. "]
     #[serde(
         rename = "packageApplications",
@@ -212,7 +212,7 @@ pub struct AppAttachPackageInfoProperties {
     pub certificate_name: Option<String>,
     #[doc = "Date certificate expires, found in the appxmanifest.xml. "]
     #[serde(rename = "certificateExpiry", default, with = "azure_core::date::rfc3339::option")]
-    pub certificate_expiry: Option<time::OffsetDateTime>,
+    pub certificate_expiry: Option<::time::OffsetDateTime>,
     #[doc = "Is package timestamped so it can ignore the certificate expiry date"]
     #[serde(rename = "isPackageTimestamped", default, skip_serializing_if = "Option::is_none")]
     pub is_package_timestamped: Option<app_attach_package_info_properties::IsPackageTimestamped>,
@@ -1124,7 +1124,7 @@ pub struct ExpandMsixImageProperties {
     pub version: Option<String>,
     #[doc = "Date Package was last updated, found in the appxmanifest.xml. "]
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated: Option<time::OffsetDateTime>,
+    pub last_updated: Option<::time::OffsetDateTime>,
     #[doc = "List of package applications. "]
     #[serde(
         rename = "packageApplications",
@@ -1138,7 +1138,7 @@ pub struct ExpandMsixImageProperties {
     pub certificate_name: Option<String>,
     #[doc = "Date certificate expires, found in the appxmanifest.xml. "]
     #[serde(rename = "certificateExpiry", default, with = "azure_core::date::rfc3339::option")]
-    pub certificate_expiry: Option<time::OffsetDateTime>,
+    pub certificate_expiry: Option<::time::OffsetDateTime>,
 }
 impl ExpandMsixImageProperties {
     pub fn new() -> Self {
@@ -2119,7 +2119,7 @@ pub struct MsixPackageProperties {
     pub version: Option<String>,
     #[doc = "Date Package was last updated, found in the appxmanifest.xml. "]
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated: Option<time::OffsetDateTime>,
+    pub last_updated: Option<::time::OffsetDateTime>,
     #[doc = "List of package applications. "]
     #[serde(
         rename = "packageApplications",
@@ -2588,7 +2588,7 @@ impl ProxyResource {
 pub struct RegistrationInfo {
     #[doc = "Expiration time of registration token."]
     #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time: Option<time::OffsetDateTime>,
+    pub expiration_time: Option<::time::OffsetDateTime>,
     #[doc = "The registration token base64 encoded string."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
@@ -2648,7 +2648,7 @@ pub mod registration_info {
 pub struct RegistrationInfoPatch {
     #[doc = "Expiration time of registration token."]
     #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time: Option<time::OffsetDateTime>,
+    pub expiration_time: Option<::time::OffsetDateTime>,
     #[doc = "The type of resetting the token."]
     #[serde(rename = "registrationTokenOperation", default, skip_serializing_if = "Option::is_none")]
     pub registration_token_operation: Option<registration_info_patch::RegistrationTokenOperation>,
@@ -4321,7 +4321,7 @@ pub struct SessionHostHealthCheckFailureDetails {
     pub error_code: Option<i32>,
     #[doc = "The timestamp of the last update."]
     #[serde(rename = "lastHealthCheckDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_health_check_date_time: Option<time::OffsetDateTime>,
+    pub last_health_check_date_time: Option<::time::OffsetDateTime>,
 }
 impl SessionHostHealthCheckFailureDetails {
     pub fn new() -> Self {
@@ -4512,7 +4512,7 @@ pub struct SessionHostProperties {
     pub object_id: Option<String>,
     #[doc = "Last heart beat from SessionHost."]
     #[serde(rename = "lastHeartBeat", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heart_beat: Option<time::OffsetDateTime>,
+    pub last_heart_beat: Option<::time::OffsetDateTime>,
     #[doc = "Number of sessions on SessionHost."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sessions: Option<i32>,
@@ -4539,7 +4539,7 @@ pub struct SessionHostProperties {
     pub status: Option<session_host_properties::Status>,
     #[doc = "The timestamp of the status."]
     #[serde(rename = "statusTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub status_timestamp: Option<time::OffsetDateTime>,
+    pub status_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The version of the OS on the session host."]
     #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
@@ -4551,7 +4551,7 @@ pub struct SessionHostProperties {
     pub update_state: Option<session_host_properties::UpdateState>,
     #[doc = "The timestamp of the last update."]
     #[serde(rename = "lastUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_update_time: Option<time::OffsetDateTime>,
+    pub last_update_time: Option<::time::OffsetDateTime>,
     #[doc = "The error message."]
     #[serde(rename = "updateErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub update_error_message: Option<String>,
@@ -4851,7 +4851,7 @@ pub struct UserSessionProperties {
     pub active_directory_user_name: Option<String>,
     #[doc = "The timestamp of the user session create."]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    pub create_time: Option<::time::OffsetDateTime>,
 }
 impl UserSessionProperties {
     pub fn new() -> Self {
@@ -5157,7 +5157,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -5166,7 +5166,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

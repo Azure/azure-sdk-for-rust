@@ -124,10 +124,10 @@ pub struct Connector {
     pub connector_properties: serde_json::Value,
     #[doc = "The created time."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The last modified time."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[doc = "State of connector."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<connector::State>,
@@ -204,10 +204,10 @@ pub struct ConnectorMapping {
     pub connector_type: Option<ConnectorType>,
     #[doc = "The created time."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The last modified time."]
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified: Option<time::OffsetDateTime>,
+    pub last_modified: Option<::time::OffsetDateTime>,
     #[doc = "Defines which entity type the file should map to."]
     #[serde(rename = "entityType")]
     pub entity_type: connector_mapping::EntityType,
@@ -231,7 +231,7 @@ pub struct ConnectorMapping {
     pub mapping_properties: ConnectorMappingProperties,
     #[doc = "The next run time based on customer's settings."]
     #[serde(rename = "nextRunTime", default, with = "azure_core::date::rfc3339::option")]
-    pub next_run_time: Option<time::OffsetDateTime>,
+    pub next_run_time: Option<::time::OffsetDateTime>,
     #[doc = "The RunId."]
     #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
@@ -785,7 +785,7 @@ pub struct EntityTypeDefinition {
     pub instances_count: Option<i64>,
     #[doc = "The last changed time for the type definition."]
     #[serde(rename = "lastChangedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_changed_utc: Option<time::OffsetDateTime>,
+    pub last_changed_utc: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -1780,7 +1780,7 @@ pub struct RelationshipDefinition {
     pub description: Option<serde_json::Value>,
     #[doc = "The expiry date time in UTC."]
     #[serde(rename = "expiryDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_date_time_utc: Option<time::OffsetDateTime>,
+    pub expiry_date_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The properties of the Relationship."]
     #[serde(
         default,
@@ -2480,10 +2480,10 @@ pub struct View {
     pub definition: String,
     #[doc = "Date time when view was last modified."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub changed: Option<time::OffsetDateTime>,
+    pub changed: Option<::time::OffsetDateTime>,
     #[doc = "Date time when view was created."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
 }
 impl View {
     pub fn new(definition: String) -> Self {
@@ -2562,10 +2562,10 @@ pub struct WidgetType {
     pub widget_version: Option<String>,
     #[doc = "Date time when widget type was last modified."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub changed: Option<time::OffsetDateTime>,
+    pub changed: Option<::time::OffsetDateTime>,
     #[doc = "Date time when widget type was created."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
 }
 impl WidgetType {
     pub fn new(definition: String) -> Self {

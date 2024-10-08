@@ -2007,10 +2007,10 @@ pub struct JobDelayDetails {
     pub description: Option<String>,
     #[doc = "Timestamp when the delay notification was created."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Timestamp when the delay notification was resolved."]
     #[serde(rename = "resolutionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub resolution_time: Option<time::OffsetDateTime>,
+    pub resolution_time: Option<::time::OffsetDateTime>,
 }
 impl JobDelayDetails {
     pub fn new() -> Self {
@@ -2105,7 +2105,7 @@ pub mod job_delay_details {
 pub struct JobDeliveryInfo {
     #[doc = "Scheduled date time."]
     #[serde(rename = "scheduledDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_date_time: Option<time::OffsetDateTime>,
+    pub scheduled_date_time: Option<::time::OffsetDateTime>,
 }
 impl JobDeliveryInfo {
     pub fn new() -> Self {
@@ -2501,7 +2501,7 @@ pub struct JobProperties {
     pub delayed_stage: Option<job_properties::DelayedStage>,
     #[doc = "Time at which the job was started in UTC ISO 8601 format."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Provides additional information about an http error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudError>,
@@ -2861,7 +2861,7 @@ pub struct JobStages {
     pub stage_status: Option<job_stages::StageStatus>,
     #[doc = "Time for the job stage in UTC ISO 8601 format."]
     #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
-    pub stage_time: Option<time::OffsetDateTime>,
+    pub stage_time: Option<::time::OffsetDateTime>,
     #[doc = "Job Stage Details"]
     #[serde(rename = "jobStageDetails", default, skip_serializing_if = "Option::is_none")]
     pub job_stage_details: Option<serde_json::Value>,
@@ -3030,7 +3030,7 @@ pub mod key_encryption_key {
 pub struct LastMitigationActionOnJob {
     #[doc = "Action performed date time"]
     #[serde(rename = "actionDateTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub action_date_time_in_utc: Option<time::OffsetDateTime>,
+    pub action_date_time_in_utc: Option<::time::OffsetDateTime>,
     #[doc = "Action performed by customer,\r\npossibility is that mitigation might happen by customer or service or by ops"]
     #[serde(rename = "isPerformedByCustomer", default, skip_serializing_if = "Option::is_none")]
     pub is_performed_by_customer: Option<bool>,
@@ -3548,7 +3548,7 @@ pub struct ScheduleAvailabilityResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub available_dates: Vec<time::OffsetDateTime>,
+    pub available_dates: Vec<::time::OffsetDateTime>,
 }
 impl ScheduleAvailabilityResponse {
     pub fn new() -> Self {
@@ -3603,16 +3603,16 @@ pub mod share_credential_details {
 pub struct ShipmentPickUpRequest {
     #[doc = "Minimum date after which the pick up should commence, this must be in local time of pick up area."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "Maximum date before which the pick up should commence, this must be in local time of pick up area."]
     #[serde(rename = "endTime", with = "azure_core::date::rfc3339")]
-    pub end_time: time::OffsetDateTime,
+    pub end_time: ::time::OffsetDateTime,
     #[doc = "Shipment Location in the pickup place. Eg.front desk"]
     #[serde(rename = "shipmentLocation")]
     pub shipment_location: String,
 }
 impl ShipmentPickUpRequest {
-    pub fn new(start_time: time::OffsetDateTime, end_time: time::OffsetDateTime, shipment_location: String) -> Self {
+    pub fn new(start_time: ::time::OffsetDateTime, end_time: ::time::OffsetDateTime, shipment_location: String) -> Self {
         Self {
             start_time,
             end_time,
@@ -3628,7 +3628,7 @@ pub struct ShipmentPickUpResponse {
     pub confirmation_number: Option<String>,
     #[doc = "Time by which shipment should be ready for pick up, this is in local time of pick up area."]
     #[serde(rename = "readyByTime", default, with = "azure_core::date::rfc3339::option")]
-    pub ready_by_time: Option<time::OffsetDateTime>,
+    pub ready_by_time: Option<::time::OffsetDateTime>,
 }
 impl ShipmentPickUpResponse {
     pub fn new() -> Self {
@@ -4450,7 +4450,7 @@ pub struct SystemData {
     pub created_by_type: Option<String>,
     #[doc = "The timestamp of resource creation (UTC)"]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "A string identifier for the identity that last modified the resource"]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -4459,7 +4459,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<String>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

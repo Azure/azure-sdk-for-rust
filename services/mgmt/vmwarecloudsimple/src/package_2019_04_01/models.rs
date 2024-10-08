@@ -521,7 +521,7 @@ pub struct DedicatedCloudNodeProperties {
     pub cloud_rack_name: Option<String>,
     #[doc = "date time the resource was created"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "count of nodes to create"]
     #[serde(rename = "nodesCount")]
     pub nodes_count: i64,
@@ -779,7 +779,7 @@ impl OperationError {
 pub struct OperationResource {
     #[doc = "End time of the operation"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Operation error model"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<OperationError>,
@@ -791,7 +791,7 @@ pub struct OperationResource {
     pub name: Option<String>,
     #[doc = "Start time of the operation"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Operation status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -888,7 +888,7 @@ pub struct PrivateCloudProperties {
     pub created_by: Option<String>,
     #[doc = "When private cloud was created"]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "Array of DNS servers"]
     #[serde(
         rename = "dnsServers",

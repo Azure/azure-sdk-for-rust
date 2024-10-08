@@ -38,7 +38,8 @@ all-features = true
 default = ["default_tag", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-default_tag = ["package-2022-12"]
+default_tag = ["package-2024-02"]
+"package-2024-02" = []
 "package-2022-12" = []
 
 [lints]

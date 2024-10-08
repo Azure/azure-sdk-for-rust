@@ -8,7 +8,7 @@ use std::str::FromStr;
 pub struct AuthorizationProfile {
     #[doc = "The requested time"]
     #[serde(rename = "requestedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub requested_time: Option<time::OffsetDateTime>,
+    pub requested_time: Option<::time::OffsetDateTime>,
     #[doc = "The requester"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub requester: Option<String>,
@@ -17,7 +17,7 @@ pub struct AuthorizationProfile {
     pub requester_object_id: Option<String>,
     #[doc = "The approved time"]
     #[serde(rename = "approvedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub approved_time: Option<time::OffsetDateTime>,
+    pub approved_time: Option<::time::OffsetDateTime>,
     #[doc = "The approver"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub approver: Option<String>,
@@ -247,10 +247,10 @@ pub mod subscription_feature_registration {
         pub metadata: Option<serde_json::Value>,
         #[doc = "The feature release date."]
         #[serde(rename = "releaseDate", default, with = "azure_core::date::rfc3339::option")]
-        pub release_date: Option<time::OffsetDateTime>,
+        pub release_date: Option<::time::OffsetDateTime>,
         #[doc = "The feature registration date."]
         #[serde(rename = "registrationDate", default, with = "azure_core::date::rfc3339::option")]
-        pub registration_date: Option<time::OffsetDateTime>,
+        pub registration_date: Option<::time::OffsetDateTime>,
         #[doc = "The feature documentation link."]
         #[serde(rename = "documentationLink", default, skip_serializing_if = "Option::is_none")]
         pub documentation_link: Option<String>,

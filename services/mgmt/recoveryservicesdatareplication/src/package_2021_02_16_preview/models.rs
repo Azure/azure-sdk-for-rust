@@ -228,7 +228,7 @@ pub struct DraModelProperties {
     pub is_responsive: Option<bool>,
     #[doc = "Gets or sets the time when last heartbeat was sent by the Dra."]
     #[serde(rename = "lastHeartbeat", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat: Option<time::OffsetDateTime>,
+    pub last_heartbeat: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the Dra version."]
     #[serde(rename = "versionNumber", default, skip_serializing_if = "Option::is_none")]
     pub version_number: Option<String>,
@@ -462,7 +462,7 @@ pub struct ErrorModel {
     pub severity: Option<String>,
     #[doc = "Gets or sets the creation time of error."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -573,7 +573,7 @@ pub struct EventModelProperties {
     pub event_name: Option<String>,
     #[doc = "Gets or sets the time at which the event occurred at source."]
     #[serde(rename = "timeOfOccurrence", default, with = "azure_core::date::rfc3339::option")]
-    pub time_of_occurrence: Option<time::OffsetDateTime>,
+    pub time_of_occurrence: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the event severity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
@@ -851,7 +851,7 @@ pub struct FailoverProtectedItemProperties {
     pub recovery_point_id: Option<String>,
     #[doc = "Gets or sets the recovery point time."]
     #[serde(rename = "recoveryPointTime", default, with = "azure_core::date::rfc3339::option")]
-    pub recovery_point_time: Option<time::OffsetDateTime>,
+    pub recovery_point_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the network name."]
     #[serde(rename = "networkName", default, skip_serializing_if = "Option::is_none")]
     pub network_name: Option<String>,
@@ -925,7 +925,7 @@ pub struct HealthErrorModel {
     pub source: Option<String>,
     #[doc = "Gets or sets the error creation time."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets a value indicating whether the error is customer resolvable."]
     #[serde(rename = "isCustomerResolvable", default, skip_serializing_if = "Option::is_none")]
     pub is_customer_resolvable: Option<bool>,
@@ -1300,7 +1300,7 @@ pub struct HyperVToAzStackHciProtectedItemModelCustomProperties {
     pub failover_recovery_point_id: Option<String>,
     #[doc = "Gets or sets the last recovery point received time."]
     #[serde(rename = "lastRecoveryPointReceived", default, with = "azure_core::date::rfc3339::option")]
-    pub last_recovery_point_received: Option<time::OffsetDateTime>,
+    pub last_recovery_point_received: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the last recovery point Id."]
     #[serde(rename = "lastRecoveryPointId", default, skip_serializing_if = "Option::is_none")]
     pub last_recovery_point_id: Option<String>,
@@ -1331,7 +1331,7 @@ pub struct HyperVToAzStackHciProtectedItemModelCustomProperties {
     pub target_vm_bios_id: Option<String>,
     #[doc = "Gets or sets the latest timestamp that replication status is updated."]
     #[serde(rename = "lastReplicationUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_replication_update_time: Option<time::OffsetDateTime>,
+    pub last_replication_update_time: Option<::time::OffsetDateTime>,
 }
 impl HyperVToAzStackHciProtectedItemModelCustomProperties {
     pub fn new(
@@ -1644,7 +1644,7 @@ pub struct InnerHealthErrorModel {
     pub source: Option<String>,
     #[doc = "Gets or sets the error creation time."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets a value indicating whether the error is customer resolvable."]
     #[serde(rename = "isCustomerResolvable", default, skip_serializing_if = "Option::is_none")]
     pub is_customer_resolvable: Option<bool>,
@@ -2105,10 +2105,10 @@ pub struct ProtectedItemJobProperties {
     pub state: Option<String>,
     #[doc = "Gets or sets start time of the workflow."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets end time of the workflow."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
 }
 impl ProtectedItemJobProperties {
     pub fn new() -> Self {
@@ -2236,17 +2236,17 @@ pub struct ProtectedItemModelProperties {
     pub resync_required: Option<bool>,
     #[doc = "Gets or sets the Last successful planned failover time."]
     #[serde(rename = "lastSuccessfulPlannedFailoverTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_successful_planned_failover_time: Option<time::OffsetDateTime>,
+    pub last_successful_planned_failover_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the Last successful unplanned failover time."]
     #[serde(
         rename = "lastSuccessfulUnplannedFailoverTime",
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub last_successful_unplanned_failover_time: Option<time::OffsetDateTime>,
+    pub last_successful_unplanned_failover_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the Last successful test failover time."]
     #[serde(rename = "lastSuccessfulTestFailoverTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_successful_test_failover_time: Option<time::OffsetDateTime>,
+    pub last_successful_test_failover_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "currentJob", default, skip_serializing_if = "Option::is_none")]
     pub current_job: Option<serde_json::Value>,
     #[doc = "Gets or sets the allowed scenarios on the protected item."]
@@ -2764,7 +2764,7 @@ pub enum RecoveryPointModelCustomPropertiesUnion {
 pub struct RecoveryPointModelProperties {
     #[doc = "Gets or sets the recovery point time."]
     #[serde(rename = "recoveryPointTime", with = "azure_core::date::rfc3339")]
-    pub recovery_point_time: time::OffsetDateTime,
+    pub recovery_point_time: ::time::OffsetDateTime,
     #[doc = "Gets or sets the recovery point type."]
     #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: recovery_point_model_properties::RecoveryPointType,
@@ -2774,7 +2774,7 @@ pub struct RecoveryPointModelProperties {
 }
 impl RecoveryPointModelProperties {
     pub fn new(
-        recovery_point_time: time::OffsetDateTime,
+        recovery_point_time: ::time::OffsetDateTime,
         recovery_point_type: recovery_point_model_properties::RecoveryPointType,
         custom_properties: RecoveryPointModelCustomPropertiesUnion,
     ) -> Self {
@@ -2983,7 +2983,7 @@ pub struct SystemDataModel {
     pub created_by_type: Option<String>,
     #[doc = "Gets or sets the timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -2992,7 +2992,7 @@ pub struct SystemDataModel {
     pub last_modified_by_type: Option<String>,
     #[doc = "Gets or sets the timestamp of resource last modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemDataModel {
     pub fn new() -> Self {
@@ -3010,10 +3010,10 @@ pub struct TaskModel {
     pub state: Option<task_model::State>,
     #[doc = "Gets or sets the start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Task model custom properties."]
     #[serde(rename = "customProperties", default, skip_serializing_if = "Option::is_none")]
     pub custom_properties: Option<TaskModelCustomProperties>,
@@ -3482,7 +3482,7 @@ pub struct VMwareToAzStackHciProtectedItemModelCustomProperties {
     pub failover_recovery_point_id: Option<String>,
     #[doc = "Gets or sets the last recovery point received time."]
     #[serde(rename = "lastRecoveryPointReceived", default, with = "azure_core::date::rfc3339::option")]
-    pub last_recovery_point_received: Option<time::OffsetDateTime>,
+    pub last_recovery_point_received: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the last recovery point Id."]
     #[serde(rename = "lastRecoveryPointId", default, skip_serializing_if = "Option::is_none")]
     pub last_recovery_point_id: Option<String>,
@@ -3515,7 +3515,7 @@ pub struct VMwareToAzStackHciProtectedItemModelCustomProperties {
     pub resume_retry_count: Option<i64>,
     #[doc = "Gets or sets the latest timestamp that replication status is updated."]
     #[serde(rename = "lastReplicationUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_replication_update_time: Option<time::OffsetDateTime>,
+    pub last_replication_update_time: Option<::time::OffsetDateTime>,
 }
 impl VMwareToAzStackHciProtectedItemModelCustomProperties {
     pub fn new(
@@ -4094,10 +4094,10 @@ pub struct WorkflowModelProperties {
     pub state: Option<workflow_model_properties::State>,
     #[doc = "Gets or sets the start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the affected object Id."]
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,

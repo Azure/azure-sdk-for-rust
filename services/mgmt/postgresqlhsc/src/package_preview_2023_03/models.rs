@@ -103,12 +103,16 @@ pub struct Cluster {
     #[doc = "Properties of the cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterProperties>,
+    #[doc = "Describes the identity of the cluster."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<IdentityProperties>,
 }
 impl Cluster {
     pub fn new(tracked_resource: TrackedResource) -> Self {
         Self {
             tracked_resource,
             properties: None,
+            identity: None,
         }
     }
 }
@@ -143,6 +147,9 @@ pub struct ClusterForUpdate {
     #[doc = "The properties used to update a cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterPropertiesForUpdate>,
+    #[doc = "Describes the identity of the cluster."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<IdentityProperties>,
     #[doc = "Application-specific metadata in the form of key-value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -180,12 +187,18 @@ impl ClusterListResult {
 #[doc = "Properties of the cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterProperties {
+    #[doc = "Indicates whether the cluster was created using AAD authentication."]
+    #[serde(rename = "aadAuthEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub aad_auth_enabled: Option<cluster_properties::AadAuthEnabled>,
     #[doc = "The administrator's login name of the servers in the cluster."]
     #[serde(rename = "administratorLogin", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login: Option<String>,
     #[doc = "The password of the administrator login. Required for creation."]
     #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login_password: Option<String>,
+    #[doc = "The data encryption properties of a cluster."]
+    #[serde(rename = "dataEncryption", default, skip_serializing_if = "Option::is_none")]
+    pub data_encryption: Option<DataEncryption>,
     #[doc = "Provisioning state of the cluster"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -251,9 +264,12 @@ pub struct ClusterProperties {
     #[doc = "The Azure region of source cluster for read replica clusters."]
     #[serde(rename = "sourceLocation", default, skip_serializing_if = "Option::is_none")]
     pub source_location: Option<String>,
+    #[doc = "Indicates whether the cluster was created with a password or using AAD authentication."]
+    #[serde(rename = "passwordEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub password_enabled: Option<cluster_properties::PasswordEnabled>,
     #[doc = "Date and time in UTC (ISO8601 format) for cluster restore."]
     #[serde(rename = "pointInTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub point_in_time_utc: Option<time::OffsetDateTime>,
+    pub point_in_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The array of read replica clusters."]
     #[serde(
         rename = "readReplicas",
@@ -264,7 +280,7 @@ pub struct ClusterProperties {
     pub read_replicas: Vec<String>,
     #[doc = "The earliest restore point time (ISO8601 format) for the cluster."]
     #[serde(rename = "earliestRestoreTime", default, with = "azure_core::date::rfc3339::option")]
-    pub earliest_restore_time: Option<time::OffsetDateTime>,
+    pub earliest_restore_time: Option<::time::OffsetDateTime>,
     #[doc = "The private endpoint connections for a cluster."]
     #[serde(
         rename = "privateEndpointConnections",
@@ -286,6 +302,87 @@ pub struct ClusterProperties {
 impl ClusterProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod cluster_properties {
+    use super::*;
+    #[doc = "Indicates whether the cluster was created using AAD authentication."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AadAuthEnabled")]
+    pub enum AadAuthEnabled {
+        #[serde(rename = "enabled")]
+        Enabled,
+        #[serde(rename = "disabled")]
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AadAuthEnabled {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AadAuthEnabled {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AadAuthEnabled {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("AadAuthEnabled", 0u32, "enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("AadAuthEnabled", 1u32, "disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Indicates whether the cluster was created with a password or using AAD authentication."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "PasswordEnabled")]
+    pub enum PasswordEnabled {
+        #[serde(rename = "enabled")]
+        Enabled,
+        #[serde(rename = "disabled")]
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for PasswordEnabled {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for PasswordEnabled {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for PasswordEnabled {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("PasswordEnabled", 0u32, "enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("PasswordEnabled", 1u32, "disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "The properties used to update a cluster."]
@@ -505,6 +602,62 @@ pub mod configuration_properties {
         }
     }
 }
+#[doc = "The data encryption properties of a cluster."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataEncryption {
+    #[doc = "URI for the key in keyvault for data encryption of the primary server."]
+    #[serde(rename = "primaryKeyUri", default, skip_serializing_if = "Option::is_none")]
+    pub primary_key_uri: Option<String>,
+    #[doc = "Resource Id for the User assigned identity to be used for data encryption of the primary server."]
+    #[serde(rename = "primaryUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
+    pub primary_user_assigned_identity_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<data_encryption::Type>,
+}
+impl DataEncryption {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod data_encryption {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        AzureKeyVault,
+        SystemAssigned,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::AzureKeyVault => serializer.serialize_unit_variant("Type", 0u32, "AzureKeyVault"),
+                Self::SystemAssigned => serializer.serialize_unit_variant("Type", 1u32, "SystemAssigned"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
@@ -628,6 +781,59 @@ impl FirewallRuleProperties {
             start_ip_address,
             end_ip_address,
             provisioning_state: None,
+        }
+    }
+}
+#[doc = "Describes the identity of the cluster."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IdentityProperties {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<identity_properties::Type>,
+    #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<UserAssignedIdentities>,
+}
+impl IdentityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod identity_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        UserAssigned,
+        SystemAssigned,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::UserAssigned => serializer.serialize_unit_variant("Type", 0u32, "UserAssigned"),
+                Self::SystemAssigned => serializer.serialize_unit_variant("Type", 1u32, "SystemAssigned"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -1089,7 +1295,7 @@ impl PrivateLinkServiceConnectionState {
 #[doc = "Request from client to promote geo-redundant replica"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PromoteRequest {
-    #[doc = "Cluster name to verify."]
+    #[doc = "Boolean property to enable geo-redundant replica promotion."]
     #[serde(rename = "enableGeoBackup", default, skip_serializing_if = "Option::is_none")]
     pub enable_geo_backup: Option<bool>,
 }
@@ -1600,6 +1806,29 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserAssignedIdentities {}
+impl UserAssignedIdentities {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "User assigned identity properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserAssignedIdentity {
+    #[doc = "The principal ID of the assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The client ID of the assigned identity."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+}
+impl UserAssignedIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -1611,7 +1840,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1620,7 +1849,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

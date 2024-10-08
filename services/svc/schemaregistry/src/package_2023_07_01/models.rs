@@ -3,61 +3,114 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "An error response returned from Azure Schema Registry service."]
+#[doc = "The error object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Error {
-    #[doc = "Error response returned from Azure Schema Registry service."]
-    pub error: ErrorDetail,
+pub struct AzureCoreFoundationsError {
+    #[doc = "One of a server-defined set of error codes."]
+    pub code: String,
+    #[doc = "A human-readable representation of the error."]
+    pub message: String,
+    #[doc = "The target of the error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[doc = "An array of details about specific errors that led to this reported error."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub details: Vec<AzureCoreFoundationsError>,
+    #[doc = "An object containing more specific information about the error. As per Microsoft One API guidelines - https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<AzureCoreFoundationsInnerError>,
 }
-impl azure_core::Continuable for Error {
+impl AzureCoreFoundationsError {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            target: None,
+            details: Vec::new(),
+            innererror: None,
+        }
+    }
+}
+#[doc = "A response containing error details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureCoreFoundationsErrorResponse {
+    #[doc = "The error object."]
+    pub error: AzureCoreFoundationsError,
+}
+impl azure_core::Continuable for AzureCoreFoundationsErrorResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
-impl Error {
-    pub fn new(error: ErrorDetail) -> Self {
+impl AzureCoreFoundationsErrorResponse {
+    pub fn new(error: AzureCoreFoundationsError) -> Self {
         Self { error }
     }
 }
-#[doc = "Error response returned from Azure Schema Registry service."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetail {
-    #[doc = "Server-defined error code."]
-    pub code: String,
-    #[doc = "Brief description of error."]
-    pub message: String,
-    #[doc = "Error message details to help user understand/debug failure."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub details: Vec<ErrorDetail>,
+#[doc = "An object containing more specific information about the error. As per Microsoft One API guidelines - https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureCoreFoundationsInnerError {
+    #[doc = "One of a server-defined set of error codes."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "An object containing more specific information about the error. As per Microsoft One API guidelines - https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<Box<AzureCoreFoundationsInnerError>>,
 }
-impl ErrorDetail {
-    pub fn new(code: String, message: String) -> Self {
-        Self {
-            code,
-            message,
-            details: Vec::new(),
-        }
+impl AzureCoreFoundationsInnerError {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
-pub type SchemaGroup = String;
-#[doc = "Object received from the registry containing the list of schema groups and link to next batch page."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "The schema, including its metadata and content."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Schema {
+    #[doc = "String representation (UTF-8) of the schema."]
+    #[serde(rename = "schemaContent")]
+    pub schema_content: String,
+}
+impl Schema {
+    pub fn new(schema_content: String) -> Self {
+        Self { schema_content }
+    }
+}
+#[doc = "Describes closed list of schema content type values."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SchemaContentTypeValues {
+    #[serde(rename = "application/json; serialization=Avro")]
+    ApplicationJsonSerializationAvro,
+    #[serde(rename = "application/json; serialization=Json")]
+    ApplicationJsonSerializationJson,
+    #[serde(rename = "text/plain; charset=utf-8")]
+    TextPlainCharsetUtf8,
+    #[serde(rename = "text/vnd.ms.protobuf")]
+    TextVndMsProtobuf,
+}
+#[doc = "Schema Group resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SchemaGroup {
+    #[doc = "Name of schema group."]
+    #[serde(rename = "groupName")]
+    pub group_name: String,
+}
+impl SchemaGroup {
+    pub fn new(group_name: String) -> Self {
+        Self { group_name }
+    }
+}
+#[doc = "The list of schema group names with server paging support."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SchemaGroups {
-    #[doc = "Array of schema groups."]
-    #[serde(
-        rename = "schemaGroups",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub schema_groups: Vec<SchemaGroup>,
-    #[doc = "URl to next batch of schema groups"]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    #[doc = "The collection of pageable schema group name items."]
+    #[serde(rename = "Value")]
+    pub value: Vec<String>,
+    #[doc = "The link to the next page of items"]
+    #[serde(rename = "NextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SchemaGroups {
@@ -67,36 +120,26 @@ impl azure_core::Continuable for SchemaGroups {
     }
 }
 impl SchemaGroups {
+    pub fn new(value: Vec<String>) -> Self {
+        Self { value, next_link: None }
+    }
+}
+#[doc = "Metadata of a schema."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SchemaProperties {}
+impl SchemaProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "Object received from the registry containing schema identifiers."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SchemaId {
-    #[doc = "Schema ID that uniquely identifies a schema in the registry namespace."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-}
-impl SchemaId {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub type SchemaVersion = i64;
-#[doc = "Object received from the registry containing the list of schema versions and link to next batch page."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "The list of schema versions with server paging support."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SchemaVersions {
-    #[doc = "Array of schema version integers."]
-    #[serde(
-        rename = "schemaVersions",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub schema_versions: Vec<SchemaVersion>,
-    #[doc = "URl to next batch of schema versions"]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    #[doc = "The collection of schema version pageable items."]
+    #[serde(rename = "Value")]
+    pub value: Vec<i32>,
+    #[doc = "The link to the next page of items"]
+    #[serde(rename = "NextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SchemaVersions {
@@ -106,7 +149,19 @@ impl azure_core::Continuable for SchemaVersions {
     }
 }
 impl SchemaVersions {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(value: Vec<i32>) -> Self {
+        Self { value, next_link: None }
+    }
+}
+#[doc = "Schemas resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SchemasName {
+    #[doc = "Name of schema."]
+    #[serde(rename = "schemaName")]
+    pub schema_name: String,
+}
+impl SchemasName {
+    pub fn new(schema_name: String) -> Self {
+        Self { schema_name }
     }
 }

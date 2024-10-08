@@ -807,10 +807,10 @@ pub struct DataLakeAnalyticsAccountPropertiesBasic {
     pub state: Option<data_lake_analytics_account_properties_basic::State>,
     #[doc = "The account creation time."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "The account last modified time."]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time: Option<time::OffsetDateTime>,
+    pub last_modified_time: Option<::time::OffsetDateTime>,
     #[doc = "The full CName endpoint for this account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
@@ -1455,7 +1455,7 @@ impl StorageContainerListResult {
 pub struct StorageContainerProperties {
     #[doc = "The last modified time of the blob container."]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time: Option<time::OffsetDateTime>,
+    pub last_modified_time: Option<::time::OffsetDateTime>,
 }
 impl StorageContainerProperties {
     pub fn new() -> Self {

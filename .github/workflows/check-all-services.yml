@@ -395,22 +395,6 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_billingbenefits
 
-  azure_mgmt_blockchain:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - uses: Swatinem/rust-cache@v2
-    - name: check all features
-      run: |
-        cd services
-        cargo check --all-features -p azure_mgmt_blockchain
-
   azure_mgmt_blueprint:
     if: always()
     runs-on: ubuntu-latest
@@ -507,6 +491,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_cloudshell
 
+  azure_mgmt_codesigning:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_codesigning
+
   azure_mgmt_cognitiveservices:
     if: always()
     runs-on: ubuntu-latest
@@ -586,6 +586,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_compute
+
+  azure_mgmt_computeschedule:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_computeschedule
 
   azure_mgmt_confidentialledger:
     if: always()
@@ -698,6 +714,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_containerstorage
+
+  azure_mgmt_contosowidgetmanager:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_contosowidgetmanager
 
   azure_mgmt_cosmosdb:
     if: always()
@@ -1339,6 +1371,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_edgeorderpartner
 
+  azure_mgmt_edgezones:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_edgezones
+
   azure_mgmt_education:
     if: always()
     runs-on: ubuntu-latest
@@ -1466,6 +1514,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_extendedlocation
+
+  azure_mgmt_fabric:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_fabric
 
   azure_mgmt_fist:
     if: always()
@@ -1627,6 +1691,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_healthcareapis
 
+  azure_mgmt_healthdataaiservices:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_healthdataaiservices
+
   azure_mgmt_help:
     if: always()
     runs-on: ubuntu-latest
@@ -1770,6 +1850,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_imagebuilder
+
+  azure_mgmt_informatica:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_informatica
 
   azure_mgmt_integrationspaces:
     if: always()
@@ -1931,6 +2027,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_kubernetesconfiguration
 
+  azure_mgmt_kubernetesruntime:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_kubernetesruntime
+
   azure_mgmt_kusto:
     if: always()
     runs-on: ubuntu-latest
@@ -1994,6 +2106,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_liftrastronomer
+
+  azure_mgmt_liftrneon:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_liftrneon
 
   azure_mgmt_liftrqumulo:
     if: always()
@@ -2090,38 +2218,6 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_machinelearning
-
-  azure_mgmt_machinelearningcompute:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - uses: Swatinem/rust-cache@v2
-    - name: check all features
-      run: |
-        cd services
-        cargo check --all-features -p azure_mgmt_machinelearningcompute
-
-  azure_mgmt_machinelearningexperimentation:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - uses: Swatinem/rust-cache@v2
-    - name: check all features
-      run: |
-        cd services
-        cargo check --all-features -p azure_mgmt_machinelearningexperimentation
 
   azure_mgmt_machinelearningservices:
     if: always()
@@ -2411,6 +2507,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_mobilepacketcore
 
+  azure_mgmt_mongocluster:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_mongocluster
+
   azure_mgmt_monitor:
     if: always()
     runs-on: ubuntu-latest
@@ -2667,6 +2779,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_operationsmanagement
 
+  azure_mgmt_oracle:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_oracle
+
   azure_mgmt_orbital:
     if: always()
     runs-on: ubuntu-latest
@@ -2746,22 +2874,6 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_policyinsights
-
-  azure_mgmt_portal:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - uses: Swatinem/rust-cache@v2
-    - name: check all features
-      run: |
-        cd services
-        cargo check --all-features -p azure_mgmt_portal
 
   azure_mgmt_portalservices:
     if: always()
@@ -2906,6 +3018,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_professionalservice
+
+  azure_mgmt_programmableconnectivity:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_programmableconnectivity
 
   azure_mgmt_providerhub:
     if: always()
@@ -3066,22 +3194,6 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_recoveryservicessiterecovery
-
-  azure_mgmt_redhatopenshift:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - uses: Swatinem/rust-cache@v2
-    - name: check all features
-      run: |
-        cd services
-        cargo check --all-features -p azure_mgmt_redhatopenshift
 
   azure_mgmt_redis:
     if: always()
@@ -3355,22 +3467,6 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_securityandcompliance
 
-  azure_mgmt_securitydevops:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - uses: Swatinem/rust-cache@v2
-    - name: check all features
-      run: |
-        cd services
-        cargo check --all-features -p azure_mgmt_securitydevops
-
   azure_mgmt_securityinsights:
     if: always()
     runs-on: ubuntu-latest
@@ -3562,6 +3658,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_sphere
+
+  azure_mgmt_splitio:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_splitio
 
   azure_mgmt_sql:
     if: always()
@@ -3803,6 +3915,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_subscription
 
+  azure_mgmt_support:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_support
+
   azure_mgmt_synapse:
     if: always()
     runs-on: ubuntu-latest
@@ -3834,6 +3962,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_syntex
+
+  azure_mgmt_terraform:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_terraform
 
   azure_mgmt_testbase:
     if: always()
@@ -3882,6 +4026,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_trafficmanager
+
+  azure_mgmt_verifiedid:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_verifiedid
 
   azure_mgmt_vi:
     if: always()
@@ -4091,6 +4251,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_svc_agrifood
 
+  azure_svc_apicenter:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_svc_apicenter
+
   azure_svc_appconfiguration:
     if: always()
     runs-on: ubuntu-latest
@@ -4234,22 +4410,6 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_svc_devcenter
-
-  azure_svc_developersigning:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - uses: Swatinem/rust-cache@v2
-    - name: check all features
-      run: |
-        cd services
-        cargo check --all-features -p azure_svc_developersigning
 
   azure_svc_deviceprovisioningservices:
     if: always()
@@ -4634,6 +4794,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_svc_timeseriesinsights
+
+  azure_svc_trustedsigning:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_svc_trustedsigning
 
   azure_svc_videoanalyzer:
     if: always()

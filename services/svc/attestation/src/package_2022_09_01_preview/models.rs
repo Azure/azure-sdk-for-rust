@@ -621,7 +621,7 @@ pub struct TcbBaseline {
     pub tcb_evaluation_data_number: Option<i32>,
     #[doc = "Date and time when the Tcb is released. SGX TEE specific property"]
     #[serde(rename = "tcbReleaseDate", default, with = "azure_core::date::rfc3339::option")]
-    pub tcb_release_date: Option<time::OffsetDateTime>,
+    pub tcb_release_date: Option<::time::OffsetDateTime>,
     #[doc = "Minimum Linux PSW version required to support the corresponding Tcb baseline. SGX TEE specific property"]
     #[serde(rename = "minimumPswLinuxVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimum_psw_linux_version: Option<String>,

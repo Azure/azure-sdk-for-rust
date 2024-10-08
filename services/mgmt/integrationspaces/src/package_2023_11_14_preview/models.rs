@@ -41,7 +41,7 @@ impl ApplicationListResult {
     }
 }
 #[doc = "The properties of application."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationProperties {
     #[doc = "The status of the current operation."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -50,16 +50,12 @@ pub struct ApplicationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The tracking data stores."]
-    #[serde(rename = "trackingDataStores")]
-    pub tracking_data_stores: serde_json::Value,
+    #[serde(rename = "trackingDataStores", default, skip_serializing_if = "Option::is_none")]
+    pub tracking_data_stores: Option<serde_json::Value>,
 }
 impl ApplicationProperties {
-    pub fn new(tracking_data_stores: serde_json::Value) -> Self {
-        Self {
-            provisioning_state: None,
-            description: None,
-            tracking_data_stores,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "A resource under application."]
@@ -999,29 +995,24 @@ impl TrackingCorrelationContext {
     }
 }
 #[doc = "The properties of tracking data store."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackingDataStore {
     #[doc = "The database name."]
-    #[serde(rename = "databaseName")]
-    pub database_name: String,
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
     #[doc = "The data store resource id."]
-    #[serde(rename = "dataStoreResourceId")]
-    pub data_store_resource_id: String,
+    #[serde(rename = "dataStoreResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub data_store_resource_id: Option<String>,
     #[doc = "The data store URI."]
-    #[serde(rename = "dataStoreUri")]
-    pub data_store_uri: String,
+    #[serde(rename = "dataStoreUri", default, skip_serializing_if = "Option::is_none")]
+    pub data_store_uri: Option<String>,
     #[doc = "The data store ingestion URI."]
-    #[serde(rename = "dataStoreIngestionUri")]
-    pub data_store_ingestion_uri: String,
+    #[serde(rename = "dataStoreIngestionUri", default, skip_serializing_if = "Option::is_none")]
+    pub data_store_ingestion_uri: Option<String>,
 }
 impl TrackingDataStore {
-    pub fn new(database_name: String, data_store_resource_id: String, data_store_uri: String, data_store_ingestion_uri: String) -> Self {
-        Self {
-            database_name,
-            data_store_resource_id,
-            data_store_uri,
-            data_store_ingestion_uri,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The tracking event definition."]
@@ -1079,7 +1070,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1088,7 +1079,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

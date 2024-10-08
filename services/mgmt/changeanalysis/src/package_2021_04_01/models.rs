@@ -50,7 +50,7 @@ pub struct ChangeProperties {
     pub resource_id: Option<String>,
     #[doc = "The time when the change is detected."]
     #[serde(rename = "timeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub time_stamp: Option<time::OffsetDateTime>,
+    pub time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "The list of identities who might initiated the change.\r\nThe identity could be user name (email address) or the object ID of the Service Principal."]
     #[serde(
         rename = "initiatedByList",

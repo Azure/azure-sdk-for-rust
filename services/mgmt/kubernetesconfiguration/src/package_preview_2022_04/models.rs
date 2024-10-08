@@ -73,7 +73,7 @@ pub struct ComplianceStatus {
     pub compliance_state: Option<compliance_status::ComplianceState>,
     #[doc = "Datetime the configuration was last applied."]
     #[serde(rename = "lastConfigApplied", default, with = "azure_core::date::rfc3339::option")]
-    pub last_config_applied: Option<time::OffsetDateTime>,
+    pub last_config_applied: Option<::time::OffsetDateTime>,
     #[doc = "Message from when the configuration was applied."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -562,10 +562,10 @@ pub mod flux_configuration {
         pub source_synced_commit_id: Option<String>,
         #[doc = "Datetime the fluxConfiguration synced its source on the cluster."]
         #[serde(rename = "sourceUpdatedAt", default, with = "azure_core::date::rfc3339::option")]
-        pub source_updated_at: Option<time::OffsetDateTime>,
+        pub source_updated_at: Option<::time::OffsetDateTime>,
         #[doc = "Datetime the fluxConfiguration synced its status on the cluster with Azure."]
         #[serde(rename = "statusUpdatedAt", default, with = "azure_core::date::rfc3339::option")]
-        pub status_updated_at: Option<time::OffsetDateTime>,
+        pub status_updated_at: Option<::time::OffsetDateTime>,
         #[doc = "Compliance state of the cluster object."]
         #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
         pub compliance_state: Option<FluxComplianceStateDefinition>,
@@ -992,7 +992,7 @@ impl ObjectReferenceDefinition {
 pub struct ObjectStatusConditionDefinition {
     #[doc = "Last time this status condition has changed"]
     #[serde(rename = "lastTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_transition_time: Option<time::OffsetDateTime>,
+    pub last_transition_time: Option<::time::OffsetDateTime>,
     #[doc = "A more verbose description of the object status condition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -1974,7 +1974,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1983,7 +1983,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

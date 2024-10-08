@@ -19,7 +19,7 @@ pub struct Conversion {
     pub status: ConversionStatus,
     #[doc = "The time when the conversion was created. Date and time in ISO 8601 format."]
     #[serde(rename = "creationTime", with = "azure_core::date::rfc3339")]
-    pub creation_time: time::OffsetDateTime,
+    pub creation_time: ::time::OffsetDateTime,
 }
 impl Conversion {
     pub fn new(
@@ -27,7 +27,7 @@ impl Conversion {
         settings: ConversionSettings,
         error: Error,
         status: ConversionStatus,
-        creation_time: time::OffsetDateTime,
+        creation_time: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             id,
@@ -299,7 +299,7 @@ pub struct SessionProperties {
     pub error: Option<Error>,
     #[doc = "The time when the rendering session was created. Date and time in ISO 8601 format."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
 }
 impl SessionProperties {
     pub fn new(id: String, size: SessionSize, status: SessionStatus) -> Self {

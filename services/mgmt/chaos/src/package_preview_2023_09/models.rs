@@ -231,11 +231,11 @@ pub struct OperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The start time of the operation."]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the operation."]
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The status of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -335,10 +335,10 @@ pub struct ActionStatus {
     pub status: Option<String>,
     #[doc = "String that represents the start time of the action."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "String that represents the end time of the action."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The array of targets."]
     #[serde(
         default,
@@ -619,10 +619,10 @@ pub struct ExperimentExecutionActionTargetDetailsProperties {
     pub target: Option<String>,
     #[doc = "String that represents the failed date time."]
     #[serde(rename = "targetFailedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub target_failed_time: Option<time::OffsetDateTime>,
+    pub target_failed_time: Option<::time::OffsetDateTime>,
     #[doc = "String that represents the completed date time."]
     #[serde(rename = "targetCompletedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub target_completed_time: Option<time::OffsetDateTime>,
+    pub target_completed_time: Option<::time::OffsetDateTime>,
     #[doc = "Model that represents the Experiment action target details error model."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ExperimentExecutionActionTargetDetailsError>,
@@ -692,16 +692,16 @@ pub struct ExperimentExecutionDetailsProperties {
     pub failure_reason: Option<String>,
     #[doc = "String that represents the created date time."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "String that represents the last action date time."]
     #[serde(rename = "lastActionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_action_date_time: Option<time::OffsetDateTime>,
+    pub last_action_date_time: Option<::time::OffsetDateTime>,
     #[doc = "String that represents the start date time."]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "String that represents the stop date time."]
     #[serde(rename = "stopDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub stop_date_time: Option<time::OffsetDateTime>,
+    pub stop_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The information of the experiment run."]
     #[serde(rename = "runInformation", default, skip_serializing_if = "Option::is_none")]
     pub run_information: Option<experiment_execution_details_properties::RunInformation>,
@@ -822,10 +822,10 @@ pub struct ExperimentStatusProperties {
     pub status: Option<String>,
     #[doc = "String that represents the created date time of a Experiment."]
     #[serde(rename = "createdDateUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_utc: Option<time::OffsetDateTime>,
+    pub created_date_utc: Option<::time::OffsetDateTime>,
     #[doc = "String that represents the end date time of a Experiment."]
     #[serde(rename = "endDateUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub end_date_utc: Option<time::OffsetDateTime>,
+    pub end_date_utc: Option<::time::OffsetDateTime>,
 }
 impl ExperimentStatusProperties {
     pub fn new() -> Self {
@@ -996,7 +996,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1005,7 +1005,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

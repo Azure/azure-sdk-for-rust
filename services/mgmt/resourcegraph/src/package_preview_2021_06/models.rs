@@ -38,13 +38,13 @@ pub enum ColumnDataType {
 pub struct DateTimeInterval {
     #[doc = "A datetime indicating the inclusive/closed start of the time interval, i.e. `[`**`start`**`, end)`. Specifying a `start` that occurs chronologically after `end` will result in an error."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub start: time::OffsetDateTime,
+    pub start: ::time::OffsetDateTime,
     #[doc = "A datetime indicating the exclusive/open end of the time interval, i.e. `[start, `**`end`**`)`. Specifying an `end` that occurs chronologically before `start` will result in an error."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub end: time::OffsetDateTime,
+    pub end: ::time::OffsetDateTime,
 }
 impl DateTimeInterval {
-    pub fn new(start: time::OffsetDateTime, end: time::OffsetDateTime) -> Self {
+    pub fn new(start: ::time::OffsetDateTime, end: ::time::OffsetDateTime) -> Self {
         Self { start, end }
     }
 }

@@ -4,11 +4,11 @@ use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 #[doc = "Schema of common properties of all chat events"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatEventBaseProperties {
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "recipientCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub recipient_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "recipientCommunicationIdentifier")]
+    pub recipient_communication_identifier: CommunicationIdentifierModel,
     #[doc = "The transaction id will be used as co-relation vector"]
     #[serde(rename = "transactionId", default, skip_serializing_if = "Option::is_none")]
     pub transaction_id: Option<String>,
@@ -17,8 +17,12 @@ pub struct AcsChatEventBaseProperties {
     pub thread_id: Option<String>,
 }
 impl AcsChatEventBaseProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(recipient_communication_identifier: CommunicationIdentifierModel) -> Self {
+        Self {
+            recipient_communication_identifier,
+            transaction_id: None,
+            thread_id: None,
+        }
     }
 }
 #[doc = "Schema of common properties of all thread-level chat events"]
@@ -37,35 +41,44 @@ impl AcsChatEventInThreadBaseProperties {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatMessageDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatMessageDeletedEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_base_properties: AcsChatMessageEventBaseProperties,
     #[doc = "The time at which the message was deleted"]
-    #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
-    pub delete_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "deleteTime", with = "azure_core::date::rfc3339")]
+    pub delete_time: ::time::OffsetDateTime,
 }
 impl AcsChatMessageDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(acs_chat_message_event_base_properties: AcsChatMessageEventBaseProperties, delete_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            acs_chat_message_event_base_properties,
+            delete_time,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatMessageDeletedInThread event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatMessageDeletedInThreadEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_in_thread_base_properties: AcsChatMessageEventInThreadBaseProperties,
     #[doc = "The time at which the message was deleted"]
-    #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
-    pub delete_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "deleteTime", with = "azure_core::date::rfc3339")]
+    pub delete_time: ::time::OffsetDateTime,
 }
 impl AcsChatMessageDeletedInThreadEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_message_event_in_thread_base_properties: AcsChatMessageEventInThreadBaseProperties,
+        delete_time: ::time::OffsetDateTime,
+    ) -> Self {
+        Self {
+            acs_chat_message_event_in_thread_base_properties,
+            delete_time,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatMessageEdited event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatMessageEditedEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_base_properties: AcsChatMessageEventBaseProperties,
@@ -73,19 +86,27 @@ pub struct AcsChatMessageEditedEventData {
     #[serde(rename = "messageBody", default, skip_serializing_if = "Option::is_none")]
     pub message_body: Option<String>,
     #[doc = "The chat message metadata"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: serde_json::Value,
     #[doc = "The time at which the message was edited"]
-    #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
-    pub edit_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "editTime", with = "azure_core::date::rfc3339")]
+    pub edit_time: ::time::OffsetDateTime,
 }
 impl AcsChatMessageEditedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_message_event_base_properties: AcsChatMessageEventBaseProperties,
+        metadata: serde_json::Value,
+        edit_time: ::time::OffsetDateTime,
+    ) -> Self {
+        Self {
+            acs_chat_message_event_base_properties,
+            message_body: None,
+            metadata,
+            edit_time,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatMessageEditedInThread event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatMessageEditedInThreadEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_in_thread_base_properties: AcsChatMessageEventInThreadBaseProperties,
@@ -93,19 +114,27 @@ pub struct AcsChatMessageEditedInThreadEventData {
     #[serde(rename = "messageBody", default, skip_serializing_if = "Option::is_none")]
     pub message_body: Option<String>,
     #[doc = "The chat message metadata"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: serde_json::Value,
     #[doc = "The time at which the message was edited"]
-    #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
-    pub edit_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "editTime", with = "azure_core::date::rfc3339")]
+    pub edit_time: ::time::OffsetDateTime,
 }
 impl AcsChatMessageEditedInThreadEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_message_event_in_thread_base_properties: AcsChatMessageEventInThreadBaseProperties,
+        metadata: serde_json::Value,
+        edit_time: ::time::OffsetDateTime,
+    ) -> Self {
+        Self {
+            acs_chat_message_event_in_thread_base_properties,
+            message_body: None,
+            metadata,
+            edit_time,
+        }
     }
 }
 #[doc = "Schema of common properties of all chat message events"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatMessageEventBaseProperties {
     #[serde(flatten)]
     pub acs_chat_event_base_properties: AcsChatEventBaseProperties,
@@ -113,14 +142,14 @@ pub struct AcsChatMessageEventBaseProperties {
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "senderCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub sender_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "senderCommunicationIdentifier")]
+    pub sender_communication_identifier: CommunicationIdentifierModel,
     #[doc = "The display name of the sender"]
     #[serde(rename = "senderDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub sender_display_name: Option<String>,
     #[doc = "The original compose time of the message"]
-    #[serde(rename = "composeTime", default, with = "azure_core::date::rfc3339::option")]
-    pub compose_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "composeTime", with = "azure_core::date::rfc3339")]
+    pub compose_time: ::time::OffsetDateTime,
     #[doc = "The type of the message"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -129,12 +158,24 @@ pub struct AcsChatMessageEventBaseProperties {
     pub version: Option<i64>,
 }
 impl AcsChatMessageEventBaseProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_event_base_properties: AcsChatEventBaseProperties,
+        sender_communication_identifier: CommunicationIdentifierModel,
+        compose_time: ::time::OffsetDateTime,
+    ) -> Self {
+        Self {
+            acs_chat_event_base_properties,
+            message_id: None,
+            sender_communication_identifier,
+            sender_display_name: None,
+            compose_time,
+            type_: None,
+            version: None,
+        }
     }
 }
 #[doc = "Schema of common properties of all thread-level chat message events"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatMessageEventInThreadBaseProperties {
     #[serde(flatten)]
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
@@ -142,14 +183,14 @@ pub struct AcsChatMessageEventInThreadBaseProperties {
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "senderCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub sender_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "senderCommunicationIdentifier")]
+    pub sender_communication_identifier: CommunicationIdentifierModel,
     #[doc = "The display name of the sender"]
     #[serde(rename = "senderDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub sender_display_name: Option<String>,
     #[doc = "The original compose time of the message"]
-    #[serde(rename = "composeTime", default, with = "azure_core::date::rfc3339::option")]
-    pub compose_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "composeTime", with = "azure_core::date::rfc3339")]
+    pub compose_time: ::time::OffsetDateTime,
     #[doc = "The type of the message"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -158,12 +199,20 @@ pub struct AcsChatMessageEventInThreadBaseProperties {
     pub version: Option<i64>,
 }
 impl AcsChatMessageEventInThreadBaseProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(sender_communication_identifier: CommunicationIdentifierModel, compose_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties::default(),
+            message_id: None,
+            sender_communication_identifier,
+            sender_display_name: None,
+            compose_time,
+            type_: None,
+            version: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatMessageReceived event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatMessageReceivedEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_base_properties: AcsChatMessageEventBaseProperties,
@@ -171,16 +220,19 @@ pub struct AcsChatMessageReceivedEventData {
     #[serde(rename = "messageBody", default, skip_serializing_if = "Option::is_none")]
     pub message_body: Option<String>,
     #[doc = "The chat message metadata"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: serde_json::Value,
 }
 impl AcsChatMessageReceivedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(acs_chat_message_event_base_properties: AcsChatMessageEventBaseProperties, metadata: serde_json::Value) -> Self {
+        Self {
+            acs_chat_message_event_base_properties,
+            message_body: None,
+            metadata,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatMessageReceivedInThread event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatMessageReceivedInThreadEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_in_thread_base_properties: AcsChatMessageEventInThreadBaseProperties,
@@ -188,288 +240,391 @@ pub struct AcsChatMessageReceivedInThreadEventData {
     #[serde(rename = "messageBody", default, skip_serializing_if = "Option::is_none")]
     pub message_body: Option<String>,
     #[doc = "The chat message metadata"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: serde_json::Value,
 }
 impl AcsChatMessageReceivedInThreadEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_message_event_in_thread_base_properties: AcsChatMessageEventInThreadBaseProperties,
+        metadata: serde_json::Value,
+    ) -> Self {
+        Self {
+            acs_chat_message_event_in_thread_base_properties,
+            message_body: None,
+            metadata,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatThreadParticipantAdded event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatParticipantAddedToThreadEventData {
     #[serde(flatten)]
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
     #[doc = "The time at which the user was added to the thread"]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub time: ::time::OffsetDateTime,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "addedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub added_by_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "addedByCommunicationIdentifier")]
+    pub added_by_communication_identifier: CommunicationIdentifierModel,
     #[doc = "Schema of the chat thread participant"]
-    #[serde(rename = "participantAdded", default, skip_serializing_if = "Option::is_none")]
-    pub participant_added: Option<AcsChatThreadParticipantProperties>,
+    #[serde(rename = "participantAdded")]
+    pub participant_added: AcsChatThreadParticipantProperties,
     #[doc = "The version of the thread"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
 impl AcsChatParticipantAddedToThreadEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        time: ::time::OffsetDateTime,
+        added_by_communication_identifier: CommunicationIdentifierModel,
+        participant_added: AcsChatThreadParticipantProperties,
+    ) -> Self {
+        Self {
+            acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties::default(),
+            time,
+            added_by_communication_identifier,
+            participant_added,
+            version: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatParticipantAddedToThreadWithUser event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatParticipantAddedToThreadWithUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
     #[doc = "The time at which the user was added to the thread"]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub time: ::time::OffsetDateTime,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "addedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub added_by_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "addedByCommunicationIdentifier")]
+    pub added_by_communication_identifier: CommunicationIdentifierModel,
     #[doc = "Schema of the chat thread participant"]
-    #[serde(rename = "participantAdded", default, skip_serializing_if = "Option::is_none")]
-    pub participant_added: Option<AcsChatThreadParticipantProperties>,
+    #[serde(rename = "participantAdded")]
+    pub participant_added: AcsChatThreadParticipantProperties,
 }
 impl AcsChatParticipantAddedToThreadWithUserEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
+        time: ::time::OffsetDateTime,
+        added_by_communication_identifier: CommunicationIdentifierModel,
+        participant_added: AcsChatThreadParticipantProperties,
+    ) -> Self {
+        Self {
+            acs_chat_thread_event_base_properties,
+            time,
+            added_by_communication_identifier,
+            participant_added,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatThreadParticipantRemoved event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatParticipantRemovedFromThreadEventData {
     #[serde(flatten)]
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
     #[doc = "The time at which the user was removed to the thread"]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub time: ::time::OffsetDateTime,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "removedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub removed_by_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "removedByCommunicationIdentifier")]
+    pub removed_by_communication_identifier: CommunicationIdentifierModel,
     #[doc = "Schema of the chat thread participant"]
-    #[serde(rename = "participantRemoved", default, skip_serializing_if = "Option::is_none")]
-    pub participant_removed: Option<AcsChatThreadParticipantProperties>,
+    #[serde(rename = "participantRemoved")]
+    pub participant_removed: AcsChatThreadParticipantProperties,
     #[doc = "The version of the thread"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
 impl AcsChatParticipantRemovedFromThreadEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        time: ::time::OffsetDateTime,
+        removed_by_communication_identifier: CommunicationIdentifierModel,
+        participant_removed: AcsChatThreadParticipantProperties,
+    ) -> Self {
+        Self {
+            acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties::default(),
+            time,
+            removed_by_communication_identifier,
+            participant_removed,
+            version: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatParticipantRemovedFromThreadWithUser event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatParticipantRemovedFromThreadWithUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
     #[doc = "The time at which the user was removed to the thread"]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub time: ::time::OffsetDateTime,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "removedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub removed_by_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "removedByCommunicationIdentifier")]
+    pub removed_by_communication_identifier: CommunicationIdentifierModel,
     #[doc = "Schema of the chat thread participant"]
-    #[serde(rename = "participantRemoved", default, skip_serializing_if = "Option::is_none")]
-    pub participant_removed: Option<AcsChatThreadParticipantProperties>,
+    #[serde(rename = "participantRemoved")]
+    pub participant_removed: AcsChatThreadParticipantProperties,
 }
 impl AcsChatParticipantRemovedFromThreadWithUserEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
+        time: ::time::OffsetDateTime,
+        removed_by_communication_identifier: CommunicationIdentifierModel,
+        participant_removed: AcsChatThreadParticipantProperties,
+    ) -> Self {
+        Self {
+            acs_chat_thread_event_base_properties,
+            time,
+            removed_by_communication_identifier,
+            participant_removed,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatThreadCreated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatThreadCreatedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "createdByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "createdByCommunicationIdentifier")]
+    pub created_by_communication_identifier: CommunicationIdentifierModel,
     #[doc = "The thread properties"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
+    pub properties: serde_json::Value,
     #[doc = "The thread metadata"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: serde_json::Value,
     #[doc = "The list of properties of participants who are part of the thread"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
     pub participants: Vec<AcsChatThreadParticipantProperties>,
 }
 impl AcsChatThreadCreatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
+        created_by_communication_identifier: CommunicationIdentifierModel,
+        properties: serde_json::Value,
+        metadata: serde_json::Value,
+        participants: Vec<AcsChatThreadParticipantProperties>,
+    ) -> Self {
+        Self {
+            acs_chat_thread_event_in_thread_base_properties,
+            created_by_communication_identifier,
+            properties,
+            metadata,
+            participants,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatThreadCreatedWithUser event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatThreadCreatedWithUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "createdByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "createdByCommunicationIdentifier")]
+    pub created_by_communication_identifier: CommunicationIdentifierModel,
     #[doc = "The thread properties"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
+    pub properties: serde_json::Value,
     #[doc = "The thread metadata"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: serde_json::Value,
     #[doc = "The list of properties of participants who are part of the thread"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
     pub participants: Vec<AcsChatThreadParticipantProperties>,
 }
 impl AcsChatThreadCreatedWithUserEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
+        created_by_communication_identifier: CommunicationIdentifierModel,
+        properties: serde_json::Value,
+        metadata: serde_json::Value,
+        participants: Vec<AcsChatThreadParticipantProperties>,
+    ) -> Self {
+        Self {
+            acs_chat_thread_event_base_properties,
+            created_by_communication_identifier,
+            properties,
+            metadata,
+            participants,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatThreadDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatThreadDeletedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "deletedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub deleted_by_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "deletedByCommunicationIdentifier")]
+    pub deleted_by_communication_identifier: CommunicationIdentifierModel,
     #[doc = "The deletion time of the thread"]
-    #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
-    pub delete_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "deleteTime", with = "azure_core::date::rfc3339")]
+    pub delete_time: ::time::OffsetDateTime,
 }
 impl AcsChatThreadDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
+        deleted_by_communication_identifier: CommunicationIdentifierModel,
+        delete_time: ::time::OffsetDateTime,
+    ) -> Self {
+        Self {
+            acs_chat_thread_event_in_thread_base_properties,
+            deleted_by_communication_identifier,
+            delete_time,
+        }
     }
 }
 #[doc = "Schema of common properties of all chat thread events"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatThreadEventBaseProperties {
     #[serde(flatten)]
     pub acs_chat_event_base_properties: AcsChatEventBaseProperties,
     #[doc = "The original creation time of the thread"]
-    #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "createTime", with = "azure_core::date::rfc3339")]
+    pub create_time: ::time::OffsetDateTime,
     #[doc = "The version of the thread"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
 impl AcsChatThreadEventBaseProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(acs_chat_event_base_properties: AcsChatEventBaseProperties, create_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            acs_chat_event_base_properties,
+            create_time,
+            version: None,
+        }
     }
 }
 #[doc = "Schema of common properties of all chat thread events"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatThreadEventInThreadBaseProperties {
     #[serde(flatten)]
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
     #[doc = "The original creation time of the thread"]
-    #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "createTime", with = "azure_core::date::rfc3339")]
+    pub create_time: ::time::OffsetDateTime,
     #[doc = "The version of the thread"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
 impl AcsChatThreadEventInThreadBaseProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(create_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties::default(),
+            create_time,
+            version: None,
+        }
     }
 }
 #[doc = "Schema of the chat thread participant"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatThreadParticipantProperties {
     #[doc = "The name of the user"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "participantCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub participant_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "participantCommunicationIdentifier")]
+    pub participant_communication_identifier: CommunicationIdentifierModel,
     #[doc = "The metadata of the user"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: serde_json::Value,
 }
 impl AcsChatThreadParticipantProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(participant_communication_identifier: CommunicationIdentifierModel, metadata: serde_json::Value) -> Self {
+        Self {
+            display_name: None,
+            participant_communication_identifier,
+            metadata,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatThreadPropertiesUpdated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatThreadPropertiesUpdatedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "editedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub edited_by_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "editedByCommunicationIdentifier")]
+    pub edited_by_communication_identifier: CommunicationIdentifierModel,
     #[doc = "The time at which the properties of the thread were updated"]
-    #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
-    pub edit_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "editTime", with = "azure_core::date::rfc3339")]
+    pub edit_time: ::time::OffsetDateTime,
     #[doc = "The updated thread properties"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
+    pub properties: serde_json::Value,
     #[doc = "The thread metadata"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: serde_json::Value,
 }
 impl AcsChatThreadPropertiesUpdatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
+        edited_by_communication_identifier: CommunicationIdentifierModel,
+        edit_time: ::time::OffsetDateTime,
+        properties: serde_json::Value,
+        metadata: serde_json::Value,
+    ) -> Self {
+        Self {
+            acs_chat_thread_event_in_thread_base_properties,
+            edited_by_communication_identifier,
+            edit_time,
+            properties,
+            metadata,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatThreadPropertiesUpdatedPerUser event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatThreadPropertiesUpdatedPerUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "editedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub edited_by_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "editedByCommunicationIdentifier")]
+    pub edited_by_communication_identifier: CommunicationIdentifierModel,
     #[doc = "The time at which the properties of the thread were updated"]
-    #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
-    pub edit_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "editTime", with = "azure_core::date::rfc3339")]
+    pub edit_time: ::time::OffsetDateTime,
     #[doc = "The thread metadata"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: serde_json::Value,
     #[doc = "The updated thread properties"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
+    pub properties: serde_json::Value,
 }
 impl AcsChatThreadPropertiesUpdatedPerUserEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
+        edited_by_communication_identifier: CommunicationIdentifierModel,
+        edit_time: ::time::OffsetDateTime,
+        metadata: serde_json::Value,
+        properties: serde_json::Value,
+    ) -> Self {
+        Self {
+            acs_chat_thread_event_base_properties,
+            edited_by_communication_identifier,
+            edit_time,
+            metadata,
+            properties,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.ChatThreadWithUserDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatThreadWithUserDeletedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "deletedByCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub deleted_by_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "deletedByCommunicationIdentifier")]
+    pub deleted_by_communication_identifier: CommunicationIdentifierModel,
     #[doc = "The deletion time of the thread"]
-    #[serde(rename = "deleteTime", default, with = "azure_core::date::rfc3339::option")]
-    pub delete_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "deleteTime", with = "azure_core::date::rfc3339")]
+    pub delete_time: ::time::OffsetDateTime,
 }
 impl AcsChatThreadWithUserDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
+        deleted_by_communication_identifier: CommunicationIdentifierModel,
+        delete_time: ::time::OffsetDateTime,
+    ) -> Self {
+        Self {
+            acs_chat_thread_event_base_properties,
+            deleted_by_communication_identifier,
+            delete_time,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.EmailDeliveryReportReceived event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsEmailDeliveryReportReceivedEventData {
     #[doc = "The Sender Email Address"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -481,18 +636,28 @@ pub struct AcsEmailDeliveryReportReceivedEventData {
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
     #[doc = "The status of the email. Any value other than Delivered is considered failed."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<AcsEmailDeliveryReportStatus>,
+    pub status: AcsEmailDeliveryReportStatus,
     #[doc = "Detailed information about the status if any"]
-    #[serde(rename = "deliveryStatusDetails", default, skip_serializing_if = "Option::is_none")]
-    pub delivery_status_details: Option<AcsEmailDeliveryReportStatusDetails>,
+    #[serde(rename = "deliveryStatusDetails")]
+    pub delivery_status_details: AcsEmailDeliveryReportStatusDetails,
     #[doc = "The time at which the email delivery report received timestamp"]
-    #[serde(rename = "deliveryAttemptTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub delivery_attempt_time_stamp: Option<time::OffsetDateTime>,
+    #[serde(rename = "deliveryAttemptTimestamp", with = "azure_core::date::rfc3339")]
+    pub delivery_attempt_timestamp: ::time::OffsetDateTime,
 }
 impl AcsEmailDeliveryReportReceivedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        status: AcsEmailDeliveryReportStatus,
+        delivery_status_details: AcsEmailDeliveryReportStatusDetails,
+        delivery_attempt_timestamp: ::time::OffsetDateTime,
+    ) -> Self {
+        Self {
+            sender: None,
+            recipient: None,
+            message_id: None,
+            status,
+            delivery_status_details,
+            delivery_attempt_timestamp,
+        }
     }
 }
 #[doc = "The status of the email. Any value other than Delivered is considered failed."]
@@ -553,7 +718,7 @@ impl AcsEmailDeliveryReportStatusDetails {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.EmailEngagementTrackingReportReceived event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsEmailEngagementTrackingReportReceivedEventData {
     #[doc = "The Sender Email Address"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -565,8 +730,8 @@ pub struct AcsEmailEngagementTrackingReportReceivedEventData {
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
     #[doc = "The time at which the user interacted with the email"]
-    #[serde(rename = "userActionTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub user_action_time_stamp: Option<time::OffsetDateTime>,
+    #[serde(rename = "userActionTimestamp", with = "azure_core::date::rfc3339")]
+    pub user_action_timestamp: ::time::OffsetDateTime,
     #[doc = "The context of the type of engagement user had with email"]
     #[serde(rename = "engagementContext", default, skip_serializing_if = "Option::is_none")]
     pub engagement_context: Option<String>,
@@ -574,38 +739,44 @@ pub struct AcsEmailEngagementTrackingReportReceivedEventData {
     #[serde(rename = "userAgent", default, skip_serializing_if = "Option::is_none")]
     pub user_agent: Option<String>,
     #[doc = "The type of engagement user have with email."]
-    #[serde(rename = "engagementType", default, skip_serializing_if = "Option::is_none")]
-    pub engagement_type: Option<AcsUserEngagement>,
+    #[serde(rename = "engagementType")]
+    pub engagement_type: AcsUserEngagement,
 }
 impl AcsEmailEngagementTrackingReportReceivedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(user_action_timestamp: ::time::OffsetDateTime, engagement_type: AcsUserEngagement) -> Self {
+        Self {
+            sender: None,
+            recipient: None,
+            message_id: None,
+            user_action_timestamp,
+            engagement_context: None,
+            user_agent: None,
+            engagement_type,
+        }
     }
 }
 #[doc = "Custom Context of Incoming Call"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsIncomingCallCustomContext {
     #[doc = "Sip Headers for incoming call"]
-    #[serde(rename = "sipHeaders", default, skip_serializing_if = "Option::is_none")]
-    pub sip_headers: Option<serde_json::Value>,
+    #[serde(rename = "sipHeaders")]
+    pub sip_headers: serde_json::Value,
     #[doc = "Voip Headers for incoming call"]
-    #[serde(rename = "voipHeaders", default, skip_serializing_if = "Option::is_none")]
-    pub voip_headers: Option<serde_json::Value>,
+    #[serde(rename = "voipHeaders")]
+    pub voip_headers: serde_json::Value,
 }
 impl AcsIncomingCallCustomContext {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(sip_headers: serde_json::Value, voip_headers: serde_json::Value) -> Self {
+        Self { sip_headers, voip_headers }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Communication.IncomingCall event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsIncomingCallEventData {
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub to: Option<CommunicationIdentifierModel>,
+    pub to: CommunicationIdentifierModel,
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub from: Option<CommunicationIdentifierModel>,
+    pub from: CommunicationIdentifierModel,
     #[doc = "The Id of the server call"]
     #[serde(rename = "serverCallId", default, skip_serializing_if = "Option::is_none")]
     pub server_call_id: Option<String>,
@@ -613,18 +784,373 @@ pub struct AcsIncomingCallEventData {
     #[serde(rename = "callerDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub caller_display_name: Option<String>,
     #[doc = "Custom Context of Incoming Call"]
-    #[serde(rename = "customContext", default, skip_serializing_if = "Option::is_none")]
-    pub custom_context: Option<AcsIncomingCallCustomContext>,
+    #[serde(rename = "customContext")]
+    pub custom_context: AcsIncomingCallCustomContext,
     #[doc = "Signed incoming call context."]
     #[serde(rename = "incomingCallContext", default, skip_serializing_if = "Option::is_none")]
     pub incoming_call_context: Option<String>,
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[serde(rename = "onBehalfOfCallee", default, skip_serializing_if = "Option::is_none")]
+    pub on_behalf_of_callee: Option<CommunicationIdentifierModel>,
     #[doc = "CorrelationId (CallId)."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
 }
 impl AcsIncomingCallEventData {
+    pub fn new(to: CommunicationIdentifierModel, from: CommunicationIdentifierModel, custom_context: AcsIncomingCallCustomContext) -> Self {
+        Self {
+            to,
+            from,
+            server_call_id: None,
+            caller_display_name: None,
+            custom_context,
+            incoming_call_context: None,
+            on_behalf_of_callee: None,
+            correlation_id: None,
+        }
+    }
+}
+#[doc = "Interactive reply kind"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AcsInteractiveReplyKind")]
+pub enum AcsInteractiveReplyKind {
+    #[serde(rename = "buttonReply")]
+    ButtonReply,
+    #[serde(rename = "listReply")]
+    ListReply,
+    #[serde(rename = "unknown")]
+    Unknown,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AcsInteractiveReplyKind {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AcsInteractiveReplyKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AcsInteractiveReplyKind {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::ButtonReply => serializer.serialize_unit_variant("AcsInteractiveReplyKind", 0u32, "buttonReply"),
+            Self::ListReply => serializer.serialize_unit_variant("AcsInteractiveReplyKind", 1u32, "listReply"),
+            Self::Unknown => serializer.serialize_unit_variant("AcsInteractiveReplyKind", 2u32, "unknown"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Message Button Content"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageButtonContent {
+    #[doc = "The Text of the button"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[doc = "The Payload of the button which was clicked by the user, setup by the business"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub payload: Option<String>,
+}
+impl AcsMessageButtonContent {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Message Channel Event Error"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageChannelEventError {
+    #[doc = "The channel error code"]
+    #[serde(rename = "channelCode", default, skip_serializing_if = "Option::is_none")]
+    pub channel_code: Option<String>,
+    #[doc = "The channel error message"]
+    #[serde(rename = "channelMessage", default, skip_serializing_if = "Option::is_none")]
+    pub channel_message: Option<String>,
+}
+impl AcsMessageChannelEventError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Message channel kind"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AcsMessageChannelKind")]
+pub enum AcsMessageChannelKind {
+    #[serde(rename = "whatsapp")]
+    Whatsapp,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AcsMessageChannelKind {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AcsMessageChannelKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AcsMessageChannelKind {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Whatsapp => serializer.serialize_unit_variant("AcsMessageChannelKind", 0u32, "whatsapp"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Message Context"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageContext {
+    #[doc = "The WhatsApp ID for the customer who replied to an inbound message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[doc = "The message ID for the sent message for an inbound reply"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl AcsMessageContext {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Message delivery status"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AcsMessageDeliveryStatus")]
+pub enum AcsMessageDeliveryStatus {
+    #[serde(rename = "read")]
+    Read,
+    #[serde(rename = "delivered")]
+    Delivered,
+    #[serde(rename = "failed")]
+    Failed,
+    #[serde(rename = "sent")]
+    Sent,
+    #[serde(rename = "warning")]
+    Warning,
+    #[serde(rename = "unknown")]
+    Unknown,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AcsMessageDeliveryStatus {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AcsMessageDeliveryStatus {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AcsMessageDeliveryStatus {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Read => serializer.serialize_unit_variant("AcsMessageDeliveryStatus", 0u32, "read"),
+            Self::Delivered => serializer.serialize_unit_variant("AcsMessageDeliveryStatus", 1u32, "delivered"),
+            Self::Failed => serializer.serialize_unit_variant("AcsMessageDeliveryStatus", 2u32, "failed"),
+            Self::Sent => serializer.serialize_unit_variant("AcsMessageDeliveryStatus", 3u32, "sent"),
+            Self::Warning => serializer.serialize_unit_variant("AcsMessageDeliveryStatus", 4u32, "warning"),
+            Self::Unknown => serializer.serialize_unit_variant("AcsMessageDeliveryStatus", 5u32, "unknown"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.AdvancedMessageDeliveryStatusUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcsMessageDeliveryStatusUpdatedEventData {
+    #[serde(flatten)]
+    pub acs_message_event_data: AcsMessageEventData,
+    #[doc = "The message id"]
+    #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
+    #[doc = "Message delivery status"]
+    pub status: AcsMessageDeliveryStatus,
+    #[doc = "Message channel kind"]
+    #[serde(rename = "channelType")]
+    pub channel_type: AcsMessageChannelKind,
+}
+impl AcsMessageDeliveryStatusUpdatedEventData {
+    pub fn new(acs_message_event_data: AcsMessageEventData, status: AcsMessageDeliveryStatus, channel_type: AcsMessageChannelKind) -> Self {
+        Self {
+            acs_message_event_data,
+            message_id: None,
+            status,
+            channel_type,
+        }
+    }
+}
+#[doc = "Schema of common properties of all chat thread events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcsMessageEventData {
+    #[doc = "The message sender"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[doc = "The message recipient"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub to: Option<String>,
+    #[doc = "The time message was received"]
+    #[serde(rename = "receivedTimeStamp", with = "azure_core::date::rfc3339")]
+    pub received_time_stamp: ::time::OffsetDateTime,
+    #[doc = "Message Channel Event Error"]
+    pub error: AcsMessageChannelEventError,
+}
+impl AcsMessageEventData {
+    pub fn new(received_time_stamp: ::time::OffsetDateTime, error: AcsMessageChannelEventError) -> Self {
+        Self {
+            from: None,
+            to: None,
+            received_time_stamp,
+            error,
+        }
+    }
+}
+#[doc = "Message Interactive button reply content for a user to business message"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageInteractiveButtonReplyContent {
+    #[doc = "The ID of the button"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The title of the button"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+}
+impl AcsMessageInteractiveButtonReplyContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Message Interactive Content"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcsMessageInteractiveContent {
+    #[doc = "Interactive reply kind"]
+    #[serde(rename = "type")]
+    pub type_: AcsInteractiveReplyKind,
+    #[doc = "Message Interactive button reply content for a user to business message"]
+    #[serde(rename = "buttonReply")]
+    pub button_reply: AcsMessageInteractiveButtonReplyContent,
+    #[doc = "Message Interactive list reply content for a user to business message"]
+    #[serde(rename = "listReply")]
+    pub list_reply: AcsMessageInteractiveListReplyContent,
+}
+impl AcsMessageInteractiveContent {
+    pub fn new(
+        type_: AcsInteractiveReplyKind,
+        button_reply: AcsMessageInteractiveButtonReplyContent,
+        list_reply: AcsMessageInteractiveListReplyContent,
+    ) -> Self {
+        Self {
+            type_,
+            button_reply,
+            list_reply,
+        }
+    }
+}
+#[doc = "Message Interactive list reply content for a user to business message"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageInteractiveListReplyContent {
+    #[doc = "The ID of the selected list item"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The title of the selected list item"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[doc = "The description of the selected row"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+impl AcsMessageInteractiveListReplyContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Message Media Content"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsMessageMediaContent {
+    #[doc = "The MIME type of the file this media represents"]
+    #[serde(rename = "mimeType", default, skip_serializing_if = "Option::is_none")]
+    pub mime_type: Option<String>,
+    #[doc = "The media identifier"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The filename of the underlying media file as specified when uploaded"]
+    #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
+    pub file_name: Option<String>,
+    #[doc = "The caption for the media object, if supported and provided"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub caption: Option<String>,
+}
+impl AcsMessageMediaContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.AdvancedMessageReceived event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcsMessageReceivedEventData {
+    #[serde(flatten)]
+    pub acs_message_event_data: AcsMessageEventData,
+    #[doc = "The message content"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[doc = "Message channel kind"]
+    #[serde(rename = "channelType")]
+    pub channel_type: AcsMessageChannelKind,
+    #[doc = "Message Media Content"]
+    pub media: AcsMessageMediaContent,
+    #[doc = "Message Context"]
+    pub context: AcsMessageContext,
+    #[doc = "Message Button Content"]
+    pub button: AcsMessageButtonContent,
+    #[doc = "Message Interactive Content"]
+    pub interactive: AcsMessageInteractiveContent,
+}
+impl AcsMessageReceivedEventData {
+    pub fn new(
+        acs_message_event_data: AcsMessageEventData,
+        channel_type: AcsMessageChannelKind,
+        media: AcsMessageMediaContent,
+        context: AcsMessageContext,
+        button: AcsMessageButtonContent,
+        interactive: AcsMessageInteractiveContent,
+    ) -> Self {
+        Self {
+            acs_message_event_data,
+            content: None,
+            channel_type,
+            media,
+            context,
+            button,
+            interactive,
+        }
     }
 }
 #[doc = "Schema for all properties of  Recording Chunk Information."]
@@ -655,50 +1181,59 @@ impl AcsRecordingChunkInfoProperties {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RecordingFileStatusUpdated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRecordingFileStatusUpdatedEventData {
     #[doc = "Schema for all properties of Recording Storage Information."]
-    #[serde(rename = "recordingStorageInfo", default, skip_serializing_if = "Option::is_none")]
-    pub recording_storage_info: Option<AcsRecordingStorageInfoProperties>,
+    #[serde(rename = "recordingStorageInfo")]
+    pub recording_storage_info: AcsRecordingStorageInfoProperties,
     #[doc = "The time at which the recording started"]
-    #[serde(rename = "recordingStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub recording_start_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "recordingStartTime", with = "azure_core::date::rfc3339")]
+    pub recording_start_time: ::time::OffsetDateTime,
     #[doc = "The recording duration in milliseconds"]
     #[serde(rename = "recordingDurationMs", default, skip_serializing_if = "Option::is_none")]
     pub recording_duration_ms: Option<i64>,
     #[doc = "Recording content type"]
-    #[serde(rename = "recordingContentType", default, skip_serializing_if = "Option::is_none")]
-    pub recording_content_type: Option<RecordingContentType>,
+    #[serde(rename = "recordingContentType")]
+    pub recording_content_type: RecordingContentType,
     #[doc = "Recording channel type"]
-    #[serde(rename = "recordingChannelType", default, skip_serializing_if = "Option::is_none")]
-    pub recording_channel_type: Option<RecordingChannelType>,
+    #[serde(rename = "recordingChannelType")]
+    pub recording_channel_type: RecordingChannelType,
     #[doc = "Recording format type"]
-    #[serde(rename = "recordingFormatType", default, skip_serializing_if = "Option::is_none")]
-    pub recording_format_type: Option<RecordingFormatType>,
+    #[serde(rename = "recordingFormatType")]
+    pub recording_format_type: RecordingFormatType,
     #[doc = "The reason for ending recording session"]
     #[serde(rename = "sessionEndReason", default, skip_serializing_if = "Option::is_none")]
     pub session_end_reason: Option<String>,
 }
 impl AcsRecordingFileStatusUpdatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        recording_storage_info: AcsRecordingStorageInfoProperties,
+        recording_start_time: ::time::OffsetDateTime,
+        recording_content_type: RecordingContentType,
+        recording_channel_type: RecordingChannelType,
+        recording_format_type: RecordingFormatType,
+    ) -> Self {
+        Self {
+            recording_storage_info,
+            recording_start_time,
+            recording_duration_ms: None,
+            recording_content_type,
+            recording_channel_type,
+            recording_format_type,
+            session_end_reason: None,
+        }
     }
 }
 #[doc = "Schema for all properties of Recording Storage Information."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRecordingStorageInfoProperties {
     #[doc = "List of details of recording chunks information"]
-    #[serde(
-        rename = "recordingChunks",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "recordingChunks")]
     pub recording_chunks: Vec<AcsRecordingChunkInfoProperties>,
 }
 impl AcsRecordingStorageInfoProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(recording_chunks: Vec<AcsRecordingChunkInfoProperties>) -> Self {
+        Self { recording_chunks }
     }
 }
 #[doc = "Router Channel Configuration"]
@@ -720,7 +1255,7 @@ impl AcsRouterChannelConfiguration {
     }
 }
 #[doc = "Router Communication Error"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterCommunicationError {
     #[doc = "Router Communication Error Code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -732,19 +1267,19 @@ pub struct AcsRouterCommunicationError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Router Communication Error"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Option<Box<AcsRouterCommunicationError>>,
+    pub innererror: Box<AcsRouterCommunicationError>,
     #[doc = "List of Router Communication Errors"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
     pub details: Vec<AcsRouterCommunicationError>,
 }
 impl AcsRouterCommunicationError {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(innererror: Box<AcsRouterCommunicationError>, details: Vec<AcsRouterCommunicationError>) -> Self {
+        Self {
+            code: None,
+            message: None,
+            target: None,
+            innererror,
+            details,
+        }
     }
 }
 #[doc = "Schema of common properties of all Router events"]
@@ -766,7 +1301,7 @@ impl AcsRouterEventData {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobCancelled event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobCancelledEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
@@ -778,12 +1313,16 @@ pub struct AcsRouterJobCancelledEventData {
     pub disposition_code: Option<String>,
 }
 impl AcsRouterJobCancelledEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(acs_router_job_event_data: AcsRouterJobEventData) -> Self {
+        Self {
+            acs_router_job_event_data,
+            note: None,
+            disposition_code: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobClassificationFailed event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobClassificationFailedEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
@@ -791,26 +1330,25 @@ pub struct AcsRouterJobClassificationFailedEventData {
     #[serde(rename = "classificationPolicyId", default, skip_serializing_if = "Option::is_none")]
     pub classification_policy_id: Option<String>,
     #[doc = "Router Job Classification Failed Errors"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
     pub errors: Vec<AcsRouterCommunicationError>,
 }
 impl AcsRouterJobClassificationFailedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(acs_router_job_event_data: AcsRouterJobEventData, errors: Vec<AcsRouterCommunicationError>) -> Self {
+        Self {
+            acs_router_job_event_data,
+            classification_policy_id: None,
+            errors,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobClassified event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobClassifiedEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
     #[doc = "Router Queue Details"]
-    #[serde(rename = "queueDetails", default, skip_serializing_if = "Option::is_none")]
-    pub queue_details: Option<AcsRouterQueueDetails>,
+    #[serde(rename = "queueDetails")]
+    pub queue_details: AcsRouterQueueDetails,
     #[doc = "Router Job Classification Policy Id"]
     #[serde(rename = "classificationPolicyId", default, skip_serializing_if = "Option::is_none")]
     pub classification_policy_id: Option<String>,
@@ -818,21 +1356,26 @@ pub struct AcsRouterJobClassifiedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[doc = "Router Job Attached Worker Selector"]
-    #[serde(
-        rename = "attachedWorkerSelectors",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "attachedWorkerSelectors")]
     pub attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
 }
 impl AcsRouterJobClassifiedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_router_job_event_data: AcsRouterJobEventData,
+        queue_details: AcsRouterQueueDetails,
+        attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
+    ) -> Self {
+        Self {
+            acs_router_job_event_data,
+            queue_details,
+            classification_policy_id: None,
+            priority: None,
+            attached_worker_selectors,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobClosed event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobClosedEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
@@ -847,12 +1390,17 @@ pub struct AcsRouterJobClosedEventData {
     pub disposition_code: Option<String>,
 }
 impl AcsRouterJobClosedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(acs_router_job_event_data: AcsRouterJobEventData) -> Self {
+        Self {
+            acs_router_job_event_data,
+            assignment_id: None,
+            worker_id: None,
+            disposition_code: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobCompleted event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobCompletedEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
@@ -864,23 +1412,27 @@ pub struct AcsRouterJobCompletedEventData {
     pub worker_id: Option<String>,
 }
 impl AcsRouterJobCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(acs_router_job_event_data: AcsRouterJobEventData) -> Self {
+        Self {
+            acs_router_job_event_data,
+            assignment_id: None,
+            worker_id: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobDeleted event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobDeletedEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
 }
 impl AcsRouterJobDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(acs_router_job_event_data: AcsRouterJobEventData) -> Self {
+        Self { acs_router_job_event_data }
     }
 }
 #[doc = "Schema of common properties of all Router Job events"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobEventData {
     #[serde(flatten)]
     pub acs_router_event_data: AcsRouterEventData,
@@ -888,19 +1440,22 @@ pub struct AcsRouterJobEventData {
     #[serde(rename = "queueId", default, skip_serializing_if = "Option::is_none")]
     pub queue_id: Option<String>,
     #[doc = "Router Job events Labels"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub labels: Option<serde_json::Value>,
+    pub labels: serde_json::Value,
     #[doc = "Router Jobs events Tags"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+    pub tags: serde_json::Value,
 }
 impl AcsRouterJobEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(labels: serde_json::Value, tags: serde_json::Value) -> Self {
+        Self {
+            acs_router_event_data: AcsRouterEventData::default(),
+            queue_id: None,
+            labels,
+            tags,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobExceptionTriggered event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobExceptionTriggeredEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
@@ -912,12 +1467,16 @@ pub struct AcsRouterJobExceptionTriggeredEventData {
     pub exception_rule_id: Option<String>,
 }
 impl AcsRouterJobExceptionTriggeredEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(acs_router_job_event_data: AcsRouterJobEventData) -> Self {
+        Self {
+            acs_router_job_event_data,
+            rule_key: None,
+            exception_rule_id: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobQueued event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobQueuedEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
@@ -925,25 +1484,24 @@ pub struct AcsRouterJobQueuedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[doc = "Router Job Queued Attached Worker Selector"]
-    #[serde(
-        rename = "attachedWorkerSelectors",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "attachedWorkerSelectors")]
     pub attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
     #[doc = "Router Job Queued Requested Worker Selector"]
-    #[serde(
-        rename = "requestedWorkerSelectors",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "requestedWorkerSelectors")]
     pub requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
 }
 impl AcsRouterJobQueuedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_router_job_event_data: AcsRouterJobEventData,
+        attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
+        requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
+    ) -> Self {
+        Self {
+            acs_router_job_event_data,
+            priority: None,
+            attached_worker_selectors,
+            requested_worker_selectors,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobReceived event"]
@@ -952,8 +1510,8 @@ pub struct AcsRouterJobReceivedEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
     #[doc = "Acs Router Job Status"]
-    #[serde(rename = "jobStatus", default, skip_serializing_if = "Option::is_none")]
-    pub job_status: Option<AcsRouterJobStatus>,
+    #[serde(rename = "jobStatus")]
+    pub job_status: AcsRouterJobStatus,
     #[doc = "Router Job Classification Policy Id"]
     #[serde(rename = "classificationPolicyId", default, skip_serializing_if = "Option::is_none")]
     pub classification_policy_id: Option<String>,
@@ -961,35 +1519,36 @@ pub struct AcsRouterJobReceivedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[doc = "Router Job Received Requested Worker Selectors"]
-    #[serde(
-        rename = "requestedWorkerSelectors",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "requestedWorkerSelectors")]
     pub requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
     #[doc = "Router Job Received Scheduled Time in UTC"]
-    #[serde(rename = "scheduledOn", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_on: Option<time::OffsetDateTime>,
+    #[serde(rename = "scheduledOn", with = "azure_core::date::rfc3339")]
+    pub scheduled_on: ::time::OffsetDateTime,
     #[doc = "Unavailable For Matching for Router Job Received"]
     #[serde(rename = "unavailableForMatching")]
     pub unavailable_for_matching: bool,
 }
 impl AcsRouterJobReceivedEventData {
-    pub fn new(unavailable_for_matching: bool) -> Self {
+    pub fn new(
+        acs_router_job_event_data: AcsRouterJobEventData,
+        job_status: AcsRouterJobStatus,
+        requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
+        scheduled_on: ::time::OffsetDateTime,
+        unavailable_for_matching: bool,
+    ) -> Self {
         Self {
-            acs_router_job_event_data: AcsRouterJobEventData::default(),
-            job_status: None,
+            acs_router_job_event_data,
+            job_status,
             classification_policy_id: None,
             priority: None,
-            requested_worker_selectors: Vec::new(),
-            scheduled_on: None,
+            requested_worker_selectors,
+            scheduled_on,
             unavailable_for_matching,
         }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobSchedulingFailed event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobSchedulingFailedEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
@@ -997,31 +1556,33 @@ pub struct AcsRouterJobSchedulingFailedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[doc = "Router Job Scheduling Failed Attached Worker Selector Expired"]
-    #[serde(
-        rename = "expiredAttachedWorkerSelectors",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "expiredAttachedWorkerSelectors")]
     pub expired_attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
     #[doc = "Router Job Scheduling Failed Requested Worker Selector Expired"]
-    #[serde(
-        rename = "expiredRequestedWorkerSelectors",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "expiredRequestedWorkerSelectors")]
     pub expired_requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
     #[doc = "Router Job Scheduling Failed Scheduled Time in UTC"]
-    #[serde(rename = "scheduledOn", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_on: Option<time::OffsetDateTime>,
+    #[serde(rename = "scheduledOn", with = "azure_core::date::rfc3339")]
+    pub scheduled_on: ::time::OffsetDateTime,
     #[doc = "Router Job Scheduling Failed Reason"]
     #[serde(rename = "failureReason", default, skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
 }
 impl AcsRouterJobSchedulingFailedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_router_job_event_data: AcsRouterJobEventData,
+        expired_attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
+        expired_requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
+        scheduled_on: ::time::OffsetDateTime,
+    ) -> Self {
+        Self {
+            acs_router_job_event_data,
+            priority: None,
+            expired_attached_worker_selectors,
+            expired_requested_worker_selectors,
+            scheduled_on,
+            failure_reason: None,
+        }
     }
 }
 #[doc = "Acs Router Job Status"]
@@ -1082,7 +1643,7 @@ impl Serialize for AcsRouterJobStatus {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobUnassigned event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobUnassignedEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
@@ -1094,8 +1655,12 @@ pub struct AcsRouterJobUnassignedEventData {
     pub worker_id: Option<String>,
 }
 impl AcsRouterJobUnassignedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(acs_router_job_event_data: AcsRouterJobEventData) -> Self {
+        Self {
+            acs_router_job_event_data,
+            assignment_id: None,
+            worker_id: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobWaitingForActivation event"]
@@ -1107,65 +1672,59 @@ pub struct AcsRouterJobWaitingForActivationEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[doc = "Router Job Waiting For Activation Worker Selector Expired"]
-    #[serde(
-        rename = "expiredAttachedWorkerSelectors",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "expiredAttachedWorkerSelectors")]
     pub expired_attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
     #[doc = "Router Job Waiting For Activation Requested Worker Selector Expired"]
-    #[serde(
-        rename = "expiredRequestedWorkerSelectors",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "expiredRequestedWorkerSelectors")]
     pub expired_requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
     #[doc = "Router Job Waiting For Activation Scheduled Time in UTC"]
-    #[serde(rename = "scheduledOn", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_on: Option<time::OffsetDateTime>,
+    #[serde(rename = "scheduledOn", with = "azure_core::date::rfc3339")]
+    pub scheduled_on: ::time::OffsetDateTime,
     #[doc = "Router Job Waiting For Activation Unavailable For Matching"]
     #[serde(rename = "unavailableForMatching")]
     pub unavailable_for_matching: bool,
 }
 impl AcsRouterJobWaitingForActivationEventData {
-    pub fn new(unavailable_for_matching: bool) -> Self {
+    pub fn new(
+        acs_router_job_event_data: AcsRouterJobEventData,
+        expired_attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
+        expired_requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
+        scheduled_on: ::time::OffsetDateTime,
+        unavailable_for_matching: bool,
+    ) -> Self {
         Self {
-            acs_router_job_event_data: AcsRouterJobEventData::default(),
+            acs_router_job_event_data,
             priority: None,
-            expired_attached_worker_selectors: Vec::new(),
-            expired_requested_worker_selectors: Vec::new(),
-            scheduled_on: None,
+            expired_attached_worker_selectors,
+            expired_requested_worker_selectors,
+            scheduled_on,
             unavailable_for_matching,
         }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobWorkerSelectorsExpired event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterJobWorkerSelectorsExpiredEventData {
     #[serde(flatten)]
     pub acs_router_job_event_data: AcsRouterJobEventData,
     #[doc = "Router Job Worker Selectors Expired Requested Worker Selectors"]
-    #[serde(
-        rename = "expiredRequestedWorkerSelectors",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "expiredRequestedWorkerSelectors")]
     pub expired_requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
     #[doc = "Router Job Worker Selectors Expired Attached Worker Selectors"]
-    #[serde(
-        rename = "expiredAttachedWorkerSelectors",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "expiredAttachedWorkerSelectors")]
     pub expired_attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
 }
 impl AcsRouterJobWorkerSelectorsExpiredEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        acs_router_job_event_data: AcsRouterJobEventData,
+        expired_requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
+        expired_attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
+    ) -> Self {
+        Self {
+            acs_router_job_event_data,
+            expired_requested_worker_selectors,
+            expired_attached_worker_selectors,
+        }
     }
 }
 #[doc = "Router Job Worker Selector Label Operator"]
@@ -1214,7 +1773,7 @@ impl Serialize for AcsRouterLabelOperator {
     }
 }
 #[doc = "Router Queue Details"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterQueueDetails {
     #[doc = "Router Queue Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1223,12 +1782,62 @@ pub struct AcsRouterQueueDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Router Queue Labels"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub labels: Option<serde_json::Value>,
+    pub labels: serde_json::Value,
 }
 impl AcsRouterQueueDetails {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(labels: serde_json::Value) -> Self {
+        Self {
+            id: None,
+            name: None,
+            labels,
+        }
+    }
+}
+#[doc = "Worker properties that can be updated"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AcsRouterUpdatedWorkerProperty")]
+pub enum AcsRouterUpdatedWorkerProperty {
+    AvailableForOffers,
+    TotalCapacity,
+    QueueAssignments,
+    Labels,
+    Tags,
+    ChannelConfigurations,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AcsRouterUpdatedWorkerProperty {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AcsRouterUpdatedWorkerProperty {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AcsRouterUpdatedWorkerProperty {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::AvailableForOffers => serializer.serialize_unit_variant("AcsRouterUpdatedWorkerProperty", 0u32, "AvailableForOffers"),
+            Self::TotalCapacity => serializer.serialize_unit_variant("AcsRouterUpdatedWorkerProperty", 1u32, "TotalCapacity"),
+            Self::QueueAssignments => serializer.serialize_unit_variant("AcsRouterUpdatedWorkerProperty", 2u32, "QueueAssignments"),
+            Self::Labels => serializer.serialize_unit_variant("AcsRouterUpdatedWorkerProperty", 3u32, "Labels"),
+            Self::Tags => serializer.serialize_unit_variant("AcsRouterUpdatedWorkerProperty", 4u32, "Tags"),
+            Self::ChannelConfigurations => {
+                serializer.serialize_unit_variant("AcsRouterUpdatedWorkerProperty", 5u32, "ChannelConfigurations")
+            }
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerDeleted event"]
@@ -1269,7 +1878,7 @@ impl AcsRouterWorkerEventData {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferAccepted event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterWorkerOfferAcceptedEventData {
     #[serde(flatten)]
     pub acs_router_worker_event_data: AcsRouterWorkerEventData,
@@ -1286,21 +1895,36 @@ pub struct AcsRouterWorkerOfferAcceptedEventData {
     #[serde(rename = "jobPriority", default, skip_serializing_if = "Option::is_none")]
     pub job_priority: Option<i32>,
     #[doc = "Router Worker Offer Accepted Worker Labels"]
-    #[serde(rename = "workerLabels", default, skip_serializing_if = "Option::is_none")]
-    pub worker_labels: Option<serde_json::Value>,
+    #[serde(rename = "workerLabels")]
+    pub worker_labels: serde_json::Value,
     #[doc = "Router Worker Offer Accepted Worker Tags"]
-    #[serde(rename = "workerTags", default, skip_serializing_if = "Option::is_none")]
-    pub worker_tags: Option<serde_json::Value>,
+    #[serde(rename = "workerTags")]
+    pub worker_tags: serde_json::Value,
     #[doc = "Router Worker Offer Accepted Job Labels"]
-    #[serde(rename = "jobLabels", default, skip_serializing_if = "Option::is_none")]
-    pub job_labels: Option<serde_json::Value>,
+    #[serde(rename = "jobLabels")]
+    pub job_labels: serde_json::Value,
     #[doc = "Router Worker Offer Accepted Job Tags"]
-    #[serde(rename = "jobTags", default, skip_serializing_if = "Option::is_none")]
-    pub job_tags: Option<serde_json::Value>,
+    #[serde(rename = "jobTags")]
+    pub job_tags: serde_json::Value,
 }
 impl AcsRouterWorkerOfferAcceptedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        worker_labels: serde_json::Value,
+        worker_tags: serde_json::Value,
+        job_labels: serde_json::Value,
+        job_tags: serde_json::Value,
+    ) -> Self {
+        Self {
+            acs_router_worker_event_data: AcsRouterWorkerEventData::default(),
+            queue_id: None,
+            offer_id: None,
+            assignment_id: None,
+            job_priority: None,
+            worker_labels,
+            worker_tags,
+            job_labels,
+            job_tags,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferDeclined event"]
@@ -1338,7 +1962,7 @@ impl AcsRouterWorkerOfferExpiredEventData {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferIssued event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterWorkerOfferIssuedEventData {
     #[serde(flatten)]
     pub acs_router_worker_event_data: AcsRouterWorkerEventData,
@@ -1352,27 +1976,45 @@ pub struct AcsRouterWorkerOfferIssuedEventData {
     #[serde(rename = "jobPriority", default, skip_serializing_if = "Option::is_none")]
     pub job_priority: Option<i32>,
     #[doc = "Router Worker Offer Issued Worker Labels"]
-    #[serde(rename = "workerLabels", default, skip_serializing_if = "Option::is_none")]
-    pub worker_labels: Option<serde_json::Value>,
+    #[serde(rename = "workerLabels")]
+    pub worker_labels: serde_json::Value,
     #[doc = "Router Worker Offer Issued Time in UTC"]
-    #[serde(rename = "offeredOn", default, with = "azure_core::date::rfc3339::option")]
-    pub offered_on: Option<time::OffsetDateTime>,
+    #[serde(rename = "offeredOn", with = "azure_core::date::rfc3339")]
+    pub offered_on: ::time::OffsetDateTime,
     #[doc = "Router Worker Offer Issued Expiration Time in UTC"]
-    #[serde(rename = "expiresOn", default, with = "azure_core::date::rfc3339::option")]
-    pub expires_on: Option<time::OffsetDateTime>,
+    #[serde(rename = "expiresOn", with = "azure_core::date::rfc3339")]
+    pub expires_on: ::time::OffsetDateTime,
     #[doc = "Router Worker Offer Issued Worker Tags"]
-    #[serde(rename = "workerTags", default, skip_serializing_if = "Option::is_none")]
-    pub worker_tags: Option<serde_json::Value>,
+    #[serde(rename = "workerTags")]
+    pub worker_tags: serde_json::Value,
     #[doc = "Router Worker Offer Issued Job Labels"]
-    #[serde(rename = "jobLabels", default, skip_serializing_if = "Option::is_none")]
-    pub job_labels: Option<serde_json::Value>,
+    #[serde(rename = "jobLabels")]
+    pub job_labels: serde_json::Value,
     #[doc = "Router Worker Offer Issued Job Tags"]
-    #[serde(rename = "jobTags", default, skip_serializing_if = "Option::is_none")]
-    pub job_tags: Option<serde_json::Value>,
+    #[serde(rename = "jobTags")]
+    pub job_tags: serde_json::Value,
 }
 impl AcsRouterWorkerOfferIssuedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        worker_labels: serde_json::Value,
+        offered_on: ::time::OffsetDateTime,
+        expires_on: ::time::OffsetDateTime,
+        worker_tags: serde_json::Value,
+        job_labels: serde_json::Value,
+        job_tags: serde_json::Value,
+    ) -> Self {
+        Self {
+            acs_router_worker_event_data: AcsRouterWorkerEventData::default(),
+            queue_id: None,
+            offer_id: None,
+            job_priority: None,
+            worker_labels,
+            offered_on,
+            expires_on,
+            worker_tags,
+            job_labels,
+            job_tags,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferRevoked event"]
@@ -1393,67 +2035,78 @@ impl AcsRouterWorkerOfferRevokedEventData {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerRegistered event"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterWorkerRegisteredEventData {
     #[doc = "Router Worker Registered Worker Id"]
     #[serde(rename = "workerId", default, skip_serializing_if = "Option::is_none")]
     pub worker_id: Option<String>,
     #[doc = "Router Worker Registered Queue Info"]
-    #[serde(
-        rename = "queueAssignments",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "queueAssignments")]
     pub queue_assignments: Vec<AcsRouterQueueDetails>,
     #[doc = "Router Worker Registered Channel Configuration"]
-    #[serde(
-        rename = "channelConfigurations",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "channelConfigurations")]
     pub channel_configurations: Vec<AcsRouterChannelConfiguration>,
     #[doc = "Router Worker Register Total Capacity"]
     #[serde(rename = "totalCapacity", default, skip_serializing_if = "Option::is_none")]
     pub total_capacity: Option<i32>,
     #[doc = "Router Worker Registered Labels"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub labels: Option<serde_json::Value>,
+    pub labels: serde_json::Value,
     #[doc = "Router Worker Registered Tags"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+    pub tags: serde_json::Value,
 }
 impl AcsRouterWorkerRegisteredEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        queue_assignments: Vec<AcsRouterQueueDetails>,
+        channel_configurations: Vec<AcsRouterChannelConfiguration>,
+        labels: serde_json::Value,
+        tags: serde_json::Value,
+    ) -> Self {
+        Self {
+            worker_id: None,
+            queue_assignments,
+            channel_configurations,
+            total_capacity: None,
+            labels,
+            tags,
+        }
     }
 }
 #[doc = "Router Job Worker Selector"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRouterWorkerSelector {
     #[doc = "Router Job Worker Selector Key"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
     #[doc = "Router Job Worker Selector Label Operator"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operator: Option<AcsRouterLabelOperator>,
+    #[serde(rename = "labelOperator")]
+    pub label_operator: AcsRouterLabelOperator,
     #[doc = "Router Job Worker Selector Value"]
-    #[serde(rename = "labelValue", default, skip_serializing_if = "Option::is_none")]
-    pub label_value: Option<serde_json::Value>,
+    pub value: serde_json::Value,
     #[doc = "Router Job Worker Selector Time to Live in Seconds"]
-    #[serde(rename = "ttlSeconds", default, skip_serializing_if = "Option::is_none")]
-    pub ttl_seconds: Option<String>,
+    #[serde(rename = "ttlSeconds")]
+    pub ttl_seconds: f64,
     #[doc = "Router Worker Selector State"]
-    #[serde(rename = "selectorState", default, skip_serializing_if = "Option::is_none")]
-    pub selector_state: Option<AcsRouterWorkerSelectorState>,
+    pub state: AcsRouterWorkerSelectorState,
     #[doc = "Router Job Worker Selector Expiration Time"]
-    #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "expirationTime", with = "azure_core::date::rfc3339")]
+    pub expiration_time: ::time::OffsetDateTime,
 }
 impl AcsRouterWorkerSelector {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        label_operator: AcsRouterLabelOperator,
+        value: serde_json::Value,
+        ttl_seconds: f64,
+        state: AcsRouterWorkerSelectorState,
+        expiration_time: ::time::OffsetDateTime,
+    ) -> Self {
+        Self {
+            key: None,
+            label_operator,
+            value,
+            ttl_seconds,
+            state,
+            expiration_time,
+        }
     }
 }
 #[doc = "Router Worker Selector State"]
@@ -1495,12 +2148,54 @@ impl Serialize for AcsRouterWorkerSelectorState {
         }
     }
 }
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcsRouterWorkerUpdatedEventData {
+    #[doc = "Router Worker Updated Worker Id"]
+    #[serde(rename = "workerId", default, skip_serializing_if = "Option::is_none")]
+    pub worker_id: Option<String>,
+    #[doc = "Router Worker Updated Queue Info"]
+    #[serde(rename = "queueAssignments")]
+    pub queue_assignments: Vec<AcsRouterQueueDetails>,
+    #[doc = "Router Worker Updated Channel Configuration"]
+    #[serde(rename = "channelConfigurations")]
+    pub channel_configurations: Vec<AcsRouterChannelConfiguration>,
+    #[doc = "Router Worker Updated Total Capacity"]
+    #[serde(rename = "totalCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub total_capacity: Option<i32>,
+    #[doc = "Router Worker Updated Labels"]
+    pub labels: serde_json::Value,
+    #[doc = "Router Worker Updated Tags"]
+    pub tags: serde_json::Value,
+    #[doc = "Router Worker Properties Updated"]
+    #[serde(rename = "updatedWorkerProperties")]
+    pub updated_worker_properties: Vec<AcsRouterUpdatedWorkerProperty>,
+}
+impl AcsRouterWorkerUpdatedEventData {
+    pub fn new(
+        queue_assignments: Vec<AcsRouterQueueDetails>,
+        channel_configurations: Vec<AcsRouterChannelConfiguration>,
+        labels: serde_json::Value,
+        tags: serde_json::Value,
+        updated_worker_properties: Vec<AcsRouterUpdatedWorkerProperty>,
+    ) -> Self {
+        Self {
+            worker_id: None,
+            queue_assignments,
+            channel_configurations,
+            total_capacity: None,
+            labels,
+            tags,
+            updated_worker_properties,
+        }
+    }
+}
 #[doc = "Schema for details of a delivery attempt"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsSmsDeliveryAttemptProperties {
     #[doc = "TimeStamp when delivery was attempted"]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "Number of segments that were successfully delivered"]
     #[serde(rename = "segmentsSucceeded", default, skip_serializing_if = "Option::is_none")]
     pub segments_succeeded: Option<i32>,
@@ -1509,12 +2204,16 @@ pub struct AcsSmsDeliveryAttemptProperties {
     pub segments_failed: Option<i32>,
 }
 impl AcsSmsDeliveryAttemptProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            timestamp,
+            segments_succeeded: None,
+            segments_failed: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.SMSDeliveryReportReceived event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsSmsDeliveryReportReceivedEventData {
     #[serde(flatten)]
     pub acs_sms_event_base_properties: AcsSmsEventBaseProperties,
@@ -1525,23 +2224,25 @@ pub struct AcsSmsDeliveryReportReceivedEventData {
     #[serde(rename = "deliveryStatusDetails", default, skip_serializing_if = "Option::is_none")]
     pub delivery_status_details: Option<String>,
     #[doc = "List of details of delivery attempts made"]
-    #[serde(
-        rename = "deliveryAttempts",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[serde(rename = "deliveryAttempts")]
     pub delivery_attempts: Vec<AcsSmsDeliveryAttemptProperties>,
     #[doc = "The time at which the SMS delivery report was received"]
-    #[serde(rename = "receivedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub received_timestamp: Option<time::OffsetDateTime>,
+    #[serde(rename = "receivedTimestamp", with = "azure_core::date::rfc3339")]
+    pub received_timestamp: ::time::OffsetDateTime,
     #[doc = "Customer Content"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
 }
 impl AcsSmsDeliveryReportReceivedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(delivery_attempts: Vec<AcsSmsDeliveryAttemptProperties>, received_timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            acs_sms_event_base_properties: AcsSmsEventBaseProperties::default(),
+            delivery_status: None,
+            delivery_status_details: None,
+            delivery_attempts,
+            received_timestamp,
+            tag: None,
+        }
     }
 }
 #[doc = "Schema of common properties of all SMS events"]
@@ -1563,7 +2264,7 @@ impl AcsSmsEventBaseProperties {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.SMSReceived event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsSmsReceivedEventData {
     #[serde(flatten)]
     pub acs_sms_event_base_properties: AcsSmsEventBaseProperties,
@@ -1571,24 +2272,30 @@ pub struct AcsSmsReceivedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The time at which the SMS was received"]
-    #[serde(rename = "receivedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub received_timestamp: Option<time::OffsetDateTime>,
+    #[serde(rename = "receivedTimestamp", with = "azure_core::date::rfc3339")]
+    pub received_timestamp: ::time::OffsetDateTime,
 }
 impl AcsSmsReceivedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(received_timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            acs_sms_event_base_properties: AcsSmsEventBaseProperties::default(),
+            message: None,
+            received_timestamp,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Communication.UserDisconnected event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsUserDisconnectedEventData {
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-    #[serde(rename = "userCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub user_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[serde(rename = "userCommunicationIdentifier")]
+    pub user_communication_identifier: CommunicationIdentifierModel,
 }
 impl AcsUserDisconnectedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(user_communication_identifier: CommunicationIdentifierModel) -> Self {
+        Self {
+            user_communication_identifier,
+        }
     }
 }
 #[doc = "The type of engagement user have with email."]
@@ -1628,6 +2335,63 @@ impl Serialize for AcsUserEngagement {
             Self::Click => serializer.serialize_unit_variant("AcsUserEngagement", 1u32, "click"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
+    }
+}
+#[doc = "Schema of the data property of an EventGridEvent for a Microsoft.ApiCenter.ApiDefinitionAdded event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiCenterApiDefinitionAddedEventData {
+    #[doc = "API definition title."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[doc = "API definition description."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "API specification details."]
+    pub specification: ApiCenterApiSpecification,
+}
+impl ApiCenterApiDefinitionAddedEventData {
+    pub fn new(specification: ApiCenterApiSpecification) -> Self {
+        Self {
+            title: None,
+            description: None,
+            specification,
+        }
+    }
+}
+#[doc = "Schema of the data property of an EventGridEvent for a Microsoft.ApiCenter.ApiDefinitionUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiCenterApiDefinitionUpdatedEventData {
+    #[doc = "API definition title."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[doc = "API definition description."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "API specification details."]
+    pub specification: ApiCenterApiSpecification,
+}
+impl ApiCenterApiDefinitionUpdatedEventData {
+    pub fn new(specification: ApiCenterApiSpecification) -> Self {
+        Self {
+            title: None,
+            description: None,
+            specification,
+        }
+    }
+}
+#[doc = "API specification details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiCenterApiSpecification {
+    #[doc = "Specification name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Specification version."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+impl ApiCenterApiSpecification {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.APICreated event."]
@@ -2070,15 +2834,14 @@ impl AppConfigurationSnapshotModifiedEventData {
     }
 }
 #[doc = "Detail of action on the app."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppEventTypeDetail {
     #[doc = "Type of action of the operation"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<AppAction>,
+    pub action: AppAction,
 }
 impl AppEventTypeDetail {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(action: AppAction) -> Self {
+        Self { action }
     }
 }
 #[doc = "Type of action on the app service plan."]
@@ -2117,21 +2880,23 @@ impl Serialize for AppServicePlanAction {
     }
 }
 #[doc = "Detail of action on the app service plan."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppServicePlanEventTypeDetail {
     #[doc = "Kind of environment where app service plan is."]
-    #[serde(rename = "stampKind", default, skip_serializing_if = "Option::is_none")]
-    pub stamp_kind: Option<StampKind>,
+    #[serde(rename = "stampKind")]
+    pub stamp_kind: StampKind,
     #[doc = "Type of action on the app service plan."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<AppServicePlanAction>,
+    pub action: AppServicePlanAction,
     #[doc = "Asynchronous operation status of the operation on the app service plan."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<AsyncStatus>,
+    pub status: AsyncStatus,
 }
 impl AppServicePlanEventTypeDetail {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(stamp_kind: StampKind, action: AppServicePlanAction, status: AsyncStatus) -> Self {
+        Self {
+            stamp_kind,
+            action,
+            status,
+        }
     }
 }
 #[doc = "Asynchronous operation status of the operation on the app service plan."]
@@ -2174,33 +2939,33 @@ impl Serialize for AsyncStatus {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterCreated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsClusterCreatedEventData {
     #[serde(flatten)]
     pub avs_cluster_event_data: AvsClusterEventData,
 }
 impl AvsClusterCreatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(avs_cluster_event_data: AvsClusterEventData) -> Self {
+        Self { avs_cluster_event_data }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsClusterDeletedEventData {
     #[serde(flatten)]
     pub avs_cluster_event_data: AvsClusterEventData,
 }
 impl AvsClusterDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(avs_cluster_event_data: AvsClusterEventData) -> Self {
+        Self { avs_cluster_event_data }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for Microsoft.AVS/clusters events."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsClusterEventData {
     #[doc = "Id of the operation that caused this event."]
-    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
-    pub operation_id: Option<String>,
+    #[serde(rename = "operationId")]
+    pub operation_id: String,
     #[doc = "Hosts added to the cluster in this event, if any."]
     #[serde(
         rename = "addedHostNames",
@@ -2227,12 +2992,17 @@ pub struct AvsClusterEventData {
     pub in_maintenance_host_names: Vec<String>,
 }
 impl AvsClusterEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(operation_id: String) -> Self {
+        Self {
+            operation_id,
+            added_host_names: Vec::new(),
+            removed_host_names: Vec::new(),
+            in_maintenance_host_names: Vec::new(),
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterFailed event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsClusterFailedEventData {
     #[serde(flatten)]
     pub avs_cluster_event_data: AvsClusterEventData,
@@ -2241,46 +3011,49 @@ pub struct AvsClusterFailedEventData {
     pub failure_message: Option<String>,
 }
 impl AvsClusterFailedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(avs_cluster_event_data: AvsClusterEventData) -> Self {
+        Self {
+            avs_cluster_event_data,
+            failure_message: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterUpdated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsClusterUpdatedEventData {
     #[serde(flatten)]
     pub avs_cluster_event_data: AvsClusterEventData,
 }
 impl AvsClusterUpdatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(avs_cluster_event_data: AvsClusterEventData) -> Self {
+        Self { avs_cluster_event_data }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ClusterUpdating event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsClusterUpdatingEventData {
     #[serde(flatten)]
     pub avs_cluster_event_data: AvsClusterEventData,
 }
 impl AvsClusterUpdatingEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(avs_cluster_event_data: AvsClusterEventData) -> Self {
+        Self { avs_cluster_event_data }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for Microsoft.AVS/privateClouds events."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsPrivateCloudEventData {
     #[doc = "Id of the operation that caused this event."]
-    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
-    pub operation_id: Option<String>,
+    #[serde(rename = "operationId")]
+    pub operation_id: String,
 }
 impl AvsPrivateCloudEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(operation_id: String) -> Self {
+        Self { operation_id }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.PrivateCloudFailed event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsPrivateCloudFailedEventData {
     #[serde(flatten)]
     pub avs_private_cloud_event_data: AvsPrivateCloudEventData,
@@ -2289,52 +3062,61 @@ pub struct AvsPrivateCloudFailedEventData {
     pub failure_message: Option<String>,
 }
 impl AvsPrivateCloudFailedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(avs_private_cloud_event_data: AvsPrivateCloudEventData) -> Self {
+        Self {
+            avs_private_cloud_event_data,
+            failure_message: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.PrivateCloudUpdated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsPrivateCloudUpdatedEventData {
     #[serde(flatten)]
     pub avs_private_cloud_event_data: AvsPrivateCloudEventData,
 }
 impl AvsPrivateCloudUpdatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(avs_private_cloud_event_data: AvsPrivateCloudEventData) -> Self {
+        Self {
+            avs_private_cloud_event_data,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.PrivateCloudUpdating event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsPrivateCloudUpdatingEventData {
     #[serde(flatten)]
     pub avs_private_cloud_event_data: AvsPrivateCloudEventData,
 }
 impl AvsPrivateCloudUpdatingEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(avs_private_cloud_event_data: AvsPrivateCloudEventData) -> Self {
+        Self {
+            avs_private_cloud_event_data,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionCancelled event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsScriptExecutionCancelledEventData {
     #[serde(flatten)]
     pub avs_script_execution_event_data: AvsScriptExecutionEventData,
 }
 impl AvsScriptExecutionCancelledEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(avs_script_execution_event_data: AvsScriptExecutionEventData) -> Self {
+        Self {
+            avs_script_execution_event_data,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for Microsoft.AVS/scriptExecutions events."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsScriptExecutionEventData {
     #[doc = "Id of the operation that caused this event."]
-    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
-    pub operation_id: Option<String>,
+    #[serde(rename = "operationId")]
+    pub operation_id: String,
     #[doc = "Cmdlet referenced in the execution that caused this event."]
-    #[serde(rename = "cmdletId", default, skip_serializing_if = "Option::is_none")]
-    pub cmdlet_id: Option<String>,
+    #[serde(rename = "cmdletId")]
+    pub cmdlet_id: String,
     #[doc = "Stdout outputs from the execution, if any."]
     #[serde(
         default,
@@ -2344,12 +3126,16 @@ pub struct AvsScriptExecutionEventData {
     pub output: Vec<String>,
 }
 impl AvsScriptExecutionEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(operation_id: String, cmdlet_id: String) -> Self {
+        Self {
+            operation_id,
+            cmdlet_id,
+            output: Vec::new(),
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionFailed event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsScriptExecutionFailedEventData {
     #[serde(flatten)]
     pub avs_script_execution_event_data: AvsScriptExecutionEventData,
@@ -2358,22 +3144,41 @@ pub struct AvsScriptExecutionFailedEventData {
     pub failure_message: Option<String>,
 }
 impl AvsScriptExecutionFailedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(avs_script_execution_event_data: AvsScriptExecutionEventData) -> Self {
+        Self {
+            avs_script_execution_event_data,
+            failure_message: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionFinished event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvsScriptExecutionFinishedEventData {
     #[serde(flatten)]
     pub avs_script_execution_event_data: AvsScriptExecutionEventData,
     #[doc = "Named outputs of completed execution, if any."]
-    #[serde(rename = "namedOutputs", default, skip_serializing_if = "Option::is_none")]
-    pub named_outputs: Option<serde_json::Value>,
+    #[serde(rename = "namedOutputs")]
+    pub named_outputs: serde_json::Value,
 }
 impl AvsScriptExecutionFinishedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(avs_script_execution_event_data: AvsScriptExecutionEventData, named_outputs: serde_json::Value) -> Self {
+        Self {
+            avs_script_execution_event_data,
+            named_outputs,
+        }
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AVS.ScriptExecutionStarted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AvsScriptExecutionStartedEventData {
+    #[serde(flatten)]
+    pub avs_script_execution_event_data: AvsScriptExecutionEventData,
+}
+impl AvsScriptExecutionStartedEventData {
+    pub fn new(avs_script_execution_event_data: AvsScriptExecutionEventData) -> Self {
+        Self {
+            avs_script_execution_event_data,
+        }
     }
 }
 #[doc = "Properties of an event published to an Event Grid topic using the CloudEvent 1.0 Schema"]
@@ -2394,7 +3199,7 @@ pub struct CloudEventEvent {
     pub type_: String,
     #[doc = "The time (in UTC) the event was generated, in RFC3339 format."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
+    pub time: Option<::time::OffsetDateTime>,
     #[doc = "The version of the CloudEvents specification which the event uses."]
     pub specversion: String,
     #[doc = "Identifies the schema that data adheres to."]
@@ -2466,24 +3271,87 @@ impl Serialize for CommunicationCloudEnvironmentModel {
     }
 }
 #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommunicationIdentifierModel {
+    #[doc = "Communication model identifier kind"]
+    pub kind: CommunicationIdentifierModelKind,
     #[doc = "Raw Id of the identifier. Optional in requests, required in responses."]
     #[serde(rename = "rawId", default, skip_serializing_if = "Option::is_none")]
     pub raw_id: Option<String>,
     #[doc = "A user that got created with an Azure Communication Services resource."]
-    #[serde(rename = "communicationUser", default, skip_serializing_if = "Option::is_none")]
-    pub communication_user: Option<CommunicationUserIdentifierModel>,
+    #[serde(rename = "communicationUser")]
+    pub communication_user: CommunicationUserIdentifierModel,
     #[doc = "A phone number."]
-    #[serde(rename = "phoneNumber", default, skip_serializing_if = "Option::is_none")]
-    pub phone_number: Option<PhoneNumberIdentifierModel>,
+    #[serde(rename = "phoneNumber")]
+    pub phone_number: PhoneNumberIdentifierModel,
     #[doc = "A Microsoft Teams user."]
-    #[serde(rename = "microsoftTeamsUser", default, skip_serializing_if = "Option::is_none")]
-    pub microsoft_teams_user: Option<MicrosoftTeamsUserIdentifierModel>,
+    #[serde(rename = "microsoftTeamsUser")]
+    pub microsoft_teams_user: MicrosoftTeamsUserIdentifierModel,
+    #[doc = "A Microsoft Teams application."]
+    #[serde(rename = "microsoftTeamsApp")]
+    pub microsoft_teams_app: MicrosoftTeamsAppIdentifierModel,
 }
 impl CommunicationIdentifierModel {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        kind: CommunicationIdentifierModelKind,
+        communication_user: CommunicationUserIdentifierModel,
+        phone_number: PhoneNumberIdentifierModel,
+        microsoft_teams_user: MicrosoftTeamsUserIdentifierModel,
+        microsoft_teams_app: MicrosoftTeamsAppIdentifierModel,
+    ) -> Self {
+        Self {
+            kind,
+            raw_id: None,
+            communication_user,
+            phone_number,
+            microsoft_teams_user,
+            microsoft_teams_app,
+        }
+    }
+}
+#[doc = "Communication model identifier kind"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "CommunicationIdentifierModelKind")]
+pub enum CommunicationIdentifierModelKind {
+    #[serde(rename = "unknown")]
+    Unknown,
+    #[serde(rename = "communicationUser")]
+    CommunicationUser,
+    #[serde(rename = "phoneNumber")]
+    PhoneNumber,
+    #[serde(rename = "microsoftTeamsUser")]
+    MicrosoftTeamsUser,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for CommunicationIdentifierModelKind {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for CommunicationIdentifierModelKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for CommunicationIdentifierModelKind {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Unknown => serializer.serialize_unit_variant("CommunicationIdentifierModelKind", 0u32, "unknown"),
+            Self::CommunicationUser => serializer.serialize_unit_variant("CommunicationIdentifierModelKind", 1u32, "communicationUser"),
+            Self::PhoneNumber => serializer.serialize_unit_variant("CommunicationIdentifierModelKind", 2u32, "phoneNumber"),
+            Self::MicrosoftTeamsUser => serializer.serialize_unit_variant("CommunicationIdentifierModelKind", 3u32, "microsoftTeamsUser"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "A user that got created with an Azure Communication Services resource."]
@@ -2498,14 +3366,14 @@ impl CommunicationUserIdentifierModel {
     }
 }
 #[doc = "The content of the event request message."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryArtifactEventData {
     #[doc = "The event ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The time at which the event occurred."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The action that encompasses the provided event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
@@ -2513,15 +3381,25 @@ pub struct ContainerRegistryArtifactEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The target of the event."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<ContainerRegistryArtifactEventTarget>,
+    pub target: ContainerRegistryArtifactEventTarget,
     #[doc = "The connected registry information if the event is generated by a connected registry."]
-    #[serde(rename = "connectedRegistry", default, skip_serializing_if = "Option::is_none")]
-    pub connected_registry: Option<ContainerRegistryEventConnectedRegistry>,
+    #[serde(rename = "connectedRegistry")]
+    pub connected_registry: ContainerRegistryEventConnectedRegistry,
 }
 impl ContainerRegistryArtifactEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        timestamp: ::time::OffsetDateTime,
+        target: ContainerRegistryArtifactEventTarget,
+        connected_registry: ContainerRegistryEventConnectedRegistry,
+    ) -> Self {
+        Self {
+            id: None,
+            timestamp,
+            action: None,
+            location: None,
+            target,
+            connected_registry,
+        }
     }
 }
 #[doc = "The target of the event."]
@@ -2555,25 +3433,29 @@ impl ContainerRegistryArtifactEventTarget {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ContainerRegistry.ChartDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryChartDeletedEventData {
     #[serde(flatten)]
     pub container_registry_artifact_event_data: ContainerRegistryArtifactEventData,
 }
 impl ContainerRegistryChartDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(container_registry_artifact_event_data: ContainerRegistryArtifactEventData) -> Self {
+        Self {
+            container_registry_artifact_event_data,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ContainerRegistry.ChartPushed event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryChartPushedEventData {
     #[serde(flatten)]
     pub container_registry_artifact_event_data: ContainerRegistryArtifactEventData,
 }
 impl ContainerRegistryChartPushedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(container_registry_artifact_event_data: ContainerRegistryArtifactEventData) -> Self {
+        Self {
+            container_registry_artifact_event_data,
+        }
     }
 }
 #[doc = "The agent that initiated the event. For most situations, this could be from the authorization context of the request."]
@@ -2601,14 +3483,14 @@ impl ContainerRegistryEventConnectedRegistry {
     }
 }
 #[doc = "The content of the event request message."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryEventData {
     #[doc = "The event ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The time at which the event occurred."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The action that encompasses the provided event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
@@ -2616,24 +3498,37 @@ pub struct ContainerRegistryEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The target of the event."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<ContainerRegistryEventTarget>,
+    pub target: ContainerRegistryEventTarget,
     #[doc = "The request that generated the event."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub request: Option<ContainerRegistryEventRequest>,
+    pub request: ContainerRegistryEventRequest,
     #[doc = "The agent that initiated the event. For most situations, this could be from the authorization context of the request."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub actor: Option<ContainerRegistryEventActor>,
+    pub actor: ContainerRegistryEventActor,
     #[doc = "The registry node that generated the event. Put differently, while the actor initiates the event, the source generates it."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<ContainerRegistryEventSource>,
+    pub source: ContainerRegistryEventSource,
     #[doc = "The connected registry information if the event is generated by a connected registry."]
-    #[serde(rename = "connectedRegistry", default, skip_serializing_if = "Option::is_none")]
-    pub connected_registry: Option<ContainerRegistryEventConnectedRegistry>,
+    #[serde(rename = "connectedRegistry")]
+    pub connected_registry: ContainerRegistryEventConnectedRegistry,
 }
 impl ContainerRegistryEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        timestamp: ::time::OffsetDateTime,
+        target: ContainerRegistryEventTarget,
+        request: ContainerRegistryEventRequest,
+        actor: ContainerRegistryEventActor,
+        source: ContainerRegistryEventSource,
+        connected_registry: ContainerRegistryEventConnectedRegistry,
+    ) -> Self {
+        Self {
+            id: None,
+            timestamp,
+            action: None,
+            location: None,
+            target,
+            request,
+            actor,
+            source,
+            connected_registry,
+        }
     }
 }
 #[doc = "The request that generated the event."]
@@ -2706,25 +3601,29 @@ impl ContainerRegistryEventTarget {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ContainerRegistry.ImageDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryImageDeletedEventData {
     #[serde(flatten)]
     pub container_registry_event_data: ContainerRegistryEventData,
 }
 impl ContainerRegistryImageDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(container_registry_event_data: ContainerRegistryEventData) -> Self {
+        Self {
+            container_registry_event_data,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ContainerRegistry.ImagePushed event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryImagePushedEventData {
     #[serde(flatten)]
     pub container_registry_event_data: ContainerRegistryEventData,
 }
 impl ContainerRegistryImagePushedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(container_registry_event_data: ContainerRegistryEventData) -> Self {
+        Self {
+            container_registry_event_data,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.ClusterSupportEnded event"]
@@ -2836,57 +3735,69 @@ impl CustomEventEvent {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.DataBox.CopyCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxCopyCompletedEventData {
     #[doc = "Serial Number of the device associated with the event. The list is comma separated if more than one serial number is associated."]
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
     #[doc = "Schema of DataBox Stage Name enumeration."]
-    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
-    pub stage_name: Option<DataBoxStageName>,
+    #[serde(rename = "stageName")]
+    pub stage_name: DataBoxStageName,
     #[doc = "The time at which the stage happened."]
-    #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
-    pub stage_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "stageTime", with = "azure_core::date::rfc3339")]
+    pub stage_time: ::time::OffsetDateTime,
 }
 impl DataBoxCopyCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(stage_name: DataBoxStageName, stage_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            serial_number: None,
+            stage_name,
+            stage_time,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.DataBox.CopyStarted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxCopyStartedEventData {
     #[doc = "Serial Number of the device associated with the event. The list is comma separated if more than one serial number is associated."]
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
     #[doc = "Schema of DataBox Stage Name enumeration."]
-    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
-    pub stage_name: Option<DataBoxStageName>,
+    #[serde(rename = "stageName")]
+    pub stage_name: DataBoxStageName,
     #[doc = "The time at which the stage happened."]
-    #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
-    pub stage_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "stageTime", with = "azure_core::date::rfc3339")]
+    pub stage_time: ::time::OffsetDateTime,
 }
 impl DataBoxCopyStartedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(stage_name: DataBoxStageName, stage_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            serial_number: None,
+            stage_name,
+            stage_time,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.DataBox.OrderCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxOrderCompletedEventData {
     #[doc = "Serial Number of the device associated with the event. The list is comma separated if more than one serial number is associated."]
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
     #[doc = "Schema of DataBox Stage Name enumeration."]
-    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
-    pub stage_name: Option<DataBoxStageName>,
+    #[serde(rename = "stageName")]
+    pub stage_name: DataBoxStageName,
     #[doc = "The time at which the stage happened."]
-    #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
-    pub stage_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "stageTime", with = "azure_core::date::rfc3339")]
+    pub stage_time: ::time::OffsetDateTime,
 }
 impl DataBoxOrderCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(stage_name: DataBoxStageName, stage_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            serial_number: None,
+            stage_name,
+            stage_time,
+        }
     }
 }
 #[doc = "Schema of DataBox Stage Name enumeration."]
@@ -2941,7 +3852,7 @@ impl DeviceConnectionStateEventInfo {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a device connection state event (DeviceConnected, DeviceDisconnected)."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceConnectionStateEventProperties {
     #[doc = "The unique identifier of the device. This case-sensitive string can be up to 128 characters long, and supports ASCII 7-bit alphanumeric characters plus the following special characters: - : . + % _ &#35; * ? ! ( ) , = `@` ; $ '."]
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
@@ -2953,16 +3864,21 @@ pub struct DeviceConnectionStateEventProperties {
     #[serde(rename = "hubName", default, skip_serializing_if = "Option::is_none")]
     pub hub_name: Option<String>,
     #[doc = "Information about the device connection state event."]
-    #[serde(rename = "deviceConnectionStateEventInfo", default, skip_serializing_if = "Option::is_none")]
-    pub device_connection_state_event_info: Option<DeviceConnectionStateEventInfo>,
+    #[serde(rename = "deviceConnectionStateEventInfo")]
+    pub device_connection_state_event_info: DeviceConnectionStateEventInfo,
 }
 impl DeviceConnectionStateEventProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(device_connection_state_event_info: DeviceConnectionStateEventInfo) -> Self {
+        Self {
+            device_id: None,
+            module_id: None,
+            hub_name: None,
+            device_connection_state_event_info,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a device life cycle event (DeviceCreated, DeviceDeleted)."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceLifeCycleEventProperties {
     #[doc = "The unique identifier of the device. This case-sensitive string can be up to 128 characters long, and supports ASCII 7-bit alphanumeric characters plus the following special characters: - : . + % _ &#35; * ? ! ( ) , = `@` ; $ '."]
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
@@ -2971,34 +3887,39 @@ pub struct DeviceLifeCycleEventProperties {
     #[serde(rename = "hubName", default, skip_serializing_if = "Option::is_none")]
     pub hub_name: Option<String>,
     #[doc = "Information about the device twin, which is the cloud representation of application device metadata."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub twin: Option<DeviceTwinInfo>,
+    pub twin: DeviceTwinInfo,
 }
 impl DeviceLifeCycleEventProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(twin: DeviceTwinInfo) -> Self {
+        Self {
+            device_id: None,
+            hub_name: None,
+            twin,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a device telemetry event (DeviceTelemetry)."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTelemetryEventProperties {
     #[doc = "The content of the message from the device."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub body: Option<serde_json::Value>,
+    pub body: serde_json::Value,
     #[doc = "Application properties are user-defined strings that can be added to the message. These fields are optional."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
+    pub properties: serde_json::Value,
     #[doc = "System properties help identify contents and source of the messages."]
-    #[serde(rename = "systemProperties", default, skip_serializing_if = "Option::is_none")]
-    pub system_properties: Option<serde_json::Value>,
+    #[serde(rename = "systemProperties")]
+    pub system_properties: serde_json::Value,
 }
 impl DeviceTelemetryEventProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(body: serde_json::Value, properties: serde_json::Value, system_properties: serde_json::Value) -> Self {
+        Self {
+            body,
+            properties,
+            system_properties,
+        }
     }
 }
 #[doc = "Information about the device twin, which is the cloud representation of application device metadata."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTwinInfo {
     #[doc = "Authentication type used for this device: either SAS, SelfSigned, or CertificateAuthority."]
     #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
@@ -3019,8 +3940,7 @@ pub struct DeviceTwinInfo {
     #[serde(rename = "lastActivityTime", default, skip_serializing_if = "Option::is_none")]
     pub last_activity_time: Option<String>,
     #[doc = "Properties JSON element."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DeviceTwinInfoProperties>,
+    pub properties: DeviceTwinInfoProperties,
     #[doc = "Whether the device twin is enabled or disabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -3031,27 +3951,37 @@ pub struct DeviceTwinInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<f32>,
     #[doc = "The thumbprint is a unique value for the x509 certificate, commonly used to find a particular certificate in a certificate store. The thumbprint is dynamically generated using the SHA1 algorithm, and does not physically exist in the certificate."]
-    #[serde(rename = "x509Thumbprint", default, skip_serializing_if = "Option::is_none")]
-    pub x509_thumbprint: Option<DeviceTwinInfoX509Thumbprint>,
+    #[serde(rename = "x509Thumbprint")]
+    pub x509_thumbprint: DeviceTwinInfoX509Thumbprint,
 }
 impl DeviceTwinInfo {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(properties: DeviceTwinInfoProperties, x509_thumbprint: DeviceTwinInfoX509Thumbprint) -> Self {
+        Self {
+            authentication_type: None,
+            cloud_to_device_message_count: None,
+            connection_state: None,
+            device_id: None,
+            etag: None,
+            last_activity_time: None,
+            properties,
+            status: None,
+            status_update_time: None,
+            version: None,
+            x509_thumbprint,
+        }
     }
 }
 #[doc = "Properties JSON element."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTwinInfoProperties {
     #[doc = "A portion of the properties that can be written only by the application back-end, and read by the device."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub desired: Option<DeviceTwinProperties>,
+    pub desired: DeviceTwinProperties,
     #[doc = "A portion of the properties that can be written only by the application back-end, and read by the device."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reported: Option<DeviceTwinProperties>,
+    pub reported: DeviceTwinProperties,
 }
 impl DeviceTwinInfoProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(desired: DeviceTwinProperties, reported: DeviceTwinProperties) -> Self {
+        Self { desired, reported }
     }
 }
 #[doc = "The thumbprint is a unique value for the x509 certificate, commonly used to find a particular certificate in a certificate store. The thumbprint is dynamically generated using the SHA1 algorithm, and does not physically exist in the certificate."]
@@ -3082,18 +4012,17 @@ impl DeviceTwinMetadata {
     }
 }
 #[doc = "A portion of the properties that can be written only by the application back-end, and read by the device."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTwinProperties {
     #[doc = "Metadata information for the properties JSON document."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<DeviceTwinMetadata>,
+    pub metadata: DeviceTwinMetadata,
     #[doc = "Version of device twin properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<f32>,
 }
 impl DeviceTwinProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(metadata: DeviceTwinMetadata) -> Self {
+        Self { metadata, version: None }
     }
 }
 #[doc = "Properties of an event published to an Event Grid topic using the EventGrid Schema."]
@@ -3113,7 +4042,7 @@ pub struct EventGridEvent {
     pub event_type: String,
     #[doc = "The time (in UTC) the event was generated."]
     #[serde(rename = "eventTime", with = "azure_core::date::rfc3339")]
-    pub event_time: time::OffsetDateTime,
+    pub event_time: ::time::OffsetDateTime,
     #[doc = "The schema version of the event metadata."]
     #[serde(rename = "metadataVersion", default, skip_serializing_if = "Option::is_none")]
     pub metadata_version: Option<String>,
@@ -3127,7 +4056,7 @@ impl EventGridEvent {
         subject: String,
         data: serde_json::Value,
         event_type: String,
-        event_time: time::OffsetDateTime,
+        event_time: ::time::OffsetDateTime,
         data_version: String,
     ) -> Self {
         Self {
@@ -3142,30 +4071,39 @@ impl EventGridEvent {
         }
     }
 }
-#[doc = "Event data for Microsoft.EventGrid.SystemEvents.MQTTClientCreatedOrUpdated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientCreatedOrUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventGridMqttClientCreatedOrUpdatedEventData {
     #[serde(flatten)]
     pub event_grid_mqtt_client_event_data: EventGridMqttClientEventData,
     #[doc = "EventGrid MQTT Client State"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<EventGridMqttClientState>,
+    pub state: EventGridMqttClientState,
     #[doc = "Time the client resource is created based on the provider's UTC time."]
-    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    #[serde(rename = "createdOn", with = "azure_core::date::rfc3339")]
+    pub created_on: ::time::OffsetDateTime,
     #[doc = "Time the client resource is last updated based on the provider's UTC time. If\nthe client resource was never updated, this value is identical to the value of\nthe 'createdOn' property."]
-    #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_on: Option<time::OffsetDateTime>,
+    #[serde(rename = "updatedOn", with = "azure_core::date::rfc3339")]
+    pub updated_on: ::time::OffsetDateTime,
     #[doc = "The key-value attributes that are assigned to the client resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub attributes: Option<serde_json::Value>,
+    pub attributes: serde_json::Value,
 }
 impl EventGridMqttClientCreatedOrUpdatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        state: EventGridMqttClientState,
+        created_on: ::time::OffsetDateTime,
+        updated_on: ::time::OffsetDateTime,
+        attributes: serde_json::Value,
+    ) -> Self {
+        Self {
+            event_grid_mqtt_client_event_data: EventGridMqttClientEventData::default(),
+            state,
+            created_on,
+            updated_on,
+            attributes,
+        }
     }
 }
-#[doc = "Event data for Microsoft.EventGrid.SystemEvents.MQTTClientDeleted event."]
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientDeleted event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventGridMqttClientDeletedEventData {
     #[serde(flatten)]
@@ -3259,7 +4197,7 @@ impl EventGridMqttClientEventData {
         Self::default()
     }
 }
-#[doc = "Event data for Microsoft.EventGrid.SystemEvents.MQTTClientSessionConnected event."]
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientSessionConnected event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventGridMqttClientSessionConnectedEventData {
     #[serde(flatten)]
@@ -3276,8 +4214,8 @@ impl EventGridMqttClientSessionConnectedEventData {
         Self::default()
     }
 }
-#[doc = "Event data for Microsoft.EventGrid.SystemEvents.MQTTClientSessionDisconnected event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientSessionDisconnected event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventGridMqttClientSessionDisconnectedEventData {
     #[serde(flatten)]
     pub event_grid_mqtt_client_event_data: EventGridMqttClientEventData,
@@ -3288,12 +4226,17 @@ pub struct EventGridMqttClientSessionDisconnectedEventData {
     #[serde(rename = "sequenceNumber", default, skip_serializing_if = "Option::is_none")]
     pub sequence_number: Option<i64>,
     #[doc = "EventGrid MQTT Client Disconnection Reason"]
-    #[serde(rename = "disconnectionReason", default, skip_serializing_if = "Option::is_none")]
-    pub disconnection_reason: Option<EventGridMqttClientDisconnectionReason>,
+    #[serde(rename = "disconnectionReason")]
+    pub disconnection_reason: EventGridMqttClientDisconnectionReason,
 }
 impl EventGridMqttClientSessionDisconnectedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(disconnection_reason: EventGridMqttClientDisconnectionReason) -> Self {
+        Self {
+            event_grid_mqtt_client_event_data: EventGridMqttClientEventData::default(),
+            client_session_name: None,
+            sequence_number: None,
+            disconnection_reason,
+        }
     }
 }
 #[doc = "EventGrid MQTT Client State"]
@@ -3334,7 +4277,7 @@ impl Serialize for EventGridMqttClientState {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.EventHub.CaptureFileCreated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubCaptureFileCreatedEventData {
     #[doc = "The path to the capture file."]
     #[serde(rename = "fileUrl", default, skip_serializing_if = "Option::is_none")]
@@ -3358,15 +4301,25 @@ pub struct EventHubCaptureFileCreatedEventData {
     #[serde(rename = "lastSequenceNumber", default, skip_serializing_if = "Option::is_none")]
     pub last_sequence_number: Option<i32>,
     #[doc = "The first time from the queue."]
-    #[serde(rename = "firstEnqueueTime", default, with = "azure_core::date::rfc3339::option")]
-    pub first_enqueue_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "firstEnqueueTime", with = "azure_core::date::rfc3339")]
+    pub first_enqueue_time: ::time::OffsetDateTime,
     #[doc = "The last time from the queue."]
-    #[serde(rename = "lastEnqueueTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_enqueue_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "lastEnqueueTime", with = "azure_core::date::rfc3339")]
+    pub last_enqueue_time: ::time::OffsetDateTime,
 }
 impl EventHubCaptureFileCreatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(first_enqueue_time: ::time::OffsetDateTime, last_enqueue_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            file_url: None,
+            file_type: None,
+            partition_id: None,
+            size_in_bytes: None,
+            event_count: None,
+            first_sequence_number: None,
+            last_sequence_number: None,
+            first_enqueue_time,
+            last_enqueue_time,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.DicomImageCreated event."]
@@ -3451,11 +4404,11 @@ impl HealthcareDicomImageUpdatedEventData {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceCreated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthcareFhirResourceCreatedEventData {
     #[doc = "Schema of FHIR resource type enumeration."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<HealthcareFhirResourceType>,
+    #[serde(rename = "resourceType")]
+    pub resource_type: HealthcareFhirResourceType,
     #[doc = "Domain name of FHIR account for this resource."]
     #[serde(rename = "resourceFhirAccount", default, skip_serializing_if = "Option::is_none")]
     pub resource_fhir_account: Option<String>,
@@ -3467,16 +4420,21 @@ pub struct HealthcareFhirResourceCreatedEventData {
     pub resource_version_id: Option<i64>,
 }
 impl HealthcareFhirResourceCreatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(resource_type: HealthcareFhirResourceType) -> Self {
+        Self {
+            resource_type,
+            resource_fhir_account: None,
+            resource_fhir_id: None,
+            resource_version_id: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthcareFhirResourceDeletedEventData {
     #[doc = "Schema of FHIR resource type enumeration."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<HealthcareFhirResourceType>,
+    #[serde(rename = "resourceType")]
+    pub resource_type: HealthcareFhirResourceType,
     #[doc = "Domain name of FHIR account for this resource."]
     #[serde(rename = "resourceFhirAccount", default, skip_serializing_if = "Option::is_none")]
     pub resource_fhir_account: Option<String>,
@@ -3488,8 +4446,13 @@ pub struct HealthcareFhirResourceDeletedEventData {
     pub resource_version_id: Option<i64>,
 }
 impl HealthcareFhirResourceDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(resource_type: HealthcareFhirResourceType) -> Self {
+        Self {
+            resource_type,
+            resource_fhir_account: None,
+            resource_fhir_id: None,
+            resource_version_id: None,
+        }
     }
 }
 #[doc = "Schema of FHIR resource type enumeration."]
@@ -3892,11 +4855,11 @@ impl Serialize for HealthcareFhirResourceType {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceUpdated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthcareFhirResourceUpdatedEventData {
     #[doc = "Schema of FHIR resource type enumeration."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<HealthcareFhirResourceType>,
+    #[serde(rename = "resourceType")]
+    pub resource_type: HealthcareFhirResourceType,
     #[doc = "Domain name of FHIR account for this resource."]
     #[serde(rename = "resourceFhirAccount", default, skip_serializing_if = "Option::is_none")]
     pub resource_fhir_account: Option<String>,
@@ -3908,61 +4871,106 @@ pub struct HealthcareFhirResourceUpdatedEventData {
     pub resource_version_id: Option<i64>,
 }
 impl HealthcareFhirResourceUpdatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(resource_type: HealthcareFhirResourceType) -> Self {
+        Self {
+            resource_type,
+            resource_fhir_account: None,
+            resource_fhir_id: None,
+            resource_version_id: None,
+        }
     }
 }
 #[doc = "Event data for Microsoft.Devices.DeviceConnected event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubDeviceConnectedEventData {
     #[serde(flatten)]
     pub device_connection_state_event_properties: DeviceConnectionStateEventProperties,
 }
 impl IotHubDeviceConnectedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(device_connection_state_event_properties: DeviceConnectionStateEventProperties) -> Self {
+        Self {
+            device_connection_state_event_properties,
+        }
     }
 }
 #[doc = "Event data for Microsoft.Devices.DeviceCreated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubDeviceCreatedEventData {
     #[serde(flatten)]
     pub device_life_cycle_event_properties: DeviceLifeCycleEventProperties,
 }
 impl IotHubDeviceCreatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(device_life_cycle_event_properties: DeviceLifeCycleEventProperties) -> Self {
+        Self {
+            device_life_cycle_event_properties,
+        }
     }
 }
 #[doc = "Event data for Microsoft.Devices.DeviceDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubDeviceDeletedEventData {
     #[serde(flatten)]
     pub device_life_cycle_event_properties: DeviceLifeCycleEventProperties,
 }
 impl IotHubDeviceDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(device_life_cycle_event_properties: DeviceLifeCycleEventProperties) -> Self {
+        Self {
+            device_life_cycle_event_properties,
+        }
     }
 }
 #[doc = "Event data for Microsoft.Devices.DeviceDisconnected event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubDeviceDisconnectedEventData {
     #[serde(flatten)]
     pub device_connection_state_event_properties: DeviceConnectionStateEventProperties,
 }
 impl IotHubDeviceDisconnectedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(device_connection_state_event_properties: DeviceConnectionStateEventProperties) -> Self {
+        Self {
+            device_connection_state_event_properties,
+        }
     }
 }
 #[doc = "Event data for Microsoft.Devices.DeviceTelemetry event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubDeviceTelemetryEventData {
     #[serde(flatten)]
     pub device_telemetry_event_properties: DeviceTelemetryEventProperties,
 }
 impl IotHubDeviceTelemetryEventData {
+    pub fn new(device_telemetry_event_properties: DeviceTelemetryEventProperties) -> Self {
+        Self {
+            device_telemetry_event_properties,
+        }
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.KeyVault.VaultAccessPolicyChanged event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct KeyVaultAccessPolicyChangedEventData {
+    #[doc = "The id of the object that triggered this event."]
+    #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Key vault name of the object that triggered this event."]
+    #[serde(rename = "VaultName", default, skip_serializing_if = "Option::is_none")]
+    pub vault_name: Option<String>,
+    #[doc = "The type of the object that triggered this event"]
+    #[serde(rename = "ObjectType", default, skip_serializing_if = "Option::is_none")]
+    pub object_type: Option<String>,
+    #[doc = "The name of the object that triggered this event"]
+    #[serde(rename = "ObjectName", default, skip_serializing_if = "Option::is_none")]
+    pub object_name: Option<String>,
+    #[doc = "The version of the object that triggered this event"]
+    #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[doc = "Not before date of the object that triggered this event"]
+    #[serde(rename = "NBF", default, skip_serializing_if = "Option::is_none")]
+    pub nbf: Option<f32>,
+    #[doc = "The expiration date of the object that triggered this event"]
+    #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
+    pub exp: Option<f32>,
+}
+impl KeyVaultAccessPolicyChangedEventData {
     pub fn new() -> Self {
         Self::default()
     }
@@ -4237,38 +5245,8 @@ impl KeyVaultSecretNewVersionCreatedEventData {
         Self::default()
     }
 }
-#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.KeyVault.VaultAccessPolicyChanged event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct KeyVaultVaultAccessPolicyChangedEventData {
-    #[doc = "The id of the object that triggered this event."]
-    #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Key vault name of the object that triggered this event."]
-    #[serde(rename = "VaultName", default, skip_serializing_if = "Option::is_none")]
-    pub vault_name: Option<String>,
-    #[doc = "The type of the object that triggered this event"]
-    #[serde(rename = "ObjectType", default, skip_serializing_if = "Option::is_none")]
-    pub object_type: Option<String>,
-    #[doc = "The name of the object that triggered this event"]
-    #[serde(rename = "ObjectName", default, skip_serializing_if = "Option::is_none")]
-    pub object_name: Option<String>,
-    #[doc = "The version of the object that triggered this event"]
-    #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-    #[doc = "Not before date of the object that triggered this event"]
-    #[serde(rename = "NBF", default, skip_serializing_if = "Option::is_none")]
-    pub nbf: Option<f32>,
-    #[doc = "The expiration date of the object that triggered this event"]
-    #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
-    pub exp: Option<f32>,
-}
-impl KeyVaultVaultAccessPolicyChangedEventData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.MachineLearningServices.DatasetDriftDetected event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineLearningServicesDatasetDriftDetectedEventData {
     #[doc = "The ID of the data drift monitor that triggered the event."]
     #[serde(rename = "dataDriftId", default, skip_serializing_if = "Option::is_none")]
@@ -4289,19 +5267,28 @@ pub struct MachineLearningServicesDatasetDriftDetectedEventData {
     #[serde(rename = "driftCoefficient", default, skip_serializing_if = "Option::is_none")]
     pub drift_coefficient: Option<f64>,
     #[doc = "The start time of the target dataset time series that resulted in drift detection."]
-    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "The end time of the target dataset time series that resulted in drift detection."]
-    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "endTime", with = "azure_core::date::rfc3339")]
+    pub end_time: ::time::OffsetDateTime,
 }
 impl MachineLearningServicesDatasetDriftDetectedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(start_time: ::time::OffsetDateTime, end_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            data_drift_id: None,
+            data_drift_name: None,
+            run_id: None,
+            base_dataset_id: None,
+            target_dataset_id: None,
+            drift_coefficient: None,
+            start_time,
+            end_time,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.MachineLearningServices.ModelDeployed event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineLearningServicesModelDeployedEventData {
     #[doc = "The name of the deployed service."]
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
@@ -4313,19 +5300,25 @@ pub struct MachineLearningServicesModelDeployedEventData {
     #[serde(rename = "modelIds", default, skip_serializing_if = "Option::is_none")]
     pub model_ids: Option<String>,
     #[doc = "The tags of the deployed service."]
-    #[serde(rename = "serviceTags", default, skip_serializing_if = "Option::is_none")]
-    pub service_tags: Option<serde_json::Value>,
+    #[serde(rename = "serviceTags")]
+    pub service_tags: serde_json::Value,
     #[doc = "The properties of the deployed service."]
-    #[serde(rename = "serviceProperties", default, skip_serializing_if = "Option::is_none")]
-    pub service_properties: Option<serde_json::Value>,
+    #[serde(rename = "serviceProperties")]
+    pub service_properties: serde_json::Value,
 }
 impl MachineLearningServicesModelDeployedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(service_tags: serde_json::Value, service_properties: serde_json::Value) -> Self {
+        Self {
+            service_name: None,
+            service_compute_type: None,
+            model_ids: None,
+            service_tags,
+            service_properties,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.MachineLearningServices.ModelRegistered event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineLearningServicesModelRegisteredEventData {
     #[doc = "The name of the model that was registered."]
     #[serde(rename = "modelName", default, skip_serializing_if = "Option::is_none")]
@@ -4334,19 +5327,24 @@ pub struct MachineLearningServicesModelRegisteredEventData {
     #[serde(rename = "modelVersion", default, skip_serializing_if = "Option::is_none")]
     pub model_version: Option<String>,
     #[doc = "The tags of the model that was registered."]
-    #[serde(rename = "modelTags", default, skip_serializing_if = "Option::is_none")]
-    pub model_tags: Option<serde_json::Value>,
+    #[serde(rename = "modelTags")]
+    pub model_tags: serde_json::Value,
     #[doc = "The properties of the model that was registered."]
-    #[serde(rename = "modelProperties", default, skip_serializing_if = "Option::is_none")]
-    pub model_properties: Option<serde_json::Value>,
+    #[serde(rename = "modelProperties")]
+    pub model_properties: serde_json::Value,
 }
 impl MachineLearningServicesModelRegisteredEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(model_tags: serde_json::Value, model_properties: serde_json::Value) -> Self {
+        Self {
+            model_name: None,
+            model_version: None,
+            model_tags,
+            model_properties,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.MachineLearningServices.RunCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineLearningServicesRunCompletedEventData {
     #[doc = "The ID of the experiment that the run belongs to."]
     #[serde(rename = "experimentId", default, skip_serializing_if = "Option::is_none")]
@@ -4361,19 +5359,26 @@ pub struct MachineLearningServicesRunCompletedEventData {
     #[serde(rename = "runType", default, skip_serializing_if = "Option::is_none")]
     pub run_type: Option<String>,
     #[doc = "The tags of the completed Run."]
-    #[serde(rename = "runTags", default, skip_serializing_if = "Option::is_none")]
-    pub run_tags: Option<serde_json::Value>,
+    #[serde(rename = "runTags")]
+    pub run_tags: serde_json::Value,
     #[doc = "The properties of the completed Run."]
-    #[serde(rename = "runProperties", default, skip_serializing_if = "Option::is_none")]
-    pub run_properties: Option<serde_json::Value>,
+    #[serde(rename = "runProperties")]
+    pub run_properties: serde_json::Value,
 }
 impl MachineLearningServicesRunCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(run_tags: serde_json::Value, run_properties: serde_json::Value) -> Self {
+        Self {
+            experiment_id: None,
+            experiment_name: None,
+            run_id: None,
+            run_type: None,
+            run_tags,
+            run_properties,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.MachineLearningServices.RunStatusChanged event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineLearningServicesRunStatusChangedEventData {
     #[doc = "The ID of the experiment that the Machine Learning Run belongs to."]
     #[serde(rename = "experimentId", default, skip_serializing_if = "Option::is_none")]
@@ -4388,33 +5393,43 @@ pub struct MachineLearningServicesRunStatusChangedEventData {
     #[serde(rename = "runType", default, skip_serializing_if = "Option::is_none")]
     pub run_type: Option<String>,
     #[doc = "The tags of the Machine Learning Run."]
-    #[serde(rename = "runTags", default, skip_serializing_if = "Option::is_none")]
-    pub run_tags: Option<serde_json::Value>,
+    #[serde(rename = "runTags")]
+    pub run_tags: serde_json::Value,
     #[doc = "The properties of the Machine Learning Run."]
-    #[serde(rename = "runProperties", default, skip_serializing_if = "Option::is_none")]
-    pub run_properties: Option<serde_json::Value>,
+    #[serde(rename = "runProperties")]
+    pub run_properties: serde_json::Value,
     #[doc = "The status of the Machine Learning Run."]
     #[serde(rename = "runStatus", default, skip_serializing_if = "Option::is_none")]
     pub run_status: Option<String>,
 }
 impl MachineLearningServicesRunStatusChangedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(run_tags: serde_json::Value, run_properties: serde_json::Value) -> Self {
+        Self {
+            experiment_id: None,
+            experiment_name: None,
+            run_id: None,
+            run_type: None,
+            run_tags,
+            run_properties,
+            run_status: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Maps.GeofenceEntered event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsGeofenceEnteredEventData {
     #[serde(flatten)]
     pub maps_geofence_event_properties: MapsGeofenceEventProperties,
 }
 impl MapsGeofenceEnteredEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(maps_geofence_event_properties: MapsGeofenceEventProperties) -> Self {
+        Self {
+            maps_geofence_event_properties,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Geofence event (GeofenceEntered, GeofenceExited, GeofenceResult)."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsGeofenceEventProperties {
     #[doc = "Lists of the geometry ID of the geofence which is expired relative to the user time in the request."]
     #[serde(
@@ -4425,11 +5440,6 @@ pub struct MapsGeofenceEventProperties {
     )]
     pub expired_geofence_geometry_id: Vec<String>,
     #[doc = "Lists the fence geometries that either fully contain the coordinate position or have an overlap with the searchBuffer around the fence."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
     pub geometries: Vec<MapsGeofenceGeometry>,
     #[doc = "Lists of the geometry ID of the geofence which is in invalid period relative to the user time in the request."]
     #[serde(
@@ -4444,19 +5454,26 @@ pub struct MapsGeofenceEventProperties {
     pub is_event_published: Option<bool>,
 }
 impl MapsGeofenceEventProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(geometries: Vec<MapsGeofenceGeometry>) -> Self {
+        Self {
+            expired_geofence_geometry_id: Vec::new(),
+            geometries,
+            invalid_period_geofence_geometry_id: Vec::new(),
+            is_event_published: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Maps.GeofenceExited event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsGeofenceExitedEventData {
     #[serde(flatten)]
     pub maps_geofence_event_properties: MapsGeofenceEventProperties,
 }
 impl MapsGeofenceExitedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(maps_geofence_event_properties: MapsGeofenceEventProperties) -> Self {
+        Self {
+            maps_geofence_event_properties,
+        }
     }
 }
 #[doc = "The geofence geometry."]
@@ -4487,71 +5504,71 @@ impl MapsGeofenceGeometry {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Maps.GeofenceResult event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsGeofenceResultEventData {
     #[serde(flatten)]
     pub maps_geofence_event_properties: MapsGeofenceEventProperties,
 }
 impl MapsGeofenceResultEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(maps_geofence_event_properties: MapsGeofenceEventProperties) -> Self {
+        Self {
+            maps_geofence_event_properties,
+        }
     }
 }
 #[doc = "Job canceled event data. Schema of the data property of an EventGridEvent for a\nMicrosoft.Media.JobCanceled event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobCanceledEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
     #[doc = "Gets the Job outputs."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
     pub outputs: Vec<MediaJobOutputUnion>,
 }
 impl MediaJobCanceledEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_state_change_event_data: MediaJobStateChangeEventData, outputs: Vec<MediaJobOutputUnion>) -> Self {
+        Self {
+            media_job_state_change_event_data,
+            outputs,
+        }
     }
 }
 #[doc = "Job canceling event data. Schema of the data property of an EventGridEvent for\na Microsoft.Media.JobCanceling event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobCancelingEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
 }
 impl MediaJobCancelingEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_state_change_event_data: MediaJobStateChangeEventData) -> Self {
+        Self {
+            media_job_state_change_event_data,
+        }
     }
 }
 #[doc = "Details of JobOutput errors."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobError {
     #[doc = "Media Job Error Codes."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<MediaJobErrorCode>,
+    pub code: MediaJobErrorCode,
     #[doc = "A human-readable language-dependent representation of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Error categories for Media Job Errors."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub category: Option<MediaJobErrorCategory>,
+    pub category: MediaJobErrorCategory,
     #[doc = "Media Job Retry Options."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub retry: Option<MediaJobRetry>,
+    pub retry: MediaJobRetry,
     #[doc = "An array of details about specific errors that led to this reported error."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
     pub details: Vec<MediaJobErrorDetail>,
 }
 impl MediaJobError {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(code: MediaJobErrorCode, category: MediaJobErrorCategory, retry: MediaJobRetry, details: Vec<MediaJobErrorDetail>) -> Self {
+        Self {
+            code,
+            message: None,
+            category,
+            retry,
+            details,
+        }
     }
 }
 #[doc = "Error categories for Media Job Errors."]
@@ -4668,47 +5685,42 @@ impl MediaJobErrorDetail {
     }
 }
 #[doc = "Job error state event data. Schema of the data property of an EventGridEvent\nfor a Microsoft.Media.JobErrored event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobErroredEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
     #[doc = "Gets the Job outputs."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
     pub outputs: Vec<MediaJobOutputUnion>,
 }
 impl MediaJobErroredEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_state_change_event_data: MediaJobStateChangeEventData, outputs: Vec<MediaJobOutputUnion>) -> Self {
+        Self {
+            media_job_state_change_event_data,
+            outputs,
+        }
     }
 }
 #[doc = "Job finished event data. Schema of the data property of an EventGridEvent for a\nMicrosoft.Media.JobFinished event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobFinishedEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
     #[doc = "Gets the Job outputs."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
     pub outputs: Vec<MediaJobOutputUnion>,
 }
 impl MediaJobFinishedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_state_change_event_data: MediaJobStateChangeEventData, outputs: Vec<MediaJobOutputUnion>) -> Self {
+        Self {
+            media_job_state_change_event_data,
+            outputs,
+        }
     }
 }
 #[doc = "The event data for a Job output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobOutput {
     #[doc = "Details of JobOutput errors."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<MediaJobError>,
+    pub error: MediaJobError,
     #[doc = "Gets the Job output label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
@@ -4718,9 +5730,9 @@ pub struct MediaJobOutput {
     pub state: MediaJobState,
 }
 impl MediaJobOutput {
-    pub fn new(progress: i64, state: MediaJobState) -> Self {
+    pub fn new(error: MediaJobError, progress: i64, state: MediaJobState) -> Self {
         Self {
-            error: None,
+            error,
             label: None,
             progress,
             state,
@@ -4729,7 +5741,7 @@ impl MediaJobOutput {
 }
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "@odataType")]
+#[serde(tag = "@odata.type")]
 pub enum MediaJobOutputUnion {
     #[serde(rename = "#Microsoft.Media.JobOutputAsset")]
     MicrosoftMediaJobOutputAsset(MediaJobOutputAsset),
@@ -4752,62 +5764,72 @@ impl MediaJobOutputAsset {
     }
 }
 #[doc = "Job output canceled event data. Schema of the data property of an\nEventGridEvent for a Microsoft.Media.JobOutputCanceled event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobOutputCanceledEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
 impl MediaJobOutputCanceledEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData) -> Self {
+        Self {
+            media_job_output_state_change_event_data,
+        }
     }
 }
 #[doc = "Job output canceling event data. Schema of the data property of an\nEventGridEvent for a Microsoft.Media.JobOutputCanceling event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobOutputCancelingEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
 impl MediaJobOutputCancelingEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData) -> Self {
+        Self {
+            media_job_output_state_change_event_data,
+        }
     }
 }
 #[doc = "Job output error event data. Schema of the data property of an EventGridEvent\nfor a Microsoft.Media.JobOutputErrored event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobOutputErroredEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
 impl MediaJobOutputErroredEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData) -> Self {
+        Self {
+            media_job_output_state_change_event_data,
+        }
     }
 }
 #[doc = "Job output finished event data. Schema of the data property of an\nEventGridEvent for a Microsoft.Media.JobOutputFinished event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobOutputFinishedEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
 impl MediaJobOutputFinishedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData) -> Self {
+        Self {
+            media_job_output_state_change_event_data,
+        }
     }
 }
 #[doc = "Job output processing event data. Schema of the data property of an\nEventGridEvent for a Microsoft.Media.JobOutputProcessing event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobOutputProcessingEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
 impl MediaJobOutputProcessingEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData) -> Self {
+        Self {
+            media_job_output_state_change_event_data,
+        }
     }
 }
 #[doc = "Job Output Progress Event Data. Schema of the Data property of an\n  EventGridEvent for a Microsoft.Media.JobOutputProgress event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobOutputProgressEventData {
     #[doc = "Gets the Job output label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4816,52 +5838,63 @@ pub struct MediaJobOutputProgressEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub progress: Option<i64>,
     #[doc = "Gets the Job correlation data."]
-    #[serde(rename = "jobCorrelationData", default, skip_serializing_if = "Option::is_none")]
-    pub job_correlation_data: Option<serde_json::Value>,
+    #[serde(rename = "jobCorrelationData")]
+    pub job_correlation_data: serde_json::Value,
 }
 impl MediaJobOutputProgressEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(job_correlation_data: serde_json::Value) -> Self {
+        Self {
+            label: None,
+            progress: None,
+            job_correlation_data,
+        }
     }
 }
 #[doc = "Job output scheduled event data. Schema of the data property of an\nEventGridEvent for a Microsoft.Media.JobOutputScheduled event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobOutputScheduledEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
 impl MediaJobOutputScheduledEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData) -> Self {
+        Self {
+            media_job_output_state_change_event_data,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a\n  Microsoft.Media.JobOutputStateChange event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobOutputStateChangeEventData {
     #[doc = "State of a Media Job."]
-    #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
-    pub previous_state: Option<MediaJobState>,
+    #[serde(rename = "previousState")]
+    pub previous_state: MediaJobState,
     #[doc = "The event data for a Job output."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub output: Option<MediaJobOutputUnion>,
+    pub output: MediaJobOutputUnion,
     #[doc = "Gets the Job correlation data."]
-    #[serde(rename = "jobCorrelationData", default, skip_serializing_if = "Option::is_none")]
-    pub job_correlation_data: Option<serde_json::Value>,
+    #[serde(rename = "jobCorrelationData")]
+    pub job_correlation_data: serde_json::Value,
 }
 impl MediaJobOutputStateChangeEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(previous_state: MediaJobState, output: MediaJobOutputUnion, job_correlation_data: serde_json::Value) -> Self {
+        Self {
+            previous_state,
+            output,
+            job_correlation_data,
+        }
     }
 }
 #[doc = "Job processing event data. Schema of the data property of an EventGridEvent for\na Microsoft.Media.JobProcessing event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobProcessingEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
 }
 impl MediaJobProcessingEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_state_change_event_data: MediaJobStateChangeEventData) -> Self {
+        Self {
+            media_job_state_change_event_data,
+        }
     }
 }
 #[doc = "Media Job Retry Options."]
@@ -4902,14 +5935,16 @@ impl Serialize for MediaJobRetry {
     }
 }
 #[doc = "Job scheduled event data. Schema of the data property of an EventGridEvent for\na Microsoft.Media.JobScheduled event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobScheduledEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
 }
 impl MediaJobScheduledEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(media_job_state_change_event_data: MediaJobStateChangeEventData) -> Self {
+        Self {
+            media_job_state_change_event_data,
+        }
     }
 }
 #[doc = "State of a Media Job."]
@@ -4960,21 +5995,24 @@ impl Serialize for MediaJobState {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a\n  Microsoft.Media.JobStateChange event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobStateChangeEventData {
     #[doc = "State of a Media Job."]
-    #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
-    pub previous_state: Option<MediaJobState>,
+    #[serde(rename = "previousState")]
+    pub previous_state: MediaJobState,
     #[doc = "State of a Media Job."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<MediaJobState>,
+    pub state: MediaJobState,
     #[doc = "Gets the Job correlation data."]
-    #[serde(rename = "correlationData", default, skip_serializing_if = "Option::is_none")]
-    pub correlation_data: Option<serde_json::Value>,
+    #[serde(rename = "correlationData")]
+    pub correlation_data: serde_json::Value,
 }
 impl MediaJobStateChangeEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(previous_state: MediaJobState, state: MediaJobState, correlation_data: serde_json::Value) -> Self {
+        Self {
+            previous_state,
+            state,
+            correlation_data,
+        }
     }
 }
 #[doc = "Channel Archive heartbeat event data. Schema of the data property of an EventGridEvent for a Microsoft.Media.LiveEventChannelArchiveHeartbeat event."]
@@ -5265,6 +6303,20 @@ impl MediaLiveEventTrackDiscontinuityDetectedEventData {
         Self::default()
     }
 }
+#[doc = "A Microsoft Teams application."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MicrosoftTeamsAppIdentifierModel {
+    #[doc = "The Id of the Microsoft Teams application"]
+    #[serde(rename = "appId")]
+    pub app_id: String,
+    #[doc = "Communication cloud environment model."]
+    pub cloud: CommunicationCloudEnvironmentModel,
+}
+impl MicrosoftTeamsAppIdentifierModel {
+    pub fn new(app_id: String, cloud: CommunicationCloudEnvironmentModel) -> Self {
+        Self { app_id, cloud }
+    }
+}
 #[doc = "A Microsoft Teams user."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftTeamsUserIdentifierModel {
@@ -5275,15 +6327,14 @@ pub struct MicrosoftTeamsUserIdentifierModel {
     #[serde(rename = "isAnonymous", default, skip_serializing_if = "Option::is_none")]
     pub is_anonymous: Option<bool>,
     #[doc = "Communication cloud environment model."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cloud: Option<CommunicationCloudEnvironmentModel>,
+    pub cloud: CommunicationCloudEnvironmentModel,
 }
 impl MicrosoftTeamsUserIdentifierModel {
-    pub fn new(user_id: String) -> Self {
+    pub fn new(user_id: String, cloud: CommunicationCloudEnvironmentModel) -> Self {
         Self {
             user_id,
             is_anonymous: None,
-            cloud: None,
+            cloud,
         }
     }
 }
@@ -5299,11 +6350,11 @@ impl PhoneNumberIdentifierModel {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.PolicyInsights.PolicyStateChanged event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyInsightsPolicyStateChangedEventData {
     #[doc = "The time that the resource was scanned by Azure Policy in the Universal ISO 8601 DateTime format yyyy-MM-ddTHH:mm:ss.fffffffZ."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The resource ID of the policy assignment."]
     #[serde(rename = "policyAssignmentId", default, skip_serializing_if = "Option::is_none")]
     pub policy_assignment_id: Option<String>,
@@ -5324,16 +6375,24 @@ pub struct PolicyInsightsPolicyStateChangedEventData {
     pub compliance_reason_code: Option<String>,
 }
 impl PolicyInsightsPolicyStateChangedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            timestamp,
+            policy_assignment_id: None,
+            policy_definition_id: None,
+            policy_definition_reference_id: None,
+            compliance_state: None,
+            subscription_id: None,
+            compliance_reason_code: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.PolicyInsights.PolicyStateCreated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyInsightsPolicyStateCreatedEventData {
     #[doc = "The time that the resource was scanned by Azure Policy in the Universal ISO 8601 DateTime format yyyy-MM-ddTHH:mm:ss.fffffffZ."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The resource ID of the policy assignment."]
     #[serde(rename = "policyAssignmentId", default, skip_serializing_if = "Option::is_none")]
     pub policy_assignment_id: Option<String>,
@@ -5354,16 +6413,24 @@ pub struct PolicyInsightsPolicyStateCreatedEventData {
     pub compliance_reason_code: Option<String>,
 }
 impl PolicyInsightsPolicyStateCreatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            timestamp,
+            policy_assignment_id: None,
+            policy_definition_id: None,
+            policy_definition_reference_id: None,
+            compliance_state: None,
+            subscription_id: None,
+            compliance_reason_code: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.PolicyInsights.PolicyStateDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyInsightsPolicyStateDeletedEventData {
     #[doc = "The time that the resource was scanned by Azure Policy in the Universal ISO 8601 DateTime format yyyy-MM-ddTHH:mm:ss.fffffffZ."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The resource ID of the policy assignment."]
     #[serde(rename = "policyAssignmentId", default, skip_serializing_if = "Option::is_none")]
     pub policy_assignment_id: Option<String>,
@@ -5384,16 +6451,24 @@ pub struct PolicyInsightsPolicyStateDeletedEventData {
     pub compliance_reason_code: Option<String>,
 }
 impl PolicyInsightsPolicyStateDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            timestamp,
+            policy_assignment_id: None,
+            policy_definition_id: None,
+            policy_definition_reference_id: None,
+            compliance_state: None,
+            subscription_id: None,
+            compliance_reason_code: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Cache.ExportRDBCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisExportRdbCompletedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -5402,16 +6477,20 @@ pub struct RedisExportRdbCompletedEventData {
     pub status: Option<String>,
 }
 impl RedisExportRdbCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            timestamp,
+            name: None,
+            status: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Cache.ImportRDBCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisImportRdbCompletedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -5420,16 +6499,20 @@ pub struct RedisImportRdbCompletedEventData {
     pub status: Option<String>,
 }
 impl RedisImportRdbCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            timestamp,
+            name: None,
+            status: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Cache.PatchingCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisPatchingCompletedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -5438,16 +6521,20 @@ pub struct RedisPatchingCompletedEventData {
     pub status: Option<String>,
 }
 impl RedisPatchingCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            timestamp,
+            name: None,
+            status: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Cache.ScalingCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisScalingCompletedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The name of this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -5456,13 +6543,17 @@ pub struct RedisScalingCompletedEventData {
     pub status: Option<String>,
 }
 impl RedisScalingCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            timestamp,
+            name: None,
+            status: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Resources.ResourceActionCancel event. This is raised when a resource action operation is canceled."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceActionCancelData {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceActionCancelEventData {
     #[doc = "The tenant ID of the resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -5485,26 +6576,36 @@ pub struct ResourceActionCancelData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The details of the authorization for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<ResourceAuthorization>,
+    pub authorization: ResourceAuthorization,
     #[doc = "The properties of the claims."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<serde_json::Value>,
+    pub claims: serde_json::Value,
     #[doc = "An operation ID used for troubleshooting."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[doc = "The details of the HTTP request."]
-    #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<ResourceHttpRequest>,
+    #[serde(rename = "httpRequest")]
+    pub http_request: ResourceHttpRequest,
 }
-impl ResourceActionCancelData {
-    pub fn new() -> Self {
-        Self::default()
+impl ResourceActionCancelEventData {
+    pub fn new(authorization: ResourceAuthorization, claims: serde_json::Value, http_request: ResourceHttpRequest) -> Self {
+        Self {
+            tenant_id: None,
+            subscription_id: None,
+            resource_group: None,
+            resource_provider: None,
+            resource_uri: None,
+            operation_name: None,
+            status: None,
+            authorization,
+            claims,
+            correlation_id: None,
+            http_request,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Resources.ResourceActionFailure event. This is raised when a resource action operation fails."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceActionFailureData {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceActionFailureEventData {
     #[doc = "The tenant ID of the resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -5527,26 +6628,36 @@ pub struct ResourceActionFailureData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The details of the authorization for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<ResourceAuthorization>,
+    pub authorization: ResourceAuthorization,
     #[doc = "The properties of the claims."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<serde_json::Value>,
+    pub claims: serde_json::Value,
     #[doc = "An operation ID used for troubleshooting."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[doc = "The details of the HTTP request."]
-    #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<ResourceHttpRequest>,
+    #[serde(rename = "httpRequest")]
+    pub http_request: ResourceHttpRequest,
 }
-impl ResourceActionFailureData {
-    pub fn new() -> Self {
-        Self::default()
+impl ResourceActionFailureEventData {
+    pub fn new(authorization: ResourceAuthorization, claims: serde_json::Value, http_request: ResourceHttpRequest) -> Self {
+        Self {
+            tenant_id: None,
+            subscription_id: None,
+            resource_group: None,
+            resource_provider: None,
+            resource_uri: None,
+            operation_name: None,
+            status: None,
+            authorization,
+            claims,
+            correlation_id: None,
+            http_request,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Resources.ResourceActionSuccess event. This is raised when a resource action operation succeeds."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceActionSuccessData {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceActionSuccessEventData {
     #[doc = "The tenant ID of the resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -5569,25 +6680,35 @@ pub struct ResourceActionSuccessData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The details of the authorization for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<ResourceAuthorization>,
+    pub authorization: ResourceAuthorization,
     #[doc = "The properties of the claims."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<serde_json::Value>,
+    pub claims: serde_json::Value,
     #[doc = "An operation ID used for troubleshooting."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[doc = "The details of the HTTP request."]
-    #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<ResourceHttpRequest>,
+    #[serde(rename = "httpRequest")]
+    pub http_request: ResourceHttpRequest,
 }
-impl ResourceActionSuccessData {
-    pub fn new() -> Self {
-        Self::default()
+impl ResourceActionSuccessEventData {
+    pub fn new(authorization: ResourceAuthorization, claims: serde_json::Value, http_request: ResourceHttpRequest) -> Self {
+        Self {
+            tenant_id: None,
+            subscription_id: None,
+            resource_group: None,
+            resource_provider: None,
+            resource_uri: None,
+            operation_name: None,
+            status: None,
+            authorization,
+            claims,
+            correlation_id: None,
+            http_request,
+        }
     }
 }
 #[doc = "The details of the authorization for the resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceAuthorization {
     #[doc = "The scope of the authorization."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5596,17 +6717,20 @@ pub struct ResourceAuthorization {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
     #[doc = "The evidence for the authorization."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub evidence: Option<serde_json::Value>,
+    pub evidence: serde_json::Value,
 }
 impl ResourceAuthorization {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(evidence: serde_json::Value) -> Self {
+        Self {
+            scope: None,
+            action: None,
+            evidence,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Resources.ResourceDeleteCancel event. This is raised when a resource delete operation is canceled."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceDeleteCancelData {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceDeleteCancelEventData {
     #[doc = "The tenant ID of the resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -5629,26 +6753,36 @@ pub struct ResourceDeleteCancelData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The details of the authorization for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<ResourceAuthorization>,
+    pub authorization: ResourceAuthorization,
     #[doc = "The properties of the claims."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<serde_json::Value>,
+    pub claims: serde_json::Value,
     #[doc = "An operation ID used for troubleshooting."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[doc = "The details of the HTTP request."]
-    #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<ResourceHttpRequest>,
+    #[serde(rename = "httpRequest")]
+    pub http_request: ResourceHttpRequest,
 }
-impl ResourceDeleteCancelData {
-    pub fn new() -> Self {
-        Self::default()
+impl ResourceDeleteCancelEventData {
+    pub fn new(authorization: ResourceAuthorization, claims: serde_json::Value, http_request: ResourceHttpRequest) -> Self {
+        Self {
+            tenant_id: None,
+            subscription_id: None,
+            resource_group: None,
+            resource_provider: None,
+            resource_uri: None,
+            operation_name: None,
+            status: None,
+            authorization,
+            claims,
+            correlation_id: None,
+            http_request,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Resources.ResourceDeleteFailure event. This is raised when a resource delete operation fails."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceDeleteFailureData {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceDeleteFailureEventData {
     #[doc = "The tenant ID of the resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -5671,26 +6805,36 @@ pub struct ResourceDeleteFailureData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The details of the authorization for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<ResourceAuthorization>,
+    pub authorization: ResourceAuthorization,
     #[doc = "The properties of the claims."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<serde_json::Value>,
+    pub claims: serde_json::Value,
     #[doc = "An operation ID used for troubleshooting."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[doc = "The details of the HTTP request."]
-    #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<ResourceHttpRequest>,
+    #[serde(rename = "httpRequest")]
+    pub http_request: ResourceHttpRequest,
 }
-impl ResourceDeleteFailureData {
-    pub fn new() -> Self {
-        Self::default()
+impl ResourceDeleteFailureEventData {
+    pub fn new(authorization: ResourceAuthorization, claims: serde_json::Value, http_request: ResourceHttpRequest) -> Self {
+        Self {
+            tenant_id: None,
+            subscription_id: None,
+            resource_group: None,
+            resource_provider: None,
+            resource_uri: None,
+            operation_name: None,
+            status: None,
+            authorization,
+            claims,
+            correlation_id: None,
+            http_request,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Resources.ResourceDeleteSuccess event. This is raised when a resource delete operation succeeds."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceDeleteSuccessData {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceDeleteSuccessEventData {
     #[doc = "The tenant ID of the resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -5713,21 +6857,31 @@ pub struct ResourceDeleteSuccessData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The details of the authorization for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<ResourceAuthorization>,
+    pub authorization: ResourceAuthorization,
     #[doc = "The properties of the claims."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<serde_json::Value>,
+    pub claims: serde_json::Value,
     #[doc = "An operation ID used for troubleshooting."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[doc = "The details of the HTTP request."]
-    #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<ResourceHttpRequest>,
+    #[serde(rename = "httpRequest")]
+    pub http_request: ResourceHttpRequest,
 }
-impl ResourceDeleteSuccessData {
-    pub fn new() -> Self {
-        Self::default()
+impl ResourceDeleteSuccessEventData {
+    pub fn new(authorization: ResourceAuthorization, claims: serde_json::Value, http_request: ResourceHttpRequest) -> Self {
+        Self {
+            tenant_id: None,
+            subscription_id: None,
+            resource_group: None,
+            resource_provider: None,
+            resource_uri: None,
+            operation_name: None,
+            status: None,
+            authorization,
+            claims,
+            correlation_id: None,
+            http_request,
+        }
     }
 }
 #[doc = "The details of the HTTP request."]
@@ -5752,37 +6906,41 @@ impl ResourceHttpRequest {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a\nMicrosoft.ResourceNotifications.HealthResources.ResourceAnnotated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceNotificationsHealthResourcesAnnotatedEventData {
     #[serde(flatten)]
     pub resource_notifications_resource_updated_event_data: ResourceNotificationsResourceUpdatedEventData,
 }
 impl ResourceNotificationsHealthResourcesAnnotatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(resource_notifications_resource_updated_event_data: ResourceNotificationsResourceUpdatedEventData) -> Self {
+        Self {
+            resource_notifications_resource_updated_event_data,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a\nMicrosoft.ResourceNotifications.HealthResources.AvailabilityStatusChanged\nevent."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceNotificationsHealthResourcesAvailabilityStatusChangedEventData {
     #[serde(flatten)]
     pub resource_notifications_resource_updated_event_data: ResourceNotificationsResourceUpdatedEventData,
 }
 impl ResourceNotificationsHealthResourcesAvailabilityStatusChangedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(resource_notifications_resource_updated_event_data: ResourceNotificationsResourceUpdatedEventData) -> Self {
+        Self {
+            resource_notifications_resource_updated_event_data,
+        }
     }
 }
 #[doc = "details of operational info"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceNotificationsOperationalDetails {
     #[doc = "Date and Time when resource was updated"]
-    #[serde(rename = "resourceEventTime", default, with = "azure_core::date::rfc3339::option")]
-    pub resource_event_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "resourceEventTime", with = "azure_core::date::rfc3339")]
+    pub resource_event_time: ::time::OffsetDateTime,
 }
 impl ResourceNotificationsOperationalDetails {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(resource_event_time: ::time::OffsetDateTime) -> Self {
+        Self { resource_event_time }
     }
 }
 #[doc = "Describes the schema of the properties under resource info which are common\nacross all ARN system topic delete events"]
@@ -5804,44 +6962,54 @@ impl ResourceNotificationsResourceDeletedDetails {
     }
 }
 #[doc = "Describes the schema of the common properties across all ARN system topic\ndelete events"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceNotificationsResourceDeletedEventData {
     #[doc = "Describes the schema of the properties under resource info which are common\nacross all ARN system topic delete events"]
-    #[serde(rename = "resourceInfo", default, skip_serializing_if = "Option::is_none")]
-    pub resource_info: Option<ResourceNotificationsResourceDeletedDetails>,
+    #[serde(rename = "resourceInfo")]
+    pub resource_info: ResourceNotificationsResourceDeletedDetails,
     #[doc = "details of operational info"]
-    #[serde(rename = "operationalInfo", default, skip_serializing_if = "Option::is_none")]
-    pub operational_info: Option<ResourceNotificationsOperationalDetails>,
+    #[serde(rename = "operationalInfo")]
+    pub operational_info: ResourceNotificationsOperationalDetails,
 }
 impl ResourceNotificationsResourceDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        resource_info: ResourceNotificationsResourceDeletedDetails,
+        operational_info: ResourceNotificationsOperationalDetails,
+    ) -> Self {
+        Self {
+            resource_info,
+            operational_info,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a\nMicrosoft.ResourceNotifications.Resources.CreatedOrUpdated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceNotificationsResourceManagementCreatedOrUpdatedEventData {
     #[serde(flatten)]
     pub resource_notifications_resource_updated_event_data: ResourceNotificationsResourceUpdatedEventData,
 }
 impl ResourceNotificationsResourceManagementCreatedOrUpdatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(resource_notifications_resource_updated_event_data: ResourceNotificationsResourceUpdatedEventData) -> Self {
+        Self {
+            resource_notifications_resource_updated_event_data,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a\nMicrosoft.ResourceNotifications.Resources.Deleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceNotificationsResourceManagementDeletedEventData {
     #[serde(flatten)]
     pub resource_notifications_resource_deleted_event_data: ResourceNotificationsResourceDeletedEventData,
 }
 impl ResourceNotificationsResourceManagementDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(resource_notifications_resource_deleted_event_data: ResourceNotificationsResourceDeletedEventData) -> Self {
+        Self {
+            resource_notifications_resource_deleted_event_data,
+        }
     }
 }
 #[doc = "Describes the schema of the properties under resource info which are common\nacross all ARN system topic events"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceNotificationsResourceUpdatedDetails {
     #[doc = "id of the resource for which the event is being emitted"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5856,38 +7024,50 @@ pub struct ResourceNotificationsResourceUpdatedDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "the tags on the resource for which the event is being emitted"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+    pub tags: serde_json::Value,
     #[doc = "properties in the payload of the resource for which the event is being emitted"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
+    pub properties: serde_json::Value,
 }
 impl ResourceNotificationsResourceUpdatedDetails {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(tags: serde_json::Value, properties: serde_json::Value) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location: None,
+            tags,
+            properties,
+        }
     }
 }
 #[doc = "Describes the schema of the common properties across all ARN system topic events"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceNotificationsResourceUpdatedEventData {
     #[doc = "Describes the schema of the properties under resource info which are common\nacross all ARN system topic events"]
-    #[serde(rename = "resourceInfo", default, skip_serializing_if = "Option::is_none")]
-    pub resource_info: Option<ResourceNotificationsResourceUpdatedDetails>,
+    #[serde(rename = "resourceInfo")]
+    pub resource_info: ResourceNotificationsResourceUpdatedDetails,
     #[doc = "details of operational info"]
-    #[serde(rename = "operationalInfo", default, skip_serializing_if = "Option::is_none")]
-    pub operational_info: Option<ResourceNotificationsOperationalDetails>,
+    #[serde(rename = "operationalInfo")]
+    pub operational_info: ResourceNotificationsOperationalDetails,
     #[doc = "api version of the resource properties bag"]
     #[serde(rename = "apiVersion", default, skip_serializing_if = "Option::is_none")]
     pub api_version: Option<String>,
 }
 impl ResourceNotificationsResourceUpdatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        resource_info: ResourceNotificationsResourceUpdatedDetails,
+        operational_info: ResourceNotificationsOperationalDetails,
+    ) -> Self {
+        Self {
+            resource_info,
+            operational_info,
+            api_version: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Resources.ResourceWriteCancel event. This is raised when a resource create or update operation is canceled."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceWriteCancelData {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceWriteCancelEventData {
     #[doc = "The tenant ID of the resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -5910,26 +7090,36 @@ pub struct ResourceWriteCancelData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The details of the authorization for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<ResourceAuthorization>,
+    pub authorization: ResourceAuthorization,
     #[doc = "The properties of the claims."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<serde_json::Value>,
+    pub claims: serde_json::Value,
     #[doc = "An operation ID used for troubleshooting."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[doc = "The details of the HTTP request."]
-    #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<ResourceHttpRequest>,
+    #[serde(rename = "httpRequest")]
+    pub http_request: ResourceHttpRequest,
 }
-impl ResourceWriteCancelData {
-    pub fn new() -> Self {
-        Self::default()
+impl ResourceWriteCancelEventData {
+    pub fn new(authorization: ResourceAuthorization, claims: serde_json::Value, http_request: ResourceHttpRequest) -> Self {
+        Self {
+            tenant_id: None,
+            subscription_id: None,
+            resource_group: None,
+            resource_provider: None,
+            resource_uri: None,
+            operation_name: None,
+            status: None,
+            authorization,
+            claims,
+            correlation_id: None,
+            http_request,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Resources.ResourceWriteFailure event. This is raised when a resource create or update operation fails."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceWriteFailureData {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceWriteFailureEventData {
     #[doc = "The tenant ID of the resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -5952,26 +7142,36 @@ pub struct ResourceWriteFailureData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The details of the authorization for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<ResourceAuthorization>,
+    pub authorization: ResourceAuthorization,
     #[doc = "The properties of the claims."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<serde_json::Value>,
+    pub claims: serde_json::Value,
     #[doc = "An operation ID used for troubleshooting."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[doc = "The details of the HTTP request."]
-    #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<ResourceHttpRequest>,
+    #[serde(rename = "httpRequest")]
+    pub http_request: ResourceHttpRequest,
 }
-impl ResourceWriteFailureData {
-    pub fn new() -> Self {
-        Self::default()
+impl ResourceWriteFailureEventData {
+    pub fn new(authorization: ResourceAuthorization, claims: serde_json::Value, http_request: ResourceHttpRequest) -> Self {
+        Self {
+            tenant_id: None,
+            subscription_id: None,
+            resource_group: None,
+            resource_provider: None,
+            resource_uri: None,
+            operation_name: None,
+            status: None,
+            authorization,
+            claims,
+            correlation_id: None,
+            http_request,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Resources.ResourceWriteSuccess event. This is raised when a resource create or update operation succeeds."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ResourceWriteSuccessData {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceWriteSuccessEventData {
     #[doc = "The tenant ID of the resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -5994,55 +7194,30 @@ pub struct ResourceWriteSuccessData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The details of the authorization for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<ResourceAuthorization>,
+    pub authorization: ResourceAuthorization,
     #[doc = "The properties of the claims."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<serde_json::Value>,
+    pub claims: serde_json::Value,
     #[doc = "An operation ID used for troubleshooting."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[doc = "The details of the HTTP request."]
-    #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<ResourceHttpRequest>,
+    #[serde(rename = "httpRequest")]
+    pub http_request: ResourceHttpRequest,
 }
-impl ResourceWriteSuccessData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "ServiceApiVersions")]
-pub enum ServiceApiVersions {
-    #[serde(rename = "2024-01-01")]
-    N2024_01_01,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for ServiceApiVersions {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for ServiceApiVersions {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for ServiceApiVersions {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::N2024_01_01 => serializer.serialize_unit_variant("ServiceApiVersions", 0u32, "2024-01-01"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+impl ResourceWriteSuccessEventData {
+    pub fn new(authorization: ResourceAuthorization, claims: serde_json::Value, http_request: ResourceHttpRequest) -> Self {
+        Self {
+            tenant_id: None,
+            subscription_id: None,
+            resource_group: None,
+            resource_provider: None,
+            resource_uri: None,
+            operation_name: None,
+            status: None,
+            authorization,
+            claims,
+            correlation_id: None,
+            http_request,
         }
     }
 }
@@ -6155,11 +7330,11 @@ impl ServiceBusDeadletterMessagesAvailableWithNoListenersEventData {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.SignalRService.ClientConnectionConnected event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignalRServiceClientConnectionConnectedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The hub of connected client connection."]
     #[serde(rename = "hubName", default, skip_serializing_if = "Option::is_none")]
     pub hub_name: Option<String>,
@@ -6171,16 +7346,21 @@ pub struct SignalRServiceClientConnectionConnectedEventData {
     pub user_id: Option<String>,
 }
 impl SignalRServiceClientConnectionConnectedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            timestamp,
+            hub_name: None,
+            connection_id: None,
+            user_id: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.SignalRService.ClientConnectionDisconnected event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignalRServiceClientConnectionDisconnectedEventData {
     #[doc = "The time at which the event occurred."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub timestamp: ::time::OffsetDateTime,
     #[doc = "The hub of connected client connection."]
     #[serde(rename = "hubName", default, skip_serializing_if = "Option::is_none")]
     pub hub_name: Option<String>,
@@ -6195,8 +7375,14 @@ pub struct SignalRServiceClientConnectionDisconnectedEventData {
     pub error_message: Option<String>,
 }
 impl SignalRServiceClientConnectionDisconnectedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(timestamp: ::time::OffsetDateTime) -> Self {
+        Self {
+            timestamp,
+            hub_name: None,
+            connection_id: None,
+            user_id: None,
+            error_message: None,
+        }
     }
 }
 #[doc = "Kind of environment where app service plan is."]
@@ -6239,7 +7425,7 @@ impl Serialize for StampKind {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.AsyncOperationInitiated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAsyncOperationInitiatedEventData {
     #[doc = "The name of the API/operation that triggered this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6269,16 +7455,70 @@ pub struct StorageAsyncOperationInitiatedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
     #[doc = "For service use only. Diagnostic data occasionally included by the Azure Storage service. This property should be ignored by event consumers."]
-    #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub storage_diagnostics: Option<serde_json::Value>,
+    #[serde(rename = "storageDiagnostics")]
+    pub storage_diagnostics: serde_json::Value,
 }
 impl StorageAsyncOperationInitiatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(storage_diagnostics: serde_json::Value) -> Self {
+        Self {
+            api: None,
+            client_request_id: None,
+            request_id: None,
+            content_type: None,
+            content_length: None,
+            blob_type: None,
+            url: None,
+            sequencer: None,
+            identity: None,
+            storage_diagnostics,
+        }
+    }
+}
+#[doc = "The access tier of the blob."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "StorageBlobAccessTier")]
+pub enum StorageBlobAccessTier {
+    Hot,
+    Cool,
+    Cold,
+    Archive,
+    Default,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for StorageBlobAccessTier {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for StorageBlobAccessTier {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for StorageBlobAccessTier {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Hot => serializer.serialize_unit_variant("StorageBlobAccessTier", 0u32, "Hot"),
+            Self::Cool => serializer.serialize_unit_variant("StorageBlobAccessTier", 1u32, "Cool"),
+            Self::Cold => serializer.serialize_unit_variant("StorageBlobAccessTier", 2u32, "Cold"),
+            Self::Archive => serializer.serialize_unit_variant("StorageBlobAccessTier", 3u32, "Archive"),
+            Self::Default => serializer.serialize_unit_variant("StorageBlobAccessTier", 4u32, "Default"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.BlobCreated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageBlobCreatedEventData {
     #[doc = "The name of the API/operation that triggered this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6304,6 +7544,9 @@ pub struct StorageBlobCreatedEventData {
     #[doc = "The type of blob."]
     #[serde(rename = "blobType", default, skip_serializing_if = "Option::is_none")]
     pub blob_type: Option<String>,
+    #[doc = "The access tier of the blob."]
+    #[serde(rename = "accessTier")]
+    pub access_tier: StorageBlobAccessTier,
     #[doc = "The path to the blob."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
@@ -6314,16 +7557,30 @@ pub struct StorageBlobCreatedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
     #[doc = "For service use only. Diagnostic data occasionally included by the Azure Storage service. This property should be ignored by event consumers."]
-    #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub storage_diagnostics: Option<serde_json::Value>,
+    #[serde(rename = "storageDiagnostics")]
+    pub storage_diagnostics: serde_json::Value,
 }
 impl StorageBlobCreatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(access_tier: StorageBlobAccessTier, storage_diagnostics: serde_json::Value) -> Self {
+        Self {
+            api: None,
+            client_request_id: None,
+            request_id: None,
+            e_tag: None,
+            content_type: None,
+            content_length: None,
+            content_offset: None,
+            blob_type: None,
+            access_tier,
+            url: None,
+            sequencer: None,
+            identity: None,
+            storage_diagnostics,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.BlobDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageBlobDeletedEventData {
     #[doc = "The name of the API/operation that triggered this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6350,20 +7607,30 @@ pub struct StorageBlobDeletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
     #[doc = "For service use only. Diagnostic data occasionally included by the Azure Storage service. This property should be ignored by event consumers."]
-    #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub storage_diagnostics: Option<serde_json::Value>,
+    #[serde(rename = "storageDiagnostics")]
+    pub storage_diagnostics: serde_json::Value,
 }
 impl StorageBlobDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(storage_diagnostics: serde_json::Value) -> Self {
+        Self {
+            api: None,
+            client_request_id: None,
+            request_id: None,
+            content_type: None,
+            blob_type: None,
+            url: None,
+            sequencer: None,
+            identity: None,
+            storage_diagnostics,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Storage.BlobInventoryPolicyCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageBlobInventoryPolicyCompletedEventData {
     #[doc = "The time at which inventory policy was scheduled."]
-    #[serde(rename = "scheduleDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub schedule_date_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "scheduleDateTime", with = "azure_core::date::rfc3339")]
+    pub schedule_date_time: ::time::OffsetDateTime,
     #[doc = "The account name for which inventory policy is registered."]
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
@@ -6384,12 +7651,20 @@ pub struct StorageBlobInventoryPolicyCompletedEventData {
     pub manifest_blob_url: Option<String>,
 }
 impl StorageBlobInventoryPolicyCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(schedule_date_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            schedule_date_time,
+            account_name: None,
+            rule_name: None,
+            policy_run_status: None,
+            policy_run_status_message: None,
+            policy_run_id: None,
+            manifest_blob_url: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.BlobRenamed event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageBlobRenamedEventData {
     #[doc = "The name of the API/operation that triggered this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6413,16 +7688,25 @@ pub struct StorageBlobRenamedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
     #[doc = "For service use only. Diagnostic data occasionally included by the Azure Storage service. This property should be ignored by event consumers."]
-    #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub storage_diagnostics: Option<serde_json::Value>,
+    #[serde(rename = "storageDiagnostics")]
+    pub storage_diagnostics: serde_json::Value,
 }
 impl StorageBlobRenamedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(storage_diagnostics: serde_json::Value) -> Self {
+        Self {
+            api: None,
+            client_request_id: None,
+            request_id: None,
+            source_url: None,
+            destination_url: None,
+            sequencer: None,
+            identity: None,
+            storage_diagnostics,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.BlobTierChanged event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageBlobTierChangedEventData {
     #[doc = "The name of the API/operation that triggered this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6442,6 +7726,12 @@ pub struct StorageBlobTierChangedEventData {
     #[doc = "The type of blob."]
     #[serde(rename = "blobType", default, skip_serializing_if = "Option::is_none")]
     pub blob_type: Option<String>,
+    #[doc = "The access tier of the blob."]
+    #[serde(rename = "accessTier")]
+    pub access_tier: StorageBlobAccessTier,
+    #[doc = "The access tier of the blob."]
+    #[serde(rename = "previousTier")]
+    pub previous_tier: StorageBlobAccessTier,
     #[doc = "The path to the blob."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
@@ -6452,16 +7742,29 @@ pub struct StorageBlobTierChangedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
     #[doc = "For service use only. Diagnostic data occasionally included by the Azure Storage service. This property should be ignored by event consumers."]
-    #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub storage_diagnostics: Option<serde_json::Value>,
+    #[serde(rename = "storageDiagnostics")]
+    pub storage_diagnostics: serde_json::Value,
 }
 impl StorageBlobTierChangedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(access_tier: StorageBlobAccessTier, previous_tier: StorageBlobAccessTier, storage_diagnostics: serde_json::Value) -> Self {
+        Self {
+            api: None,
+            client_request_id: None,
+            request_id: None,
+            content_type: None,
+            content_length: None,
+            blob_type: None,
+            access_tier,
+            previous_tier,
+            url: None,
+            sequencer: None,
+            identity: None,
+            storage_diagnostics,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.DirectoryCreated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageDirectoryCreatedEventData {
     #[doc = "The name of the API/operation that triggered this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6485,16 +7788,25 @@ pub struct StorageDirectoryCreatedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
     #[doc = "For service use only. Diagnostic data occasionally included by the Azure Storage service. This property should be ignored by event consumers."]
-    #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub storage_diagnostics: Option<serde_json::Value>,
+    #[serde(rename = "storageDiagnostics")]
+    pub storage_diagnostics: serde_json::Value,
 }
 impl StorageDirectoryCreatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(storage_diagnostics: serde_json::Value) -> Self {
+        Self {
+            api: None,
+            client_request_id: None,
+            request_id: None,
+            e_tag: None,
+            url: None,
+            sequencer: None,
+            identity: None,
+            storage_diagnostics,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.DirectoryDeleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageDirectoryDeletedEventData {
     #[doc = "The name of the API/operation that triggered this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6518,16 +7830,25 @@ pub struct StorageDirectoryDeletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
     #[doc = "For service use only. Diagnostic data occasionally included by the Azure Storage service. This property should be ignored by event consumers."]
-    #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub storage_diagnostics: Option<serde_json::Value>,
+    #[serde(rename = "storageDiagnostics")]
+    pub storage_diagnostics: serde_json::Value,
 }
 impl StorageDirectoryDeletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(storage_diagnostics: serde_json::Value) -> Self {
+        Self {
+            api: None,
+            client_request_id: None,
+            request_id: None,
+            url: None,
+            recursive: None,
+            sequencer: None,
+            identity: None,
+            storage_diagnostics,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.DirectoryRenamed event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageDirectoryRenamedEventData {
     #[doc = "The name of the API/operation that triggered this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6551,12 +7872,21 @@ pub struct StorageDirectoryRenamedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
     #[doc = "For service use only. Diagnostic data occasionally included by the Azure Storage service. This property should be ignored by event consumers."]
-    #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub storage_diagnostics: Option<serde_json::Value>,
+    #[serde(rename = "storageDiagnostics")]
+    pub storage_diagnostics: serde_json::Value,
 }
 impl StorageDirectoryRenamedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(storage_diagnostics: serde_json::Value) -> Self {
+        Self {
+            api: None,
+            client_request_id: None,
+            request_id: None,
+            source_url: None,
+            destination_url: None,
+            sequencer: None,
+            identity: None,
+            storage_diagnostics,
+        }
     }
 }
 #[doc = "Execution statistics of a specific policy action in a Blob Management cycle."]
@@ -6578,35 +7908,48 @@ impl StorageLifecyclePolicyActionSummaryDetail {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Storage.LifecyclePolicyCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageLifecyclePolicyCompletedEventData {
     #[doc = "The time the policy task was scheduled."]
     #[serde(rename = "scheduleTime", default, skip_serializing_if = "Option::is_none")]
     pub schedule_time: Option<String>,
     #[doc = "Execution statistics of a specific policy action in a Blob Management cycle."]
-    #[serde(rename = "deleteSummary", default, skip_serializing_if = "Option::is_none")]
-    pub delete_summary: Option<StorageLifecyclePolicyActionSummaryDetail>,
+    #[serde(rename = "deleteSummary")]
+    pub delete_summary: StorageLifecyclePolicyActionSummaryDetail,
     #[doc = "Execution statistics of a specific policy action in a Blob Management cycle."]
-    #[serde(rename = "tierToCoolSummary", default, skip_serializing_if = "Option::is_none")]
-    pub tier_to_cool_summary: Option<StorageLifecyclePolicyActionSummaryDetail>,
+    #[serde(rename = "tierToCoolSummary")]
+    pub tier_to_cool_summary: StorageLifecyclePolicyActionSummaryDetail,
     #[doc = "Execution statistics of a specific policy action in a Blob Management cycle."]
-    #[serde(rename = "tierToArchiveSummary", default, skip_serializing_if = "Option::is_none")]
-    pub tier_to_archive_summary: Option<StorageLifecyclePolicyActionSummaryDetail>,
+    #[serde(rename = "tierToArchiveSummary")]
+    pub tier_to_archive_summary: StorageLifecyclePolicyActionSummaryDetail,
+    #[doc = "Execution statistics of a specific policy action in a Blob Management cycle."]
+    #[serde(rename = "tierToColdSummary")]
+    pub tier_to_cold_summary: StorageLifecyclePolicyActionSummaryDetail,
 }
 impl StorageLifecyclePolicyCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        delete_summary: StorageLifecyclePolicyActionSummaryDetail,
+        tier_to_cool_summary: StorageLifecyclePolicyActionSummaryDetail,
+        tier_to_archive_summary: StorageLifecyclePolicyActionSummaryDetail,
+        tier_to_cold_summary: StorageLifecyclePolicyActionSummaryDetail,
+    ) -> Self {
+        Self {
+            schedule_time: None,
+            delete_summary,
+            tier_to_cool_summary,
+            tier_to_archive_summary,
+            tier_to_cold_summary,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskAssignmentCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageTaskAssignmentCompletedEventData {
     #[doc = "The status for a storage task."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<StorageTaskAssignmentCompletedStatus>,
+    pub status: StorageTaskAssignmentCompletedStatus,
     #[doc = "The time at which a storage task was completed."]
-    #[serde(rename = "completedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub completed_date_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "completedDateTime", with = "azure_core::date::rfc3339")]
+    pub completed_date_time: ::time::OffsetDateTime,
     #[doc = "The execution id for a storage task."]
     #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
     pub task_execution_id: Option<String>,
@@ -6614,12 +7957,22 @@ pub struct StorageTaskAssignmentCompletedEventData {
     #[serde(rename = "taskName", default, skip_serializing_if = "Option::is_none")]
     pub task_name: Option<String>,
     #[doc = "The summary report blob url for a storage task"]
-    #[serde(rename = "summaryReportBlobUrl", default, skip_serializing_if = "Option::is_none")]
-    pub summary_report_blob_url: Option<String>,
+    #[serde(rename = "summaryReportBlobUrl")]
+    pub summary_report_blob_url: String,
 }
 impl StorageTaskAssignmentCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(
+        status: StorageTaskAssignmentCompletedStatus,
+        completed_date_time: ::time::OffsetDateTime,
+        summary_report_blob_url: String,
+    ) -> Self {
+        Self {
+            status,
+            completed_date_time,
+            task_execution_id: None,
+            task_name: None,
+            summary_report_blob_url,
+        }
     }
 }
 #[doc = "The status for a storage task."]
@@ -6660,29 +8013,31 @@ impl Serialize for StorageTaskAssignmentCompletedStatus {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskAssignmentQueued event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageTaskAssignmentQueuedEventData {
     #[doc = "The time at which a storage task was queued."]
-    #[serde(rename = "queuedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub queued_date_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "queuedDateTime", with = "azure_core::date::rfc3339")]
+    pub queued_date_time: ::time::OffsetDateTime,
     #[doc = "The execution id for a storage task."]
     #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
     pub task_execution_id: Option<String>,
 }
 impl StorageTaskAssignmentQueuedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(queued_date_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            queued_date_time,
+            task_execution_id: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageTaskCompletedEventData {
     #[doc = "The status for a storage task."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<StorageTaskCompletedStatus>,
+    pub status: StorageTaskCompletedStatus,
     #[doc = "The time at which a storage task was completed."]
-    #[serde(rename = "completedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub completed_date_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "completedDateTime", with = "azure_core::date::rfc3339")]
+    pub completed_date_time: ::time::OffsetDateTime,
     #[doc = "The execution id for a storage task."]
     #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
     pub task_execution_id: Option<String>,
@@ -6690,12 +8045,18 @@ pub struct StorageTaskCompletedEventData {
     #[serde(rename = "taskName", default, skip_serializing_if = "Option::is_none")]
     pub task_name: Option<String>,
     #[doc = "The summary report blob url for a storage task"]
-    #[serde(rename = "summaryReportBlobUrl", default, skip_serializing_if = "Option::is_none")]
-    pub summary_report_blob_url: Option<String>,
+    #[serde(rename = "summaryReportBlobUrl")]
+    pub summary_report_blob_url: String,
 }
 impl StorageTaskCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(status: StorageTaskCompletedStatus, completed_date_time: ::time::OffsetDateTime, summary_report_blob_url: String) -> Self {
+        Self {
+            status,
+            completed_date_time,
+            task_execution_id: None,
+            task_name: None,
+            summary_report_blob_url,
+        }
     }
 }
 #[doc = "The status for a storage task."]
@@ -6736,21 +8097,24 @@ impl Serialize for StorageTaskCompletedStatus {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskQueued event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageTaskQueuedEventData {
     #[doc = "The time at which a storage task was queued."]
-    #[serde(rename = "queuedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub queued_date_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "queuedDateTime", with = "azure_core::date::rfc3339")]
+    pub queued_date_time: ::time::OffsetDateTime,
     #[doc = "The execution id for a storage task."]
     #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
     pub task_execution_id: Option<String>,
 }
 impl StorageTaskQueuedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(queued_date_time: ::time::OffsetDateTime) -> Self {
+        Self {
+            queued_date_time,
+            task_execution_id: None,
+        }
     }
 }
-#[doc = "Schema of the Data property of an EventGridEvent for a\nMicrosoft.EventGrid.SystemEvents.SubscriptionDeletedEvent event."]
+#[doc = "Schema of the Data property of an EventGridEvent for a\nMicrosoft.EventGrid.SubscriptionDeletedEvent event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionDeletedEventData {
     #[doc = "The Azure resource ID of the deleted event subscription."]
@@ -6762,7 +8126,7 @@ impl SubscriptionDeletedEventData {
         Self::default()
     }
 }
-#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.EventGrid.SystemEvents.SubscriptionValidationEvent event."]
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.EventGrid.SubscriptionValidationEvent event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionValidationEventData {
     #[doc = "The validation code sent by Azure Event Grid to validate an event subscription.\nTo complete the validation handshake, the subscriber must either respond with this validation code as part of the validation response,\nor perform a GET request on the validationUrl (available starting version 2018-05-01-preview)."]
@@ -6790,14 +8154,13 @@ impl SubscriptionValidationResponse {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.AppServicePlanUpdated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebAppServicePlanUpdatedEventData {
     #[doc = "Detail of action on the app service plan."]
-    #[serde(rename = "appServicePlanEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_service_plan_event_type_detail: Option<AppServicePlanEventTypeDetail>,
+    #[serde(rename = "appServicePlanEventTypeDetail")]
+    pub app_service_plan_event_type_detail: AppServicePlanEventTypeDetail,
     #[doc = "sku of app service plan."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<WebAppServicePlanUpdatedEventDataSku>,
+    pub sku: WebAppServicePlanUpdatedEventDataSku,
     #[doc = "name of the app service plan that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -6818,8 +8181,17 @@ pub struct WebAppServicePlanUpdatedEventData {
     pub verb: Option<String>,
 }
 impl WebAppServicePlanUpdatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_service_plan_event_type_detail: AppServicePlanEventTypeDetail, sku: WebAppServicePlanUpdatedEventDataSku) -> Self {
+        Self {
+            app_service_plan_event_type_detail,
+            sku,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "sku of app service plan."]
@@ -6847,11 +8219,11 @@ impl WebAppServicePlanUpdatedEventDataSku {
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.AppUpdated event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebAppUpdatedEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -6872,16 +8244,24 @@ pub struct WebAppUpdatedEventData {
     pub verb: Option<String>,
 }
 impl WebAppUpdatedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.BackupOperationCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebBackupOperationCompletedEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -6902,16 +8282,24 @@ pub struct WebBackupOperationCompletedEventData {
     pub verb: Option<String>,
 }
 impl WebBackupOperationCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.BackupOperationFailed event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebBackupOperationFailedEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -6932,16 +8320,24 @@ pub struct WebBackupOperationFailedEventData {
     pub verb: Option<String>,
 }
 impl WebBackupOperationFailedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.BackupOperationStarted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebBackupOperationStartedEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -6962,16 +8358,24 @@ pub struct WebBackupOperationStartedEventData {
     pub verb: Option<String>,
 }
 impl WebBackupOperationStartedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.RestoreOperationCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebRestoreOperationCompletedEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -6992,16 +8396,24 @@ pub struct WebRestoreOperationCompletedEventData {
     pub verb: Option<String>,
 }
 impl WebRestoreOperationCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.RestoreOperationFailed event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebRestoreOperationFailedEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -7022,16 +8434,24 @@ pub struct WebRestoreOperationFailedEventData {
     pub verb: Option<String>,
 }
 impl WebRestoreOperationFailedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.RestoreOperationStarted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebRestoreOperationStartedEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -7052,16 +8472,24 @@ pub struct WebRestoreOperationStartedEventData {
     pub verb: Option<String>,
 }
 impl WebRestoreOperationStartedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.SlotSwapCompleted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSlotSwapCompletedEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -7082,16 +8510,24 @@ pub struct WebSlotSwapCompletedEventData {
     pub verb: Option<String>,
 }
 impl WebSlotSwapCompletedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.SlotSwapFailed event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSlotSwapFailedEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -7112,16 +8548,24 @@ pub struct WebSlotSwapFailedEventData {
     pub verb: Option<String>,
 }
 impl WebSlotSwapFailedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.SlotSwapStarted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSlotSwapStartedEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -7142,16 +8586,24 @@ pub struct WebSlotSwapStartedEventData {
     pub verb: Option<String>,
 }
 impl WebSlotSwapStartedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.SlotSwapWithPreviewCancelled event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSlotSwapWithPreviewCancelledEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -7172,16 +8624,24 @@ pub struct WebSlotSwapWithPreviewCancelledEventData {
     pub verb: Option<String>,
 }
 impl WebSlotSwapWithPreviewCancelledEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Web.SlotSwapWithPreviewStarted event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebSlotSwapWithPreviewStartedEventData {
     #[doc = "Detail of action on the app."]
-    #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
-    pub app_event_type_detail: Option<AppEventTypeDetail>,
+    #[serde(rename = "appEventTypeDetail")]
+    pub app_event_type_detail: AppEventTypeDetail,
     #[doc = "name of the web site that had this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -7202,8 +8662,16 @@ pub struct WebSlotSwapWithPreviewStartedEventData {
     pub verb: Option<String>,
 }
 impl WebSlotSwapWithPreviewStartedEventData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_event_type_detail: AppEventTypeDetail) -> Self {
+        Self {
+            app_event_type_detail,
+            name: None,
+            client_request_id: None,
+            correlation_request_id: None,
+            request_id: None,
+            address: None,
+            verb: None,
+        }
     }
 }
 #[doc = "Recording channel type"]

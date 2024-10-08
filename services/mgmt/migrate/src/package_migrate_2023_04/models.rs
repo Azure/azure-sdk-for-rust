@@ -692,10 +692,10 @@ pub struct AssessedMachineProperties {
     pub operating_system_architecture: Option<GuestOperatingSystemArchitecture>,
     #[doc = "When was machine first created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "When was machine last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Display Name of the Machine."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -922,10 +922,10 @@ pub struct AssessedSqlDatabaseV2Properties {
     pub sizing_criterion: Option<AssessmentSizingCriterion>,
     #[doc = "When was assessed SQL database first created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "When was assessed SQL database last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
 }
 impl AssessedSqlDatabaseV2Properties {
     pub fn new() -> Self {
@@ -1172,10 +1172,10 @@ pub struct AssessedSqlInstanceV2Properties {
     pub sizing_criterion: Option<AssessmentSizingCriterion>,
     #[doc = "When was assessed SQL instance first created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "When was assessed SQL instance last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
 }
 impl AssessedSqlInstanceV2Properties {
     pub fn new() -> Self {
@@ -1299,10 +1299,10 @@ pub struct AssessedSqlMachineProperties {
     pub operating_system_architecture: Option<GuestOperatingSystemArchitecture>,
     #[doc = "When was machine first created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "When was machine last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Display Name of the Machine."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -1529,10 +1529,10 @@ pub struct AssessedWebAppV2Properties {
     pub confidence_rating_in_percentage: Option<f32>,
     #[doc = "When was assessed SQL database first created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "When was assessed Web app database last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
 }
 impl AssessedWebAppV2Properties {
     pub fn new(app_service_plan_name: String, machine_name: String) -> Self {
@@ -1619,21 +1619,21 @@ impl Assessment {
 pub struct AssessmentDetails {
     #[doc = "Gets last time when rates were queried."]
     #[serde(rename = "pricesTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub prices_timestamp: Option<time::OffsetDateTime>,
+    pub prices_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Gets Confidence score."]
     #[serde(rename = "confidenceRatingInPercentage", default, skip_serializing_if = "Option::is_none")]
     pub confidence_rating_in_percentage: Option<f32>,
     #[doc = "Gets date and time when assessment was created."]
     #[serde(rename = "createdTimestamp", with = "azure_core::date::rfc3339")]
-    pub created_timestamp: time::OffsetDateTime,
+    pub created_timestamp: ::time::OffsetDateTime,
     #[doc = "Gets date and time when assessment was last updated."]
     #[serde(rename = "updatedTimestamp", with = "azure_core::date::rfc3339")]
-    pub updated_timestamp: time::OffsetDateTime,
+    pub updated_timestamp: ::time::OffsetDateTime,
     #[doc = "Assessment Status."]
     pub status: AssessmentStatus,
 }
 impl AssessmentDetails {
-    pub fn new(created_timestamp: time::OffsetDateTime, updated_timestamp: time::OffsetDateTime, status: AssessmentStatus) -> Self {
+    pub fn new(created_timestamp: ::time::OffsetDateTime, updated_timestamp: ::time::OffsetDateTime, status: AssessmentStatus) -> Self {
         Self {
             prices_timestamp: None,
             confidence_rating_in_percentage: None,
@@ -1877,7 +1877,7 @@ pub struct AssessmentProjectSummaryProperties {
     pub number_of_assessments: Option<i32>,
     #[doc = "Gets the last assessment timestamp."]
     #[serde(rename = "lastAssessmentTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub last_assessment_timestamp: Option<time::OffsetDateTime>,
+    pub last_assessment_timestamp: Option<::time::OffsetDateTime>,
 }
 impl AssessmentProjectSummaryProperties {
     pub fn new() -> Self {
@@ -2345,10 +2345,10 @@ pub struct AvsAssessedMachineProperties {
     pub operating_system_architecture: Option<GuestOperatingSystemArchitecture>,
     #[doc = "When was machine first created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "When was machine last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Display Name of the Machine."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -2630,10 +2630,10 @@ pub struct AvsAssessmentProperties {
     pub time_range: Option<TimeRange>,
     #[doc = "Gets or sets the start time to consider performance data for assessment."]
     #[serde(rename = "perfDataStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub perf_data_start_time: Option<time::OffsetDateTime>,
+    pub perf_data_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the end time to consider performance data for assessment."]
     #[serde(rename = "perfDataEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub perf_data_end_time: Option<time::OffsetDateTime>,
+    pub perf_data_end_time: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stage: Option<AssessmentStage>,
     #[doc = "Custom discount percentage."]
@@ -2647,13 +2647,13 @@ pub struct AvsAssessmentProperties {
     pub confidence_rating_in_percentage: Option<f32>,
     #[doc = "Time when the Azure Prices were queried. Date-Time represented in ISO-8601\nformat."]
     #[serde(rename = "pricesTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub prices_timestamp: Option<time::OffsetDateTime>,
+    pub prices_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Date and Time when assessment was created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Date and Time when assessment was last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Assessment Status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<AssessmentStatus>,
@@ -4508,10 +4508,10 @@ pub struct AzureSettings {
     pub workload_discovery_source: Option<DiscoverySource>,
     #[doc = "Gets start time to use for performance."]
     #[serde(rename = "performanceDataStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub performance_data_start_time: Option<time::OffsetDateTime>,
+    pub performance_data_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets end time to use for performance."]
     #[serde(rename = "performanceDataEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub performance_data_end_time: Option<time::OffsetDateTime>,
+    pub performance_data_end_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets comfort factor."]
     #[serde(rename = "comfortFactor", default, skip_serializing_if = "Option::is_none")]
     pub comfort_factor: Option<f32>,
@@ -7404,7 +7404,7 @@ pub struct CollectorAgentPropertiesBase {
     pub version: Option<String>,
     #[doc = "Gets the collector last heartbeat time."]
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heartbeat_utc: Option<time::OffsetDateTime>,
+    pub last_heartbeat_utc: Option<::time::OffsetDateTime>,
     #[doc = "Collector agent SPN details class."]
     #[serde(rename = "spnDetails", default, skip_serializing_if = "Option::is_none")]
     pub spn_details: Option<CollectorAgentSpnPropertiesBase>,
@@ -7448,10 +7448,10 @@ pub struct CollectorPropertiesBase {
     pub discovery_site_id: Option<String>,
     #[doc = "Gets the Timestamp when collector was created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Timestamp when collector was last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
 }
 impl CollectorPropertiesBase {
     pub fn new() -> Self {
@@ -7471,10 +7471,10 @@ pub struct CollectorPropertiesBaseWithAgent {
     pub discovery_site_id: Option<String>,
     #[doc = "Gets the Timestamp when collector was created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Timestamp when collector was last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
 }
 impl CollectorPropertiesBaseWithAgent {
     pub fn new() -> Self {
@@ -7606,6 +7606,12 @@ pub struct ComputeSettings {
     #[doc = "Windows Server licensing settings."]
     #[serde(rename = "windowsServerLicensing")]
     pub windows_server_licensing: WindowsServerLicensingSettings,
+    #[doc = "Linux Server licensing settings."]
+    #[serde(rename = "rhelLinuxServerLicensing")]
+    pub rhel_linux_server_licensing: LinuxServerLicensingSettings,
+    #[doc = "Linux Server licensing settings."]
+    #[serde(rename = "suseLinuxServerLicensing")]
+    pub suse_linux_server_licensing: LinuxServerLicensingSettings,
     #[doc = "Virtualization software settings."]
     #[serde(rename = "virtualizationSoftwareSettings")]
     pub virtualization_software_settings: VirtualizationSoftwareSettings,
@@ -7616,6 +7622,8 @@ impl ComputeSettings {
         price: f32,
         sql_server_licensing: Vec<SqlServerLicensingSettings>,
         windows_server_licensing: WindowsServerLicensingSettings,
+        rhel_linux_server_licensing: LinuxServerLicensingSettings,
+        suse_linux_server_licensing: LinuxServerLicensingSettings,
         virtualization_software_settings: VirtualizationSoftwareSettings,
     ) -> Self {
         Self {
@@ -7623,6 +7631,8 @@ impl ComputeSettings {
             price,
             sql_server_licensing,
             windows_server_licensing,
+            rhel_linux_server_licensing,
+            suse_linux_server_licensing,
             virtualization_software_settings,
         }
     }
@@ -7801,9 +7811,12 @@ pub struct CostDetails {
     #[doc = "The network cost."]
     #[serde(rename = "networkCost", default, skip_serializing_if = "Option::is_none")]
     pub network_cost: Option<f32>,
-    #[doc = "The AhubSavings."]
+    #[doc = "The windows AhubSavings."]
     #[serde(rename = "ahubSavings", default, skip_serializing_if = "Option::is_none")]
     pub ahub_savings: Option<f32>,
+    #[doc = "The linux AhubSavings."]
+    #[serde(rename = "linuxAhubSavings", default, skip_serializing_if = "Option::is_none")]
+    pub linux_ahub_savings: Option<f32>,
     #[doc = "Security Cost."]
     #[serde(rename = "securityCost", default, skip_serializing_if = "Option::is_none")]
     pub security_cost: Option<f32>,
@@ -7972,10 +7985,10 @@ pub struct DownloadUrl {
     pub assessment_report_url: String,
     #[doc = "Expiry date of download url."]
     #[serde(rename = "expirationTime", with = "azure_core::date::rfc3339")]
-    pub expiration_time: time::OffsetDateTime,
+    pub expiration_time: ::time::OffsetDateTime,
 }
 impl DownloadUrl {
-    pub fn new(assessment_report_url: String, expiration_time: time::OffsetDateTime) -> Self {
+    pub fn new(assessment_report_url: String, expiration_time: ::time::OffsetDateTime) -> Self {
         Self {
             assessment_report_url,
             expiration_time,
@@ -8071,7 +8084,7 @@ pub struct Error {
     pub message_parameters: Option<serde_json::Value>,
     #[doc = "Gets the time stamp when the error was updated."]
     #[serde(rename = "updatedTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_time_stamp: Option<time::OffsetDateTime>,
+    pub updated_time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "Gets the type of assessment impacted by this error."]
     #[serde(rename = "impactedAssessmentType", default, skip_serializing_if = "Option::is_none")]
     pub impacted_assessment_type: Option<String>,
@@ -8616,10 +8629,10 @@ pub struct GroupProperties {
     pub are_assessments_running: Option<bool>,
     #[doc = "Time when this group was created. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Time when this group was last updated. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[serde(rename = "groupType", default, skip_serializing_if = "Option::is_none")]
     pub group_type: Option<GroupType>,
 }
@@ -9177,6 +9190,18 @@ impl Serialize for LicensingProgram {
         }
     }
 }
+#[doc = "Linux Server licensing settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LinuxServerLicensingSettings {
+    #[doc = "Licence Cost."]
+    #[serde(rename = "licenseCost")]
+    pub license_cost: f32,
+}
+impl LinuxServerLicensingSettings {
+    pub fn new(license_cost: f32) -> Self {
+        Self { license_cost }
+    }
+}
 #[doc = "Machine resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Machine {
@@ -9295,10 +9320,10 @@ pub struct MachineAssessmentProperties {
     pub time_range: Option<TimeRange>,
     #[doc = "Gets or sets the start time to consider performance data for assessment."]
     #[serde(rename = "perfDataStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub perf_data_start_time: Option<time::OffsetDateTime>,
+    pub perf_data_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the end time to consider performance data for assessment."]
     #[serde(rename = "perfDataEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub perf_data_end_time: Option<time::OffsetDateTime>,
+    pub perf_data_end_time: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stage: Option<AssessmentStage>,
     #[doc = "Custom discount percentage."]
@@ -9312,13 +9337,13 @@ pub struct MachineAssessmentProperties {
     pub confidence_rating_in_percentage: Option<f32>,
     #[doc = "Last time when rates were queried."]
     #[serde(rename = "pricesTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub prices_timestamp: Option<time::OffsetDateTime>,
+    pub prices_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Date and Time when assessment was created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Date and Time when assessment was last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Assessment Status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<AssessmentStatus>,
@@ -9446,7 +9471,7 @@ pub struct MachineProperties {
     pub description: Option<String>,
     #[doc = "When was machine first created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Disks attached to the machine discovered in private data center."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disks: Option<serde_json::Value>,
@@ -9478,7 +9503,7 @@ pub struct MachineProperties {
     pub web_applications: Vec<String>,
     #[doc = "When was machine last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
 }
 impl MachineProperties {
     pub fn new() -> Self {
@@ -10479,6 +10504,9 @@ pub struct OverviewSummaryProperties {
     #[doc = "The windows ahub saving."]
     #[serde(rename = "windowsAhubSavings", default, skip_serializing_if = "Option::is_none")]
     pub windows_ahub_savings: Option<f32>,
+    #[doc = "The linux ahub saving."]
+    #[serde(rename = "linuxAhubSavings", default, skip_serializing_if = "Option::is_none")]
+    pub linux_ahub_savings: Option<f32>,
     #[doc = "The sql ahub saving."]
     #[serde(rename = "sqlAhubSavings", default, skip_serializing_if = "Option::is_none")]
     pub sql_ahub_savings: Option<f32>,
@@ -10674,10 +10702,10 @@ pub struct PerfDataSettings {
     pub time_range: TimeRange,
     #[doc = "Gets or sets perf data start time."]
     #[serde(rename = "perfDataStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub perf_data_start_time: Option<time::OffsetDateTime>,
+    pub perf_data_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets perf data end time."]
     #[serde(rename = "perfDataEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub perf_data_end_time: Option<time::OffsetDateTime>,
+    pub perf_data_end_time: Option<::time::OffsetDateTime>,
     #[doc = "Percentile for Performance Data."]
     pub percentile: Percentile,
 }
@@ -11006,19 +11034,19 @@ pub struct ProductSupportStatus {
     pub current_esu_year: Option<String>,
     #[doc = "Gets or sets the main stream end date of the product."]
     #[serde(rename = "mainstreamEndDate", default, with = "azure_core::date::rfc3339::option")]
-    pub mainstream_end_date: Option<time::OffsetDateTime>,
+    pub mainstream_end_date: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the extended support end date of the product."]
     #[serde(rename = "extendedSupportEndDate", default, with = "azure_core::date::rfc3339::option")]
-    pub extended_support_end_date: Option<time::OffsetDateTime>,
+    pub extended_support_end_date: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the extended security update year 1 end date of the product."]
     #[serde(rename = "extendedSecurityUpdateYear1EndDate", default, with = "azure_core::date::rfc3339::option")]
-    pub extended_security_update_year1_end_date: Option<time::OffsetDateTime>,
+    pub extended_security_update_year1_end_date: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the extended security update year 2 end date of the product."]
     #[serde(rename = "extendedSecurityUpdateYear2EndDate", default, with = "azure_core::date::rfc3339::option")]
-    pub extended_security_update_year2_end_date: Option<time::OffsetDateTime>,
+    pub extended_security_update_year2_end_date: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the extended security update year 3 end date of the product."]
     #[serde(rename = "extendedSecurityUpdateYear3EndDate", default, with = "azure_core::date::rfc3339::option")]
-    pub extended_security_update_year3_end_date: Option<time::OffsetDateTime>,
+    pub extended_security_update_year3_end_date: Option<::time::OffsetDateTime>,
 }
 impl ProductSupportStatus {
     pub fn new() -> Self {
@@ -11032,10 +11060,10 @@ pub struct ProjectProperties {
     pub azure_resource_properties: AzureResourceProperties,
     #[doc = "Time when this project was created. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Time when this project was last updated. Date-Time represented in ISO-8601\nformat."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Endpoint at which the collector agent can call agent REST API."]
     #[serde(rename = "serviceEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub service_endpoint: Option<String>,
@@ -11491,7 +11519,7 @@ pub struct ReportDownloadUrl {
     pub business_case_report_url: Option<String>,
     #[doc = "Expiry date of download url."]
     #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time: Option<time::OffsetDateTime>,
+    pub expiration_time: Option<::time::OffsetDateTime>,
 }
 impl ReportDownloadUrl {
     pub fn new() -> Self {
@@ -12394,10 +12422,10 @@ pub struct SqlAssessmentV2Properties {
     pub time_range: Option<TimeRange>,
     #[doc = "Gets or sets the start time to consider performance data for assessment."]
     #[serde(rename = "perfDataStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub perf_data_start_time: Option<time::OffsetDateTime>,
+    pub perf_data_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the end time to consider performance data for assessment."]
     #[serde(rename = "perfDataEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub perf_data_end_time: Option<time::OffsetDateTime>,
+    pub perf_data_end_time: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stage: Option<AssessmentStage>,
     #[doc = "Custom discount percentage."]
@@ -12411,13 +12439,13 @@ pub struct SqlAssessmentV2Properties {
     pub confidence_rating_in_percentage: Option<f32>,
     #[doc = "Last time when rates were queried."]
     #[serde(rename = "pricesTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub prices_timestamp: Option<time::OffsetDateTime>,
+    pub prices_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Date and Time when assessment was created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Date and Time when assessment was last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Assessment Status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<AssessmentStatus>,
@@ -13926,10 +13954,10 @@ pub struct WebAppAssessmentV2Properties {
     pub time_range: Option<TimeRange>,
     #[doc = "Gets or sets the start time to consider performance data for assessment."]
     #[serde(rename = "perfDataStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub perf_data_start_time: Option<time::OffsetDateTime>,
+    pub perf_data_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the end time to consider performance data for assessment."]
     #[serde(rename = "perfDataEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub perf_data_end_time: Option<time::OffsetDateTime>,
+    pub perf_data_end_time: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stage: Option<AssessmentStage>,
     #[doc = "Custom discount percentage."]
@@ -13943,13 +13971,13 @@ pub struct WebAppAssessmentV2Properties {
     pub confidence_rating_in_percentage: Option<f32>,
     #[doc = "Last time when rates were queried."]
     #[serde(rename = "pricesTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub prices_timestamp: Option<time::OffsetDateTime>,
+    pub prices_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Date and Time when assessment was created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Date and Time when assessment was last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Assessment Status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<AssessmentStatus>,
@@ -14058,10 +14086,10 @@ pub struct WebAppCollectorPropertiesBaseWithAgent {
     pub discovery_site_id: Option<String>,
     #[doc = "Gets the Timestamp when collector was created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Timestamp when collector was last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
 }
 impl WebAppCollectorPropertiesBaseWithAgent {
     pub fn new() -> Self {
@@ -14175,10 +14203,10 @@ pub struct WebAppServicePlanV2Properties {
     pub web_app_sku_size: Option<String>,
     #[doc = "When was assessed SQL database first created."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_timestamp: Option<time::OffsetDateTime>,
+    pub created_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "When was assessed Web app database last updated."]
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_timestamp: Option<time::OffsetDateTime>,
+    pub updated_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Cost components."]
     #[serde(
         rename = "costComponents",
@@ -14322,7 +14350,7 @@ pub enum WebAppTypes {
     Unknown,
     #[serde(rename = "ASPNET")]
     Aspnet,
-    Tomcat,
+    Java,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -14350,7 +14378,7 @@ impl Serialize for WebAppTypes {
         match self {
             Self::Unknown => serializer.serialize_unit_variant("WebAppTypes", 0u32, "Unknown"),
             Self::Aspnet => serializer.serialize_unit_variant("WebAppTypes", 1u32, "ASPNET"),
-            Self::Tomcat => serializer.serialize_unit_variant("WebAppTypes", 2u32, "Tomcat"),
+            Self::Java => serializer.serialize_unit_variant("WebAppTypes", 2u32, "Java"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -14436,7 +14464,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -14445,7 +14473,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

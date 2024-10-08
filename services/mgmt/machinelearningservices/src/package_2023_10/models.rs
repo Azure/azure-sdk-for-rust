@@ -423,7 +423,7 @@ pub struct AmlComputeProperties {
     pub allocation_state: Option<aml_compute_properties::AllocationState>,
     #[doc = "The time at which the compute entered its current allocation state."]
     #[serde(rename = "allocationStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub allocation_state_transition_time: Option<time::OffsetDateTime>,
+    pub allocation_state_transition_time: Option<::time::OffsetDateTime>,
     #[doc = "Collection of errors encountered by various compute nodes during node setup."]
     #[serde(
         default,
@@ -2342,10 +2342,10 @@ pub struct Compute {
     pub description: Option<String>,
     #[doc = "The time at which the compute was created."]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "The time at which the compute was last modified."]
     #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_on: Option<time::OffsetDateTime>,
+    pub modified_on: Option<::time::OffsetDateTime>,
     #[doc = "ARM resource id of the underlying compute"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
@@ -2753,7 +2753,7 @@ pub struct ComputeInstanceDataMount {
     pub mount_state: Option<compute_instance_data_mount::MountState>,
     #[doc = "The time when the disk mounted."]
     #[serde(rename = "mountedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub mounted_on: Option<time::OffsetDateTime>,
+    pub mounted_on: Option<::time::OffsetDateTime>,
     #[doc = "Error of this data mount."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
@@ -2911,7 +2911,7 @@ pub struct ComputeInstanceLastOperation {
     pub operation_name: Option<compute_instance_last_operation::OperationName>,
     #[doc = "Time of the last operation."]
     #[serde(rename = "operationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_time: Option<time::OffsetDateTime>,
+    pub operation_time: Option<::time::OffsetDateTime>,
     #[doc = "Operation status."]
     #[serde(rename = "operationStatus", default, skip_serializing_if = "Option::is_none")]
     pub operation_status: Option<compute_instance_last_operation::OperationStatus>,
@@ -6644,10 +6644,10 @@ impl FeatureSubset {
 pub struct FeatureWindow {
     #[doc = "Specifies the feature window end time"]
     #[serde(rename = "featureWindowEnd", default, with = "azure_core::date::rfc3339::option")]
-    pub feature_window_end: Option<time::OffsetDateTime>,
+    pub feature_window_end: Option<::time::OffsetDateTime>,
     #[doc = "Specifies the feature window start time"]
     #[serde(rename = "featureWindowStart", default, with = "azure_core::date::rfc3339::option")]
-    pub feature_window_start: Option<time::OffsetDateTime>,
+    pub feature_window_start: Option<::time::OffsetDateTime>,
 }
 impl FeatureWindow {
     pub fn new() -> Self {
@@ -14280,16 +14280,16 @@ pub struct StaticInputData {
     pub preprocessing_component_id: Option<String>,
     #[doc = "[Required] The end date of the data window."]
     #[serde(rename = "windowEnd", with = "azure_core::date::rfc3339")]
-    pub window_end: time::OffsetDateTime,
+    pub window_end: ::time::OffsetDateTime,
     #[doc = "[Required] The start date of the data window."]
     #[serde(rename = "windowStart", with = "azure_core::date::rfc3339")]
-    pub window_start: time::OffsetDateTime,
+    pub window_start: ::time::OffsetDateTime,
 }
 impl StaticInputData {
     pub fn new(
         monitoring_input_data_base: MonitoringInputDataBase,
-        window_end: time::OffsetDateTime,
-        window_start: time::OffsetDateTime,
+        window_end: ::time::OffsetDateTime,
+        window_start: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             monitoring_input_data_base,
@@ -16490,7 +16490,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -16499,7 +16499,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

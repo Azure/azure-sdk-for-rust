@@ -43,11 +43,13 @@ impl AssociationListResult {
 #[doc = "Association Properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssociationProperties {
+    #[doc = "Association Type Enum"]
     #[serde(rename = "associationType")]
     pub association_type: AssociationType,
     #[doc = "Association Subnet."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<AssociationSubnet>,
+    #[doc = "Resource Provisioning State Enum"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -83,6 +85,7 @@ impl AssociationSubnetUpdate {
         Self::default()
     }
 }
+#[doc = "Association Type Enum"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AssociationType")]
 pub enum AssociationType {
@@ -136,6 +139,7 @@ impl AssociationUpdate {
 #[doc = "The updatable properties of the Association."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssociationUpdateProperties {
+    #[doc = "Association Type Enum"]
     #[serde(rename = "associationType", default, skip_serializing_if = "Option::is_none")]
     pub association_type: Option<AssociationType>,
     #[doc = "Association Subnet."]
@@ -213,7 +217,7 @@ impl ErrorResponse {
         Self::default()
     }
 }
-#[doc = "Frontend Subresource of Traffic Controller."]
+#[doc = "Frontend Sub Resource of Traffic Controller."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Frontend {
     #[serde(flatten)]
@@ -256,6 +260,7 @@ pub struct FrontendProperties {
     #[doc = "The Fully Qualified Domain Name of the DNS record associated to a Traffic Controller frontend."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Resource Provisioning State Enum"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -426,6 +431,7 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Resource Provisioning State Enum"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ProvisioningState")]
 pub enum ProvisioningState {
@@ -586,6 +592,7 @@ pub struct TrafficControllerProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub associations: Vec<ResourceId>,
+    #[doc = "Resource Provisioning State Enum"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -617,7 +624,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -626,7 +633,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

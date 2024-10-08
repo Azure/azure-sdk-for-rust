@@ -83,9 +83,9 @@ impl BlobPrefix {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPropertiesInternal {
     #[serde(rename = "Creation-Time", default, with = "azure_core::date::rfc1123::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "Last-Modified", with = "azure_core::date::rfc1123")]
-    pub last_modified: time::OffsetDateTime,
+    pub last_modified: ::time::OffsetDateTime,
     #[serde(rename = "Etag")]
     pub etag: String,
     #[doc = "Size in bytes"]
@@ -112,7 +112,7 @@ pub struct BlobPropertiesInternal {
     #[serde(rename = "CopyProgress", default, skip_serializing_if = "Option::is_none")]
     pub copy_progress: Option<String>,
     #[serde(rename = "CopyCompletionTime", default, with = "azure_core::date::rfc1123::option")]
-    pub copy_completion_time: Option<time::OffsetDateTime>,
+    pub copy_completion_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "CopyStatusDescription", default, skip_serializing_if = "Option::is_none")]
     pub copy_status_description: Option<String>,
     #[serde(rename = "ServerEncrypted", default, skip_serializing_if = "Option::is_none")]
@@ -122,7 +122,7 @@ pub struct BlobPropertiesInternal {
     #[serde(rename = "DestinationSnapshot", default, skip_serializing_if = "Option::is_none")]
     pub destination_snapshot: Option<String>,
     #[serde(rename = "DeletedTime", default, with = "azure_core::date::rfc1123::option")]
-    pub deleted_time: Option<time::OffsetDateTime>,
+    pub deleted_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "RemainingRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub remaining_retention_days: Option<i64>,
     #[serde(rename = "AccessTierInferred", default, skip_serializing_if = "Option::is_none")]
@@ -133,20 +133,20 @@ pub struct BlobPropertiesInternal {
     #[serde(rename = "EncryptionScope", default, skip_serializing_if = "Option::is_none")]
     pub encryption_scope: Option<String>,
     #[serde(rename = "AccessTierChangeTime", default, with = "azure_core::date::rfc1123::option")]
-    pub access_tier_change_time: Option<time::OffsetDateTime>,
+    pub access_tier_change_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "TagCount", default, skip_serializing_if = "Option::is_none")]
     pub tag_count: Option<i64>,
     #[serde(rename = "Expiry-Time", default, with = "azure_core::date::rfc1123::option")]
-    pub expiry_time: Option<time::OffsetDateTime>,
+    pub expiry_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "Sealed", default, skip_serializing_if = "Option::is_none")]
     pub sealed: Option<bool>,
     #[serde(rename = "LastAccessTime", default, with = "azure_core::date::rfc1123::option")]
-    pub last_access_time: Option<time::OffsetDateTime>,
+    pub last_access_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "DeleteTime", default, with = "azure_core::date::rfc1123::option")]
-    pub delete_time: Option<time::OffsetDateTime>,
+    pub delete_time: Option<::time::OffsetDateTime>,
 }
 impl BlobPropertiesInternal {
-    pub fn new(last_modified: time::OffsetDateTime, etag: String) -> Self {
+    pub fn new(last_modified: ::time::OffsetDateTime, etag: String) -> Self {
         Self {
             creation_time: None,
             last_modified,

@@ -1258,17 +1258,17 @@ pub mod pipeline {
         #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The start date for when to get the list of pipelines. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get the list of pipelines. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -1391,17 +1391,17 @@ pub mod pipeline {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) pipeline_identity: String,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The start date for when to get the pipeline and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get the pipeline and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -1539,17 +1539,17 @@ pub mod recurrence {
         #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The start date for when to get the list of recurrences. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get the list of recurrences. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -1672,17 +1672,17 @@ pub mod recurrence {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) recurrence_identity: String,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The start date for when to get the recurrence and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get recurrence and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }

@@ -314,7 +314,7 @@ pub struct Component {
     pub license: Option<String>,
     #[doc = "Release date for the component."]
     #[serde(rename = "releaseDate", default, with = "azure_core::date::rfc3339::option")]
-    pub release_date: Option<time::OffsetDateTime>,
+    pub release_date: Option<::time::OffsetDateTime>,
     #[doc = "Paths of the component."]
     #[serde(
         default,
@@ -413,10 +413,10 @@ pub struct CryptoCertificate {
     pub issuer: Option<CryptoCertificateEntity>,
     #[doc = "Issue date for the certificate."]
     #[serde(rename = "issuedDate", default, with = "azure_core::date::rfc3339::option")]
-    pub issued_date: Option<time::OffsetDateTime>,
+    pub issued_date: Option<::time::OffsetDateTime>,
     #[doc = "Expiration date for the certificate."]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Role of the certificate (Root CA, etc)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
@@ -864,10 +864,10 @@ pub struct Cve {
     pub cvss_v3_score: Option<String>,
     #[doc = "Publish date of CVE"]
     #[serde(rename = "publishDate", default, with = "azure_core::date::rfc3339::option")]
-    pub publish_date: Option<time::OffsetDateTime>,
+    pub publish_date: Option<::time::OffsetDateTime>,
     #[doc = "Updated date of CVE"]
     #[serde(rename = "updatedDate", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_date: Option<time::OffsetDateTime>,
+    pub updated_date: Option<::time::OffsetDateTime>,
     #[doc = "The list of CVE links."]
     #[serde(
         default,
@@ -1680,7 +1680,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1689,7 +1689,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

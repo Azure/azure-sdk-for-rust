@@ -38,12 +38,12 @@ all-features = true
 default = ["default_tag", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-default_tag = ["package-2023-05"]
+default_tag = ["package-preview-2024-06"]
+"package-preview-2024-06" = []
+"package-preview-2024-05" = []
 "package-preview-2023-07" = []
 "package-preview-2022-11" = []
 "package-preview-2022-05" = []
-"package-2023-05" = []
-"package-2021-06" = []
 
 [lints]
 workspace = true

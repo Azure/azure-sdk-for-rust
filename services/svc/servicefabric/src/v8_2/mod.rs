@@ -22252,8 +22252,8 @@ pub mod get_application_backup_list {
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
         pub(crate) latest: Option<bool>,
-        pub(crate) start_date_time_filter: Option<time::OffsetDateTime>,
-        pub(crate) end_date_time_filter: Option<time::OffsetDateTime>,
+        pub(crate) start_date_time_filter: Option<::time::OffsetDateTime>,
+        pub(crate) end_date_time_filter: Option<::time::OffsetDateTime>,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
     }
@@ -22269,12 +22269,12 @@ pub mod get_application_backup_list {
             self
         }
         #[doc = "Specify the start date time from which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, all backups from the beginning are enumerated."]
-        pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<time::OffsetDateTime>) -> Self {
+        pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<::time::OffsetDateTime>) -> Self {
             self.start_date_time_filter = Some(start_date_time_filter.into());
             self
         }
         #[doc = "Specify the end date time till which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, enumeration is done till the most recent backup."]
-        pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<time::OffsetDateTime>) -> Self {
+        pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<::time::OffsetDateTime>) -> Self {
             self.end_date_time_filter = Some(end_date_time_filter.into());
             self
         }
@@ -22896,8 +22896,8 @@ pub mod get_service_backup_list {
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
         pub(crate) latest: Option<bool>,
-        pub(crate) start_date_time_filter: Option<time::OffsetDateTime>,
-        pub(crate) end_date_time_filter: Option<time::OffsetDateTime>,
+        pub(crate) start_date_time_filter: Option<::time::OffsetDateTime>,
+        pub(crate) end_date_time_filter: Option<::time::OffsetDateTime>,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
     }
@@ -22913,12 +22913,12 @@ pub mod get_service_backup_list {
             self
         }
         #[doc = "Specify the start date time from which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, all backups from the beginning are enumerated."]
-        pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<time::OffsetDateTime>) -> Self {
+        pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<::time::OffsetDateTime>) -> Self {
             self.start_date_time_filter = Some(start_date_time_filter.into());
             self
         }
         #[doc = "Specify the end date time till which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, enumeration is done till the most recent backup."]
-        pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<time::OffsetDateTime>) -> Self {
+        pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<::time::OffsetDateTime>) -> Self {
             self.end_date_time_filter = Some(end_date_time_filter.into());
             self
         }
@@ -23522,8 +23522,8 @@ pub mod get_partition_backup_list {
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
         pub(crate) latest: Option<bool>,
-        pub(crate) start_date_time_filter: Option<time::OffsetDateTime>,
-        pub(crate) end_date_time_filter: Option<time::OffsetDateTime>,
+        pub(crate) start_date_time_filter: Option<::time::OffsetDateTime>,
+        pub(crate) end_date_time_filter: Option<::time::OffsetDateTime>,
     }
     impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
@@ -23537,12 +23537,12 @@ pub mod get_partition_backup_list {
             self
         }
         #[doc = "Specify the start date time from which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, all backups from the beginning are enumerated."]
-        pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<time::OffsetDateTime>) -> Self {
+        pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<::time::OffsetDateTime>) -> Self {
             self.start_date_time_filter = Some(start_date_time_filter.into());
             self
         }
         #[doc = "Specify the end date time till which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, enumeration is done till the most recent backup."]
-        pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<time::OffsetDateTime>) -> Self {
+        pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<::time::OffsetDateTime>) -> Self {
             self.end_date_time_filter = Some(end_date_time_filter.into());
             self
         }

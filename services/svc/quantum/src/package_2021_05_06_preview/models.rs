@@ -76,16 +76,16 @@ pub struct JobDetails {
     pub status: Option<job_details::Status>,
     #[doc = "The creation time of the job."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the job began execution."]
     #[serde(rename = "beginExecutionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub begin_execution_time: Option<time::OffsetDateTime>,
+    pub begin_execution_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the job finished execution."]
     #[serde(rename = "endExecutionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_execution_time: Option<time::OffsetDateTime>,
+    pub end_execution_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when a job was successfully cancelled."]
     #[serde(rename = "cancellationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub cancellation_time: Option<time::OffsetDateTime>,
+    pub cancellation_time: Option<::time::OffsetDateTime>,
     #[doc = "An error response from Azure."]
     #[serde(rename = "errorData", default, skip_serializing_if = "Option::is_none")]
     pub error_data: Option<ErrorData>,

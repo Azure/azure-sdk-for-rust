@@ -168,7 +168,7 @@ pub struct ArmTemplateProperties {
     pub contents: Option<serde_json::Value>,
     #[doc = "The creation date of the armTemplate."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "File name and parameter values information from all azuredeploy.*.parameters.json for the ARM template."]
     #[serde(
         rename = "parametersValueFilesInfo",
@@ -255,7 +255,7 @@ pub struct ArtifactInstallProperties {
     pub vm_extension_status_message: Option<String>,
     #[doc = "The time that the artifact starts to install on the virtual machine."]
     #[serde(rename = "installTime", default, with = "azure_core::date::rfc3339::option")]
-    pub install_time: Option<time::OffsetDateTime>,
+    pub install_time: Option<::time::OffsetDateTime>,
 }
 impl ArtifactInstallProperties {
     pub fn new() -> Self {
@@ -344,7 +344,7 @@ pub struct ArtifactProperties {
     pub parameters: Option<serde_json::Value>,
     #[doc = "The artifact's creation date."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
 }
 impl ArtifactProperties {
     pub fn new() -> Self {
@@ -432,7 +432,7 @@ pub struct ArtifactSourceProperties {
     pub status: Option<artifact_source_properties::Status>,
     #[doc = "The artifact source's creation date."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -953,7 +953,7 @@ pub struct CustomImageProperties {
     pub author: Option<String>,
     #[doc = "The creation date of the custom image."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
     #[doc = "The Managed Image Id backing the custom image."]
     #[serde(rename = "managedImageId", default, skip_serializing_if = "Option::is_none")]
     pub managed_image_id: Option<String>,
@@ -1371,7 +1371,7 @@ pub struct DiskProperties {
     pub storage_account_id: Option<String>,
     #[doc = "The creation date of the disk."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The host caching policy of the disk (i.e. None, ReadOnly, ReadWrite)."]
     #[serde(rename = "hostCaching", default, skip_serializing_if = "Option::is_none")]
     pub host_caching: Option<String>,
@@ -1676,7 +1676,7 @@ pub struct ExportResourceUsageParameters {
     pub blob_storage_absolute_sas_uri: Option<String>,
     #[doc = "The start time of the usage. If not provided, usage will be reported since the beginning of data collection."]
     #[serde(rename = "usageStartDate", default, with = "azure_core::date::rfc3339::option")]
-    pub usage_start_date: Option<time::OffsetDateTime>,
+    pub usage_start_date: Option<::time::OffsetDateTime>,
 }
 impl ExportResourceUsageParameters {
     pub fn new() -> Self {
@@ -1772,7 +1772,7 @@ pub struct FormulaProperties {
     pub os_type: Option<String>,
     #[doc = "The creation date of the formula."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
     #[doc = "Properties for creating a virtual machine."]
     #[serde(rename = "formulaContent", default, skip_serializing_if = "Option::is_none")]
     pub formula_content: Option<LabVirtualMachineCreationParameter>,
@@ -1868,7 +1868,7 @@ pub struct GalleryImageProperties {
     pub author: Option<String>,
     #[doc = "The creation date of the gallery image."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The description of the gallery image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -2211,7 +2211,7 @@ pub struct LabAnnouncementProperties {
     pub enabled: Option<lab_announcement_properties::Enabled>,
     #[doc = "The time at which the announcement expires (null for never)"]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Has this announcement expired?"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expired: Option<bool>,
@@ -2296,7 +2296,7 @@ impl LabCost {
 pub struct LabCostDetailsProperties {
     #[doc = "The date of the cost item."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub date: Option<time::OffsetDateTime>,
+    pub date: Option<::time::OffsetDateTime>,
     #[doc = "The cost component of the cost item."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cost: Option<f64>,
@@ -2381,13 +2381,13 @@ pub struct LabCostProperties {
     pub currency_code: Option<String>,
     #[doc = "The start time of the cost data."]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the cost data."]
     #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_date_time: Option<time::OffsetDateTime>,
+    pub end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The creation date of the cost."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -2487,7 +2487,7 @@ pub struct LabProperties {
     pub mandatory_artifacts_resource_ids_windows: Vec<String>,
     #[doc = "The creation date of the lab."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The setting to enable usage of premium data disks.\r\nWhen its value is 'Enabled', creation of standard or premium data disks is allowed.\r\nWhen its value is 'Disabled', only creation of standard data disks is allowed."]
     #[serde(rename = "premiumDataDisks", default, skip_serializing_if = "Option::is_none")]
     pub premium_data_disks: Option<lab_properties::PremiumDataDisks>,
@@ -2855,7 +2855,7 @@ pub struct LabVirtualMachineCreationParameterProperties {
     pub owner_user_principal_name: Option<String>,
     #[doc = "The creation date of the virtual machine."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The custom image identifier of the virtual machine."]
     #[serde(rename = "customImageId", default, skip_serializing_if = "Option::is_none")]
     pub custom_image_id: Option<String>,
@@ -2901,7 +2901,7 @@ pub struct LabVirtualMachineCreationParameterProperties {
     pub network_interface: Option<NetworkInterfaceProperties>,
     #[doc = "The expiration date for VM."]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Indicates whether another user can take ownership of the virtual machine"]
     #[serde(rename = "allowClaim", default, skip_serializing_if = "Option::is_none")]
     pub allow_claim: Option<bool>,
@@ -2997,7 +2997,7 @@ pub struct LabVirtualMachineProperties {
     pub created_by_user: Option<String>,
     #[doc = "The creation date of the virtual machine."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The resource identifier (Microsoft.Compute) of the virtual machine."]
     #[serde(rename = "computeId", default, skip_serializing_if = "Option::is_none")]
     pub compute_id: Option<String>,
@@ -3061,7 +3061,7 @@ pub struct LabVirtualMachineProperties {
     pub applicable_schedule: Option<ApplicableSchedule>,
     #[doc = "The expiration date for VM."]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Indicates whether another user can take ownership of the virtual machine"]
     #[serde(rename = "allowClaim", default, skip_serializing_if = "Option::is_none")]
     pub allow_claim: Option<bool>,
@@ -3339,7 +3339,7 @@ pub struct NotificationChannelProperties {
     pub events: Vec<Event>,
     #[doc = "The creation date of the notification channel."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -3811,7 +3811,7 @@ pub struct PolicyProperties {
     pub evaluator_type: Option<policy_properties::EvaluatorType>,
     #[doc = "The creation date of the policy."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -4341,7 +4341,7 @@ pub struct ScheduleProperties {
     pub notification_settings: Option<NotificationSettings>,
     #[doc = "The creation date of the schedule."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The resource ID to which the schedule belongs"]
     #[serde(rename = "targetResourceId", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_id: Option<String>,
@@ -4906,10 +4906,10 @@ pub struct TargetCostProperties {
     pub cost_thresholds: Vec<CostThresholdProperties>,
     #[doc = "Reporting cycle start date."]
     #[serde(rename = "cycleStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub cycle_start_date_time: Option<time::OffsetDateTime>,
+    pub cycle_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Reporting cycle end date."]
     #[serde(rename = "cycleEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub cycle_end_date_time: Option<time::OffsetDateTime>,
+    pub cycle_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Reporting cycle type."]
     #[serde(rename = "cycleType", default, skip_serializing_if = "Option::is_none")]
     pub cycle_type: Option<target_cost_properties::CycleType>,
@@ -5101,7 +5101,7 @@ pub struct UserProperties {
     pub secret_store: Option<UserSecretStore>,
     #[doc = "The creation date of the user profile."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -5230,7 +5230,7 @@ pub struct VirtualNetworkProperties {
     pub subnet_overrides: Vec<SubnetOverride>,
     #[doc = "The creation date of the virtual network."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,

@@ -517,10 +517,10 @@ pub struct DependencyMapServiceMapextensionsClientGroupMembersRequest {
     pub process_name: Option<String>,
     #[doc = "start time"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "end time"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "DependencyMap Service Map extensions Dependency Map Request Filters"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filters: Option<DependencyMapServiceMapextensionsDependencyMapRequestFilters>,
@@ -560,10 +560,10 @@ impl DependencyMapServiceMapextensionsDependencyMapRequestFilters {
 pub struct DependencyMapServiceMapextensionsExportDependenciesRequest {
     #[doc = "start time"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "end time"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
 }
 impl DependencyMapServiceMapextensionsExportDependenciesRequest {
     pub fn new() -> Self {
@@ -575,10 +575,10 @@ impl DependencyMapServiceMapextensionsExportDependenciesRequest {
 pub struct DependencyMapServiceMapextensionsScopeMapRequest {
     #[doc = "start time"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "end time"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "DependencyMap Service Map extensions Dependency Map Request Filters"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filters: Option<DependencyMapServiceMapextensionsDependencyMapRequestFilters>,
@@ -596,10 +596,10 @@ pub struct DependencyMapServiceMapextensionsServerGroupMembersRequest {
     pub server_port: Option<i32>,
     #[doc = "start time"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "end time"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "DependencyMap Service Map extensions Dependency Map Request Filters"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filters: Option<DependencyMapServiceMapextensionsDependencyMapRequestFilters>,
@@ -617,10 +617,10 @@ pub struct DependencyMapServiceMapextensionsSingleMachineDetailedMapRequest {
     pub machine_id: Option<String>,
     #[doc = "start time"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "end time"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "DependencyMap Service Map extensions Dependency Map Request Filters"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filters: Option<DependencyMapServiceMapextensionsDependencyMapRequestFilters>,
@@ -963,7 +963,7 @@ pub struct Errors {
     pub source: Option<MicrosoftAzureFdsWebRoleHealthErrorDetailsSource>,
     #[doc = "Gets the time stamp when the error was updated."]
     #[serde(rename = "updatedTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_time_stamp: Option<time::OffsetDateTime>,
+    pub updated_time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "Gets run as account id used while performing discovery             of entity."]
     #[serde(rename = "runAsAccountId", default, skip_serializing_if = "Option::is_none")]
     pub run_as_account_id: Option<String>,
@@ -1359,7 +1359,7 @@ pub struct HealthErrorDetails {
     pub source: Option<HealthErrorDetailsSource>,
     #[doc = "Gets the time stamp when the error was updated."]
     #[serde(rename = "updatedTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_time_stamp: Option<time::OffsetDateTime>,
+    pub updated_time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "Gets run as account id used while performing discovery             of entity."]
     #[serde(rename = "runAsAccountId", default, skip_serializing_if = "Option::is_none")]
     pub run_as_account_id: Option<String>,
@@ -1882,7 +1882,7 @@ pub struct HypervMachineProperties {
     pub number_of_applications: Option<i32>,
     #[doc = "The last time at which the Guest Details was discovered\n            or the\nerror while discovering guest details based discovery\n            of the\nmachine."]
     #[serde(rename = "guestDetailsDiscoveryTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub guest_details_discovery_timestamp: Option<time::OffsetDateTime>,
+    pub guest_details_discovery_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Whether Refresh Fabric Layout Guest Details has been completed once.\n         \n  Portal will show discovery in progress, if this value is true."]
     #[serde(rename = "isGuestDetailsDiscoveryInProgress", default, skip_serializing_if = "Option::is_none")]
     pub is_guest_details_discovery_in_progress: Option<bool>,
@@ -1891,7 +1891,7 @@ pub struct HypervMachineProperties {
     pub dependency_mapping: Option<String>,
     #[doc = "Gets or sets when dependency mapping collection is last started."]
     #[serde(rename = "dependencyMappingStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub dependency_mapping_start_time: Option<time::OffsetDateTime>,
+    pub dependency_mapping_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets when dependency mapping collection was last disabled."]
     #[serde(rename = "dependencyMappingEndTime", default, skip_serializing_if = "Option::is_none")]
     pub dependency_mapping_end_time: Option<String>,
@@ -2857,7 +2857,7 @@ pub struct ImportMachinesJobProperties {
     pub number_of_machines_imported: Option<i32>,
     #[doc = "blob Creation TimeStamp"]
     #[serde(rename = "blobCreationTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub blob_creation_time_stamp: Option<time::OffsetDateTime>,
+    pub blob_creation_time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "Job Error Summary"]
     #[serde(rename = "errorSummary", default, skip_serializing_if = "Option::is_none")]
     pub error_summary: Option<JobErrorSummary>,
@@ -4002,7 +4002,7 @@ pub struct ProductSupportStatus {
     pub support_status: Option<SupportStatus>,
     #[doc = "support end date."]
     #[serde(rename = "supportEndDate", default, with = "azure_core::date::rfc3339::option")]
-    pub support_end_date: Option<time::OffsetDateTime>,
+    pub support_end_date: Option<::time::OffsetDateTime>,
     #[doc = "esu year"]
     #[serde(rename = "esuYear", default, skip_serializing_if = "Option::is_none")]
     pub esu_year: Option<EsuYear>,
@@ -4413,7 +4413,7 @@ pub struct ServerProperties {
     pub number_of_applications: Option<i32>,
     #[doc = "The last time at which the Guest Details was discovered\n            or the\nerror while discovering guest details based discovery\n            of the\nmachine."]
     #[serde(rename = "guestDetailsDiscoveryTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub guest_details_discovery_timestamp: Option<time::OffsetDateTime>,
+    pub guest_details_discovery_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Whether Refresh Fabric Layout Guest Details has been completed once.\n         \n  Portal will show discovery in progress, if this value is true."]
     #[serde(rename = "isGuestDetailsDiscoveryInProgress", default, skip_serializing_if = "Option::is_none")]
     pub is_guest_details_discovery_in_progress: Option<bool>,
@@ -4422,7 +4422,7 @@ pub struct ServerProperties {
     pub dependency_mapping: Option<String>,
     #[doc = "Gets or sets when dependency mapping collection is last started."]
     #[serde(rename = "dependencyMappingStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub dependency_mapping_start_time: Option<time::OffsetDateTime>,
+    pub dependency_mapping_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets when dependency mapping collection was last disabled."]
     #[serde(rename = "dependencyMappingEndTime", default, skip_serializing_if = "Option::is_none")]
     pub dependency_mapping_end_time: Option<String>,
@@ -4849,7 +4849,7 @@ pub struct SiteAgentProperties {
     pub version: Option<String>,
     #[doc = "Gets the last heartbeat time of the agent in UTC."]
     #[serde(rename = "lastHeartBeatUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heart_beat_utc: Option<time::OffsetDateTime>,
+    pub last_heart_beat_utc: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the key vault URI."]
     #[serde(rename = "keyVaultUri", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_uri: Option<String>,
@@ -6171,7 +6171,7 @@ pub struct SqlServerProperties {
     pub hyperthread_ratio: Option<i32>,
     #[doc = "Gets or sets the SQL start time."]
     #[serde(rename = "sqlStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub sql_start_time: Option<time::OffsetDateTime>,
+    pub sql_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets the list of machine ARM Ids on which the SQL server is deployed."]
     #[serde(
         rename = "machineArmIds",
@@ -6377,7 +6377,7 @@ pub struct SqlServerV2UpdateProperties {
     pub hyperthread_ratio: Option<i32>,
     #[doc = "Gets or sets the SQL start time."]
     #[serde(rename = "sqlStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub sql_start_time: Option<time::OffsetDateTime>,
+    pub sql_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the run as account ID of the SQL server."]
     #[serde(rename = "runAsAccountId", default, skip_serializing_if = "Option::is_none")]
     pub run_as_account_id: Option<String>,
@@ -7620,7 +7620,7 @@ pub struct VmwareMachineProperties {
     pub number_of_applications: Option<i32>,
     #[doc = "The last time at which the Guest Details was discovered\n            or the\nerror while discovering guest details based discovery\n            of the\nmachine."]
     #[serde(rename = "guestDetailsDiscoveryTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub guest_details_discovery_timestamp: Option<time::OffsetDateTime>,
+    pub guest_details_discovery_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Whether Refresh Fabric Layout Guest Details has been completed once.\n         \n  Portal will show discovery in progress, if this value is true."]
     #[serde(rename = "isGuestDetailsDiscoveryInProgress", default, skip_serializing_if = "Option::is_none")]
     pub is_guest_details_discovery_in_progress: Option<bool>,
@@ -7629,7 +7629,7 @@ pub struct VmwareMachineProperties {
     pub dependency_mapping: Option<String>,
     #[doc = "Gets or sets when dependency mapping collection is last started."]
     #[serde(rename = "dependencyMappingStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub dependency_mapping_start_time: Option<time::OffsetDateTime>,
+    pub dependency_mapping_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets when dependency mapping collection was last disabled."]
     #[serde(rename = "dependencyMappingEndTime", default, skip_serializing_if = "Option::is_none")]
     pub dependency_mapping_end_time: Option<String>,
@@ -8777,7 +8777,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -8786,7 +8786,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

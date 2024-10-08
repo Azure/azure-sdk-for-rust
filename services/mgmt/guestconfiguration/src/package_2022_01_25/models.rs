@@ -34,10 +34,10 @@ pub struct AssignmentReport {
     pub vm: Option<VmInfo>,
     #[doc = "Start date and time of the guest configuration assignment compliance status check."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "End date and time of the guest configuration assignment compliance status check."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "A value indicating compliance status of the machine for the assigned guest configuration."]
     #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<assignment_report::ComplianceStatus>,
@@ -144,10 +144,10 @@ pub struct AssignmentReportDetails {
     pub compliance_status: Option<assignment_report_details::ComplianceStatus>,
     #[doc = "Start date and time of the guest configuration assignment compliance status check."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "End date and time of the guest configuration assignment compliance status check."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "GUID of the report."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
@@ -551,7 +551,7 @@ pub struct GuestConfigurationAssignmentProperties {
     pub compliance_status: Option<guest_configuration_assignment_properties::ComplianceStatus>,
     #[doc = "Date and time when last compliance status was checked."]
     #[serde(rename = "lastComplianceStatusChecked", default, with = "azure_core::date::rfc3339::option")]
-    pub last_compliance_status_checked: Option<time::OffsetDateTime>,
+    pub last_compliance_status_checked: Option<::time::OffsetDateTime>,
     #[doc = "Id of the latest report for the guest configuration assignment. "]
     #[serde(rename = "latestReportId", default, skip_serializing_if = "Option::is_none")]
     pub latest_report_id: Option<String>,
@@ -726,10 +726,10 @@ pub struct GuestConfigurationAssignmentReportProperties {
     pub vm: Option<VmInfo>,
     #[doc = "Start date and time of the guest configuration assignment compliance status check."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "End date and time of the guest configuration assignment compliance status check."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Details of the guest configuration assignment report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<AssignmentReportDetails>,
@@ -1056,7 +1056,7 @@ pub struct VmssvmInfo {
     pub latest_report_id: Option<String>,
     #[doc = "Date and time when last compliance status was checked."]
     #[serde(rename = "lastComplianceChecked", default, with = "azure_core::date::rfc3339::option")]
-    pub last_compliance_checked: Option<time::OffsetDateTime>,
+    pub last_compliance_checked: Option<::time::OffsetDateTime>,
 }
 impl VmssvmInfo {
     pub fn new() -> Self {
@@ -1116,7 +1116,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1125,7 +1125,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

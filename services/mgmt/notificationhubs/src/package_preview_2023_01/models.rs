@@ -632,10 +632,10 @@ pub struct NamespaceProperties {
     pub metric_id: Option<String>,
     #[doc = "Time when the namespace was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "Time when the namespace was updated."]
     #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_at: Option<time::OffsetDateTime>,
+    pub updated_at: Option<::time::OffsetDateTime>,
     #[doc = "Defines values for NamespaceType."]
     #[serde(rename = "namespaceType", default, skip_serializing_if = "Option::is_none")]
     pub namespace_type: Option<NamespaceType>,
@@ -1659,10 +1659,10 @@ pub struct SharedAccessAuthorizationRuleProperties {
     pub key_name: Option<String>,
     #[doc = "Gets the last modified time for this rule"]
     #[serde(rename = "modifiedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_time: Option<time::OffsetDateTime>,
+    pub modified_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets the created time for this rule"]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "Gets a string that describes the claim type"]
     #[serde(rename = "claimType", default, skip_serializing_if = "Option::is_none")]
     pub claim_type: Option<String>,
@@ -1910,7 +1910,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1919,7 +1919,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

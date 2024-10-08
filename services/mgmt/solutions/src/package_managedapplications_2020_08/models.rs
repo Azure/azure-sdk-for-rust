@@ -1135,10 +1135,10 @@ pub struct JitSchedulingPolicy {
     pub duration: String,
     #[doc = "The start time of the request."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
 }
 impl JitSchedulingPolicy {
-    pub fn new(type_: JitSchedulingType, duration: String, start_time: time::OffsetDateTime) -> Self {
+    pub fn new(type_: JitSchedulingType, duration: String, start_time: ::time::OffsetDateTime) -> Self {
         Self {
             type_,
             duration,

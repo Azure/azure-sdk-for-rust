@@ -1254,7 +1254,7 @@ pub mod storage_task_assignment {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Lists all the storage tasks available under the given resource group."]
+        #[doc = "Lists Resource IDs of the Storage Task Assignments associated with this Storage Task."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
@@ -1330,12 +1330,12 @@ pub mod storage_task_assignment {
             pub(crate) resource_group_name: String,
             pub(crate) storage_task_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) maxpagesize: Option<String>,
+            pub(crate) maxpagesize: Option<i32>,
         }
         impl RequestBuilder {
-            #[doc = "Optional, specifies the maximum number of storage task assignment Ids to be included in the list response."]
-            pub fn maxpagesize(mut self, maxpagesize: impl Into<String>) -> Self {
-                self.maxpagesize = Some(maxpagesize.into());
+            #[doc = "Optional, specifies the maximum number of Storage Task Assignment Resource IDs to be included in the list response."]
+            pub fn maxpagesize(mut self, maxpagesize: i32) -> Self {
+                self.maxpagesize = Some(maxpagesize);
                 self
             }
             pub fn into_stream(self) -> azure_core::Pageable<models::StorageTaskAssignmentsListResult, azure_core::error::Error> {
@@ -1366,7 +1366,9 @@ pub mod storage_task_assignment {
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 if let Some(maxpagesize) = &this.maxpagesize {
-                                    req.url_mut().query_pairs_mut().append_pair("$maxpagesize", maxpagesize);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("$maxpagesize", &maxpagesize.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1486,13 +1488,13 @@ pub mod storage_tasks_report {
             pub(crate) resource_group_name: String,
             pub(crate) storage_task_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) maxpagesize: Option<String>,
+            pub(crate) maxpagesize: Option<i32>,
             pub(crate) filter: Option<String>,
         }
         impl RequestBuilder {
-            #[doc = "Optional, specifies the maximum number of storage task assignment Ids to be included in the list response."]
-            pub fn maxpagesize(mut self, maxpagesize: impl Into<String>) -> Self {
-                self.maxpagesize = Some(maxpagesize.into());
+            #[doc = "Optional, specifies the maximum number of Storage Task Assignment Resource IDs to be included in the list response."]
+            pub fn maxpagesize(mut self, maxpagesize: i32) -> Self {
+                self.maxpagesize = Some(maxpagesize);
                 self
             }
             #[doc = "Optional. When specified, it can be used to query using reporting properties."]
@@ -1528,7 +1530,9 @@ pub mod storage_tasks_report {
                                 let bearer_token = this.client.bearer_token().await?;
                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 if let Some(maxpagesize) = &this.maxpagesize {
-                                    req.url_mut().query_pairs_mut().append_pair("$maxpagesize", maxpagesize);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("$maxpagesize", &maxpagesize.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);

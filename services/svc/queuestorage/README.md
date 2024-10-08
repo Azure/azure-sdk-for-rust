@@ -10,4 +10,5 @@ The default tag is `package-2018-03`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/legacy/services/tags.md) are available:
 
+- `package-2018-03-preview` has 16 operations from 1 API versions: `2018-03-28`. Use crate feature `package-2018-03-preview` to enable. The operations will be in the `package_2018_03_preview` module.
 - `package-2018-03` has 16 operations from 1 API versions: `2018-03-28`. Use crate feature `package-2018-03` to enable. The operations will be in the `package_2018_03` module.

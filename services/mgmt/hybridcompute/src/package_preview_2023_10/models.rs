@@ -763,7 +763,7 @@ pub struct ExtensionsResourceStatus {
     pub message: Option<String>,
     #[doc = "The time of the status."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
+    pub time: Option<::time::OffsetDateTime>,
 }
 impl ExtensionsResourceStatus {
     pub fn new() -> Self {
@@ -957,10 +957,10 @@ pub struct KeyDetails {
     pub public_key: Option<String>,
     #[doc = "Key expiration date"]
     #[serde(rename = "notAfter", default, with = "azure_core::date::rfc3339::option")]
-    pub not_after: Option<time::OffsetDateTime>,
+    pub not_after: Option<::time::OffsetDateTime>,
     #[doc = "Recommended key renewal date"]
     #[serde(rename = "renewAfter", default, with = "azure_core::date::rfc3339::option")]
-    pub renew_after: Option<time::OffsetDateTime>,
+    pub renew_after: Option<::time::OffsetDateTime>,
 }
 impl KeyDetails {
     pub fn new() -> Self {
@@ -1204,13 +1204,13 @@ pub struct LicenseProfileArmProductProfileProperties {
     pub product_type: Option<LicenseProfileProductType>,
     #[doc = "The timestamp in UTC when the billing starts."]
     #[serde(rename = "billingStartDate", default, with = "azure_core::date::rfc3339::option")]
-    pub billing_start_date: Option<time::OffsetDateTime>,
+    pub billing_start_date: Option<::time::OffsetDateTime>,
     #[doc = "The timestamp in UTC when the user enrolls the feature."]
     #[serde(rename = "enrollmentDate", default, with = "azure_core::date::rfc3339::option")]
-    pub enrollment_date: Option<time::OffsetDateTime>,
+    pub enrollment_date: Option<::time::OffsetDateTime>,
     #[doc = "The timestamp in UTC when the user disenrolled the feature."]
     #[serde(rename = "disenrollmentDate", default, with = "azure_core::date::rfc3339::option")]
-    pub disenrollment_date: Option<time::OffsetDateTime>,
+    pub disenrollment_date: Option<::time::OffsetDateTime>,
     #[doc = "The list of product features."]
     #[serde(
         rename = "productFeatures",
@@ -1861,10 +1861,10 @@ pub struct MachineAssessPatchesResult {
     pub available_patch_count_by_classification: Option<AvailablePatchCountByClassification>,
     #[doc = "The UTC timestamp when the operation began."]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The UTC timestamp when the operation finished."]
     #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_date_time: Option<time::OffsetDateTime>,
+    pub last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Indicates if operation was triggered by user or by platform."]
     #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
     pub started_by: Option<machine_assess_patches_result::StartedBy>,
@@ -2109,7 +2109,7 @@ pub mod machine_extension_instance_view {
         pub message: Option<String>,
         #[doc = "The time of the status."]
         #[serde(default, with = "azure_core::date::rfc3339::option")]
-        pub time: Option<time::OffsetDateTime>,
+        pub time: Option<::time::OffsetDateTime>,
     }
     impl Status {
         pub fn new() -> Self {
@@ -2382,10 +2382,10 @@ pub struct MachineInstallPatchesResult {
     pub failed_patch_count: Option<i32>,
     #[doc = "The UTC timestamp when the operation began."]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The UTC timestamp when the operation finished."]
     #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_date_time: Option<time::OffsetDateTime>,
+    pub last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Indicates if operation was triggered by user or by platform."]
     #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
     pub started_by: Option<machine_install_patches_result::StartedBy>,
@@ -2670,7 +2670,7 @@ pub struct MachineProperties {
     pub status: Option<machine_properties::Status>,
     #[doc = "The time of the last status change."]
     #[serde(rename = "lastStatusChange", default, with = "azure_core::date::rfc3339::option")]
-    pub last_status_change: Option<time::OffsetDateTime>,
+    pub last_status_change: Option<::time::OffsetDateTime>,
     #[doc = "Details about the error state."]
     #[serde(
         rename = "errorDetails",
@@ -2828,10 +2828,10 @@ pub struct MachineRunCommandInstanceView {
     pub error: Option<String>,
     #[doc = "Script start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Script end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The  status information."]
     #[serde(
         default,
@@ -3719,13 +3719,13 @@ pub struct ProductFeature {
     pub subscription_status: Option<LicenseProfileSubscriptionStatus>,
     #[doc = "The timestamp in UTC when the billing starts."]
     #[serde(rename = "billingStartDate", default, with = "azure_core::date::rfc3339::option")]
-    pub billing_start_date: Option<time::OffsetDateTime>,
+    pub billing_start_date: Option<::time::OffsetDateTime>,
     #[doc = "The timestamp in UTC when the user enrolls the feature."]
     #[serde(rename = "enrollmentDate", default, with = "azure_core::date::rfc3339::option")]
-    pub enrollment_date: Option<time::OffsetDateTime>,
+    pub enrollment_date: Option<::time::OffsetDateTime>,
     #[doc = "The timestamp in UTC when the user disenrolled the feature."]
     #[serde(rename = "disenrollmentDate", default, with = "azure_core::date::rfc3339::option")]
-    pub disenrollment_date: Option<time::OffsetDateTime>,
+    pub disenrollment_date: Option<::time::OffsetDateTime>,
 }
 impl ProductFeature {
     pub fn new() -> Self {
@@ -4188,7 +4188,7 @@ pub struct WindowsParameters {
     pub exclude_kbs_requiring_reboot: Option<bool>,
     #[doc = "This is used to install patches that were published on or before this given max published date."]
     #[serde(rename = "maxPatchPublishDate", default, with = "azure_core::date::rfc3339::option")]
-    pub max_patch_publish_date: Option<time::OffsetDateTime>,
+    pub max_patch_publish_date: Option<::time::OffsetDateTime>,
 }
 impl WindowsParameters {
     pub fn new() -> Self {
@@ -4231,7 +4231,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -4240,7 +4240,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

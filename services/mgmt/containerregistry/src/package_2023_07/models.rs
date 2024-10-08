@@ -832,7 +832,7 @@ pub struct CacheRuleProperties {
     pub target_repository: Option<String>,
     #[doc = "The creation date of the cache rule."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cache_rule_properties::ProvisioningState>,
@@ -1073,7 +1073,7 @@ pub struct CredentialSetProperties {
     pub auth_credentials: Vec<AuthCredential>,
     #[doc = "The creation date of credential store resource."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<credential_set_properties::ProvisioningState>,
@@ -1633,7 +1633,7 @@ pub struct EventContent {
     pub id: Option<String>,
     #[doc = "The time at which the event occurred."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The action that encompasses the provided event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
@@ -1913,7 +1913,7 @@ pub struct GenerateCredentialsParameters {
     pub token_id: Option<String>,
     #[doc = "The expiry date of the generated credentials after which the credentials become invalid."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiry: Option<time::OffsetDateTime>,
+    pub expiry: Option<::time::OffsetDateTime>,
     #[doc = "Specifies name of the password which should be regenerated if any -- password1 or password2."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<generate_credentials_parameters::Name>,
@@ -2103,7 +2103,7 @@ pub struct ImageUpdateTrigger {
     pub id: Option<String>,
     #[doc = "The timestamp when the image update happened."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The list of image updates that caused the build."]
     #[serde(
         default,
@@ -2268,7 +2268,7 @@ pub struct KeyVaultProperties {
     pub key_rotation_enabled: Option<bool>,
     #[doc = "Timestamp of the last successful key rotation."]
     #[serde(rename = "lastKeyRotationTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub last_key_rotation_timestamp: Option<time::OffsetDateTime>,
+    pub last_key_rotation_timestamp: Option<::time::OffsetDateTime>,
 }
 impl KeyVaultProperties {
     pub fn new() -> Self {
@@ -3399,7 +3399,7 @@ pub struct RegistryProperties {
     pub login_server: Option<String>,
     #[doc = "The creation date of the container registry in ISO8601 format."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning state of the container registry at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registry_properties::ProvisioningState>,
@@ -4077,7 +4077,7 @@ pub struct RetentionPolicy {
     pub days: Option<i32>,
     #[doc = "The timestamp when the policy was last updated."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
+    pub last_updated_time: Option<::time::OffsetDateTime>,
     #[doc = "The value that indicates whether the policy is enabled or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<retention_policy::Status>,
@@ -4162,10 +4162,10 @@ pub struct RunFilter {
     pub status: Option<run_filter::Status>,
     #[doc = "The create time for a run."]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    pub create_time: Option<::time::OffsetDateTime>,
     #[doc = "The time the run finished."]
     #[serde(rename = "finishTime", default, with = "azure_core::date::rfc3339::option")]
-    pub finish_time: Option<time::OffsetDateTime>,
+    pub finish_time: Option<::time::OffsetDateTime>,
     #[doc = "The list of comma-separated image manifests that were generated from the run. This is applicable if the run is of\r\nbuild type."]
     #[serde(rename = "outputImageManifests", default, skip_serializing_if = "Option::is_none")]
     pub output_image_manifests: Option<String>,
@@ -4328,7 +4328,7 @@ pub struct RunProperties {
     pub status: Option<run_properties::Status>,
     #[doc = "The last updated time for the run."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
+    pub last_updated_time: Option<::time::OffsetDateTime>,
     #[doc = "The type of run."]
     #[serde(rename = "runType", default, skip_serializing_if = "Option::is_none")]
     pub run_type: Option<run_properties::RunType>,
@@ -4337,13 +4337,13 @@ pub struct RunProperties {
     pub agent_pool_name: Option<String>,
     #[doc = "The time the run was scheduled."]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    pub create_time: Option<::time::OffsetDateTime>,
     #[doc = "The time the run started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The time the run finished."]
     #[serde(rename = "finishTime", default, with = "azure_core::date::rfc3339::option")]
-    pub finish_time: Option<time::OffsetDateTime>,
+    pub finish_time: Option<::time::OffsetDateTime>,
     #[doc = "The list of all images that were generated from the run. This is applicable if the run generates base image dependencies."]
     #[serde(
         rename = "outputImages",
@@ -4632,7 +4632,7 @@ pub struct ScopeMapProperties {
     pub type_: Option<String>,
     #[doc = "The creation date of scope map."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<scope_map_properties::ProvisioningState>,
@@ -5298,7 +5298,7 @@ pub struct Status {
     pub message: Option<String>,
     #[doc = "The timestamp when the status was changed to the current value."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
 }
 impl Status {
     pub fn new() -> Self {
@@ -5327,7 +5327,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -5336,7 +5336,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {
@@ -5518,7 +5518,7 @@ pub struct TaskProperties {
     pub provisioning_state: Option<task_properties::ProvisioningState>,
     #[doc = "The creation date of task."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
     #[doc = "The current status of task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<task_properties::Status>,
@@ -6131,7 +6131,7 @@ pub struct TokenCertificate {
     pub name: Option<token_certificate::Name>,
     #[doc = "The expiry datetime of the certificate."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiry: Option<time::OffsetDateTime>,
+    pub expiry: Option<::time::OffsetDateTime>,
     #[doc = "The thumbprint of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
@@ -6236,10 +6236,10 @@ impl TokenListResult {
 pub struct TokenPassword {
     #[doc = "The creation datetime of the password."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "The expiry datetime of the password."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiry: Option<time::OffsetDateTime>,
+    pub expiry: Option<::time::OffsetDateTime>,
     #[doc = "The password name \"password1\" or \"password2\""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<token_password::Name>,
@@ -6299,7 +6299,7 @@ pub mod token_password {
 pub struct TokenProperties {
     #[doc = "The creation date of scope map."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<token_properties::ProvisioningState>,

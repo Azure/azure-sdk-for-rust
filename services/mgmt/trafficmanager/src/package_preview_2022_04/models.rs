@@ -379,10 +379,10 @@ impl HeatMapModel {
 pub struct HeatMapProperties {
     #[doc = "The beginning of the time window for this HeatMap, inclusive."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The ending of the time window for this HeatMap, exclusive."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The endpoints used in this HeatMap calculation."]
     #[serde(
         default,

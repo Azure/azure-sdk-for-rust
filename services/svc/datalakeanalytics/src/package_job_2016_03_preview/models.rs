@@ -211,13 +211,13 @@ pub struct JobInformation {
     pub priority: Option<i32>,
     #[doc = "the time the job was submitted to the service."]
     #[serde(rename = "submitTime", default, with = "azure_core::date::rfc3339::option")]
-    pub submit_time: Option<time::OffsetDateTime>,
+    pub submit_time: Option<::time::OffsetDateTime>,
     #[doc = "the start time of the job."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "the completion time of the job."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "the job state. When the job is in the Ended state, refer to Result and ErrorMessage for details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<job_information::State>,
@@ -419,7 +419,7 @@ pub struct JobStateAuditRecord {
     pub new_state: Option<String>,
     #[doc = "the time stamp that the state change took place."]
     #[serde(rename = "timeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub time_stamp: Option<time::OffsetDateTime>,
+    pub time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "the user who requests the change."]
     #[serde(rename = "requestedByUser", default, skip_serializing_if = "Option::is_none")]
     pub requested_by_user: Option<String>,
@@ -437,10 +437,10 @@ impl JobStateAuditRecord {
 pub struct JobStatistics {
     #[doc = "the last update time for the statistics."]
     #[serde(rename = "lastUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_update_time_utc: Option<time::OffsetDateTime>,
+    pub last_update_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "the job finalizing start time."]
     #[serde(rename = "finalizingTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub finalizing_time_utc: Option<time::OffsetDateTime>,
+    pub finalizing_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "the list of stages for the job."]
     #[serde(
         default,

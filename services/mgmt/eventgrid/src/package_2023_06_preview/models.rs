@@ -167,10 +167,10 @@ pub struct CaCertificateProperties {
     pub encoded_certificate: Option<String>,
     #[doc = "Certificate issue time in UTC. This is a read-only field."]
     #[serde(rename = "issueTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub issue_time_in_utc: Option<time::OffsetDateTime>,
+    pub issue_time_in_utc: Option<::time::OffsetDateTime>,
     #[doc = "Certificate expiry time in UTC. This is a read-only field."]
     #[serde(rename = "expiryTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_time_in_utc: Option<time::OffsetDateTime>,
+    pub expiry_time_in_utc: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of the CA Certificate resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ca_certificate_properties::ProvisioningState>,
@@ -295,7 +295,7 @@ pub struct ChannelProperties {
     pub readiness_state: Option<channel_properties::ReadinessState>,
     #[doc = "Expiration time of the channel. If this timer expires while the corresponding partner topic is never activated,\r\nthe channel and corresponding partner topic are deleted."]
     #[serde(rename = "expirationTimeIfNotActivatedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time_if_not_activated_utc: Option<time::OffsetDateTime>,
+    pub expiration_time_if_not_activated_utc: Option<::time::OffsetDateTime>,
 }
 impl ChannelProperties {
     pub fn new() -> Self {
@@ -449,7 +449,7 @@ impl ChannelUpdateParameters {
 pub struct ChannelUpdateParametersProperties {
     #[doc = "Expiration time of the channel. If this timer expires while the corresponding partner topic or partner destination is never activated,\r\nthe channel and corresponding partner topic or partner destination are deleted."]
     #[serde(rename = "expirationTimeIfNotActivatedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time_if_not_activated_utc: Option<time::OffsetDateTime>,
+    pub expiration_time_if_not_activated_utc: Option<::time::OffsetDateTime>,
     #[doc = "Properties of the corresponding partner destination of a Channel."]
     #[serde(rename = "partnerDestinationInfo", default, skip_serializing_if = "Option::is_none")]
     pub partner_destination_info: Option<PartnerUpdateDestinationInfoUnion>,
@@ -2035,7 +2035,7 @@ pub struct EventSubscriptionProperties {
     pub labels: Vec<String>,
     #[doc = "Expiration time of the event subscription."]
     #[serde(rename = "expirationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time_utc: Option<time::OffsetDateTime>,
+    pub expiration_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The event delivery schema for the event subscription."]
     #[serde(rename = "eventDeliverySchema", default, skip_serializing_if = "Option::is_none")]
     pub event_delivery_schema: Option<event_subscription_properties::EventDeliverySchema>,
@@ -2170,7 +2170,7 @@ pub struct EventSubscriptionUpdateParameters {
     pub labels: Vec<String>,
     #[doc = "Information about the expiration time for the event subscription."]
     #[serde(rename = "expirationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time_utc: Option<time::OffsetDateTime>,
+    pub expiration_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The event delivery schema for the event subscription."]
     #[serde(rename = "eventDeliverySchema", default, skip_serializing_if = "Option::is_none")]
     pub event_delivery_schema: Option<event_subscription_update_parameters::EventDeliverySchema>,
@@ -3745,7 +3745,7 @@ pub struct Partner {
     pub partner_name: Option<String>,
     #[doc = "Expiration time of the partner authorization. If this timer expires, any request from this partner to create, update or delete resources in subscriber's\r\ncontext will fail. If specified, the allowed values are between 1 to the value of defaultMaximumExpirationTimeInDays specified in PartnerConfiguration.\r\nIf not specified, the default value will be the value of defaultMaximumExpirationTimeInDays specified in PartnerConfiguration or 7 if this value is not specified."]
     #[serde(rename = "authorizationExpirationTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub authorization_expiration_time_in_utc: Option<time::OffsetDateTime>,
+    pub authorization_expiration_time_in_utc: Option<::time::OffsetDateTime>,
 }
 impl Partner {
     pub fn new() -> Self {
@@ -3990,7 +3990,7 @@ pub struct PartnerDestinationProperties {
     pub endpoint_service_context: Option<String>,
     #[doc = "Expiration time of the partner destination. If this timer expires and the partner destination was never activated,\r\nthe partner destination and corresponding channel are deleted."]
     #[serde(rename = "expirationTimeIfNotActivatedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time_if_not_activated_utc: Option<time::OffsetDateTime>,
+    pub expiration_time_if_not_activated_utc: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of the partner destination."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<partner_destination_properties::ProvisioningState>,
@@ -4778,7 +4778,7 @@ pub struct PartnerTopicProperties {
     pub event_type_info: Option<EventTypeInfo>,
     #[doc = "Expiration time of the partner topic. If this timer expires while the partner topic is still never activated,\r\nthe partner topic and corresponding event channel are deleted."]
     #[serde(rename = "expirationTimeIfNotActivatedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time_if_not_activated_utc: Option<time::OffsetDateTime>,
+    pub expiration_time_if_not_activated_utc: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of the partner topic."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<partner_topic_properties::ProvisioningState>,
@@ -5348,7 +5348,7 @@ pub struct ResourceMoveChangeHistory {
     pub resource_group_name: Option<String>,
     #[doc = "UTC timestamp of when the resource was changed."]
     #[serde(rename = "changedTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub changed_time_utc: Option<time::OffsetDateTime>,
+    pub changed_time_utc: Option<::time::OffsetDateTime>,
 }
 impl ResourceMoveChangeHistory {
     pub fn new() -> Self {
@@ -7748,7 +7748,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -7757,7 +7757,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

@@ -914,13 +914,13 @@ pub struct ContainerState {
     pub state: Option<String>,
     #[doc = "The date-time when the container instance state started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The container instance exit codes correspond to those from the `docker run` command."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
     #[doc = "The date-time when the container instance state finished."]
     #[serde(rename = "finishTime", default, with = "azure_core::date::rfc3339::option")]
-    pub finish_time: Option<time::OffsetDateTime>,
+    pub finish_time: Option<::time::OffsetDateTime>,
     #[doc = "The human-readable status of the container instance state."]
     #[serde(rename = "detailStatus", default, skip_serializing_if = "Option::is_none")]
     pub detail_status: Option<String>,
@@ -1057,10 +1057,10 @@ pub struct Event {
     pub count: Option<i32>,
     #[doc = "The date-time of the earliest logged event."]
     #[serde(rename = "firstTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub first_timestamp: Option<time::OffsetDateTime>,
+    pub first_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The date-time of the latest logged event."]
     #[serde(rename = "lastTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub last_timestamp: Option<time::OffsetDateTime>,
+    pub last_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The event name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

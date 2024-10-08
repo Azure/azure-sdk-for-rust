@@ -386,13 +386,13 @@ pub struct ContainerState {
     pub state: Option<String>,
     #[doc = "Date/time when the container state started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The container exit code."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<String>,
     #[doc = "Date/time when the container state finished."]
     #[serde(rename = "finishTime", default, with = "azure_core::date::rfc3339::option")]
-    pub finish_time: Option<time::OffsetDateTime>,
+    pub finish_time: Option<::time::OffsetDateTime>,
     #[doc = "Human-readable status of this state."]
     #[serde(rename = "detailStatus", default, skip_serializing_if = "Option::is_none")]
     pub detail_status: Option<String>,

@@ -128,7 +128,7 @@ pub struct ServerKeyProperties {
     pub uri: Option<String>,
     #[doc = "The key creation date."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
 }
 impl ServerKeyProperties {
     pub fn new(server_key_type: server_key_properties::ServerKeyType) -> Self {

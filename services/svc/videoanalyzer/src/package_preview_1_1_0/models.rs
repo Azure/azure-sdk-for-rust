@@ -2510,10 +2510,10 @@ impl SymmetricKeyCredentials {
 pub struct SystemData {
     #[doc = "Date and time when this resource was first created. Value is represented in UTC according to the ISO8601 date format."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "Date and time when this resource was last modified. Value is represented in UTC according to the ISO8601 date format."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

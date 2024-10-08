@@ -83,7 +83,7 @@ impl ErrorResponse {
 #[doc = "The if block of storage task operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IfCondition {
-    #[doc = "The condition predicate which is composed of object properties, eg: blob and container properties."]
+    #[doc = "Condition predicate to evaluate each object. See https://aka.ms/storagetaskconditions for valid properties and operators."]
     pub condition: String,
     #[doc = "List of operations to execute when the condition predicate satisfies."]
     pub operations: Vec<StorageTaskOperation>,
@@ -351,18 +351,16 @@ pub struct StorageTask {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[doc = "Managed service identity (system assigned and/or user assigned identities)"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ManagedServiceIdentity>,
+    pub identity: ManagedServiceIdentity,
     #[doc = "Properties of the storage task."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<StorageTaskProperties>,
+    pub properties: StorageTaskProperties,
 }
 impl StorageTask {
-    pub fn new(tracked_resource: TrackedResource) -> Self {
+    pub fn new(tracked_resource: TrackedResource, identity: ManagedServiceIdentity, properties: StorageTaskProperties) -> Self {
         Self {
             tracked_resource,
-            identity: None,
-            properties: None,
+            identity,
+            properties,
         }
     }
 }
@@ -381,10 +379,10 @@ impl StorageTaskAction {
         Self { if_, else_: None }
     }
 }
-#[doc = "Fetch the Storage task assignment ARM ids."]
+#[doc = "Storage Task Assignment associated with this Storage Task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageTaskAssignment {
-    #[doc = "ARM Id of the storage task assignments, associated with the storage tasks."]
+    #[doc = "Resource ID of the Storage Task Assignment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -396,14 +394,14 @@ impl StorageTaskAssignment {
 #[doc = "The response from the List Storage Tasks operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageTaskAssignmentsListResult {
-    #[doc = "Gets the list of storage task assignment Ids."]
+    #[doc = "List of Storage Task Assignment Resource IDs associated with this Storage Task."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<StorageTaskAssignment>,
-    #[doc = "Request URL that can be used to query next page of storage task assignment Ids. Returned when total number of requested storage task assignment Ids exceed maximum page size."]
+    #[doc = "Request URL that can be used to query next page of Resource IDs. Returned when total number of requested Resource IDs exceed maximum page size."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -548,7 +546,7 @@ impl StorageTaskPreviewActionIfCondition {
 pub struct StorageTaskPreviewActionProperties {
     #[doc = "Storage task preview container properties"]
     pub container: StorageTaskPreviewContainerProperties,
-    #[doc = "Preview action container properties to be tested for a match with the provided condition."]
+    #[doc = "Properties of some sample blobs in the container to test for matches with the preview action."]
     pub blobs: Vec<StorageTaskPreviewBlobProperties>,
     #[doc = "Represents the storage task conditions to be tested for a match with container and blob properties."]
     pub action: StorageTaskPreviewActionCondition,
@@ -565,7 +563,7 @@ impl StorageTaskPreviewActionProperties {
 #[doc = "Storage task preview container properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageTaskPreviewBlobProperties {
-    #[doc = "property for the container name."]
+    #[doc = "Name of test blob"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "properties key value pairs to be tested for a match against the provided condition."]
@@ -643,7 +641,7 @@ pub mod storage_task_preview_blob_properties {
 #[doc = "Storage task preview container properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageTaskPreviewContainerProperties {
-    #[doc = "property for the container name."]
+    #[doc = "Name of test container"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "metadata key value pairs to be tested for a match against the provided condition."]
@@ -691,7 +689,7 @@ pub struct StorageTaskProperties {
     pub provisioning_state: Option<storage_task_properties::ProvisioningState>,
     #[doc = "The creation date and time of the storage task in UTC."]
     #[serde(rename = "creationTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time_in_utc: Option<time::OffsetDateTime>,
+    pub creation_time_in_utc: Option<::time::OffsetDateTime>,
 }
 impl StorageTaskProperties {
     pub fn new(enabled: bool, description: String, action: StorageTaskAction) -> Self {
@@ -736,10 +734,10 @@ impl StorageTaskReportInstance {
 #[doc = "Storage task execution report for a run instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageTaskReportProperties {
-    #[doc = "Represents the Storage Task Assignment Id associated with the storage task that provided an execution context."]
+    #[doc = "Resource ID of the Storage Task Assignment associated with this reported run."]
     #[serde(rename = "taskAssignmentId", default, skip_serializing_if = "Option::is_none")]
     pub task_assignment_id: Option<String>,
-    #[doc = "Represents the Storage Account Id where the storage task definition was applied and executed."]
+    #[doc = "Resource ID of the Storage Account where this reported run executed."]
     #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_id: Option<String>,
     #[doc = "Start time of the run instance. Filter options such as startTime gt '2023-06-26T20:51:24.4494016Z' and other comparison operators can be used as described for DateTime properties in https://learn.microsoft.com/en-us/rest/api/storageservices/querying-tables-and-entities#supported-comparison-operators"]
@@ -769,7 +767,7 @@ pub struct StorageTaskReportProperties {
     #[doc = "Full path to the verbose report stored in the reporting container as specified in the assignment execution context for the storage account. "]
     #[serde(rename = "summaryReportPath", default, skip_serializing_if = "Option::is_none")]
     pub summary_report_path: Option<String>,
-    #[doc = "Storage Task Arm Id."]
+    #[doc = "Resource ID of the Storage Task applied during this run."]
     #[serde(rename = "taskId", default, skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
     #[doc = "Storage Task Version"]
@@ -904,7 +902,7 @@ impl StorageTaskUpdateParameters {
         Self::default()
     }
 }
-#[doc = "The response from the List Storage Tasks operation."]
+#[doc = "The response from the List Storage Task operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageTasksListResult {
     #[doc = "Gets the list of storage tasks and their properties."]
@@ -983,7 +981,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -992,7 +990,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

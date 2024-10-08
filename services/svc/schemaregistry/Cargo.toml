@@ -41,7 +41,6 @@ enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 default_tag = ["package-2023-07-01"]
 "package-2023-07-01" = []
 "package-2022-10" = []
-"package-2021-10" = []
 
 [lints]
 workspace = true

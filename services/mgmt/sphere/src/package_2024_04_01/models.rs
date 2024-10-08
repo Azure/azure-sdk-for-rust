@@ -204,10 +204,10 @@ pub struct CertificateProperties {
     pub thumbprint: Option<String>,
     #[doc = "The certificate expiry date."]
     #[serde(rename = "expiryUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_utc: Option<time::OffsetDateTime>,
+    pub expiry_utc: Option<::time::OffsetDateTime>,
     #[doc = "The certificate not before date."]
     #[serde(rename = "notBeforeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub not_before_utc: Option<time::OffsetDateTime>,
+    pub not_before_utc: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -353,7 +353,7 @@ pub struct DeploymentProperties {
     pub deployed_images: Vec<Image>,
     #[doc = "Deployment date UTC"]
     #[serde(rename = "deploymentDateUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub deployment_date_utc: Option<time::OffsetDateTime>,
+    pub deployment_date_utc: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -487,10 +487,10 @@ pub struct DeviceInsight {
     pub description: String,
     #[doc = "Event start timestamp"]
     #[serde(rename = "startTimestampUtc", with = "azure_core::date::rfc3339")]
-    pub start_timestamp_utc: time::OffsetDateTime,
+    pub start_timestamp_utc: ::time::OffsetDateTime,
     #[doc = "Event end timestamp"]
     #[serde(rename = "endTimestampUtc", with = "azure_core::date::rfc3339")]
-    pub end_timestamp_utc: time::OffsetDateTime,
+    pub end_timestamp_utc: ::time::OffsetDateTime,
     #[doc = "Event category"]
     #[serde(rename = "eventCategory")]
     pub event_category: String,
@@ -508,8 +508,8 @@ impl DeviceInsight {
     pub fn new(
         device_id: String,
         description: String,
-        start_timestamp_utc: time::OffsetDateTime,
-        end_timestamp_utc: time::OffsetDateTime,
+        start_timestamp_utc: ::time::OffsetDateTime,
+        end_timestamp_utc: ::time::OffsetDateTime,
         event_category: String,
         event_class: String,
         event_type: String,
@@ -547,18 +547,6 @@ impl DeviceListResult {
         Self { value, next_link: None }
     }
 }
-#[doc = "The properties of device patch"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DevicePatchProperties {
-    #[doc = "Device group id"]
-    #[serde(rename = "deviceGroupId")]
-    pub device_group_id: String,
-}
-impl DevicePatchProperties {
-    pub fn new(device_group_id: String) -> Self {
-        Self { device_group_id }
-    }
-}
 #[doc = "The properties of device"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceProperties {
@@ -576,10 +564,10 @@ pub struct DeviceProperties {
     pub last_installed_os_version: Option<String>,
     #[doc = "Time when update requested and new OS version available"]
     #[serde(rename = "lastOsUpdateUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_os_update_utc: Option<time::OffsetDateTime>,
+    pub last_os_update_utc: Option<::time::OffsetDateTime>,
     #[doc = "Time when update was last requested"]
     #[serde(rename = "lastUpdateRequestUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_update_request_utc: Option<time::OffsetDateTime>,
+    pub last_update_request_utc: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -1342,45 +1330,6 @@ impl Serialize for UpdatePolicy {
         }
     }
 }
-#[doc = "Azure Sphere API versions."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "Versions")]
-pub enum Versions {
-    #[serde(rename = "2022-09-01-preview")]
-    N2022_09_01_preview,
-    #[serde(rename = "2024-04-01")]
-    N2024_04_01,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for Versions {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for Versions {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for Versions {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::N2022_09_01_preview => serializer.serialize_unit_variant("Versions", 0u32, "2022-09-01-preview"),
-            Self::N2024_04_01 => serializer.serialize_unit_variant("Versions", 1u32, "2024-04-01"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-        }
-    }
-}
 #[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -1392,7 +1341,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1401,7 +1350,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

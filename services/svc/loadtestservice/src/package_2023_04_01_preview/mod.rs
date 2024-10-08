@@ -397,8 +397,8 @@ pub mod load_test_run {
             pub(crate) orderby: Option<String>,
             pub(crate) search: Option<String>,
             pub(crate) test_id: Option<String>,
-            pub(crate) execution_from: Option<time::OffsetDateTime>,
-            pub(crate) execution_to: Option<time::OffsetDateTime>,
+            pub(crate) execution_from: Option<::time::OffsetDateTime>,
+            pub(crate) execution_to: Option<::time::OffsetDateTime>,
             pub(crate) status: Option<String>,
             pub(crate) maxpagesize: Option<i32>,
         }
@@ -419,12 +419,12 @@ pub mod load_test_run {
                 self
             }
             #[doc = "Start DateTime(RFC 3339 literal format) of test-run execution time filter range."]
-            pub fn execution_from(mut self, execution_from: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn execution_from(mut self, execution_from: impl Into<::time::OffsetDateTime>) -> Self {
                 self.execution_from = Some(execution_from.into());
                 self
             }
             #[doc = "End DateTime(RFC 3339 literal format) of test-run execution time filter range."]
-            pub fn execution_to(mut self, execution_to: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn execution_to(mut self, execution_to: impl Into<::time::OffsetDateTime>) -> Self {
                 self.execution_to = Some(execution_to.into());
                 self
             }
@@ -2083,8 +2083,8 @@ pub mod load_test_administration {
             pub(crate) client: super::super::Client,
             pub(crate) orderby: Option<String>,
             pub(crate) search: Option<String>,
-            pub(crate) last_modified_start_time: Option<time::OffsetDateTime>,
-            pub(crate) last_modified_end_time: Option<time::OffsetDateTime>,
+            pub(crate) last_modified_start_time: Option<::time::OffsetDateTime>,
+            pub(crate) last_modified_end_time: Option<::time::OffsetDateTime>,
             pub(crate) maxpagesize: Option<i32>,
         }
         impl RequestBuilder {
@@ -2099,12 +2099,12 @@ pub mod load_test_administration {
                 self
             }
             #[doc = "Start DateTime(RFC 3339 literal format) of the last updated time range to filter tests."]
-            pub fn last_modified_start_time(mut self, last_modified_start_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn last_modified_start_time(mut self, last_modified_start_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.last_modified_start_time = Some(last_modified_start_time.into());
                 self
             }
             #[doc = "End DateTime(RFC 3339 literal format) of the last updated time range to filter tests."]
-            pub fn last_modified_end_time(mut self, last_modified_end_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn last_modified_end_time(mut self, last_modified_end_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.last_modified_end_time = Some(last_modified_end_time.into());
                 self
             }

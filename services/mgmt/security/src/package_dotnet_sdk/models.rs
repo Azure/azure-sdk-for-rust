@@ -161,177 +161,6 @@ impl ActiveConnectionsNotInAllowedRange {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdaptiveApplicationControlGroup {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(flatten)]
-    pub location: Location,
-    #[doc = "Represents a machines group and set of rules to be allowed running on a machine"]
-    pub properties: AdaptiveApplicationControlGroupData,
-}
-impl AdaptiveApplicationControlGroup {
-    pub fn new(properties: AdaptiveApplicationControlGroupData) -> Self {
-        Self {
-            resource: Resource::default(),
-            location: Location::default(),
-            properties,
-        }
-    }
-}
-#[doc = "Represents a machines group and set of rules to be allowed running on a machine"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AdaptiveApplicationControlGroupData {
-    #[doc = "The application control policy enforcement/protection mode of the machine group"]
-    #[serde(rename = "enforcementMode", default, skip_serializing_if = "Option::is_none")]
-    pub enforcement_mode: Option<EnforcementMode>,
-    #[doc = "The protection mode of the collection/file types. Exe/Msi/Script are used for Windows, Executable is used for Linux."]
-    #[serde(rename = "protectionMode", default, skip_serializing_if = "Option::is_none")]
-    pub protection_mode: Option<ProtectionMode>,
-    #[doc = "The configuration status of the machines group or machine or rule"]
-    #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
-    pub configuration_status: Option<ConfigurationStatus>,
-    #[doc = "The initial recommendation status of the machine group or machine"]
-    #[serde(rename = "recommendationStatus", default, skip_serializing_if = "Option::is_none")]
-    pub recommendation_status: Option<RecommendationStatus>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub issues: Option<AdaptiveApplicationControlIssuesSummaries>,
-    #[doc = "The source type of the machine group"]
-    #[serde(rename = "sourceSystem", default, skip_serializing_if = "Option::is_none")]
-    pub source_system: Option<SourceSystem>,
-    #[serde(rename = "vmRecommendations", default, skip_serializing_if = "Option::is_none")]
-    pub vm_recommendations: Option<VmRecommendations>,
-    #[serde(rename = "pathRecommendations", default, skip_serializing_if = "Option::is_none")]
-    pub path_recommendations: Option<PathRecommendations>,
-}
-impl AdaptiveApplicationControlGroupData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Represents a list of VM/server groups and set of rules that are Recommended by Microsoft Defender for Cloud to be allowed"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AdaptiveApplicationControlGroups {
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<AdaptiveApplicationControlGroup>,
-}
-impl AdaptiveApplicationControlGroups {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "An alert that machines within a group can have"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum AdaptiveApplicationControlIssue {
-    ViolationsAudited,
-    ViolationsBlocked,
-    MsiAndScriptViolationsAudited,
-    MsiAndScriptViolationsBlocked,
-    ExecutableViolationsAudited,
-    RulesViolatedManually,
-}
-#[doc = "Represents a summary of the alerts of the machine group"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AdaptiveApplicationControlIssueSummary {
-    #[doc = "An alert that machines within a group can have"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub issue: Option<AdaptiveApplicationControlIssue>,
-    #[doc = "The number of machines in the group that have this alert"]
-    #[serde(rename = "numberOfVms", default, skip_serializing_if = "Option::is_none")]
-    pub number_of_vms: Option<f64>,
-}
-impl AdaptiveApplicationControlIssueSummary {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub type AdaptiveApplicationControlIssuesSummaries = Vec<AdaptiveApplicationControlIssueSummary>;
-#[doc = "The resource whose properties describes the Adaptive Network Hardening settings for some Azure resource"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AdaptiveNetworkHardening {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[doc = "Adaptive Network Hardening resource properties"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AdaptiveNetworkHardeningProperties>,
-}
-impl AdaptiveNetworkHardening {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdaptiveNetworkHardeningEnforceRequest {
-    #[doc = "The rules to enforce"]
-    pub rules: Vec<Rule>,
-    #[doc = "The Azure resource IDs of the effective network security groups that will be updated with the created security rules from the Adaptive Network Hardening rules"]
-    #[serde(rename = "networkSecurityGroups")]
-    pub network_security_groups: Vec<String>,
-}
-impl AdaptiveNetworkHardeningEnforceRequest {
-    pub fn new(rules: Vec<Rule>, network_security_groups: Vec<String>) -> Self {
-        Self {
-            rules,
-            network_security_groups,
-        }
-    }
-}
-#[doc = "Adaptive Network Hardening resource properties"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AdaptiveNetworkHardeningProperties {
-    #[doc = "The security rules which are recommended to be effective on the VM"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub rules: Vec<Rule>,
-    #[doc = "The UTC time on which the rules were calculated"]
-    #[serde(rename = "rulesCalculationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub rules_calculation_time: Option<time::OffsetDateTime>,
-    #[doc = "The Network Security Groups effective on the network interfaces of the protected resource"]
-    #[serde(
-        rename = "effectiveNetworkSecurityGroups",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub effective_network_security_groups: Vec<EffectiveNetworkSecurityGroups>,
-}
-impl AdaptiveNetworkHardeningProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Response for ListAdaptiveNetworkHardenings API service call"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AdaptiveNetworkHardeningsList {
-    #[doc = "A list of Adaptive Network Hardenings resources"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<AdaptiveNetworkHardening>,
-    #[doc = "The URL to get the next set of results"]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for AdaptiveNetworkHardeningsList {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl AdaptiveNetworkHardeningsList {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Sub-assessment resource type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "assessedResourceType")]
@@ -528,10 +357,10 @@ pub struct AlertProperties {
     pub intent: Option<alert_properties::Intent>,
     #[doc = "The UTC time of the first event or activity included in the alert in ISO8601 format."]
     #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time_utc: Option<time::OffsetDateTime>,
+    pub start_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The UTC time of the last event or activity included in the alert in ISO8601 format."]
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time_utc: Option<time::OffsetDateTime>,
+    pub end_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The resource identifiers that can be used to direct the alert to the right product exposure group (tenant, workspace, subscription etc.). There can be multiple identifiers of different type per alert."]
     #[serde(
         rename = "resourceIdentifiers",
@@ -567,13 +396,13 @@ pub struct AlertProperties {
     pub alert_uri: Option<String>,
     #[doc = "The UTC time the alert was generated in ISO8601 format."]
     #[serde(rename = "timeGeneratedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub time_generated_utc: Option<time::OffsetDateTime>,
+    pub time_generated_utc: Option<::time::OffsetDateTime>,
     #[doc = "The name of the product which published this alert (Microsoft Sentinel, Microsoft Defender for Identity, Microsoft Defender for Endpoint, Microsoft Defender for Office, Microsoft Defender for Cloud Apps, and so on)."]
     #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
     #[doc = "The UTC processing end time of the alert in ISO8601 format."]
     #[serde(rename = "processingEndTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub processing_end_time_utc: Option<time::OffsetDateTime>,
+    pub processing_end_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "A list of entities related to the alert."]
     #[serde(
         default,
@@ -860,10 +689,10 @@ pub struct AlertsSuppressionRuleProperties {
     pub alert_type: String,
     #[doc = "The last time this rule was modified"]
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc: Option<time::OffsetDateTime>,
+    pub last_modified_utc: Option<::time::OffsetDateTime>,
     #[doc = "Expiration date of the rule, if value is not provided or provided as null there will no expiration at all"]
     #[serde(rename = "expirationDateUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date_utc: Option<time::OffsetDateTime>,
+    pub expiration_date_utc: Option<::time::OffsetDateTime>,
     #[doc = "The reason for dismissing the alert"]
     pub reason: String,
     #[doc = "Possible states of the rule"]
@@ -961,7 +790,7 @@ impl AllowedConnectionsResource {
 pub struct AllowedConnectionsResourceProperties {
     #[doc = "The UTC time on which the allowed connections resource was calculated"]
     #[serde(rename = "calculatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub calculated_date_time: Option<time::OffsetDateTime>,
+    pub calculated_date_time: Option<::time::OffsetDateTime>,
     #[doc = "List of connectable resources"]
     #[serde(
         rename = "connectableResources",
@@ -1495,10 +1324,10 @@ pub struct AssessmentStatusResponse {
     pub assessment_status: AssessmentStatus,
     #[doc = "The time that the assessment was created and first evaluated. Returned as UTC time in ISO 8601 format"]
     #[serde(rename = "firstEvaluationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub first_evaluation_date: Option<time::OffsetDateTime>,
+    pub first_evaluation_date: Option<::time::OffsetDateTime>,
     #[doc = "The time that the status of the assessment last changed. Returned as UTC time in ISO 8601 format"]
     #[serde(rename = "statusChangeDate", default, with = "azure_core::date::rfc3339::option")]
-    pub status_change_date: Option<time::OffsetDateTime>,
+    pub status_change_date: Option<::time::OffsetDateTime>,
 }
 impl AssessmentStatusResponse {
     pub fn new(assessment_status: AssessmentStatus) -> Self {
@@ -1507,6 +1336,30 @@ impl AssessmentStatusResponse {
             first_evaluation_date: None,
             status_change_date: None,
         }
+    }
+}
+#[doc = "Describe the properties of a security assessment object reference (by key)"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AssignedAssessmentItem {
+    #[doc = "Unique key to a security assessment object"]
+    #[serde(rename = "assessmentKey", default, skip_serializing_if = "Option::is_none")]
+    pub assessment_key: Option<String>,
+}
+impl AssignedAssessmentItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describe the properties of a of a standard assignments object reference"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AssignedStandardItem {
+    #[doc = "Full resourceId of the Microsoft.Security/standard object"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl AssignedStandardItem {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Represents an ATA security solution which sends logs to an OMS workspace"]
@@ -1533,6 +1386,21 @@ pub struct AtaSolutionProperties {
     pub last_event_received: Option<String>,
 }
 impl AtaSolutionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describe the properties of a assignment attestation"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AttestationEvidence {
+    #[doc = "The description of the evidence"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "The source url of the evidence"]
+    #[serde(rename = "sourceUrl", default, skip_serializing_if = "Option::is_none")]
+    pub source_url: Option<String>,
+}
+impl AttestationEvidence {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2312,7 +2180,7 @@ pub struct AzureDevOpsOrgProperties {
     pub provisioning_status_message: Option<String>,
     #[doc = "Gets or sets time when resource was last checked."]
     #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    pub provisioning_status_update_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<DevOpsProvisioningState>,
@@ -2408,7 +2276,7 @@ pub struct AzureDevOpsProjectProperties {
     pub provisioning_status_message: Option<String>,
     #[doc = "Gets or sets time when resource was last checked."]
     #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    pub provisioning_status_update_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<DevOpsProvisioningState>,
@@ -2480,7 +2348,7 @@ pub struct AzureDevOpsRepositoryProperties {
     pub provisioning_status_message: Option<String>,
     #[doc = "Gets or sets time when resource was last checked."]
     #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    pub provisioning_status_update_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<DevOpsProvisioningState>,
@@ -2598,7 +2466,7 @@ pub struct Baseline {
     pub expected_results: Vec<Vec<String>>,
     #[doc = "Baseline update time (UTC)."]
     #[serde(rename = "updatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_time: Option<time::OffsetDateTime>,
+    pub updated_time: Option<::time::OffsetDateTime>,
 }
 impl Baseline {
     pub fn new() -> Self {
@@ -2890,7 +2758,7 @@ impl ComplianceList {
 pub struct ComplianceProperties {
     #[doc = "The timestamp when the Compliance calculation was conducted."]
     #[serde(rename = "assessmentTimestampUtcDate", default, with = "azure_core::date::rfc3339::option")]
-    pub assessment_timestamp_utc_date: Option<time::OffsetDateTime>,
+    pub assessment_timestamp_utc_date: Option<::time::OffsetDateTime>,
     #[doc = "The resource count of the given subscription for which the Compliance calculation was conducted (needed for Management Group Compliance calculation)."]
     #[serde(rename = "resourceCount", default, skip_serializing_if = "Option::is_none")]
     pub resource_count: Option<i64>,
@@ -3072,15 +2940,6 @@ pub mod condition {
     }
 }
 pub type Conditions = Vec<Condition>;
-#[doc = "The configuration status of the machines group or machine or rule"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ConfigurationStatus {
-    Configured,
-    NotConfigured,
-    InProgress,
-    Failed,
-    NoStatus,
-}
 #[doc = "Describes the allowed inbound and outbound traffic of an Azure resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectableResource {
@@ -3239,7 +3098,7 @@ pub struct ContainerRegistryVulnerabilityProperties {
     pub cve: Vec<Cve>,
     #[doc = "Published time"]
     #[serde(rename = "publishedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub published_time: Option<time::OffsetDateTime>,
+    pub published_time: Option<::time::OffsetDateTime>,
     #[serde(
         rename = "vendorReferences",
         default,
@@ -3375,6 +3234,168 @@ impl CustomEntityStoreAssignmentsListResult {
         Self::default()
     }
 }
+#[doc = "Custom Recommendation"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CustomRecommendation {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "describes the Custom Recommendation properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CustomRecommendationProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+impl CustomRecommendation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "describes the Custom Recommendation properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CustomRecommendationProperties {
+    #[doc = "KQL query representing the Recommendation results required."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
+    #[doc = "List of all standard supported clouds."]
+    #[serde(
+        rename = "cloudProviders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub cloud_providers: Vec<RecommendationSupportedCloud>,
+    #[doc = "The severity to relate to the assessments generated by this Recommendation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<custom_recommendation_properties::Severity>,
+    #[doc = "The severity to relate to the assessments generated by this Recommendation."]
+    #[serde(rename = "securityIssue", default, skip_serializing_if = "Option::is_none")]
+    pub security_issue: Option<custom_recommendation_properties::SecurityIssue>,
+    #[doc = "The display name of the assessments generated by this Recommendation."]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[doc = "The description to relate to the assessments generated by this Recommendation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "The remediation description to relate to the assessments generated by this Recommendation."]
+    #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
+    pub remediation_description: Option<String>,
+    #[doc = "The assessment metadata key used when an assessment is generated for this Recommendation."]
+    #[serde(rename = "assessmentKey", default, skip_serializing_if = "Option::is_none")]
+    pub assessment_key: Option<String>,
+}
+impl CustomRecommendationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod custom_recommendation_properties {
+    use super::*;
+    #[doc = "The severity to relate to the assessments generated by this Recommendation."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Severity")]
+    pub enum Severity {
+        High,
+        Medium,
+        Low,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Severity {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Severity {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Severity {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::High => serializer.serialize_unit_variant("Severity", 0u32, "High"),
+                Self::Medium => serializer.serialize_unit_variant("Severity", 1u32, "Medium"),
+                Self::Low => serializer.serialize_unit_variant("Severity", 2u32, "Low"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "The severity to relate to the assessments generated by this Recommendation."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "SecurityIssue")]
+    pub enum SecurityIssue {
+        Vulnerability,
+        ExcessivePermissions,
+        AnonymousAccess,
+        NetworkExposure,
+        TrafficEncryption,
+        BestPractices,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for SecurityIssue {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for SecurityIssue {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for SecurityIssue {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Vulnerability => serializer.serialize_unit_variant("SecurityIssue", 0u32, "Vulnerability"),
+                Self::ExcessivePermissions => serializer.serialize_unit_variant("SecurityIssue", 1u32, "ExcessivePermissions"),
+                Self::AnonymousAccess => serializer.serialize_unit_variant("SecurityIssue", 2u32, "AnonymousAccess"),
+                Self::NetworkExposure => serializer.serialize_unit_variant("SecurityIssue", 3u32, "NetworkExposure"),
+                Self::TrafficEncryption => serializer.serialize_unit_variant("SecurityIssue", 4u32, "TrafficEncryption"),
+                Self::BestPractices => serializer.serialize_unit_variant("SecurityIssue", 5u32, "BestPractices"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "A list of Custom Recommendations"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomRecommendationsList {
+    #[doc = "Collection of Custom Recommendations"]
+    pub value: Vec<CustomRecommendation>,
+    #[doc = "The link used to get the next page of operations."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for CustomRecommendationsList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl CustomRecommendationsList {
+    pub fn new(value: Vec<CustomRecommendation>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[doc = "The data export setting properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataExportSettingProperties {
@@ -3489,6 +3510,21 @@ impl Serialize for DesiredOnboardingState {
         }
     }
 }
+#[doc = "Details about DevOps capability."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DevOpsCapability {
+    #[doc = "Gets the name of the DevOps capability."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Gets the value of the DevOps capability."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+impl DevOpsCapability {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "DevOps Configuration resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DevOpsConfiguration {
@@ -3539,7 +3575,7 @@ pub struct DevOpsConfigurationProperties {
     pub provisioning_status_message: Option<String>,
     #[doc = "Gets or sets time when resource was last checked."]
     #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    pub provisioning_status_update_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<DevOpsProvisioningState>,
@@ -3557,6 +3593,13 @@ pub struct DevOpsConfigurationProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub top_level_inventory_list: Vec<String>,
+    #[doc = "List of capabilities assigned to the DevOps configuration during the discovery process."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub capabilities: Vec<DevOpsCapability>,
 }
 impl DevOpsConfigurationProperties {
     pub fn new() -> Self {
@@ -3826,40 +3869,6 @@ impl ETag {
         Self::default()
     }
 }
-#[doc = "Describes the Network Security Groups effective on a network interface"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct EffectiveNetworkSecurityGroups {
-    #[doc = "The Azure resource ID of the network interface"]
-    #[serde(rename = "networkInterface", default, skip_serializing_if = "Option::is_none")]
-    pub network_interface: Option<String>,
-    #[doc = "The Network Security Groups effective on the network interface"]
-    #[serde(
-        rename = "networkSecurityGroups",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub network_security_groups: Vec<String>,
-}
-impl EffectiveNetworkSecurityGroups {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The application control policy enforcement/protection mode of the machine group"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum EnforcementMode {
-    Audit,
-    Enforce,
-    None,
-}
-#[doc = "The machine supportability of Enforce feature"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum EnforcementSupport {
-    Supported,
-    NotSupported,
-    Unknown,
-}
 #[doc = "The type of the environment data."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "environmentType")]
@@ -3951,7 +3960,7 @@ impl ExecuteGovernanceRuleParams {
 #[doc = "A plan's extension properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Extension {
-    #[doc = "The extension name. Supported values are: <br><br>**AgentlessDiscoveryForKubernetes** - API-based discovery of information about Kubernetes cluster architecture, workload objects, and setup. Required for Kubernetes inventory, identity and network exposure detection, attack path analysis and risk hunting as part of the cloud security explorer.\r\nAvailable for CloudPosture plan.<br><br>**OnUploadMalwareScanning** - Limits the GB to be scanned per month for each storage account within the subscription. Once this limit reached on a given storage account, Blobs won't be scanned during current calendar month.\r\nAvailable for StorageAccounts plan.<br><br>**SensitiveDataDiscovery** - Sensitive data discovery identifies Blob storage container with sensitive data such as credentials, credit cards, and more, to help prioritize and investigate security events.\r\nAvailable for StorageAccounts and CloudPosture plans.<br><br>**ContainerRegistriesVulnerabilityAssessments** - Provides vulnerability management for images stored in your container registries.\r\nAvailable for CloudPosture and Containers plans."]
+    #[doc = "The extension name. Supported values are: <br><br>**AgentlessDiscoveryForKubernetes** - Provides zero footprint, API-based discovery of Kubernetes clusters, their configurations and deployments. The collected data is used to create a contextualized security graph for Kubernetes clusters, provide risk hunting capabilities, and visualize risks and threats to  Kubernetes environments and workloads.<br>Available for CloudPosture plan and Containers plan.<br><br>**OnUploadMalwareScanning** - Limits the GB to be scanned per month for each storage account within the subscription. Once this limit reached on a given storage account, Blobs won't be scanned during current calendar month.<br>Available for StorageAccounts plan (DefenderForStorageV2 sub plans).<br><br>**SensitiveDataDiscovery** - Sensitive data discovery identifies Blob storage container with sensitive data such as credentials, credit cards, and more, to help prioritize and investigate security events.<br>Available for StorageAccounts plan (DefenderForStorageV2 sub plan) and CloudPosture plan.<br><br>**ContainerRegistriesVulnerabilityAssessments** - Provides vulnerability management for images stored in your container registries.<br>Available for CloudPosture plan and Containers plan.<br><br>**MdeDesignatedSubscription** - Direct onboarding is a seamless integration between Defender for Endpoint and Defender for Cloud that doesn’t require extra software deployment on your servers. The onboarded resources will be presented under a designated Azure Subscription you configure<br>Available for VirtualMachines plan (P1 and P2 sub plans).<br><br>**AgentlessVmScanning** - Scans your machines for installed software, vulnerabilities, malware and secret scanning without relying on agents or impacting machine performance. Learn more here https://learn.microsoft.com/en-us/azure/defender-for-cloud/concept-agentless-data-collection.<br>Available for CloudPosture plan, VirtualMachines plan (P2 sub plan) and Containers plan.<br><br>**EntraPermissionsManagement** - Permissions Management provides Cloud Infrastructure Entitlement Management (CIEM) capabilities that helps organizations to manage and control user access and entitlements in their cloud infrastructure - important attack vector for cloud environments.<br>Permissions Management analyzes all permissions and active usage, and suggests recommendations to reduce permissions to enforce the principle of least privilege. Learn more here https://learn.microsoft.com/en-us/azure/defender-for-cloud/permissions-management.<br>Available for CloudPosture plan. <br><br>**FileIntegrityMonitoring** - File integrity monitoring (FIM), examines operating system files.<br>Windows registries, Linux system files, in real time, for changes that might indicate an attack.<br>Available for VirtualMachines plan (P2 sub plan). <br><br>**ContainerSensor** - The sensor is based on IG and provides a rich threat detection suite for Kubernetes clusters, nodes, and workloads, powered by Microsoft leading threat intelligence, provides mapping to MITRE ATT&CK framework.<br>Available for Containers plan. <br><br>**AIPromptEvidence** - Exposes the prompts passed between the user and the AI model as alert evidence. This helps classify and triage the alerts with relevant user context. The prompt snippets will include only segments of the user prompt or model response that were deemed suspicious and relevant for security classifications. The prompt evidence will be available through Defender portal as part of each alert.<br>Available for AI plan. <br><br>"]
     pub name: String,
     #[doc = "Indicates whether the extension is enabled."]
     #[serde(rename = "isEnabled")]
@@ -4149,16 +4158,6 @@ impl FailedLocalLoginsNotInAllowedRange {
             time_window_custom_alert_rule,
         }
     }
-}
-#[doc = "The type of the file (for Linux files - Executable is used)"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum FileType {
-    Exe,
-    Dll,
-    Msi,
-    Script,
-    Executable,
-    Unknown,
 }
 #[doc = "Number of file uploads is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -4501,7 +4500,7 @@ pub struct GitHubOwnerProperties {
     pub provisioning_status_message: Option<String>,
     #[doc = "Gets or sets time when resource was last checked."]
     #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    pub provisioning_status_update_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<DevOpsProvisioningState>,
@@ -4570,7 +4569,7 @@ pub struct GitHubRepositoryProperties {
     pub provisioning_status_message: Option<String>,
     #[doc = "Gets or sets time when resource was last checked."]
     #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    pub provisioning_status_update_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<DevOpsProvisioningState>,
@@ -4663,7 +4662,7 @@ pub struct GitLabGroupProperties {
     pub provisioning_status_message: Option<String>,
     #[doc = "Gets or sets time when resource was last checked."]
     #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    pub provisioning_status_update_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<DevOpsProvisioningState>,
@@ -4735,7 +4734,7 @@ pub struct GitLabProjectProperties {
     pub provisioning_status_message: Option<String>,
     #[doc = "Gets or sets time when resource was last checked."]
     #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    pub provisioning_status_update_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<DevOpsProvisioningState>,
@@ -4816,7 +4815,7 @@ pub struct GovernanceAssignmentProperties {
     pub owner: Option<String>,
     #[doc = "The remediation due-date - after this date Secure Score will be affected (in case of  active grace-period)"]
     #[serde(rename = "remediationDueDate", with = "azure_core::date::rfc3339")]
-    pub remediation_due_date: time::OffsetDateTime,
+    pub remediation_due_date: ::time::OffsetDateTime,
     #[doc = "The ETA (estimated time of arrival) for remediation"]
     #[serde(rename = "remediationEta", default, skip_serializing_if = "Option::is_none")]
     pub remediation_eta: Option<RemediationEta>,
@@ -4831,7 +4830,7 @@ pub struct GovernanceAssignmentProperties {
     pub additional_data: Option<GovernanceAssignmentAdditionalData>,
 }
 impl GovernanceAssignmentProperties {
-    pub fn new(remediation_due_date: time::OffsetDateTime) -> Self {
+    pub fn new(remediation_due_date: ::time::OffsetDateTime) -> Self {
         Self {
             owner: None,
             remediation_due_date,
@@ -4952,13 +4951,13 @@ pub struct GovernanceRuleMetadata {
     pub created_by: Option<String>,
     #[doc = "Governance rule creation date"]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "Governance rule last updated by object id (GUID)"]
     #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<String>,
     #[doc = "Governance rule last update date"]
     #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_on: Option<time::OffsetDateTime>,
+    pub updated_on: Option<::time::OffsetDateTime>,
 }
 impl GovernanceRuleMetadata {
     pub fn new() -> Self {
@@ -5177,7 +5176,6 @@ pub mod governance_rule_properties {
         }
     }
 }
-pub type GroupResourceId = String;
 #[doc = "The health report resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthReport {
@@ -5525,7 +5523,7 @@ impl InformationProtectionPolicyList {
 pub struct InformationProtectionPolicyProperties {
     #[doc = "Describes the last UTC time the policy was modified."]
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc: Option<time::OffsetDateTime>,
+    pub last_modified_utc: Option<::time::OffsetDateTime>,
     #[doc = "Describes the version of the policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
@@ -6337,10 +6335,10 @@ pub struct JitNetworkAccessPolicyInitiatePort {
     pub allowed_source_address_prefix: Option<String>,
     #[doc = "The time to close the request in UTC"]
     #[serde(rename = "endTimeUtc", with = "azure_core::date::rfc3339")]
-    pub end_time_utc: time::OffsetDateTime,
+    pub end_time_utc: ::time::OffsetDateTime,
 }
 impl JitNetworkAccessPolicyInitiatePort {
-    pub fn new(number: PortNumber, end_time_utc: time::OffsetDateTime) -> Self {
+    pub fn new(number: PortNumber, end_time_utc: ::time::OffsetDateTime) -> Self {
         Self {
             number,
             allowed_source_address_prefix: None,
@@ -6500,7 +6498,7 @@ pub struct JitNetworkAccessRequest {
     pub virtual_machines: Vec<JitNetworkAccessRequestVirtualMachine>,
     #[doc = "The start time of the request in UTC"]
     #[serde(rename = "startTimeUtc", with = "azure_core::date::rfc3339")]
-    pub start_time_utc: time::OffsetDateTime,
+    pub start_time_utc: ::time::OffsetDateTime,
     #[doc = "The identity of the person who made the request"]
     pub requestor: String,
     #[doc = "The justification for making the initiate request"]
@@ -6510,7 +6508,7 @@ pub struct JitNetworkAccessRequest {
 impl JitNetworkAccessRequest {
     pub fn new(
         virtual_machines: Vec<JitNetworkAccessRequestVirtualMachine>,
-        start_time_utc: time::OffsetDateTime,
+        start_time_utc: ::time::OffsetDateTime,
         requestor: String,
     ) -> Self {
         Self {
@@ -6537,7 +6535,7 @@ pub struct JitNetworkAccessRequestPort {
     pub allowed_source_address_prefixes: Vec<String>,
     #[doc = "The date & time at which the request ends in UTC"]
     #[serde(rename = "endTimeUtc", with = "azure_core::date::rfc3339")]
-    pub end_time_utc: time::OffsetDateTime,
+    pub end_time_utc: ::time::OffsetDateTime,
     #[doc = "The status of the port"]
     pub status: jit_network_access_request_port::Status,
     #[doc = "A description of why the `status` has its value"]
@@ -6550,7 +6548,7 @@ pub struct JitNetworkAccessRequestPort {
 impl JitNetworkAccessRequestPort {
     pub fn new(
         number: PortNumber,
-        end_time_utc: time::OffsetDateTime,
+        end_time_utc: ::time::OffsetDateTime,
         status: jit_network_access_request_port::Status,
         status_reason: jit_network_access_request_port::StatusReason,
     ) -> Self {
@@ -7146,10 +7144,10 @@ pub struct OperationStatusResult {
     pub percent_complete: Option<f64>,
     #[doc = "The start time of the operation."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the operation."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The operations list."]
     #[serde(
         default,
@@ -7175,50 +7173,18 @@ impl OperationStatusResult {
         }
     }
 }
-#[doc = "Represents a path that is recommended to be allowed and its properties"]
+#[doc = "Describes properties of an assessment as related to the standard"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PathRecommendation {
-    #[doc = "The full path of the file, or an identifier of the application"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
-    #[doc = "The recommendation action of the machine or rule"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<RecommendationAction>,
-    #[doc = "The type of the rule to be allowed"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<RecommendationType>,
-    #[doc = "Represents the publisher information of a process/rule"]
-    #[serde(rename = "publisherInfo", default, skip_serializing_if = "Option::is_none")]
-    pub publisher_info: Option<PublisherInfo>,
-    #[doc = "Whether the application is commonly run on the machine"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub common: Option<bool>,
-    #[serde(
-        rename = "userSids",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub user_sids: Vec<String>,
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub usernames: Vec<UserRecommendation>,
-    #[doc = "The type of the file (for Linux files - Executable is used)"]
-    #[serde(rename = "fileType", default, skip_serializing_if = "Option::is_none")]
-    pub file_type: Option<FileType>,
-    #[doc = "The configuration status of the machines group or machine or rule"]
-    #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
-    pub configuration_status: Option<ConfigurationStatus>,
+pub struct PartialAssessmentProperties {
+    #[doc = "The assessment key"]
+    #[serde(rename = "assessmentKey", default, skip_serializing_if = "Option::is_none")]
+    pub assessment_key: Option<String>,
 }
-impl PathRecommendation {
+impl PartialAssessmentProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub type PathRecommendations = Vec<PathRecommendation>;
 #[doc = "A permission detected in the cloud account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "PermissionProperty")]
@@ -7310,7 +7276,7 @@ pub struct PricingProperties {
     pub free_trial_remaining_time: Option<String>,
     #[doc = "Optional. If `pricingTier` is `Standard` then this property holds the date of the last time the `pricingTier` was set to `Standard`, when available (e.g 2023-03-01T12:42:42.1921106Z)."]
     #[serde(rename = "enablementTime", default, with = "azure_core::date::rfc3339::option")]
-    pub enablement_time: Option<time::OffsetDateTime>,
+    pub enablement_time: Option<::time::OffsetDateTime>,
     #[doc = "Optional. True if the plan is deprecated. If there are replacing plans they will appear in `replacedBy` property"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deprecated: Option<bool>,
@@ -7396,27 +7362,6 @@ impl ProcessNotAllowed {
         }
     }
 }
-#[doc = "The protection mode of the collection/file types. Exe/Msi/Script are used for Windows, Executable is used for Linux."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProtectionMode {
-    #[doc = "The application control policy enforcement/protection mode of the machine group"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub exe: Option<EnforcementMode>,
-    #[doc = "The application control policy enforcement/protection mode of the machine group"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub msi: Option<EnforcementMode>,
-    #[doc = "The application control policy enforcement/protection mode of the machine group"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub script: Option<EnforcementMode>,
-    #[doc = "The application control policy enforcement/protection mode of the machine group"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub executable: Option<EnforcementMode>,
-}
-impl ProtectionMode {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
@@ -7439,27 +7384,6 @@ pub struct ProxyServerProperties {
     pub port: Option<String>,
 }
 impl ProxyServerProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Represents the publisher information of a process/rule"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PublisherInfo {
-    #[doc = "The Subject field of the x.509 certificate used to sign the code, using the following fields -  O = Organization, L = Locality, S = State or Province, and C = Country"]
-    #[serde(rename = "publisherName", default, skip_serializing_if = "Option::is_none")]
-    pub publisher_name: Option<String>,
-    #[doc = "The product name taken from the file's version resource"]
-    #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
-    pub product_name: Option<String>,
-    #[doc = "The \"OriginalName\" field taken from the file's version resource"]
-    #[serde(rename = "binaryName", default, skip_serializing_if = "Option::is_none")]
-    pub binary_name: Option<String>,
-    #[doc = "The binary file version taken from the file's version resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-impl PublisherInfo {
     pub fn new() -> Self {
         Self::default()
     }
@@ -7504,13 +7428,6 @@ impl QueuePurgesNotInAllowedRange {
             time_window_custom_alert_rule,
         }
     }
-}
-#[doc = "The recommendation action of the machine or rule"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum RecommendationAction {
-    Recommended,
-    Add,
-    Remove,
 }
 pub type RecommendationConfigurationList = Vec<RecommendationConfigurationProperties>;
 #[doc = "The type of IoT Security recommendation."]
@@ -7678,23 +7595,46 @@ pub mod recommendation_configuration_properties {
         }
     }
 }
-#[doc = "The initial recommendation status of the machine group or machine"]
+#[doc = "The cloud that the recommendation is supported on."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum RecommendationStatus {
-    Recommended,
-    NotRecommended,
-    NotAvailable,
-    NoStatus,
+#[serde(remote = "RecommendationSupportedCloud")]
+pub enum RecommendationSupportedCloud {
+    Azure,
+    #[serde(rename = "AWS")]
+    Aws,
+    #[serde(rename = "GCP")]
+    Gcp,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
 }
-#[doc = "The type of the rule to be allowed"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum RecommendationType {
-    File,
-    FileHash,
-    PublisherSignature,
-    ProductSignature,
-    BinarySignature,
-    VersionAndAboveSignature,
+impl FromStr for RecommendationSupportedCloud {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for RecommendationSupportedCloud {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for RecommendationSupportedCloud {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Azure => serializer.serialize_unit_variant("RecommendationSupportedCloud", 0u32, "Azure"),
+            Self::Aws => serializer.serialize_unit_variant("RecommendationSupportedCloud", 1u32, "AWS"),
+            Self::Gcp => serializer.serialize_unit_variant("RecommendationSupportedCloud", 2u32, "GCP"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
 }
 #[doc = "Regulatory compliance assessment details and state"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -8039,12 +7979,12 @@ impl Remediation {
 pub struct RemediationEta {
     #[doc = "ETA for remediation."]
     #[serde(with = "azure_core::date::rfc3339")]
-    pub eta: time::OffsetDateTime,
+    pub eta: ::time::OffsetDateTime,
     #[doc = "Justification for change of Eta."]
     pub justification: String,
 }
 impl RemediationEta {
-    pub fn new(eta: time::OffsetDateTime, justification: String) -> Self {
+    pub fn new(eta: ::time::OffsetDateTime, justification: String) -> Self {
         Self { eta, justification }
     }
 }
@@ -8076,78 +8016,6 @@ pub enum ResourceDetailsUnion {}
 pub enum ResourceIdentifierUnion {
     AzureResource(AzureResourceIdentifier),
     LogAnalytics(LogAnalyticsIdentifier),
-}
-#[doc = "Describes remote addresses that is recommended to communicate with the Azure resource on some (Protocol, Port, Direction). All other remote addresses are recommended to be blocked"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Rule {
-    #[doc = "The name of the rule"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "The rule's direction"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub direction: Option<rule::Direction>,
-    #[serde(rename = "destinationPort", default, skip_serializing_if = "Option::is_none")]
-    pub destination_port: Option<PortNumber>,
-    #[doc = "The rule's transport protocols"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub protocols: Vec<String>,
-    #[doc = "The remote IP addresses that should be able to communicate with the Azure resource on the rule's destination port and protocol"]
-    #[serde(
-        rename = "ipAddresses",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub ip_addresses: Vec<String>,
-}
-impl Rule {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod rule {
-    use super::*;
-    #[doc = "The rule's direction"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Direction")]
-    pub enum Direction {
-        Inbound,
-        Outbound,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Direction {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Direction {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Direction {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Inbound => serializer.serialize_unit_variant("Direction", 0u32, "Inbound"),
-                Self::Outbound => serializer.serialize_unit_variant("Direction", 1u32, "Outbound"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
 }
 #[doc = "Rule categories.\r\nCode - code scanning results.\r\nArtifact scanning results.\r\nDependencies scanning results.\r\nIaC results.\r\nSecrets scanning results.\r\nContainer scanning results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -8431,10 +8299,10 @@ pub struct ScanProperties {
     pub sql_version: Option<String>,
     #[doc = "The scan start time (UTC)."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Scan results are valid until end time (UTC)."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The number of failed rules with high severity."]
     #[serde(rename = "highSeverityFailedRulesCount", default, skip_serializing_if = "Option::is_none")]
     pub high_severity_failed_rules_count: Option<i32>,
@@ -8458,7 +8326,7 @@ pub struct ScanProperties {
     pub is_baseline_applied: Option<bool>,
     #[doc = "Last scan time."]
     #[serde(rename = "lastScanTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_scan_time: Option<time::OffsetDateTime>,
+    pub last_scan_time: Option<::time::OffsetDateTime>,
 }
 impl ScanProperties {
     pub fn new() -> Self {
@@ -9394,7 +9262,7 @@ pub struct SecurityConnectorProperties {
     pub hierarchy_identifier: Option<String>,
     #[doc = "The date on which the trial period will end, if applicable. Trial period exists for 30 days after upgrading to payed offerings."]
     #[serde(rename = "hierarchyIdentifierTrialEndDate", default, with = "azure_core::date::rfc3339::option")]
-    pub hierarchy_identifier_trial_end_date: Option<time::OffsetDateTime>,
+    pub hierarchy_identifier_trial_end_date: Option<::time::OffsetDateTime>,
     #[doc = "The multi cloud resource's cloud name."]
     #[serde(rename = "environmentName", default, skip_serializing_if = "Option::is_none")]
     pub environment_name: Option<security_connector_properties::EnvironmentName>,
@@ -9915,6 +9783,40 @@ pub mod security_solution_properties {
         }
     }
 }
+#[doc = "Security Standard on a resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SecurityStandard {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Describes properties of a standard."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<StandardProperties>,
+}
+impl SecurityStandard {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Page of a Standard list"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecurityStandardList {
+    #[doc = "Collection of standards in this page"]
+    pub value: Vec<SecurityStandard>,
+    #[doc = "The URI to fetch the next page"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SecurityStandardList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl SecurityStandardList {
+    pub fn new(value: Vec<SecurityStandard>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[doc = "Security sub-assessment on a resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecuritySubAssessment {
@@ -9979,7 +9881,7 @@ pub struct SecuritySubAssessmentProperties {
     pub description: Option<String>,
     #[doc = "The date and time the sub-assessment was generated"]
     #[serde(rename = "timeGenerated", default, with = "azure_core::date::rfc3339::option")]
-    pub time_generated: Option<time::OffsetDateTime>,
+    pub time_generated: Option<::time::OffsetDateTime>,
     #[doc = "Details of the resource that was assessed"]
     #[serde(rename = "resourceDetails", default, skip_serializing_if = "Option::is_none")]
     pub resource_details: Option<ResourceDetailsUnion>,
@@ -10050,13 +9952,13 @@ pub struct SecurityTaskProperties {
     pub state: Option<String>,
     #[doc = "The time this task was discovered in UTC"]
     #[serde(rename = "creationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time_utc: Option<time::OffsetDateTime>,
+    pub creation_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Changing set of properties, depending on the task type that is derived from the name field"]
     #[serde(rename = "securityTaskParameters", default, skip_serializing_if = "Option::is_none")]
     pub security_task_parameters: Option<SecurityTaskParameters>,
     #[doc = "The time this task's details were last changed in UTC"]
     #[serde(rename = "lastStateChangeTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_state_change_time_utc: Option<time::OffsetDateTime>,
+    pub last_state_change_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Additional data on the state of the task"]
     #[serde(rename = "subState", default, skip_serializing_if = "Option::is_none")]
     pub sub_state: Option<String>,
@@ -10326,7 +10228,7 @@ pub struct ServerVulnerabilityProperties {
     pub threat: Option<String>,
     #[doc = "Published time"]
     #[serde(rename = "publishedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub published_time: Option<time::OffsetDateTime>,
+    pub published_time: Option<::time::OffsetDateTime>,
     #[serde(
         rename = "vendorReferences",
         default,
@@ -10538,19 +10440,6 @@ impl SoftwaresList {
         Self::default()
     }
 }
-#[doc = "The source type of the machine group"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SourceSystem {
-    #[serde(rename = "Azure_AppLocker")]
-    AzureAppLocker,
-    #[serde(rename = "Azure_AuditD")]
-    AzureAuditD,
-    #[serde(rename = "NonAzure_AppLocker")]
-    NonAzureAppLocker,
-    #[serde(rename = "NonAzure_AuditD")]
-    NonAzureAuditD,
-    None,
-}
 #[doc = "Details of the resource that was assessed"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlServerVulnerabilityProperties {
@@ -10564,6 +10453,414 @@ pub struct SqlServerVulnerabilityProperties {
 impl SqlServerVulnerabilityProperties {
     pub fn new() -> Self {
         Self { type_: None, query: None }
+    }
+}
+#[doc = "Security Assignment on a resource group over a given scope"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StandardAssignment {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Describes the properties of a standardAssignment"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<StandardAssignmentProperties>,
+}
+impl StandardAssignment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The standard assignment metadata"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StandardAssignmentMetadata {
+    #[doc = "Standard assignment Created by object id (GUID)"]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[doc = "Standard assignment creation date"]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
+    pub created_on: Option<::time::OffsetDateTime>,
+    #[doc = "Standard assignment last updated by object id (GUID)"]
+    #[serde(rename = "lastUpdatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_updated_by: Option<String>,
+    #[doc = "Standard assignment last update date"]
+    #[serde(rename = "lastUpdatedOn", default, with = "azure_core::date::rfc3339::option")]
+    pub last_updated_on: Option<::time::OffsetDateTime>,
+}
+impl StandardAssignmentMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes the properties of a standardAssignment"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StandardAssignmentProperties {
+    #[doc = "Display name of the standardAssignment"]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[doc = "Description of the standardAssignment"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "Describe the properties of a of a standard assignments object reference"]
+    #[serde(rename = "assignedStandard", default, skip_serializing_if = "Option::is_none")]
+    pub assigned_standard: Option<AssignedStandardItem>,
+    #[doc = "Expected effect of this assignment (Audit/Exempt/Attest)"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effect: Option<standard_assignment_properties::Effect>,
+    #[doc = "Excluded scopes, filter out the descendants of the scope (on management scopes)"]
+    #[serde(
+        rename = "excludedScopes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub excluded_scopes: Vec<String>,
+    #[doc = "Expiration date of this assignment as a full ISO date"]
+    #[serde(rename = "expiresOn", default, with = "azure_core::date::rfc3339::option")]
+    pub expires_on: Option<::time::OffsetDateTime>,
+    #[doc = "Additional data about assignment that has Exempt effect"]
+    #[serde(rename = "exemptionData", default, skip_serializing_if = "Option::is_none")]
+    pub exemption_data: Option<standard_assignment_properties::ExemptionData>,
+    #[doc = "Additional data about assignment that has Attest effect"]
+    #[serde(rename = "attestationData", default, skip_serializing_if = "Option::is_none")]
+    pub attestation_data: Option<standard_assignment_properties::AttestationData>,
+    #[doc = "The standard assignment metadata"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<StandardAssignmentMetadata>,
+}
+impl StandardAssignmentProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod standard_assignment_properties {
+    use super::*;
+    #[doc = "Expected effect of this assignment (Audit/Exempt/Attest)"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Effect")]
+    pub enum Effect {
+        Audit,
+        Exempt,
+        Attest,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Effect {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Effect {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Effect {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Audit => serializer.serialize_unit_variant("Effect", 0u32, "Audit"),
+                Self::Exempt => serializer.serialize_unit_variant("Effect", 1u32, "Exempt"),
+                Self::Attest => serializer.serialize_unit_variant("Effect", 2u32, "Attest"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Additional data about assignment that has Exempt effect"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct ExemptionData {
+        #[doc = "Exemption category of this assignment"]
+        #[serde(rename = "exemptionCategory", default, skip_serializing_if = "Option::is_none")]
+        pub exemption_category: Option<exemption_data::ExemptionCategory>,
+        #[doc = "Describe the properties of a security assessment object reference (by key)"]
+        #[serde(rename = "assignedAssessment", default, skip_serializing_if = "Option::is_none")]
+        pub assigned_assessment: Option<AssignedAssessmentItem>,
+    }
+    impl ExemptionData {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod exemption_data {
+        use super::*;
+        #[doc = "Exemption category of this assignment"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "ExemptionCategory")]
+        pub enum ExemptionCategory {
+            #[serde(rename = "waiver")]
+            Waiver,
+            #[serde(rename = "mitigated")]
+            Mitigated,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for ExemptionCategory {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for ExemptionCategory {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for ExemptionCategory {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Waiver => serializer.serialize_unit_variant("ExemptionCategory", 0u32, "waiver"),
+                    Self::Mitigated => serializer.serialize_unit_variant("ExemptionCategory", 1u32, "mitigated"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+    }
+    #[doc = "Additional data about assignment that has Attest effect"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct AttestationData {
+        #[doc = "Attest category of this assignment"]
+        #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
+        pub compliance_state: Option<attestation_data::ComplianceState>,
+        #[doc = "Describe the properties of a security assessment object reference (by key)"]
+        #[serde(rename = "assignedAssessment", default, skip_serializing_if = "Option::is_none")]
+        pub assigned_assessment: Option<AssignedAssessmentItem>,
+        #[doc = "Attestation compliance date"]
+        #[serde(rename = "complianceDate", default, with = "azure_core::date::rfc3339::option")]
+        pub compliance_date: Option<::time::OffsetDateTime>,
+        #[doc = "Array of links to attestation evidence"]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
+        pub evidence: Vec<AttestationEvidence>,
+    }
+    impl AttestationData {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod attestation_data {
+        use super::*;
+        #[doc = "Attest category of this assignment"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "ComplianceState")]
+        pub enum ComplianceState {
+            #[serde(rename = "unknown")]
+            Unknown,
+            #[serde(rename = "compliant")]
+            Compliant,
+            #[serde(rename = "nonCompliant")]
+            NonCompliant,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for ComplianceState {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for ComplianceState {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for ComplianceState {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Unknown => serializer.serialize_unit_variant("ComplianceState", 0u32, "unknown"),
+                    Self::Compliant => serializer.serialize_unit_variant("ComplianceState", 1u32, "compliant"),
+                    Self::NonCompliant => serializer.serialize_unit_variant("ComplianceState", 2u32, "nonCompliant"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+    }
+}
+#[doc = "Page of a standard assignment list"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StandardAssignmentsList {
+    #[doc = "Collection of standardAssignments in this page"]
+    pub value: Vec<StandardAssignment>,
+    #[doc = "The URI to fetch the next page"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for StandardAssignmentsList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl StandardAssignmentsList {
+    pub fn new(value: Vec<StandardAssignment>) -> Self {
+        Self { value, next_link: None }
+    }
+}
+#[doc = "The standard metadata"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StandardMetadata {
+    #[doc = "Standard Created by object id (GUID)"]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[doc = "Standard creation date"]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
+    pub created_on: Option<::time::OffsetDateTime>,
+    #[doc = "Standard last updated by object id (GUID)"]
+    #[serde(rename = "lastUpdatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_updated_by: Option<String>,
+    #[doc = "Standard last update date"]
+    #[serde(rename = "lastUpdatedOn", default, with = "azure_core::date::rfc3339::option")]
+    pub last_updated_on: Option<::time::OffsetDateTime>,
+}
+impl StandardMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes properties of a standard."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StandardProperties {
+    #[doc = "Display name of the standard, equivalent to the standardId"]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[doc = "Standard type (Custom or Default or Compliance only currently)"]
+    #[serde(rename = "standardType", default, skip_serializing_if = "Option::is_none")]
+    pub standard_type: Option<standard_properties::StandardType>,
+    #[doc = "Description of the standard"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "List of assessment keys to apply to standard scope."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub assessments: Vec<PartialAssessmentProperties>,
+    #[doc = "List of all standard supported clouds."]
+    #[serde(
+        rename = "cloudProviders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub cloud_providers: Vec<StandardSupportedCloud>,
+    #[doc = "The policy set definition id associated with the standard."]
+    #[serde(rename = "policySetDefinitionId", default, skip_serializing_if = "Option::is_none")]
+    pub policy_set_definition_id: Option<String>,
+    #[doc = "The standard metadata"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<StandardMetadata>,
+}
+impl StandardProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod standard_properties {
+    use super::*;
+    #[doc = "Standard type (Custom or Default or Compliance only currently)"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "StandardType")]
+    pub enum StandardType {
+        Custom,
+        Default,
+        Compliance,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for StandardType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for StandardType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for StandardType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Custom => serializer.serialize_unit_variant("StandardType", 0u32, "Custom"),
+                Self::Default => serializer.serialize_unit_variant("StandardType", 1u32, "Default"),
+                Self::Compliance => serializer.serialize_unit_variant("StandardType", 2u32, "Compliance"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "The cloud that the standard is supported on."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "StandardSupportedCloud")]
+pub enum StandardSupportedCloud {
+    Azure,
+    #[serde(rename = "AWS")]
+    Aws,
+    #[serde(rename = "GCP")]
+    Gcp,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for StandardSupportedCloud {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for StandardSupportedCloud {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for StandardSupportedCloud {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Azure => serializer.serialize_unit_variant("StandardSupportedCloud", 0u32, "Azure"),
+            Self::Aws => serializer.serialize_unit_variant("StandardSupportedCloud", 1u32, "AWS"),
+            Self::Gcp => serializer.serialize_unit_variant("StandardSupportedCloud", 2u32, "GCP"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "Status of the sub-assessment"]
@@ -10802,7 +11099,7 @@ impl TopologyResource {
 pub struct TopologyResourceProperties {
     #[doc = "The UTC time on which the topology was calculated"]
     #[serde(rename = "calculatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub calculated_date_time: Option<time::OffsetDateTime>,
+    pub calculated_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Azure resources which are part of this topology resource"]
     #[serde(
         rename = "topologyResources",
@@ -10991,21 +11288,6 @@ impl UserDefinedResourcesProperties {
         }
     }
 }
-#[doc = "Represents a user that is recommended to be allowed for a certain rule"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct UserRecommendation {
-    #[doc = "Represents a user that is recommended to be allowed for a certain rule"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub username: Option<String>,
-    #[doc = "The recommendation action of the machine or rule"]
-    #[serde(rename = "recommendationAction", default, skip_serializing_if = "Option::is_none")]
-    pub recommendation_action: Option<RecommendationAction>,
-}
-impl UserRecommendation {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "vulnerability assessment rule metadata details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VaRule {
@@ -11062,29 +11344,6 @@ impl VendorReference {
         Self::default()
     }
 }
-#[doc = "Represents a machine that is part of a machine group"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct VmRecommendation {
-    #[doc = "The configuration status of the machines group or machine or rule"]
-    #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
-    pub configuration_status: Option<ConfigurationStatus>,
-    #[doc = "The recommendation action of the machine or rule"]
-    #[serde(rename = "recommendationAction", default, skip_serializing_if = "Option::is_none")]
-    pub recommendation_action: Option<RecommendationAction>,
-    #[doc = "The full resource id of the machine"]
-    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<VmResourceId>,
-    #[doc = "The machine supportability of Enforce feature"]
-    #[serde(rename = "enforcementSupport", default, skip_serializing_if = "Option::is_none")]
-    pub enforcement_support: Option<EnforcementSupport>,
-}
-impl VmRecommendation {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub type VmRecommendations = Vec<VmRecommendation>;
-pub type VmResourceId = String;
 #[doc = "Configures where to store the OMS agent data for workspaces under a scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceSetting {
@@ -13351,13 +13610,13 @@ pub struct Status {
     pub reason: Option<String>,
     #[doc = "The date of when the resource was scanned in the last time"]
     #[serde(rename = "lastScannedDate", default, with = "azure_core::date::rfc3339::option")]
-    pub last_scanned_date: Option<time::OffsetDateTime>,
+    pub last_scanned_date: Option<::time::OffsetDateTime>,
     #[doc = "The date of when the status of the health report was changed in the last time"]
     #[serde(rename = "statusChangeDate", default, with = "azure_core::date::rfc3339::option")]
-    pub status_change_date: Option<time::OffsetDateTime>,
+    pub status_change_date: Option<::time::OffsetDateTime>,
     #[doc = "The date of when the resource of the health report was scanned in the first time"]
     #[serde(rename = "firstEvaluationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub first_evaluation_date: Option<time::OffsetDateTime>,
+    pub first_evaluation_date: Option<::time::OffsetDateTime>,
 }
 impl Status {
     pub fn new() -> Self {
@@ -13417,7 +13676,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -13426,7 +13685,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

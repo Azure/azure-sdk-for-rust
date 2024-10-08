@@ -365,10 +365,10 @@ pub struct DenyAssignmentProperties {
     pub condition_version: Option<String>,
     #[doc = "Time it was created"]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "Time it was updated"]
     #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_on: Option<time::OffsetDateTime>,
+    pub updated_on: Option<::time::OffsetDateTime>,
     #[doc = "Id of the user who created the assignment"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -699,7 +699,7 @@ pub mod policy_assignment_properties {
         pub last_modified_by: Option<Principal>,
         #[doc = "The last modified date time."]
         #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-        pub last_modified_date_time: Option<time::OffsetDateTime>,
+        pub last_modified_date_time: Option<::time::OffsetDateTime>,
     }
     impl Policy {
         pub fn new() -> Self {
@@ -966,10 +966,10 @@ pub struct RoleAssignmentProperties {
     pub condition_version: Option<String>,
     #[doc = "Time it was created"]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "Time it was updated"]
     #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_on: Option<time::OffsetDateTime>,
+    pub updated_on: Option<::time::OffsetDateTime>,
     #[doc = "Id of the user who created the assignment"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -1181,10 +1181,10 @@ pub struct RoleAssignmentScheduleInstanceProperties {
     pub status: Option<role_assignment_schedule_instance_properties::Status>,
     #[doc = "The startDateTime of the role assignment schedule instance"]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The endDateTime of the role assignment schedule instance"]
     #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_date_time: Option<time::OffsetDateTime>,
+    pub end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "roleEligibilityScheduleId used to activate"]
     #[serde(rename = "linkedRoleEligibilityScheduleId", default, skip_serializing_if = "Option::is_none")]
     pub linked_role_eligibility_schedule_id: Option<String>,
@@ -1209,7 +1209,7 @@ pub struct RoleAssignmentScheduleInstanceProperties {
     pub condition_version: Option<String>,
     #[doc = "DateTime when role assignment schedule was created"]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[serde(rename = "expandedProperties", default, skip_serializing_if = "Option::is_none")]
     pub expanded_properties: Option<ExpandedProperties>,
 }
@@ -1474,10 +1474,10 @@ pub struct RoleAssignmentScheduleProperties {
     pub status: Option<role_assignment_schedule_properties::Status>,
     #[doc = "Start DateTime when role assignment schedule"]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End DateTime when role assignment schedule"]
     #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_date_time: Option<time::OffsetDateTime>,
+    pub end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The conditions on the role assignment. This limits the resources it can be assigned to. e.g.: @Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub condition: Option<String>,
@@ -1486,10 +1486,10 @@ pub struct RoleAssignmentScheduleProperties {
     pub condition_version: Option<String>,
     #[doc = "DateTime when role assignment schedule was created"]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "DateTime when role assignment schedule was modified"]
     #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_on: Option<time::OffsetDateTime>,
+    pub updated_on: Option<::time::OffsetDateTime>,
     #[serde(rename = "expandedProperties", default, skip_serializing_if = "Option::is_none")]
     pub expanded_properties: Option<ExpandedProperties>,
 }
@@ -1818,7 +1818,7 @@ pub struct RoleAssignmentScheduleRequestProperties {
     pub condition_version: Option<String>,
     #[doc = "DateTime when role assignment schedule request was created"]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "Id of the user who created this request"]
     #[serde(rename = "requestorId", default, skip_serializing_if = "Option::is_none")]
     pub requestor_id: Option<String>,
@@ -2031,7 +2031,7 @@ pub mod role_assignment_schedule_request_properties {
     pub struct ScheduleInfo {
         #[doc = "Start DateTime of the role assignment schedule."]
         #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-        pub start_date_time: Option<time::OffsetDateTime>,
+        pub start_date_time: Option<::time::OffsetDateTime>,
         #[doc = "Expiration of the role assignment schedule"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub expiration: Option<schedule_info::Expiration>,
@@ -2051,7 +2051,7 @@ pub mod role_assignment_schedule_request_properties {
             pub type_: Option<expiration::Type>,
             #[doc = "End DateTime of the role assignment schedule."]
             #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
-            pub end_date_time: Option<time::OffsetDateTime>,
+            pub end_date_time: Option<::time::OffsetDateTime>,
             #[doc = "Duration of the role assignment schedule in TimeSpan."]
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub duration: Option<String>,
@@ -2210,10 +2210,10 @@ pub struct RoleDefinitionProperties {
     pub assignable_scopes: Vec<String>,
     #[doc = "Time it was created"]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "Time it was updated"]
     #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_on: Option<time::OffsetDateTime>,
+    pub updated_on: Option<::time::OffsetDateTime>,
     #[doc = "Id of the user who created the assignment"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -2355,10 +2355,10 @@ pub struct RoleEligibilityScheduleInstanceProperties {
     pub status: Option<role_eligibility_schedule_instance_properties::Status>,
     #[doc = "The startDateTime of the role eligibility schedule instance"]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The endDateTime of the role eligibility schedule instance"]
     #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_date_time: Option<time::OffsetDateTime>,
+    pub end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Membership type of the role eligibility schedule"]
     #[serde(rename = "memberType", default, skip_serializing_if = "Option::is_none")]
     pub member_type: Option<role_eligibility_schedule_instance_properties::MemberType>,
@@ -2370,7 +2370,7 @@ pub struct RoleEligibilityScheduleInstanceProperties {
     pub condition_version: Option<String>,
     #[doc = "DateTime when role eligibility schedule was created"]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[serde(rename = "expandedProperties", default, skip_serializing_if = "Option::is_none")]
     pub expanded_properties: Option<ExpandedProperties>,
 }
@@ -2592,10 +2592,10 @@ pub struct RoleEligibilityScheduleProperties {
     pub status: Option<role_eligibility_schedule_properties::Status>,
     #[doc = "Start DateTime when role eligibility schedule"]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End DateTime when role eligibility schedule"]
     #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_date_time: Option<time::OffsetDateTime>,
+    pub end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The conditions on the role assignment. This limits the resources it can be assigned to. e.g.: @Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub condition: Option<String>,
@@ -2604,10 +2604,10 @@ pub struct RoleEligibilityScheduleProperties {
     pub condition_version: Option<String>,
     #[doc = "DateTime when role eligibility schedule was created"]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "DateTime when role eligibility schedule was modified"]
     #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_on: Option<time::OffsetDateTime>,
+    pub updated_on: Option<::time::OffsetDateTime>,
     #[serde(rename = "expandedProperties", default, skip_serializing_if = "Option::is_none")]
     pub expanded_properties: Option<ExpandedProperties>,
 }
@@ -2896,7 +2896,7 @@ pub struct RoleEligibilityScheduleRequestProperties {
     pub condition_version: Option<String>,
     #[doc = "DateTime when role eligibility schedule request was created"]
     #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
-    pub created_on: Option<time::OffsetDateTime>,
+    pub created_on: Option<::time::OffsetDateTime>,
     #[doc = "Id of the user who created this request"]
     #[serde(rename = "requestorId", default, skip_serializing_if = "Option::is_none")]
     pub requestor_id: Option<String>,
@@ -3109,7 +3109,7 @@ pub mod role_eligibility_schedule_request_properties {
     pub struct ScheduleInfo {
         #[doc = "Start DateTime of the role eligibility schedule."]
         #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-        pub start_date_time: Option<time::OffsetDateTime>,
+        pub start_date_time: Option<::time::OffsetDateTime>,
         #[doc = "Expiration of the role eligibility schedule"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub expiration: Option<schedule_info::Expiration>,
@@ -3129,7 +3129,7 @@ pub mod role_eligibility_schedule_request_properties {
             pub type_: Option<expiration::Type>,
             #[doc = "End DateTime of the role eligibility schedule."]
             #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
-            pub end_date_time: Option<time::OffsetDateTime>,
+            pub end_date_time: Option<::time::OffsetDateTime>,
             #[doc = "Duration of the role eligibility schedule in TimeSpan."]
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub duration: Option<String>,
@@ -3574,7 +3574,7 @@ pub struct RoleManagementPolicyProperties {
     pub last_modified_by: Option<Principal>,
     #[doc = "The last modified date time."]
     #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_date_time: Option<time::OffsetDateTime>,
+    pub last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The rule applied to the policy."]
     #[serde(
         default,

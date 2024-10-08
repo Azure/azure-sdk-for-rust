@@ -78,7 +78,7 @@ pub struct MeterInfo {
     pub meter_rates: Option<serde_json::Value>,
     #[doc = "Indicates the date from which the meter rate is effective."]
     #[serde(rename = "EffectiveDate", default, with = "azure_core::date::rfc3339::option")]
-    pub effective_date: Option<time::OffsetDateTime>,
+    pub effective_date: Option<::time::OffsetDateTime>,
     #[doc = "The resource quantity that is included in the offer at no cost. Consumption beyond this quantity will be charged."]
     #[serde(rename = "IncludedQuantity", default, skip_serializing_if = "Option::is_none")]
     pub included_quantity: Option<f32>,
@@ -145,7 +145,7 @@ impl MonetaryCredit {
 pub struct OfferTermInfo {
     #[doc = "Indicates the date from which the offer term is effective."]
     #[serde(rename = "EffectiveDate", default, with = "azure_core::date::rfc3339::option")]
-    pub effective_date: Option<time::OffsetDateTime>,
+    pub effective_date: Option<::time::OffsetDateTime>,
 }
 impl OfferTermInfo {
     pub fn new() -> Self {
@@ -297,10 +297,10 @@ pub struct UsageSample {
     pub meter_id: Option<String>,
     #[doc = "UTC start time for the usage bucket to which this usage aggregate belongs."]
     #[serde(rename = "usageStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub usage_start_time: Option<time::OffsetDateTime>,
+    pub usage_start_time: Option<::time::OffsetDateTime>,
     #[doc = "UTC end time for the usage bucket to which this usage aggregate belongs."]
     #[serde(rename = "usageEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub usage_end_time: Option<time::OffsetDateTime>,
+    pub usage_end_time: Option<::time::OffsetDateTime>,
     #[doc = "The amount of the resource consumption that occurred in this time frame."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quantity: Option<f32>,

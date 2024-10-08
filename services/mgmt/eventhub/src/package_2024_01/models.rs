@@ -421,9 +421,6 @@ pub mod cluster {
         #[doc = "A value that indicates whether Scaling is Supported."]
         #[serde(rename = "supportsScaling", default, skip_serializing_if = "Option::is_none")]
         pub supports_scaling: Option<bool>,
-        #[doc = "Contains all settings for the cluster upgrade window."]
-        #[serde(rename = "upgradePreferences", default, skip_serializing_if = "Option::is_none")]
-        pub upgrade_preferences: Option<UpgradePreferences>,
     }
     impl Properties {
         pub fn new() -> Self {
@@ -655,10 +652,10 @@ pub mod consumer_group {
     pub struct Properties {
         #[doc = "Exact time the message was created."]
         #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-        pub created_at: Option<time::OffsetDateTime>,
+        pub created_at: Option<::time::OffsetDateTime>,
         #[doc = "The exact time the message was updated."]
         #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-        pub updated_at: Option<time::OffsetDateTime>,
+        pub updated_at: Option<::time::OffsetDateTime>,
         #[doc = "User Metadata is a placeholder to store user-defined string data with maximum length 1024. e.g. it can be used to store descriptive data, such as list of teams and their contact information also user-defined configuration settings can be stored."]
         #[serde(rename = "userMetadata", default, skip_serializing_if = "Option::is_none")]
         pub user_metadata: Option<String>,
@@ -781,10 +778,10 @@ pub mod eh_namespace {
         pub status: Option<String>,
         #[doc = "The time the Namespace was created."]
         #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-        pub created_at: Option<time::OffsetDateTime>,
+        pub created_at: Option<::time::OffsetDateTime>,
         #[doc = "The time the Namespace was updated."]
         #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-        pub updated_at: Option<time::OffsetDateTime>,
+        pub updated_at: Option<::time::OffsetDateTime>,
         #[doc = "Endpoint you can use to perform Service Bus operations."]
         #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
         pub service_bus_endpoint: Option<String>,
@@ -1135,10 +1132,10 @@ pub mod eventhub {
         pub partition_ids: Vec<String>,
         #[doc = "Exact time the Event Hub was created."]
         #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-        pub created_at: Option<time::OffsetDateTime>,
+        pub created_at: Option<::time::OffsetDateTime>,
         #[doc = "The exact time the message was updated."]
         #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-        pub updated_at: Option<time::OffsetDateTime>,
+        pub updated_at: Option<::time::OffsetDateTime>,
         #[doc = "Number of days to retain the events for this Event Hub, value should be 1 to 7 days"]
         #[serde(rename = "messageRetentionInDays", default, skip_serializing_if = "Option::is_none")]
         pub message_retention_in_days: Option<i64>,
@@ -1148,6 +1145,9 @@ pub mod eventhub {
         #[doc = "Enumerates the possible values for the status of the Event Hub."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub status: Option<properties::Status>,
+        #[doc = "Gets and Sets Metadata of User."]
+        #[serde(rename = "userMetadata", default, skip_serializing_if = "Option::is_none")]
+        pub user_metadata: Option<String>,
         #[doc = "Properties to configure capture description for eventhub"]
         #[serde(rename = "captureDescription", default, skip_serializing_if = "Option::is_none")]
         pub capture_description: Option<CaptureDescription>,
@@ -2246,7 +2246,6 @@ pub mod retention_description {
 pub struct SchemaGroup {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[doc = ""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<schema_group::Properties>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -2260,25 +2259,22 @@ impl SchemaGroup {
 }
 pub mod schema_group {
     use super::*;
-    #[doc = ""]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Exact time the Schema Group was updated"]
         #[serde(rename = "updatedAtUtc", default, with = "azure_core::date::rfc3339::option")]
-        pub updated_at_utc: Option<time::OffsetDateTime>,
+        pub updated_at_utc: Option<::time::OffsetDateTime>,
         #[doc = "Exact time the Schema Group was created."]
         #[serde(rename = "createdAtUtc", default, with = "azure_core::date::rfc3339::option")]
-        pub created_at_utc: Option<time::OffsetDateTime>,
+        pub created_at_utc: Option<::time::OffsetDateTime>,
         #[doc = "The ETag value."]
         #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
         pub e_tag: Option<String>,
         #[doc = "dictionary object for SchemaGroup group properties"]
         #[serde(rename = "groupProperties", default, skip_serializing_if = "Option::is_none")]
         pub group_properties: Option<serde_json::Value>,
-        #[doc = ""]
         #[serde(rename = "schemaCompatibility", default, skip_serializing_if = "Option::is_none")]
         pub schema_compatibility: Option<properties::SchemaCompatibility>,
-        #[doc = ""]
         #[serde(rename = "schemaType", default, skip_serializing_if = "Option::is_none")]
         pub schema_type: Option<properties::SchemaType>,
     }
@@ -2289,7 +2285,6 @@ pub mod schema_group {
     }
     pub mod properties {
         use super::*;
-        #[doc = ""]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         #[serde(remote = "SchemaCompatibility")]
         pub enum SchemaCompatibility {
@@ -2328,7 +2323,6 @@ pub mod schema_group {
                 }
             }
         }
-        #[doc = ""]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         #[serde(remote = "SchemaType")]
         pub enum SchemaType {
@@ -2602,73 +2596,6 @@ pub enum UnavailableReason {
     NameInLockdown,
     TooManyNamespaceInCurrentSubscription,
 }
-#[doc = "Contains all settings for the cluster upgrade window."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct UpgradePreferences {
-    #[doc = "Preferred day of the week in UTC time to begin an upgrade. If 'Any' is selected, upgrade will proceed at any given weekday"]
-    #[serde(rename = "startDayOfWeek", default, skip_serializing_if = "Option::is_none")]
-    pub start_day_of_week: Option<upgrade_preferences::StartDayOfWeek>,
-    #[doc = "Preferred hour of the day in UTC time to begin an upgrade"]
-    #[serde(rename = "startHourOfDay", default, skip_serializing_if = "Option::is_none")]
-    pub start_hour_of_day: Option<i32>,
-}
-impl UpgradePreferences {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod upgrade_preferences {
-    use super::*;
-    #[doc = "Preferred day of the week in UTC time to begin an upgrade. If 'Any' is selected, upgrade will proceed at any given weekday"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "StartDayOfWeek")]
-    pub enum StartDayOfWeek {
-        Sunday,
-        Monday,
-        Tuesday,
-        Wednesday,
-        Thursday,
-        Friday,
-        Saturday,
-        Any,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for StartDayOfWeek {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for StartDayOfWeek {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for StartDayOfWeek {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Sunday => serializer.serialize_unit_variant("StartDayOfWeek", 0u32, "Sunday"),
-                Self::Monday => serializer.serialize_unit_variant("StartDayOfWeek", 1u32, "Monday"),
-                Self::Tuesday => serializer.serialize_unit_variant("StartDayOfWeek", 2u32, "Tuesday"),
-                Self::Wednesday => serializer.serialize_unit_variant("StartDayOfWeek", 3u32, "Wednesday"),
-                Self::Thursday => serializer.serialize_unit_variant("StartDayOfWeek", 4u32, "Thursday"),
-                Self::Friday => serializer.serialize_unit_variant("StartDayOfWeek", 5u32, "Friday"),
-                Self::Saturday => serializer.serialize_unit_variant("StartDayOfWeek", 6u32, "Saturday"),
-                Self::Any => serializer.serialize_unit_variant("StartDayOfWeek", 7u32, "Any"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
 #[doc = "Recognized Dictionary value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentity {
@@ -2695,7 +2622,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -2704,7 +2631,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

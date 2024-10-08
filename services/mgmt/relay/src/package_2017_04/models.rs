@@ -153,10 +153,10 @@ pub mod hybrid_connection {
     pub struct Properties {
         #[doc = "The time the hybrid connection was created."]
         #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-        pub created_at: Option<time::OffsetDateTime>,
+        pub created_at: Option<::time::OffsetDateTime>,
         #[doc = "The time the namespace was updated."]
         #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-        pub updated_at: Option<time::OffsetDateTime>,
+        pub updated_at: Option<::time::OffsetDateTime>,
         #[doc = "The number of listeners for this hybrid connection. Note that min : 1 and max:25 are supported."]
         #[serde(rename = "listenerCount", default, skip_serializing_if = "Option::is_none")]
         pub listener_count: Option<i32>,
@@ -336,10 +336,10 @@ pub struct RelayNamespaceProperties {
     pub provisioning_state: Option<relay_namespace_properties::ProvisioningState>,
     #[doc = "The time the namespace was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The time the namespace was updated."]
     #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub updated_at: Option<time::OffsetDateTime>,
+    pub updated_at: Option<::time::OffsetDateTime>,
     #[doc = "Endpoint you can use to perform Service Bus operations."]
     #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub service_bus_endpoint: Option<String>,
@@ -494,10 +494,10 @@ pub mod wcf_relay {
         pub is_dynamic: Option<bool>,
         #[doc = "The time the WCF relay was created."]
         #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-        pub created_at: Option<time::OffsetDateTime>,
+        pub created_at: Option<::time::OffsetDateTime>,
         #[doc = "The time the namespace was updated."]
         #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
-        pub updated_at: Option<time::OffsetDateTime>,
+        pub updated_at: Option<::time::OffsetDateTime>,
         #[doc = "The number of listeners for this relay. Note that min :1 and max:25 are supported."]
         #[serde(rename = "listenerCount", default, skip_serializing_if = "Option::is_none")]
         pub listener_count: Option<i32>,

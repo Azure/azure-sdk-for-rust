@@ -679,10 +679,10 @@ pub mod certificate {
         pub issuer: Option<String>,
         #[doc = "Certificate issue Date."]
         #[serde(rename = "issueDate", default, with = "azure_core::date::rfc3339::option")]
-        pub issue_date: Option<time::OffsetDateTime>,
+        pub issue_date: Option<::time::OffsetDateTime>,
         #[doc = "Certificate expiration date."]
         #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-        pub expiration_date: Option<time::OffsetDateTime>,
+        pub expiration_date: Option<::time::OffsetDateTime>,
         #[doc = "Certificate thumbprint."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub thumbprint: Option<String>,
@@ -1295,7 +1295,7 @@ pub mod container_app_auth_token {
         pub token: Option<String>,
         #[doc = "Token expiration date."]
         #[serde(default, with = "azure_core::date::rfc3339::option")]
-        pub expires: Option<time::OffsetDateTime>,
+        pub expires: Option<::time::OffsetDateTime>,
     }
     impl Properties {
         pub fn new() -> Self {
@@ -1701,7 +1701,7 @@ pub struct CustomDomainConfiguration {
     pub certificate_password: Option<String>,
     #[doc = "Certificate expiration date."]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "Certificate thumbprint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
@@ -2472,7 +2472,7 @@ pub mod environment_auth_token {
         pub token: Option<String>,
         #[doc = "Token expiration date."]
         #[serde(default, with = "azure_core::date::rfc3339::option")]
-        pub expires: Option<time::OffsetDateTime>,
+        pub expires: Option<::time::OffsetDateTime>,
     }
     impl Properties {
         pub fn new() -> Self {
@@ -3454,10 +3454,10 @@ pub mod job_execution {
         pub status: Option<properties::Status>,
         #[doc = "Job execution start time."]
         #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-        pub start_time: Option<time::OffsetDateTime>,
+        pub start_time: Option<::time::OffsetDateTime>,
         #[doc = "Job execution end time."]
         #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-        pub end_time: Option<time::OffsetDateTime>,
+        pub end_time: Option<::time::OffsetDateTime>,
         #[doc = "Job's execution template, containing container configuration for a job's execution"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub template: Option<JobExecutionTemplate>,
@@ -4605,7 +4605,7 @@ pub mod replica {
     pub struct Properties {
         #[doc = "Timestamp describing when the pod was created by controller"]
         #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-        pub created_time: Option<time::OffsetDateTime>,
+        pub created_time: Option<::time::OffsetDateTime>,
         #[doc = "Current running state of the replica"]
         #[serde(rename = "runningState", default, skip_serializing_if = "Option::is_none")]
         pub running_state: Option<properties::RunningState>,
@@ -4808,10 +4808,10 @@ pub mod revision {
     pub struct Properties {
         #[doc = "Timestamp describing when the revision was created\nby controller"]
         #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-        pub created_time: Option<time::OffsetDateTime>,
+        pub created_time: Option<::time::OffsetDateTime>,
         #[doc = "Timestamp describing when the revision was last active. Only meaningful when revision is inactive"]
         #[serde(rename = "lastActiveTime", default, with = "azure_core::date::rfc3339::option")]
-        pub last_active_time: Option<time::OffsetDateTime>,
+        pub last_active_time: Option<::time::OffsetDateTime>,
         #[doc = "Fully qualified domain name of the revision"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub fqdn: Option<String>,
@@ -5608,7 +5608,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -5617,7 +5617,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

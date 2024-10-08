@@ -811,7 +811,7 @@ pub struct EventsResultData {
     pub count: Option<i64>,
     #[doc = "Timestamp of the event"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Custom dimensions of the event"]
     #[serde(rename = "customDimensions", default, skip_serializing_if = "Option::is_none")]
     pub custom_dimensions: Option<events_result_data::CustomDimensions>,

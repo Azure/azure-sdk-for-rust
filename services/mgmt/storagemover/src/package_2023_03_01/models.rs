@@ -65,7 +65,7 @@ pub struct AgentProperties {
     pub agent_status: Option<agent_properties::AgentStatus>,
     #[doc = "The last updated time of the Agent status."]
     #[serde(rename = "lastStatusUpdate", default, with = "azure_core::date::rfc3339::option")]
-    pub last_status_update: Option<time::OffsetDateTime>,
+    pub last_status_update: Option<::time::OffsetDateTime>,
     #[doc = "Local IP address reported by the Agent."]
     #[serde(rename = "localIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub local_ip_address: Option<String>,
@@ -828,13 +828,13 @@ pub struct JobRunProperties {
     pub agent_resource_id: Option<String>,
     #[doc = "Start time of the run. Null if no Agent reported that the job has started."]
     #[serde(rename = "executionStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub execution_start_time: Option<time::OffsetDateTime>,
+    pub execution_start_time: Option<::time::OffsetDateTime>,
     #[doc = "End time of the run. Null if Agent has not reported that the job has ended."]
     #[serde(rename = "executionEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub execution_end_time: Option<time::OffsetDateTime>,
+    pub execution_end_time: Option<::time::OffsetDateTime>,
     #[doc = "The last updated time of the Job Run."]
     #[serde(rename = "lastStatusUpdate", default, with = "azure_core::date::rfc3339::option")]
-    pub last_status_update: Option<time::OffsetDateTime>,
+    pub last_status_update: Option<::time::OffsetDateTime>,
     #[doc = "Number of items scanned so far in source."]
     #[serde(rename = "itemsScanned", default, skip_serializing_if = "Option::is_none")]
     pub items_scanned: Option<i64>,
@@ -1572,7 +1572,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1581,7 +1581,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

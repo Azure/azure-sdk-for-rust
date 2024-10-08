@@ -17,21 +17,6 @@ impl ContainerGroupProfile {
         Self { id, revision: None }
     }
 }
-#[doc = "Details of the ContainerGroupProfile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ContainerGroupProfileUpdate {
-    #[doc = "Specifies container group profile id of standby container groups."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Specifies revision of container group profile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub revision: Option<i64>,
-}
-impl ContainerGroupProfileUpdate {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Details of the ContainerGroupProperties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerGroupProperties {
@@ -53,26 +38,6 @@ impl ContainerGroupProperties {
             container_group_profile,
             subnet_ids: Vec::new(),
         }
-    }
-}
-#[doc = "Details of the ContainerGroupProperties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ContainerGroupPropertiesUpdate {
-    #[doc = "Details of the ContainerGroupProfile."]
-    #[serde(rename = "containerGroupProfile", default, skip_serializing_if = "Option::is_none")]
-    pub container_group_profile: Option<ContainerGroupProfileUpdate>,
-    #[doc = "Specifies subnet Ids for container group."]
-    #[serde(
-        rename = "subnetIds",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub subnet_ids: Vec<Subnet>,
-}
-impl ContainerGroupPropertiesUpdate {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "The resource management error additional info."]
@@ -418,21 +383,6 @@ impl StandbyContainerGroupPoolElasticityProfile {
         }
     }
 }
-#[doc = "Specifies the elasticity profile of the standby container group pools."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct StandbyContainerGroupPoolElasticityProfileUpdate {
-    #[doc = "Specifies maximum number of standby container groups in the standby pool."]
-    #[serde(rename = "maxReadyCapacity", default, skip_serializing_if = "Option::is_none")]
-    pub max_ready_capacity: Option<i64>,
-    #[doc = "Refill policy of standby pool"]
-    #[serde(rename = "refillPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub refill_policy: Option<RefillPolicy>,
-}
-impl StandbyContainerGroupPoolElasticityProfileUpdate {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "A StandbyContainerGroupPoolResource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StandbyContainerGroupPoolResource {
@@ -515,10 +465,10 @@ impl StandbyContainerGroupPoolResourceUpdate {
 pub struct StandbyContainerGroupPoolResourceUpdateProperties {
     #[doc = "Specifies the elasticity profile of the standby container group pools."]
     #[serde(rename = "elasticityProfile", default, skip_serializing_if = "Option::is_none")]
-    pub elasticity_profile: Option<StandbyContainerGroupPoolElasticityProfileUpdate>,
+    pub elasticity_profile: Option<StandbyContainerGroupPoolElasticityProfile>,
     #[doc = "Details of the ContainerGroupProperties."]
     #[serde(rename = "containerGroupProperties", default, skip_serializing_if = "Option::is_none")]
-    pub container_group_properties: Option<ContainerGroupPropertiesUpdate>,
+    pub container_group_properties: Option<ContainerGroupProperties>,
 }
 impl StandbyContainerGroupPoolResourceUpdateProperties {
     pub fn new() -> Self {
@@ -528,25 +478,13 @@ impl StandbyContainerGroupPoolResourceUpdateProperties {
 #[doc = "Details of the elasticity profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StandbyVirtualMachinePoolElasticityProfile {
-    #[doc = "Specifies maximum number of virtual machines in the standby virtual machine pool."]
+    #[doc = "Specifies the maximum number of virtual machines in the standby virtual machine pool."]
     #[serde(rename = "maxReadyCapacity")]
     pub max_ready_capacity: i64,
 }
 impl StandbyVirtualMachinePoolElasticityProfile {
     pub fn new(max_ready_capacity: i64) -> Self {
         Self { max_ready_capacity }
-    }
-}
-#[doc = "Details of the elasticity profile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct StandbyVirtualMachinePoolElasticityProfileUpdate {
-    #[doc = "Specifies maximum number of virtual machines in the standby virtual machine pool."]
-    #[serde(rename = "maxReadyCapacity", default, skip_serializing_if = "Option::is_none")]
-    pub max_ready_capacity: Option<i64>,
-}
-impl StandbyVirtualMachinePoolElasticityProfileUpdate {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "A StandbyVirtualMachinePoolResource."]
@@ -632,7 +570,7 @@ impl StandbyVirtualMachinePoolResourceUpdate {
 pub struct StandbyVirtualMachinePoolResourceUpdateProperties {
     #[doc = "Details of the elasticity profile."]
     #[serde(rename = "elasticityProfile", default, skip_serializing_if = "Option::is_none")]
-    pub elasticity_profile: Option<StandbyVirtualMachinePoolElasticityProfileUpdate>,
+    pub elasticity_profile: Option<StandbyVirtualMachinePoolElasticityProfile>,
     #[doc = "State of standby virtual machines"]
     #[serde(rename = "virtualMachineState", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_state: Option<VirtualMachineState>,
@@ -776,7 +714,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -785,7 +723,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

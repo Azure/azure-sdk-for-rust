@@ -266,10 +266,10 @@ pub struct ActivityRun {
     pub status: Option<String>,
     #[doc = "The start time of the activity run in 'ISO 8601' format."]
     #[serde(rename = "activityRunStart", default, with = "azure_core::date::rfc3339::option")]
-    pub activity_run_start: Option<time::OffsetDateTime>,
+    pub activity_run_start: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the activity run in 'ISO 8601' format."]
     #[serde(rename = "activityRunEnd", default, with = "azure_core::date::rfc3339::option")]
-    pub activity_run_end: Option<time::OffsetDateTime>,
+    pub activity_run_end: Option<::time::OffsetDateTime>,
     #[doc = "The duration of the activity run."]
     #[serde(rename = "durationInMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_ms: Option<i64>,
@@ -628,11 +628,16 @@ impl AmazonRdsForSqlServerLinkedService {
     }
 }
 #[doc = "Amazon Rds for SQL Server linked service properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonRdsForSqlServerLinkedServiceTypeProperties {
+    #[serde(flatten)]
+    pub sql_server_base_linked_service_type_properties: SqlServerBaseLinkedServiceTypeProperties,
     #[doc = "The connection string. Type: string, SecureString or AzureKeyVaultSecretReference."]
-    #[serde(rename = "connectionString")]
-    pub connection_string: serde_json::Value,
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<serde_json::Value>,
+    #[doc = "The type used for authentication. Type: string."]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<amazon_rds_for_sql_server_linked_service_type_properties::AuthenticationType>,
     #[doc = "The on-premises Windows authentication user name. Type: string (or Expression with resultType string)."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<serde_json::Value>,
@@ -647,13 +652,48 @@ pub struct AmazonRdsForSqlServerLinkedServiceTypeProperties {
     pub always_encrypted_settings: Option<SqlAlwaysEncryptedProperties>,
 }
 impl AmazonRdsForSqlServerLinkedServiceTypeProperties {
-    pub fn new(connection_string: serde_json::Value) -> Self {
-        Self {
-            connection_string,
-            user_name: None,
-            password: None,
-            encrypted_credential: None,
-            always_encrypted_settings: None,
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod amazon_rds_for_sql_server_linked_service_type_properties {
+    use super::*;
+    #[doc = "The type used for authentication. Type: string."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "SQL")]
+        Sql,
+        Windows,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Sql => serializer.serialize_unit_variant("AuthenticationType", 0u32, "SQL"),
+                Self::Windows => serializer.serialize_unit_variant("AuthenticationType", 1u32, "Windows"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -2735,6 +2775,12 @@ pub struct AzureFileStorageLinkedServiceTypeProperties {
     #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<String>,
+    #[doc = "File service endpoint of the Azure File Storage resource. It is mutually exclusive with connectionString, sasUri property."]
+    #[serde(rename = "serviceEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub service_endpoint: Option<serde_json::Value>,
+    #[doc = "Credential reference type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential: Option<CredentialReference>,
 }
 impl AzureFileStorageLinkedServiceTypeProperties {
     pub fn new() -> Self {
@@ -3716,11 +3762,19 @@ impl AzureSqlDwLinkedService {
     }
 }
 #[doc = "Azure SQL Data Warehouse linked service properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDwLinkedServiceTypeProperties {
+    #[serde(flatten)]
+    pub sql_server_base_linked_service_type_properties: SqlServerBaseLinkedServiceTypeProperties,
     #[doc = "The connection string. Type: string, SecureString or AzureKeyVaultSecretReference. Type: string, SecureString or AzureKeyVaultSecretReference."]
-    #[serde(rename = "connectionString")]
-    pub connection_string: serde_json::Value,
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<serde_json::Value>,
+    #[doc = "The type used for authentication. Type: string."]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<azure_sql_dw_linked_service_type_properties::AuthenticationType>,
+    #[doc = "The user name to be used when connecting to server. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<serde_json::Value>,
     #[doc = "Azure Key Vault secret reference."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<AzureKeyVaultSecretReference>,
@@ -3730,6 +3784,12 @@ pub struct AzureSqlDwLinkedServiceTypeProperties {
     #[doc = "The base definition of a secret type."]
     #[serde(rename = "servicePrincipalKey", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_key: Option<SecretBaseUnion>,
+    #[doc = "The service principal credential type to use in Server-To-Server authentication. 'ServicePrincipalKey' for key/secret, 'ServicePrincipalCert' for certificate. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential_type: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential: Option<SecretBaseUnion>,
     #[doc = "The name or ID of the tenant to which the service principal belongs. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tenant: Option<serde_json::Value>,
@@ -3744,16 +3804,56 @@ pub struct AzureSqlDwLinkedServiceTypeProperties {
     pub credential: Option<CredentialReference>,
 }
 impl AzureSqlDwLinkedServiceTypeProperties {
-    pub fn new(connection_string: serde_json::Value) -> Self {
-        Self {
-            connection_string,
-            password: None,
-            service_principal_id: None,
-            service_principal_key: None,
-            tenant: None,
-            azure_cloud_type: None,
-            encrypted_credential: None,
-            credential: None,
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod azure_sql_dw_linked_service_type_properties {
+    use super::*;
+    #[doc = "The type used for authentication. Type: string."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "SQL")]
+        Sql,
+        ServicePrincipal,
+        SystemAssignedManagedIdentity,
+        UserAssignedManagedIdentity,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Sql => serializer.serialize_unit_variant("AuthenticationType", 0u32, "SQL"),
+                Self::ServicePrincipal => serializer.serialize_unit_variant("AuthenticationType", 1u32, "ServicePrincipal"),
+                Self::SystemAssignedManagedIdentity => {
+                    serializer.serialize_unit_variant("AuthenticationType", 2u32, "SystemAssignedManagedIdentity")
+                }
+                Self::UserAssignedManagedIdentity => {
+                    serializer.serialize_unit_variant("AuthenticationType", 3u32, "UserAssignedManagedIdentity")
+                }
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -3810,11 +3910,19 @@ impl AzureSqlDatabaseLinkedService {
     }
 }
 #[doc = "Azure SQL Database linked service properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDatabaseLinkedServiceTypeProperties {
+    #[serde(flatten)]
+    pub sql_server_base_linked_service_type_properties: SqlServerBaseLinkedServiceTypeProperties,
     #[doc = "The connection string. Type: string, SecureString or AzureKeyVaultSecretReference."]
-    #[serde(rename = "connectionString")]
-    pub connection_string: serde_json::Value,
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<serde_json::Value>,
+    #[doc = "The type used for authentication. Type: string."]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<azure_sql_database_linked_service_type_properties::AuthenticationType>,
+    #[doc = "The user name to be used when connecting to server. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<serde_json::Value>,
     #[doc = "Azure Key Vault secret reference."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<AzureKeyVaultSecretReference>,
@@ -3824,6 +3932,12 @@ pub struct AzureSqlDatabaseLinkedServiceTypeProperties {
     #[doc = "The base definition of a secret type."]
     #[serde(rename = "servicePrincipalKey", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_key: Option<SecretBaseUnion>,
+    #[doc = "The service principal credential type to use in Server-To-Server authentication. 'ServicePrincipalKey' for key/secret, 'ServicePrincipalCert' for certificate. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential_type: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential: Option<SecretBaseUnion>,
     #[doc = "The name or ID of the tenant to which the service principal belongs. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tenant: Option<serde_json::Value>,
@@ -3841,17 +3955,56 @@ pub struct AzureSqlDatabaseLinkedServiceTypeProperties {
     pub credential: Option<CredentialReference>,
 }
 impl AzureSqlDatabaseLinkedServiceTypeProperties {
-    pub fn new(connection_string: serde_json::Value) -> Self {
-        Self {
-            connection_string,
-            password: None,
-            service_principal_id: None,
-            service_principal_key: None,
-            tenant: None,
-            azure_cloud_type: None,
-            encrypted_credential: None,
-            always_encrypted_settings: None,
-            credential: None,
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod azure_sql_database_linked_service_type_properties {
+    use super::*;
+    #[doc = "The type used for authentication. Type: string."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "SQL")]
+        Sql,
+        ServicePrincipal,
+        SystemAssignedManagedIdentity,
+        UserAssignedManagedIdentity,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Sql => serializer.serialize_unit_variant("AuthenticationType", 0u32, "SQL"),
+                Self::ServicePrincipal => serializer.serialize_unit_variant("AuthenticationType", 1u32, "ServicePrincipal"),
+                Self::SystemAssignedManagedIdentity => {
+                    serializer.serialize_unit_variant("AuthenticationType", 2u32, "SystemAssignedManagedIdentity")
+                }
+                Self::UserAssignedManagedIdentity => {
+                    serializer.serialize_unit_variant("AuthenticationType", 3u32, "UserAssignedManagedIdentity")
+                }
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -3873,11 +4026,19 @@ impl AzureSqlMiLinkedService {
     }
 }
 #[doc = "Azure SQL Managed Instance linked service properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlMiLinkedServiceTypeProperties {
+    #[serde(flatten)]
+    pub sql_server_base_linked_service_type_properties: SqlServerBaseLinkedServiceTypeProperties,
     #[doc = "The connection string. Type: string, SecureString or AzureKeyVaultSecretReference."]
-    #[serde(rename = "connectionString")]
-    pub connection_string: serde_json::Value,
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<serde_json::Value>,
+    #[doc = "The type used for authentication. Type: string."]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<azure_sql_mi_linked_service_type_properties::AuthenticationType>,
+    #[doc = "The user name to be used when connecting to server. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<serde_json::Value>,
     #[doc = "Azure Key Vault secret reference."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<AzureKeyVaultSecretReference>,
@@ -3887,6 +4048,12 @@ pub struct AzureSqlMiLinkedServiceTypeProperties {
     #[doc = "The base definition of a secret type."]
     #[serde(rename = "servicePrincipalKey", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_key: Option<SecretBaseUnion>,
+    #[doc = "The service principal credential type to use in Server-To-Server authentication. 'ServicePrincipalKey' for key/secret, 'ServicePrincipalCert' for certificate. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential_type: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential: Option<SecretBaseUnion>,
     #[doc = "The name or ID of the tenant to which the service principal belongs. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tenant: Option<serde_json::Value>,
@@ -3904,17 +4071,56 @@ pub struct AzureSqlMiLinkedServiceTypeProperties {
     pub credential: Option<CredentialReference>,
 }
 impl AzureSqlMiLinkedServiceTypeProperties {
-    pub fn new(connection_string: serde_json::Value) -> Self {
-        Self {
-            connection_string,
-            password: None,
-            service_principal_id: None,
-            service_principal_key: None,
-            tenant: None,
-            azure_cloud_type: None,
-            encrypted_credential: None,
-            always_encrypted_settings: None,
-            credential: None,
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod azure_sql_mi_linked_service_type_properties {
+    use super::*;
+    #[doc = "The type used for authentication. Type: string."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "SQL")]
+        Sql,
+        ServicePrincipal,
+        SystemAssignedManagedIdentity,
+        UserAssignedManagedIdentity,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Sql => serializer.serialize_unit_variant("AuthenticationType", 0u32, "SQL"),
+                Self::ServicePrincipal => serializer.serialize_unit_variant("AuthenticationType", 1u32, "ServicePrincipal"),
+                Self::SystemAssignedManagedIdentity => {
+                    serializer.serialize_unit_variant("AuthenticationType", 2u32, "SystemAssignedManagedIdentity")
+                }
+                Self::UserAssignedManagedIdentity => {
+                    serializer.serialize_unit_variant("AuthenticationType", 3u32, "UserAssignedManagedIdentity")
+                }
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -4238,16 +4444,33 @@ impl AzureTableSource {
 pub struct AzureTableStorageLinkedService {
     #[serde(flatten)]
     pub linked_service: LinkedService,
-    #[doc = "Azure Storage linked service properties."]
+    #[doc = "Azure Table Storage linked service properties."]
     #[serde(rename = "typeProperties")]
-    pub type_properties: AzureStorageLinkedServiceTypeProperties,
+    pub type_properties: AzureTableStorageLinkedServiceTypeProperties,
 }
 impl AzureTableStorageLinkedService {
-    pub fn new(linked_service: LinkedService, type_properties: AzureStorageLinkedServiceTypeProperties) -> Self {
+    pub fn new(linked_service: LinkedService, type_properties: AzureTableStorageLinkedServiceTypeProperties) -> Self {
         Self {
             linked_service,
             type_properties,
         }
+    }
+}
+#[doc = "Azure Table Storage linked service properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureTableStorageLinkedServiceTypeProperties {
+    #[serde(flatten)]
+    pub azure_storage_linked_service_type_properties: AzureStorageLinkedServiceTypeProperties,
+    #[doc = "Table service endpoint of the Azure Table Storage resource. It is mutually exclusive with connectionString, sasUri property."]
+    #[serde(rename = "serviceEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub service_endpoint: Option<serde_json::Value>,
+    #[doc = "Credential reference type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential: Option<CredentialReference>,
+}
+impl AzureTableStorageLinkedServiceTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Big data pool reference type."]
@@ -4996,9 +5219,12 @@ pub struct CommonDataServiceForAppsLinkedServiceTypeProperties {
     #[doc = "The organization name of the Common Data Service for Apps instance. The property is required for on-prem and required for online when there are more than one Common Data Service for Apps instances associated with the user. Type: string (or Expression with resultType string)."]
     #[serde(rename = "organizationName", default, skip_serializing_if = "Option::is_none")]
     pub organization_name: Option<serde_json::Value>,
-    #[doc = "The authentication type to connect to Common Data Service for Apps server. 'Office365' for online scenario, 'Ifd' for on-premises with Ifd scenario. 'AADServicePrincipal' for Server-To-Server authentication in online scenario. Type: string (or Expression with resultType string)."]
+    #[doc = "The authentication type to connect to Common Data Service for Apps server. 'Office365' for online scenario, 'Ifd' for on-premises with Ifd scenario. 'AADServicePrincipal' for Server-To-Server authentication in online scenario, 'Active Directory' for Dynamics on-premises with IFD. Type: string (or Expression with resultType string)."]
     #[serde(rename = "authenticationType")]
     pub authentication_type: serde_json::Value,
+    #[doc = "The Active Directory domain that will verify user credentials. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<serde_json::Value>,
     #[doc = "User name to access the Common Data Service for Apps instance. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<serde_json::Value>,
@@ -5027,6 +5253,7 @@ impl CommonDataServiceForAppsLinkedServiceTypeProperties {
             service_uri: None,
             organization_name: None,
             authentication_type,
+            domain: None,
             username: None,
             password: None,
             service_principal_id: None,
@@ -5304,6 +5531,24 @@ pub struct ConnectionStateProperties {
     pub status: Option<String>,
 }
 impl ConnectionStateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Continuation settings for execute data flow activity."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContinuationSettingsReference {
+    #[doc = "Continuation TTL in minutes."]
+    #[serde(rename = "continuationTtlInMinutes", default, skip_serializing_if = "Option::is_none")]
+    pub continuation_ttl_in_minutes: Option<serde_json::Value>,
+    #[doc = "Idle condition."]
+    #[serde(rename = "idleCondition", default, skip_serializing_if = "Option::is_none")]
+    pub idle_condition: Option<serde_json::Value>,
+    #[doc = "Customized checkpoint key."]
+    #[serde(rename = "customizedCheckpointKey", default, skip_serializing_if = "Option::is_none")]
+    pub customized_checkpoint_key: Option<serde_json::Value>,
+}
+impl ContinuationSettingsReference {
     pub fn new() -> Self {
         Self::default()
     }
@@ -6024,14 +6269,12 @@ impl Credential {
 #[doc = "Type of credential."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum CredentialUnion {
-    ManagedIdentity(ManagedIdentityCredential),
-}
+pub enum CredentialUnion {}
 #[doc = "A list of credential resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialListResponse {
     #[doc = "List of credentials."]
-    pub value: Vec<ManagedIdentityCredentialResource>,
+    pub value: Vec<CredentialResource>,
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -6043,7 +6286,7 @@ impl azure_core::Continuable for CredentialListResponse {
     }
 }
 impl CredentialListResponse {
-    pub fn new(value: Vec<ManagedIdentityCredentialResource>) -> Self {
+    pub fn new(value: Vec<CredentialResource>) -> Self {
         Self { value, next_link: None }
     }
 }
@@ -7109,6 +7352,7 @@ pub enum DatasetUnion {
     HiveObject(HiveObjectDataset),
     HttpFile(HttpDataset),
     HubspotObject(HubspotObjectDataset),
+    Iceberg(IcebergDataset),
     ImpalaObject(ImpalaObjectDataset),
     InformixTable(InformixTableDataset),
     JiraObject(JiraObjectDataset),
@@ -8046,6 +8290,8 @@ pub enum DynamicsAuthenticationType {
     Ifd,
     #[serde(rename = "AADServicePrincipal")]
     AadServicePrincipal,
+    #[serde(rename = "Active Directory")]
+    ActiveDirectory,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -8074,6 +8320,7 @@ impl Serialize for DynamicsAuthenticationType {
             Self::Office365 => serializer.serialize_unit_variant("DynamicsAuthenticationType", 0u32, "Office365"),
             Self::Ifd => serializer.serialize_unit_variant("DynamicsAuthenticationType", 1u32, "Ifd"),
             Self::AadServicePrincipal => serializer.serialize_unit_variant("DynamicsAuthenticationType", 2u32, "AADServicePrincipal"),
+            Self::ActiveDirectory => serializer.serialize_unit_variant("DynamicsAuthenticationType", 3u32, "Active Directory"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -8142,9 +8389,12 @@ pub struct DynamicsCrmLinkedServiceTypeProperties {
     #[doc = "The organization name of the Dynamics CRM instance. The property is required for on-prem and required for online when there are more than one Dynamics CRM instances associated with the user. Type: string (or Expression with resultType string)."]
     #[serde(rename = "organizationName", default, skip_serializing_if = "Option::is_none")]
     pub organization_name: Option<serde_json::Value>,
-    #[doc = "The authentication type to connect to Dynamics CRM server. 'Office365' for online scenario, 'Ifd' for on-premises with Ifd scenario, 'AADServicePrincipal' for Server-To-Server authentication in online scenario. Type: string (or Expression with resultType string)."]
+    #[doc = "The authentication type to connect to Dynamics CRM server. 'Office365' for online scenario, 'Ifd' for on-premises with Ifd scenario, 'AADServicePrincipal' for Server-To-Server authentication in online scenario, 'Active Directory' for Dynamics on-premises with IFD. Type: string (or Expression with resultType string)."]
     #[serde(rename = "authenticationType")]
     pub authentication_type: serde_json::Value,
+    #[doc = "The Active Directory domain that will verify user credentials. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<serde_json::Value>,
     #[doc = "User name to access the Dynamics CRM instance. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<serde_json::Value>,
@@ -8160,6 +8410,9 @@ pub struct DynamicsCrmLinkedServiceTypeProperties {
     #[doc = "The base definition of a secret type."]
     #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_credential: Option<SecretBaseUnion>,
+    #[doc = "Credential reference type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential: Option<CredentialReference>,
     #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<String>,
@@ -8173,11 +8426,13 @@ impl DynamicsCrmLinkedServiceTypeProperties {
             service_uri: None,
             organization_name: None,
             authentication_type,
+            domain: None,
             username: None,
             password: None,
             service_principal_id: None,
             service_principal_credential_type: None,
             service_principal_credential: None,
+            credential: None,
             encrypted_credential: None,
         }
     }
@@ -8329,9 +8584,12 @@ pub struct DynamicsLinkedServiceTypeProperties {
     #[doc = "The organization name of the Dynamics instance. The property is required for on-prem and required for online when there are more than one Dynamics instances associated with the user. Type: string (or Expression with resultType string)."]
     #[serde(rename = "organizationName", default, skip_serializing_if = "Option::is_none")]
     pub organization_name: Option<serde_json::Value>,
-    #[doc = "The authentication type to connect to Dynamics server. 'Office365' for online scenario, 'Ifd' for on-premises with Ifd scenario, 'AADServicePrincipal' for Server-To-Server authentication in online scenario. Type: string (or Expression with resultType string)."]
+    #[doc = "The authentication type to connect to Dynamics server. 'Office365' for online scenario, 'Ifd' for on-premises with Ifd scenario, 'AADServicePrincipal' for Server-To-Server authentication in online scenario, 'Active Directory' for Dynamics on-premises with IFD. Type: string (or Expression with resultType string)."]
     #[serde(rename = "authenticationType")]
     pub authentication_type: serde_json::Value,
+    #[doc = "The Active Directory domain that will verify user credentials. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<serde_json::Value>,
     #[doc = "User name to access the Dynamics instance. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<serde_json::Value>,
@@ -8363,6 +8621,7 @@ impl DynamicsLinkedServiceTypeProperties {
             service_uri: None,
             organization_name: None,
             authentication_type,
+            domain: None,
             username: None,
             password: None,
             service_principal_id: None,
@@ -8756,6 +9015,9 @@ pub struct ExecuteDataFlowActivityTypeProperties {
     #[doc = "Integration runtime reference type."]
     #[serde(rename = "integrationRuntime", default, skip_serializing_if = "Option::is_none")]
     pub integration_runtime: Option<IntegrationRuntimeReference>,
+    #[doc = "Continuation settings for execute data flow activity."]
+    #[serde(rename = "continuationSettings", default, skip_serializing_if = "Option::is_none")]
+    pub continuation_settings: Option<ContinuationSettingsReference>,
     #[doc = "Compute properties for data flow activity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compute: Option<execute_data_flow_activity_type_properties::Compute>,
@@ -8778,6 +9040,7 @@ impl ExecuteDataFlowActivityTypeProperties {
             data_flow,
             staging: None,
             integration_runtime: None,
+            continuation_settings: None,
             compute: None,
             trace_level: None,
             continue_on_error: None,
@@ -9091,9 +9354,13 @@ pub struct ExpressionV2 {
     #[doc = "Value for Constant/Field Type: string."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-    #[doc = "Expression operator value Type: string."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operator: Option<String>,
+    #[doc = "Expression operator value Type: list of strings."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub operators: Vec<String>,
     #[doc = "List of nested expressions."]
     #[serde(
         default,
@@ -9117,6 +9384,7 @@ pub mod expression_v2 {
         Field,
         Unary,
         Binary,
+        NAry,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -9146,6 +9414,7 @@ pub mod expression_v2 {
                 Self::Field => serializer.serialize_unit_variant("Type", 1u32, "Field"),
                 Self::Unary => serializer.serialize_unit_variant("Type", 2u32, "Unary"),
                 Self::Binary => serializer.serialize_unit_variant("Type", 3u32, "Binary"),
+                Self::NAry => serializer.serialize_unit_variant("Type", 4u32, "NAry"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -9290,7 +9559,7 @@ pub struct FactoryProperties {
     pub provisioning_state: Option<String>,
     #[doc = "Time the factory was created in ISO8601 format."]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    pub create_time: Option<::time::OffsetDateTime>,
     #[doc = "Version of the factory."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
@@ -12490,6 +12759,63 @@ impl HubspotSource {
         }
     }
 }
+#[doc = "Iceberg dataset."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IcebergDataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[doc = "Iceberg dataset properties."]
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<IcebergDatasetTypeProperties>,
+}
+impl IcebergDataset {
+    pub fn new(dataset: Dataset) -> Self {
+        Self {
+            dataset,
+            type_properties: None,
+        }
+    }
+}
+#[doc = "Iceberg dataset properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IcebergDatasetTypeProperties {
+    #[doc = "Dataset location."]
+    pub location: DatasetLocationUnion,
+}
+impl IcebergDatasetTypeProperties {
+    pub fn new(location: DatasetLocationUnion) -> Self {
+        Self { location }
+    }
+}
+#[doc = "A copy activity Iceberg sink."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IcebergSink {
+    #[serde(flatten)]
+    pub copy_sink: CopySink,
+    #[doc = "Connector write settings."]
+    #[serde(rename = "storeSettings", default, skip_serializing_if = "Option::is_none")]
+    pub store_settings: Option<StoreWriteSettingsUnion>,
+    #[doc = "Iceberg write settings."]
+    #[serde(rename = "formatSettings", default, skip_serializing_if = "Option::is_none")]
+    pub format_settings: Option<IcebergWriteSettings>,
+}
+impl IcebergSink {
+    pub fn new(copy_sink: CopySink) -> Self {
+        Self {
+            copy_sink,
+            store_settings: None,
+            format_settings: None,
+        }
+    }
+}
+#[doc = "Iceberg write settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IcebergWriteSettings {}
+impl IcebergWriteSettings {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 #[doc = "This activity evaluates a boolean expression and executes either the activities under the ifTrueActivities property or the ifFalseActivities property depending on the result of the expression."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IfConditionActivity {
@@ -14139,6 +14465,9 @@ impl LakeHouseTableDataset {
 #[doc = "Microsoft Fabric LakeHouse Table dataset properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LakeHouseTableDatasetTypeProperties {
+    #[doc = "The schema name of Microsoft Fabric LakeHouse Table. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schema: Option<serde_json::Value>,
     #[doc = "The name of Microsoft Fabric LakeHouse Table. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub table: Option<serde_json::Value>,
@@ -14244,7 +14573,7 @@ pub struct LinkedIntegrationRuntime {
     pub data_factory_location: Option<String>,
     #[doc = "The creating time of the linked integration runtime."]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    pub create_time: Option<::time::OffsetDateTime>,
 }
 impl LinkedIntegrationRuntime {
     pub fn new() -> Self {
@@ -14303,6 +14632,9 @@ pub enum LinkedIntegrationRuntimeTypeUnion {
 #[doc = "The nested object which contains the information and credential which can be used to connect with related store or compute resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedService {
+    #[doc = "Version of the linked service."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
     #[doc = "Integration runtime reference type."]
     #[serde(rename = "connectVia", default, skip_serializing_if = "Option::is_none")]
     pub connect_via: Option<IntegrationRuntimeReference>,
@@ -14323,6 +14655,7 @@ pub struct LinkedService {
 impl LinkedService {
     pub fn new() -> Self {
         Self {
+            version: None,
             connect_via: None,
             description: None,
             parameters: None,
@@ -14767,51 +15100,6 @@ impl MagentoSource {
         }
     }
 }
-#[doc = "Managed identity credential."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedIdentityCredential {
-    #[serde(flatten)]
-    pub credential: Credential,
-    #[doc = "Managed identity type properties."]
-    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
-    pub type_properties: Option<ManagedIdentityTypeProperties>,
-}
-impl ManagedIdentityCredential {
-    pub fn new(credential: Credential) -> Self {
-        Self {
-            credential,
-            type_properties: None,
-        }
-    }
-}
-#[doc = "Credential resource type."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedIdentityCredentialResource {
-    #[serde(flatten)]
-    pub sub_resource: SubResource,
-    #[doc = "Managed identity credential."]
-    pub properties: ManagedIdentityCredential,
-}
-impl ManagedIdentityCredentialResource {
-    pub fn new(properties: ManagedIdentityCredential) -> Self {
-        Self {
-            sub_resource: SubResource::default(),
-            properties,
-        }
-    }
-}
-#[doc = "Managed identity type properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ManagedIdentityTypeProperties {
-    #[doc = "The resource id of user assigned managed identity"]
-    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
-}
-impl ManagedIdentityTypeProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Managed integration runtime, including managed elastic and managed dedicated integration runtimes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedIntegrationRuntime {
@@ -14842,7 +15130,7 @@ impl ManagedIntegrationRuntime {
 pub struct ManagedIntegrationRuntimeError {
     #[doc = "The time when the error occurred."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
+    pub time: Option<::time::OffsetDateTime>,
     #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -14936,7 +15224,7 @@ pub struct ManagedIntegrationRuntimeOperationResult {
     pub type_: Option<String>,
     #[doc = "The start time of the operation."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The operation result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<String>,
@@ -14984,7 +15272,7 @@ impl ManagedIntegrationRuntimeStatus {
 pub struct ManagedIntegrationRuntimeStatusTypeProperties {
     #[doc = "The time at which the integration runtime was created, in ISO8601 format."]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    pub create_time: Option<::time::OffsetDateTime>,
     #[doc = "The list of nodes for managed integration runtime."]
     #[serde(
         default,
@@ -15689,7 +15977,7 @@ impl MariaDbLinkedService {
 #[doc = "MariaDB server linked service properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MariaDbLinkedServiceTypeProperties {
-    #[doc = "The version of the MariaDB driver. Type: string. V1 or empty for legacy driver, V2 for new driver. V1 can support connection string and property bag, V2 can only support connection string."]
+    #[doc = "The version of the MariaDB driver. Type: string. V1 or empty for legacy driver, V2 for new driver. V1 can support connection string and property bag, V2 can only support connection string. The legacy driver is scheduled for deprecation by October 2024."]
     #[serde(rename = "driverVersion", default, skip_serializing_if = "Option::is_none")]
     pub driver_version: Option<serde_json::Value>,
     #[doc = "An ODBC connection string. Type: string, SecureString or AzureKeyVaultSecretReference."]
@@ -15707,6 +15995,12 @@ pub struct MariaDbLinkedServiceTypeProperties {
     #[doc = "Database name for connection. Type: string."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub database: Option<serde_json::Value>,
+    #[doc = "This option specifies whether the driver uses TLS encryption and verification when connecting to MariaDB. E.g., SSLMode=<0/1/2/3/4>. Options: DISABLED (0) / PREFERRED (1) (Default) / REQUIRED (2) / VERIFY_CA (3) / VERIFY_IDENTITY (4), REQUIRED (2) is recommended to only allow connections encrypted with SSL/TLS."]
+    #[serde(rename = "sslMode", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_mode: Option<serde_json::Value>,
+    #[doc = "This option specifies whether to use a CA certificate from the system trust store, or from a specified PEM file. E.g. UseSystemTrustStore=<0/1>; Options: Enabled (1) / Disabled (0) (Default)"]
+    #[serde(rename = "useSystemTrustStore", default, skip_serializing_if = "Option::is_none")]
+    pub use_system_trust_store: Option<serde_json::Value>,
     #[doc = "Azure Key Vault secret reference."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<AzureKeyVaultSecretReference>,
@@ -18597,13 +18891,13 @@ pub struct PipelineRun {
     pub invoked_by: Option<PipelineRunInvokedBy>,
     #[doc = "The last updated timestamp for the pipeline run event in ISO8601 format."]
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated: Option<time::OffsetDateTime>,
+    pub last_updated: Option<::time::OffsetDateTime>,
     #[doc = "The start time of a pipeline run in ISO8601 format."]
     #[serde(rename = "runStart", default, with = "azure_core::date::rfc3339::option")]
-    pub run_start: Option<time::OffsetDateTime>,
+    pub run_start: Option<::time::OffsetDateTime>,
     #[doc = "The end time of a pipeline run in ISO8601 format."]
     #[serde(rename = "runEnd", default, with = "azure_core::date::rfc3339::option")]
-    pub run_end: Option<time::OffsetDateTime>,
+    pub run_end: Option<::time::OffsetDateTime>,
     #[doc = "The duration of a pipeline run."]
     #[serde(rename = "durationInMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_ms: Option<i64>,
@@ -18840,6 +19134,9 @@ pub struct PostgreSqlV2LinkedServiceTypeProperties {
     pub username: serde_json::Value,
     #[doc = "Database name for connection. Type: string."]
     pub database: serde_json::Value,
+    #[doc = "The authentication type to use. Type: string."]
+    #[serde(rename = "authenticationType")]
+    pub authentication_type: serde_json::Value,
     #[doc = "SSL mode for connection. Type: integer. 0: disable, 1:allow, 2: prefer, 3: require, 4: verify-ca, 5: verify-full. Type: integer."]
     #[serde(rename = "sslMode")]
     pub ssl_mode: serde_json::Value,
@@ -18887,12 +19184,19 @@ pub struct PostgreSqlV2LinkedServiceTypeProperties {
     pub encrypted_credential: Option<String>,
 }
 impl PostgreSqlV2LinkedServiceTypeProperties {
-    pub fn new(server: serde_json::Value, username: serde_json::Value, database: serde_json::Value, ssl_mode: serde_json::Value) -> Self {
+    pub fn new(
+        server: serde_json::Value,
+        username: serde_json::Value,
+        database: serde_json::Value,
+        authentication_type: serde_json::Value,
+        ssl_mode: serde_json::Value,
+    ) -> Self {
         Self {
             server,
             port: None,
             username,
             database,
+            authentication_type,
             ssl_mode,
             schema: None,
             pooling: None,
@@ -19758,10 +20062,10 @@ pub mod rerun_tumbling_window_trigger {
         pub parent_trigger: serde_json::Value,
         #[doc = "The start time for the time period for which restatement is initiated. Only UTC time is currently supported."]
         #[serde(rename = "requestedStartTime", with = "azure_core::date::rfc3339")]
-        pub requested_start_time: time::OffsetDateTime,
+        pub requested_start_time: ::time::OffsetDateTime,
         #[doc = "The end time for the time period for which restatement is initiated. Only UTC time is currently supported."]
         #[serde(rename = "requestedEndTime", with = "azure_core::date::rfc3339")]
-        pub requested_end_time: time::OffsetDateTime,
+        pub requested_end_time: ::time::OffsetDateTime,
         #[doc = "The max number of parallel time windows (ready for execution) for which a rerun is triggered."]
         #[serde(rename = "rerunConcurrency")]
         pub rerun_concurrency: i64,
@@ -19769,8 +20073,8 @@ pub mod rerun_tumbling_window_trigger {
     impl TypeProperties {
         pub fn new(
             parent_trigger: serde_json::Value,
-            requested_start_time: time::OffsetDateTime,
-            requested_end_time: time::OffsetDateTime,
+            requested_start_time: ::time::OffsetDateTime,
+            requested_end_time: ::time::OffsetDateTime,
             rerun_concurrency: i64,
         ) -> Self {
             Self {
@@ -20011,6 +20315,15 @@ pub struct RestServiceLinkedServiceTypeProperties {
     #[doc = "The scope of the access required. It describes what kind of access will be requested. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<serde_json::Value>,
+    #[doc = "The service principal credential type to use in Server-To-Server authentication. 'ServicePrincipalKey' for key/secret, 'ServicePrincipalCert' for certificate. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential_type: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "servicePrincipalEmbeddedCert", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_embedded_cert: Option<SecretBaseUnion>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "servicePrincipalEmbeddedCertPassword", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_embedded_cert_password: Option<SecretBaseUnion>,
 }
 impl RestServiceLinkedServiceTypeProperties {
     pub fn new(url: serde_json::Value, authentication_type: rest_service_linked_service_type_properties::AuthenticationType) -> Self {
@@ -20033,6 +20346,9 @@ impl RestServiceLinkedServiceTypeProperties {
             token_endpoint: None,
             resource: None,
             scope: None,
+            service_principal_credential_type: None,
+            service_principal_embedded_cert: None,
+            service_principal_embedded_cert_password: None,
         }
     }
 }
@@ -20179,10 +20495,10 @@ pub struct RunFilterParameters {
     pub continuation_token: Option<String>,
     #[doc = "The time at or after which the run event was updated in 'ISO 8601' format."]
     #[serde(rename = "lastUpdatedAfter", with = "azure_core::date::rfc3339")]
-    pub last_updated_after: time::OffsetDateTime,
+    pub last_updated_after: ::time::OffsetDateTime,
     #[doc = "The time at or before which the run event was updated in 'ISO 8601' format."]
     #[serde(rename = "lastUpdatedBefore", with = "azure_core::date::rfc3339")]
-    pub last_updated_before: time::OffsetDateTime,
+    pub last_updated_before: ::time::OffsetDateTime,
     #[doc = "List of filters."]
     #[serde(
         default,
@@ -20200,7 +20516,7 @@ pub struct RunFilterParameters {
     pub order_by: Vec<RunQueryOrderBy>,
 }
 impl RunFilterParameters {
-    pub fn new(last_updated_after: time::OffsetDateTime, last_updated_before: time::OffsetDateTime) -> Self {
+    pub fn new(last_updated_after: ::time::OffsetDateTime, last_updated_before: ::time::OffsetDateTime) -> Self {
         Self {
             continuation_token: None,
             last_updated_after,
@@ -21174,9 +21490,12 @@ pub mod salesforce_service_cloud_v2_sink {
 pub struct SalesforceServiceCloudV2Source {
     #[serde(flatten)]
     pub copy_source: CopySource,
-    #[doc = "Database query. Type: string (or Expression with resultType string)."]
+    #[doc = "Deprecating, please use 'query' property instead. Type: string (or Expression with resultType string)."]
     #[serde(rename = "SOQLQuery", default, skip_serializing_if = "Option::is_none")]
     pub soql_query: Option<serde_json::Value>,
+    #[doc = "You can only use Salesforce Object Query Language (SOQL) query with limitations. For SOQL limitations, see this article: https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/queries.htm#SOQL%20Considerations. If query is not specified, all the data of the Salesforce object specified in ObjectApiName/reportId in dataset will be retrieved. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<serde_json::Value>,
     #[doc = "This property control whether query result contains Deleted objects. Default is false. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "includeDeletedObjects", default, skip_serializing_if = "Option::is_none")]
     pub include_deleted_objects: Option<serde_json::Value>,
@@ -21189,6 +21508,7 @@ impl SalesforceServiceCloudV2Source {
         Self {
             copy_source,
             soql_query: None,
+            query: None,
             include_deleted_objects: None,
             additional_columns: None,
         }
@@ -21463,9 +21783,12 @@ pub mod salesforce_v2_sink {
 pub struct SalesforceV2Source {
     #[serde(flatten)]
     pub tabular_source: TabularSource,
-    #[doc = "Database query. Type: string (or Expression with resultType string)."]
+    #[doc = "Deprecating, please use 'query' property instead. Type: string (or Expression with resultType string)."]
     #[serde(rename = "SOQLQuery", default, skip_serializing_if = "Option::is_none")]
     pub soql_query: Option<serde_json::Value>,
+    #[doc = "You can only use Salesforce Object Query Language (SOQL) query with limitations. For SOQL limitations, see this article: https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/queries.htm#SOQL%20Considerations. If query is not specified, all the data of the Salesforce object specified in ObjectApiName/reportId in dataset will be retrieved. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<serde_json::Value>,
     #[doc = "This property control whether query result contains Deleted objects. Default is false. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "includeDeletedObjects", default, skip_serializing_if = "Option::is_none")]
     pub include_deleted_objects: Option<serde_json::Value>,
@@ -21475,6 +21798,7 @@ impl SalesforceV2Source {
         Self {
             tabular_source,
             soql_query: None,
+            query: None,
             include_deleted_objects: None,
         }
     }
@@ -22512,10 +22836,10 @@ pub struct ScheduleTriggerRecurrence {
     pub interval: Option<i32>,
     #[doc = "The start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The time zone."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
@@ -22696,9 +23020,9 @@ pub mod script_activity_parameter {
 pub struct ScriptActivityScriptBlock {
     #[doc = "The query text. Type: string (or Expression with resultType string)."]
     pub text: serde_json::Value,
-    #[doc = "The type of the query. Type: string."]
+    #[doc = "The type of the query. Please refer to the ScriptType for valid options. Type: string (or Expression with resultType string)."]
     #[serde(rename = "type")]
-    pub type_: script_activity_script_block::Type,
+    pub type_: serde_json::Value,
     #[doc = "Array of script parameters. Type: array."]
     #[serde(
         default,
@@ -22708,51 +23032,11 @@ pub struct ScriptActivityScriptBlock {
     pub parameters: Vec<ScriptActivityParameter>,
 }
 impl ScriptActivityScriptBlock {
-    pub fn new(text: serde_json::Value, type_: script_activity_script_block::Type) -> Self {
+    pub fn new(text: serde_json::Value, type_: serde_json::Value) -> Self {
         Self {
             text,
             type_,
             parameters: Vec::new(),
-        }
-    }
-}
-pub mod script_activity_script_block {
-    use super::*;
-    #[doc = "The type of the query. Type: string."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        Query,
-        NonQuery,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Query => serializer.serialize_unit_variant("Type", 0u32, "Query"),
-                Self::NonQuery => serializer.serialize_unit_variant("Type", 1u32, "NonQuery"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
         }
     }
 }
@@ -22836,6 +23120,43 @@ pub mod script_activity_type_properties {
                     Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
                 }
             }
+        }
+    }
+}
+#[doc = "The type of the ScriptActivityScriptBlock."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ScriptType")]
+pub enum ScriptType {
+    Query,
+    NonQuery,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ScriptType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ScriptType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ScriptType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Query => serializer.serialize_unit_variant("ScriptType", 0u32, "Query"),
+            Self::NonQuery => serializer.serialize_unit_variant("ScriptType", 1u32, "NonQuery"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -22929,28 +23250,28 @@ pub struct SelfHostedIntegrationRuntimeNode {
     pub version: Option<String>,
     #[doc = "The time at which the integration runtime node was registered in ISO8601 format."]
     #[serde(rename = "registerTime", default, with = "azure_core::date::rfc3339::option")]
-    pub register_time: Option<time::OffsetDateTime>,
+    pub register_time: Option<::time::OffsetDateTime>,
     #[doc = "The most recent time at which the integration runtime was connected in ISO8601 format."]
     #[serde(rename = "lastConnectTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_connect_time: Option<time::OffsetDateTime>,
+    pub last_connect_time: Option<::time::OffsetDateTime>,
     #[doc = "The time at which the integration runtime will expire in ISO8601 format."]
     #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_time: Option<time::OffsetDateTime>,
+    pub expiry_time: Option<::time::OffsetDateTime>,
     #[doc = "The time the node last started up."]
     #[serde(rename = "lastStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_start_time: Option<time::OffsetDateTime>,
+    pub last_start_time: Option<::time::OffsetDateTime>,
     #[doc = "The integration runtime node last stop time."]
     #[serde(rename = "lastStopTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_stop_time: Option<time::OffsetDateTime>,
+    pub last_stop_time: Option<::time::OffsetDateTime>,
     #[doc = "The result of the last integration runtime node update."]
     #[serde(rename = "lastUpdateResult", default, skip_serializing_if = "Option::is_none")]
     pub last_update_result: Option<self_hosted_integration_runtime_node::LastUpdateResult>,
     #[doc = "The last time for the integration runtime node update start."]
     #[serde(rename = "lastStartUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_start_update_time: Option<time::OffsetDateTime>,
+    pub last_start_update_time: Option<::time::OffsetDateTime>,
     #[doc = "The last time for the integration runtime node update end."]
     #[serde(rename = "lastEndUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_end_update_time: Option<time::OffsetDateTime>,
+    pub last_end_update_time: Option<::time::OffsetDateTime>,
     #[doc = "Indicates whether this node is the active dispatcher for integration runtime requests."]
     #[serde(rename = "isActiveDispatcher", default, skip_serializing_if = "Option::is_none")]
     pub is_active_dispatcher: Option<bool>,
@@ -23080,7 +23401,7 @@ impl SelfHostedIntegrationRuntimeStatus {
 pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[doc = "The time at which the integration runtime was created, in ISO8601 format."]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    pub create_time: Option<::time::OffsetDateTime>,
     #[doc = "The task queue id of the integration runtime."]
     #[serde(rename = "taskQueueId", default, skip_serializing_if = "Option::is_none")]
     pub task_queue_id: Option<String>,
@@ -23099,7 +23420,7 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     pub nodes: Vec<SelfHostedIntegrationRuntimeNode>,
     #[doc = "The date at which the integration runtime will be scheduled to update, in ISO8601 format."]
     #[serde(rename = "scheduledUpdateDate", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_update_date: Option<time::OffsetDateTime>,
+    pub scheduled_update_date: Option<::time::OffsetDateTime>,
     #[doc = "The time in the date scheduled by service to update the integration runtime, e.g., PT03H is 3 hours"]
     #[serde(rename = "updateDelayOffset", default, skip_serializing_if = "Option::is_none")]
     pub update_delay_offset: Option<String>,
@@ -23138,7 +23459,7 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     pub latest_version: Option<String>,
     #[doc = "The estimated time when the self-hosted integration runtime will be updated."]
     #[serde(rename = "autoUpdateETA", default, with = "azure_core::date::rfc3339::option")]
-    pub auto_update_eta: Option<time::OffsetDateTime>,
+    pub auto_update_eta: Option<::time::OffsetDateTime>,
     #[doc = "An alternative option to ensure interactive authoring function when your self-hosted integration runtime is unable to establish a connection with Azure Relay."]
     #[serde(
         rename = "selfContainedInteractiveAuthoringEnabled",
@@ -23479,12 +23800,16 @@ pub struct ServiceNowV2Source {
     #[doc = "Nested representation of a complex expression."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expression: Option<ExpressionV2>,
+    #[doc = "Page size of the result. Type: integer (or Expression with resultType integer)."]
+    #[serde(rename = "pageSize", default, skip_serializing_if = "Option::is_none")]
+    pub page_size: Option<serde_json::Value>,
 }
 impl ServiceNowV2Source {
     pub fn new(tabular_source: TabularSource) -> Self {
         Self {
             tabular_source,
             expression: None,
+            page_size: None,
         }
     }
 }
@@ -23803,24 +24128,31 @@ pub struct SharePointOnlineListLinkedServiceTypeProperties {
     #[serde(rename = "servicePrincipalId")]
     pub service_principal_id: serde_json::Value,
     #[doc = "The base definition of a secret type."]
-    #[serde(rename = "servicePrincipalKey")]
-    pub service_principal_key: SecretBaseUnion,
+    #[serde(rename = "servicePrincipalKey", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_key: Option<SecretBaseUnion>,
+    #[doc = "The service principal credential type to use in Server-To-Server authentication. 'ServicePrincipalKey' for key/secret, 'ServicePrincipalCert' for certificate. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential_type: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "servicePrincipalEmbeddedCert", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_embedded_cert: Option<SecretBaseUnion>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "servicePrincipalEmbeddedCertPassword", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_embedded_cert_password: Option<SecretBaseUnion>,
     #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<String>,
 }
 impl SharePointOnlineListLinkedServiceTypeProperties {
-    pub fn new(
-        site_url: serde_json::Value,
-        tenant_id: serde_json::Value,
-        service_principal_id: serde_json::Value,
-        service_principal_key: SecretBaseUnion,
-    ) -> Self {
+    pub fn new(site_url: serde_json::Value, tenant_id: serde_json::Value, service_principal_id: serde_json::Value) -> Self {
         Self {
             site_url,
             tenant_id,
             service_principal_id,
-            service_principal_key,
+            service_principal_key: None,
+            service_principal_credential_type: None,
+            service_principal_embedded_cert: None,
+            service_principal_embedded_cert_password: None,
             encrypted_credential: None,
         }
     }
@@ -24035,12 +24367,16 @@ pub struct SnowflakeExportCopyCommand {
     #[doc = "Additional format options directly passed to snowflake Copy Command. Type: key value pairs (value should be string type) (or Expression with resultType object). Example: \"additionalFormatOptions\": { \"OVERWRITE\": \"TRUE\", \"MAX_FILE_SIZE\": \"'FALSE'\" }"]
     #[serde(rename = "additionalFormatOptions", default, skip_serializing_if = "Option::is_none")]
     pub additional_format_options: Option<serde_json::Value>,
+    #[doc = "The name of the snowflake storage integration to use for the copy operation. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "storageIntegration", default, skip_serializing_if = "Option::is_none")]
+    pub storage_integration: Option<serde_json::Value>,
 }
 impl SnowflakeExportCopyCommand {
     pub fn new() -> Self {
         Self {
             additional_copy_options: None,
             additional_format_options: None,
+            storage_integration: None,
         }
     }
 }
@@ -24053,12 +24389,16 @@ pub struct SnowflakeImportCopyCommand {
     #[doc = "Additional format options directly passed to snowflake Copy Command. Type: key value pairs (value should be string type) (or Expression with resultType object). Example: \"additionalFormatOptions\": { \"FORCE\": \"TRUE\", \"LOAD_UNCERTAIN_FILES\": \"'FALSE'\" }"]
     #[serde(rename = "additionalFormatOptions", default, skip_serializing_if = "Option::is_none")]
     pub additional_format_options: Option<serde_json::Value>,
+    #[doc = "The name of the snowflake storage integration to use for the copy operation. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "storageIntegration", default, skip_serializing_if = "Option::is_none")]
+    pub storage_integration: Option<serde_json::Value>,
 }
 impl SnowflakeImportCopyCommand {
     pub fn new() -> Self {
         Self {
             additional_copy_options: None,
             additional_format_options: None,
+            storage_integration: None,
         }
     }
 }
@@ -24996,6 +25336,72 @@ impl SqlPartitionSettings {
         Self::default()
     }
 }
+#[doc = "Sql Server family connector common linked service properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SqlServerBaseLinkedServiceTypeProperties {
+    #[doc = "The name or network address of the instance of SQL Server to which to connect, used by recommended version. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server: Option<serde_json::Value>,
+    #[doc = "The name of the database, used by recommended version. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub database: Option<serde_json::Value>,
+    #[doc = "Indicate whether TLS encryption is required for all data sent between the client and server, used by recommended version. Possible values are true/yes/mandatory, false/no/optional and strict. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encrypt: Option<serde_json::Value>,
+    #[doc = "Indicate whether the channel will be encrypted while bypassing walking the certificate chain to validate trust, used by recommended version. Type: Boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "trustServerCertificate", default, skip_serializing_if = "Option::is_none")]
+    pub trust_server_certificate: Option<serde_json::Value>,
+    #[doc = "The host name to use when validating the server certificate for the connection. When not specified, the server name from the Data Source is used for certificate validation, used by recommended version. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "hostNameInCertificate", default, skip_serializing_if = "Option::is_none")]
+    pub host_name_in_certificate: Option<serde_json::Value>,
+    #[doc = "The application workload type when connecting to a server, used by recommended version. Possible values are ReadOnly and ReadWrite. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "applicationIntent", default, skip_serializing_if = "Option::is_none")]
+    pub application_intent: Option<serde_json::Value>,
+    #[doc = "The length of time (in seconds) to wait for a connection to the server before terminating the attempt and generating an error, used by recommended version. Type: integer (or Expression with resultType integer)."]
+    #[serde(rename = "connectTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub connect_timeout: Option<serde_json::Value>,
+    #[doc = "The number of re-connections attempted after identifying that there was an idle connection failure, used by recommended version. This must be an integer between 0 and 255. Type: integer (or Expression with resultType integer)."]
+    #[serde(rename = "connectRetryCount", default, skip_serializing_if = "Option::is_none")]
+    pub connect_retry_count: Option<serde_json::Value>,
+    #[doc = "The amount of time (in seconds) between each re-connection attempt after identifying that there was an idle connection failure, used by recommended version. This must be an integer between 1 and 60. Type: integer (or Expression with resultType integer)."]
+    #[serde(rename = "connectRetryInterval", default, skip_serializing_if = "Option::is_none")]
+    pub connect_retry_interval: Option<serde_json::Value>,
+    #[doc = "The minimum time, in seconds, for the connection to live in the connection pool before being destroyed, used by recommended version. Type: integer (or Expression with resultType integer)."]
+    #[serde(rename = "loadBalanceTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub load_balance_timeout: Option<serde_json::Value>,
+    #[doc = "The default wait time (in seconds) before terminating the attempt to execute a command and generating an error, used by recommended version. Type: integer (or Expression with resultType integer)."]
+    #[serde(rename = "commandTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub command_timeout: Option<serde_json::Value>,
+    #[doc = "Indicate whether User ID and Password are specified in the connection (when false) or whether the current Windows account credentials are used for authentication (when true), used by recommended version. Type: Boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "integratedSecurity", default, skip_serializing_if = "Option::is_none")]
+    pub integrated_security: Option<serde_json::Value>,
+    #[doc = "The name or address of the partner server to connect to if the primary server is down, used by recommended version. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "failoverPartner", default, skip_serializing_if = "Option::is_none")]
+    pub failover_partner: Option<serde_json::Value>,
+    #[doc = "The maximum number of connections allowed in the connection pool for this specific connection string, used by recommended version. Type: integer (or Expression with resultType integer)."]
+    #[serde(rename = "maxPoolSize", default, skip_serializing_if = "Option::is_none")]
+    pub max_pool_size: Option<serde_json::Value>,
+    #[doc = "The minimum number of connections allowed in the connection pool for this specific connection string, used by recommended version. Type: integer (or Expression with resultType integer)."]
+    #[serde(rename = "minPoolSize", default, skip_serializing_if = "Option::is_none")]
+    pub min_pool_size: Option<serde_json::Value>,
+    #[doc = "When true, an application can maintain multiple active result sets (MARS). When false, an application must process or cancel all result sets from one batch before it can execute any other batch on that connection, used by recommended version. Type: Boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "multipleActiveResultSets", default, skip_serializing_if = "Option::is_none")]
+    pub multiple_active_result_sets: Option<serde_json::Value>,
+    #[doc = "If your application is connecting to an AlwaysOn availability group (AG) on different subnets, setting MultiSubnetFailover=true provides faster detection of and connection to the (currently) active server, used by recommended version. Type: Boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "multiSubnetFailover", default, skip_serializing_if = "Option::is_none")]
+    pub multi_subnet_failover: Option<serde_json::Value>,
+    #[doc = "The size in bytes of the network packets used to communicate with an instance of server, used by recommended version. Type: integer (or Expression with resultType integer)."]
+    #[serde(rename = "packetSize", default, skip_serializing_if = "Option::is_none")]
+    pub packet_size: Option<serde_json::Value>,
+    #[doc = "Indicate whether the connection will be pooled or explicitly opened every time that the connection is requested, used by recommended version. Type: Boolean (or Expression with resultType boolean)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pooling: Option<serde_json::Value>,
+}
+impl SqlServerBaseLinkedServiceTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "SQL Server linked service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlServerLinkedService {
@@ -25014,11 +25420,16 @@ impl SqlServerLinkedService {
     }
 }
 #[doc = "SQL Server linked service properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlServerLinkedServiceTypeProperties {
+    #[serde(flatten)]
+    pub sql_server_base_linked_service_type_properties: SqlServerBaseLinkedServiceTypeProperties,
     #[doc = "The connection string. Type: string, SecureString or AzureKeyVaultSecretReference."]
-    #[serde(rename = "connectionString")]
-    pub connection_string: serde_json::Value,
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<serde_json::Value>,
+    #[doc = "The type used for authentication. Type: string."]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<sql_server_linked_service_type_properties::AuthenticationType>,
     #[doc = "The on-premises Windows authentication user name. Type: string (or Expression with resultType string)."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<serde_json::Value>,
@@ -25031,15 +25442,57 @@ pub struct SqlServerLinkedServiceTypeProperties {
     #[doc = "Sql always encrypted properties."]
     #[serde(rename = "alwaysEncryptedSettings", default, skip_serializing_if = "Option::is_none")]
     pub always_encrypted_settings: Option<SqlAlwaysEncryptedProperties>,
+    #[doc = "Credential reference type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential: Option<CredentialReference>,
 }
 impl SqlServerLinkedServiceTypeProperties {
-    pub fn new(connection_string: serde_json::Value) -> Self {
-        Self {
-            connection_string,
-            user_name: None,
-            password: None,
-            encrypted_credential: None,
-            always_encrypted_settings: None,
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod sql_server_linked_service_type_properties {
+    use super::*;
+    #[doc = "The type used for authentication. Type: string."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "SQL")]
+        Sql,
+        Windows,
+        UserAssignedManagedIdentity,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Sql => serializer.serialize_unit_variant("AuthenticationType", 0u32, "SQL"),
+                Self::Windows => serializer.serialize_unit_variant("AuthenticationType", 1u32, "Windows"),
+                Self::UserAssignedManagedIdentity => {
+                    serializer.serialize_unit_variant("AuthenticationType", 2u32, "UserAssignedManagedIdentity")
+                }
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -27138,7 +27591,7 @@ pub struct TriggerRun {
     pub trigger_type: Option<String>,
     #[doc = "Trigger run start time."]
     #[serde(rename = "triggerRunTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub trigger_run_timestamp: Option<time::OffsetDateTime>,
+    pub trigger_run_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "Trigger run status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<trigger_run::Status>,
@@ -27392,10 +27845,10 @@ pub mod tumbling_window_trigger {
         pub interval: i32,
         #[doc = "The start time for the time period for the trigger during which events are fired for windows that are ready. Only UTC time is currently supported."]
         #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-        pub start_time: time::OffsetDateTime,
+        pub start_time: ::time::OffsetDateTime,
         #[doc = "The end time for the time period for the trigger during which events are fired for windows that are ready. Only UTC time is currently supported."]
         #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-        pub end_time: Option<time::OffsetDateTime>,
+        pub end_time: Option<::time::OffsetDateTime>,
         #[doc = "Specifies how long the trigger waits past due time before triggering new run. It doesn't alter window start and end time. The default is 0. Type: string (or Expression with resultType string), pattern: ((\\d+)\\.)?(\\d\\d):(60|([0-5][0-9])):(60|([0-5][0-9]))."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub delay: Option<serde_json::Value>,
@@ -27415,7 +27868,7 @@ pub mod tumbling_window_trigger {
         pub depends_on: Vec<DependencyReferenceUnion>,
     }
     impl TypeProperties {
-        pub fn new(frequency: TumblingWindowFrequency, interval: i32, start_time: time::OffsetDateTime, max_concurrency: i64) -> Self {
+        pub fn new(frequency: TumblingWindowFrequency, interval: i32, start_time: ::time::OffsetDateTime, max_concurrency: i64) -> Self {
             Self {
                 frequency,
                 interval,
@@ -27780,6 +28233,18 @@ pub struct VerticaLinkedServiceTypeProperties {
     #[doc = "An ODBC connection string. Type: string, SecureString or AzureKeyVaultSecretReference."]
     #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
     pub connection_string: Option<serde_json::Value>,
+    #[doc = "Server name for connection. Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server: Option<serde_json::Value>,
+    #[doc = "The port for the connection. Type: integer."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<serde_json::Value>,
+    #[doc = "Username for authentication. Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uid: Option<serde_json::Value>,
+    #[doc = "Database name for connection. Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub database: Option<serde_json::Value>,
     #[doc = "Azure Key Vault secret reference."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pwd: Option<AzureKeyVaultSecretReference>,

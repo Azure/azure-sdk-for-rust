@@ -80,7 +80,7 @@ pub struct AssetEndpointProfileProperties {
     #[doc = "Definition of the authentication mechanism for the southbound connector."]
     #[serde(rename = "transportAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub transport_authentication: Option<TransportAuthentication>,
-    #[doc = "Contains connectivity type specific further configuration (e.g. OPC UA, Modbus, ONVIF)."]
+    #[doc = "Stringified JSON that contains connectivity type specific further configuration (e.g. OPC UA, Modbus, ONVIF)."]
     #[serde(rename = "additionalConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub additional_configuration: Option<String>,
     #[doc = "The provisioning status of the resource."]
@@ -126,7 +126,7 @@ pub struct AssetEndpointProfileUpdateProperties {
     #[doc = "Definition of the authentication mechanism for the southbound connector."]
     #[serde(rename = "transportAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub transport_authentication: Option<TransportAuthenticationUpdate>,
-    #[doc = "Contains connectivity type specific further configuration (e.g. OPC UA, Modbus, ONVIF)."]
+    #[doc = "Stringified JSON that contains connectivity type specific further configuration (e.g. OPC UA, Modbus, ONVIF)."]
     #[serde(rename = "additionalConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub additional_configuration: Option<String>,
 }
@@ -209,13 +209,13 @@ pub struct AssetProperties {
     #[doc = "A set of key-value pairs that contain custom attributes set by the customer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<serde_json::Value>,
-    #[doc = "Protocol-specific default configuration for all data points. Each data point can have its own configuration that overrides the default settings here. This assumes that each asset instance has one protocol."]
+    #[doc = "Stringified JSON that contains protocol-specific default configuration for all data points. Each data point can have its own configuration that overrides the default settings here."]
     #[serde(rename = "defaultDataPointsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub default_data_points_configuration: Option<String>,
-    #[doc = "Protocol-specific default configuration for all events. Each event can have its own configuration that overrides the default settings here. This assumes that each asset instance has one protocol."]
+    #[doc = "Stringified JSON that contains connector-specific default configuration for all events. Each event can have its own configuration that overrides the default settings here."]
     #[serde(rename = "defaultEventsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub default_events_configuration: Option<String>,
-    #[doc = "Array of data points that are part of the asset. Each data point can reference an asset type capability and have per-data point configuration. See below for more details for the definition of the dataPoints element."]
+    #[doc = "Array of data points that are part of the asset. Each data point can reference an asset type capability and have per-data point configuration."]
     #[serde(
         rename = "dataPoints",
         default,
@@ -223,7 +223,7 @@ pub struct AssetProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_points: Vec<DataPoint>,
-    #[doc = "Array of events that are part of the asset. Each event can reference an asset type capability and have per-event configuration. See below for more details about the definition of the events element."]
+    #[doc = "Array of events that are part of the asset. Each event can have per-event configuration."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -357,13 +357,13 @@ pub struct AssetUpdateProperties {
     #[doc = "A set of key-value pairs that contain custom attributes set by the customer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<serde_json::Value>,
-    #[doc = "Protocol-specific default configuration for all data points. Each data point can have its own configuration that overrides the default settings here. This assumes that each asset instance has one protocol."]
+    #[doc = "Stringified JSON that contains protocol-specific default configuration for all data points. Each data point can have its own configuration that overrides the default settings here."]
     #[serde(rename = "defaultDataPointsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub default_data_points_configuration: Option<String>,
-    #[doc = "Protocol-specific default configuration for all events. Each event can have its own configuration that overrides the default settings here. This assumes that each asset instance has one protocol."]
+    #[doc = "Stringified JSON that contains connector-specific default configuration for all events. Each event can have its own configuration that overrides the default settings here."]
     #[serde(rename = "defaultEventsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub default_events_configuration: Option<String>,
-    #[doc = "Array of data points that are part of the asset. Each data point can reference an asset type capability and have per-data point configuration. See below for more details for the definition of the dataPoints element."]
+    #[doc = "Array of data points that are part of the asset. Each data point can reference an asset type capability and have per-data point configuration."]
     #[serde(
         rename = "dataPoints",
         default,
@@ -371,7 +371,7 @@ pub struct AssetUpdateProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_points: Vec<DataPoint>,
-    #[doc = "Array of events that are part of the asset. Each event can reference an asset type capability and have per-event configuration. See below for more details about the definition of the events element."]
+    #[doc = "Array of events that are part of the asset. Each event can have per-event configuration."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -387,6 +387,17 @@ impl AssetUpdateProperties {
 #[doc = "Defines the data point properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataPoint {
+    #[serde(flatten)]
+    pub data_point_base: DataPointBase,
+}
+impl DataPoint {
+    pub fn new(data_point_base: DataPointBase) -> Self {
+        Self { data_point_base }
+    }
+}
+#[doc = "Defines the data point properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataPointBase {
     #[doc = "The name of the data point."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -398,12 +409,12 @@ pub struct DataPoint {
     pub capability_id: Option<String>,
     #[doc = "An indication of how the data point should be mapped to OpenTelemetry."]
     #[serde(rename = "observabilityMode", default, skip_serializing_if = "Option::is_none")]
-    pub observability_mode: Option<data_point::ObservabilityMode>,
-    #[doc = "Protocol-specific configuration for the data point. For OPC UA, this could include configuration like, publishingInterval, samplingInterval, and queueSize."]
+    pub observability_mode: Option<data_point_base::ObservabilityMode>,
+    #[doc = "Stringified JSON that contains connector-specific configuration for the data point. For OPC UA, this could include configuration like, publishingInterval, samplingInterval, and queueSize."]
     #[serde(rename = "dataPointConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub data_point_configuration: Option<String>,
 }
-impl DataPoint {
+impl DataPointBase {
     pub fn new(data_source: String) -> Self {
         Self {
             name: None,
@@ -414,7 +425,7 @@ impl DataPoint {
         }
     }
 }
-pub mod data_point {
+pub mod data_point_base {
     use super::*;
     #[doc = "An indication of how the data point should be mapped to OpenTelemetry."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -467,54 +478,6 @@ pub mod data_point {
     impl Default for ObservabilityMode {
         fn default() -> Self {
             Self::None
-        }
-    }
-}
-#[doc = "Defines the data point observability mode."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "DataPointsObservabilityMode")]
-pub enum DataPointsObservabilityMode {
-    #[serde(rename = "none")]
-    None,
-    #[serde(rename = "counter")]
-    Counter,
-    #[serde(rename = "gauge")]
-    Gauge,
-    #[serde(rename = "histogram")]
-    Histogram,
-    #[serde(rename = "log")]
-    Log,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for DataPointsObservabilityMode {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for DataPointsObservabilityMode {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for DataPointsObservabilityMode {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::None => serializer.serialize_unit_variant("DataPointsObservabilityMode", 0u32, "none"),
-            Self::Counter => serializer.serialize_unit_variant("DataPointsObservabilityMode", 1u32, "counter"),
-            Self::Gauge => serializer.serialize_unit_variant("DataPointsObservabilityMode", 2u32, "gauge"),
-            Self::Histogram => serializer.serialize_unit_variant("DataPointsObservabilityMode", 3u32, "histogram"),
-            Self::Log => serializer.serialize_unit_variant("DataPointsObservabilityMode", 4u32, "log"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -587,6 +550,17 @@ impl ErrorResponse {
 #[doc = "Defines the event properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Event {
+    #[serde(flatten)]
+    pub event_base: EventBase,
+}
+impl Event {
+    pub fn new(event_base: EventBase) -> Self {
+        Self { event_base }
+    }
+}
+#[doc = "Defines the event properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventBase {
     #[doc = "The name of the event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -598,12 +572,12 @@ pub struct Event {
     pub capability_id: Option<String>,
     #[doc = "An indication of how the event should be mapped to OpenTelemetry."]
     #[serde(rename = "observabilityMode", default, skip_serializing_if = "Option::is_none")]
-    pub observability_mode: Option<event::ObservabilityMode>,
-    #[doc = "Protocol-specific configuration for the event. For OPC UA, this could include configuration like, publishingInterval, samplingInterval, and queueSize."]
+    pub observability_mode: Option<event_base::ObservabilityMode>,
+    #[doc = "Stringified JSON that contains connector-specific configuration for the event. For OPC UA, this could include configuration like, publishingInterval, samplingInterval, and queueSize."]
     #[serde(rename = "eventConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub event_configuration: Option<String>,
 }
-impl Event {
+impl EventBase {
     pub fn new(event_notifier: String) -> Self {
         Self {
             name: None,
@@ -614,7 +588,7 @@ impl Event {
         }
     }
 }
-pub mod event {
+pub mod event_base {
     use super::*;
     #[doc = "An indication of how the event should be mapped to OpenTelemetry."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -658,45 +632,6 @@ pub mod event {
     impl Default for ObservabilityMode {
         fn default() -> Self {
             Self::None
-        }
-    }
-}
-#[doc = "Defines the event observability mode."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "EventsObservabilityMode")]
-pub enum EventsObservabilityMode {
-    #[serde(rename = "none")]
-    None,
-    #[serde(rename = "log")]
-    Log,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for EventsObservabilityMode {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for EventsObservabilityMode {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for EventsObservabilityMode {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::None => serializer.serialize_unit_variant("EventsObservabilityMode", 0u32, "none"),
-            Self::Log => serializer.serialize_unit_variant("EventsObservabilityMode", 1u32, "log"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -880,10 +815,10 @@ pub struct OperationStatusResult {
     pub percent_complete: Option<f64>,
     #[doc = "The start time of the operation."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the operation."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The operations list."]
     #[serde(
         default,
@@ -1041,7 +976,7 @@ impl TransportAuthenticationUpdate {
 #[doc = "Definition of the client authentication mechanism to the server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAuthentication {
-    #[doc = "Defines the mode to authenticate the user of the client at the server."]
+    #[doc = "Defines the method to authenticate the user of the client at the server."]
     pub mode: user_authentication::Mode,
     #[doc = "The credentials for authentication mode UsernamePassword."]
     #[serde(rename = "usernamePasswordCredentials", default, skip_serializing_if = "Option::is_none")]
@@ -1061,7 +996,7 @@ impl UserAuthentication {
 }
 pub mod user_authentication {
     use super::*;
-    #[doc = "Defines the mode to authenticate the user of the client at the server."]
+    #[doc = "Defines the method to authenticate the user of the client at the server."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Mode")]
     pub enum Mode {
@@ -1106,49 +1041,10 @@ pub mod user_authentication {
         }
     }
 }
-#[doc = "The mode to authenticate the user of the client at the server."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "UserAuthenticationMode")]
-pub enum UserAuthenticationMode {
-    Anonymous,
-    Certificate,
-    UsernamePassword,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for UserAuthenticationMode {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for UserAuthenticationMode {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for UserAuthenticationMode {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::Anonymous => serializer.serialize_unit_variant("UserAuthenticationMode", 0u32, "Anonymous"),
-            Self::Certificate => serializer.serialize_unit_variant("UserAuthenticationMode", 1u32, "Certificate"),
-            Self::UsernamePassword => serializer.serialize_unit_variant("UserAuthenticationMode", 2u32, "UsernamePassword"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-        }
-    }
-}
 #[doc = "Definition of the client authentication mechanism to the server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAuthenticationUpdate {
-    #[doc = "Defines the mode to authenticate the user of the client at the server."]
+    #[doc = "Defines the method to authenticate the user of the client at the server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<user_authentication_update::Mode>,
     #[doc = "The credentials for authentication mode UsernamePassword."]
@@ -1165,7 +1061,7 @@ impl UserAuthenticationUpdate {
 }
 pub mod user_authentication_update {
     use super::*;
-    #[doc = "Defines the mode to authenticate the user of the client at the server."]
+    #[doc = "Defines the method to authenticate the user of the client at the server."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Mode")]
     pub enum Mode {
@@ -1278,7 +1174,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1287,7 +1183,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

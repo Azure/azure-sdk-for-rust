@@ -7,8 +7,6 @@
 #![allow(rustdoc::bare_urls)]
 #![allow(rustdoc::invalid_html_tags)]
 #![allow(rustdoc::broken_intra_doc_links)]
-#[cfg(feature = "package-2021-10")]
-pub mod package_2021_10;
 #[cfg(feature = "package-2022-10")]
 pub mod package_2022_10;
 #[cfg(feature = "package-2023-07-01")]

@@ -993,41 +993,6 @@ impl Serialize for TransactionsTransactionStatus {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "Versions")]
-pub enum Versions {
-    #[serde(rename = "2023-06-01-preview")]
-    N2023_06_01_preview,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for Versions {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for Versions {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for Versions {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::N2023_06_01_preview => serializer.serialize_unit_variant("Versions", 0u32, "2023-06-01-preview"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-        }
-    }
-}
 pub type MemberId = String;
 pub type NodeId = String;
 pub type ProposalId = String;

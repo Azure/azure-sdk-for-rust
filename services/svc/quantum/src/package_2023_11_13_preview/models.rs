@@ -70,13 +70,13 @@ pub struct ItemDetails {
     pub target: String,
     #[doc = "The creation time of the item."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the item began execution."]
     #[serde(rename = "beginExecutionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub begin_execution_time: Option<time::OffsetDateTime>,
+    pub begin_execution_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the item finished execution."]
     #[serde(rename = "endExecutionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_execution_time: Option<time::OffsetDateTime>,
+    pub end_execution_time: Option<::time::OffsetDateTime>,
     #[doc = "The job cost billed by the provider. The final cost on your bill might be slightly different due to added taxes and currency conversion rates."]
     #[serde(rename = "costEstimate", default, skip_serializing_if = "Option::is_none")]
     pub cost_estimate: Option<CostEstimate>,
@@ -162,7 +162,7 @@ pub struct JobDetails {
     pub output_data_format: Option<String>,
     #[doc = "The time when a job was successfully cancelled."]
     #[serde(rename = "cancellationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub cancellation_time: Option<time::OffsetDateTime>,
+    pub cancellation_time: Option<::time::OffsetDateTime>,
     #[doc = "Quantum computing data."]
     #[serde(rename = "quantumComputingData", default, skip_serializing_if = "Option::is_none")]
     pub quantum_computing_data: Option<QuantumComputingData>,

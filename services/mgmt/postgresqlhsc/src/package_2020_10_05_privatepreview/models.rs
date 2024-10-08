@@ -788,7 +788,7 @@ pub struct ServerGroupProperties {
     pub state: Option<ServerState>,
     #[doc = "The earliest restore point time (ISO8601 format) for server group."]
     #[serde(rename = "earliestRestoreTime", default, with = "azure_core::date::rfc3339::option")]
-    pub earliest_restore_time: Option<time::OffsetDateTime>,
+    pub earliest_restore_time: Option<::time::OffsetDateTime>,
     #[doc = "The resource provider type of server group."]
     #[serde(rename = "resourceProviderType", default, skip_serializing_if = "Option::is_none")]
     pub resource_provider_type: Option<server_group_properties::ResourceProviderType>,
@@ -835,7 +835,7 @@ pub struct ServerGroupProperties {
     pub source_location: Option<String>,
     #[doc = "Restore point creation time (ISO8601 format), specifying the time to restore from. It's required when 'createMode' is 'PointInTimeRestore'"]
     #[serde(rename = "pointInTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub point_in_time_utc: Option<time::OffsetDateTime>,
+    pub point_in_time_utc: Option<::time::OffsetDateTime>,
 }
 impl ServerGroupProperties {
     pub fn new() -> Self {
@@ -1354,7 +1354,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1363,7 +1363,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

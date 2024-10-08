@@ -1792,7 +1792,7 @@ pub struct QuotaRequestProperties {
     pub message: Option<String>,
     #[doc = "The time when the quota request was submitted using format: yyyy-MM-ddTHH:mm:ssZ as specified by the ISO 8601 standard."]
     #[serde(rename = "requestSubmitTime", default, with = "azure_core::date::rfc3339::option")]
-    pub request_submit_time: Option<time::OffsetDateTime>,
+    pub request_submit_time: Option<::time::OffsetDateTime>,
     #[doc = "The quotaRequests."]
     #[serde(
         default,
@@ -2227,16 +2227,16 @@ pub struct ReservationOrderProperties {
     pub display_name: Option<String>,
     #[doc = "This is the DateTime when the reservation was initially requested for purchase."]
     #[serde(rename = "requestDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub request_date_time: Option<time::OffsetDateTime>,
+    pub request_date_time: Option<::time::OffsetDateTime>,
     #[doc = "This is the DateTime when the reservation was created."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "This is the date when the Reservation will expire."]
     #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
     pub expiry_date: Option<String>,
     #[doc = "This is the DateTime when the reservation benefit started."]
     #[serde(rename = "benefitStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub benefit_start_time: Option<time::OffsetDateTime>,
+    pub benefit_start_time: Option<::time::OffsetDateTime>,
     #[doc = "Total Quantity of the SKUs purchased in the Reservation."]
     #[serde(rename = "originalQuantity", default, skip_serializing_if = "Option::is_none")]
     pub original_quantity: Option<i32>,
@@ -2663,13 +2663,13 @@ pub struct ReservationsProperties {
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "DateTime of the Reservation starting when this version is effective from."]
     #[serde(rename = "effectiveDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub effective_date_time: Option<time::OffsetDateTime>,
+    pub effective_date_time: Option<::time::OffsetDateTime>,
     #[doc = "This is the DateTime when the reservation benefit started."]
     #[serde(rename = "benefitStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub benefit_start_time: Option<time::OffsetDateTime>,
+    pub benefit_start_time: Option<::time::OffsetDateTime>,
     #[doc = "DateTime of the last time the Reservation was updated."]
     #[serde(rename = "lastUpdatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_date_time: Option<time::OffsetDateTime>,
+    pub last_updated_date_time: Option<::time::OffsetDateTime>,
     #[doc = "This is the date when the Reservation will expire."]
     #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
     pub expiry_date: Option<String>,
@@ -3178,7 +3178,7 @@ pub struct QuotaRequestOneResourceProperties {
     pub message: Option<String>,
     #[doc = "The time when the quota request was submitted using format: yyyy-MM-ddTHH:mm:ssZ as specified by the ISO 8601 standard."]
     #[serde(rename = "requestSubmitTime", default, with = "azure_core::date::rfc3339::option")]
-    pub request_submit_time: Option<time::OffsetDateTime>,
+    pub request_submit_time: Option<::time::OffsetDateTime>,
     #[doc = "Quota properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CurrentQuotaLimitBase>,
@@ -3199,7 +3199,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -3208,7 +3208,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

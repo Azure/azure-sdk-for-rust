@@ -396,10 +396,10 @@ pub struct ActivityEntityQueriesProperties {
     pub enabled: Option<bool>,
     #[doc = "The time the activity was created"]
     #[serde(rename = "createdTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time_utc: Option<time::OffsetDateTime>,
+    pub created_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The last time the activity was updated"]
     #[serde(rename = "lastModifiedTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time_utc: Option<time::OffsetDateTime>,
+    pub last_modified_time_utc: Option<::time::OffsetDateTime>,
 }
 impl ActivityEntityQueriesProperties {
     pub fn new() -> Self {
@@ -524,16 +524,16 @@ pub struct ActivityTimelineItem {
     pub query_id: String,
     #[doc = "The grouping bucket start time."]
     #[serde(rename = "bucketStartTimeUTC", with = "azure_core::date::rfc3339")]
-    pub bucket_start_time_utc: time::OffsetDateTime,
+    pub bucket_start_time_utc: ::time::OffsetDateTime,
     #[doc = "The grouping bucket end time."]
     #[serde(rename = "bucketEndTimeUTC", with = "azure_core::date::rfc3339")]
-    pub bucket_end_time_utc: time::OffsetDateTime,
+    pub bucket_end_time_utc: ::time::OffsetDateTime,
     #[doc = "The time of the first activity in the grouping bucket."]
     #[serde(rename = "firstActivityTimeUTC", with = "azure_core::date::rfc3339")]
-    pub first_activity_time_utc: time::OffsetDateTime,
+    pub first_activity_time_utc: ::time::OffsetDateTime,
     #[doc = "The time of the last activity in the grouping bucket."]
     #[serde(rename = "lastActivityTimeUTC", with = "azure_core::date::rfc3339")]
-    pub last_activity_time_utc: time::OffsetDateTime,
+    pub last_activity_time_utc: ::time::OffsetDateTime,
     #[doc = "The activity timeline content."]
     pub content: String,
     #[doc = "The activity timeline title."]
@@ -542,10 +542,10 @@ pub struct ActivityTimelineItem {
 impl ActivityTimelineItem {
     pub fn new(
         query_id: String,
-        bucket_start_time_utc: time::OffsetDateTime,
-        bucket_end_time_utc: time::OffsetDateTime,
-        first_activity_time_utc: time::OffsetDateTime,
-        last_activity_time_utc: time::OffsetDateTime,
+        bucket_start_time_utc: ::time::OffsetDateTime,
+        bucket_end_time_utc: ::time::OffsetDateTime,
+        first_activity_time_utc: ::time::OffsetDateTime,
+        last_activity_time_utc: ::time::OffsetDateTime,
         content: String,
         title: String,
     ) -> Self {
@@ -799,10 +799,10 @@ pub struct AlertRuleTemplatePropertiesBase {
     pub alert_rules_created_by_template_count: Option<i32>,
     #[doc = "The last time that this alert rule template has been updated."]
     #[serde(rename = "lastUpdatedDateUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_date_utc: Option<time::OffsetDateTime>,
+    pub last_updated_date_utc: Option<::time::OffsetDateTime>,
     #[doc = "The time that this alert rule template has been added."]
     #[serde(rename = "createdDateUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_utc: Option<time::OffsetDateTime>,
+    pub created_date_utc: Option<::time::OffsetDateTime>,
     #[doc = "The description of the alert rule template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -1005,10 +1005,10 @@ impl AnalyticsRuleRunTrigger {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnalyticsRuleRunTriggerProperties {
     #[serde(rename = "executionTimeUtc", with = "azure_core::date::rfc3339")]
-    pub execution_time_utc: time::OffsetDateTime,
+    pub execution_time_utc: ::time::OffsetDateTime,
 }
 impl AnalyticsRuleRunTriggerProperties {
-    pub fn new(execution_time_utc: time::OffsetDateTime) -> Self {
+    pub fn new(execution_time_utc: ::time::OffsetDateTime) -> Self {
         Self { execution_time_utc }
     }
 }
@@ -1071,7 +1071,7 @@ pub struct AnomalySecurityMlAnalyticsSettingsProperties {
     pub enabled: bool,
     #[doc = "The last time that this SecurityMLAnalyticsSettings has been modified."]
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc: Option<time::OffsetDateTime>,
+    pub last_modified_utc: Option<::time::OffsetDateTime>,
     #[doc = "The required data sources for this SecurityMLAnalyticsSettings"]
     #[serde(
         rename = "requiredDataConnectors",
@@ -1196,13 +1196,13 @@ pub struct AnomalyTimelineItem {
     pub display_name: String,
     #[doc = "The anomaly end time."]
     #[serde(rename = "endTimeUtc", with = "azure_core::date::rfc3339")]
-    pub end_time_utc: time::OffsetDateTime,
+    pub end_time_utc: ::time::OffsetDateTime,
     #[doc = "The anomaly start time."]
     #[serde(rename = "startTimeUtc", with = "azure_core::date::rfc3339")]
-    pub start_time_utc: time::OffsetDateTime,
+    pub start_time_utc: ::time::OffsetDateTime,
     #[doc = "The anomaly generated time."]
     #[serde(rename = "timeGenerated", with = "azure_core::date::rfc3339")]
-    pub time_generated: time::OffsetDateTime,
+    pub time_generated: ::time::OffsetDateTime,
     #[doc = "The name of the anomaly vendor."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vendor: Option<String>,
@@ -1228,9 +1228,9 @@ impl AnomalyTimelineItem {
     pub fn new(
         azure_resource_id: String,
         display_name: String,
-        end_time_utc: time::OffsetDateTime,
-        start_time_utc: time::OffsetDateTime,
-        time_generated: time::OffsetDateTime,
+        end_time_utc: ::time::OffsetDateTime,
+        start_time_utc: ::time::OffsetDateTime,
+        time_generated: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             azure_resource_id,
@@ -1472,10 +1472,10 @@ pub struct AutomationRuleProperties {
     pub actions: Vec<AutomationRuleActionUnion>,
     #[doc = "The last time the automation rule was updated."]
     #[serde(rename = "lastModifiedTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time_utc: Option<time::OffsetDateTime>,
+    pub last_modified_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The time the automation rule was created."]
     #[serde(rename = "createdTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time_utc: Option<time::OffsetDateTime>,
+    pub created_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Information on the client (user or application) that made some action"]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<ClientInfo>,
@@ -2169,7 +2169,7 @@ pub struct AutomationRuleTriggeringLogic {
     pub is_enabled: bool,
     #[doc = "Determines when the automation rule should automatically expire and be disabled."]
     #[serde(rename = "expirationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time_utc: Option<time::OffsetDateTime>,
+    pub expiration_time_utc: Option<::time::OffsetDateTime>,
     #[serde(rename = "triggersOn")]
     pub triggers_on: TriggersOn,
     #[serde(rename = "triggersWhen")]
@@ -2495,13 +2495,13 @@ impl BookmarkEntityMappings {
 pub struct BookmarkExpandParameters {
     #[doc = "The end date filter, so the only expansion results returned are before this date."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The Id of the expansion to perform."]
     #[serde(rename = "expansionId", default, skip_serializing_if = "Option::is_none")]
     pub expansion_id: Option<String>,
     #[doc = "The start date filter, so the only expansion results returned are after this date."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
 }
 impl BookmarkExpandParameters {
     pub fn new() -> Self {
@@ -2574,7 +2574,7 @@ impl BookmarkList {
 pub struct BookmarkProperties {
     #[doc = "The time the bookmark was created"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "User information that made some action"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<UserInfo>,
@@ -2598,19 +2598,19 @@ pub struct BookmarkProperties {
     pub query_result: Option<String>,
     #[doc = "The last time the bookmark was updated"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub updated: Option<time::OffsetDateTime>,
+    pub updated: Option<::time::OffsetDateTime>,
     #[doc = "User information that made some action"]
     #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<UserInfo>,
     #[doc = "The bookmark event time"]
     #[serde(rename = "eventTime", default, with = "azure_core::date::rfc3339::option")]
-    pub event_time: Option<time::OffsetDateTime>,
+    pub event_time: Option<::time::OffsetDateTime>,
     #[doc = "The start time for the query"]
     #[serde(rename = "queryStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub query_start_time: Option<time::OffsetDateTime>,
+    pub query_start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time for the query"]
     #[serde(rename = "queryEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub query_end_time: Option<time::OffsetDateTime>,
+    pub query_end_time: Option<::time::OffsetDateTime>,
     #[doc = "Describes related incident information for the bookmark"]
     #[serde(rename = "incidentInfo", default, skip_serializing_if = "Option::is_none")]
     pub incident_info: Option<IncidentInfo>,
@@ -2668,13 +2668,13 @@ pub struct BookmarkTimelineItem {
     pub notes: Option<String>,
     #[doc = "The bookmark end time."]
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time_utc: Option<time::OffsetDateTime>,
+    pub end_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The bookmark start time."]
     #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time_utc: Option<time::OffsetDateTime>,
+    pub start_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The bookmark event time."]
     #[serde(rename = "eventTime", default, with = "azure_core::date::rfc3339::option")]
-    pub event_time: Option<time::OffsetDateTime>,
+    pub event_time: Option<::time::OffsetDateTime>,
     #[doc = "User information that made some action"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<UserInfo>,
@@ -3562,10 +3562,10 @@ impl CustomizableConnectorDefinition {
 pub struct CustomizableConnectorDefinitionProperties {
     #[doc = "Gets or sets the connector definition created date in UTC format."]
     #[serde(rename = "createdTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time_utc: Option<time::OffsetDateTime>,
+    pub created_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the connector definition last modified date in UTC format."]
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc: Option<time::OffsetDateTime>,
+    pub last_modified_utc: Option<::time::OffsetDateTime>,
     #[doc = "The UiConfig for 'Customizable' connector definition kind."]
     #[serde(rename = "connectorUiConfig")]
     pub connector_ui_config: CustomizableConnectorUiConfig,
@@ -3821,7 +3821,6 @@ pub struct DataConnectorConnectBody {
     #[doc = "The user password in the audit log server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
-    #[doc = ""]
     #[serde(
         rename = "requestConfigUserInputValues",
         default,
@@ -4251,7 +4250,7 @@ pub struct Deployment {
     pub deployment_result: Option<DeploymentResult>,
     #[doc = "The time when the deployment finished."]
     #[serde(rename = "deploymentTime", default, with = "azure_core::date::rfc3339::option")]
-    pub deployment_time: Option<time::OffsetDateTime>,
+    pub deployment_time: Option<::time::OffsetDateTime>,
     #[doc = "Url to access repository action logs."]
     #[serde(rename = "deploymentLogsUrl", default, skip_serializing_if = "Option::is_none")]
     pub deployment_logs_url: Option<String>,
@@ -4481,13 +4480,13 @@ pub struct EnrichmentDomainWhois {
     pub server: Option<String>,
     #[doc = "The timestamp at which this record was created"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The timestamp at which this record was last updated"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub updated: Option<time::OffsetDateTime>,
+    pub updated: Option<::time::OffsetDateTime>,
     #[doc = "The timestamp at which this record will expire"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expires: Option<time::OffsetDateTime>,
+    pub expires: Option<::time::OffsetDateTime>,
     #[doc = "The whois record for a given domain"]
     #[serde(rename = "parsedWhois", default, skip_serializing_if = "Option::is_none")]
     pub parsed_whois: Option<EnrichmentDomainWhoisDetails>,
@@ -4767,13 +4766,13 @@ impl EntityEdges {
 pub struct EntityExpandParameters {
     #[doc = "The end date filter, so the only expansion results returned are before this date."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The Id of the expansion to perform."]
     #[serde(rename = "expansionId", default, skip_serializing_if = "Option::is_none")]
     pub expansion_id: Option<String>,
     #[doc = "The start date filter, so the only expansion results returned are after this date."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
 }
 impl EntityExpandParameters {
     pub fn new() -> Self {
@@ -4841,10 +4840,10 @@ impl EntityFieldMapping {
 pub struct EntityGetInsightsParameters {
     #[doc = "The start timeline date, so the results returned are after this date."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "The end timeline date, so the results returned are before this date."]
     #[serde(rename = "endTime", with = "azure_core::date::rfc3339")]
-    pub end_time: time::OffsetDateTime,
+    pub end_time: ::time::OffsetDateTime,
     #[doc = "Indicates if query time range should be extended with default time range of the query. Default value is false"]
     #[serde(rename = "addDefaultExtendedTimeRange", default, skip_serializing_if = "Option::is_none")]
     pub add_default_extended_time_range: Option<bool>,
@@ -4858,7 +4857,7 @@ pub struct EntityGetInsightsParameters {
     pub insight_query_ids: Vec<String>,
 }
 impl EntityGetInsightsParameters {
-    pub fn new(start_time: time::OffsetDateTime, end_time: time::OffsetDateTime) -> Self {
+    pub fn new(start_time: ::time::OffsetDateTime, end_time: ::time::OffsetDateTime) -> Self {
         Self {
             start_time,
             end_time,
@@ -5076,10 +5075,10 @@ pub mod entity_insight_item {
     pub struct QueryTimeInterval {
         #[doc = "Insight query start time"]
         #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-        pub start_time: Option<time::OffsetDateTime>,
+        pub start_time: Option<::time::OffsetDateTime>,
         #[doc = "Insight query end time"]
         #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-        pub end_time: Option<time::OffsetDateTime>,
+        pub end_time: Option<::time::OffsetDateTime>,
     }
     impl QueryTimeInterval {
         pub fn new() -> Self {
@@ -5534,16 +5533,16 @@ pub struct EntityTimelineParameters {
     pub kinds: Vec<EntityTimelineKind>,
     #[doc = "The start timeline date, so the results returned are after this date."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "The end timeline date, so the results returned are before this date."]
     #[serde(rename = "endTime", with = "azure_core::date::rfc3339")]
-    pub end_time: time::OffsetDateTime,
+    pub end_time: ::time::OffsetDateTime,
     #[doc = "The number of bucket for timeline queries aggregation."]
     #[serde(rename = "numberOfBucket", default, skip_serializing_if = "Option::is_none")]
     pub number_of_bucket: Option<i32>,
 }
 impl EntityTimelineParameters {
-    pub fn new(start_time: time::OffsetDateTime, end_time: time::OffsetDateTime) -> Self {
+    pub fn new(start_time: ::time::OffsetDateTime, end_time: ::time::OffsetDateTime) -> Self {
         Self {
             kinds: Vec::new(),
             start_time,
@@ -5875,7 +5874,7 @@ pub struct FileImportProperties {
     pub content_type: file_import_properties::ContentType,
     #[doc = "The time the file was imported."]
     #[serde(rename = "createdTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time_utc: Option<time::OffsetDateTime>,
+    pub created_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Represents a file."]
     #[serde(rename = "errorFile", default, skip_serializing_if = "Option::is_none")]
     pub error_file: Option<FileMetadata>,
@@ -5906,10 +5905,10 @@ pub struct FileImportProperties {
     pub valid_record_count: Option<i32>,
     #[doc = "The time the files associated with this import are deleted from the storage account."]
     #[serde(rename = "filesValidUntilTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub files_valid_until_time_utc: Option<time::OffsetDateTime>,
+    pub files_valid_until_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The time the file import record is soft deleted from the database and history."]
     #[serde(rename = "importValidUntilTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub import_valid_until_time_utc: Option<time::OffsetDateTime>,
+    pub import_valid_until_time_utc: Option<::time::OffsetDateTime>,
 }
 impl FileImportProperties {
     pub fn new(
@@ -6219,7 +6218,7 @@ pub struct FusionAlertRuleProperties {
     pub scenario_exclusion_patterns: Vec<FusionScenarioExclusionPattern>,
     #[doc = "The last time that this alert has been modified."]
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc: Option<time::OffsetDateTime>,
+    pub last_modified_utc: Option<::time::OffsetDateTime>,
     #[doc = "The severity of the alert"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<AlertSeverityEnum>,
@@ -6288,10 +6287,10 @@ pub struct FusionAlertRuleTemplateProperties {
     pub alert_rules_created_by_template_count: Option<i32>,
     #[doc = "The time that this alert rule template has been added."]
     #[serde(rename = "createdDateUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_utc: Option<time::OffsetDateTime>,
+    pub created_date_utc: Option<::time::OffsetDateTime>,
     #[doc = "The time that this alert rule template was last updated."]
     #[serde(rename = "lastUpdatedDateUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_date_utc: Option<time::OffsetDateTime>,
+    pub last_updated_date_utc: Option<::time::OffsetDateTime>,
     #[doc = "The description of the alert rule template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -7229,7 +7228,7 @@ pub struct HuntingBookmarkProperties {
     pub entity_common_properties: EntityCommonProperties,
     #[doc = "The time the bookmark was created"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "User information that made some action"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<UserInfo>,
@@ -7238,7 +7237,7 @@ pub struct HuntingBookmarkProperties {
     pub display_name: String,
     #[doc = "The time of the event"]
     #[serde(rename = "eventTime", default, with = "azure_core::date::rfc3339::option")]
-    pub event_time: Option<time::OffsetDateTime>,
+    pub event_time: Option<::time::OffsetDateTime>,
     #[doc = "List of labels relevant to this bookmark"]
     #[serde(
         default,
@@ -7256,7 +7255,7 @@ pub struct HuntingBookmarkProperties {
     pub query_result: Option<String>,
     #[doc = "The last time the bookmark was updated"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub updated: Option<time::OffsetDateTime>,
+    pub updated: Option<::time::OffsetDateTime>,
     #[doc = "User information that made some action"]
     #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<UserInfo>,
@@ -7481,10 +7480,10 @@ pub struct IncidentCommentProperties {
     pub message: String,
     #[doc = "The time the comment was created"]
     #[serde(rename = "createdTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time_utc: Option<time::OffsetDateTime>,
+    pub created_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The time the comment was updated"]
     #[serde(rename = "lastModifiedTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time_utc: Option<time::OffsetDateTime>,
+    pub last_modified_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Information on the client (user or application) that made some action"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub author: Option<ClientInfo>,
@@ -7748,16 +7747,16 @@ pub struct IncidentProperties {
     pub labels: Vec<IncidentLabel>,
     #[doc = "The time of the first activity in the incident"]
     #[serde(rename = "firstActivityTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub first_activity_time_utc: Option<time::OffsetDateTime>,
+    pub first_activity_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The time of the last activity in the incident"]
     #[serde(rename = "lastActivityTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_activity_time_utc: Option<time::OffsetDateTime>,
+    pub last_activity_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The last time the incident was updated"]
     #[serde(rename = "lastModifiedTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time_utc: Option<time::OffsetDateTime>,
+    pub last_modified_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The time the incident was created"]
     #[serde(rename = "createdTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time_utc: Option<time::OffsetDateTime>,
+    pub created_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "A sequential number"]
     #[serde(rename = "incidentNumber", default, skip_serializing_if = "Option::is_none")]
     pub incident_number: Option<i32>,
@@ -7970,10 +7969,10 @@ pub struct IncidentTaskProperties {
     pub status: IncidentTaskStatus,
     #[doc = "The time the task was created"]
     #[serde(rename = "createdTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time_utc: Option<time::OffsetDateTime>,
+    pub created_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The last time the task was updated"]
     #[serde(rename = "lastModifiedTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_time_utc: Option<time::OffsetDateTime>,
+    pub last_modified_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Information on the client (user or application) that made some action"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<ClientInfo>,
@@ -8357,7 +8356,7 @@ impl JobList {
 pub struct JobProperties {
     #[doc = "The time the job completed"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "List of items published by the job"]
     #[serde(
         default,
@@ -8370,7 +8369,7 @@ pub struct JobProperties {
     pub provisioning_state: Option<job_properties::ProvisioningState>,
     #[doc = "The time the job started"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Message to describe error, if an error exists"]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
@@ -8603,7 +8602,7 @@ pub struct MlBehaviorAnalyticsAlertRuleProperties {
     pub enabled: bool,
     #[doc = "The last time that this alert rule has been modified."]
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc: Option<time::OffsetDateTime>,
+    pub last_modified_utc: Option<::time::OffsetDateTime>,
     #[doc = "The severity of the alert"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<AlertSeverityEnum>,
@@ -9031,7 +9030,7 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleProperties {
     pub enabled: bool,
     #[doc = "The last time that this alert has been modified."]
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc: Option<time::OffsetDateTime>,
+    pub last_modified_utc: Option<::time::OffsetDateTime>,
 }
 impl MicrosoftSecurityIncidentCreationAlertRuleProperties {
     pub fn new(
@@ -9294,7 +9293,7 @@ pub struct NrtAlertRuleProperties {
     pub enabled: bool,
     #[doc = "The last time that this alert rule has been modified."]
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc: Option<time::OffsetDateTime>,
+    pub last_modified_utc: Option<::time::OffsetDateTime>,
     #[doc = "The suppression (in ISO 8601 duration format) to wait since last time this alert rule been triggered."]
     #[serde(rename = "suppressionDuration")]
     pub suppression_duration: String,
@@ -10088,13 +10087,13 @@ pub struct Recommendation {
     pub priority: RecommendationPriority,
     #[doc = "The time stamp (UTC) when the recommendation was last evaluated."]
     #[serde(rename = "lastEvaluatedTimeUtc", with = "azure_core::date::rfc3339")]
-    pub last_evaluated_time_utc: time::OffsetDateTime,
+    pub last_evaluated_time_utc: ::time::OffsetDateTime,
     #[doc = "The time stamp (UTC) when the recommendation should be displayed again."]
     #[serde(rename = "hideUntilTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub hide_until_time_utc: Option<time::OffsetDateTime>,
+    pub hide_until_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The timestamp (UTC) after which the recommendation should not be displayed anymore."]
     #[serde(rename = "displayUntilTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub display_until_time_utc: Option<time::OffsetDateTime>,
+    pub display_until_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Value indicating if the recommendation should be displayed or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visible: Option<bool>,
@@ -10113,7 +10112,7 @@ impl Recommendation {
         actions: Vec<RecommendedAction>,
         state: RecommendationState,
         priority: RecommendationPriority,
-        last_evaluated_time_utc: time::OffsetDateTime,
+        last_evaluated_time_utc: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             id,
@@ -10246,7 +10245,7 @@ pub struct RecommendationPatch {
     pub state: Option<RecommendationState>,
     #[doc = "The time stamp (UTC) when the recommendation should be displayed again."]
     #[serde(rename = "hideUntilTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub hide_until_time_utc: Option<time::OffsetDateTime>,
+    pub hide_until_time_utc: Option<::time::OffsetDateTime>,
 }
 impl RecommendationPatch {
     pub fn new() -> Self {
@@ -10661,7 +10660,7 @@ impl RequiredPermissions {
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
-    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
+    #[doc = "Fully qualified resource ID for the resource. E.g. \"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}\""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The name of the resource"]
@@ -10980,7 +10979,7 @@ pub struct ScheduledAlertRuleProperties {
     pub enabled: bool,
     #[doc = "The last time that this alert rule has been modified."]
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc: Option<time::OffsetDateTime>,
+    pub last_modified_utc: Option<::time::OffsetDateTime>,
     #[doc = "The suppression (in ISO 8601 duration format) to wait since last time this alert rule been triggered."]
     #[serde(rename = "suppressionDuration")]
     pub suppression_duration: String,
@@ -11057,10 +11056,10 @@ pub struct ScheduledAlertRuleTemplateProperties {
     pub alert_rules_created_by_template_count: Option<i32>,
     #[doc = "The time that this alert rule template has been added."]
     #[serde(rename = "createdDateUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_utc: Option<time::OffsetDateTime>,
+    pub created_date_utc: Option<::time::OffsetDateTime>,
     #[doc = "The time that this alert rule template was last updated."]
     #[serde(rename = "lastUpdatedDateUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_date_utc: Option<time::OffsetDateTime>,
+    pub last_updated_date_utc: Option<::time::OffsetDateTime>,
     #[doc = "The description of the alert rule template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -11192,7 +11191,7 @@ pub struct SecurityAlertProperties {
     pub description: Option<String>,
     #[doc = "The impact end time of the alert (the time of the last event contributing to the alert)."]
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time_utc: Option<time::OffsetDateTime>,
+    pub end_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Holds the alert intent stage(s) mapping for this alert."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub intent: Option<security_alert_properties::Intent>,
@@ -11201,7 +11200,7 @@ pub struct SecurityAlertProperties {
     pub provider_alert_id: Option<String>,
     #[doc = "The time the alert was made available for consumption."]
     #[serde(rename = "processingEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub processing_end_time: Option<time::OffsetDateTime>,
+    pub processing_end_time: Option<::time::OffsetDateTime>,
     #[doc = "The name of a component inside the product which generated the alert."]
     #[serde(rename = "productComponentName", default, skip_serializing_if = "Option::is_none")]
     pub product_component_name: Option<String>,
@@ -11224,7 +11223,7 @@ pub struct SecurityAlertProperties {
     pub severity: Option<AlertSeverityEnum>,
     #[doc = "The impact start time of the alert (the time of the first event contributing to the alert)."]
     #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time_utc: Option<time::OffsetDateTime>,
+    pub start_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The lifecycle status of the alert."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<security_alert_properties::Status>,
@@ -11240,7 +11239,7 @@ pub struct SecurityAlertProperties {
     pub tactics: Vec<AttackTactic>,
     #[doc = "The time the alert was generated."]
     #[serde(rename = "timeGenerated", default, with = "azure_core::date::rfc3339::option")]
-    pub time_generated: Option<time::OffsetDateTime>,
+    pub time_generated: Option<::time::OffsetDateTime>,
     #[doc = "The name of the vendor that raise the alert."]
     #[serde(rename = "vendorName", default, skip_serializing_if = "Option::is_none")]
     pub vendor_name: Option<String>,
@@ -11467,13 +11466,13 @@ pub struct SecurityAlertTimelineItem {
     pub severity: AlertSeverityEnum,
     #[doc = "The alert end time."]
     #[serde(rename = "endTimeUtc", with = "azure_core::date::rfc3339")]
-    pub end_time_utc: time::OffsetDateTime,
+    pub end_time_utc: ::time::OffsetDateTime,
     #[doc = "The alert start time."]
     #[serde(rename = "startTimeUtc", with = "azure_core::date::rfc3339")]
-    pub start_time_utc: time::OffsetDateTime,
+    pub start_time_utc: ::time::OffsetDateTime,
     #[doc = "The alert generated time."]
     #[serde(rename = "timeGenerated", with = "azure_core::date::rfc3339")]
-    pub time_generated: time::OffsetDateTime,
+    pub time_generated: ::time::OffsetDateTime,
     #[doc = "The name of the alert type."]
     #[serde(rename = "alertType")]
     pub alert_type: String,
@@ -11493,9 +11492,9 @@ impl SecurityAlertTimelineItem {
         azure_resource_id: String,
         display_name: String,
         severity: AlertSeverityEnum,
-        end_time_utc: time::OffsetDateTime,
-        start_time_utc: time::OffsetDateTime,
-        time_generated: time::OffsetDateTime,
+        end_time_utc: ::time::OffsetDateTime,
+        start_time_utc: ::time::OffsetDateTime,
+        time_generated: ::time::OffsetDateTime,
         alert_type: String,
     ) -> Self {
         Self {
@@ -11735,7 +11734,7 @@ pub struct ServicePrincipal {
     pub app_id: Option<String>,
     #[doc = "Expiration time of service principal credentials."]
     #[serde(rename = "credentialsExpireOn", default, with = "azure_core::date::rfc3339::option")]
-    pub credentials_expire_on: Option<time::OffsetDateTime>,
+    pub credentials_expire_on: Option<::time::OffsetDateTime>,
 }
 impl ServicePrincipal {
     pub fn new() -> Self {
@@ -11926,7 +11925,7 @@ pub struct TiDataConnectorProperties {
     pub data_connector_tenant_id: DataConnectorTenantId,
     #[doc = "The lookback period for the feed to be imported."]
     #[serde(rename = "tipLookbackPeriod", default, with = "azure_core::date::rfc3339::option")]
-    pub tip_lookback_period: Option<time::OffsetDateTime>,
+    pub tip_lookback_period: Option<::time::OffsetDateTime>,
     #[doc = "The available data types for TI (Threat Intelligence) data connector."]
     #[serde(rename = "dataTypes")]
     pub data_types: TiDataConnectorDataTypes,
@@ -11951,7 +11950,7 @@ pub struct TeamInformation {
     pub primary_channel_url: Option<String>,
     #[doc = "The time the team was created"]
     #[serde(rename = "teamCreationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub team_creation_time_utc: Option<time::OffsetDateTime>,
+    pub team_creation_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The name of the team"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -12033,7 +12032,7 @@ pub struct ThreatIntelligenceAlertRuleProperties {
     pub enabled: bool,
     #[doc = "The last time that this alert has been modified."]
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc: Option<time::OffsetDateTime>,
+    pub last_modified_utc: Option<::time::OffsetDateTime>,
     #[doc = "The severity of the alert"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<AlertSeverityEnum>,
@@ -12739,7 +12738,7 @@ pub struct TiTaxiiDataConnectorProperties {
     pub password: Option<String>,
     #[doc = "The lookback period for the TAXII server."]
     #[serde(rename = "taxiiLookbackPeriod", default, with = "azure_core::date::rfc3339::option")]
-    pub taxii_lookback_period: Option<time::OffsetDateTime>,
+    pub taxii_lookback_period: Option<::time::OffsetDateTime>,
     #[doc = "The polling frequency for the TAXII server."]
     #[serde(rename = "pollingFrequency")]
     pub polling_frequency: ti_taxii_data_connector_properties::PollingFrequency,
@@ -12888,7 +12887,7 @@ impl TriggeredAnalyticsRuleRun {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggeredAnalyticsRuleRunProperties {
     #[serde(rename = "executionTimeUtc", with = "azure_core::date::rfc3339")]
-    pub execution_time_utc: time::OffsetDateTime,
+    pub execution_time_utc: ::time::OffsetDateTime,
     #[serde(rename = "ruleId")]
     pub rule_id: String,
     #[serde(rename = "triggeredAnalyticsRuleRunId")]
@@ -12901,7 +12900,7 @@ pub struct TriggeredAnalyticsRuleRunProperties {
 }
 impl TriggeredAnalyticsRuleRunProperties {
     pub fn new(
-        execution_time_utc: time::OffsetDateTime,
+        execution_time_utc: ::time::OffsetDateTime,
         rule_id: String,
         triggered_analytics_rule_run_id: String,
         provisioning_state: ProvisioningState,
@@ -13239,10 +13238,10 @@ pub struct WatchlistItemProperties {
     pub is_deleted: Option<bool>,
     #[doc = "The time the watchlist item was created"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The last time the watchlist item was updated"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub updated: Option<time::OffsetDateTime>,
+    pub updated: Option<::time::OffsetDateTime>,
     #[doc = "User information that made some action"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<UserInfo>,
@@ -13311,10 +13310,10 @@ pub struct WatchlistProperties {
     pub source_type: Option<watchlist_properties::SourceType>,
     #[doc = "The time the watchlist was created"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The last time the watchlist was updated"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub updated: Option<time::OffsetDateTime>,
+    pub updated: Option<::time::OffsetDateTime>,
     #[doc = "User information that made some action"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<UserInfo>,
@@ -13442,7 +13441,7 @@ pub struct Webhook {
     pub webhook_url: Option<String>,
     #[doc = "Time when the webhook secret was updated."]
     #[serde(rename = "webhookSecretUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub webhook_secret_update_time: Option<time::OffsetDateTime>,
+    pub webhook_secret_update_time: Option<::time::OffsetDateTime>,
     #[doc = "A flag to instruct the backend service to rotate webhook secret."]
     #[serde(rename = "rotateWebhookSecret", default, skip_serializing_if = "Option::is_none")]
     pub rotate_webhook_secret: Option<bool>,
@@ -13494,7 +13493,7 @@ pub struct WorkspaceManagerAssignmentProperties {
     pub target_resource_name: String,
     #[doc = "The time the last job associated to this assignment ended at"]
     #[serde(rename = "lastJobEndTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_job_end_time: Option<time::OffsetDateTime>,
+    pub last_job_end_time: Option<::time::OffsetDateTime>,
     #[doc = "State of the last job associated to this assignment"]
     #[serde(rename = "lastJobProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub last_job_provisioning_state: Option<workspace_manager_assignment_properties::LastJobProvisioningState>,
@@ -13790,7 +13789,7 @@ pub struct JobItem {
     pub status: Option<job_item::Status>,
     #[doc = "The time the item publishing was completed"]
     #[serde(rename = "executionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub execution_time: Option<time::OffsetDateTime>,
+    pub execution_time: Option<::time::OffsetDateTime>,
     #[doc = "The list of error descriptions if the item publication fails."]
     #[serde(
         default,
@@ -14631,7 +14630,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -14640,7 +14639,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

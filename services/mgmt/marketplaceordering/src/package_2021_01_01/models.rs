@@ -26,7 +26,7 @@ pub struct AgreementProperties {
     pub marketplace_terms_link: Option<String>,
     #[doc = "Date and time in UTC of when the terms were accepted. This is empty if Accepted is false."]
     #[serde(rename = "retrieveDatetime", default, with = "azure_core::date::rfc3339::option")]
-    pub retrieve_datetime: Option<time::OffsetDateTime>,
+    pub retrieve_datetime: Option<::time::OffsetDateTime>,
     #[doc = "Terms signature."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
@@ -106,10 +106,10 @@ pub struct OldAgreementProperties {
     pub offer: Option<String>,
     #[doc = "Date and time in UTC of when the terms were accepted. This is empty if state is cancelled."]
     #[serde(rename = "signDate", default, with = "azure_core::date::rfc3339::option")]
-    pub sign_date: Option<time::OffsetDateTime>,
+    pub sign_date: Option<::time::OffsetDateTime>,
     #[doc = "Date and time in UTC of when the terms were cancelled. This is empty if state is active."]
     #[serde(rename = "cancelDate", default, with = "azure_core::date::rfc3339::option")]
-    pub cancel_date: Option<time::OffsetDateTime>,
+    pub cancel_date: Option<::time::OffsetDateTime>,
     #[doc = "Whether the agreement is active or cancelled"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<old_agreement_properties::State>,
@@ -281,7 +281,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -290,7 +290,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

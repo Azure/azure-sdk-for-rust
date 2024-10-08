@@ -1553,8 +1553,8 @@ pub mod adds_services {
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
             pub(crate) group_key: Option<String>,
-            pub(crate) from_date: Option<time::OffsetDateTime>,
-            pub(crate) to_date: Option<time::OffsetDateTime>,
+            pub(crate) from_date: Option<::time::OffsetDateTime>,
+            pub(crate) to_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The group key"]
@@ -1563,12 +1563,12 @@ pub mod adds_services {
                 self
             }
             #[doc = "The start date."]
-            pub fn from_date(mut self, from_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn from_date(mut self, from_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
             #[doc = "The end date."]
-            pub fn to_date(mut self, to_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn to_date(mut self, to_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
             }
@@ -1914,8 +1914,8 @@ pub mod adds_services {
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) state: Option<String>,
-            pub(crate) from: Option<time::OffsetDateTime>,
-            pub(crate) to: Option<time::OffsetDateTime>,
+            pub(crate) from: Option<::time::OffsetDateTime>,
+            pub(crate) to: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The alert property filter to apply."]
@@ -1929,12 +1929,12 @@ pub mod adds_services {
                 self
             }
             #[doc = "The start date to query for."]
-            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn from(mut self, from: impl Into<::time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "The end date till when to query for."]
-            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn to(mut self, to: impl Into<::time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -2234,8 +2234,8 @@ pub mod alerts {
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) state: Option<String>,
-            pub(crate) from: Option<time::OffsetDateTime>,
-            pub(crate) to: Option<time::OffsetDateTime>,
+            pub(crate) from: Option<::time::OffsetDateTime>,
+            pub(crate) to: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The alert property filter to apply."]
@@ -2249,12 +2249,12 @@ pub mod alerts {
                 self
             }
             #[doc = "The start date to query for."]
-            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn from(mut self, from: impl Into<::time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "The end date till when to query for."]
-            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn to(mut self, to: impl Into<::time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -3990,8 +3990,8 @@ pub mod adds_service {
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
             pub(crate) group_key: Option<String>,
-            pub(crate) from_date: Option<time::OffsetDateTime>,
-            pub(crate) to_date: Option<time::OffsetDateTime>,
+            pub(crate) from_date: Option<::time::OffsetDateTime>,
+            pub(crate) to_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The group key"]
@@ -4000,12 +4000,12 @@ pub mod adds_service {
                 self
             }
             #[doc = "The start date."]
-            pub fn from_date(mut self, from_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn from_date(mut self, from_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
             #[doc = "The end date."]
-            pub fn to_date(mut self, to_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn to_date(mut self, to_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
             }
@@ -5774,8 +5774,8 @@ pub mod services {
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) state: Option<String>,
-            pub(crate) from: Option<time::OffsetDateTime>,
-            pub(crate) to: Option<time::OffsetDateTime>,
+            pub(crate) from: Option<::time::OffsetDateTime>,
+            pub(crate) to: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The alert property filter to apply."]
@@ -5789,12 +5789,12 @@ pub mod services {
                 self
             }
             #[doc = "The start date to query for."]
-            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn from(mut self, from: impl Into<::time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "The end date till when to query for."]
-            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn to(mut self, to: impl Into<::time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -6983,8 +6983,8 @@ pub mod services {
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
             pub(crate) group_key: Option<String>,
-            pub(crate) from_date: Option<time::OffsetDateTime>,
-            pub(crate) to_date: Option<time::OffsetDateTime>,
+            pub(crate) from_date: Option<::time::OffsetDateTime>,
+            pub(crate) to_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The group key"]
@@ -6993,12 +6993,12 @@ pub mod services {
                 self
             }
             #[doc = "The start date."]
-            pub fn from_date(mut self, from_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn from_date(mut self, from_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
             #[doc = "The end date."]
-            pub fn to_date(mut self, to_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn to_date(mut self, to_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
             }
@@ -7700,8 +7700,8 @@ pub mod service {
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
             pub(crate) group_key: Option<String>,
-            pub(crate) from_date: Option<time::OffsetDateTime>,
-            pub(crate) to_date: Option<time::OffsetDateTime>,
+            pub(crate) from_date: Option<::time::OffsetDateTime>,
+            pub(crate) to_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The group key"]
@@ -7710,12 +7710,12 @@ pub mod service {
                 self
             }
             #[doc = "The start date."]
-            pub fn from_date(mut self, from_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn from_date(mut self, from_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
             #[doc = "The end date."]
-            pub fn to_date(mut self, to_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn to_date(mut self, to_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
             }
@@ -8497,8 +8497,8 @@ pub mod service_members {
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) state: Option<String>,
-            pub(crate) from: Option<time::OffsetDateTime>,
-            pub(crate) to: Option<time::OffsetDateTime>,
+            pub(crate) from: Option<::time::OffsetDateTime>,
+            pub(crate) to: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The alert property filter to apply."]
@@ -8512,12 +8512,12 @@ pub mod service_members {
                 self
             }
             #[doc = "The start date to query for."]
-            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn from(mut self, from: impl Into<::time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "The end date till when to query for."]
-            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn to(mut self, to: impl Into<::time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -9221,8 +9221,8 @@ pub mod service_members {
             pub(crate) group_name: String,
             pub(crate) service_member_id: String,
             pub(crate) group_key: Option<String>,
-            pub(crate) from_date: Option<time::OffsetDateTime>,
-            pub(crate) to_date: Option<time::OffsetDateTime>,
+            pub(crate) from_date: Option<::time::OffsetDateTime>,
+            pub(crate) to_date: Option<::time::OffsetDateTime>,
         }
         impl RequestBuilder {
             #[doc = "The group key"]
@@ -9231,12 +9231,12 @@ pub mod service_members {
                 self
             }
             #[doc = "The start date."]
-            pub fn from_date(mut self, from_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn from_date(mut self, from_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
             #[doc = "The end date."]
-            pub fn to_date(mut self, to_date: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn to_date(mut self, to_date: impl Into<::time::OffsetDateTime>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
             }

@@ -106,7 +106,7 @@ pub struct CertificateProperties {
     pub subject: Option<String>,
     #[doc = "The certificate's expiration date and time."]
     #[serde(default, with = "azure_core::date::rfc1123::option")]
-    pub expiry: Option<time::OffsetDateTime>,
+    pub expiry: Option<::time::OffsetDateTime>,
     #[doc = "The certificate's thumbprint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
@@ -115,10 +115,10 @@ pub struct CertificateProperties {
     pub is_verified: Option<bool>,
     #[doc = "The certificate's create date and time."]
     #[serde(default, with = "azure_core::date::rfc1123::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The certificate's last update date and time."]
     #[serde(default, with = "azure_core::date::rfc1123::option")]
-    pub updated: Option<time::OffsetDateTime>,
+    pub updated: Option<::time::OffsetDateTime>,
     #[doc = "The certificate content"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub certificate: Option<String>,
@@ -136,7 +136,7 @@ pub struct CertificatePropertiesWithNonce {
     pub subject: Option<String>,
     #[doc = "The certificate's expiration date and time."]
     #[serde(default, with = "azure_core::date::rfc1123::option")]
-    pub expiry: Option<time::OffsetDateTime>,
+    pub expiry: Option<::time::OffsetDateTime>,
     #[doc = "The certificate's thumbprint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
@@ -145,10 +145,10 @@ pub struct CertificatePropertiesWithNonce {
     pub is_verified: Option<bool>,
     #[doc = "The certificate's create date and time."]
     #[serde(default, with = "azure_core::date::rfc1123::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "The certificate's last update date and time."]
     #[serde(default, with = "azure_core::date::rfc1123::option")]
-    pub updated: Option<time::OffsetDateTime>,
+    pub updated: Option<::time::OffsetDateTime>,
     #[doc = "The certificate's verification code that will be used for proof of possession."]
     #[serde(rename = "verificationCode", default, skip_serializing_if = "Option::is_none")]
     pub verification_code: Option<String>,
@@ -249,13 +249,13 @@ pub struct EndpointHealthData {
     pub last_known_error: Option<String>,
     #[doc = "Time at which the last known error occurred"]
     #[serde(rename = "lastKnownErrorTime", default, with = "azure_core::date::rfc1123::option")]
-    pub last_known_error_time: Option<time::OffsetDateTime>,
+    pub last_known_error_time: Option<::time::OffsetDateTime>,
     #[doc = "Last time iot hub successfully sent a message to the endpoint"]
     #[serde(rename = "lastSuccessfulSendAttemptTime", default, with = "azure_core::date::rfc1123::option")]
-    pub last_successful_send_attempt_time: Option<time::OffsetDateTime>,
+    pub last_successful_send_attempt_time: Option<::time::OffsetDateTime>,
     #[doc = "Last time iot hub tried to send a message to the endpoint"]
     #[serde(rename = "lastSendAttemptTime", default, with = "azure_core::date::rfc1123::option")]
-    pub last_send_attempt_time: Option<time::OffsetDateTime>,
+    pub last_send_attempt_time: Option<::time::OffsetDateTime>,
 }
 impl EndpointHealthData {
     pub fn new() -> Self {
@@ -1338,10 +1338,10 @@ pub struct JobResponse {
     pub job_id: Option<String>,
     #[doc = "The start time of the job."]
     #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc1123::option")]
-    pub start_time_utc: Option<time::OffsetDateTime>,
+    pub start_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The time the job stopped processing."]
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc1123::option")]
-    pub end_time_utc: Option<time::OffsetDateTime>,
+    pub end_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The type of the job."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_response::Type>,

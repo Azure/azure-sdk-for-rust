@@ -99,7 +99,7 @@ pub struct AlertFilter {
     pub source_name: Option<String>,
     #[doc = "UTC time on which the alert appeared"]
     #[serde(rename = "appearedOnTime", default, with = "azure_core::date::rfc3339::option")]
-    pub appeared_on_time: Option<time::OffsetDateTime>,
+    pub appeared_on_time: Option<::time::OffsetDateTime>,
 }
 impl AlertFilter {
     pub fn new() -> Self {
@@ -160,16 +160,16 @@ pub struct AlertProperties {
     pub alert_type: String,
     #[doc = "UTC time at which the alert appeared"]
     #[serde(rename = "appearedAtTime", with = "azure_core::date::rfc3339")]
-    pub appeared_at_time: time::OffsetDateTime,
+    pub appeared_at_time: ::time::OffsetDateTime,
     #[doc = "UTC time at which the alert appeared on the source"]
     #[serde(rename = "appearedAtSourceTime", with = "azure_core::date::rfc3339")]
-    pub appeared_at_source_time: time::OffsetDateTime,
+    pub appeared_at_source_time: ::time::OffsetDateTime,
     #[doc = "UTC time at which the alert got cleared"]
     #[serde(rename = "clearedAtTime", default, with = "azure_core::date::rfc3339::option")]
-    pub cleared_at_time: Option<time::OffsetDateTime>,
+    pub cleared_at_time: Option<::time::OffsetDateTime>,
     #[doc = "UTC time at which the alert was cleared on the source"]
     #[serde(rename = "clearedAtSourceTime", default, with = "azure_core::date::rfc3339::option")]
-    pub cleared_at_source_time: Option<time::OffsetDateTime>,
+    pub cleared_at_source_time: Option<::time::OffsetDateTime>,
     #[doc = "source at which the alert can be raised"]
     pub source: AlertSource,
     #[doc = "Recommendation for acting on the alert"]
@@ -194,8 +194,8 @@ impl AlertProperties {
         title: String,
         scope: alert_properties::Scope,
         alert_type: String,
-        appeared_at_time: time::OffsetDateTime,
-        appeared_at_source_time: time::OffsetDateTime,
+        appeared_at_time: ::time::OffsetDateTime,
+        appeared_at_source_time: ::time::OffsetDateTime,
         source: AlertSource,
         severity: alert_properties::Severity,
         status: alert_properties::Status,
@@ -509,7 +509,7 @@ pub struct BackupFilter {
     pub initiated_by: Option<backup_filter::InitiatedBy>,
     #[doc = "Gets or sets CreatedTime"]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
 }
 impl BackupFilter {
     pub fn new() -> Self {
@@ -559,10 +559,10 @@ pub struct BackupProperties {
     pub size_in_bytes: i64,
     #[doc = "The time when the backup was created."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_time: Option<time::OffsetDateTime>,
+    pub created_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the backup will expire."]
     #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time: Option<time::OffsetDateTime>,
+    pub expiration_time: Option<::time::OffsetDateTime>,
     #[doc = "Indicates how the backup was initiated \"Manual | Scheduled\"."]
     #[serde(rename = "initiatedBy")]
     pub initiated_by: backup_properties::InitiatedBy,
@@ -847,7 +847,7 @@ impl DevicePatch {
 pub struct DeviceProperties {
     #[doc = "The UTC time at which the device was activated"]
     #[serde(rename = "activationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub activation_time: Option<time::OffsetDateTime>,
+    pub activation_time: Option<::time::OffsetDateTime>,
     #[doc = "Operations that are allowed on the device based on its current state"]
     #[serde(
         rename = "allowedDeviceOperations",
@@ -1405,10 +1405,10 @@ pub struct Job {
     pub status: job::Status,
     #[doc = "The UTC time at which the job was started"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The UTC time at which the job completed"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The percentage of the job that is already complete"]
     #[serde(rename = "percentComplete")]
     pub percent_complete: i32,
@@ -1505,7 +1505,7 @@ pub struct JobFilter {
     pub status: job_filter::Status,
     #[doc = "The start time of the job."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
 }
 impl JobFilter {
     pub fn new(job_type: job_filter::JobType, status: job_filter::Status) -> Self {
@@ -1599,7 +1599,7 @@ pub struct JobProperties {
     pub source_device_id: Option<String>,
     #[doc = "The time of the backup used for the failover."]
     #[serde(rename = "backupPointInTime", default, with = "azure_core::date::rfc3339::option")]
-    pub backup_point_in_time: Option<time::OffsetDateTime>,
+    pub backup_point_in_time: Option<::time::OffsetDateTime>,
     #[doc = "details available during the download"]
     #[serde(rename = "downloadProgress", default, skip_serializing_if = "Option::is_none")]
     pub download_progress: Option<UpdateDownloadProgress>,
@@ -1894,7 +1894,7 @@ impl MetricAvailablity {
 pub struct MetricData {
     #[doc = "The time when the metric data is fetched"]
     #[serde(rename = "timeStamp", with = "azure_core::date::rfc3339")]
-    pub time_stamp: time::OffsetDateTime,
+    pub time_stamp: ::time::OffsetDateTime,
     #[doc = "The sum of all the samples available in the given instance of time for the specific metric data"]
     pub sum: f64,
     #[doc = "The count of samples of the metric data available for the given instance"]
@@ -1907,7 +1907,7 @@ pub struct MetricData {
     pub maximum: f64,
 }
 impl MetricData {
-    pub fn new(time_stamp: time::OffsetDateTime, sum: f64, count: i32, average: f64, minimum: f64, maximum: f64) -> Self {
+    pub fn new(time_stamp: ::time::OffsetDateTime, sum: f64, count: i32, average: f64, minimum: f64, maximum: f64) -> Self {
         Self {
             time_stamp,
             sum,
@@ -2022,10 +2022,10 @@ pub struct MetricFilter {
     pub name: Option<MetricNameFilter>,
     #[doc = "starttime for fetching metrics"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "endtime for fetching metrics"]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "timegrain of the metrics"]
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
@@ -2086,10 +2086,10 @@ pub struct Metrics {
     pub resource_id: String,
     #[doc = "The metric start time"]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "The metric end time"]
     #[serde(rename = "endTime", with = "azure_core::date::rfc3339")]
-    pub end_time: time::OffsetDateTime,
+    pub end_time: ::time::OffsetDateTime,
     #[doc = "The time grain, time grain indicates frequency of the metric data"]
     #[serde(rename = "timeGrain")]
     pub time_grain: String,
@@ -2111,8 +2111,8 @@ pub struct Metrics {
 impl Metrics {
     pub fn new(
         resource_id: String,
-        start_time: time::OffsetDateTime,
-        end_time: time::OffsetDateTime,
+        start_time: ::time::OffsetDateTime,
+        end_time: ::time::OffsetDateTime,
         time_grain: String,
         primary_aggregation: metrics::PrimaryAggregation,
         name: MetricName,
@@ -2333,10 +2333,10 @@ pub struct ResourceCertificateAndAadDetails {
     pub subject: String,
     #[doc = "Certificate Validity start Date time"]
     #[serde(rename = "validFrom", with = "azure_core::date::rfc3339")]
-    pub valid_from: time::OffsetDateTime,
+    pub valid_from: ::time::OffsetDateTime,
     #[doc = "Certificate Validity End Date time"]
     #[serde(rename = "validTo", with = "azure_core::date::rfc3339")]
-    pub valid_to: time::OffsetDateTime,
+    pub valid_to: ::time::OffsetDateTime,
     #[doc = "Certificate thumbprint"]
     pub thumbprint: String,
     #[doc = "Certificate friendly name"]
@@ -2355,8 +2355,8 @@ impl ResourceCertificateAndAadDetails {
         service_principal_object_id: String,
         azure_management_endpoint_audience: String,
         subject: String,
-        valid_from: time::OffsetDateTime,
-        valid_to: time::OffsetDateTime,
+        valid_from: ::time::OffsetDateTime,
+        valid_to: ::time::OffsetDateTime,
         thumbprint: String,
         friendly_name: String,
         issuer: String,
@@ -2746,7 +2746,7 @@ pub struct UpdatesProperties {
     pub device_version: Option<String>,
     #[doc = "The last time when the device did an update scan."]
     #[serde(rename = "deviceLastScannedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub device_last_scanned_time: Option<time::OffsetDateTime>,
+    pub device_last_scanned_time: Option<::time::OffsetDateTime>,
     #[doc = "Set to true if regular updates were detected for the current version of the device."]
     #[serde(rename = "regularUpdatesAvailable", default, skip_serializing_if = "Option::is_none")]
     pub regular_updates_available: Option<bool>,
@@ -2764,13 +2764,13 @@ pub struct UpdatesProperties {
     pub status: Option<updates_properties::Status>,
     #[doc = "The time when the last scan job was completed (success|cancelled|failed) on the device."]
     #[serde(rename = "lastCompletedScanTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_completed_scan_time: Option<time::OffsetDateTime>,
+    pub last_completed_scan_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the last Download job was completed (success|cancelled|failed) on the device."]
     #[serde(rename = "lastCompletedDownloadJobTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_completed_download_job_time: Option<time::OffsetDateTime>,
+    pub last_completed_download_job_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the last Install job was completed (success|cancelled|failed) on the device."]
     #[serde(rename = "lastCompletedInstallJobTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_completed_install_job_time: Option<time::OffsetDateTime>,
+    pub last_completed_install_job_time: Option<::time::OffsetDateTime>,
     #[doc = "If a download is in progress, this field contains the JobId of that particular download job"]
     #[serde(rename = "inProgressDownloadJobId", default, skip_serializing_if = "Option::is_none")]
     pub in_progress_download_job_id: Option<String>,
@@ -2779,13 +2779,13 @@ pub struct UpdatesProperties {
     pub in_progress_install_job_id: Option<String>,
     #[doc = "The time when the currently running scan (if any) started"]
     #[serde(rename = "inProgressScanStartedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub in_progress_scan_started_time: Option<time::OffsetDateTime>,
+    pub in_progress_scan_started_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the currently running download (if any) started"]
     #[serde(rename = "inProgressDownloadJobStartedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub in_progress_download_job_started_time: Option<time::OffsetDateTime>,
+    pub in_progress_download_job_started_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the currently running install (if any) started"]
     #[serde(rename = "inProgressInstallJobStartedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub in_progress_install_job_started_time: Option<time::OffsetDateTime>,
+    pub in_progress_install_job_started_time: Option<::time::OffsetDateTime>,
 }
 impl UpdatesProperties {
     pub fn new() -> Self {

@@ -191,7 +191,7 @@ pub struct ApplicationContainerInstanceExitedEvent {
     pub unexpected_termination: bool,
     #[doc = "Start time of process."]
     #[serde(rename = "StartTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
 }
 impl ApplicationContainerInstanceExitedEvent {
     pub fn new(
@@ -207,7 +207,7 @@ impl ApplicationContainerInstanceExitedEvent {
         host_id: String,
         exit_code: i64,
         unexpected_termination: bool,
-        start_time: time::OffsetDateTime,
+        start_time: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             application_event,
@@ -517,7 +517,7 @@ pub struct ApplicationHealthReportExpiredEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl ApplicationHealthReportExpiredEvent {
     pub fn new(
@@ -530,7 +530,7 @@ impl ApplicationHealthReportExpiredEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             application_event,
@@ -785,7 +785,7 @@ pub struct ApplicationNewHealthReportEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl ApplicationNewHealthReportEvent {
     pub fn new(
@@ -798,7 +798,7 @@ impl ApplicationNewHealthReportEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             application_event,
@@ -911,7 +911,7 @@ pub struct ApplicationProcessExitedEvent {
     pub unexpected_termination: bool,
     #[doc = "Start time of process."]
     #[serde(rename = "StartTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
 }
 impl ApplicationProcessExitedEvent {
     pub fn new(
@@ -927,7 +927,7 @@ impl ApplicationProcessExitedEvent {
         host_id: String,
         exit_code: i64,
         unexpected_termination: bool,
-        start_time: time::OffsetDateTime,
+        start_time: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             application_event,
@@ -2283,7 +2283,7 @@ pub struct BackupInfo {
     pub lsn_of_last_backup_record: Option<String>,
     #[doc = "The date time when this backup was taken."]
     #[serde(rename = "CreationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time_utc: Option<time::OffsetDateTime>,
+    pub creation_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Manifest Version of the service this partition backup belongs to."]
     #[serde(rename = "ServiceManifestVersion", default, skip_serializing_if = "Option::is_none")]
     pub service_manifest_version: Option<String>,
@@ -2397,7 +2397,7 @@ pub struct BackupProgressInfo {
     pub backup_state: Option<BackupState>,
     #[doc = "TimeStamp in UTC when operation succeeded or failed."]
     #[serde(rename = "TimeStampUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub time_stamp_utc: Option<time::OffsetDateTime>,
+    pub time_stamp_utc: Option<::time::OffsetDateTime>,
     #[doc = "Unique ID of the newly created backup."]
     #[serde(rename = "BackupId", default, skip_serializing_if = "Option::is_none")]
     pub backup_id: Option<String>,
@@ -2824,10 +2824,10 @@ impl ChaosContextMap {
 pub struct ChaosEvent {
     #[doc = "The UTC timestamp when this Chaos event was generated."]
     #[serde(rename = "TimeStampUtc", with = "azure_core::date::rfc3339")]
-    pub time_stamp_utc: time::OffsetDateTime,
+    pub time_stamp_utc: ::time::OffsetDateTime,
 }
 impl ChaosEvent {
-    pub fn new(time_stamp_utc: time::OffsetDateTime) -> Self {
+    pub fn new(time_stamp_utc: ::time::OffsetDateTime) -> Self {
         Self { time_stamp_utc }
     }
 }
@@ -3137,10 +3137,10 @@ impl ChaosReplicaRestartScheduledEvent {
 pub struct ChaosSchedule {
     #[doc = "The date and time Chaos will start using this schedule."]
     #[serde(rename = "StartDate", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date: Option<time::OffsetDateTime>,
+    pub start_date: Option<::time::OffsetDateTime>,
     #[doc = "The date and time Chaos will continue to use this schedule until."]
     #[serde(rename = "ExpiryDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_date: Option<time::OffsetDateTime>,
+    pub expiry_date: Option<::time::OffsetDateTime>,
     #[doc = "A mapping of string names to Chaos Parameters to be referenced by Chaos Schedule Jobs."]
     #[serde(
         rename = "ChaosParametersDictionary",
@@ -3713,7 +3713,7 @@ pub struct ClusterHealthReportExpiredEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl ClusterHealthReportExpiredEvent {
     pub fn new(
@@ -3725,7 +3725,7 @@ impl ClusterHealthReportExpiredEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             cluster_event,
@@ -3745,10 +3745,10 @@ impl ClusterHealthReportExpiredEvent {
 pub struct ClusterLoadInfo {
     #[doc = "The starting time of last resource balancing run."]
     #[serde(rename = "LastBalancingStartTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_balancing_start_time_utc: Option<time::OffsetDateTime>,
+    pub last_balancing_start_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The end time of last resource balancing run."]
     #[serde(rename = "LastBalancingEndTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_balancing_end_time_utc: Option<time::OffsetDateTime>,
+    pub last_balancing_end_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "List that contains metrics and their load information in this cluster."]
     #[serde(
         rename = "LoadMetricInformation",
@@ -3803,7 +3803,7 @@ pub struct ClusterNewHealthReportEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl ClusterNewHealthReportEvent {
     pub fn new(
@@ -3815,7 +3815,7 @@ impl ClusterNewHealthReportEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             cluster_event,
@@ -4140,7 +4140,7 @@ pub struct CodePackageEntryPoint {
     pub status: Option<EntryPointStatus>,
     #[doc = "The time (in UTC) when the entry point executable will be run next."]
     #[serde(rename = "NextActivationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub next_activation_time: Option<time::OffsetDateTime>,
+    pub next_activation_time: Option<::time::OffsetDateTime>,
     #[doc = "The instance ID for current running entry point. For a code package setup entry point (if specified) runs first and after it finishes main entry point is started. Each time entry point executable is run, its instance id will change."]
     #[serde(rename = "InstanceId", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<CodePackageInstanceId>,
@@ -4158,16 +4158,16 @@ pub struct CodePackageEntryPointStatistics {
     pub last_exit_code: Option<String>,
     #[doc = "The last time (in UTC) when Service Fabric attempted to run the entry point."]
     #[serde(rename = "LastActivationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_activation_time: Option<time::OffsetDateTime>,
+    pub last_activation_time: Option<::time::OffsetDateTime>,
     #[doc = "The last time (in UTC) when the entry point finished running."]
     #[serde(rename = "LastExitTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_exit_time: Option<time::OffsetDateTime>,
+    pub last_exit_time: Option<::time::OffsetDateTime>,
     #[doc = "The last time (in UTC) when the entry point ran successfully."]
     #[serde(rename = "LastSuccessfulActivationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_successful_activation_time: Option<time::OffsetDateTime>,
+    pub last_successful_activation_time: Option<::time::OffsetDateTime>,
     #[doc = "The last time (in UTC) when the entry point finished running gracefully."]
     #[serde(rename = "LastSuccessfulExitTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_successful_exit_time: Option<time::OffsetDateTime>,
+    pub last_successful_exit_time: Option<::time::OffsetDateTime>,
     #[doc = "Number of times the entry point has run."]
     #[serde(rename = "ActivationCount", default, skip_serializing_if = "Option::is_none")]
     pub activation_count: Option<String>,
@@ -4762,13 +4762,13 @@ pub struct ContainerState {
     pub state: Option<String>,
     #[doc = "Date/time when the container state started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The container exit code."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<String>,
     #[doc = "Date/time when the container state finished."]
     #[serde(rename = "finishTime", default, with = "azure_core::date::rfc3339::option")]
-    pub finish_time: Option<time::OffsetDateTime>,
+    pub finish_time: Option<::time::OffsetDateTime>,
     #[doc = "Human-readable status of this state."]
     #[serde(rename = "detailStatus", default, skip_serializing_if = "Option::is_none")]
     pub detail_status: Option<String>,
@@ -5087,7 +5087,7 @@ pub struct DeployedApplicationHealthReportExpiredEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl DeployedApplicationHealthReportExpiredEvent {
     pub fn new(
@@ -5101,7 +5101,7 @@ impl DeployedApplicationHealthReportExpiredEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             application_event,
@@ -5264,7 +5264,7 @@ pub struct DeployedApplicationNewHealthReportEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl DeployedApplicationNewHealthReportEvent {
     pub fn new(
@@ -5278,7 +5278,7 @@ impl DeployedApplicationNewHealthReportEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             application_event,
@@ -5498,7 +5498,7 @@ pub struct DeployedServicePackageHealthReportExpiredEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl DeployedServicePackageHealthReportExpiredEvent {
     pub fn new(
@@ -5514,7 +5514,7 @@ impl DeployedServicePackageHealthReportExpiredEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             application_event,
@@ -5671,7 +5671,7 @@ pub struct DeployedServicePackageNewHealthReportEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl DeployedServicePackageNewHealthReportEvent {
     pub fn new(
@@ -5687,7 +5687,7 @@ impl DeployedServicePackageNewHealthReportEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             application_event,
@@ -5745,7 +5745,7 @@ pub struct DeployedServiceReplicaDetailInfo {
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub current_service_operation_start_time_utc: Option<time::OffsetDateTime>,
+    pub current_service_operation_start_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "List of load reported by replica."]
     #[serde(rename = "ReportedLoad", default, skip_serializing_if = "Option::is_none")]
     pub reported_load: Option<LoadMetricReportInfoList>,
@@ -7055,13 +7055,13 @@ pub struct FabricEvent {
     pub category: Option<String>,
     #[doc = "The time event was logged."]
     #[serde(rename = "TimeStamp", with = "azure_core::date::rfc3339")]
-    pub time_stamp: time::OffsetDateTime,
+    pub time_stamp: ::time::OffsetDateTime,
     #[doc = "Shows there is existing related events available."]
     #[serde(rename = "HasCorrelatedEvents", default, skip_serializing_if = "Option::is_none")]
     pub has_correlated_events: Option<bool>,
 }
 impl FabricEvent {
-    pub fn new(event_instance_id: String, time_stamp: time::OffsetDateTime) -> Self {
+    pub fn new(event_instance_id: String, time_stamp: ::time::OffsetDateTime) -> Self {
         Self {
             event_instance_id,
             category: None,
@@ -7521,7 +7521,7 @@ pub struct FileInfo {
     pub file_version: Option<FileVersion>,
     #[doc = "The date and time when the image store file was last modified."]
     #[serde(rename = "ModifiedDate", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date: Option<time::OffsetDateTime>,
+    pub modified_date: Option<::time::OffsetDateTime>,
     #[doc = "The file path relative to the image store root path."]
     #[serde(rename = "StoreRelativePath", default, skip_serializing_if = "Option::is_none")]
     pub store_relative_path: Option<String>,
@@ -7716,10 +7716,10 @@ pub type GatewayResourceName = String;
 pub struct GetBackupByStorageQueryDescription {
     #[doc = "Specifies the start date time in ISO8601 from which to enumerate backups. If not specified, backups are enumerated from the beginning."]
     #[serde(rename = "StartDateTimeFilter", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time_filter: Option<time::OffsetDateTime>,
+    pub start_date_time_filter: Option<::time::OffsetDateTime>,
     #[doc = "Specifies the end date time in ISO8601 till which to enumerate backups. If not specified, backups are enumerated till the end."]
     #[serde(rename = "EndDateTimeFilter", default, with = "azure_core::date::rfc3339::option")]
-    pub end_date_time_filter: Option<time::OffsetDateTime>,
+    pub end_date_time_filter: Option<::time::OffsetDateTime>,
     #[doc = "If specified as true, gets the most recent backup (within the specified time range) for every partition under the specified backup entity."]
     #[serde(rename = "Latest", default, skip_serializing_if = "Option::is_none")]
     pub latest: Option<bool>,
@@ -7921,19 +7921,19 @@ pub struct HealthEvent {
     pub is_expired: Option<bool>,
     #[doc = "The date and time when the health report was sent by the source."]
     #[serde(rename = "SourceUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub source_utc_timestamp: Option<time::OffsetDateTime>,
+    pub source_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The date and time when the health report was last modified by the health store."]
     #[serde(rename = "LastModifiedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc_timestamp: Option<time::OffsetDateTime>,
+    pub last_modified_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "If the current health state is 'Ok', this property returns the time at which the health report was first reported with 'Ok'.\nFor periodic reporting, many reports with the same state may have been generated.\nThis property returns the date and time when the first 'Ok' health report was received.\n\nIf the current health state is 'Error' or 'Warning', returns the date and time at which the health state was last in 'Ok', before transitioning to a different state.\n\nIf the health state was never 'Ok', the value will be zero date-time."]
     #[serde(rename = "LastOkTransitionAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_ok_transition_at: Option<time::OffsetDateTime>,
+    pub last_ok_transition_at: Option<::time::OffsetDateTime>,
     #[doc = "If the current health state is 'Warning', this property returns the time at which the health report was first reported with 'Warning'. For periodic reporting, many reports with the same state may have been generated however, this property returns only the date and time at the first 'Warning' health report was received.\n\nIf the current health state is 'Ok' or 'Error', returns the date and time at which the health state was last in 'Warning', before transitioning to a different state.\n\nIf the health state was never 'Warning', the value will be zero date-time."]
     #[serde(rename = "LastWarningTransitionAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_warning_transition_at: Option<time::OffsetDateTime>,
+    pub last_warning_transition_at: Option<::time::OffsetDateTime>,
     #[doc = "If the current health state is 'Error', this property returns the time at which the health report was first reported with 'Error'. For periodic reporting, many reports with the same state may have been generated however, this property returns only the date and time at the first 'Error' health report was received.\n\nIf the current health state is 'Ok' or 'Warning', returns the date and time at which the health state was last in 'Error', before transitioning to a different state.\n\nIf the health state was never 'Error', the value will be zero date-time."]
     #[serde(rename = "LastErrorTransitionAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_error_transition_at: Option<time::OffsetDateTime>,
+    pub last_error_transition_at: Option<::time::OffsetDateTime>,
 }
 impl HealthEvent {
     pub fn new(health_information: HealthInformation) -> Self {
@@ -8720,7 +8720,7 @@ impl LoadMetricInformation {
 pub struct LoadMetricReport {
     #[doc = "Gets the UTC time when the load was reported."]
     #[serde(rename = "LastReportedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_reported_utc: Option<time::OffsetDateTime>,
+    pub last_reported_utc: Option<::time::OffsetDateTime>,
     #[doc = "The name of the load metric."]
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -8750,7 +8750,7 @@ pub struct LoadMetricReportInfo {
     pub current_value: Option<String>,
     #[doc = "The UTC time when the load is reported."]
     #[serde(rename = "LastReportedUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_reported_utc: Option<time::OffsetDateTime>,
+    pub last_reported_utc: Option<::time::OffsetDateTime>,
 }
 impl LoadMetricReportInfo {
     pub fn new() -> Self {
@@ -9184,7 +9184,7 @@ pub struct NodeDeactivateCompletedEvent {
     pub batch_ids_with_deactivate_intent: String,
     #[doc = "Start time."]
     #[serde(rename = "StartTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
 }
 impl NodeDeactivateCompletedEvent {
     pub fn new(
@@ -9192,7 +9192,7 @@ impl NodeDeactivateCompletedEvent {
         node_instance: i64,
         effective_deactivate_intent: String,
         batch_ids_with_deactivate_intent: String,
-        start_time: time::OffsetDateTime,
+        start_time: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             node_event,
@@ -9415,10 +9415,10 @@ pub struct NodeDownEvent {
     pub node_instance: i64,
     #[doc = "Time when Node was last up."]
     #[serde(rename = "LastNodeUpAt", with = "azure_core::date::rfc3339")]
-    pub last_node_up_at: time::OffsetDateTime,
+    pub last_node_up_at: ::time::OffsetDateTime,
 }
 impl NodeDownEvent {
-    pub fn new(node_event: NodeEvent, node_instance: i64, last_node_up_at: time::OffsetDateTime) -> Self {
+    pub fn new(node_event: NodeEvent, node_instance: i64, last_node_up_at: ::time::OffsetDateTime) -> Self {
         Self {
             node_event,
             node_instance,
@@ -9507,7 +9507,7 @@ pub struct NodeHealthReportExpiredEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl NodeHealthReportExpiredEvent {
     pub fn new(
@@ -9520,7 +9520,7 @@ impl NodeHealthReportExpiredEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             node_event,
@@ -9731,10 +9731,10 @@ pub struct NodeInfo {
     pub node_down_time_in_seconds: Option<String>,
     #[doc = "Date time in UTC when the node came up. If the node has never been up then this value will be zero date time."]
     #[serde(rename = "NodeUpAt", default, with = "azure_core::date::rfc3339::option")]
-    pub node_up_at: Option<time::OffsetDateTime>,
+    pub node_up_at: Option<::time::OffsetDateTime>,
     #[doc = "Date time in UTC when the node went down. If node has never been down then this value will be zero date time."]
     #[serde(rename = "NodeDownAt", default, with = "azure_core::date::rfc3339::option")]
-    pub node_down_at: Option<time::OffsetDateTime>,
+    pub node_down_at: Option<::time::OffsetDateTime>,
 }
 impl NodeInfo {
     pub fn new() -> Self {
@@ -9835,7 +9835,7 @@ pub struct NodeNewHealthReportEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl NodeNewHealthReportEvent {
     pub fn new(
@@ -9848,7 +9848,7 @@ impl NodeNewHealthReportEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             node_event,
@@ -10165,10 +10165,10 @@ pub struct NodeUpEvent {
     pub node_instance: i64,
     #[doc = "Time when Node was last down."]
     #[serde(rename = "LastNodeDownAt", with = "azure_core::date::rfc3339")]
-    pub last_node_down_at: time::OffsetDateTime,
+    pub last_node_down_at: ::time::OffsetDateTime,
 }
 impl NodeUpEvent {
-    pub fn new(node_event: NodeEvent, node_instance: i64, last_node_down_at: time::OffsetDateTime) -> Self {
+    pub fn new(node_event: NodeEvent, node_instance: i64, last_node_down_at: ::time::OffsetDateTime) -> Self {
         Self {
             node_event,
             node_instance,
@@ -11133,7 +11133,7 @@ pub struct PartitionHealthReportExpiredEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl PartitionHealthReportExpiredEvent {
     pub fn new(
@@ -11145,7 +11145,7 @@ impl PartitionHealthReportExpiredEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             partition_event,
@@ -11367,7 +11367,7 @@ pub struct PartitionNewHealthReportEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl PartitionNewHealthReportEvent {
     pub fn new(
@@ -11379,7 +11379,7 @@ impl PartitionNewHealthReportEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             partition_event,
@@ -11401,7 +11401,7 @@ pub struct PartitionPrimaryMoveAnalysisEvent {
     pub partition_analysis_event: PartitionAnalysisEvent,
     #[doc = "Time when the move was completed."]
     #[serde(rename = "WhenMoveCompleted", with = "azure_core::date::rfc3339")]
-    pub when_move_completed: time::OffsetDateTime,
+    pub when_move_completed: ::time::OffsetDateTime,
     #[doc = "The name of a Service Fabric node."]
     #[serde(rename = "PreviousNode")]
     pub previous_node: NodeName,
@@ -11418,7 +11418,7 @@ pub struct PartitionPrimaryMoveAnalysisEvent {
 impl PartitionPrimaryMoveAnalysisEvent {
     pub fn new(
         partition_analysis_event: PartitionAnalysisEvent,
-        when_move_completed: time::OffsetDateTime,
+        when_move_completed: ::time::OffsetDateTime,
         previous_node: NodeName,
         current_node: NodeName,
         move_reason: String,
@@ -11991,7 +11991,7 @@ pub struct PropertyMetadata {
     pub size_in_bytes: Option<i64>,
     #[doc = "Represents when the Property was last modified. Only write operations will cause this field to be updated."]
     #[serde(rename = "LastModifiedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_utc_timestamp: Option<time::OffsetDateTime>,
+    pub last_modified_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The version of the property. Every time a property is modified, its sequence number is increased."]
     #[serde(rename = "SequenceNumber", default, skip_serializing_if = "Option::is_none")]
     pub sequence_number: Option<String>,
@@ -12189,7 +12189,7 @@ pub struct ReconfigurationInformation {
     pub reconfiguration_type: Option<ReconfigurationType>,
     #[doc = "Start time (in UTC) of the ongoing reconfiguration. If no reconfiguration is taking place then this value will be zero date-time."]
     #[serde(rename = "ReconfigurationStartTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub reconfiguration_start_time_utc: Option<time::OffsetDateTime>,
+    pub reconfiguration_start_time_utc: Option<::time::OffsetDateTime>,
 }
 impl ReconfigurationInformation {
     pub fn new() -> Self {
@@ -12373,7 +12373,7 @@ pub struct RemoteReplicatorStatus {
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub last_acknowledgement_processed_time_utc: Option<time::OffsetDateTime>,
+    pub last_acknowledgement_processed_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The highest replication operation sequence number that the secondary has received from the primary."]
     #[serde(rename = "LastReceivedReplicationSequenceNumber", default, skip_serializing_if = "Option::is_none")]
     pub last_received_replication_sequence_number: Option<String>,
@@ -12764,53 +12764,53 @@ impl Serialize for RepairTaskHealthCheckState {
 pub struct RepairTaskHistory {
     #[doc = "The time when the repair task entered the Created state."]
     #[serde(rename = "CreatedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub created_utc_timestamp: Option<time::OffsetDateTime>,
+    pub created_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Claimed state."]
     #[serde(rename = "ClaimedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub claimed_utc_timestamp: Option<time::OffsetDateTime>,
+    pub claimed_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Preparing state."]
     #[serde(rename = "PreparingUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub preparing_utc_timestamp: Option<time::OffsetDateTime>,
+    pub preparing_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Approved state"]
     #[serde(rename = "ApprovedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub approved_utc_timestamp: Option<time::OffsetDateTime>,
+    pub approved_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Executing state"]
     #[serde(rename = "ExecutingUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub executing_utc_timestamp: Option<time::OffsetDateTime>,
+    pub executing_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Restoring state"]
     #[serde(rename = "RestoringUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub restoring_utc_timestamp: Option<time::OffsetDateTime>,
+    pub restoring_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Completed state"]
     #[serde(rename = "CompletedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub completed_utc_timestamp: Option<time::OffsetDateTime>,
+    pub completed_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time when the repair task started the health check in the Preparing state."]
     #[serde(
         rename = "PreparingHealthCheckStartUtcTimestamp",
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub preparing_health_check_start_utc_timestamp: Option<time::OffsetDateTime>,
+    pub preparing_health_check_start_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time when the repair task completed the health check in the Preparing state."]
     #[serde(
         rename = "PreparingHealthCheckEndUtcTimestamp",
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub preparing_health_check_end_utc_timestamp: Option<time::OffsetDateTime>,
+    pub preparing_health_check_end_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time when the repair task started the health check in the Restoring state."]
     #[serde(
         rename = "RestoringHealthCheckStartUtcTimestamp",
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub restoring_health_check_start_utc_timestamp: Option<time::OffsetDateTime>,
+    pub restoring_health_check_start_utc_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time when the repair task completed the health check in the Restoring state."]
     #[serde(
         rename = "RestoringHealthCheckEndUtcTimestamp",
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub restoring_health_check_end_utc_timestamp: Option<time::OffsetDateTime>,
+    pub restoring_health_check_end_utc_timestamp: Option<::time::OffsetDateTime>,
 }
 impl RepairTaskHistory {
     pub fn new() -> Self {
@@ -13615,7 +13615,7 @@ pub struct RestoreProgressInfo {
     pub restore_state: Option<RestoreState>,
     #[doc = "Timestamp when operation succeeded or failed."]
     #[serde(rename = "TimeStampUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub time_stamp_utc: Option<time::OffsetDateTime>,
+    pub time_stamp_utc: Option<::time::OffsetDateTime>,
     #[doc = "An Epoch is a configuration number for the partition as a whole. When the configuration of the replica set changes, for example when the Primary replica changes, the operations that are replicated from the new Primary replica are said to be a new Epoch from the ones which were sent by the old Primary replica."]
     #[serde(rename = "RestoredEpoch", default, skip_serializing_if = "Option::is_none")]
     pub restored_epoch: Option<Epoch>,
@@ -14079,7 +14079,7 @@ pub struct SecondaryReplicatorStatus {
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub last_replication_operation_received_time_utc: Option<time::OffsetDateTime>,
+    pub last_replication_operation_received_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Value that indicates whether the replica is currently being built."]
     #[serde(rename = "IsInBuild", default, skip_serializing_if = "Option::is_none")]
     pub is_in_build: Option<bool>,
@@ -14088,10 +14088,10 @@ pub struct SecondaryReplicatorStatus {
     pub copy_queue_status: Option<ReplicatorQueueStatus>,
     #[doc = "The last time-stamp (UTC) at which a copy operation was received from the primary.\nUTC 0 represents an invalid value, indicating that a copy operation message was never received."]
     #[serde(rename = "LastCopyOperationReceivedTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_copy_operation_received_time_utc: Option<time::OffsetDateTime>,
+    pub last_copy_operation_received_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "The last time-stamp (UTC) at which an acknowledgment was sent to the primary replicator.\nUTC 0 represents an invalid value, indicating that an acknowledgment message was never sent."]
     #[serde(rename = "LastAcknowledgementSentTimeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_acknowledgement_sent_time_utc: Option<time::OffsetDateTime>,
+    pub last_acknowledgement_sent_time_utc: Option<::time::OffsetDateTime>,
 }
 impl SecondaryReplicatorStatus {
     pub fn new() -> Self {
@@ -14713,7 +14713,7 @@ pub struct ServiceHealthReportExpiredEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl ServiceHealthReportExpiredEvent {
     pub fn new(
@@ -14726,7 +14726,7 @@ impl ServiceHealthReportExpiredEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             service_event,
@@ -15033,7 +15033,7 @@ pub struct ServiceNewHealthReportEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl ServiceNewHealthReportEvent {
     pub fn new(
@@ -15046,7 +15046,7 @@ impl ServiceNewHealthReportEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             service_event,
@@ -16002,7 +16002,7 @@ pub struct StatefulReplicaHealthReportExpiredEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl StatefulReplicaHealthReportExpiredEvent {
     pub fn new(
@@ -16015,7 +16015,7 @@ impl StatefulReplicaHealthReportExpiredEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             replica_event,
@@ -16062,7 +16062,7 @@ pub struct StatefulReplicaNewHealthReportEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl StatefulReplicaNewHealthReportEvent {
     pub fn new(
@@ -16075,7 +16075,7 @@ impl StatefulReplicaNewHealthReportEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             replica_event,
@@ -16332,7 +16332,7 @@ pub struct StatelessReplicaHealthReportExpiredEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl StatelessReplicaHealthReportExpiredEvent {
     pub fn new(
@@ -16344,7 +16344,7 @@ impl StatelessReplicaHealthReportExpiredEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             replica_event,
@@ -16387,7 +16387,7 @@ pub struct StatelessReplicaNewHealthReportEvent {
     pub remove_when_expired: bool,
     #[doc = "Source time."]
     #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339")]
-    pub source_utc_timestamp: time::OffsetDateTime,
+    pub source_utc_timestamp: ::time::OffsetDateTime,
 }
 impl StatelessReplicaNewHealthReportEvent {
     pub fn new(
@@ -16399,7 +16399,7 @@ impl StatelessReplicaNewHealthReportEvent {
         sequence_number: i64,
         description: String,
         remove_when_expired: bool,
-        source_utc_timestamp: time::OffsetDateTime,
+        source_utc_timestamp: ::time::OffsetDateTime,
     ) -> Self {
         Self {
             replica_event,
@@ -16689,7 +16689,7 @@ impl TimeBasedBackupScheduleDescription {
         }
     }
 }
-pub type TimeList = Vec<time::OffsetDateTime>;
+pub type TimeList = Vec<::time::OffsetDateTime>;
 #[doc = "Defines an hour and minute of the day specified in 24 hour time."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeOfDay {
@@ -17278,7 +17278,7 @@ pub struct UploadSessionInfo {
     pub session_id: Option<String>,
     #[doc = "The date and time when the upload session was last modified."]
     #[serde(rename = "ModifiedDate", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date: Option<time::OffsetDateTime>,
+    pub modified_date: Option<::time::OffsetDateTime>,
     #[doc = "The size in bytes of the uploading file."]
     #[serde(rename = "FileSize", default, skip_serializing_if = "Option::is_none")]
     pub file_size: Option<String>,

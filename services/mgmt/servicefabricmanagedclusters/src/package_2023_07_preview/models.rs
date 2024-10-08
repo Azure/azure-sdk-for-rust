@@ -934,10 +934,10 @@ pub struct LongRunningOperationResult {
     pub name: Option<String>,
     #[doc = "The start time of the operation."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the operation."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The completion percentage of the operation."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<f64>,
@@ -1349,13 +1349,13 @@ pub struct ManagedMaintenanceWindowStatus {
     pub can_apply_updates: Option<bool>,
     #[doc = "Last window update time in UTC."]
     #[serde(rename = "lastWindowStatusUpdateAtUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub last_window_status_update_at_utc: Option<time::OffsetDateTime>,
+    pub last_window_status_update_at_utc: Option<::time::OffsetDateTime>,
     #[doc = "Last window start time in UTC."]
     #[serde(rename = "lastWindowStartTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub last_window_start_time_utc: Option<time::OffsetDateTime>,
+    pub last_window_start_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Last window end time in UTC."]
     #[serde(rename = "lastWindowEndTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub last_window_end_time_utc: Option<time::OffsetDateTime>,
+    pub last_window_end_time_utc: Option<::time::OffsetDateTime>,
 }
 impl ManagedMaintenanceWindowStatus {
     pub fn new() -> Self {
@@ -3519,7 +3519,7 @@ pub struct SystemData {
     pub created_by_type: Option<String>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -3528,7 +3528,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<String>,
     #[doc = "The timestamp of resource last modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

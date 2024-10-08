@@ -417,7 +417,7 @@ pub struct GuestAgentProfile {
     pub status: Option<guest_agent_profile::Status>,
     #[doc = "The time of the last status change."]
     #[serde(rename = "lastStatusChange", default, with = "azure_core::date::rfc3339::option")]
-    pub last_status_change: Option<time::OffsetDateTime>,
+    pub last_status_change: Option<::time::OffsetDateTime>,
     #[doc = "Gets or sets the Public Key provided by the client for enabling guest management."]
     #[serde(rename = "clientPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub client_public_key: Option<String>,
@@ -1063,7 +1063,7 @@ pub mod machine_extension_instance_view {
         pub message: Option<String>,
         #[doc = "The time of the status."]
         #[serde(default, with = "azure_core::date::rfc3339::option")]
-        pub time: Option<time::OffsetDateTime>,
+        pub time: Option<::time::OffsetDateTime>,
     }
     impl Status {
         pub fn new() -> Self {
@@ -2561,7 +2561,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -2570,7 +2570,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

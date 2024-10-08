@@ -167,10 +167,10 @@ pub struct LockboxRequestResponseProperties {
     pub status: Option<LockboxRequestStatus>,
     #[doc = "The creation time of the request."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The expiration time of the request."]
     #[serde(rename = "expirationDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date_time: Option<time::OffsetDateTime>,
+    pub expiration_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The duration of the request in hours."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<String>,

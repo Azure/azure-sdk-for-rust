@@ -201,10 +201,10 @@ pub struct CertificateProperties {
     pub thumbprint: Option<String>,
     #[doc = "The certificate expiry date."]
     #[serde(rename = "expiryUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub expiry_utc: Option<time::OffsetDateTime>,
+    pub expiry_utc: Option<::time::OffsetDateTime>,
     #[doc = "The certificate not before date."]
     #[serde(rename = "notBeforeUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub not_before_utc: Option<time::OffsetDateTime>,
+    pub not_before_utc: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -350,7 +350,7 @@ pub struct DeploymentProperties {
     pub deployed_images: Vec<Image>,
     #[doc = "Deployment date UTC"]
     #[serde(rename = "deploymentDateUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub deployment_date_utc: Option<time::OffsetDateTime>,
+    pub deployment_date_utc: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -484,10 +484,10 @@ pub struct DeviceInsight {
     pub description: String,
     #[doc = "Event start timestamp"]
     #[serde(rename = "startTimestampUtc", with = "azure_core::date::rfc3339")]
-    pub start_timestamp_utc: time::OffsetDateTime,
+    pub start_timestamp_utc: ::time::OffsetDateTime,
     #[doc = "Event end timestamp"]
     #[serde(rename = "endTimestampUtc", with = "azure_core::date::rfc3339")]
-    pub end_timestamp_utc: time::OffsetDateTime,
+    pub end_timestamp_utc: ::time::OffsetDateTime,
     #[doc = "Event category"]
     #[serde(rename = "eventCategory")]
     pub event_category: String,
@@ -505,8 +505,8 @@ impl DeviceInsight {
     pub fn new(
         device_id: String,
         description: String,
-        start_timestamp_utc: time::OffsetDateTime,
-        end_timestamp_utc: time::OffsetDateTime,
+        start_timestamp_utc: ::time::OffsetDateTime,
+        end_timestamp_utc: ::time::OffsetDateTime,
         event_category: String,
         event_class: String,
         event_type: String,
@@ -573,10 +573,10 @@ pub struct DeviceProperties {
     pub last_installed_os_version: Option<String>,
     #[doc = "Time when update requested and new OS version available"]
     #[serde(rename = "lastOsUpdateUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_os_update_utc: Option<time::OffsetDateTime>,
+    pub last_os_update_utc: Option<::time::OffsetDateTime>,
     #[doc = "Time when update was last requested"]
     #[serde(rename = "lastUpdateRequestUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub last_update_request_utc: Option<time::OffsetDateTime>,
+    pub last_update_request_utc: Option<::time::OffsetDateTime>,
     #[doc = "Provisioning state of resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -1391,7 +1391,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1400,7 +1400,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

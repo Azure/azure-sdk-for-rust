@@ -87,7 +87,7 @@ impl ActiveSessionHostConfigurationList {
 pub struct ActiveSessionHostConfigurationProperties {
     #[doc = "The timestamp of the last update."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub version: Option<time::OffsetDateTime>,
+    pub version: Option<::time::OffsetDateTime>,
     #[doc = "Friendly name to describe this version of the SessionHostConfiguration."]
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
@@ -364,7 +364,7 @@ pub struct AppAttachPackageInfoProperties {
     pub version: Option<String>,
     #[doc = "Date Package was last updated, found in the appxmanifest.xml. "]
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated: Option<time::OffsetDateTime>,
+    pub last_updated: Option<::time::OffsetDateTime>,
     #[doc = "List of package applications. "]
     #[serde(
         rename = "packageApplications",
@@ -378,7 +378,7 @@ pub struct AppAttachPackageInfoProperties {
     pub certificate_name: Option<String>,
     #[doc = "Date certificate expires, found in the appxmanifest.xml. "]
     #[serde(rename = "certificateExpiry", default, with = "azure_core::date::rfc3339::option")]
-    pub certificate_expiry: Option<time::OffsetDateTime>,
+    pub certificate_expiry: Option<::time::OffsetDateTime>,
     #[doc = "Is package timestamped so it can ignore the certificate expiry date"]
     #[serde(rename = "isPackageTimestamped", default, skip_serializing_if = "Option::is_none")]
     pub is_package_timestamped: Option<app_attach_package_info_properties::IsPackageTimestamped>,
@@ -1544,7 +1544,7 @@ pub struct ExpandMsixImageProperties {
     pub version: Option<String>,
     #[doc = "Date Package was last updated, found in the appxmanifest.xml. "]
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated: Option<time::OffsetDateTime>,
+    pub last_updated: Option<::time::OffsetDateTime>,
     #[doc = "List of package applications. "]
     #[serde(
         rename = "packageApplications",
@@ -1558,7 +1558,7 @@ pub struct ExpandMsixImageProperties {
     pub certificate_name: Option<String>,
     #[doc = "Date certificate expires, found in the appxmanifest.xml. "]
     #[serde(rename = "certificateExpiry", default, with = "azure_core::date::rfc3339::option")]
-    pub certificate_expiry: Option<time::OffsetDateTime>,
+    pub certificate_expiry: Option<::time::OffsetDateTime>,
 }
 impl ExpandMsixImageProperties {
     pub fn new() -> Self {
@@ -3244,7 +3244,7 @@ pub struct MsixPackageProperties {
     pub version: Option<String>,
     #[doc = "Date Package was last updated, found in the appxmanifest.xml. "]
     #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated: Option<time::OffsetDateTime>,
+    pub last_updated: Option<::time::OffsetDateTime>,
     #[doc = "List of package applications. "]
     #[serde(
         rename = "packageApplications",
@@ -3790,7 +3790,7 @@ impl ProxyResource {
 pub struct RegistrationInfo {
     #[doc = "Expiration time of registration token."]
     #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time: Option<time::OffsetDateTime>,
+    pub expiration_time: Option<::time::OffsetDateTime>,
     #[doc = "The registration token base64 encoded string."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
@@ -3850,7 +3850,7 @@ pub mod registration_info {
 pub struct RegistrationInfoPatch {
     #[doc = "Expiration time of registration token."]
     #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time: Option<time::OffsetDateTime>,
+    pub expiration_time: Option<::time::OffsetDateTime>,
     #[doc = "The type of resetting the token."]
     #[serde(rename = "registrationTokenOperation", default, skip_serializing_if = "Option::is_none")]
     pub registration_token_operation: Option<registration_info_patch::RegistrationTokenOperation>,
@@ -5700,10 +5700,10 @@ pub struct SessionHostConfigurationOperationStatus {
     pub percent_complete: Option<f64>,
     #[doc = "The start time of the operation."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the operation."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The operations list."]
     #[serde(
         default,
@@ -5830,7 +5830,7 @@ impl SessionHostConfigurationPatchProperties {
 pub struct SessionHostConfigurationProperties {
     #[doc = "The timestamp of the last update."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub version: Option<time::OffsetDateTime>,
+    pub version: Option<::time::OffsetDateTime>,
     #[doc = "Friendly name to describe this version of the SessionHostConfiguration."]
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
@@ -5971,7 +5971,7 @@ pub struct SessionHostHealthCheckFailureDetails {
     pub error_code: Option<i32>,
     #[doc = "The timestamp of the last update."]
     #[serde(rename = "lastHealthCheckDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_health_check_date_time: Option<time::OffsetDateTime>,
+    pub last_health_check_date_time: Option<::time::OffsetDateTime>,
 }
 impl SessionHostHealthCheckFailureDetails {
     pub fn new() -> Self {
@@ -6172,7 +6172,7 @@ impl SessionHostManagementList {
 pub struct SessionHostManagementOperationProgress {
     #[doc = "Time that the sessionHostManagement operation was created."]
     #[serde(rename = "executionStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub execution_start_time: Option<time::OffsetDateTime>,
+    pub execution_start_time: Option<::time::OffsetDateTime>,
     #[doc = "The number of sessionHosts to be started in the sessionHostManagement operation."]
     #[serde(rename = "totalSessionHosts", default, skip_serializing_if = "Option::is_none")]
     pub total_session_hosts: Option<i32>,
@@ -6207,10 +6207,10 @@ pub struct SessionHostManagementOperationStatus {
     pub percent_complete: Option<f64>,
     #[doc = "The start time of the operation."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the operation."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The operations list."]
     #[serde(
         default,
@@ -6281,7 +6281,7 @@ pub struct SessionHostManagementOperationStatusProperties {
     pub progress: Option<SessionHostManagementOperationProgress>,
     #[doc = "The timestamp that the update is scheduled for."]
     #[serde(rename = "scheduledDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_date_time: Option<time::OffsetDateTime>,
+    pub scheduled_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Represents a SessionHostManagement definition."]
     #[serde(rename = "sessionHostManagement", default, skip_serializing_if = "Option::is_none")]
     pub session_host_management: Option<SessionHostManagement>,
@@ -6528,7 +6528,7 @@ pub struct SessionHostProperties {
     pub object_id: Option<String>,
     #[doc = "Last heart beat from SessionHost."]
     #[serde(rename = "lastHeartBeat", default, with = "azure_core::date::rfc3339::option")]
-    pub last_heart_beat: Option<time::OffsetDateTime>,
+    pub last_heart_beat: Option<::time::OffsetDateTime>,
     #[doc = "Number of sessions on SessionHost."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sessions: Option<i32>,
@@ -6555,7 +6555,7 @@ pub struct SessionHostProperties {
     pub status: Option<session_host_properties::Status>,
     #[doc = "The timestamp of the status."]
     #[serde(rename = "statusTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub status_timestamp: Option<time::OffsetDateTime>,
+    pub status_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The version of the OS on the session host."]
     #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
@@ -6567,13 +6567,13 @@ pub struct SessionHostProperties {
     pub update_state: Option<session_host_properties::UpdateState>,
     #[doc = "The timestamp of the last update."]
     #[serde(rename = "lastUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_update_time: Option<time::OffsetDateTime>,
+    pub last_update_time: Option<::time::OffsetDateTime>,
     #[doc = "The error message."]
     #[serde(rename = "updateErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub update_error_message: Option<String>,
     #[doc = "The last time update was completed."]
     #[serde(rename = "lastSessionHostUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_session_host_update_time: Option<time::OffsetDateTime>,
+    pub last_session_host_update_time: Option<::time::OffsetDateTime>,
     #[doc = "SessionHostConfiguration version reference at the time the update is initiated, in the format of date time."]
     #[serde(rename = "sessionHostConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub session_host_configuration: Option<String>,
@@ -6836,7 +6836,7 @@ impl TrackedResource {
 pub struct UpdateSessionHostsRequestBody {
     #[doc = "The timestamp that the update validation is scheduled for. If none is provided, the update will be executed immediately"]
     #[serde(rename = "scheduledDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_date_time: Option<time::OffsetDateTime>,
+    pub scheduled_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The timeZone as defined in https://docs.microsoft.com/dotnet/api/system.timezoneinfo.findsystemtimezonebyid."]
     #[serde(rename = "scheduledDateTimeZone", default, skip_serializing_if = "Option::is_none")]
     pub scheduled_date_time_zone: Option<String>,
@@ -6911,7 +6911,7 @@ pub struct UserSessionProperties {
     pub active_directory_user_name: Option<String>,
     #[doc = "The timestamp of the user session create."]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
-    pub create_time: Option<time::OffsetDateTime>,
+    pub create_time: Option<::time::OffsetDateTime>,
 }
 impl UserSessionProperties {
     pub fn new() -> Self {
@@ -7217,7 +7217,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -7226,7 +7226,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

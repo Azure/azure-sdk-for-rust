@@ -118,10 +118,10 @@ pub struct HybridUseBenefitProperties {
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Created date"]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date: Option<time::OffsetDateTime>,
+    pub created_date: Option<::time::OffsetDateTime>,
     #[doc = "Last updated date"]
     #[serde(rename = "lastUpdatedDate", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_date: Option<time::OffsetDateTime>,
+    pub last_updated_date: Option<::time::OffsetDateTime>,
 }
 impl HybridUseBenefitProperties {
     pub fn new() -> Self {

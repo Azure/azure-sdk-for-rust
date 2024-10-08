@@ -177,7 +177,7 @@ pub struct AlertProperties {
     pub alert_type: Option<String>,
     #[doc = "UTC time when the alert appeared."]
     #[serde(rename = "appearedAtDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub appeared_at_date_time: Option<time::OffsetDateTime>,
+    pub appeared_at_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Alert recommendation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recommendation: Option<String>,
@@ -880,7 +880,7 @@ pub struct ClusterCapacityViewData {
     pub memory_capacity: Option<ClusterMemoryCapacity>,
     #[doc = "The last time at which the ClusterCapacityViewData was set."]
     #[serde(rename = "lastRefreshedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_refreshed_time: Option<time::OffsetDateTime>,
+    pub last_refreshed_time: Option<::time::OffsetDateTime>,
     #[doc = "The total # of vCPUs provisioned by non-HPN VM per appliance."]
     #[serde(rename = "totalProvisionedNonHpnCores", default, skip_serializing_if = "Option::is_none")]
     pub total_provisioned_non_hpn_cores: Option<i64>,
@@ -1158,7 +1158,7 @@ pub struct ContainerProperties {
     pub refresh_details: Option<RefreshDetails>,
     #[doc = "The UTC time when container got created."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
 }
 impl ContainerProperties {
     pub fn new(data_format: container_properties::DataFormat) -> Self {
@@ -2275,7 +2275,7 @@ impl DeviceCapacityInfo {
 pub struct DeviceCapacityInfoProperties {
     #[doc = "Timestamp of request in UTC"]
     #[serde(rename = "timeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub time_stamp: Option<time::OffsetDateTime>,
+    pub time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "Cluster Storage Data."]
     #[serde(rename = "clusterStorageCapacityInfo", default, skip_serializing_if = "Option::is_none")]
     pub cluster_storage_capacity_info: Option<ClusterStorageViewData>,
@@ -2983,10 +2983,10 @@ pub struct Job {
     pub status: Option<job::Status>,
     #[doc = "The UTC date and time at which the job started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The UTC date and time at which the job completed."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The percentage of the job that is complete."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
@@ -5364,7 +5364,7 @@ pub struct OrderStatus {
     pub status: order_status::Status,
     #[doc = "Time of status update."]
     #[serde(rename = "updateDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub update_date_time: Option<time::OffsetDateTime>,
+    pub update_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Comments related to this status change."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comments: Option<String>,
@@ -5511,7 +5511,7 @@ impl PeriodicTimerProperties {
 pub struct PeriodicTimerSourceInfo {
     #[doc = "The time of the day that results in a valid trigger. Schedule is computed with reference to the time specified upto seconds. If timezone is not specified the time will considered to be in device timezone. The value will always be returned as UTC time."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
-    pub start_time: time::OffsetDateTime,
+    pub start_time: ::time::OffsetDateTime,
     #[doc = "Periodic frequency at which timer event needs to be raised. Supports daily, hourly, minutes, and seconds."]
     pub schedule: String,
     #[doc = "Topic where periodic events are published to IoT device."]
@@ -5519,7 +5519,7 @@ pub struct PeriodicTimerSourceInfo {
     pub topic: Option<String>,
 }
 impl PeriodicTimerSourceInfo {
-    pub fn new(start_time: time::OffsetDateTime, schedule: String) -> Self {
+    pub fn new(start_time: ::time::OffsetDateTime, schedule: String) -> Self {
         Self {
             start_time,
             schedule,
@@ -5644,7 +5644,7 @@ pub struct RefreshDetails {
     pub in_progress_refresh_job_id: Option<String>,
     #[doc = "Indicates the completed time for the last refresh job on this particular share or container, if any.This could be a failed job or a successful job."]
     #[serde(rename = "lastCompletedRefreshJobTimeInUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub last_completed_refresh_job_time_in_utc: Option<time::OffsetDateTime>,
+    pub last_completed_refresh_job_time_in_utc: Option<::time::OffsetDateTime>,
     #[doc = "Indicates the relative path of the error xml for the last refresh job on this particular share or container, if any. This could be a failed job or a successful job."]
     #[serde(rename = "errorManifestFile", default, skip_serializing_if = "Option::is_none")]
     pub error_manifest_file: Option<String>,
@@ -5668,7 +5668,7 @@ pub struct RemoteSupportSettings {
     pub access_level: Option<remote_support_settings::AccessLevel>,
     #[doc = "Expiration time stamp"]
     #[serde(rename = "expirationTimeStampInUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_time_stamp_in_utc: Option<time::OffsetDateTime>,
+    pub expiration_time_stamp_in_utc: Option<::time::OffsetDateTime>,
 }
 impl RemoteSupportSettings {
     pub fn new() -> Self {
@@ -5834,7 +5834,7 @@ pub struct ResourceMoveDetails {
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub operation_in_progress_lock_timeout_in_utc: Option<time::OffsetDateTime>,
+    pub operation_in_progress_lock_timeout_in_utc: Option<::time::OffsetDateTime>,
 }
 impl ResourceMoveDetails {
     pub fn new() -> Self {
@@ -6957,10 +6957,10 @@ impl SubscriptionRegisteredFeatures {
 pub struct SupportPackageRequestProperties {
     #[doc = "MinimumTimeStamp from where logs need to be collected"]
     #[serde(rename = "minimumTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub minimum_time_stamp: Option<time::OffsetDateTime>,
+    pub minimum_time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "Start of the timespan of the log collection"]
     #[serde(rename = "maximumTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub maximum_time_stamp: Option<time::OffsetDateTime>,
+    pub maximum_time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "Type of files, which need to be included in the logs\r\nThis will contain the type of logs (Default/DefaultWithDumps/None/All/DefaultWithArchived)\r\nor a comma separated list of log types that are required"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub include: Option<String>,
@@ -7384,16 +7384,16 @@ pub struct UpdateSummaryProperties {
     pub friendly_device_version_name: Option<String>,
     #[doc = "The last time when a scan was done on the device."]
     #[serde(rename = "deviceLastScannedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub device_last_scanned_date_time: Option<time::OffsetDateTime>,
+    pub device_last_scanned_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the last scan job was completed (success/cancelled/failed) on the appliance."]
     #[serde(rename = "lastCompletedScanJobDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_completed_scan_job_date_time: Option<time::OffsetDateTime>,
+    pub last_completed_scan_job_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Time when the last scan job is successfully completed."]
     #[serde(rename = "lastSuccessfulScanJobTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_successful_scan_job_time: Option<time::OffsetDateTime>,
+    pub last_successful_scan_job_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the last Download job was completed (success/cancelled/failed) on the appliance."]
     #[serde(rename = "lastCompletedDownloadJobDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_completed_download_job_date_time: Option<time::OffsetDateTime>,
+    pub last_completed_download_job_date_time: Option<::time::OffsetDateTime>,
     #[doc = "JobId of the last ran download job.(Can be success/cancelled/failed)"]
     #[serde(rename = "lastCompletedDownloadJobId", default, skip_serializing_if = "Option::is_none")]
     pub last_completed_download_job_id: Option<String>,
@@ -7402,10 +7402,10 @@ pub struct UpdateSummaryProperties {
     pub last_download_job_status: Option<update_summary_properties::LastDownloadJobStatus>,
     #[doc = "The time when the Last Install job was completed successfully on the appliance"]
     #[serde(rename = "lastSuccessfulInstallJobDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_successful_install_job_date_time: Option<time::OffsetDateTime>,
+    pub last_successful_install_job_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the last Install job was completed (success/cancelled/failed) on the appliance."]
     #[serde(rename = "lastCompletedInstallJobDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_completed_install_job_date_time: Option<time::OffsetDateTime>,
+    pub last_completed_install_job_date_time: Option<::time::OffsetDateTime>,
     #[doc = "JobId of the last ran install job.(Can be success/cancelled/failed)"]
     #[serde(rename = "lastCompletedInstallJobId", default, skip_serializing_if = "Option::is_none")]
     pub last_completed_install_job_id: Option<String>,
@@ -7439,14 +7439,14 @@ pub struct UpdateSummaryProperties {
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub in_progress_download_job_started_date_time: Option<time::OffsetDateTime>,
+    pub in_progress_download_job_started_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The time when the currently running install (if any) started."]
     #[serde(
         rename = "inProgressInstallJobStartedDateTime",
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub in_progress_install_job_started_date_time: Option<time::OffsetDateTime>,
+    pub in_progress_install_job_started_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The list of updates available for install."]
     #[serde(
         rename = "updateTitles",
@@ -7959,7 +7959,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -7968,7 +7968,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

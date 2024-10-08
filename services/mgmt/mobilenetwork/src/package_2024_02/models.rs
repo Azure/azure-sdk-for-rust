@@ -105,10 +105,10 @@ pub struct AsyncOperationStatus {
     pub resource_id: Option<String>,
     #[doc = "The start time of the operation."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time of the operation."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Percentage of the operation that is complete."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<f64>,
@@ -914,7 +914,7 @@ impl ExtendedUeInfo {
 pub struct ExtendedUeInfoProperties {
     #[doc = "The timestamp of last UE info read from the packet core (UTC)."]
     #[serde(rename = "lastReadAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_read_at: Option<time::OffsetDateTime>,
+    pub last_read_at: Option<::time::OffsetDateTime>,
 }
 impl ExtendedUeInfoProperties {
     pub fn new() -> Self {
@@ -1687,7 +1687,7 @@ pub struct PacketCapturePropertiesFormat {
     pub reason: Option<String>,
     #[doc = "The start time of the packet capture session."]
     #[serde(rename = "captureStartTime", default, with = "azure_core::date::rfc3339::option")]
-    pub capture_start_time: Option<time::OffsetDateTime>,
+    pub capture_start_time: Option<::time::OffsetDateTime>,
     #[doc = "List of network interfaces to capture on."]
     #[serde(
         rename = "networkInterfaces",
@@ -3607,7 +3607,7 @@ pub struct UeConnectionInfo4G {
     pub ue_usage_setting: Option<UeUsageSetting>,
     #[doc = "The timestamp of last activity of UE (UTC)."]
     #[serde(rename = "lastActivityTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_activity_time: Option<time::OffsetDateTime>,
+    pub last_activity_time: Option<::time::OffsetDateTime>,
 }
 impl UeConnectionInfo4G {
     pub fn new(
@@ -3671,7 +3671,7 @@ pub struct UeConnectionInfo5G {
     pub ue_usage_setting: Option<UeUsageSetting>,
     #[doc = "The timestamp of last activity of UE (UTC)."]
     #[serde(rename = "lastActivityTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_activity_time: Option<time::OffsetDateTime>,
+    pub last_activity_time: Option<::time::OffsetDateTime>,
 }
 impl UeConnectionInfo5G {
     pub fn new(
@@ -3856,7 +3856,7 @@ pub struct UeInfoPropertiesFormat {
     pub ue_ip_addresses: Vec<DnnIpPair>,
     #[doc = "The timestamp of last list UEs call to the packet core (UTC)."]
     #[serde(rename = "lastReadAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_read_at: Option<time::OffsetDateTime>,
+    pub last_read_at: Option<::time::OffsetDateTime>,
 }
 impl UeInfoPropertiesFormat {
     pub fn new(rat_type: RatType, ue_state: UeState) -> Self {
@@ -4245,7 +4245,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -4254,7 +4254,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

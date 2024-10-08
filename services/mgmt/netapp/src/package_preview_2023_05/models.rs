@@ -1234,7 +1234,7 @@ pub struct BackupProperties {
     pub backup_id: Option<String>,
     #[doc = "The creation date of the backup"]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_date: Option<time::OffsetDateTime>,
+    pub creation_date: Option<::time::OffsetDateTime>,
     #[doc = "Azure lifecycle management"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -3395,7 +3395,7 @@ pub struct SnapshotProperties {
     pub snapshot_id: Option<String>,
     #[doc = "The creation date of the snapshot"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub created: Option<time::OffsetDateTime>,
+    pub created: Option<::time::OffsetDateTime>,
     #[doc = "Azure lifecycle management"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -3501,16 +3501,16 @@ pub struct SubvolumeModelProperties {
     pub permissions: Option<String>,
     #[doc = "Creation time and date"]
     #[serde(rename = "creationTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time_stamp: Option<time::OffsetDateTime>,
+    pub creation_time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "Most recent access time and date"]
     #[serde(rename = "accessedTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub accessed_time_stamp: Option<time::OffsetDateTime>,
+    pub accessed_time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "Most recent modification time and date"]
     #[serde(rename = "modifiedTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_time_stamp: Option<time::OffsetDateTime>,
+    pub modified_time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "Most recent change time and date"]
     #[serde(rename = "changedTimeStamp", default, with = "azure_core::date::rfc3339::option")]
-    pub changed_time_stamp: Option<time::OffsetDateTime>,
+    pub changed_time_stamp: Option<::time::OffsetDateTime>,
     #[doc = "Azure lifecycle management"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -3604,7 +3604,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -3613,7 +3613,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

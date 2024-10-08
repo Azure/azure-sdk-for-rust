@@ -39,11 +39,11 @@ default = ["default_tag", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 default_tag = ["package-7_5"]
+"package-preview-7_6-preview_1" = []
 "package-preview-7_5-preview_1" = []
 "package-preview-7_4-preview_1" = []
 "package-preview-7_3-preview" = []
 "package-7_5" = []
-"package-7_4" = []
 
 [lints]
 workspace = true

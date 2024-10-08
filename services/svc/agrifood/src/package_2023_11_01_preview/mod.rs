@@ -1134,10 +1134,10 @@ pub mod attachments {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -1173,22 +1173,22 @@ pub mod attachments {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -1468,8 +1468,8 @@ pub mod attachments {
             pub(crate) original_file_name: Option<String>,
             pub(crate) id: Option<String>,
             pub(crate) status: Option<String>,
-            pub(crate) created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) source: Option<String>,
             pub(crate) name: Option<String>,
             pub(crate) description: Option<String>,
@@ -1509,12 +1509,12 @@ pub mod attachments {
                 self
             }
             #[doc = "Date when resource was created."]
-            pub fn created_date_time(mut self, created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn created_date_time(mut self, created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.created_date_time = Some(created_date_time.into());
                 self
             }
             #[doc = "Date when resource was last modified."]
-            pub fn modified_date_time(mut self, modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn modified_date_time(mut self, modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.modified_date_time = Some(modified_date_time.into());
                 self
             }
@@ -1931,10 +1931,10 @@ pub mod chemical_products {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -2035,22 +2035,22 @@ pub mod chemical_products {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -2644,10 +2644,10 @@ pub mod crop_products {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -2723,22 +2723,22 @@ pub mod crop_products {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -3296,10 +3296,10 @@ pub mod crops {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -3350,22 +3350,22 @@ pub mod crops {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -3911,10 +3911,10 @@ pub mod dataset_records {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -3945,22 +3945,22 @@ pub mod dataset_records {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -4523,10 +4523,10 @@ pub mod datasets {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -4557,22 +4557,22 @@ pub mod datasets {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -5427,10 +5427,10 @@ pub mod device_data_models {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -5456,22 +5456,22 @@ pub mod device_data_models {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -6007,10 +6007,10 @@ pub mod devices {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -6046,22 +6046,22 @@ pub mod devices {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -6604,10 +6604,10 @@ pub mod farm_equipments {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -6688,22 +6688,22 @@ pub mod farm_equipments {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -7601,10 +7601,10 @@ pub mod farms {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -7630,22 +7630,22 @@ pub mod farms {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -8070,10 +8070,10 @@ pub mod farms {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -8099,22 +8099,22 @@ pub mod farms {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -10502,10 +10502,10 @@ pub mod insight_attachments {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -10536,22 +10536,22 @@ pub mod insight_attachments {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -10838,8 +10838,8 @@ pub mod insight_attachments {
             pub(crate) original_file_name: Option<String>,
             pub(crate) id: Option<String>,
             pub(crate) status: Option<String>,
-            pub(crate) created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) source: Option<String>,
             pub(crate) name: Option<String>,
             pub(crate) description: Option<String>,
@@ -10869,12 +10869,12 @@ pub mod insight_attachments {
                 self
             }
             #[doc = "Date when resource was created."]
-            pub fn created_date_time(mut self, created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn created_date_time(mut self, created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.created_date_time = Some(created_date_time.into());
                 self
             }
             #[doc = "Date when resource was last modified."]
-            pub fn modified_date_time(mut self, modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn modified_date_time(mut self, modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.modified_date_time = Some(modified_date_time.into());
                 self
             }
@@ -11639,40 +11639,40 @@ pub mod insights {
             pub(crate) model_id: String,
             pub(crate) resource_type: String,
             pub(crate) resource_id: String,
-            pub(crate) min_insight_start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_insight_start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_insight_end_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_insight_end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_insight_start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_insight_start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_insight_end_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_insight_end_date_time: Option<::time::OffsetDateTime>,
             pub(crate) measurement_filters: Vec<String>,
             pub(crate) ids: Vec<String>,
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
         impl RequestBuilder {
             #[doc = "Minimum insightStartDateTime time of insight resources (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn min_insight_start_date_time(mut self, min_insight_start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_insight_start_date_time(mut self, min_insight_start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_insight_start_date_time = Some(min_insight_start_date_time.into());
                 self
             }
             #[doc = "Maximum insightStartDateTime time of insight resources (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn max_insight_start_date_time(mut self, max_insight_start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_insight_start_date_time(mut self, max_insight_start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_insight_start_date_time = Some(max_insight_start_date_time.into());
                 self
             }
             #[doc = "Minimum insightEndDateTime time of insight resources (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn min_insight_end_date_time(mut self, min_insight_end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_insight_end_date_time(mut self, min_insight_end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_insight_end_date_time = Some(min_insight_end_date_time.into());
                 self
             }
             #[doc = "Maximum insightEndDateTime time of insight resources (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn max_insight_end_date_time(mut self, max_insight_end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_insight_end_date_time(mut self, max_insight_end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_insight_end_date_time = Some(max_insight_end_date_time.into());
                 self
             }
@@ -11702,22 +11702,22 @@ pub mod insights {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -12346,10 +12346,10 @@ pub mod management_zones {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -12400,22 +12400,22 @@ pub mod management_zones {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -12865,10 +12865,10 @@ pub mod management_zones {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -12919,22 +12919,22 @@ pub mod management_zones {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -13510,10 +13510,10 @@ pub mod nutrient_analyses {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -13554,22 +13554,22 @@ pub mod nutrient_analyses {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -13754,10 +13754,10 @@ pub mod nutrient_analyses {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -13798,22 +13798,22 @@ pub mod nutrient_analyses {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -14370,10 +14370,10 @@ pub mod o_auth_providers {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -14399,22 +14399,22 @@ pub mod o_auth_providers {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -15177,10 +15177,10 @@ pub mod o_auth_tokens {
             pub(crate) auth_provider_ids: Vec<String>,
             pub(crate) party_ids: Vec<String>,
             pub(crate) is_valid: Option<bool>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -15201,22 +15201,22 @@ pub mod o_auth_tokens {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -15827,10 +15827,10 @@ pub mod parties {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -15856,22 +15856,22 @@ pub mod parties {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -18304,10 +18304,10 @@ pub mod prescription_maps {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -18358,22 +18358,22 @@ pub mod prescription_maps {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -18856,10 +18856,10 @@ pub mod prescription_maps {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -18910,22 +18910,22 @@ pub mod prescription_maps {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -20220,8 +20220,8 @@ pub mod scenes {
             pub(crate) associated_resource_type: String,
             pub(crate) collection: String,
             pub(crate) item_id: Option<String>,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_cloud_coverage_percentage: Option<f64>,
             pub(crate) max_dark_pixel_coverage_percentage: Option<f64>,
             pub(crate) image_names: Vec<String>,
@@ -20237,12 +20237,12 @@ pub mod scenes {
                 self
             }
             #[doc = "Scene start UTC datetime (inclusive), sample format: yyyy-MM-ddThh:mm:ssZ."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "Scene end UTC datetime (inclusive), sample format: yyyy-MM-dThh:mm:ssZ."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -21724,40 +21724,40 @@ pub mod seasons {
         #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) min_start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_end_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_end_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_end_date_time: Option<::time::OffsetDateTime>,
             pub(crate) years: Vec<i32>,
             pub(crate) ids: Vec<String>,
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
         impl RequestBuilder {
             #[doc = "Minimum season start datetime, sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn min_start_date_time(mut self, min_start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_start_date_time(mut self, min_start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_start_date_time = Some(min_start_date_time.into());
                 self
             }
             #[doc = "Maximum season start datetime, sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn max_start_date_time(mut self, max_start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_start_date_time(mut self, max_start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_start_date_time = Some(max_start_date_time.into());
                 self
             }
             #[doc = "Minimum season end datetime, sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn min_end_date_time(mut self, min_end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_end_date_time(mut self, min_end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_end_date_time = Some(min_end_date_time.into());
                 self
             }
             #[doc = "Maximum season end datetime, sample format: yyyy-MM-ddTHH:mm:ssZ."]
-            pub fn max_end_date_time(mut self, max_end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_end_date_time(mut self, max_end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_end_date_time = Some(max_end_date_time.into());
                 self
             }
@@ -21787,22 +21787,22 @@ pub mod seasons {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -22346,10 +22346,10 @@ pub mod sensor_data_models {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -22375,22 +22375,22 @@ pub mod sensor_data_models {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -22871,18 +22871,18 @@ pub mod sensor_events {
             pub(crate) client: super::super::Client,
             pub(crate) sensor_id: String,
             pub(crate) sensor_partner_id: String,
-            pub(crate) start_date_time: Option<time::OffsetDateTime>,
-            pub(crate) end_date_time: Option<time::OffsetDateTime>,
+            pub(crate) start_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<::time::OffsetDateTime>,
             pub(crate) exclude_duplicate_events: Option<bool>,
         }
         impl RequestBuilder {
             #[doc = "Search span start time of sensor events (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nIt is truncated upto seconds if fraction is provided."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "Search span end time of sensor events (inclusive), sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nIt is truncated upto seconds if fraction is provided."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -23080,10 +23080,10 @@ pub mod sensor_mappings {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -23134,22 +23134,22 @@ pub mod sensor_mappings {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -23729,10 +23729,10 @@ pub mod sensor_partner_integrations {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -23763,22 +23763,22 @@ pub mod sensor_partner_integrations {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }
@@ -24562,10 +24562,10 @@ pub mod sensors {
             pub(crate) names: Vec<String>,
             pub(crate) property_filters: Vec<String>,
             pub(crate) statuses: Vec<String>,
-            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
-            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
-            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<::time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<::time::OffsetDateTime>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
@@ -24606,22 +24606,22 @@ pub mod sensors {
                 self
             }
             #[doc = "Minimum creation date of resource (inclusive)."]
-            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_created_date_time = Some(min_created_date_time.into());
                 self
             }
             #[doc = "Maximum creation date of resource (inclusive)."]
-            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_created_date_time = Some(max_created_date_time.into());
                 self
             }
             #[doc = "Minimum last modified date of resource (inclusive)."]
-            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
                 self
             }
             #[doc = "Maximum last modified date of resource (inclusive)."]
-            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<::time::OffsetDateTime>) -> Self {
                 self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
                 self
             }

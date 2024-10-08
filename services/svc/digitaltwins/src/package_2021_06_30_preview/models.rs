@@ -16,7 +16,7 @@ pub struct DigitalTwinsModelData {
     pub id: String,
     #[doc = "The time the model was uploaded to the service."]
     #[serde(rename = "uploadTime", default, with = "azure_core::date::rfc3339::option")]
-    pub upload_time: Option<time::OffsetDateTime>,
+    pub upload_time: Option<::time::OffsetDateTime>,
     #[doc = "Indicates if the model is decommissioned. Decommissioned models cannot be referenced by newly created digital twins."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub decommissioned: Option<bool>,

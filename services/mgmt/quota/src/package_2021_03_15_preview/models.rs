@@ -401,7 +401,7 @@ pub struct QuotaRequestProperties {
     pub error: Option<ServiceErrorDetail>,
     #[doc = "The quota request submission time. The date conforms to the following format specified by the ISO 8601 standard: yyyy-MM-ddTHH:mm:ssZ"]
     #[serde(rename = "requestSubmitTime", default, with = "azure_core::date::rfc3339::option")]
-    pub request_submit_time: Option<time::OffsetDateTime>,
+    pub request_submit_time: Option<::time::OffsetDateTime>,
     #[doc = "Quota request details."]
     #[serde(
         default,
@@ -733,7 +733,7 @@ pub struct QuotaRequestOneResourceProperties {
     pub message: Option<String>,
     #[doc = "Quota request submission time. The date conforms to the following ISO 8601 standard format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "requestSubmitTime", default, with = "azure_core::date::rfc3339::option")]
-    pub request_submit_time: Option<time::OffsetDateTime>,
+    pub request_submit_time: Option<::time::OffsetDateTime>,
     #[doc = "The resource quota limit value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<LimitObject>,

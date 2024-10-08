@@ -10864,7 +10864,7 @@ pub mod credential_operations {
             resource_group_name: impl Into<String>,
             factory_name: impl Into<String>,
             credential_name: impl Into<String>,
-            credential: impl Into<models::ManagedIdentityCredentialResource>,
+            credential: impl Into<models::CredentialResource>,
         ) -> create_or_update::RequestBuilder {
             create_or_update::RequestBuilder {
                 client: self.0.clone(),
@@ -11024,9 +11024,9 @@ pub mod credential_operations {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ManagedIdentityCredentialResource> {
+            pub async fn into_body(self) -> azure_core::Result<models::CredentialResource> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ManagedIdentityCredentialResource = serde_json::from_slice(&bytes)?;
+                let body: models::CredentialResource = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -11115,8 +11115,8 @@ pub mod credential_operations {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ManagedIdentityCredentialResource>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ManagedIdentityCredentialResource>>;
+            type Output = azure_core::Result<models::CredentialResource>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::CredentialResource>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -11136,9 +11136,9 @@ pub mod credential_operations {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ManagedIdentityCredentialResource> {
+            pub async fn into_body(self) -> azure_core::Result<models::CredentialResource> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ManagedIdentityCredentialResource = serde_json::from_slice(&bytes)?;
+                let body: models::CredentialResource = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -11183,7 +11183,7 @@ pub mod credential_operations {
             pub(crate) resource_group_name: String,
             pub(crate) factory_name: String,
             pub(crate) credential_name: String,
-            pub(crate) credential: models::ManagedIdentityCredentialResource,
+            pub(crate) credential: models::CredentialResource,
             pub(crate) if_match: Option<String>,
         }
         impl RequestBuilder {
@@ -11229,8 +11229,8 @@ pub mod credential_operations {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ManagedIdentityCredentialResource>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ManagedIdentityCredentialResource>>;
+            type Output = azure_core::Result<models::CredentialResource>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::CredentialResource>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

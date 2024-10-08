@@ -9,5 +9,7 @@
 #![allow(rustdoc::broken_intra_doc_links)]
 #[cfg(feature = "package-2023-09-01-preview")]
 pub mod package_2023_09_01_preview;
-#[cfg(all(feature = "default_tag", feature = "package-2023-09-01-preview"))]
-pub use package_2023_09_01_preview::*;
+#[cfg(feature = "package-2024-07-19-preview")]
+pub mod package_2024_07_19_preview;
+#[cfg(all(feature = "default_tag", feature = "package-2024-07-19-preview"))]
+pub use package_2024_07_19_preview::*;

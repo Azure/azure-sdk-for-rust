@@ -40,7 +40,7 @@ pub struct AgentError {
     pub component: Option<String>,
     #[doc = "The timestamp of error occured (UTC)."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub time: Option<time::OffsetDateTime>,
+    pub time: Option<::time::OffsetDateTime>,
 }
 impl AgentError {
     pub fn new() -> Self {
@@ -360,10 +360,10 @@ pub struct ConnectedClusterProperties {
         default,
         with = "azure_core::date::rfc3339::option"
     )]
-    pub managed_identity_certificate_expiration_time: Option<time::OffsetDateTime>,
+    pub managed_identity_certificate_expiration_time: Option<::time::OffsetDateTime>,
     #[doc = "Time representing the last instance when heart beat was received from the cluster"]
     #[serde(rename = "lastConnectivityTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_connectivity_time: Option<time::OffsetDateTime>,
+    pub last_connectivity_time: Option<::time::OffsetDateTime>,
     #[doc = "Represents the connectivity status of the connected cluster."]
     #[serde(rename = "connectivityStatus", default, skip_serializing_if = "Option::is_none")]
     pub connectivity_status: Option<connected_cluster_properties::ConnectivityStatus>,
@@ -709,7 +709,6 @@ impl HybridConnectionConfig {
         Self::default()
     }
 }
-#[doc = ""]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListClusterUserCredentialProperties {
     #[doc = "The mode of client authentication."]
@@ -882,7 +881,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -891,7 +890,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

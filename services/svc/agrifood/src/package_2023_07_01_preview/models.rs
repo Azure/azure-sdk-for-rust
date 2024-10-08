@@ -52,13 +52,13 @@ pub struct ApplicationData {
     pub area: Option<Measure>,
     #[doc = "Modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nNote: this will be specified by the source provider itself."]
     #[serde(rename = "operationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_start_date_time: Option<time::OffsetDateTime>,
+    pub operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_end_date_time: Option<time::OffsetDateTime>,
+    pub operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Schema for storing resource type and  resource id."]
     #[serde(rename = "associatedResource", default, skip_serializing_if = "Option::is_none")]
     pub associated_resource: Option<GeoResource>,
@@ -76,10 +76,10 @@ pub struct ApplicationData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -129,13 +129,13 @@ pub struct ApplicationDataMetaData {
     pub area: Option<Measure>,
     #[doc = "Modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nNote: this will be specified by the source provider itself."]
     #[serde(rename = "operationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_start_date_time: Option<time::OffsetDateTime>,
+    pub operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_end_date_time: Option<time::OffsetDateTime>,
+    pub operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Schema for storing resource type and  resource id."]
     #[serde(rename = "associatedResource", default, skip_serializing_if = "Option::is_none")]
     pub associated_resource: Option<GeoResource>,
@@ -153,10 +153,10 @@ pub struct ApplicationDataMetaData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -239,10 +239,10 @@ pub struct Attachment {
     pub status: Option<String>,
     #[doc = "Date when resource was created."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date when resource was last modified."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -409,10 +409,10 @@ pub struct BiomassModelJob {
     pub crop_name: biomass_model_job::CropName,
     #[doc = "Planting datetime for biomass calculations. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "plantingStartDateTime", with = "azure_core::date::rfc3339")]
-    pub planting_start_date_time: time::OffsetDateTime,
+    pub planting_start_date_time: ::time::OffsetDateTime,
     #[doc = "End datetime till which biomass will be calculated. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "inferenceEndDateTime", with = "azure_core::date::rfc3339")]
-    pub inference_end_date_time: time::OffsetDateTime,
+    pub inference_end_date_time: ::time::OffsetDateTime,
     #[doc = "ExtensionId of weather data. Available values: DTN.ClearAg, DTN.ContentServices."]
     #[serde(rename = "weatherExtensionId")]
     pub weather_extension_id: String,
@@ -445,16 +445,16 @@ pub struct BiomassModelJob {
     pub error_code: Option<String>,
     #[doc = "Job created at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job was last acted upon at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "lastActionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_action_date_time: Option<time::OffsetDateTime>,
+    pub last_action_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job start time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Job end time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -477,8 +477,8 @@ impl BiomassModelJob {
         associated_resource: GeoResource,
         model_version: String,
         crop_name: biomass_model_job::CropName,
-        planting_start_date_time: time::OffsetDateTime,
-        inference_end_date_time: time::OffsetDateTime,
+        planting_start_date_time: ::time::OffsetDateTime,
+        inference_end_date_time: ::time::OffsetDateTime,
         weather_extension_id: String,
         satellite_provider: biomass_model_job::SatelliteProvider,
         satellite_source: biomass_model_job::SatelliteSource,
@@ -693,16 +693,16 @@ pub struct CascadeDeleteJob {
     pub error_code: Option<String>,
     #[doc = "Job created at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job was last acted upon at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "lastActionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_action_date_time: Option<time::OffsetDateTime>,
+    pub last_action_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job start time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Job end time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
 }
 impl CascadeDeleteJob {
     pub fn new(party_id: String, resource_id: String, resource_type: String) -> Self {
@@ -791,10 +791,10 @@ pub struct Crop {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -932,10 +932,10 @@ pub struct CropProduct {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -1057,10 +1057,10 @@ pub struct Device {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The ETag value to implement optimistic concurrency."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -1115,10 +1115,10 @@ pub struct DeviceDataModel {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The ETag value to implement optimistic concurrency."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -1288,10 +1288,10 @@ pub struct Farm {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -1385,16 +1385,16 @@ pub struct FarmOperationDataIngestionJob {
     pub error_code: Option<String>,
     #[doc = "Job created at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job was last acted upon at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "lastActionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_action_date_time: Option<time::OffsetDateTime>,
+    pub last_action_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job start time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Job end time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1557,10 +1557,10 @@ pub struct Field {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -1608,10 +1608,10 @@ pub struct FieldMetaData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -1800,13 +1800,13 @@ pub struct HarvestData {
     pub area: Option<Measure>,
     #[doc = "Modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nNote: this will be specified by the source provider itself."]
     #[serde(rename = "operationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_start_date_time: Option<time::OffsetDateTime>,
+    pub operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_end_date_time: Option<time::OffsetDateTime>,
+    pub operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Schema for storing resource type and  resource id."]
     #[serde(rename = "associatedResource", default, skip_serializing_if = "Option::is_none")]
     pub associated_resource: Option<GeoResource>,
@@ -1824,10 +1824,10 @@ pub struct HarvestData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -1889,13 +1889,13 @@ pub struct HarvestDataMetaData {
     pub area: Option<Measure>,
     #[doc = "Modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nNote: this will be specified by the source provider itself."]
     #[serde(rename = "operationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_start_date_time: Option<time::OffsetDateTime>,
+    pub operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_end_date_time: Option<time::OffsetDateTime>,
+    pub operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Schema for storing resource type and  resource id."]
     #[serde(rename = "associatedResource", default, skip_serializing_if = "Option::is_none")]
     pub associated_resource: Option<GeoResource>,
@@ -1913,10 +1913,10 @@ pub struct HarvestDataMetaData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -2075,16 +2075,16 @@ pub struct ImageProcessingRasterizeJob {
     pub error_code: Option<String>,
     #[doc = "Job created at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job was last acted upon at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "lastActionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_action_date_time: Option<time::OffsetDateTime>,
+    pub last_action_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job start time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Job end time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -2162,10 +2162,10 @@ pub struct Insight {
     pub attachments_link: Option<String>,
     #[doc = "Start date to which the insight is related."]
     #[serde(rename = "insightStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub insight_start_date_time: Option<time::OffsetDateTime>,
+    pub insight_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End date to which the insight is related."]
     #[serde(rename = "insightEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub insight_end_date_time: Option<time::OffsetDateTime>,
+    pub insight_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Measures to capture insights results."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub measurements: Option<serde_json::Value>,
@@ -2177,10 +2177,10 @@ pub struct Insight {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The ETag value to implement optimistic concurrency."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -2278,10 +2278,10 @@ pub struct InsightAttachment {
     pub status: Option<String>,
     #[doc = "Date when resource was created."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date when resource was last modified."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -2521,10 +2521,10 @@ pub struct ManagementZone {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -2674,10 +2674,10 @@ pub struct NutrientAnalysis {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -2834,10 +2834,10 @@ pub struct OAuthProvider {
     pub e_tag: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -2882,16 +2882,16 @@ pub struct OAuthProviderCascadeDeleteJob {
     pub error_code: Option<String>,
     #[doc = "Job created at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job was last acted upon at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "lastActionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_action_date_time: Option<time::OffsetDateTime>,
+    pub last_action_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job start time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Job end time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -2973,10 +2973,10 @@ pub struct OAuthToken {
     pub e_tag: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
 }
 impl OAuthToken {
     pub fn new(party_id: String, auth_provider_id: String) -> Self {
@@ -3073,10 +3073,10 @@ pub struct Party {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -3167,7 +3167,7 @@ pub struct PlantTissueAnalysis {
     pub season_id: Option<String>,
     #[doc = "Planting datetime for this plant tissue analysis."]
     #[serde(rename = "plantingDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub planting_date_time: Option<time::OffsetDateTime>,
+    pub planting_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Growth stage for this plant tissue analysis."]
     #[serde(rename = "growthStage", default, skip_serializing_if = "Option::is_none")]
     pub growth_stage: Option<String>,
@@ -3185,13 +3185,13 @@ pub struct PlantTissueAnalysis {
     pub sample_collection_condition: Option<String>,
     #[doc = "Sample collection dateTime for this plant tissue analysis."]
     #[serde(rename = "sampleCollectionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub sample_collection_date_time: Option<time::OffsetDateTime>,
+    pub sample_collection_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Sample received dateTime."]
     #[serde(rename = "sampleReceivedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub sample_received_date_time: Option<time::OffsetDateTime>,
+    pub sample_received_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Sample test result dateTime for this plant tissue analysis."]
     #[serde(rename = "sampleTestResultDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub sample_test_result_date_time: Option<time::OffsetDateTime>,
+    pub sample_test_result_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Model for representing LabDetails object."]
     #[serde(rename = "labDetails", default, skip_serializing_if = "Option::is_none")]
     pub lab_details: Option<LabDetails>,
@@ -3206,10 +3206,10 @@ pub struct PlantTissueAnalysis {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -3257,7 +3257,7 @@ pub struct PlantTissueAnalysisMetaData {
     pub season_id: Option<String>,
     #[doc = "Planting datetime for this plant tissue analysis."]
     #[serde(rename = "plantingDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub planting_date_time: Option<time::OffsetDateTime>,
+    pub planting_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Growth stage for this plant tissue analysis."]
     #[serde(rename = "growthStage", default, skip_serializing_if = "Option::is_none")]
     pub growth_stage: Option<String>,
@@ -3275,13 +3275,13 @@ pub struct PlantTissueAnalysisMetaData {
     pub sample_collection_condition: Option<String>,
     #[doc = "Sample collection dateTime for this plant tissue analysis."]
     #[serde(rename = "sampleCollectionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub sample_collection_date_time: Option<time::OffsetDateTime>,
+    pub sample_collection_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Sample received dateTime."]
     #[serde(rename = "sampleReceivedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub sample_received_date_time: Option<time::OffsetDateTime>,
+    pub sample_received_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Sample test result dateTime for this plant tissue analysis."]
     #[serde(rename = "sampleTestResultDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub sample_test_result_date_time: Option<time::OffsetDateTime>,
+    pub sample_test_result_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Model for representing LabDetails object."]
     #[serde(rename = "labDetails", default, skip_serializing_if = "Option::is_none")]
     pub lab_details: Option<LabDetails>,
@@ -3296,10 +3296,10 @@ pub struct PlantTissueAnalysisMetaData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -3363,13 +3363,13 @@ pub struct PlantingData {
     pub area: Option<Measure>,
     #[doc = "Modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nNote: this will be specified by the source provider itself."]
     #[serde(rename = "operationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_start_date_time: Option<time::OffsetDateTime>,
+    pub operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_end_date_time: Option<time::OffsetDateTime>,
+    pub operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Schema for storing resource type and  resource id."]
     #[serde(rename = "associatedResource", default, skip_serializing_if = "Option::is_none")]
     pub associated_resource: Option<GeoResource>,
@@ -3387,10 +3387,10 @@ pub struct PlantingData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -3443,13 +3443,13 @@ pub struct PlantingDataMetaData {
     pub area: Option<Measure>,
     #[doc = "Modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nNote: this will be specified by the source provider itself."]
     #[serde(rename = "operationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_start_date_time: Option<time::OffsetDateTime>,
+    pub operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_end_date_time: Option<time::OffsetDateTime>,
+    pub operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Schema for storing resource type and  resource id."]
     #[serde(rename = "associatedResource", default, skip_serializing_if = "Option::is_none")]
     pub associated_resource: Option<GeoResource>,
@@ -3467,10 +3467,10 @@ pub struct PlantingDataMetaData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -3609,10 +3609,10 @@ pub struct Prescription {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -3669,10 +3669,10 @@ pub struct PrescriptionMap {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -3756,10 +3756,10 @@ pub struct PrescriptionMetaData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -3863,10 +3863,10 @@ pub struct SatelliteDataIngestionJob {
     pub associated_resource: GeoResource,
     #[doc = "Start Date."]
     #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339")]
-    pub start_date_time: time::OffsetDateTime,
+    pub start_date_time: ::time::OffsetDateTime,
     #[doc = "End Date."]
     #[serde(rename = "endDateTime", with = "azure_core::date::rfc3339")]
-    pub end_date_time: time::OffsetDateTime,
+    pub end_date_time: ::time::OffsetDateTime,
     #[doc = "Provider of satellite data."]
     pub provider: DataProvider,
     #[doc = "Source of satellite data."]
@@ -3891,16 +3891,16 @@ pub struct SatelliteDataIngestionJob {
     pub error_code: Option<String>,
     #[doc = "Job created at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job was last acted upon at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "lastActionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_action_date_time: Option<time::OffsetDateTime>,
+    pub last_action_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job start time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Job end time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -3921,8 +3921,8 @@ impl SatelliteDataIngestionJob {
     pub fn new(
         party_id: String,
         associated_resource: GeoResource,
-        start_date_time: time::OffsetDateTime,
-        end_date_time: time::OffsetDateTime,
+        start_date_time: ::time::OffsetDateTime,
+        end_date_time: ::time::OffsetDateTime,
         provider: DataProvider,
         source: Source,
     ) -> Self {
@@ -3957,7 +3957,7 @@ impl SatelliteDataIngestionJob {
 pub struct Scene {
     #[doc = "Date-time of the scene, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "sceneDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub scene_date_time: Option<time::OffsetDateTime>,
+    pub scene_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Data provider of the scene."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -4057,22 +4057,22 @@ pub struct SearchApplicationDataQuery {
     pub associated_resource_type: Option<String>,
     #[doc = "Minimum start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_start_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_start_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum end date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_end_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum end date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_end_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Sources of the operation data."]
     #[serde(
         default,
@@ -4117,16 +4117,16 @@ pub struct SearchApplicationDataQuery {
     pub statuses: Vec<String>,
     #[doc = "Minimum creation date of resource (inclusive)."]
     #[serde(rename = "minCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_created_date_time: Option<time::OffsetDateTime>,
+    pub min_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum creation date of resource (inclusive)."]
     #[serde(rename = "maxCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_created_date_time: Option<time::OffsetDateTime>,
+    pub max_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum last modified date of resource (inclusive)."]
     #[serde(rename = "minLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum last modified date of resource (inclusive)."]
     #[serde(rename = "maxLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
     pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
@@ -4147,10 +4147,10 @@ pub struct SearchFeaturesQuery {
     pub credentials: Option<OAuthClientCredentials>,
     #[doc = "Start datetime of the time interval in which to search for Features."]
     #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339")]
-    pub start_date_time: time::OffsetDateTime,
+    pub start_date_time: ::time::OffsetDateTime,
     #[doc = "End datetime of the time interval in which to search for Features."]
     #[serde(rename = "endDateTime", with = "azure_core::date::rfc3339")]
-    pub end_date_time: time::OffsetDateTime,
+    pub end_date_time: ::time::OffsetDateTime,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub intersects: Option<GeoJsonObjectUnion>,
@@ -4171,7 +4171,7 @@ pub struct SearchFeaturesQuery {
     pub feature_ids: Vec<String>,
 }
 impl SearchFeaturesQuery {
-    pub fn new(start_date_time: time::OffsetDateTime, end_date_time: time::OffsetDateTime) -> Self {
+    pub fn new(start_date_time: ::time::OffsetDateTime, end_date_time: ::time::OffsetDateTime) -> Self {
         Self {
             credentials: None,
             start_date_time,
@@ -4241,16 +4241,16 @@ pub struct SearchFieldQuery {
     pub statuses: Vec<String>,
     #[doc = "Minimum creation date of resource (inclusive)."]
     #[serde(rename = "minCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_created_date_time: Option<time::OffsetDateTime>,
+    pub min_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum creation date of resource (inclusive)."]
     #[serde(rename = "maxCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_created_date_time: Option<time::OffsetDateTime>,
+    pub max_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum last modified date of resource (inclusive)."]
     #[serde(rename = "minLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum last modified date of resource (inclusive)."]
     #[serde(rename = "maxLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
     pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
@@ -4312,22 +4312,22 @@ pub struct SearchHarvestDataQuery {
     pub associated_resource_type: Option<String>,
     #[doc = "Minimum start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_start_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_start_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum end date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_end_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum end date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_end_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Sources of the operation data."]
     #[serde(
         default,
@@ -4372,16 +4372,16 @@ pub struct SearchHarvestDataQuery {
     pub statuses: Vec<String>,
     #[doc = "Minimum creation date of resource (inclusive)."]
     #[serde(rename = "minCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_created_date_time: Option<time::OffsetDateTime>,
+    pub min_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum creation date of resource (inclusive)."]
     #[serde(rename = "maxCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_created_date_time: Option<time::OffsetDateTime>,
+    pub max_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum last modified date of resource (inclusive)."]
     #[serde(rename = "minLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum last modified date of resource (inclusive)."]
     #[serde(rename = "maxLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
     pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
@@ -4460,16 +4460,16 @@ pub struct SearchPlantTissueAnalysisQuery {
     pub statuses: Vec<String>,
     #[doc = "Minimum creation date of resource (inclusive)."]
     #[serde(rename = "minCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_created_date_time: Option<time::OffsetDateTime>,
+    pub min_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum creation date of resource (inclusive)."]
     #[serde(rename = "maxCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_created_date_time: Option<time::OffsetDateTime>,
+    pub max_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum last modified date of resource (inclusive)."]
     #[serde(rename = "minLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum last modified date of resource (inclusive)."]
     #[serde(rename = "maxLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
     pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
@@ -4516,22 +4516,22 @@ pub struct SearchPlantingDataQuery {
     pub associated_resource_type: Option<String>,
     #[doc = "Minimum start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_start_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_start_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum end date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_end_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum end date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_end_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Sources of the operation data."]
     #[serde(
         default,
@@ -4576,16 +4576,16 @@ pub struct SearchPlantingDataQuery {
     pub statuses: Vec<String>,
     #[doc = "Minimum creation date of resource (inclusive)."]
     #[serde(rename = "minCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_created_date_time: Option<time::OffsetDateTime>,
+    pub min_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum creation date of resource (inclusive)."]
     #[serde(rename = "maxCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_created_date_time: Option<time::OffsetDateTime>,
+    pub max_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum last modified date of resource (inclusive)."]
     #[serde(rename = "minLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum last modified date of resource (inclusive)."]
     #[serde(rename = "maxLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
     pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
@@ -4670,16 +4670,16 @@ pub struct SearchPrescriptionQuery {
     pub statuses: Vec<String>,
     #[doc = "Minimum creation date of resource (inclusive)."]
     #[serde(rename = "minCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_created_date_time: Option<time::OffsetDateTime>,
+    pub min_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum creation date of resource (inclusive)."]
     #[serde(rename = "maxCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_created_date_time: Option<time::OffsetDateTime>,
+    pub max_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum last modified date of resource (inclusive)."]
     #[serde(rename = "minLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum last modified date of resource (inclusive)."]
     #[serde(rename = "maxLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
     pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
@@ -4766,16 +4766,16 @@ pub struct SearchSeasonalFieldQuery {
     pub statuses: Vec<String>,
     #[doc = "Minimum creation date of resource (inclusive)."]
     #[serde(rename = "minCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_created_date_time: Option<time::OffsetDateTime>,
+    pub min_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum creation date of resource (inclusive)."]
     #[serde(rename = "maxCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_created_date_time: Option<time::OffsetDateTime>,
+    pub max_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum last modified date of resource (inclusive)."]
     #[serde(rename = "minLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum last modified date of resource (inclusive)."]
     #[serde(rename = "maxLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
     pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
@@ -4816,22 +4816,22 @@ pub struct SearchTillageDataQuery {
     pub associated_resource_type: Option<String>,
     #[doc = "Minimum start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_start_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_start_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum end date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_end_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum end date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_end_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "minOperationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ (inclusive)."]
     #[serde(rename = "maxOperationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Sources of the operation data."]
     #[serde(
         default,
@@ -4876,16 +4876,16 @@ pub struct SearchTillageDataQuery {
     pub statuses: Vec<String>,
     #[doc = "Minimum creation date of resource (inclusive)."]
     #[serde(rename = "minCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_created_date_time: Option<time::OffsetDateTime>,
+    pub min_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum creation date of resource (inclusive)."]
     #[serde(rename = "maxCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_created_date_time: Option<time::OffsetDateTime>,
+    pub max_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum last modified date of resource (inclusive)."]
     #[serde(rename = "minLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum last modified date of resource (inclusive)."]
     #[serde(rename = "maxLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
     pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
@@ -4954,16 +4954,16 @@ pub struct SearchZoneQuery {
     pub statuses: Vec<String>,
     #[doc = "Minimum creation date of resource (inclusive)."]
     #[serde(rename = "minCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_created_date_time: Option<time::OffsetDateTime>,
+    pub min_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum creation date of resource (inclusive)."]
     #[serde(rename = "maxCreatedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_created_date_time: Option<time::OffsetDateTime>,
+    pub max_created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Minimum last modified date of resource (inclusive)."]
     #[serde(rename = "minLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub min_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub min_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Maximum last modified date of resource (inclusive)."]
     #[serde(rename = "maxLastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub max_last_modified_date_time: Option<time::OffsetDateTime>,
+    pub max_last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
     pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
@@ -4981,10 +4981,10 @@ impl SearchZoneQuery {
 pub struct Season {
     #[doc = "Season start datetime, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Season end datetime, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_date_time: Option<time::OffsetDateTime>,
+    pub end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Season year."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub year: Option<i32>,
@@ -5002,10 +5002,10 @@ pub struct Season {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -5094,10 +5094,10 @@ pub struct SeasonalField {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -5181,10 +5181,10 @@ pub struct SeasonalFieldMetaData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -5266,10 +5266,10 @@ pub struct Sensor {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The ETag value to implement optimistic concurrency."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -5319,10 +5319,10 @@ pub struct SensorDataModel {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The ETag value to implement optimistic concurrency."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -5483,10 +5483,10 @@ pub struct SensorEvent {
     pub associated_resource: Option<GeoResource>,
     #[doc = "DateTime of sensor event observation."]
     #[serde(rename = "eventDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub event_date_time: Option<time::OffsetDateTime>,
+    pub event_date_time: Option<::time::OffsetDateTime>,
     #[doc = "DateTime of sensor event ingestion to data store."]
     #[serde(rename = "ingestionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub ingestion_date_time: Option<time::OffsetDateTime>,
+    pub ingestion_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Sensor measures."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub measures: Option<serde_json::Value>,
@@ -5567,10 +5567,10 @@ pub struct SensorMapping {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The ETag value to implement optimistic concurrency."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -5663,7 +5663,7 @@ pub struct SensorPartnerIntegrationGenerateConsentLinkResponse {
     pub consent_link: Option<String>,
     #[doc = "Consent expiry date time, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "consentExpiryDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub consent_expiry_date_time: Option<time::OffsetDateTime>,
+    pub consent_expiry_date_time: Option<::time::OffsetDateTime>,
 }
 impl SensorPartnerIntegrationGenerateConsentLinkResponse {
     pub fn new() -> Self {
@@ -5690,10 +5690,10 @@ pub struct SensorPartnerIntegrationModel {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The ETag value to implement optimistic concurrency."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -5759,10 +5759,10 @@ pub struct SensorPlacementModelJob {
     pub model_version: String,
     #[doc = "Start datetime for satellite data to be pulled."]
     #[serde(rename = "inferenceStartDateTime", with = "azure_core::date::rfc3339")]
-    pub inference_start_date_time: time::OffsetDateTime,
+    pub inference_start_date_time: ::time::OffsetDateTime,
     #[doc = "End datetime for satellite data to be pulled."]
     #[serde(rename = "inferenceEndDateTime", with = "azure_core::date::rfc3339")]
-    pub inference_end_date_time: time::OffsetDateTime,
+    pub inference_end_date_time: ::time::OffsetDateTime,
     #[doc = "Provider of satellite data. Available Value: Microsoft, SentinelHub (Sentinel Hub by Sinergise)."]
     #[serde(rename = "satelliteProvider")]
     pub satellite_provider: sensor_placement_model_job::SatelliteProvider,
@@ -5792,16 +5792,16 @@ pub struct SensorPlacementModelJob {
     pub error_code: Option<String>,
     #[doc = "Job created at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job was last acted upon at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "lastActionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_action_date_time: Option<time::OffsetDateTime>,
+    pub last_action_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job start time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Job end time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -5823,8 +5823,8 @@ impl SensorPlacementModelJob {
         party_id: String,
         associated_resource: GeoResource,
         model_version: String,
-        inference_start_date_time: time::OffsetDateTime,
-        inference_end_date_time: time::OffsetDateTime,
+        inference_start_date_time: ::time::OffsetDateTime,
+        inference_end_date_time: ::time::OffsetDateTime,
         satellite_provider: sensor_placement_model_job::SatelliteProvider,
         satellite_source: sensor_placement_model_job::SatelliteSource,
         sensor_type: String,
@@ -6007,10 +6007,10 @@ pub struct SoilMoistureModelJob {
     pub sensor_partner_id: String,
     #[doc = "Inference start date time for soil moisture calculations."]
     #[serde(rename = "inferenceStartDateTime", with = "azure_core::date::rfc3339")]
-    pub inference_start_date_time: time::OffsetDateTime,
+    pub inference_start_date_time: ::time::OffsetDateTime,
     #[doc = "Inference end date time for soil moisture calculations."]
     #[serde(rename = "inferenceEndDateTime", with = "azure_core::date::rfc3339")]
-    pub inference_end_date_time: time::OffsetDateTime,
+    pub inference_end_date_time: ::time::OffsetDateTime,
     #[doc = "Provider of satellite data. Available Value: Microsoft, SentinelHub (Sentinel Hub by Sinergise)."]
     #[serde(rename = "satelliteProvider")]
     pub satellite_provider: soil_moisture_model_job::SatelliteProvider,
@@ -6046,16 +6046,16 @@ pub struct SoilMoistureModelJob {
     pub error_code: Option<String>,
     #[doc = "Job created at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job was last acted upon at dateTime. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "lastActionDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_action_date_time: Option<time::OffsetDateTime>,
+    pub last_action_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Job start time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "Job end time when available. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -6078,8 +6078,8 @@ impl SoilMoistureModelJob {
         associated_resource: GeoResource,
         sensor_data_model_id: String,
         sensor_partner_id: String,
-        inference_start_date_time: time::OffsetDateTime,
-        inference_end_date_time: time::OffsetDateTime,
+        inference_start_date_time: ::time::OffsetDateTime,
+        inference_end_date_time: ::time::OffsetDateTime,
         satellite_provider: soil_moisture_model_job::SatelliteProvider,
         satellite_source: soil_moisture_model_job::SatelliteSource,
         image_resolution: f64,
@@ -6444,13 +6444,13 @@ pub struct TillageData {
     pub area: Option<Measure>,
     #[doc = "Modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nNote: this will be specified by the source provider itself."]
     #[serde(rename = "operationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_start_date_time: Option<time::OffsetDateTime>,
+    pub operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_end_date_time: Option<time::OffsetDateTime>,
+    pub operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Schema for storing resource type and  resource id."]
     #[serde(rename = "associatedResource", default, skip_serializing_if = "Option::is_none")]
     pub associated_resource: Option<GeoResource>,
@@ -6468,10 +6468,10 @@ pub struct TillageData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -6513,13 +6513,13 @@ pub struct TillageDataMetaData {
     pub area: Option<Measure>,
     #[doc = "Modified date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ.\r\nNote: this will be specified by the source provider itself."]
     #[serde(rename = "operationModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_modified_date_time: Option<time::OffsetDateTime>,
+    pub operation_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Start date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_start_date_time: Option<time::OffsetDateTime>,
+    pub operation_start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "End date-time of the operation data, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "operationEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub operation_end_date_time: Option<time::OffsetDateTime>,
+    pub operation_end_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Schema for storing resource type and  resource id."]
     #[serde(rename = "associatedResource", default, skip_serializing_if = "Option::is_none")]
     pub associated_resource: Option<GeoResource>,
@@ -6537,10 +6537,10 @@ pub struct TillageDataMetaData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -6938,7 +6938,7 @@ pub struct WeatherLocationData {
     pub request_completion_time: Option<String>,
     #[doc = "Date-time when resource was last requested, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "lastRefreshedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_refreshed_date_time: Option<time::OffsetDateTime>,
+    pub last_refreshed_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Schema of weather data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<WeatherDataForPassthrough>,
@@ -7026,10 +7026,10 @@ pub struct Zone {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -7080,10 +7080,10 @@ pub struct ZoneMetaData {
     pub status: Option<String>,
     #[doc = "Date-time when resource was created, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Date-time when resource was last modified, sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Source of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,

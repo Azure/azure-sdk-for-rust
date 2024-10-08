@@ -403,7 +403,7 @@ pub mod dev_boxes {
             user_id: impl Into<String>,
             dev_box_name: impl Into<String>,
             upcoming_action_id: impl Into<String>,
-            delay_until: impl Into<time::OffsetDateTime>,
+            delay_until: impl Into<::time::OffsetDateTime>,
         ) -> delay_upcoming_action::RequestBuilder {
             delay_upcoming_action::RequestBuilder {
                 client: self.0.clone(),
@@ -1971,7 +1971,7 @@ pub mod dev_boxes {
             pub(crate) user_id: String,
             pub(crate) dev_box_name: String,
             pub(crate) upcoming_action_id: String,
-            pub(crate) delay_until: time::OffsetDateTime,
+            pub(crate) delay_until: ::time::OffsetDateTime,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]

@@ -5445,8 +5445,8 @@ pub mod activity_runs {
             resource_group_name: impl Into<String>,
             factory_name: impl Into<String>,
             run_id: impl Into<String>,
-            start_time: impl Into<time::OffsetDateTime>,
-            end_time: impl Into<time::OffsetDateTime>,
+            start_time: impl Into<::time::OffsetDateTime>,
+            end_time: impl Into<::time::OffsetDateTime>,
         ) -> list_by_pipeline_run::RequestBuilder {
             list_by_pipeline_run::RequestBuilder {
                 client: self.0.clone(),
@@ -5518,8 +5518,8 @@ pub mod activity_runs {
             pub(crate) resource_group_name: String,
             pub(crate) factory_name: String,
             pub(crate) run_id: String,
-            pub(crate) start_time: time::OffsetDateTime,
-            pub(crate) end_time: time::OffsetDateTime,
+            pub(crate) start_time: ::time::OffsetDateTime,
+            pub(crate) end_time: ::time::OffsetDateTime,
             pub(crate) status: Option<String>,
             pub(crate) activity_name: Option<String>,
             pub(crate) linked_service_name: Option<String>,
@@ -5771,8 +5771,8 @@ pub mod triggers {
             resource_group_name: impl Into<String>,
             factory_name: impl Into<String>,
             trigger_name: impl Into<String>,
-            start_time: impl Into<time::OffsetDateTime>,
-            end_time: impl Into<time::OffsetDateTime>,
+            start_time: impl Into<::time::OffsetDateTime>,
+            end_time: impl Into<::time::OffsetDateTime>,
         ) -> list_runs::RequestBuilder {
             list_runs::RequestBuilder {
                 client: self.0.clone(),
@@ -6432,8 +6432,8 @@ pub mod triggers {
             pub(crate) resource_group_name: String,
             pub(crate) factory_name: String,
             pub(crate) trigger_name: String,
-            pub(crate) start_time: time::OffsetDateTime,
-            pub(crate) end_time: time::OffsetDateTime,
+            pub(crate) start_time: ::time::OffsetDateTime,
+            pub(crate) end_time: ::time::OffsetDateTime,
         }
         impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<models::TriggerRunListResponse, azure_core::error::Error> {

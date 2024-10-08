@@ -53,7 +53,7 @@ impl ArmResourceProperties {
 pub struct AccountKeyMetadata {
     #[doc = "Generation time in UTC of the key in ISO-8601 format. If the value is missing from the object, it means that the last key regeneration was triggered before 2022-06-18."]
     #[serde(rename = "generationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub generation_time: Option<time::OffsetDateTime>,
+    pub generation_time: Option<::time::OffsetDateTime>,
 }
 impl AccountKeyMetadata {
     pub fn new() -> Self {
@@ -354,7 +354,7 @@ pub struct BackupPolicyMigrationState {
     pub target_type: Option<BackupPolicyType>,
     #[doc = "Time at which the backup policy migration started (ISO-8601 format)."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
 }
 impl BackupPolicyMigrationState {
     pub fn new() -> Self {
@@ -450,13 +450,13 @@ pub struct BackupResource {
     pub backup_state: Option<backup_resource::BackupState>,
     #[doc = "The time at which the backup process begins."]
     #[serde(rename = "backupStartTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub backup_start_timestamp: Option<time::OffsetDateTime>,
+    pub backup_start_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time at which the backup process ends."]
     #[serde(rename = "backupStopTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub backup_stop_timestamp: Option<time::OffsetDateTime>,
+    pub backup_stop_timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The time at which the backup will expire."]
     #[serde(rename = "backupExpiryTimestamp", default, with = "azure_core::date::rfc3339::option")]
-    pub backup_expiry_timestamp: Option<time::OffsetDateTime>,
+    pub backup_expiry_timestamp: Option<::time::OffsetDateTime>,
 }
 impl BackupResource {
     pub fn new() -> Self {
@@ -2313,7 +2313,7 @@ pub struct DataTransferJobProperties {
     pub total_count: Option<i64>,
     #[doc = "Last Updated Time (ISO-8601 format)."]
     #[serde(rename = "lastUpdatedUtcTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_utc_time: Option<time::OffsetDateTime>,
+    pub last_updated_utc_time: Option<::time::OffsetDateTime>,
     #[doc = "Worker count"]
     #[serde(rename = "workerCount", default, skip_serializing_if = "Option::is_none")]
     pub worker_count: Option<i32>,
@@ -4791,10 +4791,10 @@ impl MergeParameters {
 pub struct Metric {
     #[doc = "The start time for the metric (ISO-8601 format)."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time for the metric (ISO-8601 format)."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The time grain to be used to summarize the metric values."]
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
@@ -4986,7 +4986,7 @@ pub struct MetricValue {
     pub minimum: Option<f64>,
     #[doc = "The metric timestamp (ISO-8601 format)."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub timestamp: Option<time::OffsetDateTime>,
+    pub timestamp: Option<::time::OffsetDateTime>,
     #[doc = "The total value of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<f64>,
@@ -5166,7 +5166,7 @@ pub mod mongo_cluster_properties {
 pub struct MongoClusterRestoreParameters {
     #[doc = "UTC point in time to restore a mongo cluster"]
     #[serde(rename = "pointInTimeUTC", default, with = "azure_core::date::rfc3339::option")]
-    pub point_in_time_utc: Option<time::OffsetDateTime>,
+    pub point_in_time_utc: Option<::time::OffsetDateTime>,
     #[doc = "Resource ID to locate the source cluster to restore"]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_id: Option<String>,
@@ -6027,10 +6027,10 @@ pub type Path = String;
 pub struct PercentileMetric {
     #[doc = "The start time for the metric (ISO-8601 format)."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
+    pub start_time: Option<::time::OffsetDateTime>,
     #[doc = "The end time for the metric (ISO-8601 format)."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
+    pub end_time: Option<::time::OffsetDateTime>,
     #[doc = "The time grain to be used to summarize the metric values."]
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
@@ -6680,13 +6680,13 @@ pub struct RestorableDatabaseAccountProperties {
     pub account_name: Option<String>,
     #[doc = "The creation time of the restorable database account (ISO-8601 format)."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "The least recent time at which the database account can be restored to (ISO-8601 format)."]
     #[serde(rename = "oldestRestorableTime", default, with = "azure_core::date::rfc3339::option")]
-    pub oldest_restorable_time: Option<time::OffsetDateTime>,
+    pub oldest_restorable_time: Option<::time::OffsetDateTime>,
     #[doc = "The time at which the restorable database account has been deleted (ISO-8601 format)."]
     #[serde(rename = "deletionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub deletion_time: Option<time::OffsetDateTime>,
+    pub deletion_time: Option<::time::OffsetDateTime>,
     #[doc = "Enum to indicate the API type of the restorable database account."]
     #[serde(rename = "apiType", default, skip_serializing_if = "Option::is_none")]
     pub api_type: Option<ApiType>,
@@ -6952,10 +6952,10 @@ pub struct RestorableLocationResource {
     pub regional_database_account_instance_id: Option<String>,
     #[doc = "The creation time of the regional restorable database account (ISO-8601 format)."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "The time at which the regional restorable database account has been deleted (ISO-8601 format)."]
     #[serde(rename = "deletionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub deletion_time: Option<time::OffsetDateTime>,
+    pub deletion_time: Option<::time::OffsetDateTime>,
 }
 impl RestorableLocationResource {
     pub fn new() -> Self {
@@ -7587,7 +7587,7 @@ pub struct RestoreParameters {
     pub restore_source: Option<String>,
     #[doc = "Time to which the account has to be restored (ISO-8601 format)."]
     #[serde(rename = "restoreTimestampInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub restore_timestamp_in_utc: Option<time::OffsetDateTime>,
+    pub restore_timestamp_in_utc: Option<::time::OffsetDateTime>,
     #[doc = "List of specific databases available for restore."]
     #[serde(
         rename = "databasesToRestore",
@@ -7667,7 +7667,7 @@ pub struct RestoreParametersBase {
     pub restore_source: Option<String>,
     #[doc = "Time to which the account has to be restored (ISO-8601 format)."]
     #[serde(rename = "restoreTimestampInUtc", default, with = "azure_core::date::rfc3339::option")]
-    pub restore_timestamp_in_utc: Option<time::OffsetDateTime>,
+    pub restore_timestamp_in_utc: Option<::time::OffsetDateTime>,
 }
 impl RestoreParametersBase {
     pub fn new() -> Self {
@@ -7852,7 +7852,7 @@ impl ServiceResourceListResult {
 pub struct ServiceResourceProperties {
     #[doc = "Time of the last state change (ISO-8601 format)."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub creation_time: Option<time::OffsetDateTime>,
+    pub creation_time: Option<::time::OffsetDateTime>,
     #[doc = "Instance type for the service."]
     #[serde(rename = "instanceSize", default, skip_serializing_if = "Option::is_none")]
     pub instance_size: Option<ServiceResourceInstanceSize>,
@@ -9256,7 +9256,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -9265,7 +9265,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

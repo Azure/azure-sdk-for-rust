@@ -11,7 +11,11 @@
 pub mod package_2021_11_20_preview;
 #[cfg(feature = "package-2023-01")]
 pub mod package_2023_01;
+#[cfg(feature = "package-2024-05")]
+pub mod package_2024_05;
 #[cfg(feature = "package-preview-2022-12")]
 pub mod package_preview_2022_12;
-#[cfg(all(feature = "default_tag", feature = "package-2023-01"))]
-pub use package_2023_01::*;
+#[cfg(feature = "package-preview-2024-06")]
+pub mod package_preview_2024_06;
+#[cfg(all(feature = "default_tag", feature = "package-2024-05"))]
+pub use package_2024_05::*;

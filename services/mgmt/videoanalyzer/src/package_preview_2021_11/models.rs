@@ -403,7 +403,7 @@ impl EdgeModuleProperties {
 pub struct EdgeModuleProvisioningToken {
     #[doc = "The expiration date of the registration token. The Azure Video Analyzer IoT edge module must be initialized and connected to the Internet prior to the token expiration date."]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "The token blob to be provided to the Azure Video Analyzer IoT edge module through the Azure IoT Edge module twin properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
@@ -800,10 +800,10 @@ impl KeyVaultProperties {
 pub struct ListProvisioningTokenInput {
     #[doc = "The desired expiration date of the registration token. The Azure Video Analyzer IoT edge module must be initialized and connected to the Internet prior to the token expiration date."]
     #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339")]
-    pub expiration_date: time::OffsetDateTime,
+    pub expiration_date: ::time::OffsetDateTime,
 }
 impl ListProvisioningTokenInput {
-    pub fn new(expiration_date: time::OffsetDateTime) -> Self {
+    pub fn new(expiration_date: ::time::OffsetDateTime) -> Self {
         Self { expiration_date }
     }
 }
@@ -1585,7 +1585,7 @@ pub struct PipelineJobProperties {
     pub state: Option<pipeline_job_properties::State>,
     #[doc = "The date-time by when this pipeline job will be automatically deleted from your account."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiration: Option<time::OffsetDateTime>,
+    pub expiration: Option<::time::OffsetDateTime>,
     #[doc = "Details about the error for a failed pipeline job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<PipelineJobError>,
@@ -1667,7 +1667,7 @@ pub struct PipelineJobPropertiesUpdate {
     pub state: Option<pipeline_job_properties_update::State>,
     #[doc = "The date-time by when this pipeline job will be automatically deleted from your account."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub expiration: Option<time::OffsetDateTime>,
+    pub expiration: Option<::time::OffsetDateTime>,
     #[doc = "Details about the error for a failed pipeline job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<PipelineJobError>,
@@ -3148,7 +3148,7 @@ impl VideoArchival {
 pub struct VideoContentToken {
     #[doc = "The content token expiration date in ISO8601 format (eg. 2021-01-01T00:00:00Z)."]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
-    pub expiration_date: Option<time::OffsetDateTime>,
+    pub expiration_date: Option<::time::OffsetDateTime>,
     #[doc = "The content token value to be added to the video content URL as the value for the \"token\" query string parameter. The token is specific to a single video."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
@@ -3544,7 +3544,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -3553,7 +3553,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

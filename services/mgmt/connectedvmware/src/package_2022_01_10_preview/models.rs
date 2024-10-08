@@ -578,7 +578,7 @@ pub struct GuestAgentProfile {
     pub status: Option<guest_agent_profile::Status>,
     #[doc = "The time of the last status change."]
     #[serde(rename = "lastStatusChange", default, with = "azure_core::date::rfc3339::option")]
-    pub last_status_change: Option<time::OffsetDateTime>,
+    pub last_status_change: Option<::time::OffsetDateTime>,
     #[doc = "The hybrid machine agent full version."]
     #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
@@ -1268,7 +1268,7 @@ pub mod machine_extension_instance_view {
         pub message: Option<String>,
         #[doc = "The time of the status."]
         #[serde(default, with = "azure_core::date::rfc3339::option")]
-        pub time: Option<time::OffsetDateTime>,
+        pub time: Option<::time::OffsetDateTime>,
     }
     impl Status {
         pub fn new() -> Self {
@@ -2166,7 +2166,7 @@ pub struct ResourceStatus {
     pub severity: Option<String>,
     #[doc = "The last update time for this condition."]
     #[serde(rename = "lastUpdatedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_at: Option<time::OffsetDateTime>,
+    pub last_updated_at: Option<::time::OffsetDateTime>,
 }
 impl ResourceStatus {
     pub fn new() -> Self {
@@ -2563,10 +2563,10 @@ pub struct VirtualMachineAssessPatchesResult {
     pub available_patch_count_by_classification: Option<AvailablePatchCountByClassification>,
     #[doc = "The UTC timestamp when the operation began."]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The UTC timestamp when the operation finished."]
     #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_date_time: Option<time::OffsetDateTime>,
+    pub last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Indicates if operation was triggered by user or by platform."]
     #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
     pub started_by: Option<virtual_machine_assess_patches_result::StartedBy>,
@@ -2853,10 +2853,10 @@ pub struct VirtualMachineInstallPatchesResult {
     pub failed_patch_count: Option<i32>,
     #[doc = "The UTC timestamp when the operation began."]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_date_time: Option<time::OffsetDateTime>,
+    pub start_date_time: Option<::time::OffsetDateTime>,
     #[doc = "The UTC timestamp when the operation finished."]
     #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_date_time: Option<time::OffsetDateTime>,
+    pub last_modified_date_time: Option<::time::OffsetDateTime>,
     #[doc = "Indicates if operation was triggered by user or by platform."]
     #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
     pub started_by: Option<virtual_machine_install_patches_result::StartedBy>,
@@ -3685,7 +3685,7 @@ pub struct WindowsParameters {
     pub exclude_kbs_requiring_reboot: Option<bool>,
     #[doc = "This is used to install patches that were published on or before this given max published date."]
     #[serde(rename = "maxPatchPublishDate", default, with = "azure_core::date::rfc3339::option")]
-    pub max_patch_publish_date: Option<time::OffsetDateTime>,
+    pub max_patch_publish_date: Option<::time::OffsetDateTime>,
 }
 impl WindowsParameters {
     pub fn new() -> Self {
@@ -3765,7 +3765,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -3774,7 +3774,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

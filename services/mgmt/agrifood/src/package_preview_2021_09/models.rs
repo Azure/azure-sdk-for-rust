@@ -691,9 +691,9 @@ pub struct Insight {
     #[serde(rename = "modelVersion", default, skip_serializing_if = "Option::is_none")]
     pub model_version: Option<String>,
     #[serde(rename = "insightStartDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub insight_start_date_time: Option<time::OffsetDateTime>,
+    pub insight_start_date_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "insightEndDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub insight_end_date_time: Option<time::OffsetDateTime>,
+    pub insight_end_date_time: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub measures: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -701,9 +701,9 @@ pub struct Insight {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -739,9 +739,9 @@ pub struct InsightAttachment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub created_date_time: Option<time::OffsetDateTime>,
+    pub created_date_time: Option<::time::OffsetDateTime>,
     #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub modified_date_time: Option<time::OffsetDateTime>,
+    pub modified_date_time: Option<::time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1479,7 +1479,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1488,7 +1488,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

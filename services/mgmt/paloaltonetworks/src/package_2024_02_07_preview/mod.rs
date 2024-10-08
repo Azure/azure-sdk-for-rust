@@ -5456,9 +5456,9 @@ pub mod palo_alto_networks_cloudngfw {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::CloudManagerTenant>> {
+            pub async fn into_body(self) -> azure_core::Result<models::CloudManagerTenantList> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: Vec<models::CloudManagerTenant> = serde_json::from_slice(&bytes)?;
+                let body: models::CloudManagerTenantList = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -5536,8 +5536,8 @@ pub mod palo_alto_networks_cloudngfw {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<Vec<models::CloudManagerTenant>>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<Vec<models::CloudManagerTenant>>>;
+            type Output = azure_core::Result<models::CloudManagerTenantList>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::CloudManagerTenantList>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

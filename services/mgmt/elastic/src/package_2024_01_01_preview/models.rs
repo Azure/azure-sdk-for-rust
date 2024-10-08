@@ -956,7 +956,7 @@ impl MonitoringTagRulesProperties {
 #[doc = "Open AI Integration details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenAiIntegrationProperties {
-    #[doc = "The resource id of Open AI resource"]
+    #[doc = "The resource name of Open AI resource"]
     #[serde(rename = "openAIResourceId", default, skip_serializing_if = "Option::is_none")]
     pub open_ai_resource_id: Option<String>,
     #[doc = "The API endpoint for Open AI resource"]
@@ -967,7 +967,7 @@ pub struct OpenAiIntegrationProperties {
     pub key: Option<String>,
     #[doc = "Last Update Timestamp for key updation"]
     #[serde(rename = "lastRefreshAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_refresh_at: Option<time::OffsetDateTime>,
+    pub last_refresh_at: Option<::time::OffsetDateTime>,
 }
 impl OpenAiIntegrationProperties {
     pub fn new() -> Self {
@@ -1500,7 +1500,7 @@ pub struct SystemData {
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
+    pub created_at: Option<::time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1509,7 +1509,7 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
+    pub last_modified_at: Option<::time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {
