@@ -27,6 +27,10 @@ pub trait AmqpClaimsBasedSecurityApis {
     ///
     fn attach(&self) -> impl std::future::Future<Output = Result<()>>;
 
+    /// Asynchronously detaches the Claims-Based Security (CBS) node from the AMQP session.
+    /// This method is responsible for cleaning up the AMQP links used for CBS operations.
+    fn detach(self) -> impl std::future::Future<Output = Result<()>>;
+
     /// Asynchronously authorizes an AMQP path using the provided secret.
     ///
     /// The authorization is valid until the specified `expires_on` time. The path is typically a URI that represents an AMQP resource. The secret is typically a SAS token. The `expires_on` time is the time at which the authorization expires.
@@ -63,6 +67,7 @@ impl<'a> AmqpClaimsBasedSecurity<'a> {
         })
     }
 }
+
 impl<'a> AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity<'a> {
     async fn authorize_path(
         &self,
@@ -76,5 +81,8 @@ impl<'a> AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity<'a> {
     }
     async fn attach(&self) -> Result<()> {
         self.implementation.attach().await
+    }
+    async fn detach(self) -> Result<()> {
+        self.implementation.detach().await
     }
 }

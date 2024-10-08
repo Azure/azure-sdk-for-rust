@@ -14,7 +14,7 @@ type SenderImplementation = super::fe2o3::sender::Fe2o3AmqpSender;
 #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
 type SenderImplementation = super::noop::NoopAmqpSender;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct AmqpSenderOptions {
     pub(super) sender_settle_mode: Option<SenderSettleMode>,
     pub(super) receiver_settle_mode: Option<ReceiverSettleMode>,
@@ -40,7 +40,8 @@ pub trait AmqpSenderApis {
         target: impl Into<AmqpTarget>,
         options: Option<AmqpSenderOptions>,
     ) -> impl std::future::Future<Output = Result<()>>;
-    fn max_message_size(&self) -> impl std::future::Future<Output = Result<Option<u64>>>;
+    fn detach(self) -> impl std::future::Future<Output = Result<()>>;
+    fn max_message_size(&self) -> Result<Option<u64>>;
     fn send(
         &self,
         message: impl Into<AmqpMessage> + std::fmt::Debug,
@@ -65,8 +66,12 @@ impl AmqpSenderApis for AmqpSender {
             .attach(session, name, target, options)
             .await
     }
-    async fn max_message_size(&self) -> Result<Option<u64>> {
-        self.implementation.max_message_size().await
+     async fn detach(self) -> Result<()> {
+        self.implementation.detach().await
+    }
+
+    fn max_message_size(&self) -> Result<Option<u64>> {
+        self.implementation.max_message_size()
     }
     async fn send(
         &self,
@@ -86,13 +91,13 @@ impl AmqpSender {
 }
 
 /// Options for sending an AMQP message.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct AmqpSendOptions {
     /// The message format.
-    pub(crate) message_format: Option<u32>,
+    pub message_format: Option<u32>,
 
     /// The message priority.
-    pub(crate) settled: Option<bool>,
+    pub settled: Option<bool>,
 }
 
 impl AmqpSendOptions {
@@ -129,6 +134,7 @@ pub mod builders {
         }
     }
 
+    #[derive(Clone)]
     pub struct AmqpSenderOptionsBuilder {
         options: AmqpSenderOptions,
     }
@@ -139,57 +145,57 @@ pub mod builders {
                 options: Default::default(),
             }
         }
-        #[allow(dead_code)]
-        pub fn with_sender_settle_mode(mut self, sender_settle_mode: SenderSettleMode) -> Self {
+
+        pub fn with_sender_settle_mode(&mut self, sender_settle_mode: SenderSettleMode) -> &mut Self {
             self.options.sender_settle_mode = Some(sender_settle_mode);
             self
         }
-        #[allow(dead_code)]
+
         pub fn with_receiver_settle_mode(
-            mut self,
+            &mut self,
             receiver_settle_mode: ReceiverSettleMode,
-        ) -> Self {
+        ) -> &mut Self {
             self.options.receiver_settle_mode = Some(receiver_settle_mode);
             self
         }
-        #[allow(dead_code)]
-        pub fn with_source(mut self, source: impl Into<AmqpSource>) -> Self {
+
+        pub fn with_source(&mut self, source: impl Into<AmqpSource>) ->&mut Self {
             self.options.source = Some(source.into());
             self
         }
-        #[allow(dead_code)]
-        pub fn with_offered_capabilities(mut self, offered_capabilities: Vec<AmqpSymbol>) -> Self {
+        pub fn with_offered_capabilities(&mut self, offered_capabilities: Vec<AmqpSymbol>) ->&mut Self {
             self.options.offered_capabilities = Some(offered_capabilities);
             self
         }
         #[allow(dead_code)]
-        pub fn with_desired_capabilities(mut self, desired_capabilities: Vec<AmqpSymbol>) -> Self {
+        pub fn with_desired_capabilities(&mut self, desired_capabilities: Vec<AmqpSymbol>) -> &mut Self {
             self.options.desired_capabilities = Some(desired_capabilities);
             self
         }
-        #[allow(dead_code)]
+
         pub fn with_properties(
-            mut self,
+            &mut self,
             properties: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-        ) -> Self {
+        ) -> &mut Self {
             let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
                 properties.into().iter().collect();
 
             self.options.properties = Some(properties_map);
             self
         }
-        #[allow(dead_code)]
-        pub fn with_initial_delivery_count(mut self, initial_delivery_count: u32) -> Self {
+
+        pub fn with_initial_delivery_count(&mut self, initial_delivery_count: u32) -> &mut Self {
             self.options.initial_delivery_count = Some(initial_delivery_count);
             self
         }
-        pub fn with_max_message_size(mut self, max_message_size: u64) -> Self {
+
+        pub fn with_max_message_size(&mut self, max_message_size: u64) -> &mut Self {
             self.options.max_message_size = Some(max_message_size);
             self
         }
 
-        pub fn build(self) -> AmqpSenderOptions {
-            self.options
+        pub fn build(&mut self) -> AmqpSenderOptions {
+            self.options.clone()
         }
     }
 }

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 // cspell:: words amqp servicebus sastoken
 
-use super::error::{AmqpManagement, AmqpManagementAttach};
+use super::error::{AmqpLinkDetach, AmqpManagement, AmqpManagementAttach};
 use crate::{cbs::AmqpClaimsBasedSecurityApis, session::AmqpSession};
 use async_std::sync::Mutex;
 use azure_core::error::Result;
@@ -50,6 +50,18 @@ impl<'a> AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'a> {
                 "Claims Based Security is already set.",
             )
         })?;
+        Ok(())
+    }
+
+    async fn detach(mut self) -> Result<()> {
+        let cbs = self.cbs.take().ok_or_else(|| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Claims Based Security was not set.",
+            )
+        })?;
+        let cbs = cbs.into_inner();
+        cbs.close().await.map_err(AmqpLinkDetach::from)?;
         Ok(())
     }
 
