@@ -66,7 +66,7 @@ impl AmqpSenderApis for AmqpSender {
             .attach(session, name, target, options)
             .await
     }
-     async fn detach(self) -> Result<()> {
+    async fn detach(self) -> Result<()> {
         self.implementation.detach().await
     }
 
@@ -146,7 +146,10 @@ pub mod builders {
             }
         }
 
-        pub fn with_sender_settle_mode(&mut self, sender_settle_mode: SenderSettleMode) -> &mut Self {
+        pub fn with_sender_settle_mode(
+            &mut self,
+            sender_settle_mode: SenderSettleMode,
+        ) -> &mut Self {
             self.options.sender_settle_mode = Some(sender_settle_mode);
             self
         }
@@ -159,16 +162,22 @@ pub mod builders {
             self
         }
 
-        pub fn with_source(&mut self, source: impl Into<AmqpSource>) ->&mut Self {
+        pub fn with_source(&mut self, source: impl Into<AmqpSource>) -> &mut Self {
             self.options.source = Some(source.into());
             self
         }
-        pub fn with_offered_capabilities(&mut self, offered_capabilities: Vec<AmqpSymbol>) ->&mut Self {
+        pub fn with_offered_capabilities(
+            &mut self,
+            offered_capabilities: Vec<AmqpSymbol>,
+        ) -> &mut Self {
             self.options.offered_capabilities = Some(offered_capabilities);
             self
         }
         #[allow(dead_code)]
-        pub fn with_desired_capabilities(&mut self, desired_capabilities: Vec<AmqpSymbol>) -> &mut Self {
+        pub fn with_desired_capabilities(
+            &mut self,
+            desired_capabilities: Vec<AmqpSymbol>,
+        ) -> &mut Self {
             self.options.desired_capabilities = Some(desired_capabilities);
             self
         }
