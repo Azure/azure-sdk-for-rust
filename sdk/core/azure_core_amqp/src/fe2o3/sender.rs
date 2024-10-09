@@ -8,15 +8,16 @@ use crate::session::AmqpSession;
 use async_std::sync::Mutex;
 use azure_core::Result;
 use std::borrow::BorrowMut;
-use std::sync::{Arc, OnceLock};
+use std::sync::OnceLock;
 
 use super::error::{
-    AmqpDeliveryRejected, AmqpNotAccepted, AmqpSenderAttach, AmqpSenderSend, Fe2o3AmqpError,
+    AmqpDeliveryRejected, AmqpLinkDetach, AmqpNotAccepted, AmqpSenderAttach, AmqpSenderSend,
+    Fe2o3AmqpError,
 };
 
 #[derive(Debug, Default)]
 pub(crate) struct Fe2o3AmqpSender {
-    sender: OnceLock<Arc<Mutex<fe2o3_amqp::Sender>>>,
+    sender: OnceLock<Mutex<fe2o3_amqp::Sender>>,
 }
 
 impl AmqpSenderApis for Fe2o3AmqpSender {
@@ -67,7 +68,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
             .map_err(AmqpSenderAttach::from)?;
-        self.sender.set(Arc::new(Mutex::new(sender))).map_err(|_| {
+        self.sender.set(Mutex::new(sender)).map_err(|_| {
             azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
                 "Could not set message sender.",
@@ -76,7 +77,22 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         Ok(())
     }
 
-    async fn max_message_size(&self) -> azure_core::Result<Option<u64>> {
+    async fn detach(mut self) -> Result<()> {
+        let sender = self.sender.take().ok_or_else(|| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Message Sender not set.",
+            )
+        })?;
+        sender
+            .into_inner()
+            .detach()
+            .await
+            .map_err(|e| AmqpLinkDetach::from(e.1))?;
+        Ok(())
+    }
+
+    fn max_message_size(&self) -> azure_core::Result<Option<u64>> {
         Ok(self
             .sender
             .get()
@@ -86,8 +102,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
                     "Message Sender not set.",
                 )
             })?
-            .lock()
-            .await
+            .lock_blocking()
             .max_message_size())
     }
 
@@ -124,6 +139,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             })?
             .lock()
             .await
+            .borrow_mut()
             .send(sendable)
             .await
             .map_err(AmqpSenderSend::from)?;
