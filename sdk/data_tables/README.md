@@ -1,5 +1,12 @@
 # azure_data_tables
 
+> Microsoft is developing the official Azure SDK for Rust crates and has no plans to update this unofficial crate.
+> In the future we may release an official version that may have a different package name.
+> If releasing an official version of this crate is important to you [let us know](https://github.com/Azure/azure-sdk-for-rust/issues/new/choose).
+>
+> Source for this crate can now be found in <https://github.com/Azure/azure-sdk-for-rust/tree/legacy>.
+> To monitor for an official, supported version of this crate, see <https://aka.ms/azsdk/releases>.
+
 This crate is from the [Azure SDK for Rust](https://github.com/azure/azure-sdk-for-rust). It supports [Azure Table storage](https://docs.microsoft.com/azure/storage/tables/table-storage-overview).
 
 ```rust
