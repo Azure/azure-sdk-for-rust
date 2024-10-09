@@ -1,4 +1,5 @@
-//! Azure Messaging Event Grid crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
+#![doc = include_str!("../README.md")]
+
 mod event;
 // TODO update event_grid to use HttpClient https://github.com/Azure/azure-sdk-for-rust/issues/254
 // mod event_grid_client;

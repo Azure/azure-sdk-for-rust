@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     while let Some(pools) = pools.next().await {
         let pools = pools?;
         for pool in pools.value {
-            println!("name: {:?}", pool.proxy_resource.name.unwrap_or_default());
+            println!("name: {:?}", pool.azure_proxy_resource.name.unwrap_or_default());
             if let Some(properties) = &pool.properties {
                 if let Some(provisioning_state) = &properties.provisioning_state {
                     println!("provisioning state: {provisioning_state:?}");

@@ -1,5 +1,12 @@
 # azure_data_cosmos
 
+> Microsoft is developing the official Azure SDK for Rust crates and has no plans to update this unofficial crate.
+> In the future we may release an official version that may have a different package name.
+> If releasing an official version of this crate is important to you [let us know](https://github.com/Azure/azure-sdk-for-rust/issues/new/choose).
+>
+> Source for this crate can now be found in <https://github.com/Azure/azure-sdk-for-rust/tree/legacy>.
+> To monitor for an official, supported version of this crate, see <https://aka.ms/azsdk/releases>.
+
 ## The Cosmos DB crate.
 
 `azure-data-cosmos` offers functionality needed to interact with Cosmos DB from Rust. As an abstraction over the [Cosmos DB
@@ -8,7 +15,7 @@ should also be possible with this crate.
 
 ### Examples
 
-```rust
+```rust no_run
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos DB.
 use azure_data_cosmos::prelude::*;
 use azure_core::Context;

@@ -1,6 +1,6 @@
 /*
 Lists Batch Accounts, similar to:
-az batch account list --queyr [].id
+az batch account list --query [].id
 
 cargo run --example list_accounts
 */
@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     while let Some(accounts) = accounts.next().await {
         let accounts = accounts?;
         for account in accounts.value {
-            println!("{}", account.resource.id.unwrap_or_default());
+            println!("{}", account.azure_resource.id.unwrap_or_default());
         }
     }
 

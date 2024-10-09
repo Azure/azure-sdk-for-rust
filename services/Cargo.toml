@@ -1,6 +1,6 @@
 [workspace]
 members = [
-  "svc/blobstorage",
+  "mgmt/batch",
 ]
 
 resolver = "2"
