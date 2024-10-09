@@ -11,7 +11,8 @@ This crate is from the [Azure SDK for Rust](https://github.com/azure/azure-sdk-f
 It supports [Azure Blob Storage](https://docs.microsoft.com/azure/storage/blobs/storage-blobs-overview).
 
 ## Example
-```rust
+
+```rust no_run
 
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_storage::prelude::*;

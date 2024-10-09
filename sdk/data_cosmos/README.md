@@ -15,7 +15,7 @@ should also be possible with this crate.
 
 ### Examples
 
-```rust
+```rust no_run
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos DB.
 use azure_data_cosmos::prelude::*;
 use azure_core::Context;

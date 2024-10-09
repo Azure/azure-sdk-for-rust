@@ -12,7 +12,7 @@ Azure Identity crate for the unofficial Microsoft Azure SDK for Rust. This crate
 This crate provides several implementations of the [azure_core::auth::TokenCredential](https://docs.rs/azure_core/latest/azure_core/auth/trait.TokenCredential.html) trait.
 It is recommended to start with `azure_identity::create_credential()?`, which will create an instance of `DefaultAzureCredential` by default. If you want to use a specific credential type, the `AZURE_CREDENTIAL_KIND` environment variable may be set to a value from `azure_credential_kinds`, such as `azurecli` or `virtualmachine`.
 
-```rust
+```rust no_run
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
    let subscription_id =

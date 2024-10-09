@@ -10,12 +10,7 @@ export RUSTFLAGS="-Dwarnings"
 
 rustup update --no-self-update ${BUILD}
 rustup component add rustfmt --toolchain ${BUILD}
-cargo +${BUILD} install cargo-readme
 cargo +${BUILD} fmt --all -- --check
 cargo +${BUILD} clippy --all
 cargo +${BUILD} doc --all --no-deps
 ./eng/scripts/check_json_format.sh
-./eng/scripts/cargo_readme.sh
-if git status sdk | grep -q '.md$'; then
-    echo "Run ./eng/scripts/cargo_readme.sh to update readmes" && exit 1
-fi

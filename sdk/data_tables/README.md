@@ -9,7 +9,7 @@
 
 This crate is from the [Azure SDK for Rust](https://github.com/azure/azure-sdk-for-rust). It supports [Azure Table storage](https://docs.microsoft.com/azure/storage/tables/table-storage-overview).
 
-```rust
+```rust no_run
 use azure_core::StatusCode;
 use azure_data_tables::{operations::InsertEntityResponse, prelude::*};
 use azure_storage::prelude::*;
