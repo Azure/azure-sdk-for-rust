@@ -15,6 +15,7 @@ GitHub issues are free, but **response time is not guaranteed.** See [GitHub iss
 To ensure the relevance and manageability of our issue queue, we have an automated process that will close issues that are over two years old and have not been updated in the last 30 days. This measure is designed to help us respond to and resolve current issues more efficiently. We appreciate your understanding and cooperation in maintaining a focused and up-to-date issue tracking system.
 
 ### Community resources
+
 - Take a look at the [Azure SDK blog](https://devblogs.microsoft.com/azure-sdk/).
 - Search for similar issues in [our GitHub repository](https://github.com/Azure/azure-sdk-for-rust/issues)
 - Ask a question on [StackOverflow](https://stackoverflow.com/questions/tagged/azure-sdk-rust) and tag it with azure-sdk-.net
@@ -24,8 +25,9 @@ To ensure the relevance and manageability of our issue queue, we have an automat
 - Ask a question at [Microsoft Tech Community](https://techcommunity.microsoft.com/t5/azure/ct-p/Azure)
 
 ### Security bugs
-Security issues and bugs should be reported privately, via email, to the Microsoft Security Response Center(secure@microsoft.com). 
-You should receive a response within 24 hours. 
+
+Security issues and bugs should be reported privately, via email, to the Microsoft Security Response Center(<secure@microsoft.com>).
+You should receive a response within 24 hours.
 Further information, including the MSRC PGP key, can be found in the [Security TechCenter](https://www.microsoft.com/msrc/faqs-report-an-issue?rtc=1)
 
 ## Microsoft Support Policy
