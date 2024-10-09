@@ -22,7 +22,7 @@ impl<T> PagerResult<T, String> {
     /// Creates a [`PagerResult<T, C>`] from the provided response, extracting the continuation value from the provided header.
     ///
     /// If the provided response has a header with the matching name, this returns [`PagerResult::Continue`], using the value from the header as the continuation.
-    /// If the provided response does not have a header with the matching name, this returns [`PagerResult::Finish`].
+    /// If the provided response does not have a header with the matching name, this returns [`PagerResult::Complete`].
     pub fn from_response_header(response: Response<T>, header_name: &HeaderName) -> Self {
         match response.headers().get_optional_string(header_name) {
             Some(continuation) => PagerResult::Continue {
