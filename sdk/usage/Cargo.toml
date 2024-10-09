@@ -1,0 +1,47 @@
+[package]
+name = "azure_usage"
+version = "0.1.0"
+description = "Azure Usage Billing crate from the Azure SDK for Rust"
+readme = "README.md"
+authors = ["Microsoft Corp."]
+license = "MIT"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_usage"
+keywords = ["sdk", "azure", "usage"]
+categories = ["api-bindings"]
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1"
+azure_core = { path = "../core", version = "0.20", features = ["xml"] }
+bytes = "1.0"
+time = "0.3.10"
+futures = "0.3"
+tracing = "0.1.40"
+serde = { version = "1.0" }
+serde_derive = "1.0"
+serde_json = "1.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+url = "2.2"
+
+[dev-dependencies]
+tracing-subscriber = "0.3"
+tokio = {version = "1.0", features = ["macros", "rt-multi-thread", "io-util"]}
+azure_identity = { path = "../identity", default-features = false }
+mock_transport = { path = "../../eng/test/mock_transport" }
+async-trait = "0.1"
+clap = { version = "4.0", features = ["derive", "env"] }
+azure_core = {path = "../core", version = "0.20", features = ["tokio-fs"]}
+
+[features]
+default = ["enable_reqwest", "hmac_rust"]
+test_e2e = []
+test_integration = []
+enable_reqwest = ["azure_core/enable_reqwest"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
+hmac_rust = ["azure_core/hmac_rust"]
+hmac_openssl = ["azure_core/hmac_openssl"]
+
+[package.metadata.docs.rs]
+#features = ["enable_reqwest", "enable_reqwest_rustls", "hmac_rust", "hmac_openssl"]
