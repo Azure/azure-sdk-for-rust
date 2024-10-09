@@ -2,8 +2,12 @@
 
 ## Prerequisites
 
-- [TODO] Recommended tools to use. (Editor, extensions, etc.)
-- [TODO] Minimum required version of rustup / rustc / cargo
+- It's recommended you install `rustup` to acquire the necessary tooling like `rustc` and `cargo`.
+- Rust version [1.76](https://releases.rs/docs/1.76.0/) is required to build libraries from the SDK.
+- If you use VSCode, we recommend you install these extensions:
+  - [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+  - [Event Better TOML](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
+  - [CodeLLD](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)
 
 ## Generated code
 
@@ -11,7 +15,7 @@ If you want to contribute to a file that is generated (header contains `Code gen
 
 ## Building
 
-[TODO] Add instructions on how to build a specific library or the entire repo if possible.
+To build any library in the Azure SDK for Rust navigate to the library's project folder and run `cargo build`.
 
 ## Testing
 
