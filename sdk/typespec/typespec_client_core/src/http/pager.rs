@@ -13,7 +13,7 @@ pub enum PagerResult<T, C> {
         response: Response<T>,
         continuation: C,
     },
-    Finish {
+    Complete {
         response: Response<T>,
     },
 }
@@ -29,7 +29,7 @@ impl<T> PagerResult<T, String> {
                 response,
                 continuation,
             },
-            None => PagerResult::Finish { response },
+            None => PagerResult::Complete { response },
         }
     }
 }
@@ -108,7 +108,7 @@ impl<T> Pager<T> {
                         response,
                         continuation,
                     }) => (Ok(response), State::Continuation(continuation)),
-                    Ok(PagerResult::Finish { response }) => (Ok(response), State::Done),
+                    Ok(PagerResult::Complete { response }) => (Ok(response), State::Done),
                 };
 
                 // Flow 'make_request' through to avoid cloning
@@ -192,7 +192,7 @@ mod tests {
                     ),
                     continuation: "2",
                 }),
-                Some("2") => Ok(PagerResult::Finish {
+                Some("2") => Ok(PagerResult::Complete {
                     response: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
