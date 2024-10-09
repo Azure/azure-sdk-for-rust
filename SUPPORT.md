@@ -1,6 +1,6 @@
 # Support
 
-## How to file issues and get help  
+## How to file issues and get help
 
 ### Azure support tickets
 
