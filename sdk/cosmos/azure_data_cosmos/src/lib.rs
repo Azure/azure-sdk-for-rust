@@ -11,7 +11,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg_hide))]
 
 pub mod clients;
-pub(crate) mod constants;
+pub mod constants;
 mod options;
 mod partition_key;
 pub(crate) mod pipeline;

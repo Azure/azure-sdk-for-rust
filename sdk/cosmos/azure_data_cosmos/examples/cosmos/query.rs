@@ -34,10 +34,8 @@ impl QueryCommand {
             container_client.query_items::<serde_json::Value>(&self.query, pk, None)?;
 
         while let Some(page) = items_pager.next().await {
-            let response = page?;
+            let response = page?.deserialize_body().await?;
             println!("Results Page");
-            println!("  Query Metrics: {:?}", response.query_metrics);
-            println!("  Index Metrics: {:?}", response.index_metrics);
             println!("  Items:");
             for item in response.items {
                 println!("    * {:#?}", item);

@@ -3,8 +3,8 @@
 
 //! Model types sent to and received from the Cosmos DB API.
 
-use azure_core::{date::OffsetDateTime, Continuable, Model};
-use serde::{Deserialize, Deserializer};
+use azure_core::{date::OffsetDateTime, Model};
+use serde::{de::DeserializeOwned, Deserialize, Deserializer};
 
 #[cfg(doc)]
 use crate::{
@@ -37,19 +37,17 @@ where
 
 /// A page of query results, where each item is a document of type `T`.
 #[non_exhaustive]
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Default, Debug, Deserialize)]
 pub struct QueryResults<T> {
+    #[serde(rename = "Documents")]
     pub items: Vec<T>,
-    pub query_metrics: Option<String>,
-    pub index_metrics: Option<String>,
-    pub continuation_token: Option<String>,
 }
 
-impl<T> Continuable for QueryResults<T> {
-    type Continuation = String;
-
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.continuation_token.clone()
+impl<T: DeserializeOwned> azure_core::Model for QueryResults<T> {
+    async fn from_response_body(
+        body: azure_core::ResponseBody,
+    ) -> typespec_client_core::Result<Self> {
+        body.json().await
     }
 }
 
