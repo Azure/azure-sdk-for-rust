@@ -65,7 +65,8 @@ pub struct PartitionKeyDefinition {
     pub paths: Vec<String>,
 
     /// The version of the partition key hash in use.
-    pub version: Option<usize>,
+    #[serde(default)]
+    pub version: i32,
 }
 
 /// Represents the indexing policy for a container.

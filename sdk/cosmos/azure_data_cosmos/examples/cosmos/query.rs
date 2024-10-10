@@ -76,7 +76,7 @@ impl QueryCommand {
                     let page = page?.deserialize_body().await?;
                     println!("Results Page");
                     println!("  Databases:");
-                    for item in page.items {
+                    for item in page.databases {
                         println!("    * {:#?}", item);
                     }
                 }
@@ -90,7 +90,7 @@ impl QueryCommand {
                     let page = page?.deserialize_body().await?;
                     println!("Results Page");
                     println!("  Containers:");
-                    for item in page.items {
+                    for item in page.containers {
                         println!("    * {:#?}", item);
                     }
                 }

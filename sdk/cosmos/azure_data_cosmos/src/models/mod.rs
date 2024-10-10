@@ -37,13 +37,11 @@ where
     }
 }
 
-/// A page of query results, where each item is a document of type `T`.
+/// A page of query results, where each item is of type `T`.
 #[non_exhaustive]
 #[derive(Clone, Default, Debug, Deserialize)]
 pub struct QueryResults<T> {
     #[serde(alias = "Documents")]
-    #[serde(alias = "Databases")]
-    #[serde(alias = "DocumentCollections")]
     pub items: Vec<T>,
 }
 
@@ -53,6 +51,22 @@ impl<T: DeserializeOwned> azure_core::Model for QueryResults<T> {
     ) -> typespec_client_core::Result<Self> {
         body.json().await
     }
+}
+
+/// A page of results from [`CosmosClient::query_databases`](crate::clients::CosmosClient::query_databases())
+#[non_exhaustive]
+#[derive(Clone, Default, Debug, Deserialize, Model)]
+pub struct DatabaseQueryResults {
+    #[serde(alias = "Databases")]
+    pub databases: Vec<DatabaseProperties>,
+}
+
+/// A page of results from [`DatabaseClient::query_containers`](crate::clients::DatabaseClient::query_containers())
+#[non_exhaustive]
+#[derive(Clone, Default, Debug, Deserialize, Model)]
+pub struct ContainerQueryResults {
+    #[serde(alias = "DocumentCollections")]
+    pub containers: Vec<ContainerProperties>,
 }
 
 /// Common system properties returned for most Cosmos DB resources.

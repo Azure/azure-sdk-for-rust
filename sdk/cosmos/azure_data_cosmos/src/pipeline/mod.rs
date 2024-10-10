@@ -10,7 +10,7 @@ use azure_core::{Context, Pager, Request};
 use serde::de::DeserializeOwned;
 use typespec_client_core::http::PagerResult;
 
-use crate::{constants, models::QueryResults, Query};
+use crate::{constants, Query};
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
@@ -45,7 +45,7 @@ impl CosmosPipeline {
         query: Query,
         mut base_request: Request,
         resource_type: ResourceType,
-    ) -> azure_core::Result<Pager<QueryResults<T>>> {
+    ) -> azure_core::Result<Pager<T>> {
         base_request.insert_header(constants::QUERY, "True");
         base_request.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
         base_request.set_json(&query)?;

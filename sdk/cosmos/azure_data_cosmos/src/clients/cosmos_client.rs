@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::clients::DatabaseClient;
-use crate::models::{DatabaseProperties, QueryResults};
+use crate::models::DatabaseQueryResults;
 use crate::pipeline::{AuthorizationPolicy, CosmosPipeline, ResourceType};
 use crate::utils::AppendPathSegments;
 use crate::{CosmosClientOptions, Query, QueryDatabasesOptions};
@@ -64,7 +64,7 @@ pub trait CosmosClientMethods {
         &self,
         query: impl Into<Query>,
         options: Option<QueryDatabasesOptions>,
-    ) -> azure_core::Result<azure_core::Pager<QueryResults<DatabaseProperties>>>;
+    ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>>;
 }
 
 impl CosmosClient {
@@ -155,7 +155,7 @@ impl CosmosClientMethods for CosmosClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryDatabasesOptions>,
-    ) -> azure_core::Result<azure_core::Pager<QueryResults<DatabaseProperties>>> {
+    ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>> {
         let mut url = self.endpoint.clone();
         url.append_path_segments(["dbs"]);
         let base_request = Request::new(url, azure_core::Method::Post);

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::models::{ContainerProperties, DatabaseProperties, QueryResults};
+use crate::models::{ContainerQueryResults, DatabaseProperties};
 use crate::options::ReadDatabaseOptions;
 use crate::pipeline::ResourceType;
 use crate::utils::AppendPathSegments;
@@ -79,7 +79,7 @@ pub trait DatabaseClientMethods {
         &self,
         query: impl Into<Query>,
         options: Option<QueryContainersOptions>,
-    ) -> azure_core::Result<Pager<QueryResults<ContainerProperties>>>;
+    ) -> azure_core::Result<Pager<ContainerQueryResults>>;
 }
 
 /// A client for working with a specific database in a Cosmos DB account.
@@ -133,7 +133,7 @@ impl DatabaseClientMethods for DatabaseClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryContainersOptions>,
-    ) -> azure_core::Result<Pager<QueryResults<ContainerProperties>>> {
+    ) -> azure_core::Result<Pager<ContainerQueryResults>> {
         let mut url = self.database_url.clone();
         url.append_path_segments(["colls"]);
         let base_request = Request::new(url, azure_core::Method::Post);
