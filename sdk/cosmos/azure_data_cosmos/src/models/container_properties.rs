@@ -24,14 +24,14 @@ pub struct ContainerProperties {
 
     /// The time-to-live for items in the container.
     ///
-    /// For more information see https://docs.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations
+    /// For more information see <https://docs.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations>
     #[serde(default)]
     #[serde(deserialize_with = "deserialize_ttl")]
     pub default_ttl: Option<Duration>,
 
     /// The time-to-live for the analytical store in the container.
     ///
-    /// For more information see https://docs.microsoft.com/azure/cosmos-db/analytical-store-introduction#analytical-ttl
+    /// For more information see <https://docs.microsoft.com/azure/cosmos-db/analytical-store-introduction#analytical-ttl>
     #[serde(default)]
     #[serde(deserialize_with = "deserialize_ttl")]
     pub analytical_storage_ttl: Option<Duration>,
@@ -67,7 +67,7 @@ pub struct PartitionKeyDefinition {
 
 /// Represents the indexing policy for a container.
 ///
-/// For more information see https://docs.microsoft.com/azure/cosmos-db/index-policy
+/// For more information see <https://docs.microsoft.com/azure/cosmos-db/index-policy>
 #[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -179,7 +179,7 @@ pub enum CompositeIndexOrder {
 
 /// Represents a unique key policy for a container.
 ///
-/// For more information see https://docs.microsoft.com/azure/cosmos-db/unique-keys
+/// For more information see <https://docs.microsoft.com/azure/cosmos-db/unique-keys>
 #[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -199,7 +199,7 @@ pub struct UniqueKey {
 
 /// Represents a conflict resolution policy for a container
 ///
-/// For more information, see https://learn.microsoft.com/en-us/azure/cosmos-db/conflict-resolution-policies
+/// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/conflict-resolution-policies>
 #[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -230,7 +230,7 @@ pub enum ConflictResolutionMode {
 
 /// Represents a vector index
 ///
-/// For more information, see https://learn.microsoft.com/en-us/azure/cosmos-db/index-policy#vector-indexes
+/// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/index-policy#vector-indexes>
 #[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
