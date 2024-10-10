@@ -57,7 +57,7 @@ impl<T: DeserializeOwned> azure_core::Model for QueryResults<T> {
 
 /// Common system properties returned for most Cosmos DB resources.
 #[non_exhaustive]
-#[derive(Clone, Default, Debug, Deserialize)]
+#[derive(Clone, Default, Debug, Deserialize, PartialEq, Eq)]
 pub struct SystemProperties {
     /// The entity tag associated with the resource.
     #[serde(rename = "_etag")]
@@ -81,7 +81,7 @@ pub struct SystemProperties {
 ///
 /// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[non_exhaustive]
-#[derive(Model, Clone, Default, Debug, Deserialize)]
+#[derive(Model, Clone, Default, Debug, Deserialize, PartialEq, Eq)]
 pub struct DatabaseProperties {
     /// The ID of the database.
     pub id: String,

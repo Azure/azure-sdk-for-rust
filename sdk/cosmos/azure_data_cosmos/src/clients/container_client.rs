@@ -12,7 +12,6 @@ use crate::{
 
 use azure_core::{Context, Pager, Request, Response};
 use serde::{de::DeserializeOwned, Serialize};
-use typespec_client_core::http::PagerResult;
 use url::Url;
 
 #[cfg(doc)]

@@ -8,6 +8,7 @@ use std::sync::Arc;
 pub(crate) use authorization_policy::{AuthorizationPolicy, ResourceType};
 use azure_core::{Context, Pager, Request};
 use serde::de::DeserializeOwned;
+use typespec_client_core::http::PagerResult;
 
 use crate::{constants, models::QueryResults, Query};
 
@@ -66,10 +67,11 @@ impl CosmosPipeline {
                 }
 
                 let resp = pipeline.send(&context, &mut req).await?;
-                let continuation_token =
-                    resp.headers().get_optional_string(&constants::CONTINUATION);
 
-                Ok((resp, continuation_token))
+                Ok(PagerResult::from_response_header(
+                    resp,
+                    &constants::CONTINUATION,
+                ))
             }
         }))
     }
