@@ -39,15 +39,18 @@
     "iothub",
     "keyvault",
     "msrc",
+    "Newtonsoft",
     "pageable",
     "pkce",
     "pkcs",
     "posix",
     "reqwest",
+    "rustup",
     "seekable",
     "servicebus",
     "stylesheet",
     "typespec",
+    "upvote",
     "virtualmachine"
   ],
   "dictionaryDefinitions": [
