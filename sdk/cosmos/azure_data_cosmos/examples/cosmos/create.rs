@@ -25,7 +25,7 @@ pub struct CreateCommand {
 }
 
 impl CreateCommand {
-    pub async fn run(&self, client: CosmosClient) -> Result<(), Box<dyn Error>> {
+    pub async fn run(self, client: CosmosClient) -> Result<(), Box<dyn Error>> {
         let db_client = client.database_client(&self.database);
         let container_client = db_client.container_client(&self.container);
 

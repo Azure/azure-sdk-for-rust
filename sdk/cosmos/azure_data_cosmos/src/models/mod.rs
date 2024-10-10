@@ -12,8 +12,10 @@ use crate::{
     CosmosClientMethods,
 };
 
+mod container_properties;
 mod item;
 
+pub use container_properties::*;
 pub use item::*;
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
@@ -39,7 +41,9 @@ where
 #[non_exhaustive]
 #[derive(Clone, Default, Debug, Deserialize)]
 pub struct QueryResults<T> {
-    #[serde(rename = "Documents")]
+    #[serde(alias = "Documents")]
+    #[serde(alias = "Databases")]
+    #[serde(alias = "DocumentCollections")]
     pub items: Vec<T>,
 }
 
@@ -53,7 +57,7 @@ impl<T: DeserializeOwned> azure_core::Model for QueryResults<T> {
 
 /// Common system properties returned for most Cosmos DB resources.
 #[non_exhaustive]
-#[derive(Clone, Default, Debug, Deserialize)]
+#[derive(Clone, Default, Debug, Deserialize, PartialEq, Eq)]
 pub struct SystemProperties {
     /// The entity tag associated with the resource.
     #[serde(rename = "_etag")]
@@ -77,26 +81,12 @@ pub struct SystemProperties {
 ///
 /// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[non_exhaustive]
-#[derive(Model, Clone, Default, Debug, Deserialize)]
+#[derive(Model, Clone, Default, Debug, Deserialize, PartialEq, Eq)]
 pub struct DatabaseProperties {
     /// The ID of the database.
     pub id: String,
 
     /// A [`SystemProperties`] object containing common system properties for the database.
-    #[serde(flatten)]
-    pub system_properties: SystemProperties,
-}
-
-/// Properties of a Cosmos DB container.
-///
-/// Returned by [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
-#[non_exhaustive]
-#[derive(Model, Clone, Default, Debug, Deserialize)]
-pub struct ContainerProperties {
-    /// The ID of the container.
-    pub id: String,
-
-    /// A [`SystemProperties`] object containing common system properties for the container.
     #[serde(flatten)]
     pub system_properties: SystemProperties,
 }
