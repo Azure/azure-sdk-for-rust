@@ -15,3 +15,6 @@ sample/
 *.vim
 .idea/
 .env
+
+# temporary folder to refresh SDK with TypeSpec
+TempTypeSpecFiles/
