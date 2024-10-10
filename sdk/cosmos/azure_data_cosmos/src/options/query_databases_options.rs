@@ -4,7 +4,7 @@
 #[cfg(doc)]
 use crate::CosmosClientMethods;
 
-/// Options to be passed to [`CosmosClient::query_databases()`]
+/// Options to be passed to [`CosmosClient::query_databases()`](crate::CosmosClient)
 #[derive(Clone, Debug, Default)]
 pub struct QueryDatabasesOptions {}
 

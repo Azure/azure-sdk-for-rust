@@ -5,6 +5,9 @@ use serde::{Deserialize, Deserializer};
 
 use crate::models::SystemProperties;
 
+#[cfg(doc)]
+use crate::clients::ContainerClientMethods;
+
 fn deserialize_ttl<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
 where
     D: Deserializer<'de>,
