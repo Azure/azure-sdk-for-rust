@@ -5,7 +5,7 @@
 - [Rust toolchain](https://www.rust-lang.org/tools/install)
 
   When you run `cargo build`, toolchain version [1.76](https://releases.rs/docs/1.76.0/) and necessary components will be installed automatically.
-   
+
 - (Recommended) If you use [Visual Studio Code](https://code.visualstudio.com), install recommended extensions to improve your development experience.
 
 ## Generated code
