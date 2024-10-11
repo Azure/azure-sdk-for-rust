@@ -2,12 +2,11 @@
 
 ## Prerequisites
 
-- It's recommended you install `rustup` to acquire the necessary tooling like `rustc` and `cargo`.
-- Rust version [1.76](https://releases.rs/docs/1.76.0/) is required to build libraries from the SDK.
-- If you use VSCode, we recommend you install these extensions:
-  - [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
-  - [Event Better TOML](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
-  - [CodeLLD](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)
+- [Rust toolchain](https://www.rust-lang.org/tools/install)
+
+  When you run `cargo build`, toolchain version [1.76](https://releases.rs/docs/1.76.0/) and necessary components will be installed automatically.
+   
+- (Recommended) If you use [Visual Studio Code](https://code.visualstudio.com), install recommended extensions to improve your development experience.
 
 ## Generated code
 
