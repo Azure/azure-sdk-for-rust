@@ -31,7 +31,7 @@ This library comes with a testing framework that executes against prerecorded se
 ## Need help?
 
 - For reference documentation visit [docs.rs](https://docs.rs/).
-- For examples, go to the `/examples` subdirectory in any library's project folder e.g., `/sdk/identity/azure_identity/examples`
+- For examples, go to the `examples` subdirectory in any library's project folder e.g., `/sdk/identity/azure_identity/examples`
 - Have a question, or find a bug? File an issue via [GitHub Issues](https://github.com/Azure/azure-sdk-for-rust/issues/new/choose).
 - Check [previous questions](https://stackoverflow.com/questions/tagged/azure+rust) or ask new ones on StackOverflow using the `azure` and `rust` tags.
 
