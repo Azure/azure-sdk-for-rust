@@ -81,7 +81,7 @@ pub struct VectorEmbedding {
     pub data_type: VectorDataType,
 
     /// The number of dimensions in the vector.
-    pub dimensions: u64,
+    pub dimensions: u32,
 
     /// The [`VectorDistanceFunction`] used to calculate the distance between vectors.
     pub distance_function: VectorDistanceFunction,
