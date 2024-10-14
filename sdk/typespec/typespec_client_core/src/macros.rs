@@ -161,13 +161,10 @@ mod test {
     create_enum!(
         #[doc = "Defines operation states"]
         OperationState,
-
         #[doc = "The operation hasn't started"]
         (NotStarted, "notStarted"),
-
         #[doc = "The operation is in progress"]
         (InProgress, "inProgress"),
-
         #[doc = "The operation has completed"]
         (Completed, "completed")
     );
