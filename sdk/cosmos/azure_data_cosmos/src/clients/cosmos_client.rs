@@ -2,10 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::clients::DatabaseClient;
-use crate::pipeline::{AuthorizationPolicy, CosmosPipeline};
-use crate::CosmosClientOptions;
+use crate::models::DatabaseQueryResults;
+use crate::pipeline::{AuthorizationPolicy, CosmosPipeline, ResourceType};
+use crate::utils::AppendPathSegments;
+use crate::{CosmosClientOptions, Query, QueryDatabasesOptions};
 use azure_core::credentials::TokenCredential;
-use azure_core::Url;
+use azure_core::{Request, Url};
 use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
@@ -31,6 +33,38 @@ pub trait CosmosClientMethods {
     /// # Arguments
     /// * `id` - The ID of the database.
     fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient;
+
+    /// Returns the endpoint used to create the client.
+    fn endpoint(&self) -> &Url;
+
+    /// Executes a query against databases in the account.
+    ///
+    /// # Arguments
+    ///
+    /// * `query` - The query to execute.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// The `query` parameter accepts anything that can be transformed [`Into`] a [`Query`].
+    /// This allows simple queries without parameters to be expressed easily:
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() {
+    /// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods};
+    /// # let client: CosmosClient = panic!("this is a non-running example");
+    /// let dbs = client.query_databases(
+    ///     "SELECT * FROM dbs",
+    ///     None).unwrap();
+    /// # }
+    /// ```
+    ///
+    /// See [`Query`] for more information on how to specify a query.
+    fn query_databases(
+        &self,
+        query: impl Into<Query>,
+        options: Option<QueryDatabasesOptions>,
+    ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>>;
 }
 
 impl CosmosClient {
@@ -98,11 +132,6 @@ impl CosmosClient {
             options,
         })
     }
-
-    /// Gets the endpoint of the database account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
 }
 
 impl CosmosClientMethods for CosmosClient {
@@ -112,5 +141,26 @@ impl CosmosClientMethods for CosmosClient {
     /// * `id` - The ID of the database.
     fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient {
         DatabaseClient::new(self.pipeline.clone(), &self.endpoint, id.as_ref())
+    }
+
+    /// Gets the endpoint of the database account this client is connected to.
+    fn endpoint(&self) -> &Url {
+        &self.endpoint
+    }
+
+    fn query_databases(
+        &self,
+        query: impl Into<Query>,
+
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
+        options: Option<QueryDatabasesOptions>,
+    ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>> {
+        let mut url = self.endpoint.clone();
+        url.append_path_segments(["dbs"]);
+        let base_request = Request::new(url, azure_core::Method::Post);
+
+        self.pipeline
+            .send_query_request(query.into(), base_request, ResourceType::Databases)
     }
 }

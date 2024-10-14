@@ -3,12 +3,16 @@
 
 mod cosmos_client_options;
 mod item_options;
+mod query_containers_options;
+mod query_databases_options;
 mod query_options;
 mod read_container_options;
 mod read_database_options;
 
 pub use cosmos_client_options::CosmosClientOptions;
 pub use item_options::ItemOptions;
+pub use query_containers_options::QueryContainersOptions;
+pub use query_databases_options::QueryDatabasesOptions;
 pub use query_options::QueryOptions;
 pub use read_container_options::ReadContainerOptions;
 pub use read_database_options::ReadDatabaseOptions;
@@ -20,6 +24,8 @@ pub mod builders {
 
     pub use super::cosmos_client_options::CosmosClientOptionsBuilder;
     pub use super::item_options::ItemOptionsBuilder;
+    pub use super::query_containers_options::QueryContainersOptionsBuilder;
+    pub use super::query_databases_options::QueryDatabasesOptionsBuilder;
     pub use super::query_options::QueryOptionsBuilder;
     pub use super::read_container_options::ReadContainerOptionsBuilder;
     pub use super::read_database_options::ReadDatabaseOptionsBuilder;

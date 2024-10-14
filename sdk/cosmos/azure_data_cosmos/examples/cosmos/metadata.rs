@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::error::Error;
+
 use azure_data_cosmos::{
     clients::{ContainerClientMethods, DatabaseClientMethods},
     CosmosClient, CosmosClientMethods,
@@ -19,7 +21,7 @@ pub struct MetadataCommand {
 }
 
 impl MetadataCommand {
-    pub async fn run(&self, client: CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run(self, client: CosmosClient) -> Result<(), Box<dyn Error>> {
         let db_client = client.database_client(&self.database);
         if let Some(container_name) = &self.container {
             let container_client = db_client.container_client(container_name);
