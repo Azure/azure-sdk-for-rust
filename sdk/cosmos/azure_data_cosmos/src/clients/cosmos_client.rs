@@ -3,14 +3,25 @@
 
 use crate::{
     clients::DatabaseClient,
-    models::{DatabaseProperties, DatabaseQueryResults},
+    models::DatabaseQueryResults,
     pipeline::{AuthorizationPolicy, CosmosPipeline, ResourceType},
     utils::AppendPathSegments,
-    CosmosClientOptions, CreateDatabaseOptions, Query, QueryDatabasesOptions,
+    CosmosClientOptions, Query, QueryDatabasesOptions,
 };
-use azure_core::{credentials::TokenCredential, Context, Method, Request, Response, Url};
-use serde::Serialize;
+use azure_core::{credentials::TokenCredential, Request, Url};
 use std::sync::Arc;
+
+#[cfg(feature = "control_plane")]
+use crate::{
+    models::{DatabaseProperties, Item},
+    CreateDatabaseOptions,
+};
+
+#[cfg(feature = "control_plane")]
+use azure_core::{Context, Method, Response};
+
+#[cfg(feature = "control_plane")]
+use serde::Serialize;
 
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
@@ -75,12 +86,13 @@ pub trait CosmosClientMethods {
     /// # Arguments
     /// * `id` - The ID of the new database.
     /// * `options` - Optional parameters for the request.
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
     #[cfg(feature = "control_plane")]
     async fn create_database(
         &self,
         id: String,
         options: Option<CreateDatabaseOptions>,
-    ) -> azure_core::Result<Response<DatabaseProperties>>;
+    ) -> azure_core::Result<Response<Item<DatabaseProperties>>>;
 }
 
 impl CosmosClient {
@@ -180,6 +192,7 @@ impl CosmosClientMethods for CosmosClient {
             .send_query_request(query.into(), base_request, ResourceType::Databases)
     }
 
+    #[cfg(feature = "control_plane")]
     async fn create_database(
         &self,
         id: String,
@@ -187,7 +200,7 @@ impl CosmosClientMethods for CosmosClient {
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<CreateDatabaseOptions>,
-    ) -> azure_core::Result<Response<DatabaseProperties>> {
+    ) -> azure_core::Result<Response<Item<DatabaseProperties>>> {
         #[derive(Serialize)]
         struct RequestBody {
             id: String,
