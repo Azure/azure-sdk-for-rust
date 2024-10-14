@@ -44,6 +44,7 @@ default = ["hmac_rust"]
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 key_auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
+control_plane = ["key_auth"] # Control-plane operations require key-based authentication.
 
 [package.metadata.docs.rs]
-features = ["key_auth"]
+features = ["control_plane", "key_auth"]
