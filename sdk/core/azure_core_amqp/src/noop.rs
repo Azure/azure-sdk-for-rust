@@ -148,11 +148,9 @@ impl AmqpSenderApis for NoopAmqpSender {
     ) -> Result<()> {
         unimplemented!();
     }
-
     async fn detach(self) -> Result<()> {
         unimplemented!();
     }
-
     fn max_message_size(&self) -> Result<Option<u64>> {
         unimplemented!();
     }

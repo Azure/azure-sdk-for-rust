@@ -124,47 +124,47 @@ pub mod builders {
                 options: Default::default(),
             }
         }
-        pub fn build(&mut self) -> AmqpConnectionOptions {
-            self.options.clone()
+        pub fn build(self) -> AmqpConnectionOptions {
+            self.options
         }
-        pub fn with_max_frame_size(&mut self, max_frame_size: u32) -> &mut Self {
+        pub fn with_max_frame_size(mut self, max_frame_size: u32) -> Self {
             self.options.max_frame_size = Some(max_frame_size);
             self
         }
-        pub fn with_channel_max(&mut self, channel_max: u16) -> &mut Self {
+        pub fn with_channel_max(mut self, channel_max: u16) -> Self {
             self.options.channel_max = Some(channel_max);
             self
         }
-        pub fn with_idle_timeout(&mut self, idle_timeout: Duration) -> &mut Self {
+        pub fn with_idle_timeout(mut self, idle_timeout: Duration) -> Self {
             self.options.idle_timeout = Some(idle_timeout);
             self
         }
-        pub fn with_outgoing_locales(&mut self, outgoing_locales: Vec<String>) -> &mut Self {
+        pub fn with_outgoing_locales(mut self, outgoing_locales: Vec<String>) ->  Self {
             self.options.outgoing_locales = Some(outgoing_locales);
             self
         }
-        pub fn with_incoming_locales(&mut self, incoming_locales: Vec<String>) -> &mut Self {
+        pub fn with_incoming_locales(mut self, incoming_locales: Vec<String>) -> Self {
             self.options.incoming_locales = Some(incoming_locales);
             self
         }
         pub fn with_offered_capabilities(
-            &mut self,
+            mut self,
             offered_capabilities: Vec<AmqpSymbol>,
-        ) -> &mut Self {
+        ) ->  Self {
             self.options.offered_capabilities = Some(offered_capabilities);
             self
         }
         pub fn with_desired_capabilities(
-            &mut self,
+            mut self,
             desired_capabilities: Vec<AmqpSymbol>,
-        ) -> &mut Self {
+        ) -> Self {
             self.options.desired_capabilities = Some(desired_capabilities);
             self
         }
         pub fn with_properties<K, V>(
-            &mut self,
+            mut self,
             properties: impl Into<AmqpOrderedMap<K, V>>,
-        ) -> &mut Self
+        ) -> Self
         where
             K: Into<AmqpSymbol> + Debug + Default + PartialEq,
             V: Into<AmqpValue> + Debug + Default,
@@ -177,7 +177,7 @@ pub mod builders {
             self.options.properties = Some(properties_map);
             self
         }
-        pub fn with_buffer_size(&mut self, buffer_size: usize) -> &mut Self {
+        pub fn with_buffer_size(mut self, buffer_size: usize) -> Self {
             self.options.buffer_size = Some(buffer_size);
             self
         }

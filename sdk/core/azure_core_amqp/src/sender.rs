@@ -146,46 +146,37 @@ pub mod builders {
             }
         }
 
-        pub fn with_sender_settle_mode(
-            &mut self,
-            sender_settle_mode: SenderSettleMode,
-        ) -> &mut Self {
+        pub fn with_sender_settle_mode(mut self, sender_settle_mode: SenderSettleMode) -> Self {
             self.options.sender_settle_mode = Some(sender_settle_mode);
             self
         }
 
         pub fn with_receiver_settle_mode(
-            &mut self,
+            mut self,
             receiver_settle_mode: ReceiverSettleMode,
-        ) -> &mut Self {
+        ) -> Self {
             self.options.receiver_settle_mode = Some(receiver_settle_mode);
             self
         }
 
-        pub fn with_source(&mut self, source: impl Into<AmqpSource>) -> &mut Self {
+        pub fn with_source(mut self, source: impl Into<AmqpSource>) -> Self {
             self.options.source = Some(source.into());
             self
         }
-        pub fn with_offered_capabilities(
-            &mut self,
-            offered_capabilities: Vec<AmqpSymbol>,
-        ) -> &mut Self {
+        pub fn with_offered_capabilities(mut self, offered_capabilities: Vec<AmqpSymbol>) -> Self {
             self.options.offered_capabilities = Some(offered_capabilities);
             self
         }
         #[allow(dead_code)]
-        pub fn with_desired_capabilities(
-            &mut self,
-            desired_capabilities: Vec<AmqpSymbol>,
-        ) -> &mut Self {
+        pub fn with_desired_capabilities(mut self, desired_capabilities: Vec<AmqpSymbol>) -> Self {
             self.options.desired_capabilities = Some(desired_capabilities);
             self
         }
 
         pub fn with_properties(
-            &mut self,
+            mut self,
             properties: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-        ) -> &mut Self {
+        ) -> Self {
             let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
                 properties.into().iter().collect();
 
@@ -193,18 +184,18 @@ pub mod builders {
             self
         }
 
-        pub fn with_initial_delivery_count(&mut self, initial_delivery_count: u32) -> &mut Self {
+        pub fn with_initial_delivery_count(mut self, initial_delivery_count: u32) -> Self {
             self.options.initial_delivery_count = Some(initial_delivery_count);
             self
         }
 
-        pub fn with_max_message_size(&mut self, max_message_size: u64) -> &mut Self {
+        pub fn with_max_message_size(mut self, max_message_size: u64) -> Self {
             self.options.max_message_size = Some(max_message_size);
             self
         }
 
-        pub fn build(&mut self) -> AmqpSenderOptions {
-            self.options.clone()
+        pub fn build(self) -> AmqpSenderOptions {
+            self.options
         }
     }
 }
