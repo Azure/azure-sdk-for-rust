@@ -64,7 +64,7 @@ pub struct ContainerProperties {
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbeddingPolicy {
-    /// The [`Embedding`]s that describe the vector embeddings of items in the container.
+    /// The [`VectorEmbedding`]s that describe the vector embeddings of items in the container.
     #[serde(rename = "vectorEmbeddings")]
     pub embeddings: Vec<VectorEmbedding>,
 }
