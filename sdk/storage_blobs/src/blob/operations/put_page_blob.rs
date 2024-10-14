@@ -15,6 +15,7 @@ operation! {
     ?metadata: Metadata,
     ?tags: Tags,
     ?lease_id: LeaseId,
+    ?if_match: IfMatchCondition,
     ?sequence_number: SequenceNumber
 }
 
@@ -30,6 +31,7 @@ impl PutPageBlobBuilder {
             headers.add(self.content_encoding);
             headers.add(self.content_language);
             headers.add(self.content_disposition);
+            headers.add(self.if_match);
             headers.add(self.tags);
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {

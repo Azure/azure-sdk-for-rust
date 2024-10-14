@@ -38,11 +38,46 @@ async fn put_page_blob() {
 
     blob.put_page_blob(1024 * 64)
         .content_type("text/plain")
-        .metadata(metadata)
+        .metadata(metadata.clone())
         .await
         .unwrap();
 
+    // CreateIfNotExists should fail if the page blob exists.
+    // This behavior is controlled through IfMatch conditions.
+    let res = blob
+        .put_page_blob(1024 * 64)
+        .content_type("text/plain")
+        .metadata(metadata.clone())
+        .if_match(IfMatchCondition::NotMatch(String::from("*")))
+        .await;
+    match res {
+        Ok(_) => {
+            assert!(false, "If-match condition is not being honored.");
+        }
+        Err(ref e) => {
+            let http_error = e
+                .as_http_error()
+                .expect("Violating if-Match condition should return an HTTP error");
+            assert_eq!(
+                azure_core::StatusCode::Conflict,
+                http_error.status(),
+                "Violating if-Match condition should return 409, Conflict"
+            );
+        }
+    }
     trace!("created {:?}", blob_name);
+
+    // simulate Create a new page_blob with CreateIfNotExists.
+    let ifmatch_blob_name = "page-blob-ifmatch.txt";
+    let blob_client = container.blob_client(ifmatch_blob_name);
+    blob_client
+        .put_page_blob(1024 * 64)
+        .content_type("text/plain")
+        .metadata(metadata.clone())
+        .if_match(IfMatchCondition::NotMatch(String::from("*")))
+        .await
+        .unwrap();
+    trace!("created {:?}", ifmatch_blob_name);
 }
 
 fn initialize() -> BlobServiceClient {
