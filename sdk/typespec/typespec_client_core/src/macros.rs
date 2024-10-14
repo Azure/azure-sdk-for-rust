@@ -9,11 +9,12 @@
 /// Turns into a struct where each variant can be turned into and construct from the corresponding string.
 #[macro_export]
 macro_rules! create_enum {
-    ($(#[$meta:meta])* $name:ident, $(($variant:ident, $value:expr)), *) => (
-        $(#[$meta])*
+    ($(#[$type_doc:meta])* $name:ident, $($(#[$val_doc:meta])* ($variant:ident, $value:expr)), *) => (
+        $(#[$type_doc])*
         #[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Copy)]
         pub enum $name {
             $(
+                $(#[$val_doc])*
                 $variant,
             )*
         }
@@ -156,6 +157,17 @@ macro_rules! setters {
 mod test {
     create_enum!(Colors, (Black, "Black"), (White, "White"), (Red, "Red"));
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));
+
+    create_enum!(
+        #[doc = "Defines operation states"]
+        OperationState,
+        #[doc = "The operation hasn't started"]
+        (NotStarted, "notStarted"),
+        #[doc = "The operation is in progress"]
+        (InProgress, "inProgress"),
+        #[doc = "The operation has completed"]
+        (Completed, "completed")
+    );
 
     struct Options {
         a: Option<String>,
