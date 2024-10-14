@@ -1,20 +1,35 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-/// The following macro invocation:
+/// Creates an enum with a fixed set of variants.
+///
+/// This macro creates an enum where each variant can be turned into and constructed from the corresponding string.
+/// The [`std::str::FromStr`] implementation will return a [`typespec::error::Error`] if not supported (case-sensitive).
+///
+/// # Examples
+///
 /// ```
 /// # #[macro_use] extern crate typespec_client_core;
-/// create_enum!(Words, (Chicken, "Chicken"), (White, "White"), (Yellow, "Yellow"));
+/// create_enum!(
+///     #[doc = "Example words"]
+///     Words,
+///     #[doc = "Poultry"]
+///     (Chicken, "Chicken"),
+///     (White, "White"),
+///     (Yellow, "Yellow")
+/// );
+///
+/// let word = Words::Chicken;
+/// assert_eq!(word.to_string(), String::from("Chicken"));
 /// ```
-/// Turns into a struct where each variant can be turned into and construct from the corresponding string.
 #[macro_export]
 macro_rules! create_enum {
-    ($(#[$type_doc:meta])* $name:ident, $($(#[$val_doc:meta])* ($variant:ident, $value:expr)), *) => (
-        $(#[$type_doc])*
+    ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)), *) => (
+        $(#[$type_meta])*
         #[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Copy)]
         pub enum $name {
             $(
-                $(#[$val_doc])*
+                $(#[$value_meta])*
                 $variant,
             )*
         }
@@ -26,12 +41,6 @@ macro_rules! create_enum {
                         $name::$variant => $value,
                     )*
                 }
-            }
-        }
-
-        impl $crate::parsing::FromStringOptional<$name> for $name {
-            fn from_str_optional(s : &str) -> $crate::error::Result<$name> {
-                s.parse::<$name>()
             }
         }
 
@@ -51,19 +60,37 @@ macro_rules! create_enum {
             }
         }
 
+        impl ::std::convert::AsRef<str> for $name {
+            fn as_ref(&self) -> &str {
+                 match self {
+                    $(
+                        $name::$variant => $value,
+                    )*
+                }
+            }
+        }
+
+        impl ::std::fmt::Display for $name {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                match self {
+                    $(
+                        $name::$variant => write!(f, "{}", $value),
+                    )*
+                }
+            }
+        }
+
+        create_enum!(@intern $name);
+    );
+
+    (@intern $name:ident) => (
         impl<'de> serde::Deserialize<'de> for $name {
             fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
             where
                 D: serde::Deserializer<'de>,
             {
                 let s = String::deserialize(deserializer)?;
-
-                match s.as_ref() {
-                    $(
-                        $value => Ok(Self::$variant),
-                    )*
-                    _ => Err(serde::de::Error::custom("unsupported value")),
-                }
+                s.parse().map_err(serde::de::Error::custom)
             }
         }
 
@@ -74,26 +101,97 @@ macro_rules! create_enum {
             }
         }
 
-        impl ::std::convert::AsRef<str> for $name {
-            fn as_ref(&self) -> &str {
-                 match *self {
+        impl $crate::parsing::FromStringOptional<$name> for $name {
+            fn from_str_optional(s : &str) -> $crate::error::Result<$name> {
+                s.parse::<$name>().map_err(::core::convert::Into::into)
+            }
+        }
+    );
+}
+
+/// Creates an enum with a set of variants including `UnknownValue` which holds any unsupported string from which it was created.
+///
+/// This macro creates an enum where each variant can be turned into and constructed from the corresponding string.
+/// The [`std::str::FromStr`] implementation will not return an error but instead store the string in `UnknownValue(String)`.
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use] extern crate typespec_client_core;
+/// create_extensible_enum!(
+///     #[doc = "Example words"]
+///     Words,
+///     #[doc = "Poultry"]
+///     (Chicken, "Chicken"),
+///     (White, "White"),
+///     (Yellow, "Yellow")
+/// );
+///
+/// let word: Words = "Turkey".parse().unwrap();
+/// assert_eq!(word.to_string(), String::from("Turkey"));
+/// ```
+#[macro_export]
+macro_rules! create_extensible_enum {
+    ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)), *) => (
+        $(#[$type_meta])*
+        #[derive(Debug, PartialEq, Eq, PartialOrd, Clone)]
+        pub enum $name {
+            $(
+                $(#[$value_meta])*
+                $variant,
+            )*
+            /// Any other value not defined in `$name`.
+            UnknownValue(String),
+        }
+
+        impl<'a> ::std::convert::From<&'a $name> for &'a str {
+            fn from(e: &'a $name) -> Self {
+                match e {
                     $(
                         $name::$variant => $value,
                     )*
+                    $name::UnknownValue(s) => s.as_ref(),
+                }
+            }
+        }
+
+        impl ::std::str::FromStr for $name {
+            type Err = ::std::convert::Infallible;
+
+            fn from_str(s: &str) -> ::core::result::Result<Self, <Self as ::std::str::FromStr>::Err> {
+                Ok(match s {
+                    $(
+                        $value => $name::$variant,
+                    )*
+                    _ => $name::UnknownValue(s.to_string()),
+                })
+            }
+        }
+
+        impl ::std::convert::AsRef<str> for $name {
+            fn as_ref(&self) -> &str {
+                 match self {
+                    $(
+                        $name::$variant => $value,
+                    )*
+                    $name::UnknownValue(s) => s.as_str(),
                 }
             }
         }
 
         impl ::std::fmt::Display for $name {
             fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                match *self {
+                match self {
                     $(
-                        $name::$variant => write!(f, "{}", $value),
+                        $name::$variant => f.write_str($value),
                     )*
+                    $name::UnknownValue(s) => f.write_str(s.as_str()),
                 }
             }
         }
-    )
+
+        create_enum!(@intern $name);
+    );
 }
 
 /// Creates setter methods
@@ -155,19 +253,22 @@ macro_rules! setters {
 
 #[cfg(test)]
 mod test {
+    use serde::{Deserialize, Serialize};
+
     create_enum!(Colors, (Black, "Black"), (White, "White"), (Red, "Red"));
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));
 
-    create_enum!(
-        #[doc = "Defines operation states"]
-        OperationState,
-        #[doc = "The operation hasn't started"]
-        (NotStarted, "notStarted"),
-        #[doc = "The operation is in progress"]
-        (InProgress, "inProgress"),
-        #[doc = "The operation has completed"]
-        (Completed, "completed")
-    );
+    // cspell:ignore metasyntactic
+    create_extensible_enum!(Metasyntactic, (Foo, "foo"), (Bar, "bar"));
+
+    #[derive(Debug, Default, Deserialize, Serialize)]
+    #[serde(default)]
+    struct TestData {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        color: Option<Colors>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        meta: Option<Metasyntactic>,
+    }
 
     struct Options {
         a: Option<String>,
@@ -189,27 +290,63 @@ mod test {
     }
 
     #[test]
-    fn test_color_parse_1() {
+    fn color_parse_1() {
         let color = "Black".parse::<Colors>().unwrap();
         assert_eq!(Colors::Black, color);
     }
 
     #[test]
-    fn test_color_parse_2() {
+    fn color_parse_2() {
         let color = "White".parse::<ColorsMonochrome>().unwrap();
         assert_eq!(ColorsMonochrome::White, color);
     }
 
     #[test]
-    fn test_color_parse_err_1() {
+    fn color_parse_err_1() {
         "Red".parse::<ColorsMonochrome>().unwrap_err();
     }
 
     #[test]
-    fn test_setters() {
+    fn setters() {
         let options = Options::default().a("test".to_owned());
 
         assert_eq!(Some("test".to_owned()), options.a);
         assert_eq!(1, options.b);
+    }
+
+    #[test]
+    fn deserialize_enum() {
+        let data: TestData = serde_json::from_str(r#"{"color": "Black"}"#).unwrap();
+        assert_eq!(Some(Colors::Black), data.color);
+    }
+
+    #[test]
+    fn deserialize_extensible_enum() {
+        // Variant values are case-sensitive.
+        let data: TestData = serde_json::from_str(r#"{"meta": "Foo"}"#).unwrap();
+        assert_eq!(
+            Some(Metasyntactic::UnknownValue(String::from("Foo"))),
+            data.meta
+        );
+    }
+
+    #[test]
+    fn serialize_enum() {
+        let data = TestData {
+            color: Some(Colors::Red),
+            ..Default::default()
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        assert_eq!(String::from(r#"{"color":"Red"}"#), json);
+    }
+
+    #[test]
+    fn serialize_extensible_enum() {
+        let data = TestData {
+            meta: Some(Metasyntactic::Foo),
+            ..Default::default()
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        assert_eq!(String::from(r#"{"meta":"foo"}"#), json);
     }
 }
