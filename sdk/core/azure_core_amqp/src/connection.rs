@@ -30,7 +30,6 @@ impl AmqpConnectionOptions {
     pub fn builder() -> builders::AmqpConnectionOptionsBuilder {
         builders::AmqpConnectionOptionsBuilder::new()
     }
-
     pub fn max_frame_size(&self) -> Option<u32> {
         self.max_frame_size
     }
@@ -139,7 +138,7 @@ pub mod builders {
             self.options.idle_timeout = Some(idle_timeout);
             self
         }
-        pub fn with_outgoing_locales(mut self, outgoing_locales: Vec<String>) ->  Self {
+        pub fn with_outgoing_locales(mut self, outgoing_locales: Vec<String>) -> Self {
             self.options.outgoing_locales = Some(outgoing_locales);
             self
         }
@@ -147,24 +146,15 @@ pub mod builders {
             self.options.incoming_locales = Some(incoming_locales);
             self
         }
-        pub fn with_offered_capabilities(
-            mut self,
-            offered_capabilities: Vec<AmqpSymbol>,
-        ) ->  Self {
+        pub fn with_offered_capabilities(mut self, offered_capabilities: Vec<AmqpSymbol>) -> Self {
             self.options.offered_capabilities = Some(offered_capabilities);
             self
         }
-        pub fn with_desired_capabilities(
-            mut self,
-            desired_capabilities: Vec<AmqpSymbol>,
-        ) -> Self {
+        pub fn with_desired_capabilities(mut self, desired_capabilities: Vec<AmqpSymbol>) -> Self {
             self.options.desired_capabilities = Some(desired_capabilities);
             self
         }
-        pub fn with_properties<K, V>(
-            mut self,
-            properties: impl Into<AmqpOrderedMap<K, V>>,
-        ) -> Self
+        pub fn with_properties<K, V>(mut self, properties: impl Into<AmqpOrderedMap<K, V>>) -> Self
         where
             K: Into<AmqpSymbol> + Debug + Default + PartialEq,
             V: Into<AmqpValue> + Debug + Default,
