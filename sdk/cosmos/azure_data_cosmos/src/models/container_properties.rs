@@ -51,9 +51,74 @@ pub struct ContainerProperties {
     /// The conflict resolution policy for the container.
     pub conflict_resolution_policy: Option<ConflictResolutionPolicy>,
 
+    /// The vector embedding policy for the container.
+    pub vector_embedding_policy: Option<VectorEmbeddingPolicy>,
+
     /// A [`SystemProperties`] object containing common system properties for the container.
     #[serde(flatten)]
     pub system_properties: SystemProperties,
+}
+
+/// Represents the vector embedding policy for a container.
+#[non_exhaustive]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct VectorEmbeddingPolicy {
+    /// The [`Embedding`]s that describe the vector embeddings of items in the container.
+    #[serde(rename = "vectorEmbeddings")]
+    pub embeddings: Vec<VectorEmbedding>,
+}
+
+/// Represents the vector embedding policy for a container.
+#[non_exhaustive]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct VectorEmbedding {
+    /// The path to the property containing the vector.
+    pub path: String,
+
+    /// The data type of the elements stored in the vector.
+    pub data_type: VectorDataType,
+
+    /// The number of dimensions in the vector.
+    pub dimensions: u64,
+
+    /// The [`VectorDistanceFunction`] used to calculate the distance between vectors.
+    pub distance_function: VectorDistanceFunction,
+}
+
+/// Defines the data types of the elements of a vector.
+#[non_exhaustive]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum VectorDataType {
+    /// Represents the `float16` data type.
+    Float16,
+
+    /// Represents the `float32` data type.
+    Float32,
+
+    /// Represents the `uint8` data type.
+    Uint8,
+
+    /// Represents the `int8` data type.
+    Int8,
+}
+
+/// Defines the distance functions that can be used to calculate the distance between vectors.
+#[non_exhaustive]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum VectorDistanceFunction {
+    /// Represents the `euclidian` distance function.
+    Euclidean,
+
+    /// Represents the `cosine` distance function.
+    Cosine,
+
+    /// Represents the `dotproduct` distance function.
+    #[serde(rename = "dotproduct")]
+    DotProduct,
 }
 
 /// Represents the partition key definition for a container.
