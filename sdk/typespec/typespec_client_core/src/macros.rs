@@ -26,7 +26,8 @@
 macro_rules! create_enum {
     ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)), *) => (
         $(#[$type_meta])*
-        #[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Copy)]
+        #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+        #[non_exhaustive]
         pub enum $name {
             $(
                 $(#[$value_meta])*
@@ -134,7 +135,8 @@ macro_rules! create_enum {
 macro_rules! create_extensible_enum {
     ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)), *) => (
         $(#[$type_meta])*
-        #[derive(Debug, PartialEq, Eq, PartialOrd, Clone)]
+        #[derive(Debug, PartialEq, Eq, Clone)]
+        #[non_exhaustive]
         pub enum $name {
             $(
                 $(#[$value_meta])*
