@@ -1,14 +1,25 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::models::{ContainerQueryResults, DatabaseProperties};
-use crate::options::ReadDatabaseOptions;
-use crate::pipeline::ResourceType;
-use crate::utils::AppendPathSegments;
-use crate::{clients::ContainerClient, pipeline::CosmosPipeline};
-use crate::{Query, QueryContainersOptions};
+use crate::{
+    clients::ContainerClient,
+    models::{ContainerQueryResults, DatabaseProperties},
+    pipeline::{CosmosPipeline, ResourceType},
+    utils::AppendPathSegments,
+    Query, QueryContainersOptions, ReadDatabaseOptions,
+};
+
+#[cfg(feature = "control_plane")]
+use crate::{
+    models::{ContainerDefinition, ContainerProperties, Item},
+    CreateContainerOptions, DeleteDatabaseOptions,
+};
 
 use azure_core::{Context, Pager, Request, Response};
+
+#[cfg(feature = "control_plane")]
+use azure_core::Method;
+
 use url::Url;
 
 #[cfg(doc)]
@@ -80,6 +91,31 @@ pub trait DatabaseClientMethods {
         query: impl Into<Query>,
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<Pager<ContainerQueryResults>>;
+
+    /// Creates a new container.
+    ///
+    #[doc = include_str!("../../docs/control-plane-warning.md")]
+    ///
+    /// # Arguments
+    /// * `definition` - A [`ContainerDefinition`] describing the new container.
+    /// * `options` - Optional parameters for the request.
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
+    #[cfg(feature = "control_plane")]
+    async fn create_container(
+        &self,
+        definition: impl std::borrow::Borrow<ContainerDefinition>,
+        options: Option<CreateContainerOptions>,
+    ) -> azure_core::Result<Response<Item<ContainerProperties>>>;
+
+    /// Deletes this database.
+    ///
+    #[doc = include_str!("../../docs/control-plane-warning.md")]
+    ///
+    /// # Arguments
+    /// * `options` - Optional parameters for the request.
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
+    #[cfg(feature = "control_plane")]
+    async fn delete(&self, options: Option<DeleteDatabaseOptions>) -> azure_core::Result<Response>;
 }
 
 /// A client for working with a specific database in a Cosmos DB account.
@@ -140,5 +176,36 @@ impl DatabaseClientMethods for DatabaseClient {
 
         self.pipeline
             .send_query_request(query.into(), base_request, ResourceType::Containers)
+    }
+
+    #[cfg(feature = "control_plane")]
+    async fn create_container(
+        &self,
+        definition: impl std::borrow::Borrow<ContainerDefinition>,
+
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
+        options: Option<CreateContainerOptions>,
+    ) -> azure_core::Result<Response<Item<ContainerProperties>>> {
+        let url = self.database_url.with_path_segments(["colls"]);
+        let mut req = Request::new(url, Method::Post);
+        req.set_json(definition.borrow())?;
+
+        self.pipeline
+            .send(Context::new(), &mut req, ResourceType::Containers)
+            .await
+    }
+
+    #[cfg(feature = "control_plane")]
+    async fn delete(
+        &self,
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
+        options: Option<DeleteDatabaseOptions>,
+    ) -> azure_core::Result<Response> {
+        let mut req = Request::new(self.database_url.clone(), Method::Delete);
+        self.pipeline
+            .send(Context::new(), &mut req, ResourceType::Databases)
+            .await
     }
 }

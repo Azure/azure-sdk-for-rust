@@ -1,9 +1,9 @@
 use std::time::Duration;
 
 use azure_core::Model;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::models::SystemProperties;
+use crate::models::{IndexingPolicy, SystemProperties};
 
 #[cfg(doc)]
 use crate::clients::ContainerClientMethods;
@@ -18,7 +18,6 @@ where
 /// Properties of a Cosmos DB container.
 ///
 /// Returned by [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
-#[non_exhaustive]
 #[derive(Model, Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ContainerProperties {
@@ -60,7 +59,6 @@ pub struct ContainerProperties {
 }
 
 /// Represents the vector embedding policy for a container.
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbeddingPolicy {
@@ -70,7 +68,6 @@ pub struct VectorEmbeddingPolicy {
 }
 
 /// Represents the vector embedding policy for a container.
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbedding {
@@ -88,7 +85,6 @@ pub struct VectorEmbedding {
 }
 
 /// Defines the data types of the elements of a vector.
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorDataType {
@@ -106,7 +102,6 @@ pub enum VectorDataType {
 }
 
 /// Defines the distance functions that can be used to calculate the distance between vectors.
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorDistanceFunction {
@@ -122,134 +117,54 @@ pub enum VectorDistanceFunction {
 }
 
 /// Represents the partition key definition for a container.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct PartitionKeyDefinition {
     /// The list of partition keys paths.
     pub paths: Vec<String>,
 
+    /// The partition key kind.
+    pub kind: PartitionKeyKind,
+
     /// The version of the partition key hash in use.
     #[serde(default)]
-    pub version: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<i32>,
 }
 
-/// Represents the indexing policy for a container.
-///
-/// For more information see <https://docs.microsoft.com/azure/cosmos-db/index-policy>
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct IndexingPolicy {
-    /// Indicates that the indexing policy is automatic.
-    #[serde(default)]
-    pub automatic: bool,
-
-    /// The indexing mode in use.
-    #[serde(default)]
-    pub indexing_mode: IndexingMode,
-
-    /// The paths to be indexed.
-    #[serde(default)]
-    pub included_paths: Vec<PropertyPath>,
-
-    /// The paths to be excluded.
-    #[serde(default)]
-    pub excluded_paths: Vec<PropertyPath>,
-
-    /// A list of spatial indexes in the container.
-    #[serde(default)]
-    pub spatial_indexes: Vec<SpatialIndex>,
-
-    /// A list of composite indexes in the container
-    #[serde(default)]
-    pub composite_indexes: Vec<CompositeIndex>,
-
-    /// A list of vector indexes in the container
-    #[serde(default)]
-    pub vector_indexes: Vec<VectorIndex>,
-}
-
-/// Defines the indexing modes supported by Azure Cosmos DB.
-#[non_exhaustive]
-#[derive(Clone, Default, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub enum IndexingMode {
-    Consistent,
-
-    #[default]
-    None,
-}
-
-/// Represents a JSON path.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct PropertyPath {
-    // The path to the property referenced in this index.
-    pub path: String,
-}
-
-/// Represents a spatial index
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct SpatialIndex {
-    /// The path to the property referenced in this index.
-    pub path: String,
-
-    /// The spatial types used in this index
-    pub types: Vec<SpatialType>,
-}
-
-/// Defines the types of spatial data that can be indexed.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "PascalCase")]
-pub enum SpatialType {
-    Point,
-    Polygon,
-    LineString,
-    MultiPolygon,
-}
-
-/// Represents a composite index
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(transparent)]
-pub struct CompositeIndex {
-    /// The properties in this composite index
-    pub properties: Vec<CompositeIndexProperty>,
-}
-
-/// Describes a single property in a composite index.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct CompositeIndexProperty {
-    /// The path to the property referenced in this index.
-    pub path: String,
-
-    /// The order of the composite index.
+impl PartitionKeyDefinition {
+    /// Creates a new [`PartitionKeyDefinition`] from the provided list of partition key paths.
     ///
-    /// For example, if you want to run the query "SELECT * FROM c ORDER BY c.age asc, c.height desc",
-    /// then you'd specify the order for "/asc" to be *ascending* and the order for "/height" to be *descending*.
-    pub order: CompositeIndexOrder,
+    /// The [`PartitionKeyDefinition::kind`] will be set automatically, depending on how many paths are provided.
+    pub fn new(paths: impl Into<Vec<String>>) -> Self {
+        let paths = paths.into();
+        let kind = if paths.len() > 1 {
+            PartitionKeyKind::MultiHash
+        } else {
+            PartitionKeyKind::Hash
+        };
+        PartitionKeyDefinition {
+            paths,
+            kind,
+            version: Some(2),
+        }
+    }
 }
 
-/// Ordering values available for composite indexes.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub enum CompositeIndexOrder {
-    Ascending,
-    Descending,
+/// Represents the kind of a partition key.
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub enum PartitionKeyKind {
+    /// The container is partitioned by hashing the value of a single partition key.
+    Hash,
+
+    /// The container is partitioned by hashing multiple, hierarchical, partition keys.
+    MultiHash,
 }
 
 /// Represents a unique key policy for a container.
 ///
 /// For more information see <https://docs.microsoft.com/azure/cosmos-db/unique-keys>
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKeyPolicy {
@@ -258,7 +173,6 @@ pub struct UniqueKeyPolicy {
 }
 
 /// Represents a single unique key for a container.
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKey {
@@ -269,7 +183,6 @@ pub struct UniqueKey {
 /// Represents a conflict resolution policy for a container
 ///
 /// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/conflict-resolution-policies>
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ConflictResolutionPolicy {
@@ -286,7 +199,6 @@ pub struct ConflictResolutionPolicy {
 }
 
 /// Defines conflict resolution types available in Azure Cosmos DB
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub enum ConflictResolutionMode {
@@ -295,174 +207,4 @@ pub enum ConflictResolutionMode {
 
     /// Conflict resolution will be performed by executing the stored procedure specified by [`ConflictResolutionPolicy::resolution_procedure`].
     Custom,
-}
-
-/// Represents a vector index
-///
-/// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/index-policy#vector-indexes>
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct VectorIndex {
-    /// The path to the property referenced in this index.
-    pub path: String,
-
-    /// The type of the vector index.
-    #[serde(rename = "type")] // "type" is a reserved word in Rust.
-    pub index_type: VectorIndexType,
-}
-
-/// Types of vector indexes supported by Cosmos DB
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub enum VectorIndexType {
-    Flat,
-    QuantizedFlat,
-    DiskANN,
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::models::{
-        CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, IndexingMode, PropertyPath,
-        SpatialIndex, SpatialType, VectorIndex, VectorIndexType,
-    };
-
-    use super::IndexingPolicy;
-
-    #[test]
-    pub fn deserialize_indexing_policy() {
-        // A fairly complete deserialization test that covers most of the indexing policies described in our docs.
-        let policy = r#"
-            {
-                "indexingMode": "consistent",
-                "includedPaths": [
-                    {
-                        "path": "/*"
-                    }
-                ],
-                "excludedPaths": [
-                    {
-                        "path": "/path/to/single/excluded/property/?"
-                    },
-                    {
-                        "path": "/path/to/root/of/multiple/excluded/properties/*"
-                    }
-                ],
-                "spatialIndexes": [
-                    {
-                        "path": "/path/to/geojson/property/?",
-                        "types": [
-                            "Point",
-                            "Polygon",
-                            "MultiPolygon",
-                            "LineString"
-                        ]
-                    }
-                ],
-                "vectorIndexes": [
-                    {
-                        "path": "/vector1",
-                        "type": "quantizedFlat"
-                    },
-                    {
-                        "path": "/vector2",
-                        "type": "diskANN"
-                    }
-                ],
-                "compositeIndexes":[
-                    [
-                        {
-                            "path":"/name",
-                            "order":"ascending"
-                        },
-                        {
-                            "path":"/age",
-                            "order":"descending"
-                        }
-                    ],
-                    [
-                        {
-                            "path":"/name2",
-                            "order":"descending"
-                        },
-                        {
-                            "path":"/age2",
-                            "order":"ascending"
-                        }
-                    ]
-                ],
-                "extraValueNotCurrentlyPresentInModel": {
-                    "this": "should not fail"
-                }
-            }
-        "#;
-
-        let policy: IndexingPolicy = serde_json::from_str(policy).unwrap();
-
-        assert_eq!(
-            IndexingPolicy {
-                automatic: false,
-                indexing_mode: IndexingMode::Consistent,
-                included_paths: vec![PropertyPath {
-                    path: "/*".to_string(),
-                }],
-                excluded_paths: vec![
-                    PropertyPath {
-                        path: "/path/to/single/excluded/property/?".to_string()
-                    },
-                    PropertyPath {
-                        path: "/path/to/root/of/multiple/excluded/properties/*".to_string()
-                    },
-                ],
-                spatial_indexes: vec![SpatialIndex {
-                    path: "/path/to/geojson/property/?".to_string(),
-                    types: vec![
-                        SpatialType::Point,
-                        SpatialType::Polygon,
-                        SpatialType::MultiPolygon,
-                        SpatialType::LineString,
-                    ]
-                }],
-                composite_indexes: vec![
-                    CompositeIndex {
-                        properties: vec![
-                            CompositeIndexProperty {
-                                path: "/name".to_string(),
-                                order: CompositeIndexOrder::Ascending,
-                            },
-                            CompositeIndexProperty {
-                                path: "/age".to_string(),
-                                order: CompositeIndexOrder::Descending,
-                            },
-                        ]
-                    },
-                    CompositeIndex {
-                        properties: vec![
-                            CompositeIndexProperty {
-                                path: "/name2".to_string(),
-                                order: CompositeIndexOrder::Descending,
-                            },
-                            CompositeIndexProperty {
-                                path: "/age2".to_string(),
-                                order: CompositeIndexOrder::Ascending,
-                            },
-                        ]
-                    },
-                ],
-                vector_indexes: vec![
-                    VectorIndex {
-                        path: "/vector1".to_string(),
-                        index_type: VectorIndexType::QuantizedFlat,
-                    },
-                    VectorIndex {
-                        path: "/vector2".to_string(),
-                        index_type: VectorIndexType::DiskANN,
-                    }
-                ]
-            },
-            policy
-        );
-    }
 }

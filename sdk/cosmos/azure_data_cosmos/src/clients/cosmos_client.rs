@@ -16,10 +16,8 @@ use crate::{
     models::{DatabaseProperties, Item},
     CreateDatabaseOptions,
 };
-
 #[cfg(feature = "control_plane")]
 use azure_core::{Context, Method, Response};
-
 #[cfg(feature = "control_plane")]
 use serde::Serialize;
 
@@ -184,8 +182,7 @@ impl CosmosClientMethods for CosmosClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryDatabasesOptions>,
     ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>> {
-        let mut url = self.endpoint.clone();
-        url.append_path_segments(["dbs"]);
+        let url = self.endpoint.with_path_segments(["dbs"]);
         let base_request = Request::new(url, azure_core::Method::Post);
 
         self.pipeline

@@ -10,8 +10,12 @@ use crate::{
     ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
 };
 
-use azure_core::{Context, Pager, Request, Response};
+#[cfg(feature = "control_plane")]
+use crate::DeleteContainerOptions;
+
+use azure_core::{Context, Method, Pager, Request, Response};
 use serde::{de::DeserializeOwned, Serialize};
+use typespec_client_core::http::PagerResult;
 use url::Url;
 
 #[cfg(doc)]
@@ -46,8 +50,16 @@ pub trait ContainerClientMethods {
         options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<Response<ContainerProperties>>;
 
-    /// Returns the identifier of the Cosmos container.
-    fn id(&self) -> &str;
+    /// Deletes this container.
+    ///
+    #[doc = include_str!("../../docs/control-plane-warning.md")]
+    ///
+    /// # Arguments
+    /// * `options` - Optional parameters for the request.
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
+    #[cfg(feature = "control_plane")]
+    async fn delete(&self, options: Option<DeleteContainerOptions>)
+        -> azure_core::Result<Response>;
 
     /// Creates a new item in the container.
     ///
@@ -314,18 +326,15 @@ pub trait ContainerClientMethods {
 ///
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 pub struct ContainerClient {
-    container_id: String,
     container_url: Url,
     pipeline: CosmosPipeline,
 }
 
 impl ContainerClient {
-    pub(crate) fn new(pipeline: CosmosPipeline, database_url: &Url, container_id: &str) -> Self {
-        let container_id = container_id.to_string();
-        let container_url = database_url.with_path_segments(["colls", &container_id]);
+    pub(crate) fn new(pipeline: CosmosPipeline, database_url: &Url, container_name: &str) -> Self {
+        let container_url = database_url.with_path_segments(["colls", container_name]);
 
         Self {
-            container_id,
             container_url,
             pipeline,
         }
@@ -340,14 +349,23 @@ impl ContainerClientMethods for ContainerClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
-        let mut req = Request::new(self.container_url.clone(), azure_core::Method::Get);
+        let mut req = Request::new(self.container_url.clone(), Method::Get);
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Containers)
             .await
     }
 
-    fn id(&self) -> &str {
-        &self.container_id
+    #[cfg(feature = "control_plane")]
+    async fn delete(
+        &self,
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
+        options: Option<DeleteContainerOptions>,
+    ) -> azure_core::Result<Response> {
+        let mut req = Request::new(self.container_url.clone(), Method::Delete);
+        self.pipeline
+            .send(Context::new(), &mut req, ResourceType::Containers)
+            .await
     }
 
     async fn create_item<T: Serialize>(
@@ -360,7 +378,7 @@ impl ContainerClientMethods for ContainerClient {
         options: Option<ItemOptions>,
     ) -> azure_core::Result<Response<Item<T>>> {
         let url = self.container_url.with_path_segments(["docs"]);
-        let mut req = Request::new(url, azure_core::Method::Post);
+        let mut req = Request::new(url, Method::Post);
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
         self.pipeline
@@ -381,7 +399,7 @@ impl ContainerClientMethods for ContainerClient {
         let url = self
             .container_url
             .with_path_segments(["docs", item_id.as_ref()]);
-        let mut req = Request::new(url, azure_core::Method::Put);
+        let mut req = Request::new(url, Method::Put);
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
         self.pipeline
@@ -399,7 +417,7 @@ impl ContainerClientMethods for ContainerClient {
         options: Option<ItemOptions>,
     ) -> azure_core::Result<Response<Item<T>>> {
         let url = self.container_url.with_path_segments(["docs"]);
-        let mut req = Request::new(url, azure_core::Method::Post);
+        let mut req = Request::new(url, Method::Post);
         req.insert_header(constants::IS_UPSERT, "true");
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
@@ -420,7 +438,7 @@ impl ContainerClientMethods for ContainerClient {
         let url = self
             .container_url
             .with_path_segments(["docs", item_id.as_ref()]);
-        let mut req = Request::new(url, azure_core::Method::Get);
+        let mut req = Request::new(url, Method::Get);
         req.insert_headers(&partition_key.into())?;
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Items)
@@ -439,7 +457,7 @@ impl ContainerClientMethods for ContainerClient {
         let url = self
             .container_url
             .with_path_segments(["docs", item_id.as_ref()]);
-        let mut req = Request::new(url, azure_core::Method::Delete);
+        let mut req = Request::new(url, Method::Delete);
         req.insert_headers(&partition_key.into())?;
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Items)
@@ -457,11 +475,38 @@ impl ContainerClientMethods for ContainerClient {
     ) -> azure_core::Result<Pager<QueryResults<T>>> {
         let mut url = self.container_url.clone();
         url.append_path_segments(["docs"]);
-        let mut base_request = Request::new(url, azure_core::Method::Post);
-        let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
-        base_request.insert_headers(&partition_key)?;
+        let mut base_req = Request::new(url, Method::Post);
 
-        self.pipeline
-            .send_query_request(query.into(), base_request, ResourceType::Items)
+        base_req.insert_header(constants::QUERY, "True");
+        base_req.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
+
+        let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
+        base_req.insert_headers(&partition_key)?;
+
+        base_req.set_json(&query.into())?;
+
+        // We have to double-clone here.
+        // First we clone the pipeline to pass it in to the closure
+        let pipeline = self.pipeline.clone();
+        Ok(Pager::from_callback(move |continuation| {
+            // Then we have to clone it again to pass it in to the async block.
+            // This is because Pageable can't borrow any data, it has to own it all.
+            // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
+            let pipeline = pipeline.clone();
+            let mut req = base_req.clone();
+            async move {
+                if let Some(continuation) = continuation {
+                    req.insert_header(constants::CONTINUATION, continuation);
+                }
+
+                let response = pipeline
+                    .send(Context::new(), &mut req, ResourceType::Items)
+                    .await?;
+                Ok(PagerResult::from_response_header(
+                    response,
+                    &constants::CONTINUATION,
+                ))
+            }
+        }))
     }
 }

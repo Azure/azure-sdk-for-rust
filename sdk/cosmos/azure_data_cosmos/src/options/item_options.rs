@@ -4,7 +4,7 @@
 #[cfg(doc)]
 use crate::clients::ContainerClientMethods;
 
-/// Options to be passed to [`ContainerClient::create_item()`](crate::clients::ContainerClient::create_item()).
+/// Options to be passed to APIs that manipulate items.
 #[derive(Clone, Debug, Default)]
 pub struct ItemOptions {}
 

@@ -6,7 +6,10 @@ use azure_data_cosmos::{
 };
 use clap::{Args, Subcommand};
 
-/// Creates a new item.
+#[cfg(feature = "control_plane")]
+use azure_data_cosmos::models::{ContainerDefinition, PartitionKeyDefinition};
+
+/// Creates a new item, database, or container.
 #[derive(Clone, Args)]
 pub struct CreateCommand {
     #[command(subcommand)]
@@ -37,6 +40,26 @@ pub enum Subcommands {
     Database {
         /// The ID of the new database to create.
         id: String,
+    },
+
+    /// Create a container (does not support Entra ID).
+    #[cfg(feature = "control_plane")]
+    Container {
+        /// The ID of the database to create the container in.
+        database: String,
+
+        /// The ID of the new container to create.
+        id: String,
+
+        /// The path to the partition key properties (supports up to 3).
+        #[clap(long, short)]
+        partition_key: Vec<String>,
+
+        /// Optional indexing policy JSON to apply to the container.
+        ///
+        /// See https://learn.microsoft.com/en-us/azure/cosmos-db/index-policy for more.
+        #[clap(long, short)]
+        indexing_policy: Option<String>,
     },
 }
 
@@ -76,6 +99,32 @@ impl CreateCommand {
                     .unwrap();
                 println!("Created database:");
                 println!("{:#?}", db);
+                Ok(())
+            }
+
+            #[cfg(feature = "control_plane")]
+            Subcommands::Container {
+                database,
+                id,
+                partition_key,
+                indexing_policy,
+            } => {
+                let indexing_policy = indexing_policy.map(|s| serde_json::from_str(&s).unwrap());
+                let partition_key = PartitionKeyDefinition::new(partition_key);
+                let container_definition = ContainerDefinition {
+                    id,
+                    partition_key,
+                    indexing_policy,
+                };
+                let container = client
+                    .database_client(database)
+                    .create_container(container_definition, None)
+                    .await?
+                    .deserialize_body()
+                    .await?
+                    .unwrap();
+                println!("Created container:");
+                println!("{:#?}", container);
                 Ok(())
             }
         }
