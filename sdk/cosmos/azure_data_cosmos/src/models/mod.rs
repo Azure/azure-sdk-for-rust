@@ -14,15 +14,15 @@ use crate::{
 
 mod container_definition;
 mod container_properties;
-mod partition_key_definition;
 mod indexing_policy;
 mod item;
+mod partition_key_definition;
 
 pub use container_definition::*;
 pub use container_properties::*;
-pub use partition_key_definition::*;
 pub use indexing_policy::*;
 pub use item::*;
+pub use partition_key_definition::*;
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where
