@@ -12,3 +12,6 @@ Cargo.lock
 *.swo
 *.swp
 *.vim
+
+# temporary folder to refresh SDK with TypeSpec
+TempTypeSpecFiles/
