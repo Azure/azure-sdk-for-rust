@@ -1,9 +1,12 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::time::Duration;
 
 use azure_core::Model;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer};
 
-use crate::models::{IndexingPolicy, SystemProperties};
+use crate::models::{IndexingPolicy, PartitionKeyDefinition, SystemProperties};
 
 #[cfg(doc)]
 use crate::clients::ContainerClientMethods;
@@ -18,6 +21,7 @@ where
 /// Properties of a Cosmos DB container.
 ///
 /// Returned by [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
+#[non_exhaustive]
 #[derive(Model, Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ContainerProperties {
@@ -59,6 +63,7 @@ pub struct ContainerProperties {
 }
 
 /// Represents the vector embedding policy for a container.
+#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbeddingPolicy {
@@ -68,6 +73,7 @@ pub struct VectorEmbeddingPolicy {
 }
 
 /// Represents the vector embedding policy for a container.
+#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbedding {
@@ -85,6 +91,7 @@ pub struct VectorEmbedding {
 }
 
 /// Defines the data types of the elements of a vector.
+#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorDataType {
@@ -102,6 +109,7 @@ pub enum VectorDataType {
 }
 
 /// Defines the distance functions that can be used to calculate the distance between vectors.
+#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorDistanceFunction {
@@ -116,55 +124,10 @@ pub enum VectorDistanceFunction {
     DotProduct,
 }
 
-/// Represents the partition key definition for a container.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct PartitionKeyDefinition {
-    /// The list of partition keys paths.
-    pub paths: Vec<String>,
-
-    /// The partition key kind.
-    pub kind: PartitionKeyKind,
-
-    /// The version of the partition key hash in use.
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<i32>,
-}
-
-impl PartitionKeyDefinition {
-    /// Creates a new [`PartitionKeyDefinition`] from the provided list of partition key paths.
-    ///
-    /// The [`PartitionKeyDefinition::kind`] will be set automatically, depending on how many paths are provided.
-    pub fn new(paths: impl Into<Vec<String>>) -> Self {
-        let paths = paths.into();
-        let kind = if paths.len() > 1 {
-            PartitionKeyKind::MultiHash
-        } else {
-            PartitionKeyKind::Hash
-        };
-        PartitionKeyDefinition {
-            paths,
-            kind,
-            version: Some(2),
-        }
-    }
-}
-
-/// Represents the kind of a partition key.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "PascalCase")]
-pub enum PartitionKeyKind {
-    /// The container is partitioned by hashing the value of a single partition key.
-    Hash,
-
-    /// The container is partitioned by hashing multiple, hierarchical, partition keys.
-    MultiHash,
-}
-
 /// Represents a unique key policy for a container.
 ///
 /// For more information see <https://docs.microsoft.com/azure/cosmos-db/unique-keys>
+#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKeyPolicy {
@@ -173,6 +136,7 @@ pub struct UniqueKeyPolicy {
 }
 
 /// Represents a single unique key for a container.
+#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKey {
@@ -183,6 +147,7 @@ pub struct UniqueKey {
 /// Represents a conflict resolution policy for a container
 ///
 /// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/conflict-resolution-policies>
+#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ConflictResolutionPolicy {
@@ -199,6 +164,7 @@ pub struct ConflictResolutionPolicy {
 }
 
 /// Defines conflict resolution types available in Azure Cosmos DB
+#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub enum ConflictResolutionMode {

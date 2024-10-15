@@ -3,7 +3,7 @@
 
 use serde::Serialize;
 
-use super::{IndexingPolicy, PartitionKeyDefinition};
+use crate::models::{IndexingPolicy, PartitionKeyDefinition};
 
 /// Describes the properties used to create a new container.
 #[derive(Clone, Debug, Serialize)]

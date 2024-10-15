@@ -14,11 +14,13 @@ use crate::{
 
 mod container_definition;
 mod container_properties;
+mod partition_key_definition;
 mod indexing_policy;
 mod item;
 
 pub use container_definition::*;
 pub use container_properties::*;
+pub use partition_key_definition::*;
 pub use indexing_policy::*;
 pub use item::*;
 
@@ -42,6 +44,7 @@ where
 }
 
 /// A page of query results, where each item is of type `T`.
+#[non_exhaustive]
 #[derive(Clone, Default, Debug, Deserialize)]
 pub struct QueryResults<T> {
     #[serde(alias = "Documents")]
@@ -57,6 +60,7 @@ impl<T: DeserializeOwned> azure_core::Model for QueryResults<T> {
 }
 
 /// A page of results from [`CosmosClient::query_databases`](crate::clients::CosmosClient::query_databases())
+#[non_exhaustive]
 #[derive(Clone, Default, Debug, Deserialize, Model)]
 pub struct DatabaseQueryResults {
     #[serde(alias = "Databases")]
@@ -64,6 +68,7 @@ pub struct DatabaseQueryResults {
 }
 
 /// A page of results from [`DatabaseClient::query_containers`](crate::clients::DatabaseClient::query_containers())
+#[non_exhaustive]
 #[derive(Clone, Default, Debug, Deserialize, Model)]
 pub struct ContainerQueryResults {
     #[serde(alias = "DocumentCollections")]
@@ -71,6 +76,7 @@ pub struct ContainerQueryResults {
 }
 
 /// Common system properties returned for most Cosmos DB resources.
+#[non_exhaustive]
 #[derive(Clone, Default, Debug, Deserialize, PartialEq, Eq)]
 pub struct SystemProperties {
     /// The entity tag associated with the resource.
@@ -94,6 +100,7 @@ pub struct SystemProperties {
 /// Properties of a Cosmos DB database.
 ///
 /// Returned by [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
+#[non_exhaustive]
 #[derive(Model, Clone, Default, Debug, Deserialize, PartialEq, Eq)]
 pub struct DatabaseProperties {
     /// The ID of the database.
