@@ -123,6 +123,10 @@ impl AmqpManagementApis for NoopAmqpManagement {
         unimplemented!();
     }
 
+    async fn detach(self) -> Result<()> {
+        unimplemented!();
+    }
+
     async fn call(
         &self,
         operation_type: impl Into<String>,
@@ -148,11 +152,9 @@ impl AmqpSenderApis for NoopAmqpSender {
     ) -> Result<()> {
         unimplemented!();
     }
-
     async fn detach(self) -> Result<()> {
         unimplemented!();
     }
-
     fn max_message_size(&self) -> Result<Option<u64>> {
         unimplemented!();
     }

@@ -17,6 +17,7 @@ type ManagementImplementation = super::noop::NoopAmqpManagement;
 
 pub trait AmqpManagementApis {
     fn attach(&self) -> impl std::future::Future<Output = Result<()>>;
+    fn detach(self) -> impl std::future::Future<Output = Result<()>>;
 
     #[allow(unused_variables)]
     fn call(
@@ -34,6 +35,9 @@ pub struct AmqpManagement {
 impl AmqpManagementApis for AmqpManagement {
     async fn attach(&self) -> Result<()> {
         self.implementation.attach().await
+    }
+    async fn detach(self) -> Result<()> {
+        self.implementation.detach().await
     }
     async fn call(
         &self,

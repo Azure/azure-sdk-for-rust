@@ -11,13 +11,17 @@ use crate::{
 };
 
 use async_std::sync::Mutex;
-use azure_core::{credentials::AccessToken, error::Result};
+use azure_core::{
+    credentials::AccessToken,
+    error::{ErrorKind, Result},
+    Error,
+};
 use fe2o3_amqp_management::operations::ReadResponse;
 use fe2o3_amqp_types::{messaging::ApplicationProperties, primitives::SimpleValue};
 use std::sync::{Arc, OnceLock};
 use tracing::debug;
 
-use super::error::{AmqpManagement, AmqpManagementAttach};
+use super::error::{AmqpLinkDetach, AmqpManagement, AmqpManagementAttach};
 
 #[derive(Debug)]
 pub(crate) struct Fe2o3AmqpManagement {
@@ -67,6 +71,18 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
         })?;
         Ok(())
     }
+
+    async fn detach(mut self) -> Result<()> {
+        // Detach the management client from the session.
+        let management = self
+            .management
+            .take()
+            .ok_or_else(|| Error::message(ErrorKind::Other, "Unattached management node."))?;
+        let management = management.into_inner();
+        management.close().await.map_err(AmqpLinkDetach::from)?;
+        Ok(())
+    }
+
     async fn call(
         &self,
         operation_type: impl Into<String>,
