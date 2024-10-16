@@ -2,7 +2,7 @@
 
 This repository is for the development of the [unofficial, unsupported](https://github.com/Azure/azure-sdk-for-rust/blob/legacy/FAQ.md#why-is-it-unofficial) Azure SDK for Rust.
 
-> Microsoft is developing the official Azure SDK for Rust crates and has no plans to update this unofficial crate.
+> Microsoft is developing the official Azure SDK for Rust crates and has no plans to update these unofficial crates.
 > In the future we may release an official version that may have a different package name.
 > If releasing an official version of this crate is important to you [let us know](https://github.com/Azure/azure-sdk-for-rust/issues/new/choose).
 >
