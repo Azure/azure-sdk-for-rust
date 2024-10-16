@@ -1161,6 +1161,7 @@ impl AmqpMessage {
         self.body = body.into();
     }
 
+    #[allow(unused_variables)]
     pub fn serialize(message: &AmqpMessage) -> Result<Vec<u8>> {
         #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
         {
