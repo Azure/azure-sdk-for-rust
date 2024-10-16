@@ -479,9 +479,11 @@ impl ProducerClient {
             let expires_at = token.expires_on;
             cbs.authorize_path(&url, token.token.secret(), expires_at)
                 .await?;
-            scopes
-                .insert(url.clone(), token)
-                .ok_or_else(|| Error::from(ErrorKind::UnableToAddAuthenticationToken))?;
+            let present = scopes
+                .insert(url.clone(), token);
+            if present.is_some() {
+                return Err(Error::from(ErrorKind::UnableToAddAuthenticationToken));
+            }
         }
         Ok(scopes
             .get(url.as_str())
