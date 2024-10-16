@@ -11,7 +11,7 @@ use crate::{
 
 #[cfg(feature = "control_plane")]
 use crate::{
-    models::{ContainerDefinition, ContainerProperties, Item},
+    models::{ContainerProperties, Item},
     CreateContainerOptions, DeleteDatabaseOptions,
 };
 
@@ -97,13 +97,13 @@ pub trait DatabaseClientMethods {
     #[doc = include_str!("../../docs/control-plane-warning.md")]
     ///
     /// # Arguments
-    /// * `definition` - A [`ContainerDefinition`] describing the new container.
+    /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
     #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
     #[cfg(feature = "control_plane")]
     async fn create_container(
         &self,
-        definition: impl std::borrow::Borrow<ContainerDefinition>,
+        properties: ContainerProperties,
         options: Option<CreateContainerOptions>,
     ) -> azure_core::Result<Response<Item<ContainerProperties>>>;
 
@@ -181,7 +181,7 @@ impl DatabaseClientMethods for DatabaseClient {
     #[cfg(feature = "control_plane")]
     async fn create_container(
         &self,
-        definition: impl std::borrow::Borrow<ContainerDefinition>,
+        properties: ContainerProperties,
 
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
@@ -189,7 +189,7 @@ impl DatabaseClientMethods for DatabaseClient {
     ) -> azure_core::Result<Response<Item<ContainerProperties>>> {
         let url = self.database_url.with_path_segments(["colls"]);
         let mut req = Request::new(url, Method::Post);
-        req.set_json(definition.borrow())?;
+        req.set_json(&properties)?;
 
         self.pipeline
             .send(Context::new(), &mut req, ResourceType::Containers)

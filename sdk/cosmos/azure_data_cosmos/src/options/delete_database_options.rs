@@ -9,7 +9,7 @@ use crate::clients::DatabaseClientMethods;
 pub struct DeleteDatabaseOptions {}
 
 impl DeleteDatabaseOptions {
-    /// Deletes a new [`DeleteDatabaseOptionsBuilder`](DeleteDatabaseOptionsBuilder) that can be used to construct a [`DeleteDatabaseOptions`].
+    /// Creates a new [`DeleteDatabaseOptionsBuilder`](DeleteDatabaseOptionsBuilder) that can be used to construct a [`DeleteDatabaseOptions`].
     ///
     /// # Examples
     ///

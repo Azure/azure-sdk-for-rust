@@ -9,7 +9,7 @@ use crate::clients::ContainerClientMethods;
 pub struct DeleteContainerOptions {}
 
 impl DeleteContainerOptions {
-    /// Deletes a new [`DeleteContainerOptionsBuilder`](DeleteContainerOptionsBuilder) that can be used to construct a [`DeleteContainerOptions`].
+    /// Creates a new [`DeleteContainerOptionsBuilder`](DeleteContainerOptionsBuilder) that can be used to construct a [`DeleteContainerOptions`].
     ///
     /// # Examples
     ///

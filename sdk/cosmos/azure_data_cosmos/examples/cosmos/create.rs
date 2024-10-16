@@ -7,7 +7,7 @@ use azure_data_cosmos::{
 use clap::{Args, Subcommand};
 
 #[cfg(feature = "control_plane")]
-use azure_data_cosmos::models::{ContainerDefinition, PartitionKeyDefinition};
+use azure_data_cosmos::models::{ContainerProperties, PartitionKeyDefinition};
 
 /// Creates a new item, database, or container.
 #[derive(Clone, Args)]
@@ -49,17 +49,16 @@ pub enum Subcommands {
         database: String,
 
         /// The ID of the new container to create.
-        id: String,
+        #[clap(long, short)]
+        id: Option<String>,
 
         /// The path to the partition key properties (supports up to 3).
         #[clap(long, short)]
         partition_key: Vec<String>,
 
-        /// Optional indexing policy JSON to apply to the container.
-        ///
-        /// See https://learn.microsoft.com/en-us/azure/cosmos-db/index-policy for more.
-        #[clap(long, short)]
-        indexing_policy: Option<String>,
+        /// The JSON for a ContainerProperties value. The 'id' and 'partition key' options are ignored if this is set.
+        #[clap(long)]
+        json: Option<String>,
     },
 }
 
@@ -107,18 +106,19 @@ impl CreateCommand {
                 database,
                 id,
                 partition_key,
-                indexing_policy,
+                json,
             } => {
-                let indexing_policy = indexing_policy.map(|s| serde_json::from_str(&s).unwrap());
-                let partition_key = PartitionKeyDefinition::new(partition_key);
-                let container_definition = ContainerDefinition {
-                    id,
-                    partition_key,
-                    indexing_policy,
+                let properties = match json {
+                    Some(j) => serde_json::from_str(&j).unwrap(),
+                    None => ContainerProperties {
+                        id: id.expect("the ID is required when not using '--json'"),
+                        partition_key: PartitionKeyDefinition::new(partition_key),
+                        ..Default::default()
+                    },
                 };
                 let container = client
                     .database_client(database)
-                    .create_container(container_definition, None)
+                    .create_container(properties, None)
                     .await?
                     .deserialize_body()
                     .await?

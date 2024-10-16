@@ -4,7 +4,7 @@
 //! Model types sent to and received from the Azure Cosmos DB API.
 
 use azure_core::{date::OffsetDateTime, Model};
-use serde::{de::DeserializeOwned, Deserialize, Deserializer};
+use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
 
 #[cfg(doc)]
 use crate::{
@@ -12,13 +12,11 @@ use crate::{
     CosmosClientMethods,
 };
 
-mod container_definition;
 mod container_properties;
 mod indexing_policy;
 mod item;
 mod partition_key_definition;
 
-pub use container_definition::*;
 pub use container_properties::*;
 pub use indexing_policy::*;
 pub use item::*;
@@ -77,22 +75,30 @@ pub struct ContainerQueryResults {
 
 /// Common system properties returned for most Cosmos DB resources.
 #[non_exhaustive]
-#[derive(Clone, Default, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct SystemProperties {
     /// The entity tag associated with the resource.
+    #[serde(default)]
+    #[serde(skip_serializing)]
     #[serde(rename = "_etag")]
     pub etag: Option<azure_core::Etag>,
 
     /// The self-link associated with the resource.
+    #[serde(default)]
+    #[serde(skip_serializing)]
     #[serde(rename = "_self")]
     pub self_link: Option<String>,
 
     /// The system-generated unique identifier associated with the resource.
+    #[serde(default)]
+    #[serde(skip_serializing)]
     #[serde(rename = "_rid")]
     pub resource_id: Option<String>,
 
     /// A [`OffsetDateTime`] representing the last modified time of the resource.
+    #[serde(default)]
     #[serde(rename = "_ts")]
+    #[serde(skip_serializing)]
     #[serde(deserialize_with = "deserialize_cosmos_timestamp")]
     pub last_modified: Option<OffsetDateTime>,
 }
@@ -109,4 +115,41 @@ pub struct DatabaseProperties {
     /// A [`SystemProperties`] object containing common system properties for the database.
     #[serde(flatten)]
     pub system_properties: SystemProperties,
+}
+
+#[cfg(test)]
+mod tests {
+    use serde::{Deserialize, Serialize};
+    use time::{Date, Month, OffsetDateTime, Time};
+
+    #[cfg(test)]
+    #[derive(Debug, Deserialize, Serialize)]
+    struct TimestampHolder {
+        #[serde(default)]
+        #[serde(deserialize_with = "super::deserialize_cosmos_timestamp")]
+        pub ts: Option<OffsetDateTime>,
+    }
+
+    #[test]
+    pub fn deserialize_timestamp() {
+        let value: TimestampHolder = serde_json::from_str(r#"{"ts":1729036800}"#).unwrap();
+        let expected = OffsetDateTime::new_utc(
+            Date::from_calendar_date(2024, Month::October, 16).unwrap(), // Can't be a const because Result::unwrap isn't const.
+            Time::MIDNIGHT,
+        );
+
+        assert_eq!(Some(expected), value.ts);
+    }
+
+    #[test]
+    pub fn deserialize_missing_timestamp() {
+        let value: TimestampHolder = serde_json::from_str(r#"{}"#).unwrap();
+        assert_eq!(None, value.ts);
+    }
+
+    #[test]
+    pub fn deserialize_null_timestamp() {
+        let value: TimestampHolder = serde_json::from_str(r#"{"ts":null}"#).unwrap();
+        assert_eq!(None, value.ts);
+    }
 }
