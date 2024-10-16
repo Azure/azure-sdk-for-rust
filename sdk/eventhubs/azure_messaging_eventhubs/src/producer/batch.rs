@@ -10,7 +10,7 @@ use super::ProducerClient;
 use crate::{error::ErrorKind, models::EventData};
 use azure_core::{error::Result, Error};
 use azure_core_amqp::{
-    messaging::{ AmqpMessage, AmqpMessageBody},
+    messaging::{AmqpMessage, AmqpMessageBody},
     sender::AmqpSenderApis,
 };
 use tracing::debug;
@@ -296,11 +296,7 @@ impl<'a> EventDataBatch<'a> {
 
     pub(crate) fn get_batch_path(&self) -> String {
         if let Some(partition_id) = self.partition_id.as_ref() {
-            format!(
-                "{}/Partitions/{}",
-                self.producer.base_url(),
-                partition_id
-            )
+            format!("{}/Partitions/{}", self.producer.base_url(), partition_id)
         } else {
             self.producer.base_url()
         }
@@ -318,7 +314,8 @@ impl<'a> EventDataBatch<'a> {
             batch_builder = batch_builder.with_properties(message_properties.clone());
         }
         if let Some(application_properties) = message.application_properties() {
-            batch_builder = batch_builder.with_application_properties(application_properties.clone());
+            batch_builder =
+                batch_builder.with_application_properties(application_properties.clone());
         }
         if let Some(delivery_annotations) = message.delivery_annotations() {
             batch_builder = batch_builder.with_delivery_annotations(delivery_annotations.clone());

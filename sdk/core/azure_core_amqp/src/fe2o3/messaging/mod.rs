@@ -217,7 +217,8 @@ impl
         amqp_message_builder = amqp_message_builder.with_body(AmqpMessageBody::Empty);
 
         if let Some(application_properties) = message.application_properties {
-            amqp_message_builder = amqp_message_builder.with_application_properties(application_properties.into());
+            amqp_message_builder =
+                amqp_message_builder.with_application_properties(application_properties.into());
         }
 
         if let Some(header) = message.header {
@@ -230,11 +231,13 @@ impl
         }
 
         if let Some(delivery_annotations) = message.delivery_annotations {
-            amqp_message_builder = amqp_message_builder.with_delivery_annotations(delivery_annotations.0.into());
+            amqp_message_builder =
+                amqp_message_builder.with_delivery_annotations(delivery_annotations.0.into());
         }
 
         if let Some(message_annotations) = message.message_annotations {
-            amqp_message_builder = amqp_message_builder.with_message_annotations(message_annotations.0.into());
+            amqp_message_builder =
+                amqp_message_builder.with_message_annotations(message_annotations.0.into());
         }
 
         if let Some(footer) = message.footer {
