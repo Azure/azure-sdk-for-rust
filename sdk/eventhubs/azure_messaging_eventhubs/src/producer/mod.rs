@@ -481,6 +481,7 @@ impl ProducerClient {
                 .await?;
             let present = scopes
                 .insert(url.clone(), token);
+            // insert returns some if it *fails* to insert, None if it succeeded.
             if present.is_some() {
                 return Err(Error::from(ErrorKind::UnableToAddAuthenticationToken));
             }
