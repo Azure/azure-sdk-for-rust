@@ -262,11 +262,15 @@ mod tests {
         // If it does, users who are using `..Default::default()` syntax will start sending an unexpected payload to the server.
         // In rare cases, it's reasonable to update this test, if the new generated JSON is considered _equivalent_ to the original by the server.
         // But in general, a failure in this test means that the same user code will send an unexpected value in a new version of the SDK.
-        let properties: ContainerProperties = Default::default();
+        let properties = ContainerProperties {
+            id: "MyContainer".to_string(),
+            partition_key: "/partitionKey".into(),
+            ..Default::default()
+        };
         let json = serde_json::to_string(&properties).unwrap();
 
         assert_eq!(
-            "{\"id\":\"\",\"partitionKey\":{\"paths\":[],\"kind\":\"Hash\"}}",
+            "{\"id\":\"MyContainer\",\"partitionKey\":{\"paths\":[\"/partitionKey\"],\"kind\":\"Hash\",\"version\":2}}",
             json
         );
     }
