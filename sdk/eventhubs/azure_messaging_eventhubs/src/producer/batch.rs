@@ -10,9 +10,8 @@ use super::ProducerClient;
 use crate::{error::ErrorKind, models::EventData};
 use azure_core::{error::Result, Error};
 use azure_core_amqp::{
-    messaging::{AmqpAnnotations, AmqpMessage, AmqpMessageBody, AmqpMessageProperties},
+    messaging::{AmqpMessage, AmqpMessageBody},
     sender::AmqpSenderApis,
-    value::{AmqpSymbol, AmqpValue},
 };
 use tracing::debug;
 use uuid::Uuid;
@@ -231,27 +230,14 @@ impl<'a> EventDataBatch<'a> {
     ) -> Result<bool> {
         let mut message = message.into();
         if message.properties().is_none() || message.properties().unwrap().message_id().is_none() {
-            let mut message_properties = AmqpMessageProperties::default();
-            if let Some(properties) = message.properties() {
-                message_properties = properties.clone()
-            }
-            message_properties.set_message_id(Uuid::new_v4().to_string());
-            message.set_properties(message_properties);
+            message.set_message_id(Uuid::new_v4());
         }
-        if self.partition_key.is_some() {
-            let mut message_annotations = AmqpAnnotations::default();
-            if let Some(annotations) = message.message_annotations() {
-                message_annotations = annotations.clone()
-            }
-            message_annotations.insert(
-                AmqpSymbol::from("x-opt-partition-key"),
-                AmqpValue::from(self.partition_key.as_ref().unwrap().clone()),
-            );
-            message.set_message_annotations(message_annotations);
+        if let Some(partition_key) = self.partition_key.as_ref() {
+            message.add_message_annotation("x-opt-partition-key", partition_key.clone());
         }
 
         let mut batch_state = self.batch_state.lock().unwrap();
-        let message_len = AmqpMessage::serialize(message.clone())?.len();
+        let message_len = AmqpMessage::serialize(&message)?.len();
         if batch_state.serialized_messages.is_empty() {
             // The first message serialized is the batch envelope - we capture the parameters from the first message to use for the batch
             batch_state.size_in_bytes = batch_state
@@ -260,7 +246,7 @@ impl<'a> EventDataBatch<'a> {
                 .ok_or_else(|| Error::from(ErrorKind::ArithmeticError))?;
             batch_state.batch_envelope = Some(self.create_batch_envelope(&message));
         }
-        let serialized_message = AmqpMessage::serialize(message)?;
+        let serialized_message = AmqpMessage::serialize(&message)?;
         let actual_message_size =
             Self::calculate_actual_size_for_payload(serialized_message.len())?;
         if batch_state
@@ -309,14 +295,10 @@ impl<'a> EventDataBatch<'a> {
     }
 
     pub(crate) fn get_batch_path(&self) -> String {
-        if self.partition_id.is_none() {
-            self.producer.base_url()
+        if let Some(partition_id) = self.partition_id.as_ref() {
+            format!("{}/Partitions/{}", self.producer.base_url(), partition_id)
         } else {
-            format!(
-                "{}/Partitions/{}",
-                self.producer.base_url(),
-                self.partition_id.as_ref().unwrap()
-            )
+            self.producer.base_url()
         }
     }
 
@@ -326,22 +308,23 @@ impl<'a> EventDataBatch<'a> {
         let mut batch_builder = AmqpMessage::builder();
 
         if let Some(message_header) = message.header() {
-            batch_builder.with_header(message_header.clone());
+            batch_builder = batch_builder.with_header(message_header.clone());
         }
         if let Some(message_properties) = message.properties() {
-            batch_builder.with_properties(message_properties.clone());
+            batch_builder = batch_builder.with_properties(message_properties.clone());
         }
         if let Some(application_properties) = message.application_properties() {
-            batch_builder.with_application_properties(application_properties.clone());
+            batch_builder =
+                batch_builder.with_application_properties(application_properties.clone());
         }
         if let Some(delivery_annotations) = message.delivery_annotations() {
-            batch_builder.with_delivery_annotations(delivery_annotations.clone());
+            batch_builder = batch_builder.with_delivery_annotations(delivery_annotations.clone());
         }
         if let Some(message_annotations) = message.message_annotations() {
-            batch_builder.with_message_annotations(message_annotations.clone());
+            batch_builder = batch_builder.with_message_annotations(message_annotations.clone());
         }
         if let Some(footer) = message.footer() {
-            batch_builder.with_footer(footer.clone());
+            batch_builder = batch_builder.with_footer(footer.clone());
         }
 
         batch_builder.build()

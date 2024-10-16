@@ -379,24 +379,29 @@ pub mod models {
             {
                 let mut message_properties_builder = AmqpMessageProperties::builder();
                 if let Some(content_type) = event_data.content_type {
-                    message_properties_builder.with_content_type(content_type);
+                    message_properties_builder =
+                        message_properties_builder.with_content_type(content_type);
                 }
                 if let Some(correlation_id) = event_data.correlation_id {
-                    message_properties_builder.with_correlation_id(correlation_id);
+                    message_properties_builder =
+                        message_properties_builder.with_correlation_id(correlation_id);
                 }
                 if let Some(message_id) = event_data.message_id {
-                    message_properties_builder.with_message_id(message_id);
+                    message_properties_builder =
+                        message_properties_builder.with_message_id(message_id);
                 }
 
-                message_builder.with_properties(message_properties_builder.build());
+                message_builder =
+                    message_builder.with_properties(message_properties_builder.build());
             }
             if let Some(properties) = event_data.properties {
                 for (key, value) in properties {
-                    message_builder.add_application_property(key, value);
+                    message_builder = message_builder.add_application_property(key, value);
                 }
             }
             if let Some(event_body) = event_data.body {
-                message_builder.with_body(AmqpMessageBody::Binary(vec![event_body.to_vec()]));
+                message_builder =
+                    message_builder.with_body(AmqpMessageBody::Binary(vec![event_body.to_vec()]));
             }
             message_builder.build()
         }
