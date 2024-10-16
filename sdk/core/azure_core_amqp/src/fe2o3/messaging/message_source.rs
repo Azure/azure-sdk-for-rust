@@ -77,9 +77,9 @@ impl From<fe2o3_amqp_types::messaging::Source> for AmqpSource {
         let mut amqp_source_builder = AmqpSource::builder();
 
         if let Some(address) = source.address {
-            amqp_source_builder.with_address(address);
+            amqp_source_builder = amqp_source_builder.with_address(address);
         }
-        amqp_source_builder
+       amqp_source_builder= amqp_source_builder
             .with_durable(source.durable.into())
             .with_expiry_policy(source.expiry_policy.into())
             .with_timeout(source.timeout)
@@ -92,26 +92,26 @@ impl From<fe2o3_amqp_types::messaging::Source> for AmqpSource {
                     .map(|(k, v)| (k.into(), v.into()))
                     .collect();
 
-            amqp_source_builder.with_dynamic_node_properties(dynamic_node_properties);
+                amqp_source_builder = amqp_source_builder.with_dynamic_node_properties(dynamic_node_properties);
         }
         if let Some(distribution_mode) = source.distribution_mode {
-            amqp_source_builder.with_distribution_mode(distribution_mode.into());
+            amqp_source_builder = amqp_source_builder.with_distribution_mode(distribution_mode.into());
         }
         if let Some(filter) = source.filter {
             let filter: AmqpOrderedMap<AmqpSymbol, AmqpValue> = filter
                 .into_iter()
                 .map(|(k, v)| (k.into(), v.into()))
                 .collect();
-            amqp_source_builder.with_filter(filter);
+            amqp_source_builder = amqp_source_builder.with_filter(filter);
         }
         if let Some(default_outcome) = source.default_outcome {
-            amqp_source_builder.with_default_outcome(default_outcome.into());
+            amqp_source_builder = amqp_source_builder.with_default_outcome(default_outcome.into());
         }
         if let Some(outcomes) = source.outcomes {
-            amqp_source_builder.with_outcomes(outcomes.into_iter().map(|o| o.into()).collect());
+            amqp_source_builder = amqp_source_builder.with_outcomes(outcomes.into_iter().map(|o| o.into()).collect());
         }
         if let Some(capabilities) = source.capabilities {
-            amqp_source_builder
+            amqp_source_builder = amqp_source_builder
                 .with_capabilities(capabilities.into_iter().map(|c| c.into()).collect());
         }
         amqp_source_builder.build()

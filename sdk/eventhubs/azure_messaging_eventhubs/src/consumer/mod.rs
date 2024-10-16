@@ -424,7 +424,10 @@ impl ConsumerClient {
         }
 
         trace!("Create management session.");
-        let connection = self.connection.get().unwrap();
+        let connection = self
+            .connection
+            .get()
+            .ok_or(azure_core::Error::from(ErrorKind::MissingConnection))?;
         let session = AmqpSession::new();
         session.begin(connection, None).await?;
         trace!("Session created.");

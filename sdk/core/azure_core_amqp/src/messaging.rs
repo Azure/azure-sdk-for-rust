@@ -239,20 +239,20 @@ impl From<AmqpList> for AmqpTarget {
         let field_count = list.len();
         if field_count >= 1 {
             if let Some(AmqpValue::String(address)) = list.0.first() {
-                builder.with_address(address.clone());
+                builder = builder.with_address(address.clone());
             }
         }
         if field_count >= 2 {
             if let Some(AmqpValue::UByte(durable)) = list.0.get(1) {
                 match *durable {
                     0 => {
-                        builder.with_durable(TerminusDurability::None);
+                        builder = builder.with_durable(TerminusDurability::None);
                     }
                     1 => {
-                        builder.with_durable(TerminusDurability::Configuration);
+                        builder = builder.with_durable(TerminusDurability::Configuration);
                     }
                     2 => {
-                        builder.with_durable(TerminusDurability::UnsettledState);
+                        builder = builder.with_durable(TerminusDurability::UnsettledState);
                     }
                     _ => {
                         panic!("Invalid durable value");
@@ -262,17 +262,17 @@ impl From<AmqpList> for AmqpTarget {
         }
         if field_count >= 3 {
             if let Some(AmqpValue::Symbol(expiry_policy)) = list.0.get(2) {
-                builder.with_expiry_policy(expiry_policy.clone().into());
+                builder = builder.with_expiry_policy(expiry_policy.clone().into());
             }
         }
         if field_count >= 4 {
             if let Some(AmqpValue::UInt(timeout)) = list.0.get(3) {
-                builder.with_timeout(*timeout);
+                builder = builder.with_timeout(*timeout);
             }
         }
         if field_count >= 5 {
             if let Some(AmqpValue::Boolean(dynamic)) = list.0.get(4) {
-                builder.with_dynamic(*dynamic);
+                builder = builder.with_dynamic(*dynamic);
             }
         }
         if field_count >= 6 {
@@ -282,12 +282,12 @@ impl From<AmqpList> for AmqpTarget {
                         .iter()
                         .map(|(k, v)| (k.clone().into(), v.clone()))
                         .collect();
-                builder.with_dynamic_node_properties(dynamic_node_properties);
+                builder = builder.with_dynamic_node_properties(dynamic_node_properties);
             }
         }
         if field_count >= 7 {
             if let Some(AmqpValue::Array(capabilities)) = list.0.get(6) {
-                builder.with_capabilities(capabilities.to_vec());
+                builder = builder.with_capabilities(capabilities.to_vec());
             }
         }
         builder.build()
@@ -385,20 +385,20 @@ impl From<AmqpList> for AmqpSource {
         let field_count = list.len();
         if field_count >= 1 {
             if let Some(AmqpValue::String(address)) = list.0.first() {
-                builder.with_address(address.clone());
+                builder = builder.with_address(address.clone());
             }
         }
         if field_count >= 2 {
             if let Some(AmqpValue::UByte(durable)) = list.0.get(1) {
                 match *durable {
                     0 => {
-                        builder.with_durable(TerminusDurability::None);
+                        builder = builder.with_durable(TerminusDurability::None);
                     }
                     1 => {
-                        builder.with_durable(TerminusDurability::Configuration);
+                        builder = builder.with_durable(TerminusDurability::Configuration);
                     }
                     2 => {
-                        builder.with_durable(TerminusDurability::UnsettledState);
+                        builder = builder.with_durable(TerminusDurability::UnsettledState);
                     }
                     _ => {
                         panic!("Invalid durable value");
@@ -408,17 +408,17 @@ impl From<AmqpList> for AmqpSource {
         }
         if field_count >= 3 {
             if let Some(AmqpValue::Symbol(expiry_policy)) = list.0.get(2) {
-                builder.with_expiry_policy(expiry_policy.clone().into());
+                builder = builder.with_expiry_policy(expiry_policy.clone().into());
             }
         }
         if field_count >= 4 {
             if let Some(AmqpValue::UInt(timeout)) = list.0.get(3) {
-                builder.with_timeout(*timeout);
+                builder = builder.with_timeout(*timeout);
             }
         }
         if field_count >= 5 {
             if let Some(AmqpValue::Boolean(dynamic)) = list.0.get(4) {
-                builder.with_dynamic(*dynamic);
+                builder = builder.with_dynamic(*dynamic);
             }
         }
         if field_count >= 6 {
@@ -428,12 +428,12 @@ impl From<AmqpList> for AmqpSource {
                         .iter()
                         .map(|(k, v)| (k.clone().into(), v.clone()))
                         .collect();
-                builder.with_dynamic_node_properties(dynamic_node_properties);
+                builder = builder.with_dynamic_node_properties(dynamic_node_properties);
             }
         }
         if field_count >= 7 {
             if let Some(AmqpValue::Symbol(distribution_mode)) = list.0.get(6) {
-                builder.with_distribution_mode(distribution_mode.clone().into());
+                builder = builder.with_distribution_mode(distribution_mode.clone().into());
             }
         }
         if field_count >= 8 {
@@ -442,22 +442,24 @@ impl From<AmqpList> for AmqpSource {
                     .iter()
                     .map(|(k, v)| (k.clone().into(), v.clone()))
                     .collect();
-                builder.with_filter(filter);
+                builder = builder.with_filter(filter);
             }
         }
         if field_count >= 9 {
             if let Some(AmqpValue::Symbol(default_outcome)) = list.0.get(8) {
-                builder.with_default_outcome(default_outcome.clone().into());
+                builder = builder.with_default_outcome(default_outcome.clone().into());
             }
         }
         if field_count >= 10 {
             if let Some(AmqpValue::Array(outcomes)) = list.0.get(9) {
-                builder.with_outcomes(outcomes.iter().map(|v| v.clone().into()).collect());
+                builder =
+                    builder.with_outcomes(outcomes.iter().map(|v| v.clone().into()).collect());
             }
         }
         if field_count >= 11 {
             if let Some(AmqpValue::Array(capabilities)) = list.0.get(10) {
-                builder.with_capabilities(capabilities.iter().map(|v| v.clone().into()).collect());
+                builder = builder
+                    .with_capabilities(capabilities.iter().map(|v| v.clone().into()).collect());
             }
         }
         builder.build()
@@ -581,29 +583,29 @@ impl From<AmqpList> for AmqpMessageHeader {
         let field_count = list.len();
         if field_count >= 1 {
             if let Some(AmqpValue::Boolean(durable)) = list.0.first() {
-                builder.with_durable(*durable);
+                builder = builder.with_durable(*durable);
             }
         }
         if field_count >= 2 {
             if let Some(AmqpValue::UByte(priority)) = list.0.get(1) {
-                builder.with_priority(*priority);
+                builder = builder.with_priority(*priority);
             }
         }
         if field_count >= 3 {
             if let Some(AmqpValue::UInt(time_to_live)) = list.0.get(2) {
-                builder.with_time_to_live(Some(std::time::Duration::from_millis(
+                builder = builder.with_time_to_live(Some(std::time::Duration::from_millis(
                     *time_to_live as u64,
                 )));
             }
         }
         if field_count >= 4 {
             if let Some(AmqpValue::Boolean(first_acquirer)) = list.0.get(3) {
-                builder.with_first_acquirer(*first_acquirer);
+                builder = builder.with_first_acquirer(*first_acquirer);
             }
         }
         if field_count >= 5 {
             if let Some(AmqpValue::UInt(delivery_count)) = list.0.get(4) {
-                builder.with_delivery_count(*delivery_count);
+                builder = builder.with_delivery_count(*delivery_count);
             }
         }
         builder.build()
@@ -741,90 +743,92 @@ impl From<AmqpList> for AmqpMessageProperties {
         if field_count >= 1 {
             match &list.0[0] {
                 AmqpValue::ULong(message_id) => {
-                    builder.with_message_id(AmqpMessageId::Ulong(*message_id));
+                    builder = builder.with_message_id(AmqpMessageId::Ulong(*message_id));
                 }
                 AmqpValue::Uuid(message_id) => {
-                    builder.with_message_id(AmqpMessageId::Uuid(*message_id));
+                    builder = builder.with_message_id(AmqpMessageId::Uuid(*message_id));
                 }
                 AmqpValue::Binary(message_id) => {
-                    builder.with_message_id(AmqpMessageId::Binary(message_id.clone()));
+                    builder = builder.with_message_id(AmqpMessageId::Binary(message_id.clone()));
                 }
                 AmqpValue::String(message_id) => {
-                    builder.with_message_id(AmqpMessageId::String(message_id.clone()));
+                    builder = builder.with_message_id(AmqpMessageId::String(message_id.clone()));
                 }
                 _ => {}
             }
         }
         if field_count >= 2 {
             if let AmqpValue::Binary(user_id) = &list.0[1] {
-                builder.with_user_id(user_id.clone());
+                builder = builder.with_user_id(user_id.clone());
             }
         }
         if field_count >= 3 {
             if let AmqpValue::String(to) = &list.0[2] {
-                builder.with_to(to.clone());
+                builder = builder.with_to(to.clone());
             }
         }
         if field_count >= 4 {
             if let AmqpValue::String(subject) = &list.0[3] {
-                builder.with_subject(subject.clone());
+                builder = builder.with_subject(subject.clone());
             }
         }
         if field_count >= 5 {
             if let AmqpValue::String(reply_to) = &list.0[4] {
-                builder.with_reply_to(reply_to.clone());
+                builder = builder.with_reply_to(reply_to.clone());
             }
         }
         if field_count >= 6 {
             match &list.0[5] {
                 AmqpValue::ULong(correlation_id) => {
-                    builder.with_correlation_id(AmqpMessageId::Ulong(*correlation_id));
+                    builder = builder.with_correlation_id(AmqpMessageId::Ulong(*correlation_id));
                 }
                 AmqpValue::Uuid(correlation_id) => {
-                    builder.with_correlation_id(AmqpMessageId::Uuid(*correlation_id));
+                    builder = builder.with_correlation_id(AmqpMessageId::Uuid(*correlation_id));
                 }
                 AmqpValue::Binary(correlation_id) => {
-                    builder.with_correlation_id(AmqpMessageId::Binary(correlation_id.clone()));
+                    builder =
+                        builder.with_correlation_id(AmqpMessageId::Binary(correlation_id.clone()));
                 }
                 AmqpValue::String(correlation_id) => {
-                    builder.with_correlation_id(AmqpMessageId::String(correlation_id.clone()));
+                    builder =
+                        builder.with_correlation_id(AmqpMessageId::String(correlation_id.clone()));
                 }
                 _ => {}
             }
         }
         if field_count >= 7 {
             if let AmqpValue::Symbol(content_type) = &list.0[6] {
-                builder.with_content_type(content_type.clone());
+                builder = builder.with_content_type(content_type.clone());
             }
         }
         if field_count >= 8 {
             if let AmqpValue::Symbol(content_encoding) = &list.0[7] {
-                builder.with_content_encoding(content_encoding.clone());
+                builder = builder.with_content_encoding(content_encoding.clone());
             }
         }
         if field_count >= 9 {
             if let AmqpValue::TimeStamp(absolute_expiry_time) = &list.0[8] {
-                builder.with_absolute_expiry_time(absolute_expiry_time.clone());
+                builder = builder.with_absolute_expiry_time(absolute_expiry_time.clone());
             }
         }
         if field_count >= 10 {
             if let AmqpValue::TimeStamp(creation_time) = &list.0[9] {
-                builder.with_creation_time(creation_time.clone());
+                builder = builder.with_creation_time(creation_time.clone());
             }
         }
         if field_count >= 11 {
             if let AmqpValue::String(group_id) = &list.0[10] {
-                builder.with_group_id(group_id.clone());
+                builder = builder.with_group_id(group_id.clone());
             }
         }
         if field_count >= 12 {
             if let AmqpValue::UInt(group_sequence) = &list.0[11] {
-                builder.with_group_sequence(*group_sequence);
+                builder = builder.with_group_sequence(*group_sequence);
             }
         }
         if field_count >= 13 {
             if let AmqpValue::String(reply_to_group_id) = &list.0[12] {
-                builder.with_reply_to_group_id(reply_to_group_id.clone());
+                builder = builder.with_reply_to_group_id(reply_to_group_id.clone());
             }
         }
 
@@ -1075,74 +1079,94 @@ impl AmqpMessage {
         self.footer.as_ref()
     }
 
-    pub fn set_header(&mut self, header: AmqpMessageHeader) {
-        self.header = Some(header);
+    /// Set the message ID for the message.
+    ///
+    /// This will overwrite any existing message ID on the message.
+    ///
+    /// # Arguments
+    ///
+    /// * `message_id` - The message ID to set on the message.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use azure_core_amqp::messaging::AmqpMessage;
+    ///
+    /// let mut message = AmqpMessage::default();
+    /// message.set_message_id(uuid::Uuid::new_v4());
+    /// message.set_message_id("This is a message ID");
+    /// ```
+    ///
+    pub fn set_message_id(&mut self, message_id: impl Into<AmqpMessageId>) {
+        if let Some(properties) = self.properties.as_mut() {
+            properties.set_message_id(message_id);
+            self.properties = Some(properties.clone());
+        } else {
+            self.properties = Some(
+                AmqpMessageProperties::builder()
+                    .with_message_id(message_id)
+                    .build(),
+            );
+        }
     }
 
-    pub fn set_properties(&mut self, properties: AmqpMessageProperties) {
-        self.properties = Some(properties);
+    /// Adds a message annotation for the message.
+    /// If the message annotations already exist, the annotation will be added to the existing annotations.
+    /// If the message annotations do not exist, a new message annotations map will be created with the annotation.
+    /// # Arguments
+    /// * `name` - The name of the annotation to add.
+    /// * `value` - The value of the annotation to add.
+    /// # Example
+    /// ```
+    /// use azure_core_amqp::messaging::AmqpMessage;
+    /// let mut message = AmqpMessage::default();
+    /// message.add_message_annotation("key", "value");
+    /// ```
+    ///
+    pub fn add_message_annotation(
+        &mut self,
+        name: impl Into<AmqpSymbol>,
+        value: impl Into<AmqpValue>,
+    ) {
+        if let Some(annotations) = self.message_annotations.as_mut() {
+            annotations.insert(name.into(), value.into());
+            self.message_annotations = Some(annotations.clone());
+        } else {
+            let mut annotations = AmqpAnnotations::new();
+            annotations.insert(name.into(), value.into());
+            self.message_annotations = Some(annotations);
+        }
     }
 
-    pub fn set_message_annotations(&mut self, message_annotations: impl Into<AmqpAnnotations>) {
-        self.message_annotations = Some(message_annotations.into());
-    }
-
+    /// Replaces the message body on an existing message.
+    ///
+    /// This will overwrite any existing message body on the message.
+    ///
+    /// # Arguments
+    ///
+    /// * `body` - The new message body to set on the message.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use azure_core_amqp::messaging::AmqpMessage;
+    /// use azure_core_amqp::messaging::AmqpMessageBody;
+    ///
+    /// let mut message = AmqpMessage::default();
+    /// message.set_message_body(AmqpMessageBody::Value("Hello, world!".into()));
+    ///
+    /// ```
+    ///
     pub fn set_message_body(&mut self, body: impl Into<AmqpMessageBody>) {
         self.body = body.into();
     }
 
-    pub fn set_application_properties(
-        &mut self,
-        application_properties: impl Into<AmqpApplicationProperties>,
-    ) {
-        self.application_properties = Some(application_properties.into());
-    }
-
-    pub fn set_delivery_annotations(&mut self, delivery_annotations: impl Into<AmqpAnnotations>) {
-        self.delivery_annotations = Some(delivery_annotations.into());
-    }
-
-    pub fn set_footer(&mut self, footer: impl Into<AmqpAnnotations>) {
-        self.footer = Some(footer.into());
-    }
-
-    pub fn add_message_body_binary(&mut self, body: &[u8]) {
-        match &mut self.body {
-            AmqpMessageBody::Binary(bodies) => {
-                bodies.push(body.to_owned());
-            }
-            AmqpMessageBody::Empty => {
-                self.body = AmqpMessageBody::Binary(vec![body.to_owned()]);
-            }
-            _ => {
-                panic!("Cannot add binary body to non-binary body");
-            }
-        }
-    }
-
-    pub fn add_message_body_sequence(&mut self, body: AmqpList) {
-        match &mut self.body {
-            AmqpMessageBody::Sequence(bodies) => {
-                bodies.push(body);
-            }
-            AmqpMessageBody::Empty => {
-                self.body = AmqpMessageBody::Sequence(vec![body]);
-            }
-            _ => {
-                panic!("Cannot add sequence body to non-sequence body");
-            }
-        }
-    }
-
-    #[allow(unused_variables)]
-    pub fn serialize(message: AmqpMessage) -> Result<Vec<u8>> {
+    pub fn serialize(message: &AmqpMessage) -> Result<Vec<u8>> {
         #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
         {
-            let amqp_message = Into::<
-                fe2o3_amqp_types::messaging::Message<
-                    fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-                >,
-            >::into(message);
+            let amqp_message: fe2o3_amqp_types::messaging::Message<
+                fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
+            > = message.into();
             let res = serde_amqp::ser::to_vec(
                 &fe2o3_amqp_types::messaging::message::__private::Serializable(amqp_message),
             )
@@ -1228,49 +1252,49 @@ pub mod builders {
                 source: Default::default(),
             }
         }
-        pub fn with_address(&mut self, address: impl Into<String>) -> &mut Self {
+        pub fn with_address(mut self, address: impl Into<String>) -> Self {
             self.source.address = Some(address.into());
             self
         }
-        pub fn with_durable(&mut self, durable: TerminusDurability) -> &mut Self {
+        pub fn with_durable(mut self, durable: TerminusDurability) -> Self {
             self.source.durable = Some(durable);
             self
         }
-        pub fn with_expiry_policy(&mut self, expiry_policy: TerminusExpiryPolicy) -> &mut Self {
+        pub fn with_expiry_policy(mut self, expiry_policy: TerminusExpiryPolicy) -> Self {
             self.source.expiry_policy = Some(expiry_policy);
             self
         }
-        pub fn with_timeout(&mut self, timeout: u32) -> &mut Self {
+        pub fn with_timeout(mut self, timeout: u32) -> Self {
             self.source.timeout = Some(timeout);
             self
         }
-        pub fn with_dynamic(&mut self, dynamic: bool) -> &mut Self {
+        pub fn with_dynamic(mut self, dynamic: bool) -> Self {
             self.source.dynamic = Some(dynamic);
             self
         }
         pub fn with_dynamic_node_properties(
-            &mut self,
+            mut self,
             dynamic_node_properties: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-        ) -> &mut Self {
+        ) -> Self {
             self.source.dynamic_node_properties = Some(dynamic_node_properties.into());
             self
         }
-        pub fn with_distribution_mode(&mut self, distribution_mode: DistributionMode) -> &mut Self {
+        pub fn with_distribution_mode(mut self, distribution_mode: DistributionMode) -> Self {
             self.source.distribution_mode = Some(distribution_mode);
             self
         }
         pub fn with_filter(
-            &mut self,
+            mut self,
             filter: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-        ) -> &mut Self {
+        ) -> Self {
             self.source.filter = Some(filter.into());
             self
         }
         pub fn add_to_filter(
-            &mut self,
+            mut self,
             key: impl Into<AmqpSymbol>,
             value: impl Into<AmqpValue>,
-        ) -> &mut Self {
+        ) -> Self {
             if let Some(filter) = &mut self.source.filter {
                 filter.insert(key.into(), value.into());
             } else {
@@ -1280,19 +1304,19 @@ pub mod builders {
             }
             self
         }
-        pub fn with_default_outcome(&mut self, default_outcome: AmqpOutcome) -> &mut Self {
+        pub fn with_default_outcome(mut self, default_outcome: AmqpOutcome) -> Self {
             self.source.default_outcome = Some(default_outcome);
             self
         }
-        pub fn with_outcomes(&mut self, outcomes: Vec<AmqpSymbol>) -> &mut Self {
+        pub fn with_outcomes(mut self, outcomes: Vec<AmqpSymbol>) -> Self {
             self.source.outcomes = Some(outcomes);
             self
         }
-        pub fn with_capabilities(&mut self, capabilities: Vec<AmqpSymbol>) -> &mut Self {
+        pub fn with_capabilities(mut self, capabilities: Vec<AmqpSymbol>) -> Self {
             self.source.capabilities = Some(capabilities);
             self
         }
-        pub fn build(&mut self) -> AmqpSource {
+        pub fn build(&self) -> AmqpSource {
             self.source.clone()
         }
     }
@@ -1302,7 +1326,7 @@ pub mod builders {
     }
 
     impl AmqpTargetBuilder {
-        pub fn build(&mut self) -> AmqpTarget {
+        pub fn build(&self) -> AmqpTarget {
             self.target.clone()
         }
         pub(super) fn new() -> AmqpTargetBuilder {
@@ -1310,34 +1334,34 @@ pub mod builders {
                 target: Default::default(),
             }
         }
-        pub fn with_address(&mut self, address: impl Into<String>) -> &mut Self {
+        pub fn with_address(mut self, address: impl Into<String>) -> Self {
             self.target.address = Some(address.into());
             self
         }
-        pub fn with_durable(&mut self, durable: TerminusDurability) -> &mut Self {
+        pub fn with_durable(mut self, durable: TerminusDurability) -> Self {
             self.target.durable = Some(durable);
             self
         }
-        pub fn with_expiry_policy(&mut self, expiry_policy: TerminusExpiryPolicy) -> &mut Self {
+        pub fn with_expiry_policy(mut self, expiry_policy: TerminusExpiryPolicy) -> Self {
             self.target.expiry_policy = Some(expiry_policy);
             self
         }
-        pub fn with_timeout(&mut self, timeout: u32) -> &mut Self {
+        pub fn with_timeout(mut self, timeout: u32) -> Self {
             self.target.timeout = Some(timeout);
             self
         }
-        pub fn with_dynamic(&mut self, dynamic: bool) -> &mut Self {
+        pub fn with_dynamic(mut self, dynamic: bool) -> Self {
             self.target.dynamic = Some(dynamic);
             self
         }
         pub fn with_dynamic_node_properties(
-            &mut self,
+            mut self,
             dynamic_node_properties: impl Into<AmqpOrderedMap<String, AmqpValue>>,
-        ) -> &mut Self {
+        ) -> Self {
             self.target.dynamic_node_properties = Some(dynamic_node_properties.into());
             self
         }
-        pub fn with_capabilities(&mut self, capabilities: Vec<AmqpValue>) -> &mut Self {
+        pub fn with_capabilities(mut self, capabilities: Vec<AmqpValue>) -> Self {
             self.target.capabilities = Some(capabilities);
             self
         }
@@ -1356,26 +1380,23 @@ pub mod builders {
                 header: Default::default(),
             }
         }
-        pub fn with_durable(&mut self, durable: bool) -> &mut Self {
+        pub fn with_durable(mut self, durable: bool) -> Self {
             self.header.durable = durable;
             self
         }
-        pub fn with_priority(&mut self, priority: u8) -> &mut Self {
+        pub fn with_priority(mut self, priority: u8) -> Self {
             self.header.priority = priority;
             self
         }
-        pub fn with_time_to_live(
-            &mut self,
-            time_to_live: Option<std::time::Duration>,
-        ) -> &mut Self {
+        pub fn with_time_to_live(mut self, time_to_live: Option<std::time::Duration>) -> Self {
             self.header.time_to_live = time_to_live;
             self
         }
-        pub fn with_first_acquirer(&mut self, first_acquirer: bool) -> &mut Self {
+        pub fn with_first_acquirer(mut self, first_acquirer: bool) -> Self {
             self.header.first_acquirer = first_acquirer;
             self
         }
-        pub fn with_delivery_count(&mut self, delivery_count: u32) -> &mut Self {
+        pub fn with_delivery_count(mut self, delivery_count: u32) -> Self {
             self.header.delivery_count = delivery_count;
             self
         }
@@ -1386,7 +1407,7 @@ pub mod builders {
     }
 
     impl AmqpMessagePropertiesBuilder {
-        pub fn build(&mut self) -> AmqpMessageProperties {
+        pub fn build(&self) -> AmqpMessageProperties {
             self.properties.clone()
         }
         pub(super) fn new() -> AmqpMessagePropertiesBuilder {
@@ -1394,67 +1415,58 @@ pub mod builders {
                 properties: Default::default(),
             }
         }
-        pub fn with_message_id(&mut self, message_id: impl Into<AmqpMessageId>) -> &mut Self {
+        pub fn with_message_id(mut self, message_id: impl Into<AmqpMessageId>) -> Self {
             self.properties.message_id = Some(message_id.into());
             self
         }
-        pub fn with_user_id(&mut self, user_id: impl Into<Vec<u8>>) -> &mut Self {
+        pub fn with_user_id(mut self, user_id: impl Into<Vec<u8>>) -> Self {
             self.properties.user_id = Some(user_id.into());
             self
         }
-        pub fn with_to(&mut self, to: impl Into<String>) -> &mut Self {
+        pub fn with_to(mut self, to: impl Into<String>) -> Self {
             self.properties.to = Some(to.into());
             self
         }
-        pub fn with_subject(&mut self, subject: impl Into<String>) -> &mut Self {
+        pub fn with_subject(mut self, subject: impl Into<String>) -> Self {
             self.properties.subject = Some(subject.into());
             self
         }
-        pub fn with_reply_to(&mut self, reply_to: impl Into<String>) -> &mut Self {
+        pub fn with_reply_to(mut self, reply_to: impl Into<String>) -> Self {
             self.properties.reply_to = Some(reply_to.into());
             self
         }
-        pub fn with_correlation_id(
-            &mut self,
-            correlation_id: impl Into<AmqpMessageId>,
-        ) -> &mut Self {
+        pub fn with_correlation_id(mut self, correlation_id: impl Into<AmqpMessageId>) -> Self {
             self.properties.correlation_id = Some(correlation_id.into());
             self
         }
-        pub fn with_content_type(&mut self, content_type: impl Into<AmqpSymbol>) -> &mut Self {
+        pub fn with_content_type(mut self, content_type: impl Into<AmqpSymbol>) -> Self {
             self.properties.content_type = Some(content_type.into());
             self
         }
-        pub fn with_content_encoding(
-            &mut self,
-            content_encoding: impl Into<AmqpSymbol>,
-        ) -> &mut Self {
+        pub fn with_content_encoding(mut self, content_encoding: impl Into<AmqpSymbol>) -> Self {
             self.properties.content_encoding = Some(content_encoding.into());
             self
         }
         pub fn with_absolute_expiry_time(
-            &mut self,
+            mut self,
             absolute_expiry_time: impl Into<AmqpTimestamp>,
-        ) -> &mut Self {
+        ) -> Self {
             self.properties.absolute_expiry_time = Some(absolute_expiry_time.into());
             self
         }
-        pub fn with_creation_time(&mut self, creation_time: impl Into<AmqpTimestamp>) -> &mut Self {
+        pub fn with_creation_time(mut self, creation_time: impl Into<AmqpTimestamp>) -> Self {
             self.properties.creation_time = Some(creation_time.into());
             self
         }
-        pub fn with_group_id(&mut self, group_id: impl Into<String>) -> &mut Self {
+        pub fn with_group_id(mut self, group_id: impl Into<String>) -> Self {
             self.properties.group_id = Some(group_id.into());
             self
         }
-        pub fn with_group_sequence(&mut self, group_sequence: u32) -> &mut Self {
+        pub fn with_group_sequence(mut self, group_sequence: u32) -> Self {
             self.properties.group_sequence = Some(group_sequence);
             self
         }
-        pub fn with_reply_to_group_id(
-            &mut self,
-            reply_to_group_id: impl Into<String>,
-        ) -> &mut Self {
+        pub fn with_reply_to_group_id(mut self, reply_to_group_id: impl Into<String>) -> Self {
             self.properties.reply_to_group_id = Some(reply_to_group_id.into());
             self
         }
@@ -1465,7 +1477,7 @@ pub mod builders {
     }
 
     impl AmqpMessageBuilder {
-        pub fn build(&mut self) -> AmqpMessage {
+        pub fn build(&self) -> AmqpMessage {
             self.message.clone()
         }
         pub(super) fn new() -> AmqpMessageBuilder {
@@ -1473,26 +1485,54 @@ pub mod builders {
                 message: Default::default(),
             }
         }
-        pub fn with_body(&mut self, body: impl Into<AmqpMessageBody>) -> &mut Self {
+        pub fn with_body(mut self, body: impl Into<AmqpMessageBody>) -> Self {
             self.message.body = body.into();
             self
         }
-        pub fn with_header(&mut self, header: AmqpMessageHeader) -> &mut Self {
+        pub fn add_message_body_binary(mut self, body: Vec<u8>) -> Self {
+            match &mut self.message.body {
+                AmqpMessageBody::Binary(bodies) => {
+                    bodies.push(body);
+                }
+                AmqpMessageBody::Empty => {
+                    self.message.body = AmqpMessageBody::Binary(vec![body]);
+                }
+                _ => {
+                    panic!("Cannot add binary body to non-binary body");
+                }
+            }
+            self
+        }
+        pub fn add_message_body_sequence(mut self, body: AmqpList) -> Self {
+            match &mut self.message.body {
+                AmqpMessageBody::Sequence(bodies) => {
+                    bodies.push(body);
+                }
+                AmqpMessageBody::Empty => {
+                    self.message.body = AmqpMessageBody::Sequence(vec![body]);
+                }
+                _ => {
+                    panic!("Cannot add sequence body to non-sequence body");
+                }
+            }
+            self
+        }
+        pub fn with_header(mut self, header: AmqpMessageHeader) -> Self {
             self.message.header = Some(header);
             self
         }
         pub fn with_application_properties(
-            &mut self,
+            mut self,
             application_properties: AmqpApplicationProperties,
-        ) -> &mut Self {
+        ) -> Self {
             self.message.application_properties = Some(application_properties);
             self
         }
         pub fn add_application_property(
-            &mut self,
+            mut self,
             key: impl Into<String>,
             value: impl Into<AmqpValue>,
-        ) -> &mut Self {
+        ) -> Self {
             if let Some(application_properties) = &mut self.message.application_properties {
                 application_properties.0.insert(key.into(), value.into());
             } else {
@@ -1503,28 +1543,22 @@ pub mod builders {
             }
             self
         }
-        pub fn with_message_annotations(
-            &mut self,
-            message_annotations: AmqpAnnotations,
-        ) -> &mut Self {
+        pub fn with_message_annotations(mut self, message_annotations: AmqpAnnotations) -> Self {
             self.message.message_annotations = Some(message_annotations);
             self
         }
-        pub fn with_delivery_annotations(
-            &mut self,
-            delivery_annotations: AmqpAnnotations,
-        ) -> &mut Self {
+        pub fn with_delivery_annotations(mut self, delivery_annotations: AmqpAnnotations) -> Self {
             self.message.delivery_annotations = Some(delivery_annotations);
             self
         }
-        pub fn with_properties<T>(&mut self, properties: T) -> &mut Self
+        pub fn with_properties<T>(mut self, properties: T) -> Self
         where
             T: Into<AmqpMessageProperties>,
         {
             self.message.properties = Some(properties.into());
             self
         }
-        pub fn with_footer(&mut self, footer: AmqpAnnotations) -> &mut Self {
+        pub fn with_footer(mut self, footer: AmqpAnnotations) -> Self {
             self.message.footer = Some(footer);
             self
         }
@@ -1775,7 +1809,7 @@ mod tests {
     fn test_empty_message_serialization() {
         {
             let message = AmqpMessage::builder().build();
-            let serialized = AmqpMessage::serialize(message).unwrap();
+            let serialized = AmqpMessage::serialize(&message).unwrap();
             assert_eq!(serialized, vec![0, 0x53, 0x77, 0x40]);
             #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
             {
@@ -1801,7 +1835,7 @@ mod tests {
                         .build(),
                 )
                 .build();
-            let serialized = AmqpMessage::serialize(message).unwrap();
+            let serialized = AmqpMessage::serialize(&message).unwrap();
 
             // The serialized body should contain:
             // - 0x0 DESCRIPTOR
@@ -1832,7 +1866,7 @@ mod tests {
             let message = AmqpMessage::builder()
                 .with_body(AmqpValue::from(123))
                 .build();
-            let serialized = AmqpMessage::serialize(message).unwrap();
+            let serialized = AmqpMessage::serialize(&message).unwrap();
             // The serialized body should contain:
             // - 0x00: 0 DESCRIPTOR
             // - 0x53: SMALLULONG
@@ -1845,7 +1879,7 @@ mod tests {
             let message = AmqpMessage::builder()
                 .with_body(AmqpValue::from("hello"))
                 .build();
-            let serialized = AmqpMessage::serialize(message).unwrap();
+            let serialized = AmqpMessage::serialize(&message).unwrap();
             // The serialized body should contain:
             // - 0x00: 0 DESCRIPTOR
             // - 0x53: SMALLULONG
@@ -1866,7 +1900,7 @@ mod tests {
             let message = AmqpMessage::builder()
                 .with_body(AmqpMessageBody::Binary(vec![vec![1, 2, 3]]))
                 .build();
-            let serialized = AmqpMessage::serialize(message).unwrap();
+            let serialized = AmqpMessage::serialize(&message).unwrap();
             // The serialized body should contain:
             // - 0x00: 0 DESCRIPTOR
             // - 0x53: SMALLULONG
@@ -1879,7 +1913,7 @@ mod tests {
             let message = AmqpMessage::builder()
                 .with_body(AmqpMessageBody::Binary(vec![vec![1, 2, 3], vec![4, 5, 6]]))
                 .build();
-            let serialized = AmqpMessage::serialize(message).unwrap();
+            let serialized = AmqpMessage::serialize(&message).unwrap();
             // The serialized body should contain:
             // - 0x00: 0 DESCRIPTOR
             // - 0x53: SMALLULONG
@@ -1896,7 +1930,7 @@ mod tests {
             let message = AmqpMessage::builder()
                 .with_body(vec![vec![1, 2, 3]])
                 .build();
-            let serialized = AmqpMessage::serialize(message).unwrap();
+            let serialized = AmqpMessage::serialize(&message).unwrap();
             // The serialized body should contain:
             // - 0x00: 0 DESCRIPTOR
             // - 0x53: SMALLULONG
@@ -1908,7 +1942,7 @@ mod tests {
 
         {
             let message = AmqpMessage::builder().with_body(vec![1, 2, 3]).build();
-            let serialized = AmqpMessage::serialize(message).unwrap();
+            let serialized = AmqpMessage::serialize(&message).unwrap();
             // The serialized body should contain:
             // - 0x00: 0 DESCRIPTOR
             // - 0x53: SMALLULONG
@@ -1926,7 +1960,7 @@ mod tests {
                 .with_body(AmqpMessageBody::Sequence(vec![AmqpList::new()]))
                 .build();
 
-            let serialized = AmqpMessage::serialize(message).unwrap();
+            let serialized = AmqpMessage::serialize(&message).unwrap();
 
             // The serialized body should contain:
             // - 0x00: 0 DESCRIPTOR
@@ -1944,7 +1978,7 @@ mod tests {
                 .with_body(AmqpMessageBody::Sequence(vec![body]))
                 .build();
 
-            let serialized = AmqpMessage::serialize(message).unwrap();
+            let serialized = AmqpMessage::serialize(&message).unwrap();
 
             // The serialized body should contain:
             // - 0x00: 0 DESCRIPTOR
@@ -1980,7 +2014,7 @@ mod tests {
             )
             .build();
 
-        let serialized = AmqpMessage::serialize(message.clone()).unwrap();
+        let serialized = AmqpMessage::serialize(&message).unwrap();
         assert_eq!(
             serialized,
             vec![

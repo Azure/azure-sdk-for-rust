@@ -30,6 +30,7 @@ impl AmqpConnectionOptions {
     pub fn builder() -> builders::AmqpConnectionOptionsBuilder {
         builders::AmqpConnectionOptionsBuilder::new()
     }
+
     pub fn max_frame_size(&self) -> Option<u32> {
         self.max_frame_size
     }

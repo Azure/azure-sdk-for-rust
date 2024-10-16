@@ -123,10 +123,6 @@ impl AmqpManagementApis for NoopAmqpManagement {
         unimplemented!();
     }
 
-    async fn detach(self) -> Result<()> {
-        unimplemented!();
-    }
-
     async fn call(
         &self,
         operation_type: impl Into<String>,
