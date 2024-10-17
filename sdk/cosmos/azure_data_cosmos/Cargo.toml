@@ -14,7 +14,6 @@ keywords = ["sdk", "azure", "rest", "cloud", "cosmos", "database"]
 categories = ["api-bindings"]
 
 [dependencies]
-cfg-if.workspace = true
 async-trait.workspace = true
 azure_core.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
