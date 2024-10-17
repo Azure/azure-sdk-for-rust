@@ -12,7 +12,6 @@ use crate::constants;
 /// [`QueryPartitionStrategy`] implements [`From`] for any type that is convertible to a `PartitionKey`.
 /// This allows you to use any of the syntaxes specified in the [`PartitionKey`] docs any place an [`Into<QueryPartitionStrategy>`] is expected.
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 pub enum QueryPartitionStrategy {
     SinglePartition(PartitionKey),
 }

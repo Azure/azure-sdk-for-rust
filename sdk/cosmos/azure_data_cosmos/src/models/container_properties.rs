@@ -1,9 +1,12 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::time::Duration;
 
 use azure_core::Model;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::models::SystemProperties;
+use crate::models::{IndexingPolicy, PartitionKeyDefinition, SystemProperties};
 
 #[cfg(doc)]
 use crate::clients::ContainerClientMethods;
@@ -15,44 +18,81 @@ where
     Ok(Option::<u64>::deserialize(deserializer)?.map(Duration::from_secs))
 }
 
+fn serialize_ttl<S>(duration: &Option<Duration>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match duration {
+        Some(d) => serializer.serialize_some(&d.as_secs()),
+        None => serializer.serialize_none(),
+    }
+}
+
 /// Properties of a Cosmos DB container.
 ///
-/// Returned by [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
-#[non_exhaustive]
-#[derive(Model, Clone, Debug, Deserialize, PartialEq, Eq)]
+/// # Constructing
+///
+/// When constructing this type, you should **always** use [Struct Update] syntax using `..Default::default()`, for example:
+///
+/// ```rust
+/// # use azure_data_cosmos::models::ContainerProperties;
+/// let properties = ContainerProperties {
+///     id: "NewContainer".to_string(),
+///     partition_key: "/partitionKey".into(),
+///     ..Default::default()
+/// };
+/// ```
+///
+/// Using this syntax has two purposes:
+///
+/// 1. It allows you to construct the type even though [`SystemProperties`] is not constructable (these properties should always be empty when you send a request).
+/// 2. It protects you if we add additional properties to this struct.
+///
+/// Also, note that the `id` and `partition_key` values are **required** by the server. You will get an error from the server if you omit them.
+///
+/// [Struct Update]: https://doc.rust-lang.org/stable/book/ch05-01-defining-structs.html?highlight=Struct#creating-instances-from-other-instances-with-struct-update-syntax
+#[derive(Model, Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ContainerProperties {
     /// The ID of the container.
     pub id: String,
 
+    /// The definition of the partition key for the container.
+    pub partition_key: PartitionKeyDefinition,
+
+    /// The indexing policy for the container.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub indexing_policy: Option<IndexingPolicy>,
+
+    /// The unique key policy for the container.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unique_key_policy: Option<UniqueKeyPolicy>,
+
+    /// The conflict resolution policy for the container.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub conflict_resolution_policy: Option<ConflictResolutionPolicy>,
+
+    /// The vector embedding policy for the container.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub vector_embedding_policy: Option<VectorEmbeddingPolicy>,
+
     /// The time-to-live for items in the container.
     ///
     /// For more information see <https://docs.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations>
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(deserialize_with = "deserialize_ttl")]
+    #[serde(serialize_with = "serialize_ttl")]
     pub default_ttl: Option<Duration>,
 
     /// The time-to-live for the analytical store in the container.
     ///
     /// For more information see <https://docs.microsoft.com/azure/cosmos-db/analytical-store-introduction#analytical-ttl>
     #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(deserialize_with = "deserialize_ttl")]
+    #[serde(serialize_with = "serialize_ttl")]
     pub analytical_storage_ttl: Option<Duration>,
-
-    /// The definition of the partition key for the container.
-    pub partition_key: PartitionKeyDefinition,
-
-    /// The indexing policy for the container.
-    pub indexing_policy: Option<IndexingPolicy>,
-
-    /// The unique key policy for the container.
-    pub unique_key_policy: Option<UniqueKeyPolicy>,
-
-    /// The conflict resolution policy for the container.
-    pub conflict_resolution_policy: Option<ConflictResolutionPolicy>,
-
-    /// The vector embedding policy for the container.
-    pub vector_embedding_policy: Option<VectorEmbeddingPolicy>,
 
     /// A [`SystemProperties`] object containing common system properties for the container.
     #[serde(flatten)]
@@ -60,8 +100,7 @@ pub struct ContainerProperties {
 }
 
 /// Represents the vector embedding policy for a container.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbeddingPolicy {
     /// The [`VectorEmbedding`]s that describe the vector embeddings of items in the container.
@@ -70,8 +109,7 @@ pub struct VectorEmbeddingPolicy {
 }
 
 /// Represents the vector embedding policy for a container.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct VectorEmbedding {
     /// The path to the property containing the vector.
@@ -88,8 +126,7 @@ pub struct VectorEmbedding {
 }
 
 /// Defines the data types of the elements of a vector.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorDataType {
     /// Represents the `float16` data type.
@@ -106,8 +143,7 @@ pub enum VectorDataType {
 }
 
 /// Defines the distance functions that can be used to calculate the distance between vectors.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum VectorDistanceFunction {
     /// Represents the `euclidian` distance function.
@@ -121,136 +157,10 @@ pub enum VectorDistanceFunction {
     DotProduct,
 }
 
-/// Represents the partition key definition for a container.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct PartitionKeyDefinition {
-    /// The list of partition keys paths.
-    pub paths: Vec<String>,
-
-    /// The version of the partition key hash in use.
-    #[serde(default)]
-    pub version: i32,
-}
-
-/// Represents the indexing policy for a container.
-///
-/// For more information see <https://docs.microsoft.com/azure/cosmos-db/index-policy>
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct IndexingPolicy {
-    /// Indicates that the indexing policy is automatic.
-    #[serde(default)]
-    pub automatic: bool,
-
-    /// The indexing mode in use.
-    #[serde(default)]
-    pub indexing_mode: IndexingMode,
-
-    /// The paths to be indexed.
-    #[serde(default)]
-    pub included_paths: Vec<PropertyPath>,
-
-    /// The paths to be excluded.
-    #[serde(default)]
-    pub excluded_paths: Vec<PropertyPath>,
-
-    /// A list of spatial indexes in the container.
-    #[serde(default)]
-    pub spatial_indexes: Vec<SpatialIndex>,
-
-    /// A list of composite indexes in the container
-    #[serde(default)]
-    pub composite_indexes: Vec<CompositeIndex>,
-
-    /// A list of vector indexes in the container
-    #[serde(default)]
-    pub vector_indexes: Vec<VectorIndex>,
-}
-
-/// Defines the indexing modes supported by Azure Cosmos DB.
-#[non_exhaustive]
-#[derive(Clone, Default, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub enum IndexingMode {
-    Consistent,
-
-    #[default]
-    None,
-}
-
-/// Represents a JSON path.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct PropertyPath {
-    // The path to the property referenced in this index.
-    pub path: String,
-}
-
-/// Represents a spatial index
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct SpatialIndex {
-    /// The path to the property referenced in this index.
-    pub path: String,
-
-    /// The spatial types used in this index
-    pub types: Vec<SpatialType>,
-}
-
-/// Defines the types of spatial data that can be indexed.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "PascalCase")]
-pub enum SpatialType {
-    Point,
-    Polygon,
-    LineString,
-    MultiPolygon,
-}
-
-/// Represents a composite index
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(transparent)]
-pub struct CompositeIndex {
-    /// The properties in this composite index
-    pub properties: Vec<CompositeIndexProperty>,
-}
-
-/// Describes a single property in a composite index.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct CompositeIndexProperty {
-    /// The path to the property referenced in this index.
-    pub path: String,
-
-    /// The order of the composite index.
-    ///
-    /// For example, if you want to run the query "SELECT * FROM c ORDER BY c.age asc, c.height desc",
-    /// then you'd specify the order for "/asc" to be *ascending* and the order for "/height" to be *descending*.
-    pub order: CompositeIndexOrder,
-}
-
-/// Ordering values available for composite indexes.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub enum CompositeIndexOrder {
-    Ascending,
-    Descending,
-}
-
 /// Represents a unique key policy for a container.
 ///
 /// For more information see <https://docs.microsoft.com/azure/cosmos-db/unique-keys>
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKeyPolicy {
     /// The keys defined in this policy.
@@ -258,8 +168,7 @@ pub struct UniqueKeyPolicy {
 }
 
 /// Represents a single unique key for a container.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKey {
     /// The set of paths which must be unique for each item.
@@ -269,8 +178,7 @@ pub struct UniqueKey {
 /// Represents a conflict resolution policy for a container
 ///
 /// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/conflict-resolution-policies>
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ConflictResolutionPolicy {
     /// The conflict resolution mode.
@@ -286,8 +194,7 @@ pub struct ConflictResolutionPolicy {
 }
 
 /// Defines conflict resolution types available in Azure Cosmos DB
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub enum ConflictResolutionMode {
     /// Conflict resolution will be performed by using the highest value of the property specified by [`ConflictResolutionPolicy::resolution_path`].
@@ -297,172 +204,74 @@ pub enum ConflictResolutionMode {
     Custom,
 }
 
-/// Represents a vector index
-///
-/// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/index-policy#vector-indexes>
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct VectorIndex {
-    /// The path to the property referenced in this index.
-    pub path: String,
-
-    /// The type of the vector index.
-    #[serde(rename = "type")] // "type" is a reserved word in Rust.
-    pub index_type: VectorIndexType,
-}
-
-/// Types of vector indexes supported by Cosmos DB
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub enum VectorIndexType {
-    Flat,
-    QuantizedFlat,
-    DiskANN,
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::models::{
-        CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, IndexingMode, PropertyPath,
-        SpatialIndex, SpatialType, VectorIndex, VectorIndexType,
-    };
+    use serde::{Deserialize, Serialize};
+    use std::time::Duration;
 
-    use super::IndexingPolicy;
+    use crate::models::ContainerProperties;
+
+    #[cfg(test)]
+    #[derive(Debug, Deserialize, Serialize)]
+    struct DurationHolder {
+        #[serde(default)]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(deserialize_with = "super::deserialize_ttl")]
+        #[serde(serialize_with = "super::serialize_ttl")]
+        pub duration: Option<Duration>,
+    }
 
     #[test]
-    pub fn deserialize_indexing_policy() {
-        // A fairly complete deserialization test that covers most of the indexing policies described in our docs.
-        let policy = r#"
-            {
-                "indexingMode": "consistent",
-                "includedPaths": [
-                    {
-                        "path": "/*"
-                    }
-                ],
-                "excludedPaths": [
-                    {
-                        "path": "/path/to/single/excluded/property/?"
-                    },
-                    {
-                        "path": "/path/to/root/of/multiple/excluded/properties/*"
-                    }
-                ],
-                "spatialIndexes": [
-                    {
-                        "path": "/path/to/geojson/property/?",
-                        "types": [
-                            "Point",
-                            "Polygon",
-                            "MultiPolygon",
-                            "LineString"
-                        ]
-                    }
-                ],
-                "vectorIndexes": [
-                    {
-                        "path": "/vector1",
-                        "type": "quantizedFlat"
-                    },
-                    {
-                        "path": "/vector2",
-                        "type": "diskANN"
-                    }
-                ],
-                "compositeIndexes":[
-                    [
-                        {
-                            "path":"/name",
-                            "order":"ascending"
-                        },
-                        {
-                            "path":"/age",
-                            "order":"descending"
-                        }
-                    ],
-                    [
-                        {
-                            "path":"/name2",
-                            "order":"descending"
-                        },
-                        {
-                            "path":"/age2",
-                            "order":"ascending"
-                        }
-                    ]
-                ],
-                "extraValueNotCurrentlyPresentInModel": {
-                    "this": "should not fail"
-                }
-            }
-        "#;
+    pub fn serialize_ttl() {
+        let value = DurationHolder {
+            duration: Some(Duration::from_secs(4200)),
+        };
+        let json = serde_json::to_string(&value).unwrap();
+        assert_eq!(r#"{"duration":4200}"#, json);
+    }
 
-        let policy: IndexingPolicy = serde_json::from_str(policy).unwrap();
+    #[test]
+    pub fn serialize_missing_ttl() {
+        let value = DurationHolder { duration: None };
+        let json = serde_json::to_string(&value).unwrap();
+        assert_eq!(r#"{}"#, json);
+    }
+
+    #[test]
+    pub fn deserialize_ttl() {
+        let value: DurationHolder = serde_json::from_str(r#"{"duration":4200}"#).unwrap();
+        assert_eq!(Some(Duration::from_secs(4200)), value.duration);
+    }
+
+    #[test]
+    pub fn deserialize_missing_ttl() {
+        let value: DurationHolder = serde_json::from_str(r#"{}"#).unwrap();
+        assert_eq!(None, value.duration);
+    }
+
+    #[test]
+    pub fn deserialize_null_ttl() {
+        let value: DurationHolder = serde_json::from_str(r#"{"duration":null}"#).unwrap();
+        assert_eq!(None, value.duration);
+    }
+
+    #[test]
+    pub fn container_properties_default_serialization() {
+        // This test asserts that the default value serializes the same way across SDK versions.
+        // When new properties are added to ContainerProperties, this test should not break.
+        // If it does, users who are using `..Default::default()` syntax will start sending an unexpected payload to the server.
+        // In rare cases, it's reasonable to update this test, if the new generated JSON is considered _equivalent_ to the original by the server.
+        // But in general, a failure in this test means that the same user code will send an unexpected value in a new version of the SDK.
+        let properties = ContainerProperties {
+            id: "MyContainer".to_string(),
+            partition_key: "/partitionKey".into(),
+            ..Default::default()
+        };
+        let json = serde_json::to_string(&properties).unwrap();
 
         assert_eq!(
-            IndexingPolicy {
-                automatic: false,
-                indexing_mode: IndexingMode::Consistent,
-                included_paths: vec![PropertyPath {
-                    path: "/*".to_string(),
-                }],
-                excluded_paths: vec![
-                    PropertyPath {
-                        path: "/path/to/single/excluded/property/?".to_string()
-                    },
-                    PropertyPath {
-                        path: "/path/to/root/of/multiple/excluded/properties/*".to_string()
-                    },
-                ],
-                spatial_indexes: vec![SpatialIndex {
-                    path: "/path/to/geojson/property/?".to_string(),
-                    types: vec![
-                        SpatialType::Point,
-                        SpatialType::Polygon,
-                        SpatialType::MultiPolygon,
-                        SpatialType::LineString,
-                    ]
-                }],
-                composite_indexes: vec![
-                    CompositeIndex {
-                        properties: vec![
-                            CompositeIndexProperty {
-                                path: "/name".to_string(),
-                                order: CompositeIndexOrder::Ascending,
-                            },
-                            CompositeIndexProperty {
-                                path: "/age".to_string(),
-                                order: CompositeIndexOrder::Descending,
-                            },
-                        ]
-                    },
-                    CompositeIndex {
-                        properties: vec![
-                            CompositeIndexProperty {
-                                path: "/name2".to_string(),
-                                order: CompositeIndexOrder::Descending,
-                            },
-                            CompositeIndexProperty {
-                                path: "/age2".to_string(),
-                                order: CompositeIndexOrder::Ascending,
-                            },
-                        ]
-                    },
-                ],
-                vector_indexes: vec![
-                    VectorIndex {
-                        path: "/vector1".to_string(),
-                        index_type: VectorIndexType::QuantizedFlat,
-                    },
-                    VectorIndex {
-                        path: "/vector2".to_string(),
-                        index_type: VectorIndexType::DiskANN,
-                    }
-                ]
-            },
-            policy
+            "{\"id\":\"MyContainer\",\"partitionKey\":{\"paths\":[\"/partitionKey\"],\"kind\":\"Hash\",\"version\":2}}",
+            json
         );
     }
 }
