@@ -1,9 +1,9 @@
 # Azure SDK for Rust
 
-This repository is for the development of the [unofficial](https://github.com/Azure/azure-sdk-for-rust/blob/main/FAQ.md#why-is-it-unofficial) Azure SDK for Rust.
+This repository is for the development of the [unofficial, unsupported](https://github.com/Azure/azure-sdk-for-rust/blob/legacy/FAQ.md#why-is-it-unofficial) Azure SDK for Rust.
 
-> Microsoft is developing the official Azure SDK for Rust crates and has no plans to update this unofficial crate.
-> In the future we may release an official version that may have a different package name.
+> Microsoft is developing the official Azure SDK for Rust crates and has no plans to update these unofficial crates.
+> In the future we may release official versions that may have a different package names.
 > If releasing an official version of this crate is important to you [let us know](https://github.com/Azure/azure-sdk-for-rust/issues/new/choose).
 >
 > Source for this crate can now be found in <https://github.com/Azure/azure-sdk-for-rust/tree/legacy>.
@@ -30,7 +30,7 @@ Azure service crates generated from [Azure REST API Specifications](https://gith
 
 ## Status
 
-🚨 WARNING 🚨: This project is under active development. Be aware that large breaking changes will happen before 1.0 is reached.
+🚨 WARNING 🚨: This project is no longer under active development. Work on officially supported crates is being done in the `main` branch. Pull requests to `legacy` may be considered but are not guaranteed to be merged. Instead, you might consider forking this repository, creating a topic branch you'd need to submit a pull request anyway, and [override dependencies](https://doc.rust-lang.org/cargo/reference/overriding-dependencies.html) in your `Cargo.toml` file(s) as necessary.
 
 This project is the successor to the `azure_sdk*` crates from [MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust). The crates have been renamed, so those older crates should be considered fully deprecated. See [history](HISTORY.md) for more details.
 

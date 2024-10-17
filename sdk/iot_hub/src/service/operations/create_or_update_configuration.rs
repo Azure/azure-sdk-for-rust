@@ -83,11 +83,8 @@ impl CreateOrUpdateConfigurationBuilder {
 
             let mut request = self.client.finalize_request(&uri, Method::Put)?;
 
-            match &self.etag {
-                Some(etag) => {
-                    request.insert_header(headers::IF_MATCH, format!("\"{etag}\""));
-                }
-                None => (),
+            if let Some(etag) = &self.etag {
+                request.insert_header(headers::IF_MATCH, format!("\"{etag}\""));
             }
 
             let body = CreateOrUpdateConfigurationBody {
