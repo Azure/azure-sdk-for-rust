@@ -3,22 +3,14 @@
 
 use crate::{
     clients::ContainerClient,
-    models::{ContainerQueryResults, DatabaseProperties},
+    models::{ContainerProperties, ContainerQueryResults, DatabaseProperties, Item},
     pipeline::{CosmosPipeline, ResourceType},
     utils::AppendPathSegments,
-    Query, QueryContainersOptions, ReadDatabaseOptions,
+    CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
+    ReadDatabaseOptions,
 };
 
-#[cfg(feature = "control_plane")]
-use crate::{
-    models::{ContainerProperties, Item},
-    CreateContainerOptions, DeleteDatabaseOptions,
-};
-
-use azure_core::{Context, Pager, Request, Response};
-
-#[cfg(feature = "control_plane")]
-use azure_core::Method;
+use azure_core::{Context, Method, Pager, Request, Response};
 
 use url::Url;
 
@@ -100,7 +92,6 @@ pub trait DatabaseClientMethods {
     /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
     #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
-    #[cfg(feature = "control_plane")]
     async fn create_container(
         &self,
         properties: ContainerProperties,
@@ -114,7 +105,6 @@ pub trait DatabaseClientMethods {
     /// # Arguments
     /// * `options` - Optional parameters for the request.
     #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
-    #[cfg(feature = "control_plane")]
     async fn delete(&self, options: Option<DeleteDatabaseOptions>) -> azure_core::Result<Response>;
 }
 
@@ -178,7 +168,6 @@ impl DatabaseClientMethods for DatabaseClient {
             .send_query_request(query.into(), base_request, ResourceType::Containers)
     }
 
-    #[cfg(feature = "control_plane")]
     async fn create_container(
         &self,
         properties: ContainerProperties,
@@ -196,7 +185,6 @@ impl DatabaseClientMethods for DatabaseClient {
             .await
     }
 
-    #[cfg(feature = "control_plane")]
     async fn delete(
         &self,
         #[allow(unused_variables)]

@@ -7,11 +7,8 @@ use crate::{
     options::{QueryOptions, ReadContainerOptions},
     pipeline::{CosmosPipeline, ResourceType},
     utils::AppendPathSegments,
-    ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
+    DeleteContainerOptions, ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
 };
-
-#[cfg(feature = "control_plane")]
-use crate::DeleteContainerOptions;
 
 use azure_core::{Context, Method, Pager, Request, Response};
 use serde::{de::DeserializeOwned, Serialize};
@@ -57,7 +54,6 @@ pub trait ContainerClientMethods {
     /// # Arguments
     /// * `options` - Optional parameters for the request.
     #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
-    #[cfg(feature = "control_plane")]
     async fn delete(&self, options: Option<DeleteContainerOptions>)
         -> azure_core::Result<Response>;
 
@@ -355,7 +351,6 @@ impl ContainerClientMethods for ContainerClient {
             .await
     }
 
-    #[cfg(feature = "control_plane")]
     async fn delete(
         &self,
         #[allow(unused_variables)]

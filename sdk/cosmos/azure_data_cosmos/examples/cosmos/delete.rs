@@ -34,14 +34,12 @@ pub enum Subcommands {
     },
 
     /// Create a database (does not support Entra ID).
-    #[cfg(feature = "control_plane")]
     Database {
         /// The ID of the database to delete.
         id: String,
     },
 
     /// Create a container (does not support Entra ID).
-    #[cfg(feature = "control_plane")]
     Container {
         /// The ID of the database the container is in.
         database: String,
@@ -76,14 +74,12 @@ impl DeleteCommand {
                 Ok(())
             }
 
-            #[cfg(feature = "control_plane")]
             Subcommands::Database { id } => {
                 let db_client = client.database_client(id);
                 db_client.delete(None).await?;
                 Ok(())
             }
 
-            #[cfg(feature = "control_plane")]
             Subcommands::Container { database, id } => {
                 let db_client = client.database_client(database);
                 let container_client = db_client.container_client(id);

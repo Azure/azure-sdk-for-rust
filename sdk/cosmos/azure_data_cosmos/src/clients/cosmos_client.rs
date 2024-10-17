@@ -3,23 +3,15 @@
 
 use crate::{
     clients::DatabaseClient,
-    models::DatabaseQueryResults,
+    models::{DatabaseProperties, DatabaseQueryResults, Item},
     pipeline::{AuthorizationPolicy, CosmosPipeline, ResourceType},
     utils::AppendPathSegments,
-    CosmosClientOptions, Query, QueryDatabasesOptions,
+    CosmosClientOptions, CreateDatabaseOptions, Query, QueryDatabasesOptions,
 };
-use azure_core::{credentials::TokenCredential, Request, Url};
-use std::sync::Arc;
+use azure_core::{credentials::TokenCredential, Context, Method, Request, Response, Url};
 
-#[cfg(feature = "control_plane")]
-use crate::{
-    models::{DatabaseProperties, Item},
-    CreateDatabaseOptions,
-};
-#[cfg(feature = "control_plane")]
-use azure_core::{Context, Method, Response};
-#[cfg(feature = "control_plane")]
 use serde::Serialize;
+use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
@@ -85,7 +77,6 @@ pub trait CosmosClientMethods {
     /// * `id` - The ID of the new database.
     /// * `options` - Optional parameters for the request.
     #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
-    #[cfg(feature = "control_plane")]
     async fn create_database(
         &self,
         id: String,
@@ -189,7 +180,6 @@ impl CosmosClientMethods for CosmosClient {
             .send_query_request(query.into(), base_request, ResourceType::Databases)
     }
 
-    #[cfg(feature = "control_plane")]
     async fn create_database(
         &self,
         id: String,

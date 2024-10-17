@@ -2,12 +2,10 @@ use std::error::Error;
 
 use azure_data_cosmos::{
     clients::{ContainerClientMethods, DatabaseClientMethods},
+    models::{ContainerProperties, PartitionKeyDefinition},
     CosmosClient, CosmosClientMethods, PartitionKey,
 };
 use clap::{Args, Subcommand};
-
-#[cfg(feature = "control_plane")]
-use azure_data_cosmos::models::{ContainerProperties, PartitionKeyDefinition};
 
 /// Creates a new item, database, or container.
 #[derive(Clone, Args)]
@@ -36,14 +34,12 @@ pub enum Subcommands {
     },
 
     /// Create a database (does not support Entra ID).
-    #[cfg(feature = "control_plane")]
     Database {
         /// The ID of the new database to create.
         id: String,
     },
 
     /// Create a container (does not support Entra ID).
-    #[cfg(feature = "control_plane")]
     Container {
         /// The ID of the database to create the container in.
         database: String,
@@ -88,7 +84,6 @@ impl CreateCommand {
                 Ok(())
             }
 
-            #[cfg(feature = "control_plane")]
             Subcommands::Database { id } => {
                 let db = client
                     .create_database(id, None)
@@ -101,7 +96,6 @@ impl CreateCommand {
                 Ok(())
             }
 
-            #[cfg(feature = "control_plane")]
             Subcommands::Container {
                 database,
                 id,
