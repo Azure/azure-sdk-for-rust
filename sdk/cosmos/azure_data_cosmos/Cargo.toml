@@ -13,8 +13,6 @@ documentation = "https://docs.rs/azure_data_cosmos"
 keywords = ["sdk", "azure", "rest", "cloud", "cosmos", "database"]
 categories = ["api-bindings"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 async-trait.workspace = true
 azure_core.workspace = true

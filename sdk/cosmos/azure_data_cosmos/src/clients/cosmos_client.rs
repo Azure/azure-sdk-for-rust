@@ -1,13 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::clients::DatabaseClient;
-use crate::models::DatabaseQueryResults;
-use crate::pipeline::{AuthorizationPolicy, CosmosPipeline, ResourceType};
-use crate::utils::AppendPathSegments;
-use crate::{CosmosClientOptions, Query, QueryDatabasesOptions};
-use azure_core::credentials::TokenCredential;
-use azure_core::{Request, Url};
+use crate::{
+    clients::DatabaseClient,
+    models::{DatabaseProperties, DatabaseQueryResults, Item},
+    pipeline::{AuthorizationPolicy, CosmosPipeline, ResourceType},
+    utils::AppendPathSegments,
+    CosmosClientOptions, CreateDatabaseOptions, Query, QueryDatabasesOptions,
+};
+use azure_core::{credentials::TokenCredential, Context, Method, Request, Response, Url};
+
+use serde::Serialize;
 use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
@@ -65,6 +68,20 @@ pub trait CosmosClientMethods {
         query: impl Into<Query>,
         options: Option<QueryDatabasesOptions>,
     ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>>;
+
+    /// Creates a new database.
+    ///
+    #[doc = include_str!("../../docs/control-plane-warning.md")]
+    ///
+    /// # Arguments
+    /// * `id` - The ID of the new database.
+    /// * `options` - Optional parameters for the request.
+    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
+    async fn create_database(
+        &self,
+        id: String,
+        options: Option<CreateDatabaseOptions>,
+    ) -> azure_core::Result<Response<Item<DatabaseProperties>>>;
 }
 
 impl CosmosClient {
@@ -156,11 +173,32 @@ impl CosmosClientMethods for CosmosClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryDatabasesOptions>,
     ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>> {
-        let mut url = self.endpoint.clone();
-        url.append_path_segments(["dbs"]);
+        let url = self.endpoint.with_path_segments(["dbs"]);
         let base_request = Request::new(url, azure_core::Method::Post);
 
         self.pipeline
             .send_query_request(query.into(), base_request, ResourceType::Databases)
+    }
+
+    async fn create_database(
+        &self,
+        id: String,
+
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
+        options: Option<CreateDatabaseOptions>,
+    ) -> azure_core::Result<Response<Item<DatabaseProperties>>> {
+        #[derive(Serialize)]
+        struct RequestBody {
+            id: String,
+        }
+
+        let url = self.endpoint.with_path_segments(["dbs"]);
+        let mut req = Request::new(url, Method::Post);
+        req.set_json(&RequestBody { id })?;
+
+        self.pipeline
+            .send(Context::new(), &mut req, ResourceType::Databases)
+            .await
     }
 }

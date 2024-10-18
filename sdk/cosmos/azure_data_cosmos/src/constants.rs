@@ -4,6 +4,8 @@
 // Don't spell-check header names (which should start with 'x-').
 // cSpell:ignoreRegExp /x-[^\s]+/
 
+//! Constants defining HTTP headers and other values relevant to Azure Cosmos DB APIs.
+
 use azure_core::{headers::HeaderName, request_options::ContentType};
 
 pub const QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-query");

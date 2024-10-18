@@ -21,7 +21,7 @@ use url::form_urlencoded;
 #[cfg(feature = "key_auth")]
 use azure_core::{credentials::Secret, hmac::hmac_sha256};
 
-const AZURE_VERSION: &str = "2018-12-31";
+const AZURE_VERSION: &str = "2020-07-15";
 const VERSION_NUMBER: &str = "1.0";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

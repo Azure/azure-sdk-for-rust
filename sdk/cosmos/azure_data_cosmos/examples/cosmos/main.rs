@@ -34,7 +34,6 @@ struct SharedArgs {
 
     /// An authentication key to use when connecting to the Cosmos DB account. If omitted, the connection will use Entra ID.
     #[clap(long)]
-    #[cfg(feature = "key_auth")]
     key: Option<String>,
 }
 
@@ -62,7 +61,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     };
 
-    let client = create_client(&args.shared_args);
+    let client = create_client(&args.shared_args)?;
 
     match cmd {
         Subcommands::Create(cmd) => cmd.run(client).await,
@@ -75,18 +74,19 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     }
 }
 
-#[cfg(feature = "key_auth")]
-fn create_client(args: &SharedArgs) -> CosmosClient {
+fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
     if let Some(key) = args.key.as_ref() {
-        CosmosClient::with_key(&args.endpoint, key.clone(), None).unwrap()
+        #[cfg(feature = "key_auth")]
+        {
+            Ok(CosmosClient::with_key(&args.endpoint, key.clone(), None)?)
+        }
+        #[cfg(not(feature = "key_auth"))]
+        {
+            let _ = key; // Mark 'key' as used to make the compiler happy.
+            Err("cannot authenticate with a key unless the 'key_auth' feature is enabled".into())
+        }
     } else {
         let cred = DefaultAzureCredential::new().unwrap();
-        CosmosClient::new(&args.endpoint, cred, None).unwrap()
+        Ok(CosmosClient::new(&args.endpoint, cred, None)?)
     }
-}
-
-#[cfg(not(feature = "key_auth"))]
-fn create_client(args: &SharedArgs) -> CosmosClient {
-    let cred = DefaultAzureCredential::new().unwrap();
-    CosmosClient::new(&args.endpoint, cred, None).unwrap()
 }
