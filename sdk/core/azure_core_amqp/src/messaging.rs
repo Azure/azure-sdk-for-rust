@@ -993,6 +993,15 @@ impl From<AmqpValue> for AmqpAnnotationKey {
     }
 }
 
+impl From<AmqpAnnotationKey> for AmqpValue {
+    fn from(key: AmqpAnnotationKey) -> Self {
+        match key {
+            AmqpAnnotationKey::Symbol(symbol) => AmqpValue::Symbol(symbol),
+            AmqpAnnotationKey::Ulong(ulong) => AmqpValue::ULong(ulong),
+        }
+    }
+}
+
 impl From<AmqpSymbol> for AmqpAnnotationKey {
     fn from(symbol: AmqpSymbol) -> Self {
         AmqpAnnotationKey::Symbol(symbol)
