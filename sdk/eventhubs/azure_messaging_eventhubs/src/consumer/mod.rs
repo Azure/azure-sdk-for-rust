@@ -424,7 +424,10 @@ impl ConsumerClient {
         }
 
         trace!("Create management session.");
-        let connection = self.connection.get().unwrap();
+        let connection = self
+            .connection
+            .get()
+            .ok_or(azure_core::Error::from(ErrorKind::MissingConnection))?;
         let session = AmqpSession::new();
         session.begin(connection, None).await?;
         trace!("Session created.");
@@ -503,9 +506,15 @@ impl ConsumerClient {
             let expires_at = token.expires_on;
             cbs.authorize_path(&url, token.token.secret(), expires_at)
                 .await?;
-            scopes.insert(url.clone(), token).ok_or_else(|| {
-                azure_core::Error::from(ErrorKind::UnableToAddAuthenticationToken)
-            })?;
+
+            // insert returns some if it *fails* to insert, None if it succeeded.
+            let present = scopes.insert(url.clone(), token);
+            if present.is_some() {
+                return Err(azure_core::Error::from(
+                    ErrorKind::UnableToAddAuthenticationToken,
+                ));
+            }
+            trace!("Token added.");
         }
         Ok(scopes
             .get(url.as_str())

@@ -340,43 +340,54 @@ impl From<fe2o3_amqp_types::messaging::Properties> for AmqpMessageProperties {
         let mut amqp_message_properties_builder = AmqpMessageProperties::builder();
 
         if let Some(message_id) = properties.message_id {
-            amqp_message_properties_builder.with_message_id(message_id);
+            amqp_message_properties_builder =
+                amqp_message_properties_builder.with_message_id(message_id);
         }
         if let Some(user_id) = properties.user_id {
-            amqp_message_properties_builder.with_user_id(user_id.to_vec());
+            amqp_message_properties_builder =
+                amqp_message_properties_builder.with_user_id(user_id.to_vec());
         }
         if let Some(to) = properties.to {
-            amqp_message_properties_builder.with_to(to);
+            amqp_message_properties_builder = amqp_message_properties_builder.with_to(to);
         }
         if let Some(subject) = properties.subject {
-            amqp_message_properties_builder.with_subject(subject);
+            amqp_message_properties_builder = amqp_message_properties_builder.with_subject(subject);
         }
         if let Some(reply_to) = properties.reply_to {
-            amqp_message_properties_builder.with_reply_to(reply_to);
+            amqp_message_properties_builder =
+                amqp_message_properties_builder.with_reply_to(reply_to);
         }
         if let Some(correlation_id) = properties.correlation_id {
-            amqp_message_properties_builder.with_correlation_id(correlation_id);
+            amqp_message_properties_builder =
+                amqp_message_properties_builder.with_correlation_id(correlation_id);
         }
         if let Some(content_type) = properties.content_type {
-            amqp_message_properties_builder.with_content_type(content_type);
+            amqp_message_properties_builder =
+                amqp_message_properties_builder.with_content_type(content_type);
         }
         if let Some(content_encoding) = properties.content_encoding {
-            amqp_message_properties_builder.with_content_encoding(content_encoding);
+            amqp_message_properties_builder =
+                amqp_message_properties_builder.with_content_encoding(content_encoding);
         }
         if let Some(absolute_expiry_time) = properties.absolute_expiry_time {
-            amqp_message_properties_builder.with_absolute_expiry_time(absolute_expiry_time);
+            amqp_message_properties_builder =
+                amqp_message_properties_builder.with_absolute_expiry_time(absolute_expiry_time);
         }
         if let Some(creation_time) = properties.creation_time {
-            amqp_message_properties_builder.with_creation_time(creation_time);
+            amqp_message_properties_builder =
+                amqp_message_properties_builder.with_creation_time(creation_time);
         }
         if let Some(group_id) = properties.group_id {
-            amqp_message_properties_builder.with_group_id(group_id);
+            amqp_message_properties_builder =
+                amqp_message_properties_builder.with_group_id(group_id);
         }
         if let Some(group_sequence) = properties.group_sequence {
-            amqp_message_properties_builder.with_group_sequence(group_sequence);
+            amqp_message_properties_builder =
+                amqp_message_properties_builder.with_group_sequence(group_sequence);
         }
         if let Some(reply_to_group_id) = properties.reply_to_group_id {
-            amqp_message_properties_builder.with_reply_to_group_id(reply_to_group_id);
+            amqp_message_properties_builder =
+                amqp_message_properties_builder.with_reply_to_group_id(reply_to_group_id);
         }
         amqp_message_properties_builder.build()
     }
