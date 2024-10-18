@@ -1,6 +1,0 @@
-[tags]
-deny = [
-    # error[E0428]: the name `ErrorResponse` is defined multiple times
-    "package-preview-2023-07",
-    "package-preview-2024-01",
-]

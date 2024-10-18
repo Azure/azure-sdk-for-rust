@@ -1,6 +1,0 @@
-[tags]
-deny = [
-    "package-preview-2021-07", # duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
-    "package-2021-07", # duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
-  ]
-deny_contains = ["hybrid"]

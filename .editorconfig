@@ -7,6 +7,15 @@ indent_size = 4
 indent_style = space
 trim_trailing_whitespace = true
 
+[*.json]
+indent_size = 2
+
+[*.ps1]
+indent_size = 2
+
+[*.rs]
+end_of_line = lf
+
 [*.toml]
 indent_size = 2
 

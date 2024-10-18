@@ -1,0 +1,26 @@
+[package]
+name = "typespec_derive"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+description = "Macros used by TypeSpec-generated libraries."
+homepage = "https://typespec.io"
+repository.workspace = true
+license.workspace = true
+categories = ["compilers", "development-tools"]
+keywords = ["typespec"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn.workspace = true
+quote.workspace = true
+proc-macro2.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+typespec_client_core = { workspace = true, features = [ "http", "json", "xml" ] }
+serde.workspace = true
+serde_json.workspace = true
+cargo_metadata.workspace = true

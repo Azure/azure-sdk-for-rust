@@ -1,0 +1,128 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "useGitignore": true,
+  "ignorePaths": [
+    "**/test-resources.bicep",
+    "**/test-resources.json",
+    ".devcontainer/devcontainer.json",
+    ".devcontainer/Dockerfile",
+    ".devcontainer/oncreate",
+    ".github/CODEOWNERS",
+    ".github/dependabot.yml",
+    ".vscode/cspell.json",
+    ".vscode/extensions.json",
+    ".vscode/tasks.json",
+    "NOTICE.txt",
+    "eng/",
+    "*.dict.txt",
+    "rust-toolchain.toml"
+  ],
+  "words": [
+    "amqp",
+    "asyncoperation",
+    "azsdk",
+    "azurecli",
+    "Contoso",
+    "cplusplus",
+    "datalake",
+    "datetime",
+    "devicecode",
+    "docsrs",
+    "downcasted",
+    "downcasting",
+    "entra",
+    "etag",
+    "eventhub",
+    "eventhubs",
+    "hmac",
+    "iothub",
+    "keyvault",
+    "msrc",
+    "Newtonsoft",
+    "pageable",
+    "pkce",
+    "pkcs",
+    "posix",
+    "reqwest",
+    "rustup",
+    "seekable",
+    "servicebus",
+    "stylesheet",
+    "typespec",
+    "upvote",
+    "virtualmachine"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "crates",
+      "path": "../eng/dict/crates.txt",
+      "noSuggest": true,
+      "useCompounds": false
+    },
+    {
+      "name": "rust-custom",
+      "path": "../eng/dict/rust-custom.txt",
+      "noSuggest": true
+    },
+    {
+      "name": "cosmos",
+      "path": "../sdk/cosmos/.dict.txt",
+      "noSuggest": true
+    },
+    {
+      "name": "identity",
+      "path": "../sdk/identity/.dict.txt",
+      "noSuggest": true
+    }
+  ],
+  "overrides": [
+    {
+      "filename": "**/Cargo.toml",
+      "dictionaries": [
+        "crates",
+        "rust-custom"
+      ]
+    },
+    {
+      "filename": "**/*.md",
+      "dictionaries": [
+        "rust",
+        "rust-custom"
+      ],
+      "ignoreRegExpList": [
+        "@\\w+"
+      ]
+    },
+    {
+      "filename": "**/*.rs",
+      "dictionaries": [
+        "crates",
+        "rust-custom"
+      ]
+    },
+    {
+      "filename": "sdk/identity/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "identity"
+      ]
+    },
+    {
+      "filename": "sdk/typespec/**",
+      "flagWords": [
+        "azure",
+        "azurite"
+      ]
+    },
+    {
+      "filename": "sdk/cosmos/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "cosmos"
+      ]
+    }
+  ]
+}

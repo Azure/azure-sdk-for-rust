@@ -1,8 +1,0 @@
-[properties]
-invalid_type = [
-  [
-    "../../../azure-rest-api-specs/specification/operationalinsights/data-plane/Microsoft.OperationalInsights/stable/v1/OperationalInsights.json",
-    "table",
-    "rows"
-  ]
-]

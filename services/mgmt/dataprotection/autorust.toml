@@ -1,3 +1,0 @@
-[tags]
-# There are a lot of previews and each currently requires a new box entry.
-deny_contains_preview = true

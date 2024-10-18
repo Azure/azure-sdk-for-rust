@@ -1,0 +1,58 @@
+[package]
+name = "azure_identity"
+version = "0.19.0"
+description = "Rust wrappers around Microsoft Azure REST APIs - Azure identity helper crate"
+readme = "README.md"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_identity"
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+categories = ["api-bindings"]
+edition.workspace = true
+
+[dependencies]
+azure_core.workspace = true
+async-lock.workspace = true
+oauth2.workspace = true
+url.workspace = true
+futures.workspace = true
+serde.workspace = true
+time.workspace = true
+tracing.workspace = true
+async-trait.workspace = true
+openssl = { workspace = true, optional = true }
+pin-project.workspace = true
+typespec_client_core = { workspace = true, features = ["derive"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+async-process.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+tz-rs = { workspace = true, optional = true }
+
+[dev-dependencies]
+reqwest.workspace = true
+tokio.workspace = true
+tracing-subscriber.workspace = true
+serde_test.workspace = true
+serial_test.workspace = true
+clap.workspace = true
+
+[features]
+default = ["reqwest", "old_azure_cli"]
+reqwest = ["azure_core/reqwest"]
+reqwest_rustls = ["azure_core/reqwest_rustls"]
+test_e2e = []
+client_certificate = ["openssl"]
+
+# If you are using and Azure CLI version older than 2.54.0 from November 2023,
+# upgrade your Azure CLI version or enable this feature.
+# Azure CLI 2.54.0 and above has an "expires_on" timestamp that we can use.
+# https://github.com/Azure/azure-cli/releases/tag/azure-cli-2.54.0
+# https://github.com/Azure/azure-cli/issues/19700
+old_azure_cli = ["time/local-offset", "tz-rs"]
+
+[package.metadata.docs.rs]
+features = ["reqwest", "reqwest_rustls", "client_certificate"]

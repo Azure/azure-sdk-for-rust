@@ -1,5 +1,0 @@
-[tags]
-deny = [
-  # recursive types `ProblemClassification` and `ProblemClassificationProperties` have infinite size
-  "package-preview-2023-06",
-]

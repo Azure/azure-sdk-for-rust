@@ -1,8 +1,0 @@
-[workspace]
-members = [
-  "mgmt/batch",
-]
-
-resolver = "2"
-
-[workspace.lints]

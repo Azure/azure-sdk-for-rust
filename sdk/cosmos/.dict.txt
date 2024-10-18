@@ -1,0 +1,7 @@
+colls
+documentdb
+dotproduct
+euclidian
+pkranges
+sprocs
+udfs

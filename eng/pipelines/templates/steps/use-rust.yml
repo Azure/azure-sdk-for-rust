@@ -1,0 +1,19 @@
+parameters:
+  - name: Toolchain
+    type: string
+    default: stable
+
+steps:
+  - pwsh: |
+      $toolchain = '${{ parameters.Toolchain }}'
+      if ($toolchain -eq 'msrv') {
+          Write-Host "Reading MSRV from azure_core"
+          $toolchain = cargo metadata --manifest-path ./sdk/core/azure_core/Cargo.toml --format-version 1 | convertfrom-json | select -expand packages | where { $_.name -eq 'azure_core' } | select -expand rust_version
+      }
+
+      Write-Host "Setting Toolchain variable to $toolchain"
+      Write-Host "##vso[task.setvariable variable=Toolchain]$toolchain"
+
+      Write-Host "> rustup update --no-self-update $toolchain"
+      rustup update --no-self-update $toolchain
+    displayName: "Use Rust ${{ parameters.Toolchain }}"
