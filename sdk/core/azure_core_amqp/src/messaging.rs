@@ -976,6 +976,23 @@ impl Default for AmqpAnnotationKey {
     }
 }
 
+// Implementing From for AmqpValue to AmqpAnnotationKey
+// Note that this is a lossy conversion as AmqpValue can contain other types.
+// See also: https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-annotations
+//
+impl From<AmqpValue> for AmqpAnnotationKey {
+    fn from(value: AmqpValue) -> Self {
+        match value {
+            AmqpValue::Symbol(symbol) => AmqpAnnotationKey::Symbol(symbol),
+            AmqpValue::ULong(ulong) => AmqpAnnotationKey::Ulong(ulong),
+            _ => panic!(
+                "Annotation Keys can only be Symbol or ULong values, found: {:?}",
+                value
+            ),
+        }
+    }
+}
+
 impl From<AmqpSymbol> for AmqpAnnotationKey {
     fn from(symbol: AmqpSymbol) -> Self {
         AmqpAnnotationKey::Symbol(symbol)
