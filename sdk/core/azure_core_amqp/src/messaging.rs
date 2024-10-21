@@ -1113,7 +1113,7 @@ impl AmqpMessage {
     ///
     /// * `message_id` - The message ID to set on the message.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```
     /// use azure_core_amqp::messaging::AmqpMessage;
@@ -1137,12 +1137,14 @@ impl AmqpMessage {
     }
 
     /// Adds a message annotation for the message.
+    ///
     /// If the message annotations already exist, the annotation will be added to the existing annotations.
     /// If the message annotations do not exist, a new message annotations map will be created with the annotation.
     /// # Arguments
     /// * `name` - The name of the annotation to add.
     /// * `value` - The value of the annotation to add.
-    /// # Example
+    ///
+    /// # Examples
     /// ```
     /// use azure_core_amqp::messaging::AmqpMessage;
     /// let mut message = AmqpMessage::default();
@@ -1172,7 +1174,7 @@ impl AmqpMessage {
     ///
     /// * `body` - The new message body to set on the message.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```
     /// use azure_core_amqp::messaging::AmqpMessage;
