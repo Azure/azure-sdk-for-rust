@@ -151,8 +151,9 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<DeleteDatabaseOptions>,
     ) -> azure_core::Result<Response> {
-        let link = self.link.feed(ResourceType::Containers);
-        let mut req = Request::new(link.url(&self.endpoint), Method::Delete);
-        self.pipeline.send(Context::new(), &mut req, link).await
+        let mut req = Request::new(self.link.url(&self.endpoint), Method::Delete);
+        self.pipeline
+            .send(Context::new(), &mut req, self.link.clone())
+            .await
     }
 }
