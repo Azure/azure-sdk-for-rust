@@ -3,12 +3,13 @@
 
 use crate::{
     clients::DatabaseClient,
-    models::DatabaseQueryResults,
+    models::{DatabaseProperties, DatabaseQueryResults, Item},
     pipeline::{AuthorizationPolicy, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, Query, QueryDatabasesOptions,
+    CosmosClientOptions, CreateDatabaseOptions, Query, QueryDatabasesOptions,
 };
-use azure_core::{credentials::TokenCredential, Request, Url};
+use azure_core::{credentials::TokenCredential, Context, Method, Request, Response, Url};
+use serde::Serialize;
 use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
@@ -166,12 +167,11 @@ impl CosmosClient {
             id: String,
         }
 
-        let url = self.endpoint.with_path_segments(["dbs"]);
+        let link = ResourceLink::root(ResourceType::Databases);
+        let url = link.url(&self.endpoint);
         let mut req = Request::new(url, Method::Post);
         req.set_json(&RequestBody { id })?;
 
-        self.pipeline
-            .send(Context::new(), &mut req, ResourceType::Databases)
-            .await
+        self.pipeline.send(Context::new(), &mut req, link).await
     }
 }

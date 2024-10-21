@@ -12,7 +12,6 @@ use crate::{
 
 use azure_core::{Context, Method, Pager, Request, Response};
 use serde::{de::DeserializeOwned, Serialize};
-use typespec_client_core::http::PagerResult;
 use url::Url;
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -401,7 +400,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Pager<QueryResults<T>>> {
         let link = self.link.feed(ResourceType::Items);
         let url = link.url(&self.endpoint);
-        let mut base_request = Request::new(url, azure_core::Method::Post);
+        let mut base_request = Request::new(url, Method::Post);
         let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
         base_request.insert_headers(&partition_key)?;
 
