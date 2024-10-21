@@ -17,7 +17,7 @@ use azure_core::{
 use std::sync::Arc;
 use tracing::trace;
 
-use crate::pipeline::{signature_target::SignatureTarget, ResourceContext};
+use crate::{pipeline::signature_target::SignatureTarget, resource_context::ResourceLink};
 
 use crate::utils::url_encode;
 
@@ -71,14 +71,14 @@ impl Policy for AuthorizationPolicy {
 
         let time_nonce = OffsetDateTime::now_utc();
 
-        let resource_context: &ResourceContext = ctx
+        let resource_link: &ResourceLink = ctx
             .value()
             .expect("ResourceContext should have been provided by CosmosPipeline");
 
         let auth = generate_authorization(
             &self.credential,
             request.url(),
-            SignatureTarget::new(*request.method(), &resource_context.link, time_nonce),
+            SignatureTarget::new(*request.method(), resource_link, time_nonce),
         )
         .await?;
 

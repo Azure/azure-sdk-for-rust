@@ -11,7 +11,7 @@ use azure_core::{Context, Pager, Request};
 use serde::de::DeserializeOwned;
 use typespec_client_core::http::PagerResult;
 
-use crate::{constants, resource_context::ResourceContext, Query};
+use crate::{constants, resource_context::ResourceLink, Query};
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
@@ -35,9 +35,9 @@ impl CosmosPipeline {
         &self,
         ctx: azure_core::Context<'_>,
         request: &mut azure_core::Request,
-        resource_context: impl Into<ResourceContext>,
+        resource_link: ResourceLink,
     ) -> azure_core::Result<azure_core::Response<T>> {
-        let ctx = ctx.with_value(resource_context.into());
+        let ctx = ctx.with_value(resource_link);
         self.0.send(&ctx, request).await
     }
 
@@ -45,7 +45,7 @@ impl CosmosPipeline {
         &self,
         query: Query,
         mut base_request: Request,
-        resource_context: impl Into<ResourceContext>,
+        resource_link: ResourceLink,
     ) -> azure_core::Result<Pager<T>> {
         base_request.insert_header(constants::QUERY, "True");
         base_request.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
@@ -54,7 +54,7 @@ impl CosmosPipeline {
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure
         let pipeline = self.0.clone();
-        let context = Context::new().with_value(resource_context.into());
+        let context = Context::new().with_value(resource_link);
         Ok(Pager::from_callback(move |continuation| {
             // Then we have to clone it again to pass it in to the async block.
             // This is because Pageable can't borrow any data, it has to own it all.

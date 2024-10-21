@@ -119,18 +119,6 @@ impl ResourceLink {
     }
 }
 
-/// Provides the context necessary to authorize a Cosmos DB request, and control other headers expected by Cosmos DB.
-pub struct ResourceContext {
-    pub link: ResourceLink,
-    // There will be more options here later, like "is_write_operation" for handling certain headers.
-}
-
-impl From<ResourceLink> for ResourceContext {
-    fn from(link: ResourceLink) -> Self {
-        Self { link }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::resource_context::{ResourceLink, ResourceType};
