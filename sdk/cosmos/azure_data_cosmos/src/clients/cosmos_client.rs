@@ -3,14 +3,12 @@
 
 use crate::{
     clients::DatabaseClient,
-    models::{DatabaseProperties, DatabaseQueryResults, Item},
-    pipeline::{AuthorizationPolicy, CosmosPipeline, ResourceType},
-    utils::AppendPathSegments,
-    CosmosClientOptions, CreateDatabaseOptions, Query, QueryDatabasesOptions,
+    models::DatabaseQueryResults,
+    pipeline::{AuthorizationPolicy, CosmosPipeline},
+    resource_context::{ResourceLink, ResourceType},
+    CosmosClientOptions, Query, QueryDatabasesOptions,
 };
-use azure_core::{credentials::TokenCredential, Context, Method, Request, Response, Url};
-
-use serde::Serialize;
+use azure_core::{credentials::TokenCredential, Request, Url};
 use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
@@ -136,11 +134,16 @@ impl CosmosClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryDatabasesOptions>,
     ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>> {
-        let url = self.endpoint.with_path_segments(["dbs"]);
+        let link = ResourceLink::root(ResourceType::Databases);
+        let url = link.url(&self.endpoint);
         let base_request = Request::new(url, azure_core::Method::Post);
 
-        self.pipeline
-            .send_query_request(query.into(), base_request, ResourceType::Databases)
+        self.pipeline.send_query_request(
+            query.into(),
+            base_request,
+            // Databases have no parent resource, so we use an empty resource link
+            link,
+        )
     }
 
     /// Creates a new database.

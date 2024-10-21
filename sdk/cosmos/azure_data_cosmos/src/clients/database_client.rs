@@ -3,14 +3,12 @@
 
 use crate::{
     clients::ContainerClient,
-    models::{ContainerProperties, ContainerQueryResults, DatabaseProperties, Item},
-    pipeline::{CosmosPipeline, ResourceType},
-    utils::AppendPathSegments,
-    CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
-    ReadDatabaseOptions,
+    models::{ContainerQueryResults, DatabaseProperties},
+    options::ReadDatabaseOptions,
+    pipeline::CosmosPipeline,
+    resource_context::{ResourceLink, ResourceType},
+    Query, QueryContainersOptions,
 };
-
-use azure_core::{Context, Method, Pager, Request, Response};
 
 use url::Url;
 
@@ -18,19 +16,20 @@ use url::Url;
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
 pub struct DatabaseClient {
+    endpoint: Url,
+    link: ResourceLink,
     database_id: String,
-    database_url: Url,
     pipeline: CosmosPipeline,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: CosmosPipeline, base_url: &Url, database_id: &str) -> Self {
-        let database_id = database_id.to_string();
-        let database_url = base_url.with_path_segments(["dbs", &database_id]);
+    pub(crate) fn new(pipeline: CosmosPipeline, endpoint: Url, database_id: String) -> Self {
+        let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
 
         Self {
+            endpoint,
+            link,
             database_id,
-            database_url,
             pipeline,
         }
     }
@@ -73,9 +72,9 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
-        let mut req = Request::new(self.database_url.clone(), azure_core::Method::Get);
+        let mut req = Request::new(self.link.url(&self.endpoint), azure_core::Method::Get);
         self.pipeline
-            .send(Context::new(), &mut req, ResourceType::Databases)
+            .send(Context::new(), &mut req, self.link.clone())
             .await
     }
 
@@ -110,12 +109,11 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<Pager<ContainerQueryResults>> {
-        let mut url = self.database_url.clone();
-        url.append_path_segments(["colls"]);
-        let base_request = Request::new(url, azure_core::Method::Post);
+        let link = self.link.feed(ResourceType::Containers);
+        let base_request = Request::new(link.url(&self.endpoint), azure_core::Method::Post);
 
         self.pipeline
-            .send_query_request(query.into(), base_request, ResourceType::Containers)
+            .send_query_request(query.into(), base_request, link)
     }
 
     /// Creates a new container.
