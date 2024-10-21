@@ -84,7 +84,7 @@ impl ResourceLink {
     pub fn resource_link(&self) -> String {
         match self.item_id {
             Some(_) => self.path(),
-            None => self.parent.clone().unwrap_or_else(|| "".to_string()),
+            None => self.parent.clone().unwrap_or_default(),
         }
     }
 
