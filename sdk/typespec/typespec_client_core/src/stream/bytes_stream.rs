@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::SeekableStream;
-use bytes::Bytes;
+use super::{Bytes, SeekableStream};
 use futures::io::AsyncRead;
 use futures::stream::Stream;
 use std::pin::Pin;
@@ -111,14 +110,14 @@ mod tests {
     use futures::stream::StreamExt;
 
     // Test BytesStream Stream
-    #[test]
-    fn test_bytes_stream() {
+    #[tokio::test]
+    async fn bytes_stream() {
         let bytes = Bytes::from("hello world");
         let mut stream = BytesStream::new(bytes.clone());
 
         let mut buf = Vec::new();
         let mut bytes_read = 0;
-        while let Some(Ok(bytes)) = futures::executor::block_on(stream.next()) {
+        while let Some(Ok(bytes)) = stream.next().await {
             buf.extend_from_slice(&bytes);
             bytes_read += bytes.len();
         }
@@ -128,26 +127,26 @@ mod tests {
     }
 
     // Test BytesStream AsyncRead, all bytes at once
-    #[test]
-    fn test_async_read_all_bytes_at_once() {
+    #[tokio::test]
+    async fn async_read_all_bytes_at_once() {
         let bytes = Bytes::from("hello world");
         let mut stream = BytesStream::new(bytes.clone());
 
         let mut buf = [0; 11];
-        let bytes_read = futures::executor::block_on(stream.read(&mut buf)).unwrap();
+        let bytes_read = stream.read(&mut buf).await.unwrap();
         assert_eq!(bytes_read, 11);
         assert_eq!(&buf[..], &bytes);
     }
 
     // Test BytesStream AsyncRead, one byte at a time
-    #[test]
-    fn test_async_read_one_byte_at_a_time() {
+    #[tokio::test]
+    async fn async_read_one_byte_at_a_time() {
         let bytes = Bytes::from("hello world");
         let mut stream = BytesStream::new(bytes.clone());
 
         for i in 0..bytes.len() {
             let mut buf = [0; 1];
-            let bytes_read = futures::executor::block_on(stream.read(&mut buf)).unwrap();
+            let bytes_read = stream.read(&mut buf).await.unwrap();
             assert_eq!(bytes_read, 1);
             assert_eq!(buf[0], bytes[i]);
         }
