@@ -61,5 +61,9 @@ reqwest_rustls = ["reqwest/rustls-tls"]
 tokio_sleep = ["tokio/time"]
 xml = ["dep:quick-xml"]
 
+[[example]]
+name = "stream_response"
+required-features = ["derive"]
+
 [package.metadata.docs.rs]
 all-features = true
