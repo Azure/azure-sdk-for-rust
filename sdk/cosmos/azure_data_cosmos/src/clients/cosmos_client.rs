@@ -26,64 +26,6 @@ pub struct CosmosClient {
     options: CosmosClientOptions,
 }
 
-/// Defines the methods provided by a [`CosmosClient`]
-///
-/// This trait is intended to allow you to mock out the `CosmosClient` when testing your application.
-/// Rather than depending on `CosmosClient`, you can depend on a generic parameter constrained by this trait, or an `impl CosmosClientMethods` type.
-pub trait CosmosClientMethods {
-    /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
-    ///
-    /// # Arguments
-    /// * `id` - The ID of the database.
-    fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient;
-
-    /// Returns the endpoint used to create the client.
-    fn endpoint(&self) -> &Url;
-
-    /// Executes a query against databases in the account.
-    ///
-    /// # Arguments
-    ///
-    /// * `query` - The query to execute.
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// # Examples
-    ///
-    /// The `query` parameter accepts anything that can be transformed [`Into`] a [`Query`].
-    /// This allows simple queries without parameters to be expressed easily:
-    ///
-    /// ```rust,no_run
-    /// # async fn doc() {
-    /// # use azure_data_cosmos::{CosmosClient, CosmosClientMethods};
-    /// # let client: CosmosClient = panic!("this is a non-running example");
-    /// let dbs = client.query_databases(
-    ///     "SELECT * FROM dbs",
-    ///     None).unwrap();
-    /// # }
-    /// ```
-    ///
-    /// See [`Query`] for more information on how to specify a query.
-    fn query_databases(
-        &self,
-        query: impl Into<Query>,
-        options: Option<QueryDatabasesOptions>,
-    ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>>;
-
-    /// Creates a new database.
-    ///
-    #[doc = include_str!("../../docs/control-plane-warning.md")]
-    ///
-    /// # Arguments
-    /// * `id` - The ID of the new database.
-    /// * `options` - Optional parameters for the request.
-    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
-    async fn create_database(
-        &self,
-        id: String,
-        options: Option<CreateDatabaseOptions>,
-    ) -> azure_core::Result<Response<Item<DatabaseProperties>>>;
-}
-
 impl CosmosClient {
     /// Creates a new CosmosClient, using Entra ID authentication.
     ///
@@ -149,23 +91,44 @@ impl CosmosClient {
             options,
         })
     }
-}
 
-impl CosmosClientMethods for CosmosClient {
     /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
     ///
     /// # Arguments
     /// * `id` - The ID of the database.
-    fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient {
+    pub fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient {
         DatabaseClient::new(self.pipeline.clone(), &self.endpoint, id.as_ref())
     }
 
     /// Gets the endpoint of the database account this client is connected to.
-    fn endpoint(&self) -> &Url {
+    pub fn endpoint(&self) -> &Url {
         &self.endpoint
     }
 
-    fn query_databases(
+    /// Executes a query against databases in the account.
+    ///
+    /// # Arguments
+    ///
+    /// * `query` - The query to execute.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// The `query` parameter accepts anything that can be transformed [`Into`] a [`Query`].
+    /// This allows simple queries without parameters to be expressed easily:
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() {
+    /// # use azure_data_cosmos::CosmosClient;
+    /// # let client: CosmosClient = panic!("this is a non-running example");
+    /// let dbs = client.query_databases(
+    ///     "SELECT * FROM dbs",
+    ///     None).unwrap();
+    /// # }
+    /// ```
+    ///
+    /// See [`Query`] for more information on how to specify a query.
+    pub fn query_databases(
         &self,
         query: impl Into<Query>,
 
@@ -180,7 +143,14 @@ impl CosmosClientMethods for CosmosClient {
             .send_query_request(query.into(), base_request, ResourceType::Databases)
     }
 
-    async fn create_database(
+    /// Creates a new database.
+    ///
+    #[doc = include_str!("../../docs/control-plane-warning.md")]
+    ///
+    /// # Arguments
+    /// * `id` - The ID of the new database.
+    /// * `options` - Optional parameters for the request.
+    pub async fn create_database(
         &self,
         id: String,
 

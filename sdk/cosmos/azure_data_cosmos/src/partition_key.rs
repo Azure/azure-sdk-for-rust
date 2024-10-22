@@ -32,7 +32,7 @@ impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
 /// A single, non-hierarchical, partition key can be specified using the underlying type itself:
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::clients::{ContainerClient, ContainerClientMethods};
+/// # use azure_data_cosmos::clients::ContainerClient;
 /// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
@@ -47,7 +47,7 @@ impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
 /// Hierarchical partition keys can be specified using tuples:
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::clients::{ContainerClient, ContainerClientMethods};
+/// # use azure_data_cosmos::clients::ContainerClient;
 /// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
@@ -59,7 +59,7 @@ impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
 /// First, you can use an empty tuple (`()`) anywhere a `PartitionKey` is expected:
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::clients::{ContainerClient, ContainerClientMethods};
+/// # use azure_data_cosmos::clients::ContainerClient;
 /// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
@@ -74,7 +74,7 @@ impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
 /// Or, if you have an [`Option<T>`], for some `T` that is valid as a partition key, it will automatically be serialized as `null` if it has the value [`Option::None`]:
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::clients::{ContainerClient, ContainerClientMethods};
+/// # use azure_data_cosmos::clients::ContainerClient;
 /// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// let my_partition_key: Option<String> = None;
 /// container_client.query_items::<serde_json::Value>(

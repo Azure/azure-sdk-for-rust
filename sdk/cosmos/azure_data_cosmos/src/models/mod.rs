@@ -6,12 +6,6 @@
 use azure_core::{date::OffsetDateTime, Model};
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
 
-#[cfg(doc)]
-use crate::{
-    clients::{ContainerClient, ContainerClientMethods, DatabaseClientMethods},
-    CosmosClientMethods,
-};
-
 mod container_properties;
 mod indexing_policy;
 mod item;
@@ -41,7 +35,7 @@ where
     }
 }
 
-/// A page of query results, where each item is of type `T`.
+/// A page of query results from [`ContainerClient::query_items`](crate::clients::ContainerClient::query_items()) where each item is of type `T`.
 #[non_exhaustive]
 #[derive(Clone, Default, Debug, Deserialize)]
 pub struct QueryResults<T> {
@@ -57,7 +51,7 @@ impl<T: DeserializeOwned> azure_core::Model for QueryResults<T> {
     }
 }
 
-/// A page of results from [`CosmosClient::query_databases`](crate::clients::CosmosClient::query_databases())
+/// A page of results from [`CosmosClient::query_databases`](crate::CosmosClient::query_databases())
 #[non_exhaustive]
 #[derive(Clone, Default, Debug, Deserialize, Model)]
 pub struct DatabaseQueryResults {

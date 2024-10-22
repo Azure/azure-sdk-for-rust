@@ -8,9 +8,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::models::{IndexingPolicy, PartitionKeyDefinition, SystemProperties};
 
-#[cfg(doc)]
-use crate::clients::ContainerClientMethods;
-
 fn deserialize_ttl<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
 where
     D: Deserializer<'de>,

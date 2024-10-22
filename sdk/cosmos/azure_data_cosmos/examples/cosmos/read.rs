@@ -1,10 +1,7 @@
 use std::error::Error;
 
 use azure_core::StatusCode;
-use azure_data_cosmos::{
-    clients::{ContainerClientMethods, DatabaseClientMethods},
-    CosmosClient, CosmosClientMethods,
-};
+use azure_data_cosmos::CosmosClient;
 use clap::Args;
 
 /// Reads a specific item.

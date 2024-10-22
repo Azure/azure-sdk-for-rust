@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(doc)]
-use crate::CosmosClientMethods;
-
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
 #[derive(Clone, Debug, Default)]
 pub struct CreateDatabaseOptions {}

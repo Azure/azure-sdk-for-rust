@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(doc)]
-use crate::clients::ContainerClientMethods;
-
 /// Options to be passed to [`ContainerClient::query_items()`](crate::clients::ContainerClient::query_items()).
 #[derive(Clone, Debug, Default)]
 pub struct QueryOptions {}

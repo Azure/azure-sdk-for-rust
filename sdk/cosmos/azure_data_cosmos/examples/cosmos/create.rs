@@ -1,9 +1,8 @@
 use std::error::Error;
 
 use azure_data_cosmos::{
-    clients::{ContainerClientMethods, DatabaseClientMethods},
     models::{ContainerProperties, PartitionKeyDefinition},
-    CosmosClient, CosmosClientMethods, PartitionKey,
+    CosmosClient, PartitionKey,
 };
 use clap::{Args, Subcommand};
 
