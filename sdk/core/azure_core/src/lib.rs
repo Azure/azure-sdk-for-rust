@@ -38,7 +38,6 @@ pub use models::*;
 pub use options::*;
 pub use pipeline::*;
 pub use policies::*;
-pub use typespec_client_core::http::response::{Model, PinnedStream, Response, ResponseBody};
 
 // Re-export typespec types that are not specific to Azure.
 pub use typespec::{Error, Result};
@@ -51,8 +50,11 @@ pub use typespec_client_core::xml;
 pub use typespec_client_core::{
     base64, date,
     http::{
-        headers::Header, new_http_client, AppendToUrlQuery, Body, Context, HttpClient, Method,
-        Pager, Request, RequestContent, StatusCode, Url,
+        headers::Header,
+        new_http_client,
+        response::{Model, PinnedStream, Response, ResponseBody},
+        AppendToUrlQuery, Body, Context, HttpClient, Method, Pager, Request, RequestContent,
+        StatusCode, Url,
     },
     json, parsing,
     sleep::{self, sleep},
