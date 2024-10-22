@@ -1,17 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use futures::{Stream, StreamExt};
-use std::{task::Poll, time::Duration};
-use typespec_client_core::{
-    http::{headers::Headers, Response, StatusCode},
-    Bytes,
-};
+use futures::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get a response from a service client.
-    let response = get_response()?;
+    let response = client::get_binary_data_response()?;
 
     // Normally you'd deserialize into a type or `collect()` the body,
     // but this better simulates fetching multiple chunks from a slow response.
@@ -21,41 +16,108 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let page = String::from_utf8(data?.into())?;
         println!("{page}");
     }
+
+    // You can also deserialize into a model from a slow response.
+    let team = client::get_model_response()?.deserialize_body().await?;
+    println!("{team:#?}");
+
     Ok(())
 }
 
-fn get_response() -> typespec_client_core::Result<Response<()>> {
-    Ok(Response::new(
-        StatusCode::Ok,
-        Headers::new(),
-        Box::pin(SlowResponse::default()),
-    ))
-}
+mod client {
+    use futures::Stream;
+    use serde::Deserialize;
+    use std::{cmp::min, task::Poll, time::Duration};
+    use typespec_client_core::{
+        http::{headers::Headers, Model, Response, StatusCode},
+        Bytes,
+    };
 
-#[derive(Debug, Default)]
-struct SlowResponse {
-    chunk: usize,
-}
+    #[derive(Debug, Model, Deserialize)]
+    pub struct Team {
+        pub name: Option<String>,
+        #[serde(default)]
+        pub members: Vec<Person>,
+    }
 
-impl Stream for SlowResponse {
-    type Item = typespec_client_core::Result<Bytes>;
+    #[derive(Debug, Model, Deserialize)]
+    pub struct Person {
+        pub id: u32,
+        pub name: Option<String>,
+    }
 
-    fn poll_next(
-        self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
-    ) -> Poll<Option<Self::Item>> {
-        const MAX_CHUNKS: usize = 10;
-        static DATA: Bytes = Bytes::from_static(b"Hello, world!");
+    pub fn get_binary_data_response() -> typespec_client_core::Result<Response<()>> {
+        let bytes = Bytes::from_static(b"Hello, world!");
+        let response = SlowResponse {
+            bytes: bytes.repeat(5).into(),
+            bytes_per_read: bytes.len(),
+            bytes_read: 0,
+        };
 
-        let self_mut = self.get_mut();
-        if self_mut.chunk < MAX_CHUNKS {
-            eprintln!("getting partial response...");
-            std::thread::sleep(Duration::from_millis(300));
-            self_mut.chunk += 1;
-            Poll::Ready(Some(Ok(DATA.clone())))
-        } else {
-            eprintln!("done");
-            Poll::Ready(None)
+        Ok(Response::new(
+            StatusCode::Ok,
+            Headers::new(),
+            Box::pin(response),
+        ))
+    }
+
+    pub fn get_model_response() -> typespec_client_core::Result<Response<Team>> {
+        let bytes = br#"{
+            "name": "Contoso Dev Team",
+            "members": [
+                {
+                    "id": 1234,
+                    "name": "Jan"
+                },
+                {
+                    "id": 5678,
+                    "name": "Bill"
+                }
+            ]
+        }"#;
+        let response = SlowResponse {
+            bytes: Bytes::from_static(bytes),
+            bytes_per_read: 64,
+            bytes_read: 0,
+        };
+
+        Ok(Response::new(
+            StatusCode::Ok,
+            Headers::new(),
+            Box::pin(response),
+        ))
+    }
+
+    struct SlowResponse {
+        bytes: Bytes,
+        bytes_per_read: usize,
+        bytes_read: usize,
+    }
+
+    impl Stream for SlowResponse {
+        type Item = typespec_client_core::Result<Bytes>;
+
+        fn poll_next(
+            self: std::pin::Pin<&mut Self>,
+            _cx: &mut std::task::Context<'_>,
+        ) -> Poll<Option<Self::Item>> {
+            let self_mut = self.get_mut();
+            if self_mut.bytes_read < self_mut.bytes.len() {
+                eprintln!("getting partial response...");
+                std::thread::sleep(Duration::from_millis(200));
+
+                let end = self_mut.bytes_read
+                    + min(
+                        self_mut.bytes_per_read,
+                        self_mut.bytes.len() - self_mut.bytes_read,
+                    );
+                let bytes = self_mut.bytes.slice(self_mut.bytes_read..end);
+                self_mut.bytes_read += bytes.len();
+                Poll::Ready(Some(Ok(bytes)))
+            } else {
+                eprintln!("done");
+                Poll::Ready(None)
+            }
         }
     }
 }
