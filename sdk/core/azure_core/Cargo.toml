@@ -50,7 +50,7 @@ hmac_openssl = ["dep:openssl"]
 test_e2e = []
 azurite_workaround = []
 xml = ["typespec_client_core/xml"]
-tokio_fs = ["tokio/fs", "tokio/sync", "tokio/io-util"]
+tokio_fs = ["typespec_client_core/tokio_fs"]
 tokio_sleep = ["typespec_client_core/tokio_sleep"]
 
 [package.metadata.docs.rs]

@@ -1,6 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::{
+    http::Body,
+    setters,
+    stream::{SeekableStream, DEFAULT_BUFFER_SIZE},
+};
 use futures::{task::Poll, Future};
 use std::{cmp::min, io::SeekFrom, pin::Pin, sync::Arc, task::Context};
 use tokio::{
@@ -9,11 +14,6 @@ use tokio::{
     sync::Mutex,
 };
 use tracing::debug;
-use typespec_client_core::{
-    http::Body,
-    setters,
-    stream::{SeekableStream, DEFAULT_BUFFER_SIZE},
-};
 
 #[derive(Debug)]
 pub struct FileStreamBuilder {

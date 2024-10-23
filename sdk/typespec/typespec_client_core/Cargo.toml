@@ -41,25 +41,25 @@ tokio = { workspace = true, features = ["macros", "rt", "time"] }
 [dev-dependencies]
 once_cell.workspace = true
 tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 typespec_derive.workspace = true
 
 [features]
-default = [
-  "http",
-  "json",
-  "reqwest",
-  "reqwest_gzip",
-  "reqwest_rustls",
-  "tokio_sleep",
-]
+default = ["http", "json", "reqwest", "reqwest_gzip", "reqwest_rustls"]
 derive = ["dep:typespec_derive"]
 http = ["dep:http-types", "typespec/http"]
 json = ["typespec/json"]
 reqwest = ["dep:reqwest", "reqwest/default-tls"]
 reqwest_gzip = ["reqwest/gzip"]
 reqwest_rustls = ["reqwest/rustls-tls"]
+tokio_fs = ["tokio/fs", "tokio/sync", "tokio/io-util"]
 tokio_sleep = ["tokio/time"]
 xml = ["dep:quick-xml"]
+
+[[example]]
+name = "binary_data_request"
+required-features = ["tokio_fs", "tokio_sleep"]
 
 [[example]]
 name = "stream_response"

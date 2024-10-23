@@ -2,4 +2,7 @@
 // Licensed under the MIT License.
 
 #[cfg(feature = "tokio_fs")]
-pub use typespec_client_core::fs::*;
+mod tokio;
+
+#[cfg(feature = "tokio_fs")]
+pub use tokio::*;
