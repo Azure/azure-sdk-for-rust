@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(doc)]
-use crate::clients::DatabaseClientMethods;
-
 /// Options to be passed to [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[derive(Clone, Debug, Default)]
 pub struct ReadDatabaseOptions {}

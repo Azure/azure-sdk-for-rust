@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(doc)]
-use crate::CosmosClientMethods;
-
 /// Options to be passed to [`CosmosClient::query_databases()`](crate::CosmosClient)
 #[derive(Clone, Debug, Default)]
 pub struct QueryDatabasesOptions {}

@@ -1,9 +1,6 @@
 use std::error::Error;
 
-use azure_data_cosmos::{
-    clients::{ContainerClientMethods, DatabaseClientMethods},
-    CosmosClient, CosmosClientMethods, PartitionKey,
-};
+use azure_data_cosmos::{CosmosClient, PartitionKey};
 use clap::{Args, Subcommand};
 use futures::StreamExt;
 

@@ -21,7 +21,7 @@ pub(crate) mod utils;
 pub mod models;
 
 #[doc(inline)]
-pub use clients::{CosmosClient, CosmosClientMethods};
+pub use clients::CosmosClient;
 
 pub use options::*;
 pub use partition_key::*;

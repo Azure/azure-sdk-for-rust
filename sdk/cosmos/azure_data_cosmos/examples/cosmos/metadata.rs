@@ -3,10 +3,7 @@
 
 use std::error::Error;
 
-use azure_data_cosmos::{
-    clients::{ContainerClientMethods, DatabaseClientMethods},
-    CosmosClient, CosmosClientMethods,
-};
+use azure_data_cosmos::CosmosClient;
 use clap::Args;
 
 /// Retrieves basic metadata about databases and containers.

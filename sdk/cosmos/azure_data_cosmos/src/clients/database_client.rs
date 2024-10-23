@@ -14,100 +14,6 @@ use azure_core::{Context, Method, Pager, Request, Response};
 
 use url::Url;
 
-#[cfg(doc)]
-use crate::CosmosClientMethods;
-
-/// Defines the methods provided by a [`DatabaseClient`]
-///
-/// This trait is intended to allow you to mock out the `DatabaseClient` when testing your application.
-/// Rather than depending on `DatabaseClient`, you can depend on a generic parameter constrained by this trait, or an `impl DatabaseClientMethods` type.
-pub trait DatabaseClientMethods {
-    /// Reads the properties of the database.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// # Examples
-    ///
-    /// ```rust,no_run
-    /// # async fn doc() {
-    /// # use azure_data_cosmos::clients::{DatabaseClient, DatabaseClientMethods};
-    /// # let database_client: DatabaseClient = panic!("this is a non-running example");
-    /// let response = database_client.read(None)
-    ///     .await.unwrap()
-    ///     .deserialize_body()
-    ///     .await.unwrap();
-    /// # }
-    /// ```
-    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
-    async fn read(
-        &self,
-        options: Option<ReadDatabaseOptions>,
-    ) -> azure_core::Result<Response<DatabaseProperties>>;
-
-    /// Gets a [`ContainerClient`] that can be used to access the collection with the specified name.
-    ///
-    /// # Arguments
-    /// * `name` - The name of the container.
-    fn container_client(&self, name: impl AsRef<str>) -> ContainerClient;
-
-    /// Returns the identifier of the Cosmos database.
-    fn id(&self) -> &str;
-
-    /// Executes a query against containers in the database.
-    ///
-    /// # Arguments
-    ///
-    /// * `query` - The query to execute.
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// # Examples
-    ///
-    /// The `query` parameter accepts anything that can be transformed [`Into`] a [`Query`].
-    /// This allows simple queries without parameters to be expressed easily:
-    ///
-    /// ```rust,no_run
-    /// # async fn doc() {
-    /// # use azure_data_cosmos::clients::{DatabaseClient, DatabaseClientMethods};
-    /// # let db_client: DatabaseClient = panic!("this is a non-running example");
-    /// let containers = db_client.query_containers(
-    ///     "SELECT * FROM dbs",
-    ///     None).unwrap();
-    /// # }
-    /// ```
-    ///
-    /// See [`Query`] for more information on how to specify a query.
-    fn query_containers(
-        &self,
-        query: impl Into<Query>,
-        options: Option<QueryContainersOptions>,
-    ) -> azure_core::Result<Pager<ContainerQueryResults>>;
-
-    /// Creates a new container.
-    ///
-    #[doc = include_str!("../../docs/control-plane-warning.md")]
-    ///
-    /// # Arguments
-    /// * `properties` - A [`ContainerProperties`] describing the new container.
-    /// * `options` - Optional parameters for the request.
-    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
-    async fn create_container(
-        &self,
-        properties: ContainerProperties,
-        options: Option<CreateContainerOptions>,
-    ) -> azure_core::Result<Response<Item<ContainerProperties>>>;
-
-    /// Deletes this database.
-    ///
-    #[doc = include_str!("../../docs/control-plane-warning.md")]
-    ///
-    /// # Arguments
-    /// * `options` - Optional parameters for the request.
-    #[allow(async_fn_in_trait)] // REASON: See https://github.com/Azure/azure-sdk-for-rust/issues/1796 for detailed justification
-    async fn delete(&self, options: Option<DeleteDatabaseOptions>) -> azure_core::Result<Response>;
-}
-
 /// A client for working with a specific database in a Cosmos DB account.
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
@@ -128,10 +34,39 @@ impl DatabaseClient {
             pipeline,
         }
     }
-}
 
-impl DatabaseClientMethods for DatabaseClient {
-    async fn read(
+    /// Gets a [`ContainerClient`] that can be used to access the collection with the specified name.
+    ///
+    /// # Arguments
+    /// * `name` - The name of the container.
+    pub fn container_client(&self, name: impl AsRef<str>) -> ContainerClient {
+        ContainerClient::new(self.pipeline.clone(), &self.database_url, name.as_ref())
+    }
+
+    /// Returns the identifier of the Cosmos database.
+    pub fn id(&self) -> &str {
+        &self.database_id
+    }
+
+    /// Reads the properties of the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() {
+    /// # use azure_data_cosmos::clients::DatabaseClient;
+    /// # let database_client: DatabaseClient = panic!("this is a non-running example");
+    /// let response = database_client.read(None)
+    ///     .await.unwrap()
+    ///     .deserialize_body()
+    ///     .await.unwrap();
+    /// # }
+    /// ```
+    pub async fn read(
         &self,
 
         #[allow(unused_variables)]
@@ -144,15 +79,30 @@ impl DatabaseClientMethods for DatabaseClient {
             .await
     }
 
-    fn container_client(&self, name: impl AsRef<str>) -> ContainerClient {
-        ContainerClient::new(self.pipeline.clone(), &self.database_url, name.as_ref())
-    }
-
-    fn id(&self) -> &str {
-        &self.database_id
-    }
-
-    fn query_containers(
+    /// Executes a query against containers in the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `query` - The query to execute.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// The `query` parameter accepts anything that can be transformed [`Into`] a [`Query`].
+    /// This allows simple queries without parameters to be expressed easily:
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() {
+    /// # use azure_data_cosmos::clients::DatabaseClient;
+    /// # let db_client: DatabaseClient = panic!("this is a non-running example");
+    /// let containers = db_client.query_containers(
+    ///     "SELECT * FROM dbs",
+    ///     None).unwrap();
+    /// # }
+    /// ```
+    ///
+    /// See [`Query`] for more information on how to specify a query.
+    pub fn query_containers(
         &self,
         query: impl Into<Query>,
 
@@ -168,7 +118,14 @@ impl DatabaseClientMethods for DatabaseClient {
             .send_query_request(query.into(), base_request, ResourceType::Containers)
     }
 
-    async fn create_container(
+    /// Creates a new container.
+    ///
+    #[doc = include_str!("../../docs/control-plane-warning.md")]
+    ///
+    /// # Arguments
+    /// * `properties` - A [`ContainerProperties`] describing the new container.
+    /// * `options` - Optional parameters for the request.
+    pub async fn create_container(
         &self,
         properties: ContainerProperties,
 
@@ -185,7 +142,13 @@ impl DatabaseClientMethods for DatabaseClient {
             .await
     }
 
-    async fn delete(
+    /// Deletes this database.
+    ///
+    #[doc = include_str!("../../docs/control-plane-warning.md")]
+    ///
+    /// # Arguments
+    /// * `options` - Optional parameters for the request.
+    pub async fn delete(
         &self,
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
