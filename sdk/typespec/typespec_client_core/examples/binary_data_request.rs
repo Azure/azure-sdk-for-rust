@@ -4,10 +4,7 @@
 use tokio::fs;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::fmt::format::FmtSpan;
-use typespec_client_core::{
-    fs::FileStreamBuilder,
-    http::{Body, RequestContent},
-};
+use typespec_client_core::{fs::FileStreamBuilder, http::RequestContent};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -30,8 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .buffer_size(256usize)
             .build()
             .await?;
-        let body: Body = file.into();
-        client::put_binary_data(body.into()).await?;
+        client::put_binary_data(file.into()).await?;
     }
 
     Ok(())
