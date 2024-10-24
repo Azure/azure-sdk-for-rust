@@ -40,6 +40,7 @@
     "keyvault",
     "msrc",
     "Newtonsoft",
+    "oidc",
     "pageable",
     "pkce",
     "pkcs",
