@@ -2,12 +2,7 @@
 // Licensed under the MIT License.
 
 #[cfg_attr(not(feature = "key_auth"), allow(unused_imports))]
-use azure_core::{
-    credentials::Secret,
-    date::{self, OffsetDateTime},
-    hmac::hmac_sha256,
-    Method,
-};
+use azure_core::{credentials::Secret, hmac::hmac_sha256, Method};
 
 use crate::resource_context::ResourceLink;
 
@@ -15,15 +10,15 @@ use crate::resource_context::ResourceLink;
 pub struct SignatureTarget<'a> {
     http_method: azure_core::Method,
     link: &'a ResourceLink,
-    time_nonce: OffsetDateTime,
+    date_string: &'a str,
 }
 
 impl<'a> SignatureTarget<'a> {
-    pub fn new(http_method: Method, link: &'a ResourceLink, time_nonce: OffsetDateTime) -> Self {
+    pub fn new(http_method: Method, link: &'a ResourceLink, date_string: &'a str) -> Self {
         SignatureTarget {
             http_method,
             link,
-            time_nonce,
+            date_string,
         }
     }
 
@@ -31,7 +26,7 @@ impl<'a> SignatureTarget<'a> {
     pub fn into_authorization(self, key: &Secret) -> azure_core::Result<String> {
         let string_to_sign = self.into_signable_string();
         // The signature payload is NOT SECRET. The signature IS SECRET, but we can safely log the signature payload (which can be useful for diagnosing auth errors)
-        tracing::trace!(signature_payload = ?string_to_sign, "generating Cosmos auth signature");
+        tracing::debug!(signature_payload = ?string_to_sign, "generating Cosmos auth signature");
         let signature = hmac_sha256(&string_to_sign, key)?;
         Ok(format!("type=master&ver=1.0&sig={signature}"))
     }
@@ -67,7 +62,7 @@ impl<'a> SignatureTarget<'a> {
             },
             self.link.resource_type().path_segment(),
             self.link.resource_link(),
-            date::to_rfc1123(&self.time_nonce).to_lowercase()
+            self.date_string,
         )
     }
 }

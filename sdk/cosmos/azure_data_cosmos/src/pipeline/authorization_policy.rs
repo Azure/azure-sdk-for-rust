@@ -69,7 +69,8 @@ impl Policy for AuthorizationPolicy {
             "Authorization policies cannot be the last policy of a pipeline"
         );
 
-        let time_nonce = OffsetDateTime::now_utc();
+        // x-ms-date and the string used in the signature must be exactly the same, so just generate it here once.
+        let date_string = date::to_rfc1123(&OffsetDateTime::now_utc()).to_lowercase();
 
         let resource_link: &ResourceLink = ctx
             .value()
@@ -78,11 +79,11 @@ impl Policy for AuthorizationPolicy {
         let auth = generate_authorization(
             &self.credential,
             request.url(),
-            SignatureTarget::new(*request.method(), resource_link, time_nonce),
+            SignatureTarget::new(*request.method(), resource_link, &date_string),
         )
         .await?;
 
-        request.insert_header(MS_DATE, HeaderValue::from(date::to_rfc1123(&time_nonce)));
+        request.insert_header(MS_DATE, HeaderValue::from(date_string));
         request.insert_header(VERSION, HeaderValue::from_static(AZURE_VERSION));
         request.insert_header(AUTHORIZATION, HeaderValue::from(auth));
 

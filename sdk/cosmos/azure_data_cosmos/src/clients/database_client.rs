@@ -11,25 +11,26 @@ use crate::{
 };
 
 use azure_core::{Context, Method, Pager, Request, Response};
-use url::Url;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
 pub struct DatabaseClient {
-    endpoint: Url,
     link: ResourceLink,
+    containers_link: ResourceLink,
     database_id: String,
     pipeline: CosmosPipeline,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: CosmosPipeline, endpoint: Url, database_id: String) -> Self {
+    pub(crate) fn new(pipeline: CosmosPipeline, database_id: &str) -> Self {
+        let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
+        let containers_link = link.feed(ResourceType::Containers);
 
         Self {
-            endpoint,
             link,
+            containers_link,
             database_id,
             pipeline,
         }
@@ -40,7 +41,7 @@ impl DatabaseClient {
     /// # Arguments
     /// * `name` - The name of the container.
     pub fn container_client(&self, name: impl AsRef<str>) -> ContainerClient {
-        ContainerClient::new(self.pipeline.clone(), &self.database_url, name.as_ref())
+        ContainerClient::new(self.pipeline.clone(), &self.link, name.as_ref())
     }
 
     /// Returns the identifier of the Cosmos database.
@@ -73,7 +74,8 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
-        let mut req = Request::new(self.link.url(&self.endpoint), Method::Get);
+        let url = self.pipeline.url(&self.link);
+        let mut req = Request::new(url, Method::Get);
         self.pipeline
             .send(Context::new(), &mut req, self.link.clone())
             .await
@@ -110,11 +112,11 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<Pager<ContainerQueryResults>> {
-        let link = self.link.feed(ResourceType::Containers);
-        let base_request = Request::new(link.url(&self.endpoint), Method::Post);
+        let url = self.pipeline.url(&self.containers_link);
+        let base_request = Request::new(url, Method::Post);
 
         self.pipeline
-            .send_query_request(query.into(), base_request, link)
+            .send_query_request(query.into(), base_request, self.containers_link.clone())
     }
 
     /// Creates a new container.
@@ -132,11 +134,13 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<CreateContainerOptions>,
     ) -> azure_core::Result<Response<Item<ContainerProperties>>> {
-        let link = self.link.feed(ResourceType::Containers);
-        let mut req = Request::new(link.url(&self.endpoint), Method::Post);
+        let url = self.pipeline.url(&self.containers_link);
+        let mut req = Request::new(url, Method::Post);
         req.set_json(&properties)?;
 
-        self.pipeline.send(Context::new(), &mut req, link).await
+        self.pipeline
+            .send(Context::new(), &mut req, self.containers_link.clone())
+            .await
     }
 
     /// Deletes this database.
@@ -151,7 +155,8 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<DeleteDatabaseOptions>,
     ) -> azure_core::Result<Response> {
-        let mut req = Request::new(self.link.url(&self.endpoint), Method::Delete);
+        let url = self.pipeline.url(&self.link);
+        let mut req = Request::new(url, Method::Delete);
         self.pipeline
             .send(Context::new(), &mut req, self.link.clone())
             .await
