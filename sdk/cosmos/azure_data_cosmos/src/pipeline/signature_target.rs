@@ -82,6 +82,7 @@ mod tests {
     #[test]
     fn into_signable_string_generates_correct_value() {
         let time_nonce = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+        let date_string = date::to_rfc1123(&time_nonce).to_lowercase();
 
         let ret = SignatureTarget::new(
             azure_core::Method::Get,
@@ -89,7 +90,7 @@ mod tests {
                 .item("MyDatabase")
                 .feed(ResourceType::Containers)
                 .item("MyCollection"),
-            time_nonce,
+            &date_string,
         )
         .into_signable_string();
         assert_eq!(

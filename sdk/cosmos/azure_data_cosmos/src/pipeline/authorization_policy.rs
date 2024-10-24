@@ -179,6 +179,7 @@ mod tests {
     #[tokio::test]
     async fn generate_authorization_for_token_credential() {
         let time_nonce = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+        let date_string = date::to_rfc1123(&time_nonce).to_lowercase();
         let cred = Arc::new(TestTokenCredential("test_token".to_string()));
         let auth_token = Credential::Token(cred);
 
@@ -194,7 +195,7 @@ mod tests {
                     .item("MyDatabase")
                     .feed(ResourceType::Containers)
                     .item("MyCollection"),
-                time_nonce,
+                &date_string,
             ),
         )
         .await
@@ -211,6 +212,7 @@ mod tests {
     #[cfg(feature = "key_auth")]
     async fn generate_authorization_for_primary_key_0() {
         let time_nonce = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+        let date_string = date::to_rfc1123(&time_nonce).to_lowercase();
 
         let auth_token = Credential::PrimaryKey(
             "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==".into(),
@@ -228,7 +230,7 @@ mod tests {
                     .item("MyDatabase")
                     .feed(ResourceType::Containers)
                     .item("MyCollection"),
-                time_nonce,
+                &date_string,
             ),
         )
         .await
@@ -244,6 +246,7 @@ mod tests {
     #[cfg(feature = "key_auth")]
     async fn generate_authorization_for_primary_key_1() {
         let time_nonce = date::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
+        let date_string = date::to_rfc1123(&time_nonce).to_lowercase();
 
         let auth_token = Credential::PrimaryKey(
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".into(),
@@ -258,7 +261,7 @@ mod tests {
             SignatureTarget::new(
                 azure_core::Method::Get,
                 &ResourceLink::root(ResourceType::Databases).item("ToDoList"),
-                time_nonce,
+                &date_string,
             ),
         )
         .await
