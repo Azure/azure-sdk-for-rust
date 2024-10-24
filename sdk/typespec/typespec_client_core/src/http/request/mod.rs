@@ -208,6 +208,35 @@ impl<T> From<RequestContent<T>> for Body {
     }
 }
 
+impl<T> From<Body> for RequestContent<T> {
+    fn from(body: Body) -> Self {
+        Self {
+            body,
+            phantom: PhantomData,
+        }
+    }
+}
+
+#[cfg(all(feature = "tokio_fs", not(target_arch = "wasm32")))]
+impl<T> From<crate::fs::FileStream> for RequestContent<T> {
+    fn from(body: crate::fs::FileStream) -> Self {
+        Self {
+            body: body.into(),
+            phantom: PhantomData,
+        }
+    }
+}
+
+#[cfg(all(feature = "tokio_fs", not(target_arch = "wasm32")))]
+impl<T> From<&crate::fs::FileStream> for RequestContent<T> {
+    fn from(body: &crate::fs::FileStream) -> Self {
+        Self {
+            body: body.into(),
+            phantom: PhantomData,
+        }
+    }
+}
+
 impl<T> TryFrom<Bytes> for RequestContent<T> {
     type Error = crate::Error;
     fn try_from(body: Bytes) -> Result<Self, Self::Error> {

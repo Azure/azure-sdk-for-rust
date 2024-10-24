@@ -2,11 +2,19 @@
 // Licensed under the MIT License.
 
 use futures::StreamExt;
+use tracing::level_filters::LevelFilter;
+use tracing_subscriber::fmt::format::FmtSpan;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Log traces to stdout.
+    let _log = tracing_subscriber::fmt()
+        .with_span_events(FmtSpan::ENTER | FmtSpan::EXIT)
+        .with_max_level(LevelFilter::DEBUG)
+        .init();
+
     // Get a response from a service client.
-    let response = client::get_binary_data_response()?;
+    let response = client::get_binary_data()?;
 
     // Normally you'd deserialize into a type or `collect()` the body,
     // but this better simulates fetching multiple chunks from a slow response.
@@ -18,7 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // You can also deserialize into a model from a slow response.
-    let team = client::get_model_response()?.deserialize_body().await?;
+    let team = client::get_model()?.deserialize_body().await?;
     println!("{team:#?}");
 
     Ok(())
@@ -29,6 +37,7 @@ mod client {
     use futures::Stream;
     use serde::Deserialize;
     use std::{cmp::min, task::Poll, time::Duration};
+    use tracing::debug;
     use typespec_client_core::{
         http::{headers::Headers, Model, Response, StatusCode},
         Bytes,
@@ -47,7 +56,8 @@ mod client {
         pub name: Option<String>,
     }
 
-    pub fn get_binary_data_response() -> typespec_client_core::Result<Response<()>> {
+    #[tracing::instrument]
+    pub fn get_binary_data() -> typespec_client_core::Result<Response<()>> {
         let bytes = Bytes::from_static(b"Hello, world!");
         let response = SlowResponse {
             bytes: bytes.repeat(5).into(),
@@ -62,7 +72,8 @@ mod client {
         ))
     }
 
-    pub fn get_model_response() -> typespec_client_core::Result<Response<Team>> {
+    #[tracing::instrument]
+    pub fn get_model() -> typespec_client_core::Result<Response<Team>> {
         let bytes = br#"{
             "name": "Contoso Dev Team",
             "members": [
@@ -104,7 +115,9 @@ mod client {
         ) -> Poll<Option<Self::Item>> {
             let self_mut = self.get_mut();
             if self_mut.bytes_read < self_mut.bytes.len() {
-                eprintln!("getting partial response...");
+                debug!("writing partial response...");
+
+                // Simulate a slow response.
                 std::thread::sleep(Duration::from_millis(200));
 
                 let end = self_mut.bytes_read
@@ -116,7 +129,7 @@ mod client {
                 self_mut.bytes_read += bytes.len();
                 Poll::Ready(Some(Ok(bytes)))
             } else {
-                eprintln!("done");
+                debug!("done");
                 Poll::Ready(None)
             }
         }

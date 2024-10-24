@@ -8,6 +8,7 @@ mod macros;
 pub mod base64;
 pub mod date;
 pub mod error;
+pub mod fs;
 #[cfg(feature = "http")]
 pub mod http;
 #[cfg(feature = "json")]
