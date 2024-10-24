@@ -31,9 +31,6 @@
 # GitHub integration and bot rules
 /.github/                @heaths @RickWinter @ronniegeraghty @LarryOsterman
 
-# PRLabel: %EngSys
-/sdk/template/           @weshaggard @heaths @RickWinter
-
 ###########
 # SDK
 ###########
@@ -70,10 +67,8 @@
 ###########
 /eng/                    @weshaggard @heaths @RickWinter
 /eng/common/             @Azure/azure-sdk-eng
-/.config/1espt/          @benbp @weshaggard
 /.github/workflows/      @Azure/azure-sdk-eng
 /.github/CODEOWNERS      @RickWinter @ronniegeraghty @Azure/azure-sdk-eng
 
 # Add owners for notifications for specific pipelines
 /eng/common/pipelines/codeowners-linter.yml       @rickwinter
-/eng/pipelines/aggregate-reports.yml              @rickwinter                
