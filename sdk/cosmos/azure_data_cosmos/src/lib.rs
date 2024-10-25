@@ -16,6 +16,7 @@ mod options;
 mod partition_key;
 pub(crate) mod pipeline;
 mod query;
+pub(crate) mod resource_context;
 pub(crate) mod utils;
 
 pub mod models;

@@ -4,12 +4,11 @@
 use crate::{
     clients::DatabaseClient,
     models::{DatabaseProperties, DatabaseQueryResults, Item},
-    pipeline::{AuthorizationPolicy, CosmosPipeline, ResourceType},
-    utils::AppendPathSegments,
+    pipeline::{AuthorizationPolicy, CosmosPipeline},
+    resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, Query, QueryDatabasesOptions,
 };
 use azure_core::{credentials::TokenCredential, Context, Method, Request, Response, Url};
-
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -19,8 +18,8 @@ use azure_core::credentials::Secret;
 /// Client for Azure Cosmos DB.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
-    endpoint: Url,
-    pub(crate) pipeline: CosmosPipeline,
+    databases_link: ResourceLink,
+    pipeline: CosmosPipeline,
 
     #[allow(dead_code)]
     options: CosmosClientOptions,
@@ -51,8 +50,9 @@ impl CosmosClient {
     ) -> azure_core::Result<Self> {
         let options = options.unwrap_or_default();
         Ok(Self {
-            endpoint: endpoint.as_ref().parse()?,
+            databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline: CosmosPipeline::new(
+                endpoint.as_ref().parse()?,
                 AuthorizationPolicy::from_token_credential(credential),
                 options.client_options.clone(),
             ),
@@ -83,8 +83,9 @@ impl CosmosClient {
     ) -> azure_core::Result<Self> {
         let options = options.unwrap_or_default();
         Ok(Self {
-            endpoint: endpoint.as_ref().parse()?,
+            databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline: CosmosPipeline::new(
+                endpoint.as_ref().parse()?,
                 AuthorizationPolicy::from_shared_key(key.into()),
                 options.client_options.clone(),
             ),
@@ -97,12 +98,12 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the database.
     pub fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient {
-        DatabaseClient::new(self.pipeline.clone(), &self.endpoint, id.as_ref())
+        DatabaseClient::new(self.pipeline.clone(), id.as_ref())
     }
 
     /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
-        &self.endpoint
+        &self.pipeline.endpoint
     }
 
     /// Executes a query against databases in the account.
@@ -136,11 +137,11 @@ impl CosmosClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryDatabasesOptions>,
     ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>> {
-        let url = self.endpoint.with_path_segments(["dbs"]);
+        let url = self.pipeline.url(&self.databases_link);
         let base_request = Request::new(url, azure_core::Method::Post);
 
         self.pipeline
-            .send_query_request(query.into(), base_request, ResourceType::Databases)
+            .send_query_request(query.into(), base_request, self.databases_link.clone())
     }
 
     /// Creates a new database.
@@ -163,12 +164,12 @@ impl CosmosClient {
             id: String,
         }
 
-        let url = self.endpoint.with_path_segments(["dbs"]);
+        let url = self.pipeline.url(&self.databases_link);
         let mut req = Request::new(url, Method::Post);
         req.set_json(&RequestBody { id })?;
 
         self.pipeline
-            .send(Context::new(), &mut req, ResourceType::Databases)
+            .send(Context::new(), &mut req, self.databases_link.clone())
             .await
     }
 }

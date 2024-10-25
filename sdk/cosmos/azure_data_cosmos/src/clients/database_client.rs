@@ -4,33 +4,34 @@
 use crate::{
     clients::ContainerClient,
     models::{ContainerProperties, ContainerQueryResults, DatabaseProperties, Item},
-    pipeline::{CosmosPipeline, ResourceType},
-    utils::AppendPathSegments,
+    options::ReadDatabaseOptions,
+    pipeline::CosmosPipeline,
+    resource_context::{ResourceLink, ResourceType},
     CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
-    ReadDatabaseOptions,
 };
 
 use azure_core::{Context, Method, Pager, Request, Response};
-
-use url::Url;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
 pub struct DatabaseClient {
+    link: ResourceLink,
+    containers_link: ResourceLink,
     database_id: String,
-    database_url: Url,
     pipeline: CosmosPipeline,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: CosmosPipeline, base_url: &Url, database_id: &str) -> Self {
+    pub(crate) fn new(pipeline: CosmosPipeline, database_id: &str) -> Self {
         let database_id = database_id.to_string();
-        let database_url = base_url.with_path_segments(["dbs", &database_id]);
+        let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
+        let containers_link = link.feed(ResourceType::Containers);
 
         Self {
+            link,
+            containers_link,
             database_id,
-            database_url,
             pipeline,
         }
     }
@@ -40,7 +41,7 @@ impl DatabaseClient {
     /// # Arguments
     /// * `name` - The name of the container.
     pub fn container_client(&self, name: impl AsRef<str>) -> ContainerClient {
-        ContainerClient::new(self.pipeline.clone(), &self.database_url, name.as_ref())
+        ContainerClient::new(self.pipeline.clone(), &self.link, name.as_ref())
     }
 
     /// Returns the identifier of the Cosmos database.
@@ -73,9 +74,10 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
-        let mut req = Request::new(self.database_url.clone(), azure_core::Method::Get);
+        let url = self.pipeline.url(&self.link);
+        let mut req = Request::new(url, Method::Get);
         self.pipeline
-            .send(Context::new(), &mut req, ResourceType::Databases)
+            .send(Context::new(), &mut req, self.link.clone())
             .await
     }
 
@@ -110,12 +112,11 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<Pager<ContainerQueryResults>> {
-        let mut url = self.database_url.clone();
-        url.append_path_segments(["colls"]);
-        let base_request = Request::new(url, azure_core::Method::Post);
+        let url = self.pipeline.url(&self.containers_link);
+        let base_request = Request::new(url, Method::Post);
 
         self.pipeline
-            .send_query_request(query.into(), base_request, ResourceType::Containers)
+            .send_query_request(query.into(), base_request, self.containers_link.clone())
     }
 
     /// Creates a new container.
@@ -133,12 +134,12 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<CreateContainerOptions>,
     ) -> azure_core::Result<Response<Item<ContainerProperties>>> {
-        let url = self.database_url.with_path_segments(["colls"]);
+        let url = self.pipeline.url(&self.containers_link);
         let mut req = Request::new(url, Method::Post);
         req.set_json(&properties)?;
 
         self.pipeline
-            .send(Context::new(), &mut req, ResourceType::Containers)
+            .send(Context::new(), &mut req, self.containers_link.clone())
             .await
     }
 
@@ -154,9 +155,10 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<DeleteDatabaseOptions>,
     ) -> azure_core::Result<Response> {
-        let mut req = Request::new(self.database_url.clone(), Method::Delete);
+        let url = self.pipeline.url(&self.link);
+        let mut req = Request::new(url, Method::Delete);
         self.pipeline
-            .send(Context::new(), &mut req, ResourceType::Databases)
+            .send(Context::new(), &mut req, self.link.clone())
             .await
     }
 }
