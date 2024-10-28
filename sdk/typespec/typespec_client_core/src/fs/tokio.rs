@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    http::Body,
+    http::{Body, RequestContent},
     setters,
     stream::{SeekableStream, DEFAULT_BUFFER_SIZE},
 };
@@ -166,5 +166,19 @@ impl From<&FileStream> for Body {
 impl From<FileStream> for Body {
     fn from(stream: FileStream) -> Self {
         Body::SeekableStream(Box::new(stream))
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<T> From<&FileStream> for RequestContent<T> {
+    fn from(stream: &FileStream) -> Self {
+        Body::from(stream).into()
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<T> From<FileStream> for RequestContent<T> {
+    fn from(stream: FileStream) -> Self {
+        Body::from(stream).into()
     }
 }
