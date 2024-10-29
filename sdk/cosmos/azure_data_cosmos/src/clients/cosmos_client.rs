@@ -20,9 +20,6 @@ use azure_core::credentials::Secret;
 pub struct CosmosClient {
     databases_link: ResourceLink,
     pipeline: CosmosPipeline,
-
-    #[allow(dead_code)]
-    options: CosmosClientOptions,
 }
 
 impl CosmosClient {
@@ -54,9 +51,8 @@ impl CosmosClient {
             pipeline: CosmosPipeline::new(
                 endpoint.as_ref().parse()?,
                 AuthorizationPolicy::from_token_credential(credential),
-                options.client_options.clone(),
+                options.client_options,
             ),
-            options,
         })
     }
 
@@ -87,9 +83,8 @@ impl CosmosClient {
             pipeline: CosmosPipeline::new(
                 endpoint.as_ref().parse()?,
                 AuthorizationPolicy::from_shared_key(key.into()),
-                options.client_options.clone(),
+                options.client_options,
             ),
-            options,
         })
     }
 
