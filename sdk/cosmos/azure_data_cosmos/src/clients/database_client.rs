@@ -40,8 +40,8 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `name` - The name of the container.
-    pub fn container_client(&self, name: impl AsRef<str>) -> ContainerClient {
-        ContainerClient::new(self.pipeline.clone(), &self.link, name.as_ref())
+    pub fn container_client(&self, name: &str) -> ContainerClient {
+        ContainerClient::new(self.pipeline.clone(), &self.link, name)
     }
 
     /// Returns the identifier of the Cosmos database.

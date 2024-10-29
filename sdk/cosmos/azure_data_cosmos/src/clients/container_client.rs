@@ -183,7 +183,7 @@ impl ContainerClient {
     pub async fn replace_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
-        item_id: impl AsRef<str>,
+        item_id: &str,
         item: T,
 
         #[allow(unused_variables)]
@@ -288,7 +288,7 @@ impl ContainerClient {
     pub async fn read_item<T: DeserializeOwned>(
         &self,
         partition_key: impl Into<PartitionKey>,
-        item_id: impl AsRef<str>,
+        item_id: &str,
 
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
@@ -323,7 +323,7 @@ impl ContainerClient {
     pub async fn delete_item(
         &self,
         partition_key: impl Into<PartitionKey>,
-        item_id: impl AsRef<str>,
+        item_id: &str,
 
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.

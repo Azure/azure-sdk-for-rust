@@ -41,7 +41,7 @@ impl CosmosClient {
     /// let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
     /// ```
     pub fn new(
-        endpoint: impl AsRef<str>,
+        endpoint: &str,
         credential: Arc<dyn TokenCredential>,
         options: Option<CosmosClientOptions>,
     ) -> azure_core::Result<Self> {
@@ -49,7 +49,7 @@ impl CosmosClient {
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline: CosmosPipeline::new(
-                endpoint.as_ref().parse()?,
+                endpoint.parse()?,
                 AuthorizationPolicy::from_token_credential(credential),
                 options.client_options,
             ),
@@ -73,15 +73,15 @@ impl CosmosClient {
     /// ```
     #[cfg(feature = "key_auth")]
     pub fn with_key(
-        endpoint: impl AsRef<str>,
-        key: impl Into<Secret>,
+        endpoint: &str,
+        key: Secret,
         options: Option<CosmosClientOptions>,
     ) -> azure_core::Result<Self> {
         let options = options.unwrap_or_default();
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline: CosmosPipeline::new(
-                endpoint.as_ref().parse()?,
+                endpoint.parse()?,
                 AuthorizationPolicy::from_shared_key(key.into()),
                 options.client_options,
             ),
@@ -92,8 +92,8 @@ impl CosmosClient {
     ///
     /// # Arguments
     /// * `id` - The ID of the database.
-    pub fn database_client(&self, id: impl AsRef<str>) -> DatabaseClient {
-        DatabaseClient::new(self.pipeline.clone(), id.as_ref())
+    pub fn database_client(&self, id: &str) -> DatabaseClient {
+        DatabaseClient::new(self.pipeline.clone(), id)
     }
 
     /// Gets the endpoint of the database account this client is connected to.
@@ -148,15 +148,15 @@ impl CosmosClient {
     /// * `options` - Optional parameters for the request.
     pub async fn create_database(
         &self,
-        id: String,
+        id: &str,
 
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<CreateDatabaseOptions>,
     ) -> azure_core::Result<Response<Item<DatabaseProperties>>> {
         #[derive(Serialize)]
-        struct RequestBody {
-            id: String,
+        struct RequestBody<'a> {
+            id: &'a str,
         }
 
         let url = self.pipeline.url(&self.databases_link);
