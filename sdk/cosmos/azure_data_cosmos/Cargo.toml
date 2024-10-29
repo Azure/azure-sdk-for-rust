@@ -16,17 +16,17 @@ categories = ["api-bindings"]
 [dependencies]
 async-trait.workspace = true
 azure_core.workspace = true
-typespec_client_core = { workspace = true, features = ["derive"] }
-tracing.workspace = true
-url.workspace = true
-serde.workspace = true
+futures.workspace = true
 serde_json.workspace = true
+serde.workspace = true
+tracing.workspace = true
+typespec_client_core = { workspace = true, features = ["derive"] }
+url.workspace = true
 
 [dev-dependencies]
 azure_identity.workspace = true
 clap.workspace = true
 time.workspace = true
-futures.workspace = true
 tracing-subscriber = { workspace = true, features = [ "env-filter", "fmt" ] }
 tokio = { workspace = true, default-features = false, features = [
   "rt-multi-thread",

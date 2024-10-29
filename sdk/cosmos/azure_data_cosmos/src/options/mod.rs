@@ -3,6 +3,8 @@
 
 use azure_core::{ClientMethodOptions, ClientOptions};
 
+use crate::models::ThroughputProperties;
+
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 #[derive(Clone, Debug, Default)]
 pub struct CosmosClientOptions {
@@ -19,6 +21,7 @@ pub struct CreateContainerOptions<'a> {
 #[derive(Clone, Debug, Default)]
 pub struct CreateDatabaseOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
+    pub throughput: Option<ThroughputProperties>,
 }
 
 /// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
@@ -66,5 +69,11 @@ pub struct ReadContainerOptions<'a> {
 /// Options to be passed to [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[derive(Clone, Debug, Default)]
 pub struct ReadDatabaseOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to operations related to Throughput offers.
+#[derive(Clone, Debug, Default)]
+pub struct ThroughputOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }

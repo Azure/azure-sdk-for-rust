@@ -2,43 +2,105 @@ use std::error::Error;
 
 use azure_core::StatusCode;
 use azure_data_cosmos::CosmosClient;
-use clap::Args;
+use clap::{Args, Subcommand};
 
 /// Reads a specific item.
 #[derive(Clone, Args)]
 pub struct ReadCommand {
-    /// The database containing the item.
-    database: String,
+    #[command(subcommand)]
+    subcommands: Subcommands,
+}
 
-    /// The container containing the item.
-    container: String,
+#[derive(Clone, Subcommand)]
+enum Subcommands {
+    Database {
+        /// The database to read metadata for.
+        database: String,
+    },
+    Container {
+        /// The database containing the container.
+        database: String,
 
-    /// The ID of the item.
-    #[clap(long, short)]
-    item_id: String,
+        /// The container to read metadata for.
+        container: String,
+    },
+    Item {
+        /// The database containing the item.
+        database: String,
 
-    /// The partition key of the item.
-    #[clap(long, short)]
-    partition_key: String,
+        /// The container containing the item.
+        container: String,
+
+        /// The ID of the item.
+        #[clap(long, short)]
+        item_id: String,
+
+        /// The partition key of the item.
+        #[clap(long, short)]
+        partition_key: String,
+    },
 }
 
 impl ReadCommand {
     pub async fn run(self, client: CosmosClient) -> Result<(), Box<dyn Error>> {
-        let db_client = client.database_client(&self.database);
-        let container_client = db_client.container_client(&self.container);
+        match self.subcommands {
+            Subcommands::Item {
+                database,
+                container,
+                item_id,
+                partition_key,
+            } => {
+                let db_client = client.database_client(&database);
+                let container_client = db_client.container_client(&container);
 
-        let response = container_client
-            .read_item(&self.partition_key, &self.item_id, None)
-            .await;
-        match response {
-            Err(e) if e.http_status() == Some(StatusCode::NotFound) => println!("Item not found!"),
-            Ok(r) => {
-                let item: serde_json::Value = r.deserialize_body().await?.unwrap();
-                println!("Found item:");
-                println!("{:#?}", item);
+                let response = container_client
+                    .read_item(&partition_key, &item_id, None)
+                    .await;
+                match response {
+                    Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                        println!("Item not found!")
+                    }
+                    Ok(r) => {
+                        let item: serde_json::Value = r.deserialize_body().await?.unwrap();
+                        println!("Found item:");
+                        println!("{:#?}", item);
+                    }
+                    Err(e) => return Err(e.into()),
+                };
+                Ok(())
             }
-            Err(e) => return Err(e.into()),
-        };
-        Ok(())
+            Subcommands::Database { database } => {
+                let db_client = client.database_client(&database);
+                let response = db_client.read(None).await?.deserialize_body().await?;
+                println!("Database:");
+                println!(" {:#?}", response);
+
+                let resp = db_client.read_throughput(None).await?;
+
+                match resp {
+                    None => println!("Database does not have provisioned throughput"),
+                    Some(r) => {
+                        let throughput = r.deserialize_body().await?;
+                        println!("Throughput:");
+                        println!(" {:#?}", throughput);
+                    }
+                }
+                Ok(())
+            }
+            Subcommands::Container {
+                database,
+                container,
+            } => {
+                let db_client = client.database_client(&database);
+                let container_client = db_client.container_client(&container);
+                let response = container_client
+                    .read(None)
+                    .await?
+                    .deserialize_body()
+                    .await?;
+                println!("{:#?}", response);
+                Ok(())
+            }
+        }
     }
 }

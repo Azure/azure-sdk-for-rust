@@ -3,14 +3,19 @@
 
 use crate::{
     clients::ContainerClient,
-    models::{ContainerProperties, ContainerQueryResults, DatabaseProperties, Item},
+    models::{
+        ContainerProperties, ContainerQueryResults, DatabaseProperties, Item, ThroughputProperties,
+    },
     options::ReadDatabaseOptions,
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
     CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
+    ThroughputOptions,
 };
 
-use azure_core::{Method, Pager, Request, Response};
+use azure_core::{Method, Model, Pager, Request, Response};
+use futures::StreamExt;
+use serde::Deserialize;
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -165,5 +170,76 @@ impl DatabaseClient {
                 self.link.clone(),
             )
             .await
+    }
+
+    pub async fn read_throughput(
+        &self,
+
+        #[allow(unused_variables)]
+        // REASON: This is a documented public API so prefixing with '_' is undesirable.
+        options: Option<ThroughputOptions<'_>>,
+    ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
+        #[derive(Model, Deserialize)]
+        struct OfferResults {
+            #[serde(rename = "Offers")]
+            pub offers: Vec<ThroughputProperties>,
+        }
+
+        // We only have to into_owned here in order to call send_query_request below,
+        // since it returns `Pager` which must own it's data.
+        // But in this case, we don't really _need_ the `Pager` to own it's data
+        // because we use it and dispose of it within the body of this method.
+        // If we wanted to optimize this later, we have a few options:
+        // 1. Give Pager a lifetime parameter so it can borrow it's context (proliferates lifetime parameters everywhere though...)
+        // 2. Don't use send_query_request. We expect the offer to be in the first page, so we could just make a regular request
+        // (but what if we get an empty page for some reason? is that something the server could do?)
+        //
+        // For now, we'll risk cloning the context data and I'm just leaving this note to complain about it ;).
+        let context = options
+            .map(|o| o.method_options.context)
+            .unwrap_or_default()
+            .into_owned();
+
+        // We need to get the RID for the database.
+        let db = self.read(None).await?.deserialize_body().await?;
+        let rid = db
+            .system_properties
+            .resource_id
+            .expect("service should always return a '_rid' for a database");
+
+        // Now, query for the offer for this resource.
+        let query = Query::from("SELECT * FROM c WHERE c.offerResourceId = @rid")
+            .with_parameter("@rid", rid)?;
+        let offers_link = ResourceLink::root(ResourceType::Offers);
+        let mut results: Pager<OfferResults> = self.pipeline.send_query_request(
+            Some(context.clone()),
+            query,
+            Request::new(self.pipeline.url(&offers_link), Method::Post),
+            offers_link.clone(),
+        )?;
+        let offers = results
+            .next()
+            .await
+            .expect("the first pager result should always be Some, even when there's an error")?
+            .deserialize_body()
+            .await?
+            .offers;
+
+        if offers.len() == 0 {
+            // No offers found for this resource.
+            return Ok(None);
+        }
+        println!("Offers");
+        println!("{:#?}", offers);
+
+        let offer_link = offers_link.item(&offers[0].offer_id);
+        let offer_url = self.pipeline.url(&offer_link);
+
+        // Now we can read the offer itself
+        let mut req = Request::new(offer_url, Method::Get);
+        self.pipeline
+            .send(Some(context), &mut req, offer_link)
+            .await
+            .map(Some)
     }
 }

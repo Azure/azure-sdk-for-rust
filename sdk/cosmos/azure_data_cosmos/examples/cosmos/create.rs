@@ -1,8 +1,8 @@
 use std::error::Error;
 
 use azure_data_cosmos::{
-    models::{ContainerProperties, PartitionKeyDefinition},
-    CosmosClient, PartitionKey,
+    models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
+    CosmosClient, CreateDatabaseOptions, PartitionKey,
 };
 use clap::{Args, Subcommand};
 
@@ -36,6 +36,18 @@ pub enum Subcommands {
     Database {
         /// The ID of the new database to create.
         id: String,
+
+        /// Enables autoscaling and sets the maximum RUs to support. Cannot be used if `--manual` is set.
+        #[clap(long)]
+        auto_scale: Option<usize>,
+
+        /// Sets the increment percentage for autoscale. Ignored unless `--auto-scale` is set.
+        #[clap(long)]
+        auto_scale_increment: Option<usize>,
+
+        /// Provisions manual throughput, specifying the number of RUs.
+        #[clap(long)]
+        manual: Option<usize>,
     },
 
     /// Create a container (does not support Entra ID).
@@ -83,9 +95,29 @@ impl CreateCommand {
                 Ok(())
             }
 
-            Subcommands::Database { id } => {
+            Subcommands::Database {
+                id,
+                auto_scale,
+                auto_scale_increment,
+                manual,
+            } => {
+                let throughput_properties = match (auto_scale, manual) {
+                    (Some(_), Some(_)) => {
+                        return Err("cannot set both '--auto-scale' and '--manual'".into())
+                    }
+                    (Some(max), None) => {
+                        Some(ThroughputProperties::auto_scale(max, auto_scale_increment))
+                    }
+                    (None, Some(rus)) => Some(ThroughputProperties::manual(rus)),
+                    (None, None) => None,
+                };
+                let options = throughput_properties.map(|p| CreateDatabaseOptions {
+                    throughput: Some(p),
+                    ..Default::default()
+                });
+
                 let db = client
-                    .create_database(&id, None)
+                    .create_database(&id, options)
                     .await?
                     .deserialize_body()
                     .await?
