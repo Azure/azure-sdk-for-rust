@@ -125,7 +125,7 @@ impl AsClientOptions for ClientOptions {
 /// Method options allow customization of client method calls.
 #[derive(Clone, Debug, Default)]
 pub struct ClientMethodOptions<'a> {
-    pub(crate) context: Context<'a>,
+    pub context: Context<'a>,
 }
 
 impl<'a> ClientMethodOptions<'a> {

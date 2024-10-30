@@ -104,6 +104,20 @@ impl<'a> Context<'a> {
     pub fn len(&self) -> usize {
         self.type_map.len()
     }
+
+    /// Transforms this [`Context`] into a new [`Context`] that owns the underlying data, cloning it if necessary.
+    ///
+    /// If this [`Context`] already owns the underlying data, that data is moved into the new [`Context`] as-is.
+    /// If this [`Context`] is borrowing it's underlying data, that data is cloned and returned as a new [`Context`].
+    pub fn into_owned(self) -> Context<'static> {
+        let type_map = match self.type_map {
+            Cow::Owned(o) => o,
+            Cow::Borrowed(o) => o.clone(),
+        };
+        Context {
+            type_map: Cow::Owned(type_map),
+        }
+    }
 }
 
 impl<'a> Default for Context<'a> {

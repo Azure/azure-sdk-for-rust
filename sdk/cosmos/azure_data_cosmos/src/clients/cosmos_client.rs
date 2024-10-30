@@ -8,7 +8,7 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, Query, QueryDatabasesOptions,
 };
-use azure_core::{credentials::TokenCredential, Context, Method, Request, Response, Url};
+use azure_core::{credentials::TokenCredential, Method, Request, Response, Url};
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -127,16 +127,17 @@ impl CosmosClient {
     pub fn query_databases(
         &self,
         query: impl Into<Query>,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<QueryDatabasesOptions>,
+        options: Option<QueryDatabasesOptions<'_>>,
     ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>> {
         let url = self.pipeline.url(&self.databases_link);
         let base_request = Request::new(url, azure_core::Method::Post);
 
-        self.pipeline
-            .send_query_request(query.into(), base_request, self.databases_link.clone())
+        self.pipeline.send_query_request(
+            options.map(|o| o.method_options.context),
+            query.into(),
+            base_request,
+            self.databases_link.clone(),
+        )
     }
 
     /// Creates a new database.
@@ -149,10 +150,7 @@ impl CosmosClient {
     pub async fn create_database(
         &self,
         id: &str,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<CreateDatabaseOptions>,
+        options: Option<CreateDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<Item<DatabaseProperties>>> {
         #[derive(Serialize)]
         struct RequestBody<'a> {
@@ -164,7 +162,11 @@ impl CosmosClient {
         req.set_json(&RequestBody { id })?;
 
         self.pipeline
-            .send(Context::new(), &mut req, self.databases_link.clone())
+            .send(
+                options.map(|o| o.method_options.context),
+                &mut req,
+                self.databases_link.clone(),
+            )
             .await
     }
 }

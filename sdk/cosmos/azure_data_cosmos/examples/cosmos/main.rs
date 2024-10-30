@@ -74,11 +74,15 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     }
 }
 
-fn create_client(args: &mut SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
-    if let Some(key) = args.key.take() {
+fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
+    if let Some(key) = args.key.as_ref() {
         #[cfg(feature = "key_auth")]
         {
-            Ok(CosmosClient::with_key(&args.endpoint, key.into(), None)?)
+            Ok(CosmosClient::with_key(
+                &args.endpoint,
+                key.clone().into(),
+                None,
+            )?)
         }
         #[cfg(not(feature = "key_auth"))]
         {
