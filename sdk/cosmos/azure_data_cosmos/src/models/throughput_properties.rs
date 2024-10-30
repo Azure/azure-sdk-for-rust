@@ -3,10 +3,13 @@
 
 use std::borrow::Cow;
 
-use azure_core::Model;
+use azure_core::{
+    headers::{AsHeaders, HeaderName, HeaderValue},
+    Model,
+};
 use serde::{Deserialize, Serialize};
 
-use crate::models::SystemProperties;
+use crate::{constants, models::SystemProperties};
 
 const OFFER_VERSION_2: &'static str = "V2";
 
@@ -77,6 +80,27 @@ impl ThroughputProperties {
                 .as_ref()?
                 .increment_percent,
         )
+    }
+}
+
+impl AsHeaders for ThroughputProperties {
+    type Error = azure_core::Error;
+    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
+
+    fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
+        let vec = match (
+            self.offer.offer_throughput,
+            self.offer.offer_autopilot_settings.as_ref(),
+        ) {
+            (Some(t), _) => vec![(constants::OFFER_THROUGHPUT, t.to_string().into())],
+            (_, Some(ap)) => vec![(
+                constants::OFFER_AUTO_SCALE,
+                serde_json::to_string(&ap)?.into(),
+            )],
+            (None, None) => vec![],
+        };
+
+        Ok(vec.into_iter())
     }
 }
 

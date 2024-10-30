@@ -159,6 +159,7 @@ impl CosmosClient {
 
         let url = self.pipeline.url(&self.databases_link);
         let mut req = Request::new(url, Method::Post);
+        req.insert_headers(&options.and_then(|o| o.throughput))?;
         req.set_json(&RequestBody { id })?;
 
         self.pipeline
