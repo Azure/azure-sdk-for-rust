@@ -17,9 +17,6 @@ pub struct HttpError {
     status: StatusCode,
     details: ErrorDetails,
     headers: HashMap<String, String>,
-
-    // Attempt to read body for debugging purposes only.
-    #[allow(dead_code)]
     body: Bytes,
 }
 
@@ -76,6 +73,22 @@ impl HttpError {
     pub fn error_message(&self) -> Option<&str> {
         self.details.message.as_deref()
     }
+
+    /// Get a reference to the HTTP error's headers.
+    ///
+    /// You should not display these headers directly.
+    /// Headers may contain Personally-Identifiable Information (PII) and need to be sanitized.
+    pub fn headers(&self) -> &HashMap<String, String> {
+        &self.headers
+    }
+
+    /// Get a reference to the HTTP error's body.
+    ///
+    /// You should not display the body directly.
+    /// The body may contain Personally-Identifiable Information (PII) and need to be sanitized.
+    pub fn body(&self) -> &Bytes {
+        &self.body
+    }
 }
 
 impl fmt::Debug for HttpError {
@@ -103,8 +116,6 @@ impl fmt::Display for HttpError {
                 .as_deref()
                 .unwrap_or("(unknown error code)")
         )?;
-        write!(f, "{tab}Body: \"(sanitized)\",{newline}")?;
-
         let mut keys: Vec<_> = self.headers.keys().collect();
         keys.sort();
 
@@ -112,7 +123,9 @@ impl fmt::Display for HttpError {
         for key in keys {
             write!(f, "{tab}{tab}{key}: (sanitized),{newline}")?;
         }
-        write!(f, "{tab}],{newline}}}")?;
+        write!(f, "{tab}],{newline}")?;
+
+        write!(f, "{tab}Body: \"(sanitized)\",{newline}}}")?;
         if f.alternate() {
             write!(f, "{newline}")?;
         }
@@ -247,7 +260,51 @@ mod tests {
         let actual = format!("{err}");
         assert_eq!(
             actual,
-            r#"HttpError { Status: 404, Error Code: (unknown error code), Body: "(sanitized)", Headers: [ authorization: (sanitized), x-ms-request-id: (sanitized), ], }"#
+            r#"HttpError { Status: 404, Error Code: (unknown error code), Headers: [ authorization: (sanitized), x-ms-request-id: (sanitized), ], Body: "(sanitized)", }"#
+        );
+    }
+
+    #[cfg(feature = "json")]
+    #[tokio::test]
+    async fn deserialize_body() {
+        // cspell:ignore innererror
+        use crate::{http::headers::Headers, json};
+
+        #[derive(Deserialize)]
+        struct ErrorResponse {
+            error: ErrorDetail,
+        }
+
+        #[derive(Deserialize)]
+        struct ErrorDetail {
+            #[serde(rename = "innererror")]
+            inner_error: Option<InnerError>,
+        }
+
+        #[derive(Deserialize)]
+        struct InnerError {
+            code: Option<String>,
+        }
+
+        let response: Response<()> = Response::from_bytes(
+            StatusCode::BadRequest,
+            Headers::new(),
+            Bytes::from_static(br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey","key":"foo"}}}"#),
+        );
+        let err = HttpError::new(response).await;
+
+        assert_eq!(err.status(), StatusCode::BadRequest);
+        assert_eq!(err.error_code(), Some("InvalidRequest"));
+        assert_eq!(
+            err.error_message(),
+            Some("The request object is not recognized.")
+        );
+        assert!(err.headers().is_empty());
+
+        let details: ErrorResponse = json::from_json(err.body()).expect("JSON error response");
+        assert_eq!(
+            details.error.inner_error.expect("innererror code").code,
+            Some("InvalidKey".to_string()),
         );
     }
 }
