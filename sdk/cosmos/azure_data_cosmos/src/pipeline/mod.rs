@@ -50,17 +50,17 @@ impl CosmosPipeline {
 
     pub async fn send<T>(
         &self,
-        ctx: Option<Context<'_>>,
+        ctx: Context<'_>,
         request: &mut Request,
         resource_link: ResourceLink,
     ) -> azure_core::Result<azure_core::Response<T>> {
-        let ctx = ctx.unwrap_or_default().with_value(resource_link);
+        let ctx = ctx.with_value(resource_link);
         self.pipeline.send(&ctx, request).await
     }
 
     pub fn send_query_request<T: DeserializeOwned>(
         &self,
-        ctx: Option<Context<'_>>,
+        ctx: Context<'_>,
         query: Query,
         mut base_request: Request,
         resource_link: ResourceLink,
@@ -72,10 +72,7 @@ impl CosmosPipeline {
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure
         let pipeline = self.pipeline.clone();
-        let ctx = ctx
-            .unwrap_or_default()
-            .with_value(resource_link)
-            .into_owned();
+        let ctx = ctx.with_value(resource_link).into_owned();
         Ok(Pager::from_callback(move |continuation| {
             // Then we have to clone it again to pass it in to the async block.
             // This is because Pageable can't borrow any data, it has to own it all.

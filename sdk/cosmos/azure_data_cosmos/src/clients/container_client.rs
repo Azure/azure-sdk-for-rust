@@ -62,14 +62,11 @@ impl ContainerClient {
         &self,
         options: Option<ReadContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Get);
         self.pipeline
-            .send(
-                options.map(|o| o.method_options.context),
-                &mut req,
-                self.link.clone(),
-            )
+            .send(options.method_options.context, &mut req, self.link.clone())
             .await
     }
 
@@ -83,14 +80,11 @@ impl ContainerClient {
         &self,
         options: Option<DeleteContainerOptions<'_>>,
     ) -> azure_core::Result<Response> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Delete);
         self.pipeline
-            .send(
-                options.map(|o| o.method_options.context),
-                &mut req,
-                self.link.clone(),
-            )
+            .send(options.method_options.context, &mut req, self.link.clone())
             .await
     }
 
@@ -135,13 +129,14 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<Item<T>>> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
         self.pipeline
             .send(
-                options.map(|o| o.method_options.context),
+                options.method_options.context,
                 &mut req,
                 self.items_link.clone(),
             )
@@ -194,13 +189,14 @@ impl ContainerClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<Item<T>>> {
+        let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Put);
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
         self.pipeline
-            .send(options.map(|o| o.method_options.context), &mut req, link)
+            .send(options.method_options.context, &mut req, link)
             .await
     }
 
@@ -248,6 +244,7 @@ impl ContainerClient {
         item: T,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<Item<T>>> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
         req.insert_header(constants::IS_UPSERT, "true");
@@ -255,7 +252,7 @@ impl ContainerClient {
         req.set_json(&item)?;
         self.pipeline
             .send(
-                options.map(|o| o.method_options.context),
+                options.method_options.context,
                 &mut req,
                 self.items_link.clone(),
             )
@@ -298,12 +295,13 @@ impl ContainerClient {
         item_id: &str,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<Item<T>>> {
+        let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Get);
         req.insert_headers(&partition_key.into())?;
         self.pipeline
-            .send(options.map(|o| o.method_options.context), &mut req, link)
+            .send(options.method_options.context, &mut req, link)
             .await
     }
 
@@ -332,12 +330,13 @@ impl ContainerClient {
         item_id: &str,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response> {
+        let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Delete);
         req.insert_headers(&partition_key.into())?;
         self.pipeline
-            .send(options.map(|o| o.method_options.context), &mut req, link)
+            .send(options.method_options.context, &mut req, link)
             .await
     }
 
@@ -458,13 +457,14 @@ impl ContainerClient {
         partition_key: impl Into<QueryPartitionStrategy>,
         options: Option<QueryOptions<'_>>,
     ) -> azure_core::Result<Pager<QueryResults<T>>> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
         let mut base_request = Request::new(url, Method::Post);
         let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
         base_request.insert_headers(&partition_key)?;
 
         self.pipeline.send_query_request(
-            options.map(|o| o.method_options.context),
+            options.method_options.context,
             query.into(),
             base_request,
             self.items_link.clone(),

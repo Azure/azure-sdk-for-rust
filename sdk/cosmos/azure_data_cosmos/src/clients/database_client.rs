@@ -76,14 +76,11 @@ impl DatabaseClient {
         &self,
         options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Get);
         self.pipeline
-            .send(
-                options.map(|o| o.method_options.context),
-                &mut req,
-                self.link.clone(),
-            )
+            .send(options.method_options.context, &mut req, self.link.clone())
             .await
     }
 
@@ -115,11 +112,12 @@ impl DatabaseClient {
         query: impl Into<Query>,
         options: Option<QueryContainersOptions<'_>>,
     ) -> azure_core::Result<Pager<ContainerQueryResults>> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
         let base_request = Request::new(url, Method::Post);
 
         self.pipeline.send_query_request(
-            options.map(|o| o.method_options.context),
+            options.method_options.context,
             query.into(),
             base_request,
             self.containers_link.clone(),
@@ -138,13 +136,14 @@ impl DatabaseClient {
         properties: ContainerProperties,
         options: Option<CreateContainerOptions<'_>>,
     ) -> azure_core::Result<Response<Item<ContainerProperties>>> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
         let mut req = Request::new(url, Method::Post);
         req.set_json(&properties)?;
 
         self.pipeline
             .send(
-                options.map(|o| o.method_options.context),
+                options.method_options.context,
                 &mut req,
                 self.containers_link.clone(),
             )
@@ -161,14 +160,11 @@ impl DatabaseClient {
         &self,
         options: Option<DeleteDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Delete);
         self.pipeline
-            .send(
-                options.map(|o| o.method_options.context),
-                &mut req,
-                self.link.clone(),
-            )
+            .send(options.method_options.context, &mut req, self.link.clone())
             .await
     }
 
@@ -179,6 +175,8 @@ impl DatabaseClient {
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ThroughputOptions<'_>>,
     ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
+        let options = options.unwrap_or_default();
+
         #[derive(Model, Deserialize)]
         struct OfferResults {
             #[serde(rename = "Offers")]
@@ -195,10 +193,7 @@ impl DatabaseClient {
         // (but what if we get an empty page for some reason? is that something the server could do?)
         //
         // For now, we'll risk cloning the context data and I'm just leaving this note to complain about it ;).
-        let context = options
-            .map(|o| o.method_options.context)
-            .unwrap_or_default()
-            .into_owned();
+        let context = options.method_options.context.into_owned();
 
         // We need to get the RID for the database.
         let db = self.read(None).await?.deserialize_body().await?;
@@ -212,7 +207,7 @@ impl DatabaseClient {
             .with_parameter("@rid", rid)?;
         let offers_link = ResourceLink::root(ResourceType::Offers);
         let mut results: Pager<OfferResults> = self.pipeline.send_query_request(
-            Some(context.clone()),
+            context.clone(),
             query,
             Request::new(self.pipeline.url(&offers_link), Method::Post),
             offers_link.clone(),
@@ -238,7 +233,7 @@ impl DatabaseClient {
         // Now we can read the offer itself
         let mut req = Request::new(offer_url, Method::Get);
         self.pipeline
-            .send(Some(context), &mut req, offer_link)
+            .send(context, &mut req, offer_link)
             .await
             .map(Some)
     }
