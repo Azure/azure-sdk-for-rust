@@ -58,6 +58,7 @@ impl Debug for Body {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Bytes(v) => write!(f, "Bytes(len: {})", v.len()),
+            #[cfg(not(target_arch = "wasm32"))]
             Self::SeekableStream(v) => write!(f, "SeekableStream(len: {})", v.len()),
         }
     }
