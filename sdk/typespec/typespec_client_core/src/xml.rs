@@ -32,7 +32,7 @@ where
 {
     from_reader(slice_bom(body)).with_context(ErrorKind::DataConversion, || {
         let t = core::any::type_name::<T>();
-        let xml = std::str::from_utf8(body).unwrap_or("<XML IS NOT UTF-8>");
+        let xml = std::str::from_utf8(body).unwrap_or("(XML is not UTF8-encoded)");
         format!("failed to deserialize the following xml into a {t}\n{xml}")
     })
 }

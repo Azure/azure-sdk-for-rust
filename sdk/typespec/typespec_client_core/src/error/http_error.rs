@@ -13,11 +13,13 @@ use serde::Deserialize;
 use std::{collections::HashMap, fmt};
 
 /// An HTTP error response.
-#[derive(Debug)]
 pub struct HttpError {
     status: StatusCode,
     details: ErrorDetails,
     headers: HashMap<String, String>,
+
+    // Attempt to read body for debugging purposes only.
+    #[allow(dead_code)]
     body: Bytes,
 }
 
@@ -36,7 +38,7 @@ impl HttpError {
             .into_body()
             .collect()
             .await
-            .unwrap_or_else(|_| Bytes::from_static(b"<ERROR COLLECTING BODY>"));
+            .unwrap_or_else(|_| Bytes::from_static(b"(error reading body)"));
         let details = ErrorDetails::new(&headers, &body);
         HttpError {
             status,
@@ -76,10 +78,21 @@ impl HttpError {
     }
 }
 
+impl fmt::Debug for HttpError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Elide potential PII since it's too easily to accidentally leak through Debug or Display.
+        f.debug_struct("HttpError")
+            .field("status", &self.status)
+            .field("details", &self.details)
+            .finish_non_exhaustive()
+    }
+}
+
 impl fmt::Display for HttpError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Elide potential PII since it's too easily to accidentally leak through Debug or Display.
         let newline = if f.alternate() { "\n" } else { " " };
-        let tab = if f.alternate() { "\t" } else { " " };
+        let tab = if f.alternate() { "\t" } else { "" };
         write!(f, "HttpError {{{newline}")?;
         write!(f, "{tab}Status: {},{newline}", self.status)?;
         write!(
@@ -88,16 +101,21 @@ impl fmt::Display for HttpError {
             self.details
                 .code
                 .as_deref()
-                .unwrap_or("<unknown error code>")
+                .unwrap_or("(unknown error code)")
         )?;
-        // TODO: sanitize body
-        write!(f, "{tab}Body: \"{:?}\",{newline}", self.body)?;
+        write!(f, "{tab}Body: \"(sanitized)\",{newline}")?;
+
+        let mut keys: Vec<_> = self.headers.keys().collect();
+        keys.sort();
+
         write!(f, "{tab}Headers: [{newline}")?;
-        // TODO: sanitize headers
-        for (k, v) in &self.headers {
-            write!(f, "{tab}{tab}{k}:{v}{newline}")?;
+        for key in keys {
+            write!(f, "{tab}{tab}{key}: (sanitized),{newline}")?;
         }
-        write!(f, "{tab}],{newline}}}{newline}")?;
+        write!(f, "{tab}],{newline}}}")?;
+        if f.alternate() {
+            write!(f, "{newline}")?;
+        }
 
         Ok(())
     }
@@ -189,5 +207,47 @@ mod tests {
             }
             if error_code.as_deref() == Some("teapot")
         ));
+    }
+
+    #[test]
+    fn debug_is_sanitized() {
+        let err = HttpError {
+            status: StatusCode::NotFound,
+            details: ErrorDetails {
+                code: Some("Not Found".to_string()),
+                message: Some("Resource not found".to_string()),
+            },
+            body: Bytes::from_static(b"resource not found"),
+            headers: HashMap::from([
+                ("authorization".to_string(), "bearer *****".to_string()),
+                ("x-ms-request-id".to_string(), "abcd1234".to_string()),
+            ]),
+        };
+        let actual = format!("{err:?}");
+        assert_eq!(
+            actual,
+            r#"HttpError { status: NotFound, details: ErrorDetails { code: Some("Not Found"), message: Some("Resource not found") }, .. }"#
+        );
+    }
+
+    #[test]
+    fn display_is_sanitized() {
+        let err = HttpError {
+            status: StatusCode::NotFound,
+            details: ErrorDetails {
+                code: None,
+                message: None,
+            },
+            body: Bytes::from_static(b"resource not found"),
+            headers: HashMap::from([
+                ("authorization".to_string(), "bearer *****".to_string()),
+                ("x-ms-request-id".to_string(), "abcd1234".to_string()),
+            ]),
+        };
+        let actual = format!("{err}");
+        assert_eq!(
+            actual,
+            r#"HttpError { Status: 404, Error Code: (unknown error code), Body: "(sanitized)", Headers: [ authorization: (sanitized), x-ms-request-id: (sanitized), ], }"#
+        );
     }
 }

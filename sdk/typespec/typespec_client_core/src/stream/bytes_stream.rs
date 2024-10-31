@@ -4,6 +4,7 @@
 use super::{Bytes, SeekableStream};
 use futures::io::AsyncRead;
 use futures::stream::Stream;
+use std::fmt;
 use std::pin::Pin;
 use std::task::Poll;
 
@@ -12,7 +13,7 @@ use std::task::Poll;
 /// This struct implements both `Stream` and `SeekableStream` for an
 /// immutable bytes buffer. It's cheap to clone but remember to `reset`
 /// the stream position if you clone it.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct BytesStream {
     bytes: Bytes,
     bytes_read: usize,
@@ -29,6 +30,15 @@ impl BytesStream {
     /// Creates a stream that resolves immediately with no data.
     pub fn new_empty() -> Self {
         Self::new(Bytes::new())
+    }
+}
+
+impl fmt::Debug for BytesStream {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BytesStream")
+            .field("bytes", &format!("(len: {})", self.bytes.len()))
+            .field("bytes_read", &self.bytes_read)
+            .finish()
     }
 }
 

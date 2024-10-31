@@ -7,6 +7,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Pipeline execution context.
+///
+/// Do not store Personally-Identifiable Information (PII) in a `Context`.
+/// It could easily leak in logs or traces.
 #[derive(Clone, Debug)]
 pub struct Context<'a> {
     type_map: Cow<'a, HashMap<TypeId, Arc<dyn Any + Send + Sync>>>,
