@@ -55,11 +55,11 @@ impl DeleteCommand {
                 item_id,
                 partition_key,
             } => {
-                let db_client = client.database_client(database);
-                let container_client = db_client.container_client(container);
+                let db_client = client.database_client(&database);
+                let container_client = db_client.container_client(&container);
 
                 let response = container_client
-                    .delete_item(partition_key, item_id, None)
+                    .delete_item(partition_key, &item_id, None)
                     .await;
                 match response {
                     Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
@@ -72,14 +72,14 @@ impl DeleteCommand {
             }
 
             Subcommands::Database { id } => {
-                let db_client = client.database_client(id);
+                let db_client = client.database_client(&id);
                 db_client.delete(None).await?;
                 Ok(())
             }
 
             Subcommands::Container { database, id } => {
-                let db_client = client.database_client(database);
-                let container_client = db_client.container_client(id);
+                let db_client = client.database_client(&database);
+                let container_client = db_client.container_client(&id);
                 container_client.delete(None).await?;
                 Ok(())
             }

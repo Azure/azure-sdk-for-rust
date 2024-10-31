@@ -1,44 +1,70 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-mod cosmos_client_options;
-mod create_container_options;
-mod create_database_options;
-mod delete_container_options;
-mod delete_database_options;
-mod item_options;
-mod query_containers_options;
-mod query_databases_options;
-mod query_options;
-mod read_container_options;
-mod read_database_options;
+use azure_core::{ClientMethodOptions, ClientOptions};
 
-pub use cosmos_client_options::CosmosClientOptions;
-pub use create_container_options::CreateContainerOptions;
-pub use create_database_options::CreateDatabaseOptions;
-pub use delete_container_options::DeleteContainerOptions;
-pub use delete_database_options::DeleteDatabaseOptions;
-pub use item_options::ItemOptions;
-pub use query_containers_options::QueryContainersOptions;
-pub use query_databases_options::QueryDatabasesOptions;
-pub use query_options::QueryOptions;
-pub use read_container_options::ReadContainerOptions;
-pub use read_database_options::ReadDatabaseOptions;
+/// Options used when creating a [`CosmosClient`](crate::CosmosClient).
+#[derive(Clone, Debug, Default)]
+pub struct CosmosClientOptions {
+    pub client_options: ClientOptions,
+}
 
-pub mod builders {
-    //! Builders used to create options types.
-    //!
-    //! You shouldn't need to construct these builders on your own. Instead, use the `builder()` method on the related options type to get an instance of the builder.
+/// Options to be passed to [`DatabaseClient::create_container()`](crate::clients::DatabaseClient::create_container()).
+#[derive(Clone, Debug, Default)]
+pub struct CreateContainerOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}
 
-    pub use super::cosmos_client_options::CosmosClientOptionsBuilder;
-    pub use super::create_container_options::CreateContainerOptionsBuilder;
-    pub use super::create_database_options::CreateDatabaseOptionsBuilder;
-    pub use super::delete_container_options::DeleteContainerOptionsBuilder;
-    pub use super::delete_database_options::DeleteDatabaseOptionsBuilder;
-    pub use super::item_options::ItemOptionsBuilder;
-    pub use super::query_containers_options::QueryContainersOptionsBuilder;
-    pub use super::query_databases_options::QueryDatabasesOptionsBuilder;
-    pub use super::query_options::QueryOptionsBuilder;
-    pub use super::read_container_options::ReadContainerOptionsBuilder;
-    pub use super::read_database_options::ReadDatabaseOptionsBuilder;
+/// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
+#[derive(Clone, Debug, Default)]
+pub struct CreateDatabaseOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
+#[derive(Clone, Debug, Default)]
+pub struct DeleteContainerOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`DatabaseClient::delete()`](crate::clients::DatabaseClient::delete()).
+#[derive(Clone, Debug, Default)]
+pub struct DeleteDatabaseOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to APIs that manipulate items.
+#[derive(Clone, Debug, Default)]
+pub struct ItemOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers())
+#[derive(Clone, Debug, Default)]
+pub struct QueryContainersOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`CosmosClient::query_databases()`](crate::CosmosClient::query_databases())
+#[derive(Clone, Debug, Default)]
+pub struct QueryDatabasesOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`ContainerClient::query_items()`](crate::clients::ContainerClient::query_items()).
+#[derive(Clone, Debug, Default)]
+pub struct QueryOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
+#[derive(Clone, Debug, Default)]
+pub struct ReadContainerOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
+#[derive(Clone, Debug, Default)]
+pub struct ReadDatabaseOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
 }

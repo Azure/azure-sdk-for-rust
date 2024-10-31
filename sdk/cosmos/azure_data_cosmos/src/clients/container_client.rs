@@ -10,7 +10,7 @@ use crate::{
     DeleteContainerOptions, ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
 };
 
-use azure_core::{Context, Method, Pager, Request, Response};
+use azure_core::{Method, Pager, Request, Response};
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -60,15 +60,16 @@ impl ContainerClient {
     /// ```
     pub async fn read(
         &self,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<ReadContainerOptions>,
+        options: Option<ReadContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Get);
         self.pipeline
-            .send(Context::new(), &mut req, self.link.clone())
+            .send(
+                options.map(|o| o.method_options.context),
+                &mut req,
+                self.link.clone(),
+            )
             .await
     }
 
@@ -80,14 +81,16 @@ impl ContainerClient {
     /// * `options` - Optional parameters for the request.
     pub async fn delete(
         &self,
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<DeleteContainerOptions>,
+        options: Option<DeleteContainerOptions<'_>>,
     ) -> azure_core::Result<Response> {
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Delete);
         self.pipeline
-            .send(Context::new(), &mut req, self.link.clone())
+            .send(
+                options.map(|o| o.method_options.context),
+                &mut req,
+                self.link.clone(),
+            )
             .await
     }
 
@@ -130,17 +133,18 @@ impl ContainerClient {
         &self,
         partition_key: impl Into<PartitionKey>,
         item: T,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<ItemOptions>,
+        options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<Item<T>>> {
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
         self.pipeline
-            .send(Context::new(), &mut req, self.items_link.clone())
+            .send(
+                options.map(|o| o.method_options.context),
+                &mut req,
+                self.items_link.clone(),
+            )
             .await
     }
 
@@ -183,19 +187,21 @@ impl ContainerClient {
     pub async fn replace_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
-        item_id: impl AsRef<str>,
+        item_id: &str,
         item: T,
 
         #[allow(unused_variables)]
         // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<ItemOptions>,
+        options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<Item<T>>> {
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Put);
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
-        self.pipeline.send(Context::new(), &mut req, link).await
+        self.pipeline
+            .send(options.map(|o| o.method_options.context), &mut req, link)
+            .await
     }
 
     /// Creates or replaces an item in the container.
@@ -240,10 +246,7 @@ impl ContainerClient {
         &self,
         partition_key: impl Into<PartitionKey>,
         item: T,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<ItemOptions>,
+        options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<Item<T>>> {
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
@@ -251,7 +254,11 @@ impl ContainerClient {
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
         self.pipeline
-            .send(Context::new(), &mut req, self.items_link.clone())
+            .send(
+                options.map(|o| o.method_options.context),
+                &mut req,
+                self.items_link.clone(),
+            )
             .await
     }
 
@@ -288,17 +295,16 @@ impl ContainerClient {
     pub async fn read_item<T: DeserializeOwned>(
         &self,
         partition_key: impl Into<PartitionKey>,
-        item_id: impl AsRef<str>,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<ItemOptions>,
+        item_id: &str,
+        options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<Item<T>>> {
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Get);
         req.insert_headers(&partition_key.into())?;
-        self.pipeline.send(Context::new(), &mut req, link).await
+        self.pipeline
+            .send(options.map(|o| o.method_options.context), &mut req, link)
+            .await
     }
 
     /// Deletes an item from the container.
@@ -323,17 +329,16 @@ impl ContainerClient {
     pub async fn delete_item(
         &self,
         partition_key: impl Into<PartitionKey>,
-        item_id: impl AsRef<str>,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<ItemOptions>,
+        item_id: &str,
+        options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response> {
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Delete);
         req.insert_headers(&partition_key.into())?;
-        self.pipeline.send(Context::new(), &mut req, link).await
+        self.pipeline
+            .send(options.map(|o| o.method_options.context), &mut req, link)
+            .await
     }
 
     /// Executes a single-partition query against items in the container.
@@ -394,17 +399,18 @@ impl ContainerClient {
         &self,
         query: impl Into<Query>,
         partition_key: impl Into<QueryPartitionStrategy>,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<QueryOptions>,
+        options: Option<QueryOptions<'_>>,
     ) -> azure_core::Result<Pager<QueryResults<T>>> {
         let url = self.pipeline.url(&self.items_link);
         let mut base_request = Request::new(url, Method::Post);
         let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
         base_request.insert_headers(&partition_key)?;
 
-        self.pipeline
-            .send_query_request(query.into(), base_request, self.items_link.clone())
+        self.pipeline.send_query_request(
+            options.map(|o| o.method_options.context),
+            query.into(),
+            base_request,
+            self.items_link.clone(),
+        )
     }
 }

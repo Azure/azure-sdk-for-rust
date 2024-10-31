@@ -7,7 +7,7 @@ mod signature_target;
 use std::sync::Arc;
 
 pub use authorization_policy::AuthorizationPolicy;
-use azure_core::{Context, Pager, Request};
+use azure_core::{ClientOptions, Context, Pager, Request};
 use serde::de::DeserializeOwned;
 use typespec_client_core::http::PagerResult;
 use url::Url;
@@ -25,7 +25,7 @@ impl CosmosPipeline {
     pub fn new(
         endpoint: Url,
         auth_policy: AuthorizationPolicy,
-        client_options: azure_core::ClientOptions,
+        client_options: ClientOptions,
     ) -> Self {
         CosmosPipeline {
             endpoint,
@@ -50,16 +50,17 @@ impl CosmosPipeline {
 
     pub async fn send<T>(
         &self,
-        ctx: azure_core::Context<'_>,
-        request: &mut azure_core::Request,
+        ctx: Option<Context<'_>>,
+        request: &mut Request,
         resource_link: ResourceLink,
     ) -> azure_core::Result<azure_core::Response<T>> {
-        let ctx = ctx.with_value(resource_link);
+        let ctx = ctx.unwrap_or_default().with_value(resource_link);
         self.pipeline.send(&ctx, request).await
     }
 
     pub fn send_query_request<T: DeserializeOwned>(
         &self,
+        ctx: Option<Context<'_>>,
         query: Query,
         mut base_request: Request,
         resource_link: ResourceLink,
@@ -71,20 +72,23 @@ impl CosmosPipeline {
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure
         let pipeline = self.pipeline.clone();
-        let context = Context::new().with_value(resource_link);
+        let ctx = ctx
+            .unwrap_or_default()
+            .with_value(resource_link)
+            .into_owned();
         Ok(Pager::from_callback(move |continuation| {
             // Then we have to clone it again to pass it in to the async block.
             // This is because Pageable can't borrow any data, it has to own it all.
             // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
             let pipeline = pipeline.clone();
             let mut req = base_request.clone();
-            let context = context.clone();
+            let ctx = ctx.clone();
             async move {
                 if let Some(continuation) = continuation {
                     req.insert_header(constants::CONTINUATION, continuation);
                 }
 
-                let resp = pipeline.send(&context, &mut req).await?;
+                let resp = pipeline.send(&ctx, &mut req).await?;
 
                 Ok(PagerResult::from_response_header(
                     resp,

@@ -10,7 +10,7 @@ use crate::{
     CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
 };
 
-use azure_core::{Context, Method, Pager, Request, Response};
+use azure_core::{Method, Pager, Request, Response};
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -40,8 +40,8 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `name` - The name of the container.
-    pub fn container_client(&self, name: impl AsRef<str>) -> ContainerClient {
-        ContainerClient::new(self.pipeline.clone(), &self.link, name.as_ref())
+    pub fn container_client(&self, name: &str) -> ContainerClient {
+        ContainerClient::new(self.pipeline.clone(), &self.link, name)
     }
 
     /// Returns the identifier of the Cosmos database.
@@ -69,15 +69,16 @@ impl DatabaseClient {
     /// ```
     pub async fn read(
         &self,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<ReadDatabaseOptions>,
+        options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Get);
         self.pipeline
-            .send(Context::new(), &mut req, self.link.clone())
+            .send(
+                options.map(|o| o.method_options.context),
+                &mut req,
+                self.link.clone(),
+            )
             .await
     }
 
@@ -107,16 +108,17 @@ impl DatabaseClient {
     pub fn query_containers(
         &self,
         query: impl Into<Query>,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<QueryContainersOptions>,
+        options: Option<QueryContainersOptions<'_>>,
     ) -> azure_core::Result<Pager<ContainerQueryResults>> {
         let url = self.pipeline.url(&self.containers_link);
         let base_request = Request::new(url, Method::Post);
 
-        self.pipeline
-            .send_query_request(query.into(), base_request, self.containers_link.clone())
+        self.pipeline.send_query_request(
+            options.map(|o| o.method_options.context),
+            query.into(),
+            base_request,
+            self.containers_link.clone(),
+        )
     }
 
     /// Creates a new container.
@@ -129,17 +131,18 @@ impl DatabaseClient {
     pub async fn create_container(
         &self,
         properties: ContainerProperties,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<CreateContainerOptions>,
+        options: Option<CreateContainerOptions<'_>>,
     ) -> azure_core::Result<Response<Item<ContainerProperties>>> {
         let url = self.pipeline.url(&self.containers_link);
         let mut req = Request::new(url, Method::Post);
         req.set_json(&properties)?;
 
         self.pipeline
-            .send(Context::new(), &mut req, self.containers_link.clone())
+            .send(
+                options.map(|o| o.method_options.context),
+                &mut req,
+                self.containers_link.clone(),
+            )
             .await
     }
 
@@ -151,14 +154,16 @@ impl DatabaseClient {
     /// * `options` - Optional parameters for the request.
     pub async fn delete(
         &self,
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
-        options: Option<DeleteDatabaseOptions>,
+        options: Option<DeleteDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response> {
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Delete);
         self.pipeline
-            .send(Context::new(), &mut req, self.link.clone())
+            .send(
+                options.map(|o| o.method_options.context),
+                &mut req,
+                self.link.clone(),
+            )
             .await
     }
 }

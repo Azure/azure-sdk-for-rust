@@ -65,8 +65,8 @@ impl ResourceLink {
         }
     }
 
-    pub fn item(&self, item_id: impl AsRef<str>) -> Self {
-        let item_id = url_encode(item_id.as_ref().as_bytes());
+    pub fn item(&self, item_id: &str) -> Self {
+        let item_id = url_encode(item_id.as_bytes());
         Self {
             parent: self.parent.clone(),
             resource_type: self.resource_type,

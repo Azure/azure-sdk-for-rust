@@ -66,8 +66,8 @@ impl CreateCommand {
                 partition_key,
                 json,
             } => {
-                let db_client = client.database_client(database);
-                let container_client = db_client.container_client(container);
+                let db_client = client.database_client(&database);
+                let container_client = db_client.container_client(&container);
 
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
@@ -85,7 +85,7 @@ impl CreateCommand {
 
             Subcommands::Database { id } => {
                 let db = client
-                    .create_database(id, None)
+                    .create_database(&id, None)
                     .await?
                     .deserialize_body()
                     .await?
@@ -110,7 +110,7 @@ impl CreateCommand {
                     },
                 };
                 let container = client
-                    .database_client(database)
+                    .database_client(&database)
                     .create_container(properties, None)
                     .await?
                     .deserialize_body()
