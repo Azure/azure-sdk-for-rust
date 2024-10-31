@@ -29,7 +29,7 @@ use std::borrow::Cow;
 ///     Cow::Owned(expected) if expected == "hello, world!"
 /// ));
 /// ```
-pub fn to_ascii_lowercase<'a>(value: &'a str) -> Cow<'a, str> {
+pub fn to_ascii_lowercase(value: &str) -> Cow<'_, str> {
     for (i, c) in value.chars().enumerate() {
         if c.is_ascii_uppercase() {
             let mut s = value.to_owned();
