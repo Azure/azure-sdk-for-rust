@@ -103,34 +103,26 @@ impl fmt::Debug for HttpError {
 
 impl fmt::Display for HttpError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        struct Unquote<'a>(&'a str);
+        impl<'a> fmt::Debug for Unquote<'a> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str(&self.0)
+            }
+        }
+
         // Elide potential PII since it's too easily to accidentally leak through Debug or Display.
-        let newline = if f.alternate() { "\n" } else { " " };
-        let tab = if f.alternate() { "\t" } else { "" };
-        write!(f, "HttpError {{{newline}")?;
-        write!(f, "{tab}Status: {},{newline}", self.status)?;
-        write!(
-            f,
-            "{tab}Error Code: {},{newline}",
-            self.details
-                .code
-                .as_deref()
-                .unwrap_or("(unknown error code)")
-        )?;
-        let mut keys: Vec<_> = self.headers.keys().collect();
-        keys.sort();
-
-        write!(f, "{tab}Headers: [{newline}")?;
-        for key in keys {
-            write!(f, "{tab}{tab}{key}: (sanitized),{newline}")?;
-        }
-        write!(f, "{tab}],{newline}")?;
-
-        write!(f, "{tab}Body: \"(sanitized)\",{newline}}}")?;
-        if f.alternate() {
-            write!(f, "{newline}")?;
-        }
-
-        Ok(())
+        f.debug_struct("HttpError")
+            .field("Status", &Unquote(&self.status.to_string()))
+            .field(
+                "Error Code",
+                &Unquote(
+                    self.details
+                        .code
+                        .as_deref()
+                        .unwrap_or("(unknown error code)"),
+                ),
+            )
+            .finish_non_exhaustive()
     }
 }
 
@@ -260,7 +252,7 @@ mod tests {
         let actual = format!("{err}");
         assert_eq!(
             actual,
-            r#"HttpError { Status: 404, Error Code: (unknown error code), Headers: [ authorization: (sanitized), x-ms-request-id: (sanitized), ], Body: "(sanitized)", }"#
+            r#"HttpError { Status: 404, Error Code: (unknown error code), .. }"#
         );
     }
 
