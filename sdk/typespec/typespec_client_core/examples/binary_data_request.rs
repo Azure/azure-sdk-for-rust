@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let file = fs::File::open(file!()).await?;
         let file = FileStreamBuilder::new(file)
             // Simulate a slow, chunky request.
-            .buffer_size(256usize)
+            .buffer_size(512usize)
             .build()
             .await?;
         client::put_binary_data(file.into()).await?;
@@ -50,7 +50,7 @@ mod client {
 
         let content = match body {
             Body::Bytes(ref bytes) => {
-                debug!("received bytes");
+                debug!("received {} bytes", bytes.len());
                 bytes.to_owned()
             }
             Body::SeekableStream(mut stream) => {
@@ -58,9 +58,9 @@ mod client {
                 let stream = stream.as_mut();
 
                 let mut bytes = Vec::new();
-                while let Some(buf) = stream.next().await {
-                    debug!("reading partial request...");
-                    bytes.extend(buf?);
+                while let Some(Ok(buf)) = stream.next().await {
+                    debug!("read {} bytes from stream", buf.len());
+                    bytes.extend(buf);
                 }
 
                 bytes.into()
