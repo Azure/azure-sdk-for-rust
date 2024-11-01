@@ -208,6 +208,15 @@ impl<T> From<RequestContent<T>> for Body {
     }
 }
 
+impl<T> From<Body> for RequestContent<T> {
+    fn from(body: Body) -> Self {
+        Self {
+            body,
+            phantom: PhantomData,
+        }
+    }
+}
+
 impl<T> TryFrom<Bytes> for RequestContent<T> {
     type Error = crate::Error;
     fn try_from(body: Bytes) -> Result<Self, Self::Error> {
