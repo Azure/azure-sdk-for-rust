@@ -9,5 +9,5 @@ edition = "2021"
 publish = false
 
 [dependencies]
-typespec_client_core = { path = "../../typespec_client_core", features = ["derive"] }
+typespec_client_core = { path = "../../../../typespec_client_core", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
