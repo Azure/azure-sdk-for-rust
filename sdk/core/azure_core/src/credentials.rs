@@ -57,7 +57,7 @@ impl From<&'static str> for Secret {
 
 impl Debug for Secret {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("Secret").field(&"<REDACTED>").finish()
+        f.write_str("Secret")
     }
 }
 

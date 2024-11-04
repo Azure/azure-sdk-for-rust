@@ -9,7 +9,7 @@ mod microsoft;
 pub use common::*;
 pub use microsoft::*;
 
-use std::{borrow::Cow, convert::Infallible, fmt::Debug, str::FromStr};
+use std::{borrow::Cow, convert::Infallible, fmt, str::FromStr};
 use typespec::error::{Error, ErrorKind, ResultExt};
 
 /// A trait for converting a type into request headers.
@@ -84,7 +84,7 @@ pub trait Header {
 }
 
 /// A collection of headers.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, PartialEq, Eq, Default)]
 pub struct Headers(std::collections::HashMap<HeaderName, HeaderValue>);
 
 impl Headers {
@@ -220,6 +220,13 @@ impl Headers {
     }
 }
 
+impl fmt::Debug for Headers {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // TODO: Sanitize headers.
+        write!(f, "Headers(len: {})", self.0.len())
+    }
+}
+
 impl IntoIterator for Headers {
     type Item = (HeaderName, HeaderValue);
 
@@ -292,7 +299,7 @@ impl From<String> for HeaderName {
 }
 
 /// A header value.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct HeaderValue(Cow<'static, str>);
 
 impl HeaderValue {
@@ -312,6 +319,12 @@ impl HeaderValue {
     /// Get a header value as a `str`.
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
+    }
+}
+
+impl fmt::Debug for HeaderValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("HeaderValue")
     }
 }
 

@@ -214,9 +214,8 @@ impl<T> fmt::Debug for Response<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Response")
             .field("status", &self.status)
-            .field("headers", &self.headers)
-            .field("body", &"(body)")
-            .finish()
+            // TODO: Sanitize headers and emit body as "(body)".
+            .finish_non_exhaustive()
     }
 }
 

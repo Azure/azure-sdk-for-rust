@@ -13,7 +13,6 @@ use serde::Deserialize;
 use std::{collections::HashMap, fmt};
 
 /// An HTTP error response.
-#[derive(Debug)]
 pub struct HttpError {
     status: StatusCode,
     details: ErrorDetails,
@@ -36,7 +35,7 @@ impl HttpError {
             .into_body()
             .collect()
             .await
-            .unwrap_or_else(|_| Bytes::from_static(b"<ERROR COLLECTING BODY>"));
+            .unwrap_or_else(|_| Bytes::from_static(b"(error reading body)"));
         let details = ErrorDetails::new(&headers, &body);
         HttpError {
             status,
@@ -74,32 +73,56 @@ impl HttpError {
     pub fn error_message(&self) -> Option<&str> {
         self.details.message.as_deref()
     }
+
+    /// Get a reference to the HTTP error's headers.
+    ///
+    /// You should not display these headers directly.
+    /// Headers may contain Personally-Identifiable Information (PII) and need to be sanitized.
+    pub fn headers(&self) -> &HashMap<String, String> {
+        &self.headers
+    }
+
+    /// Get a reference to the HTTP error's body.
+    ///
+    /// You should not display the body directly.
+    /// The body may contain Personally-Identifiable Information (PII) and need to be sanitized.
+    pub fn body(&self) -> &Bytes {
+        &self.body
+    }
+}
+
+impl fmt::Debug for HttpError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Elide potential PII since it's too easily to accidentally leak through Debug or Display.
+        f.debug_struct("HttpError")
+            .field("status", &self.status)
+            .field("details", &self.details)
+            .finish_non_exhaustive()
+    }
 }
 
 impl fmt::Display for HttpError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let newline = if f.alternate() { "\n" } else { " " };
-        let tab = if f.alternate() { "\t" } else { " " };
-        write!(f, "HttpError {{{newline}")?;
-        write!(f, "{tab}Status: {},{newline}", self.status)?;
-        write!(
-            f,
-            "{tab}Error Code: {},{newline}",
-            self.details
-                .code
-                .as_deref()
-                .unwrap_or("<unknown error code>")
-        )?;
-        // TODO: sanitize body
-        write!(f, "{tab}Body: \"{:?}\",{newline}", self.body)?;
-        write!(f, "{tab}Headers: [{newline}")?;
-        // TODO: sanitize headers
-        for (k, v) in &self.headers {
-            write!(f, "{tab}{tab}{k}:{v}{newline}")?;
+        struct Unquote<'a>(&'a str);
+        impl<'a> fmt::Debug for Unquote<'a> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str(self.0)
+            }
         }
-        write!(f, "{tab}],{newline}}}{newline}")?;
 
-        Ok(())
+        // Elide potential PII since it's too easily to accidentally leak through Debug or Display.
+        f.debug_struct("HttpError")
+            .field("Status", &Unquote(&self.status.to_string()))
+            .field(
+                "Error Code",
+                &Unquote(
+                    self.details
+                        .code
+                        .as_deref()
+                        .unwrap_or("(unknown error code)"),
+                ),
+            )
+            .finish_non_exhaustive()
     }
 }
 
@@ -189,5 +212,91 @@ mod tests {
             }
             if error_code.as_deref() == Some("teapot")
         ));
+    }
+
+    #[test]
+    fn debug_is_sanitized() {
+        let err = HttpError {
+            status: StatusCode::NotFound,
+            details: ErrorDetails {
+                code: Some("Not Found".to_string()),
+                message: Some("Resource not found".to_string()),
+            },
+            body: Bytes::from_static(b"resource not found"),
+            headers: HashMap::from([
+                ("authorization".to_string(), "bearer *****".to_string()),
+                ("x-ms-request-id".to_string(), "abcd1234".to_string()),
+            ]),
+        };
+        let actual = format!("{err:?}");
+        assert_eq!(
+            actual,
+            r#"HttpError { status: NotFound, details: ErrorDetails { code: Some("Not Found"), message: Some("Resource not found") }, .. }"#
+        );
+    }
+
+    #[test]
+    fn display_is_sanitized() {
+        let err = HttpError {
+            status: StatusCode::NotFound,
+            details: ErrorDetails {
+                code: None,
+                message: None,
+            },
+            body: Bytes::from_static(b"resource not found"),
+            headers: HashMap::from([
+                ("authorization".to_string(), "bearer *****".to_string()),
+                ("x-ms-request-id".to_string(), "abcd1234".to_string()),
+            ]),
+        };
+        let actual = format!("{err}");
+        assert_eq!(
+            actual,
+            r#"HttpError { Status: 404, Error Code: (unknown error code), .. }"#
+        );
+    }
+
+    #[cfg(feature = "json")]
+    #[tokio::test]
+    async fn deserialize_body() {
+        // cspell:ignore innererror
+        use crate::{http::headers::Headers, json};
+
+        #[derive(Deserialize)]
+        struct ErrorResponse {
+            error: ErrorDetail,
+        }
+
+        #[derive(Deserialize)]
+        struct ErrorDetail {
+            #[serde(rename = "innererror")]
+            inner_error: Option<InnerError>,
+        }
+
+        #[derive(Deserialize)]
+        struct InnerError {
+            code: Option<String>,
+        }
+
+        let response: Response<()> = Response::from_bytes(
+            StatusCode::BadRequest,
+            Headers::new(),
+            Bytes::from_static(br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey","key":"foo"}}}"#),
+        );
+        let err = HttpError::new(response).await;
+
+        assert_eq!(err.status(), StatusCode::BadRequest);
+        assert_eq!(err.error_code(), Some("InvalidRequest"));
+        assert_eq!(
+            err.error_message(),
+            Some("The request object is not recognized.")
+        );
+        assert!(err.headers().is_empty());
+
+        let details: ErrorResponse = json::from_json(err.body()).expect("JSON error response");
+        assert_eq!(
+            details.error.inner_error.expect("innererror code").code,
+            Some("InvalidKey".to_string()),
+        );
     }
 }

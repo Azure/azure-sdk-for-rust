@@ -8,14 +8,15 @@ use typespec::Error;
 
 use crate::http::{headers::HeaderName, Response};
 
+/// The result of fetching a single page from a [`Pager`], whether the `Pager` should continue or is complete.
 pub enum PagerResult<T, C> {
+    /// The [`Pager`] may fetch additional pages with the included `continuation` token.
     Continue {
         response: Response<T>,
         continuation: C,
     },
-    Complete {
-        response: Response<T>,
-    },
+    /// The [`Pager`] is complete and there are no additional pages to fetch.
+    Complete { response: Response<T> },
 }
 
 impl<T> PagerResult<T, String> {

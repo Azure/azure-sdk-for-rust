@@ -54,19 +54,16 @@ impl Display for ErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             #[cfg(feature = "http")]
-            ErrorKind::HttpResponse { status, error_code } => {
-                write!(
-                    f,
-                    "HttpResponse({},{})",
-                    status,
-                    error_code.as_deref().unwrap_or("unknown")
-                )
-            }
-            ErrorKind::Io => write!(f, "Io"),
-            ErrorKind::DataConversion => write!(f, "DataConversion"),
-            ErrorKind::Credential => write!(f, "Credential"),
-            ErrorKind::MockFramework => write!(f, "MockFramework"),
-            ErrorKind::Other => write!(f, "Other"),
+            ErrorKind::HttpResponse { status, error_code } => f
+                .debug_tuple("HttpResponse")
+                .field(status)
+                .field(&error_code.as_deref().unwrap_or("(unknown error code)"))
+                .finish(),
+            ErrorKind::Io => f.write_str("Io"),
+            ErrorKind::DataConversion => f.write_str("DataConversion"),
+            ErrorKind::Credential => f.write_str("Credential"),
+            ErrorKind::MockFramework => f.write_str("MockFramework"),
+            ErrorKind::Other => f.write_str("Other"),
         }
     }
 }
@@ -194,10 +191,7 @@ impl Error {
             return Err(self);
         }
         // Unwrapping is ok here since we already check above that the downcast will work
-        Ok(*self
-            .into_inner()?
-            .downcast()
-            .expect("failed to unwrap downcast"))
+        Ok(*self.into_inner()?.downcast().expect("downcast is Some(T)"))
     }
 
     /// Returns a reference to the inner error wrapped by this error, if any.
