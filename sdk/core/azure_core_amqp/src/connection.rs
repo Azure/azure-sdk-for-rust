@@ -62,7 +62,7 @@ impl AmqpConnectionOptions {
 pub trait AmqpConnectionApis {
     fn open(
         &self,
-        name: impl Into<String>,
+        name: String,
         url: Url,
         options: Option<AmqpConnectionOptions>,
     ) -> impl std::future::Future<Output = Result<()>>;
@@ -83,7 +83,7 @@ pub struct AmqpConnection {
 impl AmqpConnectionApis for AmqpConnection {
     fn open(
         &self,
-        name: impl Into<String>,
+        name: String,
         url: Url,
         options: Option<AmqpConnectionOptions>,
     ) -> impl std::future::Future<Output = Result<()>> {

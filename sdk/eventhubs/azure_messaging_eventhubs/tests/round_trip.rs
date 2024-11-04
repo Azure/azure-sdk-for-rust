@@ -12,7 +12,9 @@ use azure_core_amqp::{
 };
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
-    consumer::{ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition},
+    consumer::{
+        ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartLocation, StartPosition,
+    },
     models::{EventData, MessageId},
     producer::{batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions},
 };
@@ -33,15 +35,16 @@ async fn test_round_trip_batch() {
         host.clone(),
         eventhub.clone(),
         DefaultAzureCredential::new().unwrap(),
-        ProducerClientOptions::builder()
-            .with_application_id(TEST_NAME)
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some(TEST_NAME.to_string()),
+            ..Default::default()
+        }),
     );
 
     assert!(producer.open().await.is_ok());
 
     let partition_properties = producer
-        .get_partition_properties(EVENTHUB_PARTITION)
+        .get_partition_properties(EVENTHUB_PARTITION.to_string())
         .await
         .unwrap();
 
@@ -52,12 +55,11 @@ async fn test_round_trip_batch() {
 
     let start_sequence = partition_properties.last_enqueued_sequence_number;
     let mut batch = producer
-        .create_batch(Some(
-            EventDataBatchOptions::builder()
-                .with_partition_key("My Partition Key.")
-                .with_partition_id(EVENTHUB_PARTITION)
-                .build(),
-        ))
+        .create_batch(Some(EventDataBatchOptions {
+            partition_id: Some(EVENTHUB_PARTITION.to_string()),
+            partition_key: Some("My Partition Key.".to_string()),
+            ..Default::default()
+        }))
         .await
         .unwrap();
 
@@ -65,7 +67,7 @@ async fn test_round_trip_batch() {
         .try_add_event_data(
             EventData::builder()
                 .with_body(b"Hello, World!")
-                .add_property("Message#", 1)
+                .add_property("Message#".to_string(), 1)
                 .with_message_id(1)
                 .build(),
             None
@@ -76,7 +78,7 @@ async fn test_round_trip_batch() {
         .try_add_amqp_message(
             AmqpMessage::builder()
                 .with_body(AmqpValue::from("Hello, World!"))
-                .add_application_property("Message#", 2)
+                .add_application_property("Message#".to_string(), 2)
                 .with_properties(AmqpMessageProperties::builder().with_message_id(2).build())
                 .build(),
             None,
@@ -91,7 +93,7 @@ async fn test_round_trip_batch() {
                     3.into(),
                     5.into()
                 ]))
-                .add_application_property("Message#", 3)
+                .add_application_property("Message#".to_string(), 3)
                 .with_properties(AmqpMessageProperties::builder().with_message_id(3).build())
                 .build(),
             None,
@@ -101,7 +103,7 @@ async fn test_round_trip_batch() {
     assert!(batch
         .try_add_amqp_message(
             AmqpMessage::builder()
-                .add_application_property("Message#", 4)
+                .add_application_property("Message#".to_string(), 4)
                 .with_properties(AmqpMessageProperties::builder().with_message_id(4).build())
                 .build(),
             None
@@ -115,27 +117,24 @@ async fn test_round_trip_batch() {
         eventhub,
         None,
         DefaultAzureCredential::new().unwrap(),
-        Some(
-            ConsumerClientOptions::builder()
-                .with_application_id(TEST_NAME)
-                .build(),
-        ),
+        Some(ConsumerClientOptions {
+            application_id: Some(TEST_NAME.to_string()),
+            ..Default::default()
+        }),
     );
 
     assert!(consumer.open().await.is_ok());
 
     let receive_stream = consumer
         .receive_events_on_partition(
-            EVENTHUB_PARTITION,
-            Some(
-                ReceiveOptions::builder()
-                    .with_start_position(
-                        StartPosition::builder()
-                            .with_sequence_number(start_sequence)
-                            .build(),
-                    )
-                    .build(),
-            ),
+            EVENTHUB_PARTITION.to_string(),
+            Some(ReceiveOptions {
+                start_position: Some(StartPosition {
+                    location: StartLocation::SequenceNumber(start_sequence),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
         )
         .await;
 

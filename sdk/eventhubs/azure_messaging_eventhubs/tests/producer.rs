@@ -27,9 +27,10 @@ async fn test_new() {
         host,
         eventhub,
         DefaultAzureCredential::new().unwrap(),
-        ProducerClientOptions::builder()
-            .with_application_id("test_new")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_new".to_string()),
+            ..Default::default()
+        }),
     );
 }
 
@@ -38,12 +39,13 @@ async fn test_new_with_error() {
     common::setup();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
     let producer = ProducerClient::new(
-        "invalid_host",
+        "invalid_host".to_string(),
         eventhub,
         azure_identity::DefaultAzureCredential::new().unwrap(),
-        ProducerClientOptions::builder()
-            .with_application_id("test_new_with_error")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_new_with_error".to_string()),
+            ..Default::default()
+        }),
     );
     let result = producer.open().await;
     assert!(result.is_err());
@@ -59,9 +61,10 @@ async fn test_open() {
         host,
         eventhub,
         azure_identity::DefaultAzureCredential::new().unwrap(),
-        ProducerClientOptions::builder()
-            .with_application_id("test_open")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_open".to_string()),
+            ..Default::default()
+        }),
     );
     client.open().await.unwrap();
 }
@@ -74,9 +77,10 @@ async fn test_close() {
         host,
         eventhub,
         azure_identity::DefaultAzureCredential::new().unwrap(),
-        ProducerClientOptions::builder()
-            .with_application_id("test_close")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_close".to_string()),
+            ..Default::default()
+        }),
     );
     client.open().await.unwrap();
     client.close().await.unwrap();
@@ -94,9 +98,10 @@ async fn test_get_properties() {
         host,
         eventhub.clone(),
         credential,
-        ProducerClientOptions::builder()
-            .with_application_id("test_get_properties")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_get_properties".to_string()),
+            ..Default::default()
+        }),
     );
     client.open().await.unwrap();
     let properties = client.get_eventhub_properties().await.unwrap();
@@ -116,9 +121,10 @@ async fn test_get_partition_properties() {
         host,
         eventhub.clone(),
         credential,
-        ProducerClientOptions::builder()
-            .with_application_id("test_get_properties")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_get_partition_properties".to_string()),
+            ..Default::default()
+        }),
     );
     client.open().await.unwrap();
     let properties = client.get_eventhub_properties().await.unwrap();
@@ -150,10 +156,10 @@ fn test_create_eventdata() {
     let data = b"hello world";
     let _ = azure_messaging_eventhubs::models::EventData::builder()
         .with_body(data.to_vec())
-        .with_content_type("text/plain")
+        .with_content_type("text/plain".to_string())
         .with_correlation_id("correlation_id")
         .with_message_id(35u64)
-        .add_property("key", "value")
+        .add_property("key".to_string(), "value")
         .build();
 }
 
@@ -169,9 +175,10 @@ async fn test_create_batch() {
         host,
         eventhub.clone(),
         credential,
-        ProducerClientOptions::builder()
-            .with_application_id("test_create_batch")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_create_batch".to_string()),
+            ..Default::default()
+        }),
     );
     client.open().await.unwrap();
     {
@@ -192,9 +199,10 @@ async fn test_create_and_send_batch() {
         host,
         eventhub.clone(),
         credential,
-        ProducerClientOptions::builder()
-            .with_application_id("test_create_batch")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_create_and_send_batch".to_string()),
+            ..Default::default()
+        }),
     );
     client.open().await.unwrap();
     {
@@ -207,11 +215,10 @@ async fn test_create_and_send_batch() {
     }
     {
         let mut batch = client
-            .create_batch(Some(
-                EventDataBatchOptions::builder()
-                    .with_partition_id("0")
-                    .build(),
-            ))
+            .create_batch(Some(EventDataBatchOptions {
+                partition_id: Some("0".to_string()),
+                ..Default::default()
+            }))
             .await
             .unwrap();
         for i in 0..10 {
@@ -244,9 +251,10 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
         host,
         eventhub.clone(),
         credential,
-        ProducerClientOptions::builder()
-            .with_application_id("test_create_batch")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_add_amqp_messages_to_batch".to_string()),
+            ..Default::default()
+        }),
     );
     client.open().await?;
 
@@ -270,7 +278,7 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
     assert!(batch.try_add_amqp_message(
         AmqpMessage::builder()
             .with_body(vec![1, 2, 3, 4])
-            .add_application_property("MessageName", "Frederick")
+            .add_application_property("MessageName".to_string(), "Frederick")
             .build(),
         None
     )?);
@@ -286,7 +294,7 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
                 AmqpValue::from(2),
                 AmqpValue::from(3)
             ])
-            .add_application_property("MessageName", "Frederick")
+            .add_application_property("MessageName".to_string(), "Frederick")
             .build(),
         None
     )?);
@@ -323,9 +331,10 @@ async fn test_overload_batch() {
         host,
         eventhub.clone(),
         credential,
-        ProducerClientOptions::builder()
-            .with_application_id("test_create_batch")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_overload_batch".to_string()),
+            ..Default::default()
+        }),
     );
 
     info!("Open producer client...");
@@ -334,11 +343,10 @@ async fn test_overload_batch() {
     info!("Client is open.");
     {
         let mut batch = client
-            .create_batch(Some(
-                EventDataBatchOptions::builder()
-                    .with_partition_id("0")
-                    .build(),
-            ))
+            .create_batch(Some(EventDataBatchOptions {
+                partition_id: Some("0".to_string()),
+                ..Default::default()
+            }))
             .await
             .unwrap();
         trace!("Batch created.");

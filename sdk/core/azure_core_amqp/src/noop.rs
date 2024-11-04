@@ -44,7 +44,7 @@ impl NoopAmqpConnection {
 impl AmqpConnectionApis for NoopAmqpConnection {
     async fn open(
         &self,
-        name: impl Into<String>,
+        name: String,
         url: azure_core::Url,
         options: Option<AmqpConnectionOptions>,
     ) -> Result<()> {
@@ -101,8 +101,9 @@ impl<'a> AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity<'a> {
     }
     async fn authorize_path(
         &self,
-        path: impl Into<String> + std::fmt::Debug,
-        secret: impl Into<String>,
+        path: String,
+        token_type: Option<String>,
+        secret: String,
         expires_on: time::OffsetDateTime,
     ) -> Result<()> {
         unimplemented!()
@@ -110,11 +111,7 @@ impl<'a> AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity<'a> {
 }
 
 impl NoopAmqpManagement {
-    pub fn new(
-        session: AmqpSession,
-        name: impl Into<String>,
-        access_token: AccessToken,
-    ) -> Result<Self> {
+    pub fn new(session: AmqpSession, name: String, access_token: AccessToken) -> Result<Self> {
         Ok(Self {})
     }
 }
@@ -129,7 +126,7 @@ impl AmqpManagementApis for NoopAmqpManagement {
 
     async fn call(
         &self,
-        operation_type: impl Into<String>,
+        operation_type: String,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
         unimplemented!();
@@ -146,7 +143,7 @@ impl AmqpSenderApis for NoopAmqpSender {
     async fn attach(
         &self,
         session: &AmqpSession,
-        name: impl Into<String>,
+        name: String,
         target: impl Into<AmqpTarget>,
         options: Option<AmqpSenderOptions>,
     ) -> Result<()> {

@@ -39,7 +39,7 @@ struct EventDataBatchState {
 ///
 /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credentials = azure_identity::DefaultAzureCredential::new()?;
-/// # let producer_client = ProducerClient::new("fully_qualified_domain_name", "event_hub_name", credentials, ProducerClientOptions::builder().build());
+/// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), credentials, None);
 ///
 /// let mut batch = producer_client.create_batch(None).await?;
 ///
@@ -166,7 +166,7 @@ impl<'a> EventDataBatch<'a> {
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name", "event_hub_name", my_credential, ProducerClientOptions::builder().build());
+    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential, None);
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let event_data = EventData::builder().build();
@@ -213,7 +213,7 @@ impl<'a> EventDataBatch<'a> {
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name", "event_hub_name", my_credential, ProducerClientOptions::builder().build());
+    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential, None);
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let amqp_message = AmqpMessage::builder().build();
@@ -339,74 +339,23 @@ impl<'a> EventDataBatch<'a> {
 /// ```
 /// use azure_messaging_eventhubs::producer::batch::EventDataBatchOptions;
 ///
-/// let options = EventDataBatchOptions::builder()
-///    .with_max_size_in_bytes(1024)
-///    .with_partition_key("pk")
-///    .with_partition_id("pid")
-///    .build();
+/// let options = EventDataBatchOptions{
+///    max_size_in_bytes: Some(1024),
+///    partition_key: Some("pk".to_string()),
+///    partition_id: Some("12".to_string()),
+///    ..Default::default()};
 /// ```
 ///
 #[derive(Default)]
 pub struct EventDataBatchOptions {
-    max_size_in_bytes: Option<u64>,
-    partition_key: Option<String>,
-    partition_id: Option<String>,
-}
+    /// The maximum size of the batch in bytes.
+    pub max_size_in_bytes: Option<u64>,
 
-impl EventDataBatchOptions {
-    /// Creates a new `EventDataBatchOptionsBuilder` to build an `EventDataBatchOptions`.
-    ///
-    /// # Returns
-    ///
-    /// An `EventDataBatchOptionsBuilder`.
-    ///
-    pub fn builder() -> builders::EventDataBatchOptionsBuilder {
-        builders::EventDataBatchOptionsBuilder::new()
-    }
-}
+    /// The partition key to use when writing messages.
+    pub partition_key: Option<String>,
 
-mod builders {
-    use super::*;
-
-    pub struct EventDataBatchOptionsBuilder {
-        options: EventDataBatchOptions,
-    }
-
-    impl EventDataBatchOptionsBuilder {
-        pub(super) fn new() -> Self {
-            Self {
-                options: Default::default(),
-            }
-        }
-
-        /// Sets the maximum size of the batch in bytes.
-        pub fn with_max_size_in_bytes(mut self, max_size_in_bytes: u64) -> Self {
-            self.options.max_size_in_bytes = Some(max_size_in_bytes);
-            self
-        }
-
-        /// Sets the target partition key for the batch.
-        pub fn with_partition_key(mut self, partition_key: impl Into<String>) -> Self {
-            self.options.partition_key = Some(partition_key.into());
-            self
-        }
-
-        /// Sets the target partition ID for the batch.
-        pub fn with_partition_id(mut self, partition_id: impl Into<String>) -> Self {
-            self.options.partition_id = Some(partition_id.into());
-            self
-        }
-
-        /// Builds the `EventDataBatchOptions`.
-        ///
-        /// # Returns
-        ///
-        /// An `EventDataBatchOptions`.
-        ///
-        pub fn build(self) -> EventDataBatchOptions {
-            self.options
-        }
-    }
+    /// The partition ID to use as the target partition for the messages being written.
+    pub partition_id: Option<String>,
 }
 
 #[cfg(test)]
@@ -415,28 +364,15 @@ mod tests {
 
     #[test]
     fn test_batch_builder() {
-        let options = EventDataBatchOptions::builder()
-            .with_max_size_in_bytes(1024)
-            .with_partition_key("pk")
-            .with_partition_id("pid")
-            .build();
+        let options = EventDataBatchOptions {
+            max_size_in_bytes: Some(1024),
+            partition_key: Some("pk".to_string()),
+            partition_id: Some("pid".to_string()),
+            ..Default::default()
+        };
 
         assert_eq!(options.max_size_in_bytes, Some(1024));
         assert_eq!(options.partition_key, Some("pk".to_string()));
         assert_eq!(options.partition_id, Some("pid".to_string()));
-    }
-
-    #[test]
-    fn test_clone_array() {
-        let mut array = vec![1, 2, 3, 4, 5];
-        let mut copy = Vec::<i32>::new();
-
-        // while let Some(val) = array.pop() {
-        //     println!("{:?}", val);
-        //     copy.push(val);
-        // }
-        copy.append(&mut array);
-        assert_eq!(array.len(), 0);
-        assert_eq!(copy, vec![1, 2, 3, 4, 5]);
     }
 }

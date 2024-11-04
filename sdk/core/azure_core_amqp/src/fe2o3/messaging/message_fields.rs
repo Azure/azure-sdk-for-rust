@@ -127,7 +127,7 @@ impl From<fe2o3_amqp_types::messaging::ApplicationProperties>
     fn from(application_properties: fe2o3_amqp_types::messaging::ApplicationProperties) -> Self {
         let mut properties = AmqpOrderedMap::<String, AmqpValue>::new();
         for (key, value) in application_properties.0 {
-            properties.insert(key, value);
+            properties.insert(key, value.into());
         }
         AmqpApplicationProperties(properties)
     }
@@ -278,7 +278,7 @@ impl From<fe2o3_amqp_types::messaging::Annotations> for AmqpAnnotations {
     fn from(annotations: fe2o3_amqp_types::messaging::Annotations) -> Self {
         let mut amqp_annotations = AmqpOrderedMap::<AmqpAnnotationKey, AmqpValue>::new();
         for (key, value) in annotations {
-            amqp_annotations.insert(key, value);
+            amqp_annotations.insert(key.into(), value.into());
         }
         AmqpAnnotations(amqp_annotations)
     }
@@ -484,13 +484,13 @@ fn test_properties_conversion() {
             .with_content_type("content_type")
             .with_correlation_id("correlation_id")
             .with_creation_time(time_now)
-            .with_group_id("group_id")
+            .with_group_id("group_id".to_string())
             .with_group_sequence(3)
             .with_message_id("test")
-            .with_reply_to("reply_to")
-            .with_reply_to_group_id("reply_to_group_id")
-            .with_subject("subject")
-            .with_to("to")
+            .with_reply_to("reply_to".to_string())
+            .with_reply_to_group_id("reply_to_group_id".to_string())
+            .with_subject("subject".to_string())
+            .with_to("to".to_string())
             .with_user_id(vec![1, 2, 3])
             .build();
 

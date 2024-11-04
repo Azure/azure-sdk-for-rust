@@ -9,7 +9,6 @@ use crate::{
     session::AmqpSession,
     value::{AmqpOrderedMap, AmqpValue},
 };
-
 use async_std::sync::Mutex;
 use azure_core::{
     credentials::AccessToken,
@@ -40,7 +39,7 @@ impl Drop for Fe2o3AmqpManagement {
 impl Fe2o3AmqpManagement {
     pub fn new(
         session: AmqpSession,
-        client_node_name: impl Into<String>,
+        client_node_name: String,
         access_token: AccessToken,
     ) -> Result<Self> {
         // Session::get() returns a clone of the underlying session handle.
@@ -48,7 +47,7 @@ impl Fe2o3AmqpManagement {
 
         Ok(Self {
             access_token,
-            client_node_name: client_node_name.into(),
+            client_node_name,
             session,
             management: OnceLock::new(),
         })
@@ -85,7 +84,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
 
     async fn call(
         &self,
-        operation_type: impl Into<String>,
+        operation_type: String,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
         let mut management = self
@@ -122,12 +121,12 @@ struct WithApplicationPropertiesRequest<'a> {
 
 impl<'a> WithApplicationPropertiesRequest<'a> {
     pub fn new(
-        entity_type: impl Into<String>,
+        entity_type: String,
         access_token: &'a AccessToken,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
     ) -> Self {
         Self {
-            entity_type: entity_type.into(),
+            entity_type,
             access_token,
             application_properties,
         }

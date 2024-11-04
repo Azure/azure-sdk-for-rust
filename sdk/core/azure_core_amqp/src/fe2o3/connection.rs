@@ -39,7 +39,7 @@ impl Drop for Fe2o3AmqpConnection {
 impl AmqpConnectionApis for Fe2o3AmqpConnection {
     async fn open(
         &self,
-        id: impl Into<String>,
+        id: String,
         url: Url,
         options: Option<AmqpConnectionOptions>,
     ) -> Result<()> {

@@ -172,10 +172,11 @@ async fn send_events() {
         host,
         eventhub.clone(),
         credential,
-        azure_messaging_eventhubs::producer::ProducerClientOptions::builder()
-            .with_application_id("test_create_batch")
-            .build(),
-    );
+        Some(azure_messaging_eventhubs::producer::ProducerClientOptions{
+          application_id: Some("test_create_batch".to_string()),
+          ..Default::default()
+        }),
+      );
     client.open().await.unwrap();
     {
         let mut batch = client.create_batch(None).await.unwrap();
@@ -207,9 +208,9 @@ async fn receive_events() {
         None,
         credential,
         Some(
-            azure_messaging_eventhubs::consumer::ConsumerClientOptions::builder()
-                .with_application_id("receive_lots_of_events")
-                .build(),
+            azure_messaging_eventhubs::consumer::ConsumerClientOptions{
+                application_id: Some("receive_lots_of_events".to_string()),
+                ..Default::default()}
         ),
     );
 
@@ -217,13 +218,14 @@ async fn receive_events() {
 
     let event_stream = client
         .receive_events_on_partition(
-            "0",
+            "0".to_string(),
             Some(
-                azure_messaging_eventhubs::consumer::ReceiveOptions::builder()
-                    .with_start_position(azure_messaging_eventhubs::consumer::StartPosition::builder().with_earliest_location().build())
-                    .build(),
-            ),
-        )
+                azure_messaging_eventhubs::consumer::ReceiveOptions{
+                    start_position: Some(azure_messaging_eventhubs::consumer::StartPosition{
+                        location: azure_messaging_eventhubs::consumer::StartLocation::Earliest,
+                        ..Default::default()}),
+                    ..Default::default()},
+            ))
         .await;
 
     pin_mut!(event_stream); // Needed for iteration.

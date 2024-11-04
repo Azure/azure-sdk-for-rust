@@ -24,6 +24,7 @@ use azure_core::RetryOptions;
 use azure_core::{
     credentials::AccessToken,
     error::{Error, Result},
+    Uuid,
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::collections::HashMap;
@@ -37,19 +38,19 @@ pub mod batch;
 const DEFAULT_EVENTHUBS_APPLICATION: &str = "DefaultApplicationName";
 
 /// Options used when creating an Event Hubs ProducerClient.
-#[derive(Default)]
+#[derive(Default, Debug, Clone)]
 pub struct ProducerClientOptions {
-    application_id: Option<String>,
-    retry_options: Option<RetryOptions>,
-    max_message_size: Option<u64>,
+    /// The application id that will be used to identify the client.
+    pub application_id: Option<String>,
+
+    /// The options used to configure retry operations.
+    pub retry_options: Option<RetryOptions>,
+
+    /// The maximum size of a message that can be sent to the Event Hub.
+    pub max_message_size: Option<u64>,
 }
 
-impl ProducerClientOptions {
-    /// Creates a builder to create ProducerClientOptions.
-    pub fn builder() -> builders::ProducerClientOptionsBuilder {
-        builders::ProducerClientOptionsBuilder::new()
-    }
-}
+impl ProducerClientOptions {}
 
 struct SenderInstance {
     #[allow(dead_code)]
@@ -75,10 +76,11 @@ struct SenderInstance {
 ///    let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
 ///    let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
 ///    let my_credentials = DefaultAzureCredential::new()?;
-///    let options = ProducerClientOptions::builder()
-///      .with_application_id("your_application_id")
-///      .build();
-///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, options);
+///    let options = ProducerClientOptions{
+///      application_id: Some("your_application_id".to_string()),
+///      ..Default::default()
+///   };
+///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, Some(options));
 ///   producer.open().await?;
 ///   Ok(())
 /// }
@@ -108,15 +110,13 @@ impl ProducerClient {
     ///
     /// A new instance of `ProducerClient`.
     pub fn new(
-        fully_qualified_namespace: impl Into<String>,
-        eventhub: impl Into<String>,
+        fully_qualified_namespace: String,
+        eventhub: String,
         credential: Arc<dyn azure_core::credentials::TokenCredential>,
-        options: ProducerClientOptions,
+        options: Option<ProducerClientOptions>,
     ) -> Self {
-        let eventhub: String = eventhub.into();
-        let fully_qualified_namespace: String = fully_qualified_namespace.into();
         Self {
-            options,
+            options: options.unwrap_or_default(),
             connection: OnceLock::new(),
             credential: credential.clone(),
             url: format!("amqps://{}/{}", fully_qualified_namespace, eventhub),
@@ -172,10 +172,11 @@ impl ProducerClient {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///   let my_credentials = DefaultAzureCredential::new()?;
-    ///   let options = ProducerClientOptions::builder()
-    ///     .with_application_id("your_application_id")
-    ///     .build();
-    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, options);
+    ///   let options = ProducerClientOptions{
+    ///     application_id: Some("your_application_id".to_string()),
+    ///     ..Default::default()
+    ///   };
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, Some(options));
     ///   producer.open().await?;
     ///   let mut batch = producer.create_batch(None).await?;
     ///   Ok(())
@@ -214,10 +215,11 @@ impl ProducerClient {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///   let my_credentials = DefaultAzureCredential::new()?;
-    ///   let options = ProducerClientOptions::builder()
-    ///    .with_application_id("your_application_id")
-    ///    .build();
-    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, options);
+    ///   let options = ProducerClientOptions{
+    ///     application_id: Some("your_application_id".to_string()),
+    ///     ..Default::default()
+    ///   };
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, Some(options));
     ///   producer.open().await?;
     ///   let mut batch = producer.create_batch(None).await?;
     ///   batch.try_add_event_data("Hello, World!", None)?;
@@ -259,7 +261,7 @@ impl ProducerClient {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///   let my_credentials = DefaultAzureCredential::new()?;
-    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, ProducerClientOptions::builder().build());
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, None);
     ///   producer.open().await?;
     ///   let properties = producer.get_eventhub_properties().await?;
     ///   println!("Event Hub: {:?}", properties);
@@ -274,7 +276,7 @@ impl ProducerClient {
             .await
             .get()
             .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingManagementClient))?
-            .get_eventhub_properties(&self.eventhub)
+            .get_eventhub_properties(self.eventhub.clone())
             .await
     }
 
@@ -297,16 +299,16 @@ impl ProducerClient {
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let my_credentials = DefaultAzureCredential::new()?;
-    ///     let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, ProducerClientOptions::builder().build());
+    ///     let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, None);
     ///     producer.open().await?;
-    ///     let partition_properties = producer.get_partition_properties("0").await?;
+    ///     let partition_properties = producer.get_partition_properties("0".to_string()).await?;
     ///     println!("Event Hub: {:?}", partition_properties);
     ///     Ok(())
     /// }
     /// ```
     pub async fn get_partition_properties(
         &self,
-        partition_id: impl Into<String>,
+        partition_id: String,
     ) -> Result<EventHubPartitionProperties> {
         self.ensure_management_client().await?;
 
@@ -315,7 +317,7 @@ impl ProducerClient {
             .await
             .get()
             .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingManagementClient))?
-            .get_eventhub_partition_properties(&self.eventhub, partition_id)
+            .get_eventhub_partition_properties(self.eventhub.clone(), partition_id)
             .await
     }
 
@@ -352,7 +354,8 @@ impl ProducerClient {
         let access_token = self.authorize_path(management_path).await?;
 
         trace!("Create management client.");
-        let management = AmqpManagement::new(session, "eventhubs_management", access_token)?;
+        let management =
+            AmqpManagement::new(session, "eventhubs_management".to_string(), access_token)?;
         management.attach().await?;
         mgmt_client
             .set(ManagementInstance::new(management))
@@ -369,8 +372,7 @@ impl ProducerClient {
                     self.options
                         .application_id
                         .clone()
-                        .unwrap_or(uuid::Uuid::new_v4().to_string())
-                        .as_str(),
+                        .unwrap_or(Uuid::new_v4().to_string()),
                     Url::parse(url).map_err(Error::from)?,
                     Some(
                         AmqpConnectionOptions::builder()
@@ -391,8 +393,7 @@ impl ProducerClient {
         Ok(())
     }
 
-    async fn ensure_sender(&self, path: impl Into<String>) -> Result<Arc<Mutex<AmqpSender>>> {
-        let path: String = path.into();
+    async fn ensure_sender(&self, path: String) -> Result<Arc<Mutex<AmqpSender>>> {
         let mut sender_instances = self.sender_instances.lock().await;
         if !sender_instances.contains_key(&path) {
             self.ensure_connection(&path).await?;
@@ -450,8 +451,7 @@ impl ProducerClient {
             .clone())
     }
 
-    async fn authorize_path(&self, url: impl Into<String>) -> Result<AccessToken> {
-        let url: String = url.into();
+    async fn authorize_path(&self, url: String) -> Result<AccessToken> {
         debug!("Authorizing path: {:?}", url);
         let mut scopes = self.authorization_scopes.lock().await;
         if self.connection.get().is_none() {
@@ -477,8 +477,13 @@ impl ProducerClient {
                 .await?;
             debug!("Got token: {:?}", token.token.secret());
             let expires_at = token.expires_on;
-            cbs.authorize_path(&url, token.token.secret(), expires_at)
-                .await?;
+            cbs.authorize_path(
+                url.clone(),
+                None,
+                token.token.secret().to_string(),
+                expires_at,
+            )
+            .await?;
             let present = scopes.insert(url.clone(), token);
             // insert returns some if it *fails* to insert, None if it succeeded.
             if present.is_some() {
@@ -492,40 +497,6 @@ impl ProducerClient {
     }
 }
 
-mod builders {
-    use super::*;
-    pub struct ProducerClientOptionsBuilder {
-        options: ProducerClientOptions,
-    }
-
-    impl ProducerClientOptionsBuilder {
-        pub(super) fn new() -> Self {
-            Self {
-                options: Default::default(),
-            }
-        }
-
-        pub fn with_application_id(mut self, application_id: impl Into<String>) -> Self {
-            self.options.application_id = Some(application_id.into());
-            self
-        }
-
-        pub fn with_retry_options(mut self, retry_options: RetryOptions) -> Self {
-            self.options.retry_options = Some(retry_options);
-            self
-        }
-
-        pub fn with_max_message_size(mut self, max_message_size: u64) -> Self {
-            self.options.max_message_size = Some(max_message_size);
-            self
-        }
-
-        pub fn build(self) -> ProducerClientOptions {
-            self.options
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
@@ -533,10 +504,12 @@ mod tests {
 
     #[test]
     fn test_producer_client_options_builder() {
-        let options = ProducerClientOptions::builder()
-            .with_application_id("application_id")
-            .with_retry_options(RetryOptions::default())
-            .build();
+        let options = ProducerClientOptions {
+            application_id: Some("application_id".to_string()),
+            retry_options: Some(RetryOptions::default()),
+            ..Default::default()
+        };
+
         assert_eq!(options.application_id.unwrap(), "application_id");
     }
 }

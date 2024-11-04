@@ -192,9 +192,9 @@ mod tests {
         );
         assert!(session_options.properties.is_some());
         let properties = session_options.properties.clone().unwrap();
-        assert!(properties.contains_key("key"));
+        assert!(properties.contains_key("key".into()));
         assert_eq!(
-            *properties.get("key").unwrap(),
+            *properties.get("key".into()).unwrap(),
             AmqpValue::String("value".to_string())
         );
 

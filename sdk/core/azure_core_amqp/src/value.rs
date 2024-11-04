@@ -76,12 +76,17 @@ impl From<Vec<AmqpValue>> for AmqpList {
     }
 }
 
+/// AMQP Timestamp. Number of milliseconds since UNIX_EPOCH.
+///
+/// NOTE: This can also contain the value of -62_135_596_800_000 which is
+/// January 1, 0001 represented as the number of milliseconds *BEFORE* the UNIX_EPOCH.
+/// This time cannot be expressed as a SystemTime.
 #[derive(Debug, PartialEq, Clone)]
-pub struct AmqpTimestamp(pub std::time::SystemTime);
+pub struct AmqpTimestamp(pub Option<std::time::SystemTime>);
 
 impl From<std::time::SystemTime> for AmqpTimestamp {
     fn from(v: std::time::SystemTime) -> Self {
-        AmqpTimestamp(v)
+        AmqpTimestamp(Some(v))
     }
 }
 
@@ -252,18 +257,14 @@ where
         Self { inner: Vec::new() }
     }
 
-    pub fn insert(&mut self, key: impl Into<K>, value: impl Into<V>) {
-        self.inner.push((key.into(), value.into()));
+    pub fn insert(&mut self, key: K, value: V) {
+        self.inner.push((key, value));
     }
 
-    pub fn get(&self, key: impl Into<K> + Clone) -> Option<&V> {
-        self.inner.iter().find_map(|(k, v)| {
-            if *k == key.clone().into() {
-                Some(v)
-            } else {
-                None
-            }
-        })
+    pub fn get(&self, key: K) -> Option<&V> {
+        self.inner
+            .iter()
+            .find_map(|(k, v)| if *k == key.clone() { Some(v) } else { None })
     }
 
     pub fn len(&self) -> usize {
@@ -279,8 +280,8 @@ where
         Some(self.inner.remove(index).1)
     }
 
-    pub fn contains_key(&self, key: impl Into<K> + Clone) -> bool {
-        self.inner.iter().any(|(k, _)| *k == key.clone().into())
+    pub fn contains_key(&self, key: K) -> bool {
+        self.inner.iter().any(|(k, _)| *k == key.clone())
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (K, V)> + '_ {
@@ -472,7 +473,7 @@ mod tests {
         let v10 = AmqpValue::Float(9.0);
         let v11 = AmqpValue::Double(10.0);
         let v12 = AmqpValue::Char('a');
-        let v13 = AmqpValue::TimeStamp(AmqpTimestamp(timestamp));
+        let v13 = AmqpValue::TimeStamp(AmqpTimestamp(Some(timestamp)));
         let v14 = AmqpValue::Uuid(uuid);
         let v15 = AmqpValue::Binary(vec![1, 2, 3]);
         let v16 = AmqpValue::String("hello".to_string());
@@ -502,7 +503,7 @@ mod tests {
         assert_eq!(v10, AmqpValue::Float(9.0));
         assert_eq!(v11, AmqpValue::Double(10.0));
         assert_eq!(v12, AmqpValue::Char('a'));
-        assert_eq!(v13, AmqpValue::TimeStamp(AmqpTimestamp(timestamp)));
+        assert_eq!(v13, AmqpValue::TimeStamp(AmqpTimestamp(Some(timestamp))));
         assert_eq!(v14, AmqpValue::Uuid(uuid));
         assert_eq!(v15, AmqpValue::Binary(vec![1, 2, 3]));
         assert_eq!(v16, AmqpValue::String("hello".to_string()));
@@ -566,7 +567,7 @@ mod tests {
         test_conversion!(
             AmqpTimestamp,
             TimeStamp,
-            AmqpTimestamp(std::time::SystemTime::now())
+            AmqpTimestamp(Some(std::time::SystemTime::now()))
         );
         test_conversion!(Uuid, Uuid, Uuid::new_v4());
         test_conversion!(Vec<u8>, Binary, vec![1, 2, 3]);
@@ -723,17 +724,17 @@ mod tests {
 
         // Test AmqpValue::TimeStamp
         let timestamp = std::time::SystemTime::now();
-        let timestamp_value: AmqpValue = AmqpValue::TimeStamp(AmqpTimestamp(timestamp));
+        let timestamp_value: AmqpValue = AmqpValue::TimeStamp(AmqpTimestamp(Some(timestamp)));
         assert_eq!(
             timestamp_value,
-            AmqpValue::TimeStamp(AmqpTimestamp(timestamp))
+            AmqpValue::TimeStamp(AmqpTimestamp(Some(timestamp)))
         );
         assert_eq!(
-            AmqpValue::TimeStamp(AmqpTimestamp(timestamp)),
+            AmqpValue::TimeStamp(AmqpTimestamp(Some(timestamp))),
             timestamp_value
         );
         let timestamp_val: AmqpTimestamp = timestamp_value.into();
-        assert_eq!(timestamp_val, AmqpTimestamp(timestamp));
+        assert_eq!(timestamp_val, AmqpTimestamp(Some(timestamp)));
 
         // Test AmqpValue::Uuid
         let uuid = Uuid::new_v4();

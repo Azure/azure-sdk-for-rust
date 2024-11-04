@@ -24,7 +24,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
     async fn attach(
         &self,
         session: &AmqpSession,
-        name: impl Into<String>,
+        name: String,
         target: impl Into<AmqpTarget>,
         options: Option<AmqpSenderOptions>,
     ) -> Result<()> {
@@ -63,7 +63,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             }
         }
         let sender = session_builder
-            .name(name.into())
+            .name(name)
             .target(target.into())
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await

@@ -23,9 +23,10 @@ async fn main() -> Result<()> {
         host,
         eventhub.clone(),
         credential,
-        ProducerClientOptions::builder()
-            .with_application_id("test_get_properties")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_get_properties".to_string()),
+            ..Default::default()
+        }),
     );
     let result = client.open().await;
     info!("Open result: {:?}", result);
@@ -37,7 +38,10 @@ async fn main() -> Result<()> {
     println!("Eventhub Properties for: {eventhub} {:?}", properties);
 
     for partition in properties.partition_ids.iter() {
-        let partition_properties = client.get_partition_properties(partition).await.unwrap();
+        let partition_properties = client
+            .get_partition_properties(partition.clone())
+            .await
+            .unwrap();
         println!(
             "Partition Properties for: {partition} {:?}",
             partition_properties

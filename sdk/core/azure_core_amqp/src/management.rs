@@ -22,7 +22,7 @@ pub trait AmqpManagementApis {
     #[allow(unused_variables)]
     fn call(
         &self,
-        operation_type: impl Into<String>,
+        operation_type: String,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
     ) -> impl std::future::Future<Output = Result<AmqpOrderedMap<String, AmqpValue>>>;
 }
@@ -41,7 +41,7 @@ impl AmqpManagementApis for AmqpManagement {
     }
     async fn call(
         &self,
-        operation_type: impl Into<String>,
+        operation_type: String,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
         self.implementation
@@ -53,7 +53,7 @@ impl AmqpManagementApis for AmqpManagement {
 impl AmqpManagement {
     pub fn new(
         session: AmqpSession,
-        client_node_name: impl Into<String>,
+        client_node_name: String,
         access_token: AccessToken,
     ) -> Result<Self> {
         Ok(Self {

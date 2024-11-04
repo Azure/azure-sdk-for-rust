@@ -67,8 +67,9 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
 
     async fn authorize_path(
         &self,
-        path: impl Into<String> + Debug,
-        secret: impl Into<String>,
+        path: String,
+        token_type: Option<String>,
+        secret: String,
         expires_at: time::OffsetDateTime,
     ) -> Result<()> {
         trace!(
@@ -77,8 +78,11 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
             expires_at
         );
         let cbs_token = CbsToken::new(
-            secret.into(),
-            "jwt",
+            secret,
+            match token_type {
+                Some(token_type) => token_type,
+                None => "jwt".to_string(),
+            },
             Some(Timestamp::from(
                 expires_at
                     .to_offset(time::UtcOffset::UTC)
@@ -103,7 +107,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
             .lock()
             .await
             .borrow_mut()
-            .put_token(path.into(), cbs_token)
+            .put_token(path, cbs_token)
             .await
             .map_err(AmqpManagement::from)?;
         Ok(())

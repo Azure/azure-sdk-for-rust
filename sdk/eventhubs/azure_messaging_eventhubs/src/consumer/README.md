@@ -16,7 +16,7 @@ use azure_messaging_eventhubs::consumer::ConsumerClient;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 
 let my_credential = DefaultAzureCredential::new().unwrap();
-let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
 ```
 
 ### Opening a connection to the Event Hub
@@ -28,7 +28,7 @@ use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 #[tokio::main]
 async fn main() {
     let my_credential = DefaultAzureCredential::new().unwrap();
-    let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
 
     let result = consumer.open().await;
 
@@ -54,7 +54,7 @@ use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 #[tokio::main]
 async fn main() {
     let my_credential = DefaultAzureCredential::new().unwrap();
-    let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
 
     consumer.open().await.unwrap();
 
@@ -83,13 +83,13 @@ use async_std::stream::StreamExt;
 #[tokio::main]
 async fn main() {
     let my_credential = DefaultAzureCredential::new().unwrap();
-    let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
     let partition_id = "0";
     let options = None;
 
     consumer.open().await.unwrap();
 
-    let event_stream = consumer.receive_events_on_partition(partition_id, options).await;
+    let event_stream = consumer.receive_events_on_partition(partition_id.to_string(), options).await;
 
     tokio::pin!(event_stream);
     while let Some(event_result) = event_stream.next().await {
