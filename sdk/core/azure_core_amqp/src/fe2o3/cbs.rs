@@ -27,15 +27,15 @@ impl<'a> Fe2o3ClaimsBasedSecurity<'a> {
     }
 }
 
-impl<'a> Fe2o3ClaimsBasedSecurity<'a> {}
+impl Fe2o3ClaimsBasedSecurity<'_> {}
 
-impl<'a> Drop for Fe2o3ClaimsBasedSecurity<'a> {
+impl Drop for Fe2o3ClaimsBasedSecurity<'_> {
     fn drop(&mut self) {
         debug!("Dropping Fe2o3ClaimsBasedSecurity.");
     }
 }
 
-impl<'a> AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'a> {
+impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
     async fn attach(&self) -> Result<()> {
         let session = self.session.implementation.get()?;
         let mut session = session.lock().await;

@@ -43,7 +43,7 @@ pub fn compilation_tests() {
         p
     };
 
-    // Probably save to assume cargo is on the path, but if that's not the case, tests will start failing and we'll figure it out.
+    // Probably safe to assume cargo is on the path, but if that's not the case, tests will start failing and we'll figure it out.
     let mut compilation = std::process::Command::new("cargo")
         .arg("build")
         .arg("--message-format")
@@ -54,6 +54,9 @@ pub fn compilation_tests() {
         .spawn()
         // An error here does not mean a non-zero exit code, it means a failure to run the process.
         .expect("failed to execute compilation");
+    let exit_status = compilation.wait().expect("failed to wait on compilation");
+    assert!(exit_status.success(), "compilation failed");
+
     let reader = BufReader::new(compilation.stdout.take().unwrap());
     let messages = Message::parse_stream(reader);
     let file_messages = messages

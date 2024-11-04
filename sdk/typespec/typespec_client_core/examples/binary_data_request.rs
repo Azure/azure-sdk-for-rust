@@ -9,7 +9,7 @@ use typespec_client_core::{fs::FileStreamBuilder, http::RequestContent};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Log traces to stdout.
-    let _log = tracing_subscriber::fmt()
+    tracing_subscriber::fmt()
         .with_span_events(FmtSpan::ENTER | FmtSpan::EXIT)
         .with_max_level(LevelFilter::DEBUG)
         .init();

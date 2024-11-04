@@ -105,4 +105,5 @@ tz-rs = { version = "0.6" }
 url = "2.2"
 uuid = { version = "1.0", features = ["v4"] }
 
-[workspace.lints]
+[workspace.lints.clippy]
+large_futures = "deny"

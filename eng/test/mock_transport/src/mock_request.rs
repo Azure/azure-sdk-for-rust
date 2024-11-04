@@ -116,7 +116,7 @@ impl<'de> Visitor<'de> for RequestVisitor {
     }
 }
 
-impl<'a> Serialize for RequestSerializer<'a> {
+impl Serialize for RequestSerializer<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
