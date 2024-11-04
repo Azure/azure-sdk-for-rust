@@ -174,7 +174,7 @@ where
                 Err(error) => {
                     if error.kind() == &ErrorKind::Io {
                         debug!(
-                            "io error occurred when making request which will be retried: {}",
+                            "io error occurred when making request which will be retried: {:?}",
                             error
                         );
                         // IO error so no Retry-After headers - leave the retry period up to the policy
