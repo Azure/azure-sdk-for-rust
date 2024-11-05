@@ -3,12 +3,7 @@
 
 use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
 use serde::Serialize;
-use std::{
-    collections::HashMap,
-    io::{BufReader, Read},
-    path::PathBuf,
-    process::Stdio,
-};
+use std::{collections::HashMap, path::PathBuf, process::Stdio};
 
 #[derive(Serialize)]
 struct MessageExpectation {
@@ -30,8 +25,35 @@ struct FileResult {
     pub messages: Vec<MessageExpectation>,
 }
 
+/// Finds relative paths to files within root, with 'path_prefix' tracking the relative directories descended
+fn find_recursive(root: &Path, path_prefix: &Path, file_suffix: &str) -> Vec<String> {
+    let mut vec = Vec::new();
+    if !root.is_dir() {
+        return vec;
+    }
+
+    for dirent in root.read_dir().expect("to be able to read the directory") {
+        let dirent = dirent.expect("to have a valid directory entry (dirent)");
+        let file_type = dirent.file_type().expect("to have a valid file type");
+        let file_name = dirent
+            .file_name()
+            .into_string()
+            .expect("to have a valid UTF-8 file name");
+        let mut path = path_prefix.to_path_buf();
+        path.push(&file_name);
+        if file_type.is_file() && file_name.ends_with(file_suffix) {
+            let file_name = format!("{}.rs", &file_name[..(file_name.len() - file_suffix.len())]);
+            path.set_file_name(file_name);
+            vec.push(path.to_str().expect("path is valid UTF-8").to_string());
+        } else if file_type.is_dir() {
+            vec.append(&mut find_recursive(&dirent.path(), &path, file_suffix));
+        }
+    }
+
+    vec
+}
+
 #[test]
-#[ignore = "https://github.com/Azure/azure-sdk-for-rust/issues/1896"]
 pub fn compilation_tests() {
     let test_root = {
         let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -47,24 +69,41 @@ pub fn compilation_tests() {
         p.pop(); // [root]
         p
     };
+    let src_root = {
+        let mut p = test_root.clone();
+        p.push("src");
+        p
+    };
 
-    let compilation = std::process::Command::new(env!("CARGO"))
+    let mut expected_files = find_recursive(&test_root, Path::new(""), ".expected.json");
+    expected_files.sort();
+
+    // Probably save to assume cargo is on the path, but if that's not the case, tests will start failing and we'll figure it out.
+    let output = std::process::Command::new(env!("CARGO"))
         .arg("build")
         .arg("--message-format")
         .arg("json")
         .current_dir(test_root.clone())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .output()
-        // An error here does not mean a non-zero exit code, it means a failure to run the process.
-        .expect("failed to execute compilation");
-    assert!(
-        !compilation.status.success(),
-        "expected compilation to fail"
-    );
+        .spawn()
+        .expect("cargo to start running")
+        .wait_with_output()
+        .expect("the compilation to run to completion");
+    assert!(!output.status.success(), "compilation should have failed");
 
-    let reader = BufReader::new(compilation.stdout.take(u64::MAX));
-    let messages = Message::parse_stream(reader);
+    // Collect output and error and write them
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be valid UTF-8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be valid UTF-8");
+    println!(
+        "==== Standard Output ====\n{}\n==== End Standard Output ====",
+        &stdout
+    );
+    println!(
+        "==== Standard Error ====\n{}\n==== End Standard Error ====",
+        &stderr
+    );
+    let messages = Message::parse_stream(stdout.as_bytes());
     let file_messages = messages
         .filter_map(|m| match m.expect("failed to parse message") {
             Message::CompilerMessage(m) => Some(m),
@@ -128,6 +167,11 @@ pub fn compilation_tests() {
                 .push(expectation);
             map
         });
+    let mut files_with_errors: Vec<String> = file_messages.keys().cloned().collect();
+    files_with_errors.sort();
+    println!("Found errors in files:\n{:?}", files_with_errors);
+    println!("Expect errors in files:\n{:?}", expected_files);
+    assert_eq!(files_with_errors, expected_files);
 
     // Now, for each group, generate/validate baselines depending on the env var AZSDK_GENERATE_BASELINES
     let generate_baselines = std::env::var("AZSDK_GENERATE_BASELINES")
