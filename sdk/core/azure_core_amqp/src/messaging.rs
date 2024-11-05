@@ -1054,7 +1054,8 @@ impl AmqpApplicationProperties {
     }
 }
 
-/// An AMQP message
+/// An AMQP message.
+///
 /// This is a simplified version of the AMQP message
 /// that is used in the Azure SDK for Event Hubs
 /// and is not a complete implementation of the AMQP message

@@ -9,6 +9,7 @@ use crate::{
 };
 
 /// Tries to create an HMAC SHA256 signature from the given `data` and `key`.
+///
 /// The `key` is expected to be a base64 encoded string and will be decoded
 /// before using it for signing. The returned signature is also base64 encoded.
 ///

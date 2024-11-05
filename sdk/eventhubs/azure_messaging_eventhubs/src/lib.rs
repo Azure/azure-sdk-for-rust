@@ -6,30 +6,6 @@
 // cspell: words amqp eventdata
 #![doc = include_str!("../README.md")]
 
-/// This module contains the implementation of the Azure Messaging Event Hubs SDK for Rust.
-///
-/// The SDK provides types and functions to interact with Azure Event Hubs, which is a highly scalable data streaming platform and event ingestion service.
-/// It allows you to consume events from an Event Hub and create/send events to an Event Hub.
-///
-/// # Examples
-///
-/// Consuming events from an Event Hub:
-///
-/// ```no_run
-/// # use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
-/// # #[tokio::main]
-/// # async fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
-/// # let my_credentials = DefaultAzureCredential::new()?;
-
-/// use azure_messaging_eventhubs::consumer::ConsumerClient;
-/// use azure_messaging_eventhubs::models::EventData;
-///
-/// let consumer_client = ConsumerClient::new("fully_qualified_domain", "eventhub_name", None, my_credentials, None);
-/// let partition_properties = consumer_client.get_partition_properties("0").await?;
-/// # Ok(())
-/// }
-/// ```
-///
 pub(crate) mod common;
 
 /// Types related to consuming events from an Event Hub.
@@ -408,8 +384,8 @@ pub mod models {
     }
 
     /// Represents the data associated with an event received from an Event Hub.
-    /// This struct provides the event data, enqueued time, offset, sequence number, partition key, and system properties of the event.
     ///
+    /// This struct provides the event data, enqueued time, offset, sequence number, partition key, and system properties of the event.
     pub struct ReceivedEventData {
         message: AmqpMessage,
         event_data: EventData,

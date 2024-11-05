@@ -134,7 +134,7 @@ impl<'a> WithApplicationPropertiesRequest<'a> {
     }
 }
 
-impl<'a> fe2o3_amqp_management::Request for WithApplicationPropertiesRequest<'a> {
+impl fe2o3_amqp_management::Request for WithApplicationPropertiesRequest<'_> {
     const OPERATION: &'static str = "READ";
     type Response = ReadResponse;
     type Body = ();

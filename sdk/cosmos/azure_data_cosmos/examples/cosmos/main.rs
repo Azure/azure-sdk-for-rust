@@ -54,14 +54,14 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    let mut args = ProgramArgs::parse();
+    let args = ProgramArgs::parse();
 
     let Some(cmd) = args.subcommand else {
         ProgramArgs::command().print_long_help()?;
         return Ok(());
     };
 
-    let client = create_client(&mut args.shared_args)?;
+    let client = create_client(&args.shared_args)?;
 
     match cmd {
         Subcommands::Create(cmd) => cmd.run(client).await,

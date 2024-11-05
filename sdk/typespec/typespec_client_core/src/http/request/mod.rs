@@ -25,7 +25,6 @@ pub enum Body {
     /// A streaming body.
     ///
     /// This is not currently supported on WASM targets.
-
     // We cannot currently implement `Body::SeekableStream` for WASM
     // because `reqwest::Body::wrap_stream()` is not implemented for WASM.
     #[cfg(not(target_arch = "wasm32"))]

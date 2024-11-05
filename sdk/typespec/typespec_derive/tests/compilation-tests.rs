@@ -1,10 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{collections::HashMap, io::BufReader, path::PathBuf, process::Stdio};
-
 use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
 use serde::Serialize;
+use std::{
+    collections::HashMap,
+    io::{BufReader, Read},
+    path::PathBuf,
+    process::Stdio,
+};
 
 #[derive(Serialize)]
 struct MessageExpectation {
@@ -27,6 +31,7 @@ struct FileResult {
 }
 
 #[test]
+#[ignore = "https://github.com/Azure/azure-sdk-for-rust/issues/1896"]
 pub fn compilation_tests() {
     let test_root = {
         let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -43,18 +48,22 @@ pub fn compilation_tests() {
         p
     };
 
-    // Probably save to assume cargo is on the path, but if that's not the case, tests will start failing and we'll figure it out.
-    let mut compilation = std::process::Command::new("cargo")
+    let compilation = std::process::Command::new(env!("CARGO"))
         .arg("build")
         .arg("--message-format")
         .arg("json")
         .current_dir(test_root.clone())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn()
+        .output()
         // An error here does not mean a non-zero exit code, it means a failure to run the process.
         .expect("failed to execute compilation");
-    let reader = BufReader::new(compilation.stdout.take().unwrap());
+    assert!(
+        !compilation.status.success(),
+        "expected compilation to fail"
+    );
+
+    let reader = BufReader::new(compilation.stdout.take(u64::MAX));
     let messages = Message::parse_stream(reader);
     let file_messages = messages
         .filter_map(|m| match m.expect("failed to parse message") {

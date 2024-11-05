@@ -123,7 +123,7 @@ impl<'a> Context<'a> {
     }
 }
 
-impl<'a> Default for Context<'a> {
+impl Default for Context<'_> {
     fn default() -> Self {
         Self::new()
     }
