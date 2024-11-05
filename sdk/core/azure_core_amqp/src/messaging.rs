@@ -1463,11 +1463,11 @@ pub mod builders {
             self
         }
         pub fn with_content_type(mut self, content_type: AmqpSymbol) -> Self {
-            self.properties.content_type = Some(content_type.into());
+            self.properties.content_type = Some(content_type);
             self
         }
         pub fn with_content_encoding(mut self, content_encoding: AmqpSymbol) -> Self {
-            self.properties.content_encoding = Some(content_encoding.into());
+            self.properties.content_encoding = Some(content_encoding);
             self
         }
         pub fn with_absolute_expiry_time(
