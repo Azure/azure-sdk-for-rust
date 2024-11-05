@@ -12,6 +12,7 @@ use azure_core::{error::Result, Error};
 use azure_core_amqp::{
     messaging::{AmqpMessage, AmqpMessageBody},
     sender::AmqpSenderApis,
+    value::AmqpSymbol,
 };
 use tracing::debug;
 use uuid::Uuid;
@@ -233,7 +234,10 @@ impl<'a> EventDataBatch<'a> {
             message.set_message_id(Uuid::new_v4());
         }
         if let Some(partition_key) = self.partition_key.as_ref() {
-            message.add_message_annotation("x-opt-partition-key", partition_key.clone());
+            message.add_message_annotation(
+                AmqpSymbol::from("x-opt-partition-key"),
+                partition_key.clone(),
+            );
         }
 
         let mut batch_state = self.batch_state.lock().unwrap();

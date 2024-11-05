@@ -1152,17 +1152,13 @@ impl AmqpMessage {
     /// message.add_message_annotation("key", "value");
     /// ```
     ///
-    pub fn add_message_annotation(
-        &mut self,
-        name: impl Into<AmqpSymbol>,
-        value: impl Into<AmqpValue>,
-    ) {
+    pub fn add_message_annotation(&mut self, name: AmqpSymbol, value: impl Into<AmqpValue>) {
         if let Some(annotations) = self.message_annotations.as_mut() {
-            annotations.insert(name.into(), value.into());
+            annotations.insert(name, value.into());
             self.message_annotations = Some(annotations.clone());
         } else {
             let mut annotations = AmqpAnnotations::new();
-            annotations.insert(name.into(), value.into());
+            annotations.insert(name, value.into());
             self.message_annotations = Some(annotations);
         }
     }
@@ -1320,16 +1316,12 @@ pub mod builders {
             self.source.filter = Some(filter.into());
             self
         }
-        pub fn add_to_filter(
-            mut self,
-            key: impl Into<AmqpSymbol>,
-            value: impl Into<AmqpValue>,
-        ) -> Self {
+        pub fn add_to_filter(mut self, key: AmqpSymbol, value: impl Into<AmqpValue>) -> Self {
             if let Some(filter) = &mut self.source.filter {
-                filter.insert(key.into(), value.into());
+                filter.insert(key, value.into());
             } else {
                 let mut filter = AmqpOrderedMap::new();
-                filter.insert(key.into(), value.into());
+                filter.insert(key, value.into());
                 self.source.filter = Some(filter);
             }
             self
@@ -1469,11 +1461,11 @@ pub mod builders {
             self.properties.correlation_id = Some(correlation_id.into());
             self
         }
-        pub fn with_content_type(mut self, content_type: impl Into<AmqpSymbol>) -> Self {
+        pub fn with_content_type(mut self, content_type: AmqpSymbol) -> Self {
             self.properties.content_type = Some(content_type.into());
             self
         }
-        pub fn with_content_encoding(mut self, content_encoding: impl Into<AmqpSymbol>) -> Self {
+        pub fn with_content_encoding(mut self, content_encoding: AmqpSymbol) -> Self {
             self.properties.content_encoding = Some(content_encoding.into());
             self
         }
@@ -1657,7 +1649,7 @@ mod tests {
             .with_subject("subject".to_string())
             .with_reply_to("reply_to".to_string())
             .with_correlation_id(test_uuid2)
-            .with_content_type("content_type")
+            .with_content_type(AmqpSymbol::from("content_type"))
             .with_content_encoding(AmqpSymbol::from("content_encoding"))
             .with_absolute_expiry_time(time_now)
             .with_creation_time(time_now)

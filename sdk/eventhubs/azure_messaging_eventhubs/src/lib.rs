@@ -359,7 +359,7 @@ pub mod models {
                 let mut message_properties_builder = AmqpMessageProperties::builder();
                 if let Some(content_type) = event_data.content_type {
                     message_properties_builder =
-                        message_properties_builder.with_content_type(content_type);
+                        message_properties_builder.with_content_type(content_type.into());
                 }
                 if let Some(correlation_id) = event_data.correlation_id {
                     message_properties_builder =

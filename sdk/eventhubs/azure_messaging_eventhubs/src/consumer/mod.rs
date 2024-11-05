@@ -264,7 +264,7 @@ impl ConsumerClient {
         let message_source = AmqpSource::builder()
             .with_address(source_url)
             .add_to_filter(
-                AmqpSourceFilter::selector_filter().description(),
+                AmqpSourceFilter::selector_filter().description().into(),
                 Box::new(AmqpDescribed::new(
                     AmqpSourceFilter::selector_filter().code(),
                     start_expression,

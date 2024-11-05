@@ -363,11 +363,11 @@ impl From<fe2o3_amqp_types::messaging::Properties> for AmqpMessageProperties {
         }
         if let Some(content_type) = properties.content_type {
             amqp_message_properties_builder =
-                amqp_message_properties_builder.with_content_type(content_type);
+                amqp_message_properties_builder.with_content_type(content_type.into());
         }
         if let Some(content_encoding) = properties.content_encoding {
             amqp_message_properties_builder =
-                amqp_message_properties_builder.with_content_encoding(content_encoding);
+                amqp_message_properties_builder.with_content_encoding(content_encoding.into());
         }
         if let Some(absolute_expiry_time) = properties.absolute_expiry_time {
             amqp_message_properties_builder =
@@ -480,8 +480,8 @@ fn test_properties_conversion() {
 
         let properties = AmqpMessageProperties::builder()
             .with_absolute_expiry_time(time_now)
-            .with_content_encoding("content_encoding")
-            .with_content_type("content_type")
+            .with_content_encoding(crate::value::AmqpSymbol("content_encoding".to_string()))
+            .with_content_type(crate::value::AmqpSymbol("content_type".to_string()))
             .with_correlation_id("correlation_id")
             .with_creation_time(time_now)
             .with_group_id("group_id".to_string())

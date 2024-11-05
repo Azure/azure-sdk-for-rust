@@ -56,7 +56,7 @@ impl AmqpConnectionApis for NoopAmqpConnection {
 
     async fn close_with_error(
         &self,
-        condition: impl Into<AmqpSymbol>,
+        condition: AmqpSymbol,
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
     ) -> Result<()> {
