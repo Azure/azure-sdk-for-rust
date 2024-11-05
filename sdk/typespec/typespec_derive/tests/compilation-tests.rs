@@ -1,9 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    process::Stdio,
+};
+
 use cargo_metadata::{diagnostic::DiagnosticLevel, Message};
 use serde::Serialize;
-use std::{collections::HashMap, path::PathBuf, process::Stdio};
 
 #[derive(Serialize)]
 struct MessageExpectation {
@@ -67,11 +72,6 @@ pub fn compilation_tests() {
         p.pop(); // [root]/sdk/typespec
         p.pop(); // [root]/sdk
         p.pop(); // [root]
-        p
-    };
-    let src_root = {
-        let mut p = test_root.clone();
-        p.push("src");
         p
     };
 
