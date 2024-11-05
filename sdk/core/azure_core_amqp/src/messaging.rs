@@ -1148,8 +1148,9 @@ impl AmqpMessage {
     /// # Examples
     /// ```
     /// use azure_core_amqp::messaging::AmqpMessage;
+    /// use azure_core_amqp::value::AmqpSymbol;
     /// let mut message = AmqpMessage::default();
-    /// message.add_message_annotation("key", "value");
+    /// message.add_message_annotation(AmqpSymbol::from("key"), "value");
     /// ```
     ///
     pub fn add_message_annotation(&mut self, name: AmqpSymbol, value: impl Into<AmqpValue>) {
