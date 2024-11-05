@@ -2132,7 +2132,7 @@ pub struct FileShareProperties {
     #[doc = "Remaining retention days for share that was soft deleted."]
     #[serde(rename = "remainingRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub remaining_retention_days: Option<i64>,
-    #[doc = "Access tier for specific share. GpV2 account can choose between TransactionOptimized (default), Hot, and Cool. FileStorage account can choose Premium."]
+    #[doc = "Access tier for specific share. GpV2 account can choose between TransactionOptimized (default), Hot, Cold and Cool. FileStorage account can choose Premium."]
     #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<file_share_properties::AccessTier>,
     #[doc = "Indicates the last modification time for share access tier."]
@@ -2250,13 +2250,14 @@ pub mod file_share_properties {
             }
         }
     }
-    #[doc = "Access tier for specific share. GpV2 account can choose between TransactionOptimized (default), Hot, and Cool. FileStorage account can choose Premium."]
+    #[doc = "Access tier for specific share. GpV2 account can choose between TransactionOptimized (default), Hot, Cold and Cool. FileStorage account can choose Premium."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "AccessTier")]
     pub enum AccessTier {
         TransactionOptimized,
         Hot,
         Cool,
+        Cold,
         Premium,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -2285,6 +2286,7 @@ pub mod file_share_properties {
             match self {
                 Self::TransactionOptimized => serializer.serialize_unit_variant("AccessTier", 0u32, "TransactionOptimized"),
                 Self::Hot => serializer.serialize_unit_variant("AccessTier", 1u32, "Hot"),
+                Self::Cold => serializer.serialize_unit_variant("AccessTier", 2u32, "Cold"),
                 Self::Cool => serializer.serialize_unit_variant("AccessTier", 2u32, "Cool"),
                 Self::Premium => serializer.serialize_unit_variant("AccessTier", 3u32, "Premium"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
@@ -5644,6 +5646,7 @@ pub mod storage_account_properties {
     pub enum AccessTier {
         Hot,
         Cool,
+        Cold,
         Premium,
     }
     #[doc = "Allow large file shares if sets to Enabled. It cannot be disabled once it is enabled."]
@@ -5998,6 +6001,7 @@ pub mod storage_account_properties_create_parameters {
     pub enum AccessTier {
         Hot,
         Cool,
+        Cold,
         Premium,
     }
     #[doc = "Allow large file shares if sets to Enabled. It cannot be disabled once it is enabled."]
@@ -6196,6 +6200,7 @@ pub mod storage_account_properties_update_parameters {
     pub enum AccessTier {
         Hot,
         Cool,
+        Cold,
         Premium,
     }
     #[doc = "Allow large file shares if sets to Enabled. It cannot be disabled once it is enabled."]
