@@ -341,12 +341,30 @@ mod tests {
             value: String,
         }
 
+        /// An example JSON-serialized list response type.
+        #[derive(Model, Deserialize)]
+        #[typespec(crate = "crate")]
+        struct GetSecretListResponse {
+            value: Vec<GetSecretResponse>,
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse> {
             Response::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
-                "{\"name\":\"my_secret\",\"value\":\"my_value\"}",
+                r#"{"name":"my_secret","value":"my_value"}"#,
+            )
+        }
+
+        /// A sample service client function to return a list of secrets.
+        fn list_secrets() -> Response<GetSecretListResponse> {
+            Response::from_bytes(
+                StatusCode::Ok,
+                Headers::new(),
+                r#"{"value":[{"name":"my_secret","value":"my_value"}],"nextLink":"?page=2"}"#,
             )
         }
 
@@ -373,6 +391,28 @@ mod tests {
             let secret: MySecretResponse = response.deserialize_body_into().await.unwrap();
             assert_eq!(secret.yon_name, "my_secret");
             assert_eq!(secret.yon_value, "my_value");
+        }
+
+        #[tokio::test]
+        async fn deserialize_pageable_from_body() {
+            // We need to efficiently deserialize the body twice to get the "nextLink" but return it to the caller.
+            let response = list_secrets();
+            let (status, headers, body) = response.deconstruct();
+            let bytes = body.collect().await.expect("collect response");
+            let model: GetSecretListResponse =
+                crate::json::from_json(bytes.clone()).expect("deserialize GetSecretListResponse");
+            assert_eq!(status, StatusCode::Ok);
+            assert_eq!(model.value.len(), 1);
+            assert_eq!(model.next_link, Some("?page=2".to_string()));
+
+            let response: Response<GetSecretListResponse> =
+                Response::from_bytes(status, headers, bytes);
+            assert_eq!(response.status(), StatusCode::Ok);
+            let model = response
+                .deserialize_body()
+                .await
+                .expect("deserialize GetSecretListResponse again");
+            assert_eq!(model.next_link, Some("?page=2".to_string()));
         }
     }
 
