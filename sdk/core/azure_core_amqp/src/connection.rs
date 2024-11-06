@@ -30,32 +30,32 @@ impl AmqpConnectionOptions {
     pub fn builder() -> builders::AmqpConnectionOptionsBuilder {
         builders::AmqpConnectionOptionsBuilder::new()
     }
-    pub fn max_frame_size(&self) -> Option<u32> {
-        self.max_frame_size
+    pub fn max_frame_size(&self) -> Option<&u32> {
+        self.max_frame_size.as_ref()
     }
-    pub fn channel_max(&self) -> Option<u16> {
-        self.channel_max
+    pub fn channel_max(&self) -> Option<&u16> {
+        self.channel_max.as_ref()
     }
-    pub fn idle_timeout(&self) -> Option<Duration> {
-        self.idle_timeout
+    pub fn idle_timeout(&self) -> Option<&Duration> {
+        self.idle_timeout.as_ref()
     }
-    pub fn outgoing_locales(&self) -> Option<Vec<String>> {
-        self.outgoing_locales.clone()
+    pub fn outgoing_locales(&self) -> Option<&Vec<String>> {
+        self.outgoing_locales.as_ref()
     }
-    pub fn incoming_locales(&self) -> Option<Vec<String>> {
-        self.incoming_locales.clone()
+    pub fn incoming_locales(&self) -> Option<&Vec<String>> {
+        self.incoming_locales.as_ref()
     }
-    pub fn offered_capabilities(&self) -> Option<Vec<AmqpSymbol>> {
-        self.offered_capabilities.clone()
+    pub fn offered_capabilities(&self) -> Option<&Vec<AmqpSymbol>> {
+        self.offered_capabilities.as_ref()
     }
-    pub fn desired_capabilities(&self) -> Option<Vec<AmqpSymbol>> {
-        self.desired_capabilities.clone()
+    pub fn desired_capabilities(&self) -> Option<&Vec<AmqpSymbol>> {
+        self.desired_capabilities.as_ref()
     }
-    pub fn properties(&self) -> Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>> {
-        self.properties.clone()
+    pub fn properties(&self) -> Option<&AmqpOrderedMap<AmqpSymbol, AmqpValue>> {
+        self.properties.as_ref()
     }
-    pub fn buffer_size(&self) -> Option<usize> {
-        self.buffer_size
+    pub fn buffer_size(&self) -> Option<&usize> {
+        self.buffer_size.as_ref()
     }
 }
 
@@ -156,8 +156,8 @@ pub mod builders {
         }
         pub fn with_properties<K, V>(mut self, properties: impl Into<AmqpOrderedMap<K, V>>) -> Self
         where
-            K: Into<AmqpSymbol> + Debug + Default + PartialEq,
-            V: Into<AmqpValue> + Debug + Default,
+            K: Into<AmqpSymbol> + Debug + Clone + PartialEq,
+            V: Into<AmqpValue> + Debug + Clone,
         {
             let properties_map: AmqpOrderedMap<K, V> = properties.into();
             let properties_map = properties_map

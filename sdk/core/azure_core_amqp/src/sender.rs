@@ -247,7 +247,7 @@ mod tests {
         let properties = sender_options.properties.clone().unwrap();
         assert!(properties.contains_key(&AmqpSymbol::from("key")));
         assert_eq!(
-            *properties.get("key".into()).unwrap(),
+            *properties.get(&AmqpSymbol::from("key")).unwrap(),
             AmqpValue::String("value".to_string())
         );
 

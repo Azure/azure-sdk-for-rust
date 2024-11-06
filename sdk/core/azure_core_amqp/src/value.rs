@@ -99,8 +99,8 @@ impl From<std::time::SystemTime> for AmqpTimestamp {
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct AmqpOrderedMap<K, V>
 where
-    K: PartialEq + Default,
-    V: Default,
+    K: PartialEq,
+    V: Clone,
 {
     inner: Vec<(K, V)>,
 }
@@ -256,8 +256,8 @@ impl Deserializable<AmqpValue> for AmqpValue {
 
 impl<K, V> AmqpOrderedMap<K, V>
 where
-    K: PartialEq + Clone + Default,
-    V: Clone + Default,
+    K: PartialEq + Clone,
+    V: Clone,
 {
     pub fn new() -> Self {
         Self { inner: Vec::new() }
@@ -267,10 +267,10 @@ where
         self.inner.push((key, value));
     }
 
-    pub fn get(&self, key: K) -> Option<&V> {
+    pub fn get(&self, key: &K) -> Option<&V> {
         self.inner
             .iter()
-            .find_map(|(k, v)| if *k == key.clone() { Some(v) } else { None })
+            .find_map(|(k, v)| if k == key { Some(v) } else { None })
     }
 
     pub fn len(&self) -> usize {
@@ -287,7 +287,7 @@ where
     }
 
     pub fn contains_key(&self, key: &K) -> bool {
-        self.inner.iter().any(|(k, _)| *k == key.clone())
+        self.inner.iter().any(|(k, _)| k == key)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (K, V)> + '_ {
@@ -297,8 +297,8 @@ where
 
 impl<K, V> IntoIterator for AmqpOrderedMap<K, V>
 where
-    K: PartialEq + Default,
-    V: Default,
+    K: PartialEq,
+    V: Clone,
 {
     type Item = (K, V);
     type IntoIter = <Vec<(K, V)> as IntoIterator>::IntoIter;
@@ -426,8 +426,8 @@ impl From<Box<AmqpValue>> for AmqpValue {
 
 impl<K, V> From<Vec<(K, V)>> for AmqpOrderedMap<K, V>
 where
-    K: PartialEq + Default,
-    V: Default,
+    K: PartialEq,
+    V: Clone,
 {
     fn from(v: Vec<(K, V)>) -> Self {
         AmqpOrderedMap {
@@ -438,8 +438,8 @@ where
 
 impl<K, V> FromIterator<(K, V)> for AmqpOrderedMap<K, V>
 where
-    K: PartialEq + Default,
-    V: Default,
+    K: PartialEq,
+    V: Clone,
 {
     fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
         AmqpOrderedMap {
@@ -625,14 +625,14 @@ mod tests {
         map.insert("key2", 2);
         map.insert("key3", 3);
 
-        assert_eq!(map.get("key1"), Some(&1));
-        assert_eq!(map.get("key2"), Some(&2));
-        assert_eq!(map.get("key3"), Some(&3));
-        assert_eq!(map.get("key4"), None);
+        assert_eq!(map.get(&"key1"), Some(&1));
+        assert_eq!(map.get(&"key2"), Some(&2));
+        assert_eq!(map.get(&"key3"), Some(&3));
+        assert_eq!(map.get(&"key4"), None);
 
         assert_eq!(map.remove(&"key1"), Some(1));
         assert_eq!(map.remove(&"key1"), None);
-        assert_eq!(map.get("key1"), None);
+        assert_eq!(map.get(&"key1"), None);
     }
 
     #[allow(clippy::approx_constant)]

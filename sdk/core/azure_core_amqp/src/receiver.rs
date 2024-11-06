@@ -215,7 +215,7 @@ mod tests {
         let properties = receiver_options.properties.clone().unwrap();
         assert!(properties.contains_key(&AmqpSymbol::from("key").into()));
         assert_eq!(
-            *properties.get("key".into()).unwrap(),
+            *properties.get(&AmqpSymbol::from("key")).unwrap(),
             AmqpValue::String("value".to_string())
         );
     }
@@ -303,7 +303,9 @@ mod tests {
         assert!(receiver_options.properties.is_some());
         let properties_option = receiver_options.properties.unwrap();
         assert_eq!(
-            *properties_option.get("combo_key".into()).unwrap(),
+            *properties_option
+                .get(&AmqpSymbol::from("combo_key"))
+                .unwrap(),
             AmqpValue::String("combo_value".to_string())
         );
         assert_eq!(
