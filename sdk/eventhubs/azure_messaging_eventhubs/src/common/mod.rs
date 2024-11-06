@@ -15,7 +15,6 @@ use std::time::SystemTime;
 
 pub(crate) mod user_agent;
 
-#[derive(Debug)]
 pub(crate) struct ManagementInstance {
     pub management: AmqpManagement,
 }
@@ -53,7 +52,7 @@ impl ManagementInstance {
             .call(EVENTHUB_ENTITY_TYPE.to_string(), application_properties)
             .await?;
 
-        if !response.contains_key(EVENTHUB_PROPERTY_PARTITION_COUNT.to_string()) {
+        if !response.contains_key(&EVENTHUB_PROPERTY_PARTITION_COUNT.to_string()) {
             return Err(ErrorKind::InvalidManagementResponse.into());
         }
         let name: String = response
@@ -107,9 +106,9 @@ impl ManagementInstance {
             .await?;
 
         // Look for the required response properties
-        if !response.contains_key(EVENTHUB_PARTITION_PROPERTIES_TYPE.to_string())
+        if !response.contains_key(&EVENTHUB_PARTITION_PROPERTIES_TYPE.to_string())
             || !response.contains_key(
-                EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_SEQUENCE_NUMBER_EPOCH.to_string(),
+                &EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_SEQUENCE_NUMBER_EPOCH.to_string(),
             )
         {
             return Err(ErrorKind::InvalidManagementResponse.into());

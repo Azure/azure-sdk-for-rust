@@ -76,11 +76,17 @@ impl From<Vec<AmqpValue>> for AmqpList {
     }
 }
 
-/// AMQP Timestamp. Number of milliseconds since UNIX_EPOCH.
+/// AMQP Timestamp.
 ///
-/// NOTE: This can also contain the value of -62_135_596_800_000 which is
+/// Represents a point in time.
+///
+/// Note: Internally, AMQP times are represented as signed milliseconds since
+/// the UNIX epoch (1-1-1970).
+///
+/// They can also contain the value of -62_135_596_800_000 which is
 /// January 1, 0001 represented as the number of milliseconds *BEFORE* the UNIX_EPOCH.
-/// This time cannot be expressed as a SystemTime.
+///
+/// This time cannot be expressed as a `SystemTime`, so it is represented as `None`.
 #[derive(Debug, PartialEq, Clone)]
 pub struct AmqpTimestamp(pub Option<std::time::SystemTime>);
 
@@ -280,7 +286,7 @@ where
         Some(self.inner.remove(index).1)
     }
 
-    pub fn contains_key(&self, key: K) -> bool {
+    pub fn contains_key(&self, key: &K) -> bool {
         self.inner.iter().any(|(k, _)| *k == key.clone())
     }
 

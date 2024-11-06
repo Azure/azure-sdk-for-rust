@@ -49,7 +49,7 @@ pub trait AmqpSenderApis {
     ) -> impl std::future::Future<Output = Result<()>>;
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct AmqpSender {
     implementation: SenderImplementation,
 }
@@ -245,7 +245,7 @@ mod tests {
         );
         assert!(sender_options.properties.is_some());
         let properties = sender_options.properties.clone().unwrap();
-        assert!(properties.contains_key("key".into()));
+        assert!(properties.contains_key(&AmqpSymbol::from("key")));
         assert_eq!(
             *properties.get("key".into()).unwrap(),
             AmqpValue::String("value".to_string())

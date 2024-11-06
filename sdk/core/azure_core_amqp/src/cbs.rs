@@ -3,7 +3,6 @@
 // cspell: words amqp sasl sastoken
 
 use azure_core::error::Result;
-use std::fmt::Debug;
 
 use super::session::AmqpSession;
 
@@ -57,7 +56,6 @@ pub trait AmqpClaimsBasedSecurityApis {
     ) -> impl std::future::Future<Output = Result<()>>;
 }
 
-#[derive(Debug)]
 pub struct AmqpClaimsBasedSecurity<'a> {
     implementation: CbsImplementation<'a>,
 }

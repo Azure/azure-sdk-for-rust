@@ -9,10 +9,9 @@ use azure_core::error::Result;
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
 use std::borrow::BorrowMut;
-use std::{fmt::Debug, sync::OnceLock};
+use std::sync::OnceLock;
 use tracing::{debug, trace};
 
-#[derive(Debug)]
 pub(crate) struct Fe2o3ClaimsBasedSecurity<'a> {
     cbs: OnceLock<Mutex<fe2o3_amqp_cbs::client::CbsClient>>,
     session: &'a AmqpSession,
@@ -79,10 +78,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
         );
         let cbs_token = CbsToken::new(
             secret,
-            match token_type {
-                Some(token_type) => token_type,
-                None => "jwt".to_string(),
-            },
+            token_type.unwrap_or("jwt".to_string()),
             Some(Timestamp::from(
                 expires_at
                     .to_offset(time::UtcOffset::UTC)

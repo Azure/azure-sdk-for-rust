@@ -87,7 +87,7 @@ pub trait AmqpReceiverApis {
     fn receive(&self) -> impl std::future::Future<Output = Result<AmqpMessage>>;
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct AmqpReceiver {
     implementation: ReceiverImplementation,
 }
@@ -213,7 +213,7 @@ mod tests {
         );
         assert!(receiver_options.properties.is_some());
         let properties = receiver_options.properties.clone().unwrap();
-        assert!(properties.contains_key("key".into()));
+        assert!(properties.contains_key(&AmqpSymbol::from("key").into()));
         assert_eq!(
             *properties.get("key".into()).unwrap(),
             AmqpValue::String("value".to_string())

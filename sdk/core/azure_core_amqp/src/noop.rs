@@ -16,22 +16,22 @@ use super::{
 use azure_core::{credentials::AccessToken, error::Result};
 use std::marker::PhantomData;
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub(crate) struct NoopAmqpConnection {}
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub(crate) struct NoopAmqpManagement {}
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub(crate) struct NoopAmqpSender {}
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub(crate) struct NoopAmqpReceiver {}
 
-#[derive(Debug, Default, Clone)]
+#[derive(Default, Clone)]
 pub(crate) struct NoopAmqpSession {}
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub(crate) struct NoopAmqpClaimsBasedSecurity<'a> {
     phantom: PhantomData<&'a AmqpSession>,
 }

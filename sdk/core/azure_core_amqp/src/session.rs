@@ -75,7 +75,7 @@ pub trait AmqpSessionApis {
     fn end(&self) -> impl std::future::Future<Output = Result<()>>;
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct AmqpSession {
     pub(crate) implementation: SessionImplementation,
 }
@@ -192,7 +192,7 @@ mod tests {
         );
         assert!(session_options.properties.is_some());
         let properties = session_options.properties.clone().unwrap();
-        assert!(properties.contains_key("key".into()));
+        assert!(properties.contains_key(&AmqpSymbol::from("key")));
         assert_eq!(
             *properties.get("key".into()).unwrap(),
             AmqpValue::String("value".to_string())

@@ -15,7 +15,7 @@ use super::error::{
     Fe2o3AmqpError,
 };
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub(crate) struct Fe2o3AmqpSender {
     sender: OnceLock<Mutex<fe2o3_amqp::Sender>>,
 }
@@ -106,7 +106,6 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .max_message_size())
     }
 
-    #[tracing::instrument]
     async fn send(
         &self,
         message: impl Into<AmqpMessage> + std::fmt::Debug,

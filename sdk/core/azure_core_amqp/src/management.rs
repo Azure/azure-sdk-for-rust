@@ -7,7 +7,6 @@ use super::{
     value::{AmqpOrderedMap, AmqpValue},
 };
 use azure_core::{credentials::AccessToken, error::Result};
-use std::fmt::Debug;
 
 #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
 type ManagementImplementation = super::fe2o3::management::Fe2o3AmqpManagement;
@@ -27,7 +26,6 @@ pub trait AmqpManagementApis {
     ) -> impl std::future::Future<Output = Result<AmqpOrderedMap<String, AmqpValue>>>;
 }
 
-#[derive(Debug)]
 pub struct AmqpManagement {
     implementation: ManagementImplementation,
 }

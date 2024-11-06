@@ -40,7 +40,6 @@ use tracing::{debug, trace};
 use url::Url;
 
 /// A client that can be used to receive events from an Event Hub.
-#[derive(Debug)]
 pub struct ConsumerClient {
     options: ConsumerClientOptions,
     session_instances: Mutex<HashMap<String, Arc<AmqpSession>>>,
@@ -80,7 +79,6 @@ impl ConsumerClient {
     /// let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
     /// # Ok(())}
     /// ```
-    #[tracing::instrument]
     pub fn new(
         fully_qualified_namespace: String,
         eventhub_name: String,
@@ -139,7 +137,6 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    #[tracing::instrument]
     pub async fn open(&self) -> Result<()> {
         self.ensure_connection(&self.url).await?;
         Ok(())
@@ -183,7 +180,6 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    #[tracing::instrument]
     pub async fn close(self) -> Result<()> {
         self.connection
             .get()
@@ -240,7 +236,6 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    #[tracing::instrument]
     pub async fn receive_events_on_partition(
         &self,
         partition_id: String,
@@ -333,7 +328,6 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    #[tracing::instrument]
     pub async fn get_eventhub_properties(&self) -> Result<EventHubProperties> {
         self.ensure_management_client().await?;
 
@@ -385,7 +379,6 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    #[tracing::instrument]
     pub async fn get_partition_properties(
         &self,
         partition_id: String,
@@ -401,7 +394,6 @@ impl ConsumerClient {
             .await
     }
 
-    #[tracing::instrument]
     async fn ensure_management_client(&self) -> Result<()> {
         trace!("Ensure management client.");
 
@@ -443,7 +435,6 @@ impl ConsumerClient {
         Ok(())
     }
 
-    #[tracing::instrument]
     async fn ensure_connection(&self, url: &String) -> Result<()> {
         if self.connection.get().is_none() {
             let connection = AmqpConnection::new();
@@ -538,7 +529,7 @@ impl ConsumerClient {
             .get(partition_id)
             .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingSession))?
             .clone();
-        debug!("Cloning session for partition {:?}: {:?}", partition_id, rv);
+        debug!("Cloning session for partition {:?}", partition_id);
         Ok(rv)
     }
 }

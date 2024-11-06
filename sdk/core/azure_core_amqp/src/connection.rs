@@ -75,7 +75,7 @@ pub trait AmqpConnectionApis {
     ) -> impl std::future::Future<Output = Result<()>>;
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct AmqpConnection {
     pub(crate) implementation: ConnectionImplementation,
 }

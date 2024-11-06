@@ -223,8 +223,10 @@ async fn receive_events() {
                 azure_messaging_eventhubs::consumer::ReceiveOptions{
                     start_position: Some(azure_messaging_eventhubs::consumer::StartPosition{
                         location: azure_messaging_eventhubs::consumer::StartLocation::Earliest,
-                        ..Default::default()}),
-                    ..Default::default()},
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
             ))
         .await;
 
