@@ -82,7 +82,7 @@ impl CosmosClient {
             databases_link: ResourceLink::root(ResourceType::Databases),
             pipeline: CosmosPipeline::new(
                 endpoint.parse()?,
-                AuthorizationPolicy::from_shared_key(key.into()),
+                AuthorizationPolicy::from_shared_key(key),
                 options.client_options,
             ),
         })
