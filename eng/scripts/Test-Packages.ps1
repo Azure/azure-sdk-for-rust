@@ -49,9 +49,23 @@ foreach ($package in $packagesToTest) {
 
     Invoke-LoggedCommand "cargo +$Toolchain build --keep-going"
     Write-Host "`n`n"
-    Invoke-LoggedCommand "cargo +$Toolchain test --lib --no-fail-fast"
+
+    $targets = @()
+    if ($UnitTests) {
+      $targets += "--lib"
+    }
+
+    if ($FunctionalTests) {
+      $targets += "--bins"
+      $targets += "--examples"
+      $targets += "--benches"
+    }
+
+    Invoke-LoggedCommand "cargo +$Toolchain test $($targets -join ' ') --no-fail-fast"
     Write-Host "`n`n"
+
     Invoke-LoggedCommand "cargo +$Toolchain test --doc --no-fail-fast"
+    Write-Host "`n`n"
   }
   finally {
     Pop-Location

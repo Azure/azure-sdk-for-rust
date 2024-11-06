@@ -45,7 +45,6 @@ mod client {
     pub async fn put_binary_data(
         body: RequestContent<()>,
     ) -> typespec_client_core::Result<Response<()>> {
-        let body: RequestContent<()> = body.into();
         let body: Body = body.into();
 
         let content = match body {
