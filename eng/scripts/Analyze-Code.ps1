@@ -1,5 +1,6 @@
-#Requires -Version 7.0
+#!/usr/bin/env pwsh
 
+#Requires -Version 7.0
 param(
   [string]$Toolchain = 'stable',
   [string]$PackageInfoPath,
