@@ -213,9 +213,9 @@ mod tests {
         );
         assert!(receiver_options.properties.is_some());
         let properties = receiver_options.properties.clone().unwrap();
-        assert!(properties.contains_key(&AmqpSymbol::from("key")));
+        assert!(properties.contains_key("key"));
         assert_eq!(
-            *properties.get(&AmqpSymbol::from("key")).unwrap(),
+            *properties.get("key").unwrap(),
             AmqpValue::String("value".to_string())
         );
     }
