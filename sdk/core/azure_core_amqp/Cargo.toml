@@ -46,7 +46,6 @@ fe2o3-amqp = [
   "serde_bytes",
 ]
 cplusplus = []
-test_e2e = []
 
 [package.metadata.docs.rs]
 features = ["fe2o3-amqp"]

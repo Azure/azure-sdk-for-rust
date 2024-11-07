@@ -44,7 +44,6 @@ clap.workspace = true
 default = ["reqwest", "old_azure_cli"]
 reqwest = ["azure_core/reqwest"]
 reqwest_rustls = ["azure_core/reqwest_rustls"]
-test_e2e = []
 client_certificate = ["openssl"]
 
 # If you are using and Azure CLI version older than 2.54.0 from November 2023,
