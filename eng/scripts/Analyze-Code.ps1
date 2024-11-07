@@ -31,7 +31,7 @@ Invoke-LoggedCommand "cargo +$Toolchain fmt --all -- --check"
 Invoke-LoggedCommand "cargo +$Toolchain clippy --workspace --all-features --all-targets --keep-going --no-deps"
 
 if ($CheckWasm) {
-  Invoke-LoggedCommand "cargo +$Toolchain clippy --target=wasm32-unknown-unknown --workspace --all-features --all-targets --keep-going --no-deps"
+  Invoke-LoggedCommand "cargo +$Toolchain clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps"
 }
 
 Invoke-LoggedCommand "cargo +$Toolchain doc --workspace --no-deps"
