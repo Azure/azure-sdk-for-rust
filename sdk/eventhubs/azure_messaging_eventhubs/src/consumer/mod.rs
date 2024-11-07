@@ -435,7 +435,7 @@ impl ConsumerClient {
         Ok(())
     }
 
-    async fn ensure_connection(&self, url: &String) -> Result<()> {
+    async fn ensure_connection(&self, url: &str) -> Result<()> {
         if self.connection.get().is_none() {
             let connection = AmqpConnection::new();
             connection
@@ -751,7 +751,6 @@ mod tests {
         let start_position = StartPosition {
             location: StartLocation::SequenceNumber(sequence_number),
             inclusive: true,
-            ..Default::default()
         };
         assert_eq!(
             StartPosition::start_expression(&Some(start_position)),
@@ -783,7 +782,7 @@ mod tests {
             start_position.location,
             StartLocation::EnqueuedTime(enqueued_time)
         );
-        assert_eq!(start_position.inclusive, false);
+        assert!(!start_position.inclusive);
         assert_eq!(
             StartPosition::start_expression(&Some(start_position)),
             format!(
@@ -798,7 +797,6 @@ mod tests {
         let start_position = StartPosition {
             location: StartLocation::EnqueuedTime(enqueued_time),
             inclusive: true,
-            ..Default::default()
         };
         assert_eq!(
             StartPosition::start_expression(&Some(start_position)),
@@ -832,7 +830,6 @@ mod tests {
         let start_position = StartPosition {
             location: StartLocation::Offset(offset.clone()),
             inclusive: true,
-            ..Default::default()
         };
         assert_eq!(
             "amqp.annotation.x-opt-offset >='12345'",

@@ -213,7 +213,7 @@ mod tests {
         );
         assert!(receiver_options.properties.is_some());
         let properties = receiver_options.properties.clone().unwrap();
-        assert!(properties.contains_key(&AmqpSymbol::from("key").into()));
+        assert!(properties.contains_key(&AmqpSymbol::from("key")));
         assert_eq!(
             *properties.get(&AmqpSymbol::from("key")).unwrap(),
             AmqpValue::String("value".to_string())

@@ -54,7 +54,6 @@ struct EventDataBatchState {
 /// ```
 pub struct EventDataBatch<'a> {
     producer: &'a ProducerClient,
-
     batch_state: Mutex<EventDataBatchState>,
     max_size_in_bytes: u64,
     partition_key: Option<String>,
@@ -372,7 +371,6 @@ mod tests {
             max_size_in_bytes: Some(1024),
             partition_key: Some("pk".to_string()),
             partition_id: Some("pid".to_string()),
-            ..Default::default()
         };
 
         assert_eq!(options.max_size_in_bytes, Some(1024));
