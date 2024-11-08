@@ -229,7 +229,7 @@ impl<'a> EventDataBatch<'a> {
         #[allow(unused_variables)] options: Option<AddEventDataOptions>,
     ) -> Result<bool> {
         let mut message = message.into();
-        if message.properties().is_none() || message.properties().unwrap().message_id().is_none() {
+        if message.properties().is_none() || message.properties().unwrap().message_id.is_none() {
             message.set_message_id(Uuid::new_v4());
         }
         if let Some(partition_key) = self.partition_key.as_ref() {

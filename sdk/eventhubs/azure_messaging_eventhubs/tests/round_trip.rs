@@ -79,7 +79,10 @@ async fn test_round_trip_batch() {
             AmqpMessage::builder()
                 .with_body(AmqpValue::from("Hello, World!"))
                 .add_application_property("Message#".to_string(), 2)
-                .with_properties(AmqpMessageProperties::builder().with_message_id(2).build())
+                .with_properties(AmqpMessageProperties {
+                    message_id: Some(2.into()),
+                    ..Default::default()
+                })
                 .build(),
             None,
         )
@@ -94,7 +97,10 @@ async fn test_round_trip_batch() {
                     5.into()
                 ]))
                 .add_application_property("Message#".to_string(), 3)
-                .with_properties(AmqpMessageProperties::builder().with_message_id(3).build())
+                .with_properties(AmqpMessageProperties {
+                    message_id: Some(3.into()),
+                    ..Default::default()
+                })
                 .build(),
             None,
         )
@@ -104,7 +110,10 @@ async fn test_round_trip_batch() {
         .try_add_amqp_message(
             AmqpMessage::builder()
                 .add_application_property("Message#".to_string(), 4)
-                .with_properties(AmqpMessageProperties::builder().with_message_id(4).build())
+                .with_properties(AmqpMessageProperties {
+                    message_id: Some(4.into()),
+                    ..Default::default()
+                })
                 .build(),
             None
         )
