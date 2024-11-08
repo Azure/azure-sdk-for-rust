@@ -144,7 +144,7 @@ pub mod builders {
         }
         pub fn with_properties<K, V>(mut self, properties: impl Into<AmqpOrderedMap<K, V>>) -> Self
         where
-            K: Into<AmqpSymbol> + PartialEq + Clone + Debug,
+            K: Into<AmqpSymbol> + PartialEq + Clone,
             V: Into<AmqpValue> + Clone,
         {
             let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = properties

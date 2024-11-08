@@ -2,6 +2,8 @@
 // Licensed under the MIT license.
 // cspell: words amqp
 
+use std::borrow::Borrow;
+
 use crate::Uuid;
 
 #[cfg(all(
@@ -18,12 +20,23 @@ use azure_core::Result;
 #[derive(Debug, PartialEq, Clone, Default, Eq)]
 pub struct AmqpSymbol(pub String);
 
+impl PartialEq<str> for AmqpSymbol {
+    fn eq(&self, other: &str) -> bool {
+        self.0.as_str() == other
+    }
+}
+
+impl PartialEq<AmqpSymbol> for str {
+    fn eq(&self, other: &AmqpSymbol) -> bool {
+        self == other.0.as_str()
+    }
+}
+
 impl PartialEq<&str> for AmqpSymbol {
     fn eq(&self, other: &&str) -> bool {
         self.0 == *other
     }
 }
-
 impl PartialEq<AmqpSymbol> for &str {
     fn eq(&self, other: &AmqpSymbol) -> bool {
         *self == other.0
@@ -56,6 +69,12 @@ impl From<AmqpSymbol> for String {
 impl From<&str> for AmqpSymbol {
     fn from(s: &str) -> Self {
         AmqpSymbol(s.to_string())
+    }
+}
+
+impl Borrow<str> for AmqpSymbol {
+    fn borrow(&self) -> &str {
+        self.0.as_str()
     }
 }
 
@@ -285,10 +304,14 @@ where
         self.inner.push((key, value));
     }
 
-    pub fn get(&self, key: impl PartialEq<K>) -> Option<&V> {
+    pub fn get<Q>(&self, key: &Q) -> Option<&V>
+    where
+        K: Borrow<Q> + PartialEq<Q>,
+        Q: PartialEq<K> + ?Sized,
+    {
         self.inner
             .iter()
-            .find_map(|(k, v)| if key == *k { Some(v) } else { None })
+            .find_map(|(k, v)| if key == k { Some(v) } else { None })
     }
 
     pub fn len(&self) -> usize {
@@ -299,13 +322,21 @@ where
         self.inner.is_empty()
     }
 
-    pub fn remove(&mut self, key: impl PartialEq<K>) -> Option<V> {
-        let index = self.inner.iter().position(|(k, _)| key == *k)?;
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
+    where
+        K: Borrow<Q> + PartialEq<Q>,
+        Q: PartialEq<K> + ?Sized,
+    {
+        let index = self.inner.iter().position(|(k, _)| key == k)?;
         Some(self.inner.remove(index).1)
     }
 
-    pub fn contains_key(&self, key: impl PartialEq<K>) -> bool {
-        self.inner.iter().any(|(k, _)| key == *k)
+    pub fn contains_key<Q>(&self, key: &Q) -> bool
+    where
+        K: Borrow<Q> + PartialEq<Q>,
+        Q: PartialEq<K> + ?Sized,
+    {
+        self.inner.iter().any(|(k, _)| key == k)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (K, V)> + '_ {
@@ -643,14 +674,14 @@ mod tests {
         map.insert("key2", 2);
         map.insert("key3", 3);
 
-        assert_eq!(map.get("key1"), Some(&1));
-        assert_eq!(map.get("key2"), Some(&2));
-        assert_eq!(map.get("key3"), Some(&3));
-        assert_eq!(map.get("key4"), None);
+        assert_eq!(map.get(&"key1"), Some(&1));
+        assert_eq!(map.get(&"key2"), Some(&2));
+        assert_eq!(map.get(&"key3"), Some(&3));
+        assert_eq!(map.get(&"key4"), None);
 
-        assert_eq!(map.remove("key1"), Some(1));
-        assert_eq!(map.remove("key1"), None);
-        assert_eq!(map.get("key1"), None);
+        assert_eq!(map.remove(&"key1"), Some(1));
+        assert_eq!(map.remove(&"key1"), None);
+        assert_eq!(map.get(&"key1"), None);
     }
 
     #[allow(clippy::approx_constant)]

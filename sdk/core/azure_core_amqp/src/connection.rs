@@ -30,11 +30,11 @@ impl AmqpConnectionOptions {
     pub fn builder() -> builders::AmqpConnectionOptionsBuilder {
         builders::AmqpConnectionOptionsBuilder::new()
     }
-    pub fn max_frame_size(&self) -> Option<&u32> {
-        self.max_frame_size.as_ref()
+    pub fn max_frame_size(&self) -> Option<u32> {
+        self.max_frame_size
     }
-    pub fn channel_max(&self) -> Option<&u16> {
-        self.channel_max.as_ref()
+    pub fn channel_max(&self) -> Option<u16> {
+        self.channel_max
     }
     pub fn idle_timeout(&self) -> Option<&Duration> {
         self.idle_timeout.as_ref()
@@ -54,8 +54,8 @@ impl AmqpConnectionOptions {
     pub fn properties(&self) -> Option<&AmqpOrderedMap<AmqpSymbol, AmqpValue>> {
         self.properties.as_ref()
     }
-    pub fn buffer_size(&self) -> Option<&usize> {
-        self.buffer_size.as_ref()
+    pub fn buffer_size(&self) -> Option<usize> {
+        self.buffer_size
     }
 }
 
