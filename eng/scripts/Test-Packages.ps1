@@ -1,5 +1,6 @@
-#Requires -Version 7.0
+#!/usr/bin/env pwsh
 
+#Requires -Version 7.0
 param(
   [string]$Toolchain = 'stable',
   [bool]$UnitTests = $true,
@@ -30,12 +31,12 @@ if ($PackageInfoPath) {
   | ConvertFrom-Json
 }
 else {
-  $packagesToTest = Get-AllPackagesInRepo
+  $packagesToTest = Get-AllPackageInfoFromRepo
 }
 
 Write-Host "Testing packages:"
 foreach ($package in $packagesToTest) {
-  Write-Host "  '$($package.Name)'"
+  Write-Host "  '$($package.Name)' in '$($package.DirectoryPath)'"
 }
 
 Write-Host "Setting RUSTFLAGS to '-Dwarnings'"
@@ -43,9 +44,9 @@ $env:RUSTFLAGS = "-Dwarnings"
 
 
 foreach ($package in $packagesToTest) {
-  Push-Location (Join-Path $RepoRoot $package.DirectoryPath)
+  Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
   try {
-    Write-Host "`n`nTesting package: '$($package.Name)' in directory: '$($package.DirectoryPath)'`n"
+    Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
     Invoke-LoggedCommand "cargo +$Toolchain build --keep-going"
     Write-Host "`n`n"

@@ -1,8 +1,10 @@
-#Requires -Version 7.0
+#!/usr/bin/env pwsh
 
+#Requires -Version 7.0
 param(
   [string]$Toolchain = 'stable',
   [string]$PackageInfoPath,
+  [switch]$CheckWasm = $true,
   [switch]$SkipPackageAnalysis
 )
 
@@ -18,11 +20,19 @@ Write-Host "Analyzing code with
 $env:RUSTDOCFLAGS = "-D warnings"
 $env:RUSTFLAGS = "-Dwarnings"
 
+if ($CheckWasm) {
+  Invoke-LoggedCommand "rustup target add --toolchain $Toolchain wasm32-unknown-unknown"
+}
+
 Invoke-LoggedCommand "cargo +$Toolchain check -p azure_core --all-features --all-targets --keep-going"
 
 Invoke-LoggedCommand "cargo +$Toolchain fmt --all -- --check"
 
 Invoke-LoggedCommand "cargo +$Toolchain clippy --workspace --all-features --all-targets --keep-going --no-deps"
+
+if ($CheckWasm) {
+  Invoke-LoggedCommand "cargo +$Toolchain clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps"
+}
 
 Invoke-LoggedCommand "cargo +$Toolchain doc --workspace --no-deps"
 
