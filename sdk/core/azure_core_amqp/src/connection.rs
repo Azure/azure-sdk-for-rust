@@ -26,35 +26,7 @@ pub struct AmqpConnectionOptions {
     pub buffer_size: Option<usize>,
 }
 
-impl AmqpConnectionOptions {
-    pub fn max_frame_size(&self) -> Option<u32> {
-        self.max_frame_size
-    }
-    pub fn channel_max(&self) -> Option<u16> {
-        self.channel_max
-    }
-    pub fn idle_timeout(&self) -> Option<&Duration> {
-        self.idle_timeout.as_ref()
-    }
-    pub fn outgoing_locales(&self) -> Option<&Vec<String>> {
-        self.outgoing_locales.as_ref()
-    }
-    pub fn incoming_locales(&self) -> Option<&Vec<String>> {
-        self.incoming_locales.as_ref()
-    }
-    pub fn offered_capabilities(&self) -> Option<&Vec<AmqpSymbol>> {
-        self.offered_capabilities.as_ref()
-    }
-    pub fn desired_capabilities(&self) -> Option<&Vec<AmqpSymbol>> {
-        self.desired_capabilities.as_ref()
-    }
-    pub fn properties(&self) -> Option<&AmqpOrderedMap<AmqpSymbol, AmqpValue>> {
-        self.properties.as_ref()
-    }
-    pub fn buffer_size(&self) -> Option<usize> {
-        self.buffer_size
-    }
-}
+impl AmqpConnectionOptions {}
 
 pub trait AmqpConnectionApis {
     fn open(
