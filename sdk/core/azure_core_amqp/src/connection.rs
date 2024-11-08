@@ -36,23 +36,23 @@ impl AmqpConnectionOptions {
     pub fn channel_max(&self) -> Option<u16> {
         self.channel_max
     }
-    pub fn idle_timeout(&self) -> Option<Duration> {
-        self.idle_timeout
+    pub fn idle_timeout(&self) -> Option<&Duration> {
+        self.idle_timeout.as_ref()
     }
-    pub fn outgoing_locales(&self) -> Option<Vec<String>> {
-        self.outgoing_locales.clone()
+    pub fn outgoing_locales(&self) -> Option<&Vec<String>> {
+        self.outgoing_locales.as_ref()
     }
-    pub fn incoming_locales(&self) -> Option<Vec<String>> {
-        self.incoming_locales.clone()
+    pub fn incoming_locales(&self) -> Option<&Vec<String>> {
+        self.incoming_locales.as_ref()
     }
-    pub fn offered_capabilities(&self) -> Option<Vec<AmqpSymbol>> {
-        self.offered_capabilities.clone()
+    pub fn offered_capabilities(&self) -> Option<&Vec<AmqpSymbol>> {
+        self.offered_capabilities.as_ref()
     }
-    pub fn desired_capabilities(&self) -> Option<Vec<AmqpSymbol>> {
-        self.desired_capabilities.clone()
+    pub fn desired_capabilities(&self) -> Option<&Vec<AmqpSymbol>> {
+        self.desired_capabilities.as_ref()
     }
-    pub fn properties(&self) -> Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>> {
-        self.properties.clone()
+    pub fn properties(&self) -> Option<&AmqpOrderedMap<AmqpSymbol, AmqpValue>> {
+        self.properties.as_ref()
     }
     pub fn buffer_size(&self) -> Option<usize> {
         self.buffer_size
@@ -62,20 +62,20 @@ impl AmqpConnectionOptions {
 pub trait AmqpConnectionApis {
     fn open(
         &self,
-        name: impl Into<String>,
+        name: String,
         url: Url,
         options: Option<AmqpConnectionOptions>,
     ) -> impl std::future::Future<Output = Result<()>>;
     fn close(&self) -> impl std::future::Future<Output = Result<()>>;
     fn close_with_error(
         &self,
-        condition: impl Into<AmqpSymbol>,
+        condition: AmqpSymbol,
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
     ) -> impl std::future::Future<Output = Result<()>>;
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct AmqpConnection {
     pub(crate) implementation: ConnectionImplementation,
 }
@@ -83,7 +83,7 @@ pub struct AmqpConnection {
 impl AmqpConnectionApis for AmqpConnection {
     fn open(
         &self,
-        name: impl Into<String>,
+        name: String,
         url: Url,
         options: Option<AmqpConnectionOptions>,
     ) -> impl std::future::Future<Output = Result<()>> {
@@ -94,7 +94,7 @@ impl AmqpConnectionApis for AmqpConnection {
     }
     fn close_with_error(
         &self,
-        condition: impl Into<AmqpSymbol>,
+        condition: AmqpSymbol,
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
     ) -> impl std::future::Future<Output = Result<()>> {
@@ -156,8 +156,8 @@ pub mod builders {
         }
         pub fn with_properties<K, V>(mut self, properties: impl Into<AmqpOrderedMap<K, V>>) -> Self
         where
-            K: Into<AmqpSymbol> + Debug + Default + PartialEq,
-            V: Into<AmqpValue> + Debug + Default,
+            K: Into<AmqpSymbol> + Debug + Clone + PartialEq,
+            V: Into<AmqpValue> + Debug + Clone,
         {
             let properties_map: AmqpOrderedMap<K, V> = properties.into();
             let properties_map = properties_map

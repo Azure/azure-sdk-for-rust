@@ -26,11 +26,10 @@ async fn test_new() {
         eventhub,
         None,
         DefaultAzureCredential::new().unwrap(),
-        Some(
-            ConsumerClientOptions::builder()
-                .with_application_id("test_new")
-                .build(),
-        ),
+        Some(ConsumerClientOptions {
+            application_id: Some("test_new".to_string()),
+            ..Default::default()
+        }),
     );
 }
 
@@ -40,15 +39,14 @@ async fn test_new_with_error() {
     trace!("test_new_with_error");
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
     let consumer = ConsumerClient::new(
-        "invalid_host",
+        "invalid_host".into(),
         eventhub,
         None,
         DefaultAzureCredential::new().unwrap(),
-        Some(
-            ConsumerClientOptions::builder()
-                .with_application_id("test_new")
-                .build(),
-        ),
+        Some(ConsumerClientOptions {
+            application_id: Some("test_new".to_string()),
+            ..Default::default()
+        }),
     );
     let result = consumer.open().await;
     assert!(result.is_err());
@@ -65,11 +63,10 @@ async fn test_open() {
         eventhub,
         None,
         azure_identity::DefaultAzureCredential::new().unwrap(),
-        Some(
-            ConsumerClientOptions::builder()
-                .with_application_id("test_open")
-                .build(),
-        ),
+        Some(ConsumerClientOptions {
+            application_id: Some("test_open".to_string()),
+            ..Default::default()
+        }),
     );
     client.open().await.unwrap();
 }
@@ -83,11 +80,10 @@ async fn test_close() {
         eventhub,
         None,
         azure_identity::DefaultAzureCredential::new().unwrap(),
-        Some(
-            ConsumerClientOptions::builder()
-                .with_application_id("test_close")
-                .build(),
-        ),
+        Some(ConsumerClientOptions {
+            application_id: Some("test_open".to_string()),
+            ..Default::default()
+        }),
     );
     client.open().await.unwrap();
     client.close().await.unwrap();
@@ -106,11 +102,10 @@ async fn test_get_properties() {
         eventhub.clone(),
         None,
         credential,
-        Some(
-            ConsumerClientOptions::builder()
-                .with_application_id("test_get_properties")
-                .build(),
-        ),
+        Some(ConsumerClientOptions {
+            application_id: Some("test_open".to_string()),
+            ..Default::default()
+        }),
     );
     client.open().await.unwrap();
     let properties = client.get_eventhub_properties().await.unwrap();
@@ -131,11 +126,10 @@ async fn test_get_partition_properties() {
         eventhub,
         None,
         credential,
-        Some(
-            ConsumerClientOptions::builder()
-                .with_application_id("test_get_properties")
-                .build(),
-        ),
+        Some(ConsumerClientOptions {
+            application_id: Some("test_open".to_string()),
+            ..Default::default()
+        }),
     );
     client.open().await.unwrap();
     let properties = client.get_eventhub_properties().await.unwrap();
@@ -167,11 +161,10 @@ async fn receive_lots_of_events() {
         eventhub,
         None,
         credential,
-        Some(
-            ConsumerClientOptions::builder()
-                .with_application_id("receive_lots_of_events")
-                .build(),
-        ),
+        Some(ConsumerClientOptions {
+            application_id: Some("test_open".to_string()),
+            ..Default::default()
+        }),
     );
 
     info!("Opening client.");
@@ -180,12 +173,14 @@ async fn receive_lots_of_events() {
     info!("Creating event receive stream.");
     let event_stream = client
         .receive_events_on_partition(
-            "0",
-            Some(
-                ReceiveOptions::builder()
-                    .with_start_position(StartPosition::builder().with_earliest_location().build())
-                    .build(),
-            ),
+            "0".to_string(),
+            Some(ReceiveOptions {
+                start_position: Some(StartPosition {
+                    location: azure_messaging_eventhubs::consumer::StartLocation::Earliest,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
         )
         .await;
 

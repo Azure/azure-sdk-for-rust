@@ -39,7 +39,7 @@ impl Drop for Fe2o3AmqpConnection {
 impl AmqpConnectionApis for Fe2o3AmqpConnection {
     async fn open(
         &self,
-        id: impl Into<String>,
+        id: String,
         url: Url,
         options: Option<AmqpConnectionOptions>,
     ) -> Result<()> {
@@ -133,7 +133,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
     }
     async fn close_with_error(
         &self,
-        condition: impl Into<AmqpSymbol>,
+        condition: AmqpSymbol,
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
     ) -> Result<()> {
@@ -152,7 +152,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             .borrow_mut()
             .close_with_error(fe2o3_amqp::types::definitions::Error::new(
                 fe2o3_amqp::types::definitions::ErrorCondition::Custom(
-                    fe2o3_amqp_types::primitives::Symbol::from(condition.into()),
+                    fe2o3_amqp_types::primitives::Symbol::from(condition),
                 ),
                 description,
                 info.map(|i| i.into()),

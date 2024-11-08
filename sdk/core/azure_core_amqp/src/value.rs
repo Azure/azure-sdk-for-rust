@@ -2,6 +2,8 @@
 // Licensed under the MIT license.
 // cspell: words amqp
 
+use std::borrow::Borrow;
+
 use crate::Uuid;
 
 #[cfg(all(
@@ -18,9 +20,38 @@ use azure_core::Result;
 #[derive(Debug, PartialEq, Clone, Default, Eq)]
 pub struct AmqpSymbol(pub String);
 
+// impl PartialEq<str> for AmqpSymbol {
+//     fn eq(&self, other: &str) -> bool {
+//         self.0.as_str() == other
+//     }
+// }
+
+impl PartialEq<AmqpSymbol> for str {
+    fn eq(&self, other: &AmqpSymbol) -> bool {
+        self == other.0.as_str()
+    }
+}
+
 impl PartialEq<&str> for AmqpSymbol {
     fn eq(&self, other: &&str) -> bool {
         self.0 == *other
+    }
+}
+impl PartialEq<AmqpSymbol> for &str {
+    fn eq(&self, other: &AmqpSymbol) -> bool {
+        *self == other.0
+    }
+}
+
+impl PartialEq<&AmqpSymbol> for AmqpSymbol {
+    fn eq(&self, other: &&AmqpSymbol) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl PartialEq<AmqpSymbol> for &AmqpSymbol {
+    fn eq(&self, other: &AmqpSymbol) -> bool {
+        self.0 == other.0
     }
 }
 
@@ -38,6 +69,12 @@ impl From<AmqpSymbol> for String {
 impl From<&str> for AmqpSymbol {
     fn from(s: &str) -> Self {
         AmqpSymbol(s.to_string())
+    }
+}
+
+impl Borrow<str> for AmqpSymbol {
+    fn borrow(&self) -> &str {
+        self.0.as_str()
     }
 }
 
@@ -76,20 +113,31 @@ impl From<Vec<AmqpValue>> for AmqpList {
     }
 }
 
+/// AMQP Timestamp.
+///
+/// Represents a point in time.
+///
+/// Note: Internally, AMQP times are represented as signed milliseconds since
+/// the UNIX epoch (1-1-1970).
+///
+/// They can also contain the value of -62_135_596_800_000 which is
+/// January 1, 0001 represented as the number of milliseconds *BEFORE* the UNIX_EPOCH.
+///
+/// This time cannot be expressed as a `SystemTime`, so it is represented as `None`.
 #[derive(Debug, PartialEq, Clone)]
-pub struct AmqpTimestamp(pub std::time::SystemTime);
+pub struct AmqpTimestamp(pub Option<std::time::SystemTime>);
 
 impl From<std::time::SystemTime> for AmqpTimestamp {
     fn from(v: std::time::SystemTime) -> Self {
-        AmqpTimestamp(v)
+        AmqpTimestamp(Some(v))
     }
 }
 
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct AmqpOrderedMap<K, V>
 where
-    K: PartialEq + Default,
-    V: Default,
+    K: PartialEq,
+    V: Clone,
 {
     inner: Vec<(K, V)>,
 }
@@ -245,25 +293,25 @@ impl Deserializable<AmqpValue> for AmqpValue {
 
 impl<K, V> AmqpOrderedMap<K, V>
 where
-    K: PartialEq + Clone + Default,
-    V: Clone + Default,
+    K: PartialEq + Clone,
+    V: Clone,
 {
     pub fn new() -> Self {
         Self { inner: Vec::new() }
     }
 
-    pub fn insert(&mut self, key: impl Into<K>, value: impl Into<V>) {
-        self.inner.push((key.into(), value.into()));
+    pub fn insert(&mut self, key: K, value: V) {
+        self.inner.push((key, value));
     }
 
-    pub fn get(&self, key: impl Into<K> + Clone) -> Option<&V> {
-        self.inner.iter().find_map(|(k, v)| {
-            if *k == key.clone().into() {
-                Some(v)
-            } else {
-                None
-            }
-        })
+    pub fn get<Q>(&self, key: &Q) -> Option<&V>
+    where
+        K: Borrow<Q>,
+        Q: PartialEq<K> + ?Sized,
+    {
+        self.inner
+            .iter()
+            .find_map(|(k, v)| if key.eq(k) { Some(v) } else { None })
     }
 
     pub fn len(&self) -> usize {
@@ -274,13 +322,21 @@ where
         self.inner.is_empty()
     }
 
-    pub fn remove(&mut self, key: &K) -> Option<V> {
-        let index = self.inner.iter().position(|(k, _)| k == key)?;
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
+    where
+        K: Borrow<Q>,
+        Q: PartialEq<K> + ?Sized,
+    {
+        let index = self.inner.iter().position(|(k, _)| key.eq(k))?;
         Some(self.inner.remove(index).1)
     }
 
-    pub fn contains_key(&self, key: impl Into<K> + Clone) -> bool {
-        self.inner.iter().any(|(k, _)| *k == key.clone().into())
+    pub fn contains_key<Q>(&self, key: &Q) -> bool
+    where
+        K: Borrow<Q>,
+        Q: PartialEq<K> + ?Sized,
+    {
+        self.inner.iter().any(|(k, _)| key.eq(k))
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (K, V)> + '_ {
@@ -290,8 +346,8 @@ where
 
 impl<K, V> IntoIterator for AmqpOrderedMap<K, V>
 where
-    K: PartialEq + Default,
-    V: Default,
+    K: PartialEq,
+    V: Clone,
 {
     type Item = (K, V);
     type IntoIter = <Vec<(K, V)> as IntoIterator>::IntoIter;
@@ -419,8 +475,8 @@ impl From<Box<AmqpValue>> for AmqpValue {
 
 impl<K, V> From<Vec<(K, V)>> for AmqpOrderedMap<K, V>
 where
-    K: PartialEq + Default,
-    V: Default,
+    K: PartialEq,
+    V: Clone,
 {
     fn from(v: Vec<(K, V)>) -> Self {
         AmqpOrderedMap {
@@ -431,8 +487,8 @@ where
 
 impl<K, V> FromIterator<(K, V)> for AmqpOrderedMap<K, V>
 where
-    K: PartialEq + Default,
-    V: Default,
+    K: PartialEq,
+    V: Clone,
 {
     fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
         AmqpOrderedMap {
@@ -472,7 +528,7 @@ mod tests {
         let v10 = AmqpValue::Float(9.0);
         let v11 = AmqpValue::Double(10.0);
         let v12 = AmqpValue::Char('a');
-        let v13 = AmqpValue::TimeStamp(AmqpTimestamp(timestamp));
+        let v13 = AmqpValue::TimeStamp(AmqpTimestamp(Some(timestamp)));
         let v14 = AmqpValue::Uuid(uuid);
         let v15 = AmqpValue::Binary(vec![1, 2, 3]);
         let v16 = AmqpValue::String("hello".to_string());
@@ -502,7 +558,7 @@ mod tests {
         assert_eq!(v10, AmqpValue::Float(9.0));
         assert_eq!(v11, AmqpValue::Double(10.0));
         assert_eq!(v12, AmqpValue::Char('a'));
-        assert_eq!(v13, AmqpValue::TimeStamp(AmqpTimestamp(timestamp)));
+        assert_eq!(v13, AmqpValue::TimeStamp(AmqpTimestamp(Some(timestamp))));
         assert_eq!(v14, AmqpValue::Uuid(uuid));
         assert_eq!(v15, AmqpValue::Binary(vec![1, 2, 3]));
         assert_eq!(v16, AmqpValue::String("hello".to_string()));
@@ -566,7 +622,7 @@ mod tests {
         test_conversion!(
             AmqpTimestamp,
             TimeStamp,
-            AmqpTimestamp(std::time::SystemTime::now())
+            AmqpTimestamp(Some(std::time::SystemTime::now()))
         );
         test_conversion!(Uuid, Uuid, Uuid::new_v4());
         test_conversion!(Vec<u8>, Binary, vec![1, 2, 3]);
@@ -618,14 +674,14 @@ mod tests {
         map.insert("key2", 2);
         map.insert("key3", 3);
 
-        assert_eq!(map.get("key1"), Some(&1));
-        assert_eq!(map.get("key2"), Some(&2));
-        assert_eq!(map.get("key3"), Some(&3));
-        assert_eq!(map.get("key4"), None);
+        assert_eq!(map.get(&"key1"), Some(&1));
+        assert_eq!(map.get(&"key2"), Some(&2));
+        assert_eq!(map.get(&"key3"), Some(&3));
+        assert_eq!(map.get(&"key4"), None);
 
         assert_eq!(map.remove(&"key1"), Some(1));
         assert_eq!(map.remove(&"key1"), None);
-        assert_eq!(map.get("key1"), None);
+        assert_eq!(map.get(&"key1"), None);
     }
 
     #[allow(clippy::approx_constant)]
@@ -723,17 +779,17 @@ mod tests {
 
         // Test AmqpValue::TimeStamp
         let timestamp = std::time::SystemTime::now();
-        let timestamp_value: AmqpValue = AmqpValue::TimeStamp(AmqpTimestamp(timestamp));
+        let timestamp_value: AmqpValue = AmqpValue::TimeStamp(AmqpTimestamp(Some(timestamp)));
         assert_eq!(
             timestamp_value,
-            AmqpValue::TimeStamp(AmqpTimestamp(timestamp))
+            AmqpValue::TimeStamp(AmqpTimestamp(Some(timestamp)))
         );
         assert_eq!(
-            AmqpValue::TimeStamp(AmqpTimestamp(timestamp)),
+            AmqpValue::TimeStamp(AmqpTimestamp(Some(timestamp))),
             timestamp_value
         );
         let timestamp_val: AmqpTimestamp = timestamp_value.into();
-        assert_eq!(timestamp_val, AmqpTimestamp(timestamp));
+        assert_eq!(timestamp_val, AmqpTimestamp(Some(timestamp)));
 
         // Test AmqpValue::Uuid
         let uuid = Uuid::new_v4();

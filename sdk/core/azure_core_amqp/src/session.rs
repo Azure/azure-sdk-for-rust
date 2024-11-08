@@ -75,7 +75,7 @@ pub trait AmqpSessionApis {
     fn end(&self) -> impl std::future::Future<Output = Result<()>>;
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct AmqpSession {
     pub(crate) implementation: SessionImplementation,
 }
@@ -144,8 +144,8 @@ pub mod builders {
         }
         pub fn with_properties<K, V>(mut self, properties: impl Into<AmqpOrderedMap<K, V>>) -> Self
         where
-            K: Into<AmqpSymbol> + PartialEq + Default + Debug,
-            V: Into<AmqpValue> + Default,
+            K: Into<AmqpSymbol> + PartialEq + Clone,
+            V: Into<AmqpValue> + Clone,
         {
             let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = properties
                 .into()
@@ -194,7 +194,7 @@ mod tests {
         let properties = session_options.properties.clone().unwrap();
         assert!(properties.contains_key("key"));
         assert_eq!(
-            *properties.get("key").unwrap(),
+            *properties.get(&AmqpSymbol::from("key")).unwrap(),
             AmqpValue::String("value".to_string())
         );
 

@@ -15,7 +15,7 @@ use super::error::{
     Fe2o3AmqpError,
 };
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub(crate) struct Fe2o3AmqpSender {
     sender: OnceLock<Mutex<fe2o3_amqp::Sender>>,
 }
@@ -24,7 +24,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
     async fn attach(
         &self,
         session: &AmqpSession,
-        name: impl Into<String>,
+        name: String,
         target: impl Into<AmqpTarget>,
         options: Option<AmqpSenderOptions>,
     ) -> Result<()> {
@@ -63,7 +63,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             }
         }
         let sender = session_builder
-            .name(name.into())
+            .name(name)
             .target(target.into())
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
@@ -106,7 +106,6 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .max_message_size())
     }
 
-    #[tracing::instrument]
     async fn send(
         &self,
         message: impl Into<AmqpMessage> + std::fmt::Debug,

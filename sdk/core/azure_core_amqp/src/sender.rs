@@ -36,7 +36,7 @@ pub trait AmqpSenderApis {
     fn attach(
         &self,
         session: &AmqpSession,
-        name: impl Into<String>,
+        name: String,
         target: impl Into<AmqpTarget>,
         options: Option<AmqpSenderOptions>,
     ) -> impl std::future::Future<Output = Result<()>>;
@@ -49,7 +49,7 @@ pub trait AmqpSenderApis {
     ) -> impl std::future::Future<Output = Result<()>>;
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct AmqpSender {
     implementation: SenderImplementation,
 }
@@ -58,7 +58,7 @@ impl AmqpSenderApis for AmqpSender {
     async fn attach(
         &self,
         session: &AmqpSession,
-        name: impl Into<String>,
+        name: String,
         target: impl Into<AmqpTarget>,
         options: Option<AmqpSenderOptions>,
     ) -> Result<()> {
@@ -215,7 +215,11 @@ mod tests {
             .with_sender_settle_mode(SenderSettleMode::Mixed)
             .with_receiver_settle_mode(ReceiverSettleMode::Second)
             .with_receiver_settle_mode(ReceiverSettleMode::First)
-            .with_source(AmqpSource::builder().with_address("address").build())
+            .with_source(
+                AmqpSource::builder()
+                    .with_address("address".to_string())
+                    .build(),
+            )
             .with_offered_capabilities(vec!["capability".into()])
             .with_desired_capabilities(vec!["capability".into()])
             .with_properties(properties)

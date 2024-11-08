@@ -32,6 +32,7 @@ use azure_core_amqp::{
 use futures::stream::Stream;
 use std::{
     collections::HashMap,
+    default::Default,
     fmt::Debug,
     sync::{Arc, OnceLock},
 };
@@ -39,7 +40,6 @@ use tracing::{debug, trace};
 use url::Url;
 
 /// A client that can be used to receive events from an Event Hub.
-#[derive(Debug)]
 pub struct ConsumerClient {
     options: ConsumerClientOptions,
     session_instances: Mutex<HashMap<String, Arc<AmqpSession>>>,
@@ -76,24 +76,20 @@ impl ConsumerClient {
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     ///     let my_credential = DefaultAzureCredential::new()?;
-    /// let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    /// let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
     /// # Ok(())}
     /// ```
-    #[tracing::instrument]
     pub fn new(
-        fully_qualified_namespace: impl Into<String> + Debug,
-        eventhub_name: impl Into<String> + Debug,
+        fully_qualified_namespace: String,
+        eventhub_name: String,
         consumer_group: Option<String>,
         credential: Arc<dyn TokenCredential>,
         options: Option<ConsumerClientOptions>,
     ) -> Self {
-        let eventhub_name = eventhub_name.into();
         let consumer_group = consumer_group.unwrap_or("$Default".into());
         let url = format!(
             "amqps://{}/{}/ConsumerGroups/{}",
-            fully_qualified_namespace.into(),
-            eventhub_name,
-            consumer_group
+            fully_qualified_namespace, eventhub_name, consumer_group
         );
         Self {
             options: options.unwrap_or_default(),
@@ -125,7 +121,7 @@ impl ConsumerClient {
     /// #[tokio::main]
     /// async fn main() {
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
-    ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    ///     let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
     ///
     ///     let result = consumer.open().await;
     ///
@@ -141,7 +137,6 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    #[tracing::instrument]
     pub async fn open(&self) -> Result<()> {
         self.ensure_connection(&self.url).await?;
         Ok(())
@@ -167,7 +162,7 @@ impl ConsumerClient {
     /// #[tokio::main]
     /// async fn main() {
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
-    ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    ///     let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
     ///
     ///     consumer.open().await.unwrap();
     ///
@@ -185,7 +180,6 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    #[tracing::instrument]
     pub async fn close(self) -> Result<()> {
         self.connection
             .get()
@@ -211,7 +205,7 @@ impl ConsumerClient {
     ///
     /// # Example
     ///
-    /// ``` no_run
+    /// ```no_run
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use async_std::stream::StreamExt;
@@ -219,13 +213,13 @@ impl ConsumerClient {
     /// #[tokio::main]
     /// async fn main() {
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
-    ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    ///     let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
     ///     let partition_id = "0";
     ///     let options = None;
     ///
     ///     consumer.open().await.unwrap();
     ///
-    ///     let event_stream = consumer.receive_events_on_partition(partition_id, options).await;
+    ///     let event_stream = consumer.receive_events_on_partition(partition_id.to_string(), options).await;
     ///
     ///     tokio::pin!(event_stream);
     ///     while let Some(event_result) = event_stream.next().await {
@@ -242,13 +236,11 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    #[tracing::instrument]
     pub async fn receive_events_on_partition(
         &self,
-        partition_id: impl Into<String> + Debug + Clone,
+        partition_id: String,
         options: Option<ReceiveOptions>,
     ) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
-        let partition_id = partition_id.into();
         let options = options.unwrap_or_default();
 
         let receiver_name = self
@@ -267,7 +259,7 @@ impl ConsumerClient {
         let message_source = AmqpSource::builder()
             .with_address(source_url)
             .add_to_filter(
-                AmqpSourceFilter::selector_filter().description(),
+                AmqpSourceFilter::selector_filter().description().into(),
                 Box::new(AmqpDescribed::new(
                     AmqpSourceFilter::selector_filter().code(),
                     start_expression,
@@ -277,12 +269,12 @@ impl ConsumerClient {
 
         let mut receiver_options_builder = AmqpReceiverOptions::builder()
             .with_name(receiver_name.clone())
-            .add_property("com.microsoft.com:receiver-name", receiver_name)
+            .add_property("com.microsoft.com:receiver-name".into(), receiver_name)
             .with_credit_mode(ReceiverCreditMode::Auto(options.prefetch.unwrap_or(300)))
             .with_auto_accept(true);
 
         if let Some(owner_level) = options.owner_level {
-            receiver_options_builder = receiver_options_builder.add_property("com.microsoft:epoch", owner_level);
+            receiver_options_builder = receiver_options_builder.add_property("com.microsoft:epoch".into(), owner_level);
         }
 
         let receiver = AmqpReceiver::new();
@@ -320,7 +312,7 @@ impl ConsumerClient {
     /// #[tokio::main]
     /// async fn main() {
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
-    ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    ///     let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
     ///
     ///     let eventhub_properties = consumer.get_eventhub_properties().await;
     ///
@@ -336,7 +328,6 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    #[tracing::instrument]
     pub async fn get_eventhub_properties(&self) -> Result<EventHubProperties> {
         self.ensure_management_client().await?;
 
@@ -345,7 +336,7 @@ impl ConsumerClient {
             .await
             .get()
             .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingManagementClient))?
-            .get_eventhub_properties(&self.eventhub)
+            .get_eventhub_properties(self.eventhub.clone())
             .await
     }
 
@@ -371,10 +362,10 @@ impl ConsumerClient {
     /// #[tokio::main]
     /// async fn main() {
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
-    ///     let consumer = ConsumerClient::new("my_namespace", "my_eventhub", None, my_credential, None);
+    ///     let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
     ///     let partition_id = "0";
     ///
-    ///     let partition_properties = consumer.get_partition_properties(partition_id).await;
+    ///     let partition_properties = consumer.get_partition_properties(partition_id.to_string()).await;
     ///
     ///     match partition_properties {
     ///         Ok(properties) => {
@@ -388,14 +379,10 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    #[tracing::instrument]
-    pub async fn get_partition_properties<T>(
+    pub async fn get_partition_properties(
         &self,
-        partition_id: T,
-    ) -> Result<EventHubPartitionProperties>
-    where
-        T: Into<String> + Debug,
-    {
+        partition_id: String,
+    ) -> Result<EventHubPartitionProperties> {
         self.ensure_management_client().await?;
 
         self.mgmt_client
@@ -403,11 +390,10 @@ impl ConsumerClient {
             .await
             .get()
             .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingManagementClient))?
-            .get_eventhub_partition_properties(&self.eventhub, partition_id)
+            .get_eventhub_partition_properties(self.eventhub.clone(), partition_id)
             .await
     }
 
-    #[tracing::instrument]
     async fn ensure_management_client(&self) -> Result<()> {
         trace!("Ensure management client.");
 
@@ -436,8 +422,11 @@ impl ConsumerClient {
         let access_token = self.authorize_path(management_path).await?;
 
         trace!("Create management client.");
-        let management =
-            AmqpManagement::new(session, "eventhubs_consumer_management", access_token)?;
+        let management = AmqpManagement::new(
+            session,
+            "eventhubs_consumer_management".to_string(),
+            access_token,
+        )?;
         management.attach().await?;
         mgmt_client
             .set(ManagementInstance::new(management))
@@ -446,8 +435,7 @@ impl ConsumerClient {
         Ok(())
     }
 
-    #[tracing::instrument]
-    async fn ensure_connection(&self, url: &String) -> Result<()> {
+    async fn ensure_connection(&self, url: &str) -> Result<()> {
         if self.connection.get().is_none() {
             let connection = AmqpConnection::new();
             connection
@@ -455,8 +443,7 @@ impl ConsumerClient {
                     self.options
                         .application_id
                         .clone()
-                        .unwrap_or(uuid::Uuid::new_v4().to_string())
-                        .as_str(),
+                        .unwrap_or(uuid::Uuid::new_v4().to_string()),
                     Url::parse(url).map_err(Error::from)?,
                     Some(
                         AmqpConnectionOptions::builder()
@@ -477,8 +464,7 @@ impl ConsumerClient {
         Ok(())
     }
 
-    async fn authorize_path(&self, url: impl Into<String>) -> Result<AccessToken> {
-        let url: String = url.into();
+    async fn authorize_path(&self, url: String) -> Result<AccessToken> {
         debug!("Authorizing path: {:?}", url);
         let mut scopes = self.authorization_scopes.lock().await;
         if self.connection.get().is_none() {
@@ -504,8 +490,13 @@ impl ConsumerClient {
                 .await?;
             debug!("Got token: {:?}", token.token.secret());
             let expires_at = token.expires_on;
-            cbs.authorize_path(&url, token.token.secret(), expires_at)
-                .await?;
+            cbs.authorize_path(
+                url.clone(),
+                None,
+                token.token.secret().to_string(),
+                expires_at,
+            )
+            .await?;
 
             // insert returns some if it *fails* to insert, None if it succeeded.
             let present = scopes.insert(url.clone(), token);
@@ -538,7 +529,7 @@ impl ConsumerClient {
             .get(partition_id)
             .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingSession))?
             .clone();
-        debug!("Cloning session for partition {:?}: {:?}", partition_id, rv);
+        debug!("Cloning session for partition {:?}", partition_id);
         Ok(rv)
     }
 }
@@ -546,40 +537,42 @@ impl ConsumerClient {
 /// Represents the options for configuring a ConsumerClient.
 #[derive(Debug, Default)]
 pub struct ConsumerClientOptions {
-    application_id: Option<String>,
-    instance_id: Option<String>,
-    retry_options: Option<RetryOptions>,
+    /// The application ID to set.
+    pub application_id: Option<String>,
+    /// The instance ID to set.
+    pub instance_id: Option<String>,
+    /// The retry options to set.
+    pub retry_options: Option<RetryOptions>,
 }
 
-impl ConsumerClientOptions {
-    /// Creates a new `ConsumerClientOptionsBuilder` to configure the consumer client options.
-    pub fn builder() -> builders::ConsumerClientOptionsBuilder {
-        builders::ConsumerClientOptionsBuilder::new()
-    }
-}
+impl ConsumerClientOptions {}
 
 /// Represents the options for receiving events from an Event Hub.
 #[derive(Debug, Clone, Default)]
 pub struct ReceiveOptions {
-    owner_level: Option<i64>,
-    prefetch: Option<u32>,
-    start_position: Option<StartPosition>,
+    /// The owner level for messages being retrieved.
+    pub owner_level: Option<i64>,
+    /// The prefetch count for messages being retrieved.
+    pub prefetch: Option<u32>,
+    /// The starting position for messages being retrieved.
+    pub start_position: Option<StartPosition>,
 }
 /// Represents the options for receiving events from an Event Hub.
-impl ReceiveOptions {
-    /// Creates a new `ReceiveOptionsBuilder` to configure the receive options.
-    pub fn builder() -> builders::ReceiveOptionsBuilder {
-        builders::ReceiveOptionsBuilder::new()
-    }
-}
+impl ReceiveOptions {}
 
+/// Represents the starting position of a consumer when receiving events from an Event Hub.
 #[derive(Debug, Default, PartialEq, Clone)]
-pub(crate) enum StartLocation {
+pub enum StartLocation {
+    /// The starting position is specified by an offset.
     Offset(String),
+    /// The starting position is specified by a sequence number.
     SequenceNumber(i64),
+    /// The starting position is specified by an enqueued time.
     EnqueuedTime(std::time::SystemTime),
+    /// The starting position is the earliest event in the partition.
     Earliest,
     #[default]
+    /// The starting position is the latest event in the partition.
     Latest,
 }
 
@@ -598,79 +591,66 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 ///
 /// Basic usage:
 ///
-/// ```no_run
-/// use azure_messaging_eventhubs::consumer::StartPosition;
+/// ```
+/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
 ///
-/// let start_position = StartPosition::builder()
-///    .with_sequence_number(12345)
-///    .build();
+/// let start_position = StartPosition{
+///   location: StartLocation::SequenceNumber(12345),
+///    ..Default::default()};;
 /// ```
 ///
-/// ```no_run
-/// use azure_messaging_eventhubs::consumer::StartPosition;
+/// ```
+/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
 ///
-/// let start_position = StartPosition::builder()
-///   .with_sequence_number(12345)
-///   .inclusive()
-///   .build();
+/// let start_position = StartPosition{
+///  location: StartLocation::EnqueuedTime(std::time::SystemTime::now()),
+///  ..Default::default()
+/// };
 /// ```
 ///
-/// ```no_run
-/// use azure_messaging_eventhubs::consumer::StartPosition;
+/// ```
+/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
 ///
-/// let start_position = StartPosition::builder()
-///  .with_enqueued_time(std::time::SystemTime::now())
-///  .build();
+/// let start_position = StartPosition{
+///   location: StartLocation::Offset("12345".to_string()),
+///   ..Default::default()
+/// };
 /// ```
 ///
-/// ```no_run
-/// use azure_messaging_eventhubs::consumer::StartPosition;
+/// ```
+/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
 ///
-/// let start_position = StartPosition::builder()
-///  .with_offset("12345".to_string())
-///  .build();
+/// let start_position = StartPosition{
+///   location: StartLocation::Earliest,
+///   ..Default::default()
+/// };
 /// ```
 ///
-/// ```no_run
-/// use azure_messaging_eventhubs::consumer::StartPosition;
+/// ```
+/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
 ///
-/// let start_position = StartPosition::builder()
-///   .with_earliest_location()
-///   .build();
+/// let start_position = StartPosition{
+///   location: StartLocation::Latest,
+///   ..Default::default()
+/// };
 /// ```
 ///
-/// ```no_run
-/// use azure_messaging_eventhubs::consumer::StartPosition;
-///
-/// let start_position = StartPosition::builder()
-///   .with_latest_location()
-///   .build();
 /// ```
-///
-/// ```no_run
 /// use azure_messaging_eventhubs::consumer::StartPosition;
 ///
-/// let start_position = StartPosition::builder()
-///   .build();
+/// let start_position = StartPosition::default();
 /// ```
 ///
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct StartPosition {
-    location: StartLocation,
-    inclusive: bool,
+    /// The location of the starting position.
+    pub location: StartLocation,
+
+    /// Whether the starting position is inclusive (includes the event at StartLocation).
+    pub inclusive: bool,
 }
 
 impl StartPosition {
-    /// Creates a new builder to build a `StartPosition`.
-    ///
-    /// # Returns
-    ///
-    /// A builder which can be used to create a StartPosition.
-    ///
-    pub fn builder() -> builders::StartPositionBuilder {
-        builders::StartPositionBuilder::new()
-    }
-
     pub(crate) fn start_expression(position: &Option<StartPosition>) -> String {
         if let Some(position) = position {
             let mut greater_than: &str = ">";
@@ -706,237 +686,6 @@ impl StartPosition {
     }
 }
 
-mod builders {
-    use super::*;
-
-    pub struct ConsumerClientOptionsBuilder {
-        options: ConsumerClientOptions,
-    }
-
-    /// Builder for configuring options for the `ConsumerClient`.
-    impl ConsumerClientOptionsBuilder {
-        /// Creates a new `ConsumerClientOptionsBuilder` with default options.
-        pub(super) fn new() -> Self {
-            Self {
-                options: Default::default(),
-            }
-        }
-
-        /// Sets the application ID for the `ConsumerClient`.
-        ///
-        /// # Arguments
-        ///
-        /// * `application_id` - The application ID to set.
-        ///
-        /// # Returns
-        ///
-        /// The updated `ConsumerClientOptionsBuilder`.
-        ///
-        /// # Note: The application ID identifies the application, it is used for telemetry.
-        pub fn with_application_id<T>(mut self, application_id: T) -> Self
-        where
-            T: Into<String>,
-        {
-            self.options.application_id = Some(application_id.into());
-            self
-        }
-
-        /// Sets the retry options for the `ConsumerClient`.
-        ///
-        /// # Arguments
-        ///
-        /// * `retry_options` - The retry options to set.
-        ///
-        /// # Returns
-        ///
-        /// The updated `ConsumerClientOptionsBuilder`.
-        pub fn with_retry_options(mut self, retry_options: RetryOptions) -> Self {
-            self.options.retry_options = Some(retry_options);
-            self
-        }
-
-        /// Sets the instance ID for the `ConsumerClient`.
-        ///
-        /// The "instance ID" uniquely identifies the consumer client instance. If not set, a random UUID will be used.
-        ///
-        /// # Arguments
-        ///
-        /// * `instance_id` - The instance ID to set.
-        ///
-        /// # Returns
-        ///
-        /// The updated `ConsumerClientOptionsBuilder`.
-        ///
-        pub fn with_instance_id<T>(mut self, instance_id: T) -> Self
-        where
-            T: Into<String>,
-        {
-            self.options.instance_id = Some(instance_id.into());
-            self
-        }
-
-        /// Builds the `ConsumerClientOptions` using the configured options.
-        ///
-        /// # Returns
-        ///
-        /// The `ConsumerClientOptions` with the configured options.
-        pub fn build(self) -> ConsumerClientOptions {
-            self.options
-        }
-    }
-
-    pub struct ReceiveOptionsBuilder {
-        options: ReceiveOptions,
-    }
-
-    impl ReceiveOptionsBuilder {
-        pub(super) fn new() -> Self {
-            Self {
-                options: Default::default(),
-            }
-        }
-
-        pub fn with_owner_level(mut self, owner_level: i64) -> Self {
-            self.options.owner_level = Some(owner_level);
-            self
-        }
-
-        pub fn with_prefetch(mut self, prefetch: u32) -> Self {
-            self.options.prefetch = Some(prefetch);
-            self
-        }
-
-        pub fn with_start_position(mut self, start_position: StartPosition) -> Self {
-            self.options.start_position = Some(start_position);
-            self
-        }
-
-        pub fn build(self) -> ReceiveOptions {
-            self.options
-        }
-    }
-
-    /// A builder for the `StartPosition` struct.
-    pub struct StartPositionBuilder {
-        position: StartPosition,
-    }
-
-    impl StartPositionBuilder {
-        pub(super) fn new() -> Self {
-            Self {
-                position: Default::default(),
-            }
-        }
-
-        /// Sets the starting position to the earliest event in the partition.
-        ///
-        /// # Returns
-        ///
-        /// A reference to the updated builder.
-        ///
-        pub fn with_earliest_location(mut self) -> Self {
-            self.position.location = StartLocation::Earliest;
-            self
-        }
-
-        /// Sets the starting position to the latest event in the partition.
-        ///
-        /// # Returns
-        ///
-        /// A reference to the updated builder.
-        ///
-        pub fn with_latest_location(mut self) -> Self {
-            self.position.location = StartLocation::Latest;
-            self
-        }
-
-        /// Sets the starting position to the event with the specified sequence number.
-        ///
-        /// # Parameters
-        ///
-        /// - `sequence_number`: The sequence number to start receiving events.
-        ///
-        /// # Returns
-        ///
-        /// A reference to the updated builder.
-        ///
-        /// # Remarks:
-        ///
-        /// If the "inclusive" method is not called, the starting position will be greater than the specified sequence number.
-        /// If the "inclusive" method is called, the message at the starting sequence number will be included.
-        ///
-        pub fn with_sequence_number(mut self, sequence_number: i64) -> Self {
-            self.position.location = StartLocation::SequenceNumber(sequence_number);
-            self
-        }
-
-        /// Sets the starting position to the event enqueued at the specified time.
-        ///
-        /// # Parameters
-        ///
-        /// - `enqueued_time`: The time when the event was enqueued.
-        ///
-        /// # Returns
-        ///
-        /// A reference to the updated builder.
-        ///
-        /// # Remarks
-        ///
-        /// If the "inclusive" method is not called, the starting position will be greater than the specified enqueued time.
-        /// If the "inclusive" method is called, the message enqueued at the specified time will be included.
-        ///
-        pub fn with_enqueued_time(mut self, enqueued_time: std::time::SystemTime) -> Self {
-            self.position.location = StartLocation::EnqueuedTime(enqueued_time);
-            self
-        }
-
-        /// Sets the starting position to the event with the specified offset.
-        ///
-        /// # Parameters
-        ///
-        /// - `offset`: The offset of the event.
-        ///
-        /// # Returns
-        ///
-        /// A reference to the updated builder.
-        ///
-        /// # Remarks
-        ///
-        /// If the "inclusive" method is not called, the starting position will be greater than the specified offset.
-        /// If the "inclusive" method is called, the message at the specified offset will be included.
-        ///
-        pub fn with_offset(mut self, offset: String) -> Self {
-            self.position.location = StartLocation::Offset(offset);
-            self
-        }
-
-        /// Sets the starting position to be inclusive.
-        ///
-        /// # Returns
-        ///
-        /// A reference to the updated builder.
-        ///
-        /// # Remarks
-        ///
-        /// If this method is called, the message at the starting position will be included.
-        ///
-        pub fn inclusive(mut self) -> Self {
-            self.position.inclusive = true;
-            self
-        }
-
-        /// Builds the `StartPosition`.
-        ///
-        /// # Returns
-        ///
-        /// The built `StartPosition`.
-        ///
-        pub fn build(self) -> StartPosition {
-            self.position
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -963,7 +712,7 @@ mod tests {
         }
 
         {
-            let options = ConsumerClientOptions::builder().build();
+            let options = ConsumerClientOptions::default();
             assert!(options.application_id.is_none());
             assert!(options.instance_id.is_none());
             assert!(options.retry_options.is_none());
@@ -972,11 +721,11 @@ mod tests {
 
     #[test]
     fn test_consumer_client_with_options() {
-        let options = ConsumerClientOptions::builder()
-            .with_application_id("test_app_id")
-            .with_retry_options(RetryOptions::default())
-            .with_instance_id("test_instance_id")
-            .build();
+        let options = ConsumerClientOptions {
+            application_id: Some("test_app_id".to_string()),
+            instance_id: Some("test_instance_id".to_string()),
+            retry_options: Some(RetryOptions::default()),
+        };
 
         assert_eq!(options.application_id, Some("test_app_id".to_string()));
         assert_eq!(options.instance_id, Some("test_instance_id".to_string()));
@@ -986,9 +735,10 @@ mod tests {
     fn test_start_position_builder_with_sequence_number() {
         setup();
         let sequence_number = 12345i64;
-        let start_position = StartPosition::builder()
-            .with_sequence_number(sequence_number)
-            .build();
+        let start_position = StartPosition {
+            location: StartLocation::SequenceNumber(sequence_number),
+            ..Default::default()
+        };
         assert_eq!(
             start_position.location,
             StartLocation::SequenceNumber(sequence_number)
@@ -998,10 +748,10 @@ mod tests {
             "amqp.annotation.x-opt-sequence-number >'12345'"
         );
 
-        let start_position = StartPosition::builder()
-            .with_sequence_number(sequence_number)
-            .inclusive()
-            .build();
+        let start_position = StartPosition {
+            location: StartLocation::SequenceNumber(sequence_number),
+            inclusive: true,
+        };
         assert_eq!(
             StartPosition::start_expression(&Some(start_position)),
             "amqp.annotation.x-opt-sequence-number >='12345'"
@@ -1012,9 +762,10 @@ mod tests {
     fn test_start_position_builder_with_enqueued_time() {
         setup();
         let enqueued_time = std::time::SystemTime::now();
-        let start_position = StartPosition::builder()
-            .with_enqueued_time(enqueued_time)
-            .build();
+        let start_position = StartPosition {
+            location: StartLocation::EnqueuedTime(enqueued_time),
+            ..Default::default()
+        };
         info!("enqueued_time: {:?}", enqueued_time);
         info!(
             "enqueued_time: {:?}",
@@ -1031,6 +782,7 @@ mod tests {
             start_position.location,
             StartLocation::EnqueuedTime(enqueued_time)
         );
+        assert!(!start_position.inclusive);
         assert_eq!(
             StartPosition::start_expression(&Some(start_position)),
             format!(
@@ -1042,10 +794,10 @@ mod tests {
             )
         );
 
-        let start_position = StartPosition::builder()
-            .with_enqueued_time(enqueued_time)
-            .inclusive()
-            .build();
+        let start_position = StartPosition {
+            location: StartLocation::EnqueuedTime(enqueued_time),
+            inclusive: true,
+        };
         assert_eq!(
             StartPosition::start_expression(&Some(start_position)),
             format!(
@@ -1062,7 +814,10 @@ mod tests {
     fn test_start_position_builder_with_offset() {
         setup();
         let offset = "12345".to_string();
-        let start_position = StartPosition::builder().with_offset(offset.clone()).build();
+        let start_position = StartPosition {
+            location: StartLocation::Offset(offset.clone()),
+            ..Default::default()
+        };
         assert_eq!(
             start_position.location,
             StartLocation::Offset(offset.clone())
@@ -1072,10 +827,10 @@ mod tests {
             StartPosition::start_expression(&Some(start_position)),
         );
 
-        let start_position = StartPosition::builder()
-            .with_offset(offset.clone())
-            .inclusive()
-            .build();
+        let start_position = StartPosition {
+            location: StartLocation::Offset(offset.clone()),
+            inclusive: true,
+        };
         assert_eq!(
             "amqp.annotation.x-opt-offset >='12345'",
             StartPosition::start_expression(&Some(start_position)),
@@ -1085,9 +840,12 @@ mod tests {
     #[test]
     fn test_start_position_builder_inclusive() {
         setup();
-        let start_position = StartPosition::builder().inclusive().build();
+        let start_position = StartPosition {
+            inclusive: true,
+            ..Default::default()
+        };
         assert!(start_position.inclusive);
-        let start_position = StartPosition::builder().build();
+        let start_position = StartPosition::default();
         assert!(!start_position.inclusive);
     }
 }

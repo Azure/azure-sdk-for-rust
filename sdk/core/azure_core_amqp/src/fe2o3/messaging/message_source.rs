@@ -222,7 +222,7 @@ fn message_source_conversion_fe2o3_amqp() {
 #[test]
 fn message_source_conversion_amqp_fe2o3() {
     let amqp_source = AmqpSource::builder()
-        .with_address("test")
+        .with_address("test".to_string())
         .with_durable(TerminusDurability::UnsettledState)
         .with_expiry_policy(TerminusExpiryPolicy::SessionEnd)
         .with_timeout(95)

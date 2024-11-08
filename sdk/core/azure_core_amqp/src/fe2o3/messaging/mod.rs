@@ -521,8 +521,8 @@ mod tests {
                 std::time::UNIX_EPOCH + std::time::Duration::from_millis(timestamp as u64);
 
             let amqp_message = AmqpMessage::builder()
-                .add_application_property("abc", "23 skiddoo")
-                .add_application_property("What?", 29.5)
+                .add_application_property("abc".to_string(), "23 skiddoo")
+                .add_application_property("What?".to_string(), 29.5)
                 .with_body(AmqpValue::from("hello"))
                 .with_properties(
                     AmqpMessageProperties::builder()
@@ -531,13 +531,13 @@ mod tests {
                         .with_content_type(AmqpSymbol::from("text/plain"))
                         .with_correlation_id("abc")
                         .with_creation_time(timestamp)
-                        .with_group_id(AmqpSymbol::from("group"))
+                        .with_group_id("group".to_string())
                         .with_group_sequence(5)
                         .with_message_id("message")
-                        .with_reply_to(AmqpSymbol::from("reply"))
-                        .with_reply_to_group_id(AmqpSymbol::from("reply_group"))
-                        .with_subject(AmqpSymbol::from("subject"))
-                        .with_to(AmqpSymbol::from("to"))
+                        .with_reply_to("reply".to_string())
+                        .with_reply_to_group_id("reply_group".to_string())
+                        .with_subject("subject".to_string())
+                        .with_to("to".to_string())
                         .with_user_id(vec![39, 20, 54])
                         .build(),
                 )

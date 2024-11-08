@@ -36,23 +36,31 @@ impl From<AmqpValue> for fe2o3_amqp_types::primitives::Symbol {
     }
 }
 
+// Number of milliseconds between the Unix epoch (1/1/1970) and year 1 CE.
+// This is the lowest value that can be represented by an AMQP timestamp.
+const CE_ZERO_MILLISECONDS: i64 = -62_135_596_800_000;
+
 impl From<fe2o3_amqp_types::primitives::Timestamp> for AmqpTimestamp {
     fn from(timestamp: fe2o3_amqp_types::primitives::Timestamp) -> Self {
         AmqpTimestamp(
-            std::time::UNIX_EPOCH
-                + std::time::Duration::from_millis(timestamp.milliseconds() as u64),
+            std::time::UNIX_EPOCH.checked_add(std::time::Duration::from_millis(
+                timestamp.milliseconds() as u64,
+            )),
         )
     }
 }
 
 impl From<AmqpTimestamp> for fe2o3_amqp_types::primitives::Timestamp {
     fn from(timestamp: AmqpTimestamp) -> Self {
-        let t = timestamp
-            .0
-            .duration_since(UNIX_EPOCH)
-            .expect("Could not convert timestamp to time since unix epoch")
-            .as_millis();
-        fe2o3_amqp_types::primitives::Timestamp::from_milliseconds(t as i64)
+        if let Some(t) = timestamp.0 {
+            let t = t
+                .duration_since(UNIX_EPOCH)
+                .expect("Could not convert timestamp to time since unix epoch")
+                .as_millis();
+            fe2o3_amqp_types::primitives::Timestamp::from_milliseconds(t as i64)
+        } else {
+            fe2o3_amqp_types::primitives::Timestamp::from_milliseconds(CE_ZERO_MILLISECONDS)
+        }
     }
 }
 
@@ -239,9 +247,9 @@ impl From<fe2o3_amqp_types::primitives::Value> for AmqpValue {
                 AmqpValue::List(AmqpList(l))
             }
             fe2o3_amqp_types::primitives::Value::Map(m) => {
-                let mut map = AmqpOrderedMap::new();
+                let mut map: AmqpOrderedMap<AmqpValue, AmqpValue> = AmqpOrderedMap::new();
                 for (k, v) in m {
-                    map.insert(k, v);
+                    map.insert(k.into(), v.into());
                 }
                 AmqpValue::Map(map)
             }
@@ -329,13 +337,19 @@ impl PartialEq<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             }
             AmqpValue::Char(c) => self == &fe2o3_amqp_types::primitives::Value::Char(*c),
             AmqpValue::TimeStamp(t) => {
-                let t: u64 =
-                    t.0.duration_since(UNIX_EPOCH)
+                if let Some(t) = t.0 {
+                    let t: u64 = t
+                        .duration_since(UNIX_EPOCH)
                         .expect("Could not convert timestamp into unix epoch")
                         .as_millis() as u64;
-                self == &fe2o3_amqp_types::primitives::Value::Timestamp(
-                    Timestamp::from_milliseconds(t as i64),
-                )
+                    self == &fe2o3_amqp_types::primitives::Value::Timestamp(
+                        Timestamp::from_milliseconds(t as i64),
+                    )
+                } else {
+                    self == &fe2o3_amqp_types::primitives::Value::Timestamp(
+                        Timestamp::from_milliseconds(CE_ZERO_MILLISECONDS),
+                    )
+                }
             }
             AmqpValue::Uuid(u) => self == &fe2o3_amqp_types::primitives::Value::Uuid((*u).into()),
             AmqpValue::Binary(b) => {
@@ -386,15 +400,11 @@ impl PartialEq<fe2o3_amqp_types::primitives::Value> for AmqpValue {
     }
 }
 
-impl<K, V> From<fe2o3_amqp_types::definitions::Fields> for AmqpOrderedMap<K, V>
-where
-    K: PartialEq + From<fe2o3_amqp_types::primitives::Symbol> + Clone + Default,
-    V: From<fe2o3_amqp_types::primitives::Value> + Clone + Default,
-{
+impl From<fe2o3_amqp_types::definitions::Fields> for AmqpOrderedMap<AmqpSymbol, AmqpValue> {
     fn from(fields: fe2o3_amqp_types::definitions::Fields) -> Self {
-        let mut map = AmqpOrderedMap::new();
+        let mut map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = AmqpOrderedMap::new();
         for (k, v) in fields {
-            map.insert(k, v);
+            map.insert(k.into(), v.into());
         }
         map
     }
@@ -417,7 +427,7 @@ impl
         // Convert the OrderedMap to AmqpOrderedMap
         let mut amqp_ordered_map = AmqpOrderedMap::new();
         for (key, value) in value.into_iter() {
-            amqp_ordered_map.insert(key, value);
+            amqp_ordered_map.insert(key, value.into());
         }
         amqp_ordered_map
     }

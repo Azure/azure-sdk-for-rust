@@ -7,7 +7,6 @@ use super::{
     value::{AmqpOrderedMap, AmqpValue},
 };
 use azure_core::{credentials::AccessToken, error::Result};
-use std::fmt::Debug;
 
 #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
 type ManagementImplementation = super::fe2o3::management::Fe2o3AmqpManagement;
@@ -22,12 +21,11 @@ pub trait AmqpManagementApis {
     #[allow(unused_variables)]
     fn call(
         &self,
-        operation_type: impl Into<String>,
+        operation_type: String,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
     ) -> impl std::future::Future<Output = Result<AmqpOrderedMap<String, AmqpValue>>>;
 }
 
-#[derive(Debug)]
 pub struct AmqpManagement {
     implementation: ManagementImplementation,
 }
@@ -41,7 +39,7 @@ impl AmqpManagementApis for AmqpManagement {
     }
     async fn call(
         &self,
-        operation_type: impl Into<String>,
+        operation_type: String,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
         self.implementation
@@ -53,7 +51,7 @@ impl AmqpManagementApis for AmqpManagement {
 impl AmqpManagement {
     pub fn new(
         session: AmqpSession,
-        client_node_name: impl Into<String>,
+        client_node_name: String,
         access_token: AccessToken,
     ) -> Result<Self> {
         Ok(Self {

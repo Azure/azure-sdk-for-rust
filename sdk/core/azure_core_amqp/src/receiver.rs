@@ -87,7 +87,7 @@ pub trait AmqpReceiverApis {
     fn receive(&self) -> impl std::future::Future<Output = Result<AmqpMessage>>;
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct AmqpReceiver {
     implementation: ReceiverImplementation,
 }
@@ -130,7 +130,7 @@ pub mod builders {
                 options: Default::default(),
             }
         }
-        #[allow(dead_code)]
+
         pub fn with_receiver_settle_mode(
             mut self,
             receiver_settle_mode: ReceiverSettleMode,
@@ -138,17 +138,17 @@ pub mod builders {
             self.options.receiver_settle_mode = Some(receiver_settle_mode);
             self
         }
-        #[allow(dead_code)]
+
         pub fn with_target(mut self, target: impl Into<AmqpTarget>) -> Self {
             self.options.target = Some(target.into());
             self
         }
-        #[allow(dead_code)]
-        pub fn with_name(mut self, name: impl Into<String>) -> Self {
-            self.options.name = Some(name.into());
+
+        pub fn with_name(mut self, name: String) -> Self {
+            self.options.name = Some(name);
             self
         }
-        #[allow(dead_code)]
+
         pub fn with_properties(
             mut self,
             properties: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
@@ -159,8 +159,9 @@ pub mod builders {
             self.options.properties = Some(properties_map);
             self
         }
-        pub fn add_property(mut self, key: impl Into<String>, value: impl Into<AmqpValue>) -> Self {
-            let key = AmqpSymbol::from(key.into());
+
+        pub fn add_property(mut self, key: String, value: impl Into<AmqpValue>) -> Self {
+            let key = AmqpSymbol::from(key);
             let value = value.into();
             if let Some(properties) = self.options.properties.as_mut() {
                 properties.insert(key, value);
@@ -198,7 +199,11 @@ mod tests {
         let receiver_options = AmqpReceiverOptions::builder()
             .with_receiver_settle_mode(ReceiverSettleMode::Second)
             .with_receiver_settle_mode(ReceiverSettleMode::First)
-            .with_target(AmqpTarget::builder().with_address("address").build())
+            .with_target(
+                AmqpTarget::builder()
+                    .with_address("address".to_string())
+                    .build(),
+            )
             .with_properties(properties)
             .build();
 
@@ -218,7 +223,11 @@ mod tests {
     #[test]
     fn test_amqp_receiver_options_builder_with_target() {
         let receiver_options = AmqpReceiverOptions::builder()
-            .with_target(AmqpTarget::builder().with_address("test_address").build())
+            .with_target(
+                AmqpTarget::builder()
+                    .with_address("test_address".to_string())
+                    .build(),
+            )
             .build();
 
         assert!(receiver_options.target.is_some());
@@ -231,7 +240,7 @@ mod tests {
     #[test]
     fn test_amqp_receiver_options_builder_with_name() {
         let receiver_options = AmqpReceiverOptions::builder()
-            .with_name("test_receiver")
+            .with_name("test_receiver".into())
             .build();
 
         assert!(receiver_options.name.is_some());
@@ -270,8 +279,12 @@ mod tests {
 
         let receiver_options = AmqpReceiverOptions::builder()
             .with_receiver_settle_mode(ReceiverSettleMode::First)
-            .with_target(AmqpTarget::builder().with_address("combo_address").build())
-            .with_name("combo_name")
+            .with_target(
+                AmqpTarget::builder()
+                    .with_address("combo_address".to_string())
+                    .build(),
+            )
+            .with_name("combo_name".into())
             .with_properties(properties.clone())
             .with_credit_mode(ReceiverCreditMode::Manual)
             .with_auto_accept(false)
@@ -290,7 +303,9 @@ mod tests {
         assert!(receiver_options.properties.is_some());
         let properties_option = receiver_options.properties.unwrap();
         assert_eq!(
-            *properties_option.get("combo_key").unwrap(),
+            *properties_option
+                .get(&AmqpSymbol::from("combo_key"))
+                .unwrap(),
             AmqpValue::String("combo_value".to_string())
         );
         assert_eq!(

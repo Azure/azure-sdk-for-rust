@@ -12,7 +12,7 @@ use std::borrow::BorrowMut;
 use std::sync::{Arc, OnceLock};
 use tracing::trace;
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub(crate) struct Fe2o3AmqpReceiver {
     receiver: OnceLock<Arc<Mutex<fe2o3_amqp::Receiver>>>,
 }
@@ -84,7 +84,6 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .max_message_size())
     }
 
-    #[tracing::instrument]
     async fn receive(&self) -> Result<AmqpMessage> {
         let mut receiver = self
             .receiver

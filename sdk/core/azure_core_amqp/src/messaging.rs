@@ -1033,9 +1033,9 @@ where
     V: Into<AmqpValue>,
 {
     fn from(vec: Vec<(K, V)>) -> Self {
-        let mut map = AmqpOrderedMap::new();
+        let mut map: AmqpOrderedMap<AmqpAnnotationKey, AmqpValue> = AmqpOrderedMap::new();
         for (k, v) in vec {
-            map.insert(k, v);
+            map.insert(k.into(), v.into());
         }
         AmqpAnnotations(map)
     }
@@ -1049,8 +1049,8 @@ impl AmqpApplicationProperties {
         AmqpApplicationProperties(AmqpOrderedMap::new())
     }
 
-    pub fn insert(&mut self, key: impl Into<String>, value: impl Into<AmqpValue>) {
-        self.0.insert(key.into(), value.into());
+    pub fn insert(&mut self, key: String, value: impl Into<AmqpValue>) {
+        self.0.insert(key, value.into());
     }
 }
 
@@ -1148,21 +1148,18 @@ impl AmqpMessage {
     /// # Examples
     /// ```
     /// use azure_core_amqp::messaging::AmqpMessage;
+    /// use azure_core_amqp::value::AmqpSymbol;
     /// let mut message = AmqpMessage::default();
-    /// message.add_message_annotation("key", "value");
+    /// message.add_message_annotation(AmqpSymbol::from("key"), "value");
     /// ```
     ///
-    pub fn add_message_annotation(
-        &mut self,
-        name: impl Into<AmqpSymbol>,
-        value: impl Into<AmqpValue>,
-    ) {
+    pub fn add_message_annotation(&mut self, name: AmqpSymbol, value: impl Into<AmqpValue>) {
         if let Some(annotations) = self.message_annotations.as_mut() {
-            annotations.insert(name.into(), value.into());
+            annotations.insert(name, value.into());
             self.message_annotations = Some(annotations.clone());
         } else {
             let mut annotations = AmqpAnnotations::new();
-            annotations.insert(name.into(), value.into());
+            annotations.insert(name, value.into());
             self.message_annotations = Some(annotations);
         }
     }
@@ -1282,8 +1279,8 @@ pub mod builders {
                 source: Default::default(),
             }
         }
-        pub fn with_address(mut self, address: impl Into<String>) -> Self {
-            self.source.address = Some(address.into());
+        pub fn with_address(mut self, address: String) -> Self {
+            self.source.address = Some(address);
             self
         }
         pub fn with_durable(mut self, durable: TerminusDurability) -> Self {
@@ -1320,16 +1317,12 @@ pub mod builders {
             self.source.filter = Some(filter.into());
             self
         }
-        pub fn add_to_filter(
-            mut self,
-            key: impl Into<AmqpSymbol>,
-            value: impl Into<AmqpValue>,
-        ) -> Self {
+        pub fn add_to_filter(mut self, key: AmqpSymbol, value: impl Into<AmqpValue>) -> Self {
             if let Some(filter) = &mut self.source.filter {
-                filter.insert(key.into(), value.into());
+                filter.insert(key, value.into());
             } else {
                 let mut filter = AmqpOrderedMap::new();
-                filter.insert(key.into(), value.into());
+                filter.insert(key, value.into());
                 self.source.filter = Some(filter);
             }
             self
@@ -1364,8 +1357,8 @@ pub mod builders {
                 target: Default::default(),
             }
         }
-        pub fn with_address(mut self, address: impl Into<String>) -> Self {
-            self.target.address = Some(address.into());
+        pub fn with_address(mut self, address: String) -> Self {
+            self.target.address = Some(address);
             self
         }
         pub fn with_durable(mut self, durable: TerminusDurability) -> Self {
@@ -1453,28 +1446,28 @@ pub mod builders {
             self.properties.user_id = Some(user_id.into());
             self
         }
-        pub fn with_to(mut self, to: impl Into<String>) -> Self {
-            self.properties.to = Some(to.into());
+        pub fn with_to(mut self, to: String) -> Self {
+            self.properties.to = Some(to);
             self
         }
-        pub fn with_subject(mut self, subject: impl Into<String>) -> Self {
-            self.properties.subject = Some(subject.into());
+        pub fn with_subject(mut self, subject: String) -> Self {
+            self.properties.subject = Some(subject);
             self
         }
-        pub fn with_reply_to(mut self, reply_to: impl Into<String>) -> Self {
-            self.properties.reply_to = Some(reply_to.into());
+        pub fn with_reply_to(mut self, reply_to: String) -> Self {
+            self.properties.reply_to = Some(reply_to);
             self
         }
         pub fn with_correlation_id(mut self, correlation_id: impl Into<AmqpMessageId>) -> Self {
             self.properties.correlation_id = Some(correlation_id.into());
             self
         }
-        pub fn with_content_type(mut self, content_type: impl Into<AmqpSymbol>) -> Self {
-            self.properties.content_type = Some(content_type.into());
+        pub fn with_content_type(mut self, content_type: AmqpSymbol) -> Self {
+            self.properties.content_type = Some(content_type);
             self
         }
-        pub fn with_content_encoding(mut self, content_encoding: impl Into<AmqpSymbol>) -> Self {
-            self.properties.content_encoding = Some(content_encoding.into());
+        pub fn with_content_encoding(mut self, content_encoding: AmqpSymbol) -> Self {
+            self.properties.content_encoding = Some(content_encoding);
             self
         }
         pub fn with_absolute_expiry_time(
@@ -1488,16 +1481,16 @@ pub mod builders {
             self.properties.creation_time = Some(creation_time.into());
             self
         }
-        pub fn with_group_id(mut self, group_id: impl Into<String>) -> Self {
-            self.properties.group_id = Some(group_id.into());
+        pub fn with_group_id(mut self, group_id: String) -> Self {
+            self.properties.group_id = Some(group_id);
             self
         }
         pub fn with_group_sequence(mut self, group_sequence: u32) -> Self {
             self.properties.group_sequence = Some(group_sequence);
             self
         }
-        pub fn with_reply_to_group_id(mut self, reply_to_group_id: impl Into<String>) -> Self {
-            self.properties.reply_to_group_id = Some(reply_to_group_id.into());
+        pub fn with_reply_to_group_id(mut self, reply_to_group_id: String) -> Self {
+            self.properties.reply_to_group_id = Some(reply_to_group_id);
             self
         }
     }
@@ -1560,14 +1553,14 @@ pub mod builders {
         }
         pub fn add_application_property(
             mut self,
-            key: impl Into<String>,
+            key: String,
             value: impl Into<AmqpValue>,
         ) -> Self {
             if let Some(application_properties) = &mut self.message.application_properties {
-                application_properties.0.insert(key.into(), value.into());
+                application_properties.0.insert(key, value.into());
             } else {
                 let mut application_properties = AmqpOrderedMap::new();
-                application_properties.insert(key.into(), value.into());
+                application_properties.insert(key, value.into());
                 self.message.application_properties =
                     Some(AmqpApplicationProperties(application_properties));
             }
@@ -1654,16 +1647,16 @@ mod tests {
             .with_message_id(test_uuid1)
             .with_user_id(vec![1, 2, 3])
             .with_to("destination".to_string())
-            .with_subject("subject")
+            .with_subject("subject".to_string())
             .with_reply_to("reply_to".to_string())
             .with_correlation_id(test_uuid2)
-            .with_content_type("content_type")
+            .with_content_type(AmqpSymbol::from("content_type"))
             .with_content_encoding(AmqpSymbol::from("content_encoding"))
             .with_absolute_expiry_time(time_now)
             .with_creation_time(time_now)
-            .with_group_id("group_id")
+            .with_group_id("group_id".to_string())
             .with_group_sequence(1)
-            .with_reply_to_group_id("reply_to_group_id")
+            .with_reply_to_group_id("reply_to_group_id".to_string())
             .build();
 
         assert_eq!(properties.message_id, Some(test_uuid1.into()));
@@ -1706,7 +1699,7 @@ mod tests {
         assert_eq!(message.body, AmqpMessageBody::Binary(vec![vec![1, 2, 3]]));
         assert_eq!(message.header, Some(AmqpMessageHeader::builder().build()));
         let mut properties = AmqpApplicationProperties::new();
-        properties.insert("key", AmqpValue::from(123));
+        properties.insert("key".to_string(), AmqpValue::from(123));
         assert_eq!(message.application_properties, Some(properties));
         assert_eq!(message.message_annotations, Some(AmqpAnnotations::new()));
         assert_eq!(message.delivery_annotations, Some(AmqpAnnotations::new()));
@@ -1781,7 +1774,7 @@ mod tests {
     #[test]
     fn test_amqp_source_builder() {
         let source = AmqpSource::builder()
-            .with_address("address")
+            .with_address("address".to_string())
             .with_durable(TerminusDurability::Configuration)
             .with_expiry_policy(TerminusExpiryPolicy::ConnectionClose)
             .with_timeout(10)
@@ -1811,7 +1804,7 @@ mod tests {
     #[test]
     fn test_amqp_target_builder() {
         let target = AmqpTarget::builder()
-            .with_address("address")
+            .with_address("address".to_string())
             .with_durable(TerminusDurability::Configuration)
             .with_expiry_policy(TerminusExpiryPolicy::ConnectionClose)
             .with_timeout(10)

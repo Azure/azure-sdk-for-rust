@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-// cspell: words amqp sasl
+// cspell: words amqp sasl sastoken
 
 use azure_core::error::Result;
-use std::fmt::Debug;
 
 use super::session::AmqpSession;
 
@@ -37,9 +36,10 @@ pub trait AmqpClaimsBasedSecurityApis {
     ///
     /// # Parameters
     ///
-    /// - `path`: A `String` reference representing the AMQP path to be authorized.
-    /// - `secret`: An implementor of `Into<String>` representing the secret used for authorization. This is typically a JSON Web token.
-    /// - `expires_on`: A `time::OffsetDateTime` representing the expiration time of the authorization.
+    /// - `path`: A string representing the AMQP path to be authorized.
+    /// - `token_type`: An optional string representing the type of token used for authorization. This is either "servicebus.windows.net:sastoken" or "jwt". If it is not supplied, "jwt" is assumed.
+    /// - `secret`: A string representing the secret used for authorization. This is typically a JSON Web token.
+    /// - `expires_on`: The expiration time of the authorization.
     ///
     /// # Returns
     ///
@@ -49,13 +49,13 @@ pub trait AmqpClaimsBasedSecurityApis {
     ///
     fn authorize_path(
         &self,
-        path: impl Into<String> + Debug,
-        secret: impl Into<String>,
+        path: String,
+        token_type: Option<String>,
+        secret: String,
         expires_on: time::OffsetDateTime,
     ) -> impl std::future::Future<Output = Result<()>>;
 }
 
-#[derive(Debug)]
 pub struct AmqpClaimsBasedSecurity<'a> {
     implementation: CbsImplementation<'a>,
 }
@@ -71,12 +71,13 @@ impl<'a> AmqpClaimsBasedSecurity<'a> {
 impl<'a> AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity<'a> {
     async fn authorize_path(
         &self,
-        path: impl Into<String> + Debug,
-        secret: impl Into<String>,
+        path: String,
+        token_type: Option<String>,
+        secret: String,
         expires_on: time::OffsetDateTime,
     ) -> Result<()> {
         self.implementation
-            .authorize_path(path, secret, expires_on)
+            .authorize_path(path, token_type, secret, expires_on)
             .await
     }
     async fn attach(&self) -> Result<()> {

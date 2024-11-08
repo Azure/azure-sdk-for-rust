@@ -24,9 +24,10 @@ async fn main() -> Result<()> {
         host,
         eventhub.clone(),
         credential,
-        ProducerClientOptions::builder()
-            .with_application_id("test_get_properties")
-            .build(),
+        Some(ProducerClientOptions {
+            application_id: Some("test_get_properties".to_string()),
+            ..Default::default()
+        }),
     );
     let result = client.open().await;
     info!("Open result: {:?}", result);

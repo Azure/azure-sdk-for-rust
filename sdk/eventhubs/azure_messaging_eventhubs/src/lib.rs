@@ -6,6 +6,8 @@
 // cspell: words amqp eventdata
 #![doc = include_str!("../README.md")]
 
+/// let consumer_client = ConsumerClient::new("fully_qualified_domain", "eventhub_name", None, my_credentials, None);
+/// let partition_properties = consumer_client.get_partition_properties("0").await?;
 pub(crate) mod common;
 
 /// Types related to consuming events from an Event Hub.
@@ -60,7 +62,7 @@ pub mod models {
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credentials = DefaultAzureCredential::new()?;
-    /// let consumer_client = azure_messaging_eventhubs::consumer::ConsumerClient::new("fully_qualified_domain", "eventhub_name", None, my_credentials, None);
+    /// let consumer_client = azure_messaging_eventhubs::consumer::ConsumerClient::new("fully_qualified_domain".to_string(), "eventhub_name".to_string(), None, my_credentials, None);
     ///
     /// let eventhub_properties = consumer_client.get_eventhub_properties().await?;
     ///
@@ -76,7 +78,7 @@ pub mod models {
         pub name: String,
 
         /// The time when the Event Hub was created.
-        pub created_on: std::time::SystemTime,
+        pub created_on: Option<std::time::SystemTime>,
 
         /// The unique identifiers of the partitions in the Event Hub.
         pub partition_ids: Vec<String>,
@@ -105,9 +107,9 @@ pub mod models {
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credentials = DefaultAzureCredential::new()?;
-    /// let consumer_client = azure_messaging_eventhubs::consumer::ConsumerClient::new("fully_qualified_domain", "eventhub_name", None, my_credentials, None);
+    /// let consumer_client = azure_messaging_eventhubs::consumer::ConsumerClient::new("fully_qualified_domain".to_string(), "eventhub_name".to_string(), None, my_credentials, None);
     ///
-    /// let partition_properties = consumer_client.get_partition_properties("0").await?;
+    /// let partition_properties = consumer_client.get_partition_properties("0".to_string()).await?;
     /// # Ok(()) }
     /// ```
     ///
@@ -129,7 +131,8 @@ pub mod models {
         pub last_enqueued_offset: String,
 
         /// The UTC time when the last event was enqueued in this partition.
-        pub last_enqueued_time_utc: std::time::SystemTime,
+        /// This will be `None` if the partition is empty.
+        pub last_enqueued_time_utc: Option<std::time::SystemTime>,
 
         /// Indicates whether the partition is empty.
         pub is_empty: bool,
@@ -257,10 +260,10 @@ pub mod models {
     ///
     /// let event_data = EventData::builder()
     ///    .with_body(b"Hello, world!")
-    ///    .with_content_type("text/plain")
+    ///    .with_content_type("text/plain".to_string())
     ///    .with_correlation_id("correlation_id")
     ///    .with_message_id("message_id")
-    ///    .add_property("key", "value")
+    ///    .add_property("key".to_string(), "value")
     ///    .build();
     ///
     /// println!("{:?}", event_data);
@@ -356,7 +359,7 @@ pub mod models {
                 let mut message_properties_builder = AmqpMessageProperties::builder();
                 if let Some(content_type) = event_data.content_type {
                     message_properties_builder =
-                        message_properties_builder.with_content_type(content_type);
+                        message_properties_builder.with_content_type(content_type.into());
                 }
                 if let Some(correlation_id) = event_data.correlation_id {
                     message_properties_builder =
@@ -389,7 +392,7 @@ pub mod models {
     pub struct ReceivedEventData {
         message: AmqpMessage,
         event_data: EventData,
-        enqueued_time: std::time::SystemTime,
+        enqueued_time: Option<std::time::SystemTime>,
         offset: String,
         sequence_number: i64,
         partition_key: String,
@@ -422,7 +425,7 @@ pub mod models {
         }
 
         /// The time when the event was sent to the the Event Hub.
-        pub fn enqueued_time(&self) -> std::time::SystemTime {
+        pub fn enqueued_time(&self) -> Option<std::time::SystemTime> {
             self.enqueued_time
         }
 
@@ -486,7 +489,8 @@ pub mod models {
             let event_data = event_data_builder.build();
 
             // Extract the Eventhubs specific properties from the message.
-            let mut enqueued_time: std::time::SystemTime = std::time::SystemTime::now();
+            let mut enqueued_time: Option<std::time::SystemTime> =
+                Some(std::time::SystemTime::now());
             let mut sequence_number: i64 = 0;
             let mut partition_key: String = String::new();
             let mut offset: String = String::new();
@@ -532,7 +536,7 @@ pub mod models {
         }
     }
 
-    /// Represents builders for types in the EventHubs Model module.
+    /// Contains builders for types in the EventHubs Model module.
     pub mod builders {
         use super::*;
 
@@ -577,8 +581,8 @@ pub mod models {
             ///
             /// A reference to the updated builder.
             ///
-            pub fn with_content_type(mut self, content_type: impl Into<String>) -> Self {
-                self.event_data.content_type = Some(content_type.into());
+            pub fn with_content_type(mut self, content_type: String) -> Self {
+                self.event_data.content_type = Some(content_type);
                 self
             }
 
@@ -623,17 +627,13 @@ pub mod models {
             ///
             /// A reference to the updated builder.
             ///
-            pub fn add_property(
-                mut self,
-                key: impl Into<String>,
-                value: impl Into<AmqpValue>,
-            ) -> Self {
+            pub fn add_property(mut self, key: String, value: impl Into<AmqpValue>) -> Self {
                 if let Some(mut properties) = self.event_data.properties {
-                    properties.insert(key.into(), value.into());
+                    properties.insert(key, value.into());
                     self.event_data.properties = Some(properties);
                 } else {
                     let mut properties = HashMap::new();
-                    properties.insert(key.into(), value.into());
+                    properties.insert(key, value.into());
                     self.event_data.properties = Some(properties);
                 }
                 self
@@ -737,7 +737,9 @@ mod tests {
     #[test]
     fn test_event_data_builder_with_content_type() {
         let content_type = "application/json";
-        let event_data = EventData::builder().with_content_type(content_type).build();
+        let event_data = EventData::builder()
+            .with_content_type(content_type.to_string())
+            .build();
 
         assert_eq!(event_data.content_type(), Some(content_type));
     }
@@ -784,7 +786,7 @@ mod tests {
 
         let event_data = EventData::builder()
             .with_body(body.clone())
-            .with_content_type(content_type)
+            .with_content_type(content_type.to_string())
             .with_correlation_id(correlation_id.clone())
             .with_message_id(message_id.clone())
             .add_property(key.clone(), value.clone())
