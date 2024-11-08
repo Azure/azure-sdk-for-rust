@@ -27,7 +27,7 @@ use azure_core_amqp::{
     messaging::{AmqpSource, AmqpSourceFilter},
     receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::{AmqpSession, AmqpSessionApis},
-    value::AmqpDescribed,
+    value::{AmqpDescribed, AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
 use futures::stream::Stream;
 use std::{
@@ -266,23 +266,29 @@ impl ConsumerClient {
                 )),
             )
             .build();
-
-        let mut receiver_options_builder = AmqpReceiverOptions::builder()
-            .with_name(receiver_name.clone())
-            .add_property("com.microsoft.com:receiver-name".into(), receiver_name)
-            .with_credit_mode(ReceiverCreditMode::Auto(options.prefetch.unwrap_or(300)))
-            .with_auto_accept(true);
+        let mut receiver_properties : AmqpOrderedMap<AmqpSymbol, AmqpValue> = vec![("com.microsoft.com:receiver-name", receiver_name.clone())]
+            .into_iter()
+            .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
+            .collect();
 
         if let Some(owner_level) = options.owner_level {
-            receiver_options_builder = receiver_options_builder.add_property("com.microsoft:epoch".into(), owner_level);
+            receiver_properties.insert("com.microsoft:epoch".into(), AmqpValue::from(owner_level));
         }
+
+        let receiver_options = AmqpReceiverOptions{
+            name: Some(receiver_name),
+            properties: Some(receiver_properties),
+            credit_mode: Some(ReceiverCreditMode::Auto(options.prefetch.unwrap_or(300))),
+            auto_accept: true,
+            ..Default::default()
+        };
 
         let receiver = AmqpReceiver::new();
         receiver
             .attach(
                 &session,
                 message_source,
-                Some(receiver_options_builder.build()),
+                Some(receiver_options),
             )
             .await?;
 
@@ -445,16 +451,20 @@ impl ConsumerClient {
                         .clone()
                         .unwrap_or(uuid::Uuid::new_v4().to_string()),
                     Url::parse(url).map_err(Error::from)?,
-                    Some(
-                        AmqpConnectionOptions::builder()
-                            .with_properties(vec![
+                    Some(AmqpConnectionOptions {
+                        properties: Some(
+                            vec![
                                 ("user-agent", get_user_agent(&self.options.application_id)),
                                 ("version", get_package_version()),
                                 ("platform", get_platform_info()),
                                 ("product", get_package_name()),
-                            ])
-                            .build(),
-                    ),
+                            ]
+                            .into_iter()
+                            .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
+                            .collect(),
+                        ),
+                        ..Default::default()
+                    }),
                 )
                 .await?;
             self.connection

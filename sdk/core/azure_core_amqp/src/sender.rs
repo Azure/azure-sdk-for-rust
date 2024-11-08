@@ -16,20 +16,16 @@ type SenderImplementation = super::noop::NoopAmqpSender;
 
 #[derive(Debug, Default, Clone)]
 pub struct AmqpSenderOptions {
-    pub(super) sender_settle_mode: Option<SenderSettleMode>,
-    pub(super) receiver_settle_mode: Option<ReceiverSettleMode>,
-    pub(super) source: Option<AmqpSource>,
-    pub(super) offered_capabilities: Option<Vec<AmqpSymbol>>,
-    pub(super) desired_capabilities: Option<Vec<AmqpSymbol>>,
-    pub(super) properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-    pub(super) initial_delivery_count: Option<u32>,
-    pub(super) max_message_size: Option<u64>,
+    pub sender_settle_mode: Option<SenderSettleMode>,
+    pub receiver_settle_mode: Option<ReceiverSettleMode>,
+    pub source: Option<AmqpSource>,
+    pub offered_capabilities: Option<Vec<AmqpSymbol>>,
+    pub desired_capabilities: Option<Vec<AmqpSymbol>>,
+    pub properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    pub initial_delivery_count: Option<u32>,
+    pub max_message_size: Option<u64>,
 }
-impl AmqpSenderOptions {
-    pub fn builder() -> builders::AmqpSenderOptionsBuilder {
-        builders::AmqpSenderOptionsBuilder::new()
-    }
-}
+impl AmqpSenderOptions {}
 
 #[allow(unused_variables)]
 pub trait AmqpSenderApis {
@@ -100,105 +96,7 @@ pub struct AmqpSendOptions {
     pub settled: Option<bool>,
 }
 
-impl AmqpSendOptions {
-    pub fn builder() -> builders::AmqpSendOptionsBuilder {
-        builders::AmqpSendOptionsBuilder::new()
-    }
-}
-
-pub mod builders {
-    use super::*;
-
-    pub struct AmqpSendOptionsBuilder {
-        options: AmqpSendOptions,
-    }
-
-    impl AmqpSendOptionsBuilder {
-        pub(super) fn new() -> Self {
-            AmqpSendOptionsBuilder {
-                options: Default::default(),
-            }
-        }
-        #[allow(dead_code)]
-        pub fn with_message_format(mut self, message_format: u32) -> Self {
-            self.options.message_format = Some(message_format);
-            self
-        }
-        #[allow(dead_code)]
-        pub fn with_settled(mut self, settled: bool) -> Self {
-            self.options.settled = Some(settled);
-            self
-        }
-        pub fn build(self) -> Option<AmqpSendOptions> {
-            Some(self.options)
-        }
-    }
-
-    #[derive(Clone)]
-    pub struct AmqpSenderOptionsBuilder {
-        options: AmqpSenderOptions,
-    }
-
-    impl AmqpSenderOptionsBuilder {
-        pub(super) fn new() -> Self {
-            AmqpSenderOptionsBuilder {
-                options: Default::default(),
-            }
-        }
-
-        pub fn with_sender_settle_mode(mut self, sender_settle_mode: SenderSettleMode) -> Self {
-            self.options.sender_settle_mode = Some(sender_settle_mode);
-            self
-        }
-
-        pub fn with_receiver_settle_mode(
-            mut self,
-            receiver_settle_mode: ReceiverSettleMode,
-        ) -> Self {
-            self.options.receiver_settle_mode = Some(receiver_settle_mode);
-            self
-        }
-
-        pub fn with_source(mut self, source: impl Into<AmqpSource>) -> Self {
-            self.options.source = Some(source.into());
-            self
-        }
-        pub fn with_offered_capabilities(mut self, offered_capabilities: Vec<AmqpSymbol>) -> Self {
-            self.options.offered_capabilities = Some(offered_capabilities);
-            self
-        }
-        #[allow(dead_code)]
-        pub fn with_desired_capabilities(mut self, desired_capabilities: Vec<AmqpSymbol>) -> Self {
-            self.options.desired_capabilities = Some(desired_capabilities);
-            self
-        }
-
-        pub fn with_properties(
-            mut self,
-            properties: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-        ) -> Self {
-            let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
-                properties.into().iter().collect();
-
-            self.options.properties = Some(properties_map);
-            self
-        }
-
-        pub fn with_initial_delivery_count(mut self, initial_delivery_count: u32) -> Self {
-            self.options.initial_delivery_count = Some(initial_delivery_count);
-            self
-        }
-
-        pub fn with_max_message_size(mut self, max_message_size: u64) -> Self {
-            self.options.max_message_size = Some(max_message_size);
-            self
-        }
-
-        pub fn build(self) -> AmqpSenderOptions {
-            self.options
-        }
-    }
-}
+impl AmqpSendOptions {}
 
 #[cfg(test)]
 mod tests {
@@ -209,23 +107,20 @@ mod tests {
         let mut properties: AmqpOrderedMap<AmqpSymbol, AmqpValue> = AmqpOrderedMap::new();
         properties.insert(AmqpSymbol::from("key"), AmqpValue::from("value"));
 
-        let sender_options = AmqpSenderOptions::builder()
-            .with_sender_settle_mode(SenderSettleMode::Unsettled)
-            .with_sender_settle_mode(SenderSettleMode::Settled)
-            .with_sender_settle_mode(SenderSettleMode::Mixed)
-            .with_receiver_settle_mode(ReceiverSettleMode::Second)
-            .with_receiver_settle_mode(ReceiverSettleMode::First)
-            .with_source(
+        let sender_options = AmqpSenderOptions {
+            sender_settle_mode: Some(SenderSettleMode::Mixed),
+            receiver_settle_mode: Some(ReceiverSettleMode::First),
+            source: Some(
                 AmqpSource::builder()
                     .with_address("address".to_string())
                     .build(),
-            )
-            .with_offered_capabilities(vec!["capability".into()])
-            .with_desired_capabilities(vec!["capability".into()])
-            .with_properties(properties)
-            .with_initial_delivery_count(27)
-            .with_max_message_size(1024)
-            .build();
+            ),
+            offered_capabilities: Some(vec!["capability".into()]),
+            desired_capabilities: Some(vec!["capability".into()]),
+            properties: Some(properties),
+            initial_delivery_count: Some(27),
+            max_message_size: Some(1024),
+        };
 
         assert_eq!(
             sender_options.sender_settle_mode,

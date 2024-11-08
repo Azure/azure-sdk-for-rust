@@ -15,21 +15,18 @@ type ConnectionImplementation = super::noop::NoopAmqpConnection;
 
 #[derive(Debug, Default, Clone)]
 pub struct AmqpConnectionOptions {
-    pub(crate) max_frame_size: Option<u32>,
-    pub(crate) channel_max: Option<u16>,
-    pub(crate) idle_timeout: Option<Duration>,
-    pub(crate) outgoing_locales: Option<Vec<String>>,
-    pub(crate) incoming_locales: Option<Vec<String>>,
-    pub(crate) offered_capabilities: Option<Vec<AmqpSymbol>>,
-    pub(crate) desired_capabilities: Option<Vec<AmqpSymbol>>,
-    pub(crate) properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-    pub(crate) buffer_size: Option<usize>,
+    pub max_frame_size: Option<u32>,
+    pub channel_max: Option<u16>,
+    pub idle_timeout: Option<Duration>,
+    pub outgoing_locales: Option<Vec<String>>,
+    pub incoming_locales: Option<Vec<String>>,
+    pub offered_capabilities: Option<Vec<AmqpSymbol>>,
+    pub desired_capabilities: Option<Vec<AmqpSymbol>>,
+    pub properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    pub buffer_size: Option<usize>,
 }
 
 impl AmqpConnectionOptions {
-    pub fn builder() -> builders::AmqpConnectionOptionsBuilder {
-        builders::AmqpConnectionOptionsBuilder::new()
-    }
     pub fn max_frame_size(&self) -> Option<u32> {
         self.max_frame_size
     }
@@ -111,127 +108,69 @@ impl AmqpConnection {
     }
 }
 
-pub mod builders {
-    use super::*;
-    pub struct AmqpConnectionOptionsBuilder {
-        options: AmqpConnectionOptions,
-    }
-
-    impl AmqpConnectionOptionsBuilder {
-        pub(super) fn new() -> Self {
-            Self {
-                options: Default::default(),
-            }
-        }
-        pub fn build(self) -> AmqpConnectionOptions {
-            self.options
-        }
-        pub fn with_max_frame_size(mut self, max_frame_size: u32) -> Self {
-            self.options.max_frame_size = Some(max_frame_size);
-            self
-        }
-        pub fn with_channel_max(mut self, channel_max: u16) -> Self {
-            self.options.channel_max = Some(channel_max);
-            self
-        }
-        pub fn with_idle_timeout(mut self, idle_timeout: Duration) -> Self {
-            self.options.idle_timeout = Some(idle_timeout);
-            self
-        }
-        pub fn with_outgoing_locales(mut self, outgoing_locales: Vec<String>) -> Self {
-            self.options.outgoing_locales = Some(outgoing_locales);
-            self
-        }
-        pub fn with_incoming_locales(mut self, incoming_locales: Vec<String>) -> Self {
-            self.options.incoming_locales = Some(incoming_locales);
-            self
-        }
-        pub fn with_offered_capabilities(mut self, offered_capabilities: Vec<AmqpSymbol>) -> Self {
-            self.options.offered_capabilities = Some(offered_capabilities);
-            self
-        }
-        pub fn with_desired_capabilities(mut self, desired_capabilities: Vec<AmqpSymbol>) -> Self {
-            self.options.desired_capabilities = Some(desired_capabilities);
-            self
-        }
-        pub fn with_properties<K, V>(mut self, properties: impl Into<AmqpOrderedMap<K, V>>) -> Self
-        where
-            K: Into<AmqpSymbol> + Debug + Clone + PartialEq,
-            V: Into<AmqpValue> + Debug + Clone,
-        {
-            let properties_map: AmqpOrderedMap<K, V> = properties.into();
-            let properties_map = properties_map
-                .into_iter()
-                .map(|(k, v)| (k.into(), v.into()))
-                .collect();
-            self.options.properties = Some(properties_map);
-            self
-        }
-        pub fn with_buffer_size(mut self, buffer_size: usize) -> Self {
-            self.options.buffer_size = Some(buffer_size);
-            self
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_amqp_connection_builder_with_max_frame_size() {
-        let connection_options = AmqpConnectionOptions::builder()
-            .with_max_frame_size(1024)
-            .build();
-
+    fn test_amqp_connection_options_with_max_frame_size() {
+        let connection_options = AmqpConnectionOptions {
+            max_frame_size: Some(1024),
+            ..Default::default()
+        };
         assert_eq!(connection_options.max_frame_size, Some(1024));
     }
 
     #[test]
-    fn test_amqp_connection_builder_with_channel_max() {
-        let connection_options = AmqpConnectionOptions::builder()
-            .with_channel_max(16)
-            .build();
+    fn test_amqp_connection_options_with_channel_max() {
+        let connection_options = AmqpConnectionOptions {
+            channel_max: Some(16),
+            ..Default::default()
+        };
 
         assert_eq!(connection_options.channel_max, Some(16));
     }
 
     #[test]
-    fn test_amqp_connection_builder_with_idle_timeout() {
+    fn test_amqp_connection_options_with_idle_timeout() {
         let idle_timeout = time::Duration::seconds(60);
-        let connection_options = AmqpConnectionOptions::builder()
-            .with_idle_timeout(idle_timeout)
-            .build();
+        let connection_options = AmqpConnectionOptions {
+            idle_timeout: Some(idle_timeout),
+            ..Default::default()
+        };
 
         assert_eq!(connection_options.idle_timeout, Some(idle_timeout));
     }
 
     #[test]
-    fn test_amqp_connection_builder_with_outgoing_locales() {
+    fn test_amqp_connection_options_with_outgoing_locales() {
         let outgoing_locales = vec!["en-US".to_string()];
-        let connection_options = AmqpConnectionOptions::builder()
-            .with_outgoing_locales(outgoing_locales.clone())
-            .build();
+        let connection_options = AmqpConnectionOptions {
+            outgoing_locales: Some(outgoing_locales.clone()),
+            ..Default::default()
+        };
 
         assert_eq!(connection_options.outgoing_locales, Some(outgoing_locales));
     }
 
     #[test]
-    fn test_amqp_connection_builder_with_incoming_locales() {
+    fn test_amqp_connection_options_with_incoming_locales() {
         let incoming_locales = vec!["en-US".to_string()];
-        let connection_options = AmqpConnectionOptions::builder()
-            .with_incoming_locales(incoming_locales.clone())
-            .build();
+        let connection_options = AmqpConnectionOptions {
+            incoming_locales: Some(incoming_locales.clone()),
+            ..Default::default()
+        };
 
         assert_eq!(connection_options.incoming_locales, Some(incoming_locales));
     }
 
     #[test]
-    fn test_amqp_connection_builder_with_offered_capabilities() {
+    fn test_amqp_connection_options_with_offered_capabilities() {
         let offered_capabilities = vec!["capability".into()];
-        let connection_options = AmqpConnectionOptions::builder()
-            .with_offered_capabilities(offered_capabilities.clone())
-            .build();
+        let connection_options = AmqpConnectionOptions {
+            offered_capabilities: Some(offered_capabilities.clone()),
+            ..Default::default()
+        };
 
         assert_eq!(
             connection_options.offered_capabilities,
@@ -240,11 +179,12 @@ mod tests {
     }
 
     #[test]
-    fn test_amqp_connection_builder_with_desired_capabilities() {
+    fn test_amqp_connection_options_with_desired_capabilities() {
         let desired_capabilities = vec!["capability".into()];
-        let connection_options = AmqpConnectionOptions::builder()
-            .with_desired_capabilities(desired_capabilities.clone())
-            .build();
+        let connection_options = AmqpConnectionOptions {
+            desired_capabilities: Some(desired_capabilities.clone()),
+            ..Default::default()
+        };
 
         assert_eq!(
             connection_options.desired_capabilities,
@@ -253,11 +193,17 @@ mod tests {
     }
 
     #[test]
-    fn test_amqp_connection_builder_with_properties() {
+    fn test_amqp_connection_options_with_properties() {
         let properties = vec![("key", "value")];
-        let connection_options = AmqpConnectionOptions::builder()
-            .with_properties(properties.clone())
-            .build();
+        let connection_options = AmqpConnectionOptions {
+            properties: Some(
+                properties
+                    .iter()
+                    .map(|(k, v)| (AmqpSymbol::from(*k), AmqpValue::from(*v)))
+                    .collect(),
+            ),
+            ..Default::default()
+        };
 
         let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = properties
             .into_iter()
@@ -268,28 +214,34 @@ mod tests {
     }
 
     #[test]
-    fn test_amqp_connection_builder_with_buffer_size() {
+    fn test_amqp_connection_options_with_buffer_size() {
         let buffer_size = 1024;
-        let connection_options = AmqpConnectionOptions::builder()
-            .with_buffer_size(buffer_size)
-            .build();
+        let connection_options = AmqpConnectionOptions {
+            buffer_size: Some(buffer_size),
+            ..Default::default()
+        };
 
         assert_eq!(connection_options.buffer_size, Some(buffer_size));
     }
 
     #[test]
-    fn test_amqp_connection_builder() {
-        let connection_options = AmqpConnectionOptions::builder()
-            .with_max_frame_size(1024)
-            .with_channel_max(16)
-            .with_idle_timeout(time::Duration::seconds(60))
-            .with_outgoing_locales(vec!["en-US".to_string()])
-            .with_incoming_locales(vec!["en-US".to_string()])
-            .with_offered_capabilities(vec!["capability".into()])
-            .with_desired_capabilities(vec!["capability".into()])
-            .with_properties(vec![("key", "value")])
-            .with_buffer_size(1024)
-            .build();
+    fn test_amqp_connection_options() {
+        let connection_options = AmqpConnectionOptions {
+            max_frame_size: Some(1024),
+            channel_max: Some(16),
+            idle_timeout: Some(time::Duration::seconds(60)),
+            outgoing_locales: Some(vec!["en-US".to_string()]),
+            incoming_locales: Some(vec!["en-US".to_string()]),
+            offered_capabilities: Some(vec!["capability".into()]),
+            desired_capabilities: Some(vec!["capability".into()]),
+            properties: Some(
+                vec![("key", "value")]
+                    .into_iter()
+                    .map(|(k, v)| (k.into(), v.into()))
+                    .collect(),
+            ),
+            buffer_size: Some(1024),
+        };
 
         assert_eq!(connection_options.max_frame_size, Some(1024));
         assert_eq!(connection_options.channel_max, Some(16));
