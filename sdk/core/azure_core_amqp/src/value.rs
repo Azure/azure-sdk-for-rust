@@ -20,11 +20,11 @@ use azure_core::Result;
 #[derive(Debug, PartialEq, Clone, Default, Eq)]
 pub struct AmqpSymbol(pub String);
 
-impl PartialEq<str> for AmqpSymbol {
-    fn eq(&self, other: &str) -> bool {
-        self.0.as_str() == other
-    }
-}
+// impl PartialEq<str> for AmqpSymbol {
+//     fn eq(&self, other: &str) -> bool {
+//         self.0.as_str() == other
+//     }
+// }
 
 impl PartialEq<AmqpSymbol> for str {
     fn eq(&self, other: &AmqpSymbol) -> bool {
@@ -306,12 +306,12 @@ where
 
     pub fn get<Q>(&self, key: &Q) -> Option<&V>
     where
-        K: Borrow<Q> + PartialEq<Q>,
+        K: Borrow<Q>,
         Q: PartialEq<K> + ?Sized,
     {
         self.inner
             .iter()
-            .find_map(|(k, v)| if key == k { Some(v) } else { None })
+            .find_map(|(k, v)| if key.eq(k) { Some(v) } else { None })
     }
 
     pub fn len(&self) -> usize {
@@ -324,19 +324,19 @@ where
 
     pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
     where
-        K: Borrow<Q> + PartialEq<Q>,
+        K: Borrow<Q>,
         Q: PartialEq<K> + ?Sized,
     {
-        let index = self.inner.iter().position(|(k, _)| key == k)?;
+        let index = self.inner.iter().position(|(k, _)| key.eq(k))?;
         Some(self.inner.remove(index).1)
     }
 
     pub fn contains_key<Q>(&self, key: &Q) -> bool
     where
-        K: Borrow<Q> + PartialEq<Q>,
+        K: Borrow<Q>,
         Q: PartialEq<K> + ?Sized,
     {
-        self.inner.iter().any(|(k, _)| key == k)
+        self.inner.iter().any(|(k, _)| key.eq(k))
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (K, V)> + '_ {
