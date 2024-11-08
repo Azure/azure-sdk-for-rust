@@ -3,14 +3,6 @@
 
 //cspell: words amqp amqps servicebus mgmt
 
-use azure_core_amqp::{
-    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis},
-    connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
-    management::{AmqpManagement, AmqpManagementApis},
-    sender::{AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSenderOptions},
-    session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
-};
-
 use crate::{
     common::{
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
@@ -20,11 +12,18 @@ use crate::{
     models::{EventHubPartitionProperties, EventHubProperties},
 };
 use async_std::sync::Mutex;
-use azure_core::RetryOptions;
 use azure_core::{
     credentials::AccessToken,
     error::{Error, Result},
-    Uuid,
+    RetryOptions, Uuid,
+};
+use azure_core_amqp::{
+    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis},
+    connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
+    management::{AmqpManagement, AmqpManagementApis},
+    sender::{AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSenderOptions},
+    session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
+    value::{AmqpSymbol, AmqpValue},
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::collections::HashMap;
@@ -237,9 +236,10 @@ impl ProducerClient {
             .await
             .send(
                 messages,
-                AmqpSendOptions::builder()
-                    .with_message_format(Self::BATCH_MESSAGE_FORMAT)
-                    .build(),
+                Some(AmqpSendOptions {
+                    message_format: Some(Self::BATCH_MESSAGE_FORMAT),
+                    ..Default::default()
+                }),
             )
             .await?;
         Ok(())
@@ -374,16 +374,20 @@ impl ProducerClient {
                         .clone()
                         .unwrap_or(Uuid::new_v4().to_string()),
                     Url::parse(url).map_err(Error::from)?,
-                    Some(
-                        AmqpConnectionOptions::builder()
-                            .with_properties(vec![
+                    Some(AmqpConnectionOptions {
+                        properties: Some(
+                            vec![
                                 ("user-agent", get_user_agent(&self.options.application_id)),
                                 ("version", get_package_version()),
                                 ("platform", get_platform_info()),
                                 ("product", get_package_name()),
-                            ])
-                            .build(),
-                    ),
+                            ]
+                            .into_iter()
+                            .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
+                            .collect(),
+                        ),
+                        ..Default::default()
+                    }),
                 )
                 .await?;
             self.connection
@@ -407,12 +411,11 @@ impl ProducerClient {
             session
                 .begin(
                     connection,
-                    Some(
-                        AmqpSessionOptions::builder()
-                            .with_incoming_window(u32::MAX)
-                            .with_outgoing_window(u32::MAX)
-                            .build(),
-                    ),
+                    Some(AmqpSessionOptions {
+                        incoming_window: Some(u32::MAX),
+                        outgoing_window: Some(u32::MAX),
+                        ..Default::default()
+                    }),
                 )
                 .await?;
             let sender = AmqpSender::new();
@@ -427,13 +430,10 @@ impl ProducerClient {
                             .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
                     ),
                     path.clone(),
-                    Some(
-                        AmqpSenderOptions::builder()
-                            .with_max_message_size(
-                                self.options.max_message_size.unwrap_or(u64::MAX),
-                            )
-                            .build(),
-                    ),
+                    Some(AmqpSenderOptions {
+                        max_message_size: Some(self.options.max_message_size.unwrap_or(u64::MAX)),
+                        ..Default::default()
+                    }),
                 )
                 .await?;
             sender_instances.insert(

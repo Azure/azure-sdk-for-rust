@@ -35,45 +35,17 @@ impl Default for ReceiverCreditMode {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct AmqpReceiverOptions {
-    receiver_settle_mode: Option<ReceiverSettleMode>,
-    target: Option<AmqpTarget>,
-    name: Option<String>,
-    credit_mode: Option<ReceiverCreditMode>,
-    auto_accept: bool,
-    properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    pub receiver_settle_mode: Option<ReceiverSettleMode>,
+    pub target: Option<AmqpTarget>,
+    pub name: Option<String>,
+    pub credit_mode: Option<ReceiverCreditMode>,
+    pub auto_accept: bool,
+    pub properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
 }
 
-impl AmqpReceiverOptions {
-    pub fn builder() -> builders::AmqpReceiverOptionsBuilder {
-        builders::AmqpReceiverOptionsBuilder::new()
-    }
-
-    pub fn name(&self) -> &Option<String> {
-        &self.name
-    }
-
-    pub fn credit_mode(&self) -> &Option<ReceiverCreditMode> {
-        &self.credit_mode
-    }
-
-    pub fn auto_accept(&self) -> bool {
-        self.auto_accept
-    }
-
-    pub fn properties(&self) -> &Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>> {
-        &self.properties
-    }
-
-    pub fn receiver_settle_mode(&self) -> &Option<ReceiverSettleMode> {
-        &self.receiver_settle_mode
-    }
-
-    pub fn target(&self) -> &Option<AmqpTarget> {
-        &self.target
-    }
-}
+impl AmqpReceiverOptions {}
 
 #[allow(unused_variables)]
 pub trait AmqpReceiverApis {
@@ -117,76 +89,6 @@ impl AmqpReceiver {
     }
 }
 
-pub mod builders {
-    use super::*;
-
-    pub struct AmqpReceiverOptionsBuilder {
-        options: AmqpReceiverOptions,
-    }
-
-    impl AmqpReceiverOptionsBuilder {
-        pub(super) fn new() -> Self {
-            AmqpReceiverOptionsBuilder {
-                options: Default::default(),
-            }
-        }
-
-        pub fn with_receiver_settle_mode(
-            mut self,
-            receiver_settle_mode: ReceiverSettleMode,
-        ) -> Self {
-            self.options.receiver_settle_mode = Some(receiver_settle_mode);
-            self
-        }
-
-        pub fn with_target(mut self, target: impl Into<AmqpTarget>) -> Self {
-            self.options.target = Some(target.into());
-            self
-        }
-
-        pub fn with_name(mut self, name: String) -> Self {
-            self.options.name = Some(name);
-            self
-        }
-
-        pub fn with_properties(
-            mut self,
-            properties: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-        ) -> Self {
-            let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
-                properties.into().iter().collect();
-
-            self.options.properties = Some(properties_map);
-            self
-        }
-
-        pub fn add_property(mut self, key: String, value: impl Into<AmqpValue>) -> Self {
-            let key = AmqpSymbol::from(key);
-            let value = value.into();
-            if let Some(properties) = self.options.properties.as_mut() {
-                properties.insert(key, value);
-            } else {
-                let mut properties = AmqpOrderedMap::new();
-                properties.insert(key, value);
-                self.options.properties = Some(properties);
-            }
-            self
-        }
-        pub fn with_credit_mode(mut self, credit_mode: ReceiverCreditMode) -> Self {
-            self.options.credit_mode = Some(credit_mode);
-            self
-        }
-        pub fn with_auto_accept(mut self, auto_accept: bool) -> Self {
-            self.options.auto_accept = auto_accept;
-            self
-        }
-
-        pub fn build(self) -> AmqpReceiverOptions {
-            self.options
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -196,16 +98,16 @@ mod tests {
         let mut properties: AmqpOrderedMap<AmqpSymbol, AmqpValue> = AmqpOrderedMap::new();
         properties.insert(AmqpSymbol::from("key"), AmqpValue::from("value"));
 
-        let receiver_options = AmqpReceiverOptions::builder()
-            .with_receiver_settle_mode(ReceiverSettleMode::Second)
-            .with_receiver_settle_mode(ReceiverSettleMode::First)
-            .with_target(
+        let receiver_options = AmqpReceiverOptions {
+            receiver_settle_mode: Some(ReceiverSettleMode::First),
+            target: Some(
                 AmqpTarget::builder()
                     .with_address("address".to_string())
                     .build(),
-            )
-            .with_properties(properties)
-            .build();
+            ),
+            properties: Some(properties),
+            ..Default::default()
+        };
 
         assert_eq!(
             receiver_options.receiver_settle_mode,
@@ -222,13 +124,14 @@ mod tests {
 
     #[test]
     fn test_amqp_receiver_options_builder_with_target() {
-        let receiver_options = AmqpReceiverOptions::builder()
-            .with_target(
+        let receiver_options = AmqpReceiverOptions {
+            target: Some(
                 AmqpTarget::builder()
                     .with_address("test_address".to_string())
                     .build(),
-            )
-            .build();
+            ),
+            ..Default::default()
+        };
 
         assert!(receiver_options.target.is_some());
         assert_eq!(
@@ -239,9 +142,10 @@ mod tests {
 
     #[test]
     fn test_amqp_receiver_options_builder_with_name() {
-        let receiver_options = AmqpReceiverOptions::builder()
-            .with_name("test_receiver".into())
-            .build();
+        let receiver_options = AmqpReceiverOptions {
+            name: Some("test_receiver".into()),
+            ..Default::default()
+        };
 
         assert!(receiver_options.name.is_some());
         assert_eq!(receiver_options.name.unwrap(), "test_receiver".to_string());
@@ -249,9 +153,10 @@ mod tests {
 
     #[test]
     fn test_amqp_receiver_options_builder_with_credit_mode() {
-        let receiver_options = AmqpReceiverOptions::builder()
-            .with_credit_mode(ReceiverCreditMode::Auto(200))
-            .build();
+        let receiver_options = AmqpReceiverOptions {
+            credit_mode: Some(ReceiverCreditMode::Auto(200)),
+            ..Default::default()
+        };
 
         assert!(receiver_options.credit_mode.is_some());
         assert_eq!(
@@ -262,9 +167,10 @@ mod tests {
 
     #[test]
     fn test_amqp_receiver_options_builder_with_auto_accept() {
-        let receiver_options = AmqpReceiverOptions::builder()
-            .with_auto_accept(true)
-            .build();
+        let receiver_options = AmqpReceiverOptions {
+            auto_accept: true,
+            ..Default::default()
+        };
 
         assert!(receiver_options.auto_accept);
     }
@@ -277,18 +183,18 @@ mod tests {
             AmqpValue::from("combo_value"),
         );
 
-        let receiver_options = AmqpReceiverOptions::builder()
-            .with_receiver_settle_mode(ReceiverSettleMode::First)
-            .with_target(
+        let receiver_options = AmqpReceiverOptions {
+            receiver_settle_mode: Some(ReceiverSettleMode::First),
+            target: Some(
                 AmqpTarget::builder()
                     .with_address("combo_address".to_string())
                     .build(),
-            )
-            .with_name("combo_name".into())
-            .with_properties(properties.clone())
-            .with_credit_mode(ReceiverCreditMode::Manual)
-            .with_auto_accept(false)
-            .build();
+            ),
+            name: Some("combo_name".into()),
+            properties: Some(properties.clone()),
+            credit_mode: Some(ReceiverCreditMode::Manual),
+            auto_accept: false,
+        };
 
         assert_eq!(
             receiver_options.receiver_settle_mode,

@@ -17,21 +17,17 @@ type SessionImplementation = super::noop::NoopAmqpSession;
 
 #[derive(Debug, Default, Clone)]
 pub struct AmqpSessionOptions {
-    next_outgoing_id: Option<u32>,
-    incoming_window: Option<u32>,
-    outgoing_window: Option<u32>,
-    handle_max: Option<u32>,
-    offered_capabilities: Option<Vec<AmqpSymbol>>,
-    desired_capabilities: Option<Vec<AmqpSymbol>>,
-    properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-    buffer_size: Option<usize>,
+    pub next_outgoing_id: Option<u32>,
+    pub incoming_window: Option<u32>,
+    pub outgoing_window: Option<u32>,
+    pub handle_max: Option<u32>,
+    pub offered_capabilities: Option<Vec<AmqpSymbol>>,
+    pub desired_capabilities: Option<Vec<AmqpSymbol>>,
+    pub properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    pub buffer_size: Option<usize>,
 }
 
 impl AmqpSessionOptions {
-    pub fn builder() -> builders::AmqpSessionOptionsBuilder {
-        builders::AmqpSessionOptionsBuilder::new()
-    }
-
     pub fn next_outgoing_id(&self) -> Option<u32> {
         self.next_outgoing_id
     }
@@ -102,82 +98,27 @@ impl AmqpSession {
     }
 }
 
-pub mod builders {
-    use super::*;
-
-    pub struct AmqpSessionOptionsBuilder {
-        options: AmqpSessionOptions,
-    }
-
-    impl AmqpSessionOptionsBuilder {
-        pub(super) fn new() -> Self {
-            Self {
-                options: Default::default(),
-            }
-        }
-        pub fn build(&self) -> AmqpSessionOptions {
-            self.options.clone()
-        }
-        pub fn with_next_outgoing_id(mut self, next_outgoing_id: u32) -> Self {
-            self.options.next_outgoing_id = Some(next_outgoing_id);
-            self
-        }
-        pub fn with_incoming_window(mut self, incoming_window: u32) -> Self {
-            self.options.incoming_window = Some(incoming_window);
-            self
-        }
-        pub fn with_outgoing_window(mut self, outgoing_window: u32) -> Self {
-            self.options.outgoing_window = Some(outgoing_window);
-            self
-        }
-        pub fn with_handle_max(mut self, handle_max: u32) -> Self {
-            self.options.handle_max = Some(handle_max);
-            self
-        }
-        pub fn with_offered_capabilities(mut self, offered_capabilities: Vec<AmqpSymbol>) -> Self {
-            self.options.offered_capabilities = Some(offered_capabilities);
-            self
-        }
-        pub fn with_desired_capabilities(mut self, desired_capabilities: Vec<AmqpSymbol>) -> Self {
-            self.options.desired_capabilities = Some(desired_capabilities);
-            self
-        }
-        pub fn with_properties<K, V>(mut self, properties: impl Into<AmqpOrderedMap<K, V>>) -> Self
-        where
-            K: Into<AmqpSymbol> + PartialEq + Clone,
-            V: Into<AmqpValue> + Clone,
-        {
-            let properties_map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = properties
-                .into()
-                .into_iter()
-                .map(|(k, v)| (k.into(), v.into()))
-                .collect();
-            self.options.properties = Some(properties_map);
-            self
-        }
-        pub fn with_buffer_size(mut self, buffer_size: usize) -> Self {
-            self.options.buffer_size = Some(buffer_size);
-            self
-        }
-    }
-}
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_amqp_session_options_builder() {
-        let session_options = AmqpSessionOptions::builder()
-            .with_next_outgoing_id(1)
-            .with_incoming_window(1)
-            .with_outgoing_window(1)
-            .with_handle_max(1)
-            .with_offered_capabilities(vec!["capability".into()])
-            .with_desired_capabilities(vec!["capability".into()])
-            .with_properties(vec![("key", "value")])
-            .with_buffer_size(1024)
-            .build();
-
+        let session_options = AmqpSessionOptions {
+            next_outgoing_id: Some(1),
+            incoming_window: Some(1),
+            outgoing_window: Some(1),
+            handle_max: Some(1),
+            offered_capabilities: Some(vec!["capability".into()]),
+            desired_capabilities: Some(vec!["capability".into()]),
+            properties: Some(
+                vec![("key", "value")]
+                    .into_iter()
+                    .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
+                    .collect(),
+            ),
+            buffer_size: Some(1024),
+        };
         assert_eq!(session_options.next_outgoing_id, Some(1));
         assert_eq!(session_options.incoming_window, Some(1));
         assert_eq!(session_options.outgoing_window, Some(1));

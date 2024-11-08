@@ -42,10 +42,10 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .into());
         }
         let options = options.unwrap_or_default();
-        let name = options.name().clone().unwrap_or_default();
-        let credit_mode = options.credit_mode().clone().unwrap_or_default();
-        let auto_accept = options.auto_accept();
-        let properties = options.properties().clone().unwrap_or_default();
+        let name = options.name.unwrap_or_default();
+        let credit_mode = options.credit_mode.clone().unwrap_or_default();
+        let auto_accept = options.auto_accept;
+        let properties = options.properties.clone().unwrap_or_default();
         let source = source.into();
 
         let receiver = fe2o3_amqp::Receiver::builder()

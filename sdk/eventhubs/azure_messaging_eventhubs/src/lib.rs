@@ -356,22 +356,18 @@ pub mod models {
                 || event_data.correlation_id.is_some()
                 || event_data.message_id.is_some()
             {
-                let mut message_properties_builder = AmqpMessageProperties::builder();
+                let mut message_properties = AmqpMessageProperties::default();
                 if let Some(content_type) = event_data.content_type {
-                    message_properties_builder =
-                        message_properties_builder.with_content_type(content_type.into());
+                    message_properties.content_type = Some(content_type.into());
                 }
                 if let Some(correlation_id) = event_data.correlation_id {
-                    message_properties_builder =
-                        message_properties_builder.with_correlation_id(correlation_id);
+                    message_properties.correlation_id = Some(correlation_id.into());
                 }
                 if let Some(message_id) = event_data.message_id {
-                    message_properties_builder =
-                        message_properties_builder.with_message_id(message_id);
+                    message_properties.message_id = Some(message_id.into());
                 }
 
-                message_builder =
-                    message_builder.with_properties(message_properties_builder.build());
+                message_builder = message_builder.with_properties(message_properties);
             }
             if let Some(properties) = event_data.properties {
                 for (key, value) in properties {
@@ -469,15 +465,15 @@ pub mod models {
             }
 
             if let Some(properties) = message.properties() {
-                if let Some(content_type) = properties.content_type() {
+                if let Some(content_type) = &properties.content_type {
                     event_data_builder = event_data_builder
                         .with_content_type(Into::<String>::into(content_type.clone()));
                 }
-                if let Some(correlation_id) = properties.correlation_id() {
+                if let Some(correlation_id) = &properties.correlation_id {
                     event_data_builder =
                         event_data_builder.with_correlation_id(correlation_id.clone());
                 }
-                if let Some(message_id) = properties.message_id() {
+                if let Some(message_id) = &properties.message_id {
                     event_data_builder = event_data_builder.with_message_id(message_id.clone());
                 }
             }
