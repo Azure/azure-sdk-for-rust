@@ -31,8 +31,6 @@ if ($PackageInfoPath) {
   | ConvertFrom-Json
 }
 else {
-  . "$PSScriptRoot\Language-Settings.ps1"
-
   $packagesToTest = Get-AllPackageInfoFromRepo
 }
 
