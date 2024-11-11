@@ -220,7 +220,7 @@ impl DatabaseClient {
             .await?
             .offers;
 
-        if offers.len() == 0 {
+        if offers.is_empty() {
             // No offers found for this resource.
             return Ok(None);
         }
