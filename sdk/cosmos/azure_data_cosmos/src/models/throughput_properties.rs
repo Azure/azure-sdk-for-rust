@@ -18,7 +18,7 @@ const OFFER_VERSION_2: &'static str = "V2";
 pub struct ThroughputProperties {
     resource: String,
     #[serde(rename = "content")]
-    offer: Offer,
+    pub(crate) offer: Offer,
     #[serde(rename = "id")]
     pub(crate) offer_id: String,
     offer_resource_id: String,
@@ -106,26 +106,30 @@ impl AsHeaders for ThroughputProperties {
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct Offer {
+pub(crate) struct Offer {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub offer_throughput: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub offer_autopilot_settings: Option<OfferAutoScaleSettings>,
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct OfferAutoScaleSettings {
+pub(crate) struct OfferAutoScaleSettings {
     pub max_throughput: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub auto_upgrade_policy: Option<AutoScaleAutoUpgradePolicy>,
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct AutoScaleAutoUpgradePolicy {
+pub(crate) struct AutoScaleAutoUpgradePolicy {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub throughput_policy: Option<AutoScaleThroughputPolicy>,
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct AutoScaleThroughputPolicy {
+pub(crate) struct AutoScaleThroughputPolicy {
     pub increment_percent: usize,
 }

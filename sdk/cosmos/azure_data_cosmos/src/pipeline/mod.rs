@@ -7,12 +7,18 @@ mod signature_target;
 use std::sync::Arc;
 
 pub use authorization_policy::AuthorizationPolicy;
-use azure_core::{ClientOptions, Context, Pager, Request};
-use serde::de::DeserializeOwned;
+use azure_core::{ClientOptions, Context, Method, Model, Pager, Request, Response};
+use futures::StreamExt;
+use serde::{de::DeserializeOwned, Deserialize};
 use typespec_client_core::http::PagerResult;
 use url::Url;
 
-use crate::{constants, resource_context::ResourceLink, Query};
+use crate::{
+    constants,
+    models::ThroughputProperties,
+    resource_context::{ResourceLink, ResourceType},
+    Query, ThroughputOptions,
+};
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
@@ -53,7 +59,7 @@ impl CosmosPipeline {
         ctx: Context<'_>,
         request: &mut Request,
         resource_link: ResourceLink,
-    ) -> azure_core::Result<azure_core::Response<T>> {
+    ) -> azure_core::Result<Response<T>> {
         let ctx = ctx.with_value(resource_link);
         self.pipeline.send(&ctx, request).await
     }
@@ -93,5 +99,96 @@ impl CosmosPipeline {
                 ))
             }
         }))
+    }
+
+    /// Helper function to read a throughput offer given a resource ID.
+    ///
+    /// ## Arguments
+    /// * `context` - The context for the request.
+    /// * `resource_id` - The resource ID to read the throughput offer for.
+    pub async fn read_throughput_offer(
+        &self,
+        context: Context<'_>,
+        resource_id: &str,
+    ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
+        #[derive(Model, Deserialize)]
+        struct OfferResults {
+            #[serde(rename = "Offers")]
+            pub offers: Vec<ThroughputProperties>,
+        }
+
+        // We only have to into_owned here in order to call send_query_request below,
+        // since it returns `Pager` which must own it's data.
+        // But in this case, we don't really _need_ the `Pager` to own it's data
+        // because we use it and dispose of it within the body of this method.
+        // If we wanted to optimize this later, we have a few options:
+        // 1. Give Pager a lifetime parameter so it can borrow it's context (proliferates lifetime parameters everywhere though...)
+        // 2. Don't use send_query_request. We expect the offer to be in the first page, so we could just make a regular request
+        // (but what if we get an empty page for some reason? is that something the server could do?)
+        //
+        // For now, we'll risk cloning the context data and I'm just leaving this note to complain about it ;).
+        let context = context.into_owned();
+
+        // Now, query for the offer for this resource.
+        let query = Query::from("SELECT * FROM c WHERE c.offerResourceId = @rid")
+            .with_parameter("@rid", resource_id)?;
+        let offers_link = ResourceLink::root(ResourceType::Offers);
+        let mut results: Pager<OfferResults> = self.send_query_request(
+            context.clone(),
+            query,
+            Request::new(self.url(&offers_link), Method::Post),
+            offers_link.clone(),
+        )?;
+        let offers = results
+            .next()
+            .await
+            .expect("the first pager result should always be Some, even when there's an error")?
+            .deserialize_body()
+            .await?
+            .offers;
+
+        if offers.is_empty() {
+            // No offers found for this resource.
+            return Ok(None);
+        }
+        println!("Offers");
+        println!("{:#?}", offers);
+
+        let offer_link = offers_link.item(&offers[0].offer_id);
+        let offer_url = self.url(&offer_link);
+
+        // Now we can read the offer itself
+        let mut req = Request::new(offer_url, Method::Get);
+        self.send(context, &mut req, offer_link).await.map(Some)
+    }
+
+    /// Helper function to update a throughput offer given a resource ID.
+    ///
+    /// ## Arguments
+    /// * `context` - The context for the request.
+    /// * `resource_id` - The resource ID to update the throughput offer for.
+    /// * `throughput` - The new throughput to set.
+    pub async fn replace_throughput_offer(
+        &self,
+        context: Context<'_>,
+        resource_id: &str,
+        throughput: ThroughputProperties,
+    ) -> azure_core::Result<Response<ThroughputProperties>> {
+        let response = self
+            .read_throughput_offer(context.clone(), resource_id)
+            .await?;
+        let mut current_throughput = match response {
+            Some(r) => r.deserialize_body().await?,
+            None => Default::default(),
+        };
+        current_throughput.offer = throughput.offer;
+
+        // NOTE: Offers API doesn't allow Enable Content Response On Write to be false, so once we support that option, we'll need to ignore it here.
+        let offer_link =
+            ResourceLink::root(ResourceType::Offers).item(&current_throughput.offer_id);
+        let mut req = Request::new(self.url(&offer_link), Method::Put);
+        req.set_json(&current_throughput)?;
+
+        self.send(context, &mut req, offer_link).await
     }
 }

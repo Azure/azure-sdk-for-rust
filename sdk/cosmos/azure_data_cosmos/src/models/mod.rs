@@ -89,7 +89,6 @@ pub struct SystemProperties {
 
     /// The system-generated unique identifier associated with the resource.
     #[serde(default)]
-    #[serde(skip_serializing)]
     #[serde(rename = "_rid")]
     pub resource_id: Option<String>,
 
