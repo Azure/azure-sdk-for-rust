@@ -17,7 +17,7 @@ use crate::{
     constants,
     models::ThroughputProperties,
     resource_context::{ResourceLink, ResourceType},
-    Query, ThroughputOptions,
+    Query,
 };
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.

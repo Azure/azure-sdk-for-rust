@@ -13,9 +13,7 @@ use crate::{
     ThroughputOptions,
 };
 
-use azure_core::{Method, Model, Pager, Request, Response};
-use futures::StreamExt;
-use serde::Deserialize;
+use azure_core::{Method, Pager, Request, Response};
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///

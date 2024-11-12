@@ -17,8 +17,7 @@ use serde::Serialize;
 use std::{fmt::Debug, marker::PhantomData, str::FromStr};
 
 /// An HTTP Body.
-// REVIEW: This is for testing purposes only! It should be removed before merging.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Body {
     /// A body of a known size.
     Bytes(bytes::Bytes),
@@ -54,15 +53,15 @@ impl Body {
     }
 }
 
-// impl Debug for Body {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             Self::Bytes(v) => write!(f, "Bytes(len: {})", v.len()),
-//             #[cfg(not(target_arch = "wasm32"))]
-//             Self::SeekableStream(v) => write!(f, "SeekableStream(len: {})", v.len()),
-//         }
-//     }
-// }
+impl Debug for Body {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Bytes(v) => write!(f, "Bytes(len: {})", v.len()),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::SeekableStream(v) => write!(f, "SeekableStream(len: {})", v.len()),
+        }
+    }
+}
 
 impl<B> From<B> for Body
 where

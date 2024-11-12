@@ -89,6 +89,8 @@ pub struct SystemProperties {
 
     /// The system-generated unique identifier associated with the resource.
     #[serde(default)]
+    // Some APIs do expect the "_rid" to be provided (Replace Offer, for example), so we do want to serialize it if it's provided.
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "_rid")]
     pub resource_id: Option<String>,
 

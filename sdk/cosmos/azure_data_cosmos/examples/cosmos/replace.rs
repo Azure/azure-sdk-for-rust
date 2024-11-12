@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use azure_core::StatusCode;
-use azure_data_cosmos::{models::ThroughputProperties, CosmosClient, PartitionKey};
+use azure_data_cosmos::{CosmosClient, PartitionKey};
 use clap::{Args, Subcommand};
 
 use crate::utils::ThroughputOptions;

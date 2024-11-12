@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{constants, models::SystemProperties};
 
-const OFFER_VERSION_2: &'static str = "V2";
+const OFFER_VERSION_2: &str = "V2";
 
 #[derive(Model, Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
