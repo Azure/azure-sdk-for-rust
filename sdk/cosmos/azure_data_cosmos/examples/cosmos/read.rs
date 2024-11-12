@@ -98,7 +98,19 @@ impl ReadCommand {
                     .await?
                     .deserialize_body()
                     .await?;
-                println!("{:#?}", response);
+                println!("Container:");
+                println!("  {:#?}", response);
+
+                let resp = container_client.read_throughput(None).await?;
+
+                match resp {
+                    None => println!("Container does not have provisioned throughput"),
+                    Some(r) => {
+                        let throughput = r.deserialize_body().await?;
+                        println!("Throughput:");
+                        println!(" {:#?}", throughput);
+                    }
+                }
                 Ok(())
             }
         }

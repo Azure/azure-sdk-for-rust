@@ -139,6 +139,7 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
         let mut req = Request::new(url, Method::Post);
+        req.insert_headers(&options.throughput)?;
         req.set_json(&properties)?;
 
         self.pipeline
@@ -168,6 +169,12 @@ impl DatabaseClient {
             .await
     }
 
+    /// Reads database throughput properties, if any.
+    ///
+    /// This will return `None` if the database does not have a throughput offer configured.
+    ///
+    /// # Arguments
+    /// * `options` - Optional parameters for the request.
     pub async fn read_throughput(
         &self,
         options: Option<ThroughputOptions<'_>>,
@@ -186,6 +193,11 @@ impl DatabaseClient {
             .await
     }
 
+    /// Replaces the database throughput properties.
+    ///
+    /// # Arguments
+    /// * `throughput` - The new throughput properties to set.
+    /// * `options` - Optional parameters for the request.
     pub async fn replace_throughput(
         &self,
         throughput: ThroughputProperties,

@@ -3,11 +3,12 @@
 
 use crate::{
     constants,
-    models::{ContainerProperties, Item, PatchDocument, QueryResults},
+    models::{ContainerProperties, Item, PatchDocument, QueryResults, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
     DeleteContainerOptions, ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
+    ThroughputOptions,
 };
 
 use azure_core::{Method, Pager, Request, Response};
@@ -67,6 +68,54 @@ impl ContainerClient {
         let mut req = Request::new(url, Method::Get);
         self.pipeline
             .send(options.method_options.context, &mut req, self.link.clone())
+            .await
+    }
+
+    /// Reads container throughput properties, if any.
+    ///
+    /// This will return `None` if the database does not have a throughput offer configured.
+    ///
+    /// # Arguments
+    /// * `options` - Optional parameters for the request.
+    pub async fn read_throughput(
+        &self,
+        options: Option<ThroughputOptions<'_>>,
+    ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
+        let options = options.unwrap_or_default();
+
+        // We need to get the RID for the database.
+        let db = self.read(None).await?.deserialize_body().await?;
+        let resource_id = db
+            .system_properties
+            .resource_id
+            .expect("service should always return a '_rid' for a container");
+
+        self.pipeline
+            .read_throughput_offer(options.method_options.context, &resource_id)
+            .await
+    }
+
+    /// Replaces the container throughput properties.
+    ///
+    /// # Arguments
+    /// * `throughput` - The new throughput properties to set.
+    /// * `options` - Optional parameters for the request.
+    pub async fn replace_throughput(
+        &self,
+        throughput: ThroughputProperties,
+        options: Option<ThroughputOptions<'_>>,
+    ) -> azure_core::Result<Response<ThroughputProperties>> {
+        let options = options.unwrap_or_default();
+
+        // We need to get the RID for the database.
+        let db = self.read(None).await?.deserialize_body().await?;
+        let resource_id = db
+            .system_properties
+            .resource_id
+            .expect("service should always return a '_rid' for a container");
+
+        self.pipeline
+            .replace_throughput_offer(options.method_options.context, &resource_id, throughput)
             .await
     }
 

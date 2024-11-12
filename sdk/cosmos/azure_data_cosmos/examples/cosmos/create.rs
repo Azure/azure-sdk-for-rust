@@ -2,7 +2,7 @@ use std::error::Error;
 
 use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
-    CosmosClient, CreateDatabaseOptions, PartitionKey,
+    CosmosClient, CreateContainerOptions, CreateDatabaseOptions, PartitionKey,
 };
 use clap::{Args, Subcommand};
 
@@ -47,6 +47,9 @@ pub enum Subcommands {
     Container {
         /// The ID of the database to create the container in.
         database: String,
+
+        #[clap(flatten)]
+        throughput_options: ThroughputOptions,
 
         /// The ID of the new container to create.
         #[clap(long, short)]
@@ -112,21 +115,39 @@ impl CreateCommand {
 
             Subcommands::Container {
                 database,
+                throughput_options,
                 id,
                 partition_key,
                 json,
             } => {
+                let throughput_properties: Option<ThroughputProperties> =
+                    throughput_options.try_into()?;
+                let options = throughput_properties.map(|p| CreateContainerOptions {
+                    throughput: Some(p),
+                    ..Default::default()
+                });
+
                 let properties = match json {
                     Some(j) => serde_json::from_str(&j).unwrap(),
-                    None => ContainerProperties {
-                        id: id.expect("the ID is required when not using '--json'"),
-                        partition_key: PartitionKeyDefinition::new(partition_key),
-                        ..Default::default()
-                    },
+                    None => {
+                        if partition_key.is_empty() {
+                            panic!("the partition key is required when not using '--json'");
+                        }
+
+                        if partition_key.len() > 3 {
+                            panic!("only up to 3 partition key paths are supported");
+                        }
+
+                        ContainerProperties {
+                            id: id.expect("the ID is required when not using '--json'"),
+                            partition_key: PartitionKeyDefinition::new(partition_key),
+                            ..Default::default()
+                        }
+                    }
                 };
                 let container = client
                     .database_client(&database)
-                    .create_container(properties, None)
+                    .create_container(properties, options)
                     .await?
                     .deserialize_body()
                     .await?

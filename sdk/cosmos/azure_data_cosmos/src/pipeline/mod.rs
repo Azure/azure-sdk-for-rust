@@ -151,8 +151,6 @@ impl CosmosPipeline {
             // No offers found for this resource.
             return Ok(None);
         }
-        println!("Offers");
-        println!("{:#?}", offers);
 
         let offer_link = offers_link.item(&offers[0].offer_id);
         let offer_url = self.url(&offer_link);

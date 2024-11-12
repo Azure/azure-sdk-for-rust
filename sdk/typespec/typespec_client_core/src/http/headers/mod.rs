@@ -84,7 +84,8 @@ pub trait Header {
 }
 
 /// A collection of headers.
-#[derive(Clone, PartialEq, Eq, Default)]
+// REVIEW: This is for testing purposes only! It should be removed before merging.
+#[derive(fmt::Debug, Clone, PartialEq, Eq, Default)]
 pub struct Headers(std::collections::HashMap<HeaderName, HeaderValue>);
 
 impl Headers {
@@ -220,12 +221,12 @@ impl Headers {
     }
 }
 
-impl fmt::Debug for Headers {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // TODO: Sanitize headers.
-        write!(f, "Headers(len: {})", self.0.len())
-    }
-}
+// impl fmt::Debug for Headers {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         // TODO: Sanitize headers.
+//         write!(f, "Headers(len: {})", self.0.len())
+//     }
+// }
 
 impl IntoIterator for Headers {
     type Item = (HeaderName, HeaderValue);
@@ -299,7 +300,8 @@ impl From<String> for HeaderName {
 }
 
 /// A header value.
-#[derive(Clone, PartialEq, Eq)]
+// REVIEW: This is for testing purposes only! It should be removed before merging.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HeaderValue(Cow<'static, str>);
 
 impl HeaderValue {
@@ -322,11 +324,11 @@ impl HeaderValue {
     }
 }
 
-impl fmt::Debug for HeaderValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("HeaderValue")
-    }
-}
+// impl fmt::Debug for HeaderValue {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         f.write_str("HeaderValue")
+//     }
+// }
 
 impl From<&'static str> for HeaderValue {
     fn from(s: &'static str) -> Self {

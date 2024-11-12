@@ -15,6 +15,7 @@ pub struct CosmosClientOptions {
 #[derive(Clone, Debug, Default)]
 pub struct CreateContainerOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
+    pub throughput: Option<ThroughputProperties>,
 }
 
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).

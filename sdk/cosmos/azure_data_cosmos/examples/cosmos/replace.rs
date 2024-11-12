@@ -35,8 +35,18 @@ pub enum Subcommands {
         json: String,
     },
     DatabaseThroughput {
-        /// THe database to update throughput for.
+        /// The database to update throughput for.
         database: String,
+
+        #[clap(flatten)]
+        throughput_options: ThroughputOptions,
+    },
+    ContainerThroughput {
+        /// The database containing the container.
+        database: String,
+
+        /// The container to update throughput for.
+        container: String,
 
         #[clap(flatten)]
         throughput_options: ThroughputOptions,
@@ -82,6 +92,22 @@ impl ReplaceCommand {
                 let throughput_properties = throughput_options.try_into()?;
                 let db_client = client.database_client(&database);
                 let new_throughput = db_client
+                    .replace_throughput(throughput_properties, None)
+                    .await?
+                    .deserialize_body()
+                    .await?;
+                println!("New Throughput: {:#?}", new_throughput);
+                Ok(())
+            }
+            Subcommands::ContainerThroughput {
+                database,
+                container,
+                throughput_options,
+            } => {
+                let throughput_properties = throughput_options.try_into()?;
+                let db_client = client.database_client(&database);
+                let container_client = db_client.container_client(&container);
+                let new_throughput = container_client
                     .replace_throughput(throughput_properties, None)
                     .await?
                     .deserialize_body()
