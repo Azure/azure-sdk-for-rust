@@ -3,7 +3,7 @@
 
 use crate::{
     constants,
-    models::{ContainerProperties, Item, QueryResults},
+    models::{ContainerProperties, Item, PatchDocument, QueryResults},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
@@ -336,6 +336,61 @@ impl ContainerClient {
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Delete);
         req.insert_headers(&partition_key.into())?;
+        self.pipeline
+            .send(options.map(|o| o.method_options.context), &mut req, link)
+            .await
+    }
+
+    /// Patches an item in the container.
+    ///
+    /// # Arguments
+    /// * `partition_key` - The partition key of the item to patch.
+    /// * `item_id` - The id of the item to patch.
+    /// * `patch` - The patch document to apply to the item.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::{clients::ContainerClient, models::Item};
+    /// # use serde::{Deserialize, Serialize};
+    /// # async fn doc() {
+    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// let patch = PatchDocument::new().with_add("/some/path", "some value").unwrap();
+    /// container_client
+    ///     .patch_item("partition1", "item1", patch, None)
+    ///     .await.unwrap();
+    /// # }
+    /// ```
+    ///
+    /// # Note
+    ///
+    /// The Cosmos service does return the patched item in the response.
+    /// However, this method does not return `Response<T>` since that would **force** users to provide a generic type parameter, even when they do not wish to deserialize the body.
+    /// If you want to deserialize the response, you can use [`Response::deserialize_body_into`] to manually deserialize the body.
+    ///
+    /// For example:
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::{clients::ContainerClient, models::PatchDocument};
+    /// # let client: ContainerClient = panic!("this is a non-running example");
+    /// let patch = PatchDocument::new().with_add("/some/path", "some value").unwrap();
+    /// let response = client.patch_item("partition1", "item1", patch, None).await.unwrap();
+    /// let patched_item: serde_json::Value = response.deserialize_body_into().await.unwrap();
+    /// ```
+    pub async fn patch_item(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item_id: &str,
+        patch: PatchDocument,
+        options: Option<ItemOptions<'_>>,
+    ) -> azure_core::Result<Response> {
+        let link = self.items_link.item(item_id);
+        let url = self.pipeline.url(&link);
+        let mut req = Request::new(url, Method::Patch);
+        req.insert_headers(&partition_key.into())?;
+        req.set_json(&patch)?;
+
         self.pipeline
             .send(options.map(|o| o.method_options.context), &mut req, link)
             .await
