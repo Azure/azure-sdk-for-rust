@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use azure_core::Model;
 use serde::{Deserialize, Serialize};
 
@@ -18,17 +20,17 @@ use serde::{Deserialize, Serialize};
 /// # use azure_data_cosmos::models::{PatchDocument, PatchOperation};
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let patch = PatchDocument::default()
-///     .with_add("/color".to_string(), "silver")?
-///     .with_move("/from".to_string(), "/to".to_string())?;
+///     .with_add("/color".into(), "silver")?
+///     .with_move("/from".into(), "/to".into())?;
 /// # assert_eq!(patch, PatchDocument {
 /// #     operations: vec![
 /// #         PatchOperation::Add {
-/// #             path: "/color".to_string(),
+/// #             path: "/color".into(),
 /// #             value: serde_json::Value::String("silver".to_string()),
 /// #        },
 /// #        PatchOperation::Move {
-/// #            from: "/from".to_string(),
-/// #            to: "/to".to_string(),
+/// #            from: "/from".into(),
+/// #            to: "/to".into(),
 /// #        },
 /// #    ],
 /// # });
@@ -50,7 +52,7 @@ impl PatchDocument {
     /// * `value` - The value to add.
     pub fn with_add(
         mut self,
-        path: String,
+        path: Cow<'static, str>,
         value: impl Serialize,
     ) -> Result<Self, serde_json::Error> {
         self.operations.push(PatchOperation::Add {
@@ -69,7 +71,7 @@ impl PatchDocument {
     /// * `value` - The amount to increment by. Integers can be specified directly in this parameter. Use [`serde_json::Number::from_f64`] to create a floating-point number.
     pub fn with_increment(
         mut self,
-        path: String,
+        path: Cow<'static, str>,
         value: serde_json::Number,
     ) -> Result<Self, serde_json::Error> {
         self.operations
@@ -83,7 +85,7 @@ impl PatchDocument {
     ///
     /// # Arguments
     /// * `path` - The path to the property to remove.
-    pub fn with_remove(mut self, path: String) -> Result<Self, serde_json::Error> {
+    pub fn with_remove(mut self, path: Cow<'static, str>) -> Result<Self, serde_json::Error> {
         self.operations.push(PatchOperation::Remove { path });
         Ok(self)
     }
@@ -97,7 +99,7 @@ impl PatchDocument {
     /// * `value` - The value to replace the property with.
     pub fn with_replace(
         mut self,
-        path: String,
+        path: Cow<'static, str>,
         value: impl Serialize,
     ) -> Result<Self, serde_json::Error> {
         self.operations.push(PatchOperation::Replace {
@@ -116,7 +118,7 @@ impl PatchDocument {
     /// * `value` - The value to set the property to.
     pub fn with_set(
         mut self,
-        path: String,
+        path: Cow<'static, str>,
         value: impl Serialize,
     ) -> Result<Self, serde_json::Error> {
         self.operations.push(PatchOperation::Set {
@@ -133,7 +135,11 @@ impl PatchDocument {
     /// # Arguments
     /// * `from` - The path to the property to move.
     /// * `to` - The path to move the property to.
-    pub fn with_move(mut self, from: String, to: String) -> Result<Self, serde_json::Error> {
+    pub fn with_move(
+        mut self,
+        from: Cow<'static, str>,
+        to: Cow<'static, str>,
+    ) -> Result<Self, serde_json::Error> {
         self.operations.push(PatchOperation::Move { from, to });
         Ok(self)
     }
@@ -144,29 +150,29 @@ impl PatchDocument {
 #[serde(rename_all = "camelCase")]
 pub enum PatchOperation {
     Add {
-        path: String,
+        path: Cow<'static, str>,
         value: serde_json::Value,
     },
     #[serde(rename = "incr")]
     Increment {
-        path: String,
+        path: Cow<'static, str>,
         value: serde_json::Number,
     },
     Remove {
-        path: String,
+        path: Cow<'static, str>,
     },
     Replace {
-        path: String,
+        path: Cow<'static, str>,
         value: serde_json::Value,
     },
     Set {
-        path: String,
+        path: Cow<'static, str>,
         value: serde_json::Value,
     },
     Move {
-        from: String,
+        from: Cow<'static, str>,
         #[serde(rename = "path")]
-        to: String,
+        to: Cow<'static, str>,
     },
 }
 
@@ -195,7 +201,7 @@ mod tests {
     #[test]
     pub fn serialize_add() -> Result<(), Box<dyn std::error::Error>> {
         let patch_document = PatchDocument::default().with_add(
-            "/parent".to_string(),
+            "/parent".into(),
             TestStruct {
                 foo: "test".to_string(),
                 bar: 42,
@@ -214,8 +220,8 @@ mod tests {
     #[test]
     pub fn serialize_increment() -> Result<(), Box<dyn std::error::Error>> {
         let patch_document = PatchDocument::default()
-            .with_increment("/count".to_string(), Number::from(1))?
-            .with_increment("/sum".to_string(), Number::from_f64(4.2).unwrap())?;
+            .with_increment("/count".into(), Number::from(1))?
+            .with_increment("/sum".into(), Number::from_f64(4.2).unwrap())?;
         let serialized = serde_json::to_string(&patch_document).unwrap();
         assert_eq!(
             serialized,
@@ -227,7 +233,7 @@ mod tests {
 
     #[test]
     pub fn serialize_remove() -> Result<(), Box<dyn std::error::Error>> {
-        let patch_document = PatchDocument::default().with_remove("/value".to_string())?;
+        let patch_document = PatchDocument::default().with_remove("/value".into())?;
 
         let serialized = serde_json::to_string(&patch_document).unwrap();
         assert_eq!(
@@ -241,7 +247,7 @@ mod tests {
     #[test]
     pub fn serialize_replace() -> Result<(), Box<dyn std::error::Error>> {
         let patch_document = PatchDocument::default().with_replace(
-            "/parent".to_string(),
+            "/parent".into(),
             TestStruct {
                 foo: "test".to_string(),
                 bar: 42,
@@ -260,7 +266,7 @@ mod tests {
     #[test]
     pub fn serialize_set() -> Result<(), Box<dyn std::error::Error>> {
         let patch_document = PatchDocument::default().with_set(
-            "/parent".to_string(),
+            "/parent".into(),
             TestStruct {
                 foo: "test".to_string(),
                 bar: 42,
@@ -278,8 +284,7 @@ mod tests {
 
     #[test]
     pub fn serialize_move() -> Result<(), Box<dyn std::error::Error>> {
-        let patch_document =
-            PatchDocument::default().with_move("/from".to_string(), "/to".to_string())?;
+        let patch_document = PatchDocument::default().with_move("/from".into(), "/to".into())?;
 
         let serialized = serde_json::to_string(&patch_document).unwrap();
         assert_eq!(
@@ -308,15 +313,15 @@ mod tests {
         assert_eq!(
             doc,
             PatchDocument::default()
-                .with_add("/color".to_string(), "silver")?
-                .with_remove("/used".to_string())?
+                .with_add("/color".into(), "silver")?
+                .with_remove("/used".into())?
                 .with_set(
-                    "/price".to_string(),
+                    "/price".into(),
                     serde_json::Number::from_f64(355.45).unwrap()
                 )?
-                .with_increment("/inventory/quantity".to_string(), Number::from(10))?
-                .with_add("/tags/-".to_string(), "featured-bikes")?
-                .with_move("/color".to_string(), "/inventory/color".to_string())?
+                .with_increment("/inventory/quantity".into(), Number::from(10))?
+                .with_add("/tags/-".into(), "featured-bikes")?
+                .with_move("/color".into(), "/inventory/color".into())?
         );
         Ok(())
     }

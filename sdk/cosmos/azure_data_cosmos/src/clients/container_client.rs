@@ -356,7 +356,7 @@ impl ContainerClient {
     /// # use serde::{Deserialize, Serialize};
     /// # async fn doc() {
     /// # let container_client: ContainerClient = panic!("this is a non-running example");
-    /// let patch = PatchDocument::default().with_add("/some/path".to_string(), "some value").unwrap();
+    /// let patch = PatchDocument::default().with_add("/some/path".into(), "some value").unwrap();
     /// container_client
     ///     .patch_item("partition1", "item1", patch, None)
     ///     .await.unwrap();
@@ -375,7 +375,7 @@ impl ContainerClient {
     /// # use azure_data_cosmos::{clients::ContainerClient, models::PatchDocument};
     /// # async fn doc() {
     /// # let client: ContainerClient = panic!("this is a non-running example");
-    /// let patch = PatchDocument::default().with_add("/some/path".to_string(), "some value").unwrap();
+    /// let patch = PatchDocument::default().with_add("/some/path".into(), "some value").unwrap();
     /// let response = client.patch_item("partition1", "item1", patch, None).await.unwrap();
     /// let patched_item: serde_json::Value = response.deserialize_body_into().await.unwrap();
     /// # }
