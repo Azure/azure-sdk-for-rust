@@ -40,17 +40,17 @@ impl ThroughputProperties {
         }
     }
 
-    pub fn auto_scale(
+    pub fn autoscale(
         starting_maximum_throughput: usize,
         increment_percent: Option<usize>,
     ) -> ThroughputProperties {
         ThroughputProperties {
             offer_version: OFFER_VERSION_2.into(),
             offer: Offer {
-                offer_autopilot_settings: Some(OfferAutoScaleSettings {
+                offer_autopilot_settings: Some(OfferAutoscaleSettings {
                     max_throughput: starting_maximum_throughput,
-                    auto_upgrade_policy: increment_percent.map(|p| AutoScaleAutoUpgradePolicy {
-                        throughput_policy: Some(AutoScaleThroughputPolicy {
+                    auto_upgrade_policy: increment_percent.map(|p| AutoscaleAutoUpgradePolicy {
+                        throughput_policy: Some(AutoscaleThroughputPolicy {
                             increment_percent: p,
                         }),
                     }),
@@ -65,11 +65,11 @@ impl ThroughputProperties {
         self.offer.offer_throughput
     }
 
-    pub fn auto_scale_maximum(&self) -> Option<usize> {
+    pub fn autoscale_maximum(&self) -> Option<usize> {
         Some(self.offer.offer_autopilot_settings.as_ref()?.max_throughput)
     }
 
-    pub fn auto_scale_increment(&self) -> Option<usize> {
+    pub fn autoscale_increment(&self) -> Option<usize> {
         Some(
             self.offer
                 .offer_autopilot_settings
@@ -94,7 +94,7 @@ impl AsHeaders for ThroughputProperties {
         ) {
             (Some(t), _) => vec![(constants::OFFER_THROUGHPUT, t.to_string().into())],
             (_, Some(ap)) => vec![(
-                constants::OFFER_AUTO_SCALE,
+                constants::OFFER_AUTOPILOT_SETTINGS,
                 serde_json::to_string(&ap)?.into(),
             )],
             (None, None) => vec![],
@@ -110,26 +110,26 @@ pub(crate) struct Offer {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offer_throughput: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub offer_autopilot_settings: Option<OfferAutoScaleSettings>,
+    pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct OfferAutoScaleSettings {
+pub(crate) struct OfferAutoscaleSettings {
     pub max_throughput: usize,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub auto_upgrade_policy: Option<AutoScaleAutoUpgradePolicy>,
+    pub auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct AutoScaleAutoUpgradePolicy {
+pub(crate) struct AutoscaleAutoUpgradePolicy {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub throughput_policy: Option<AutoScaleThroughputPolicy>,
+    pub throughput_policy: Option<AutoscaleThroughputPolicy>,
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct AutoScaleThroughputPolicy {
+pub(crate) struct AutoscaleThroughputPolicy {
     pub increment_percent: usize,
 }

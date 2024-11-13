@@ -5,11 +5,11 @@ use clap::Args;
 pub struct ThroughputOptions {
     /// Enables autoscaling and sets the maximum RUs to support. Cannot be used if `--manual` is set.
     #[clap(long)]
-    auto_scale: Option<usize>,
+    autoscale: Option<usize>,
 
-    /// Sets the increment percentage for autoscale. Ignored unless `--auto-scale` is set.
+    /// Sets the increment percentage for autoscale. Ignored unless `--autoscale` is set.
     #[clap(long)]
-    auto_scale_increment: Option<usize>,
+    autoscale_increment: Option<usize>,
 
     /// Provisions manual throughput, specifying the number of RUs.
     #[clap(long)]
@@ -20,11 +20,11 @@ impl TryFrom<ThroughputOptions> for Option<ThroughputProperties> {
     type Error = Box<dyn std::error::Error>;
 
     fn try_from(v: ThroughputOptions) -> Result<Self, Box<dyn std::error::Error>> {
-        match (v.auto_scale, v.manual) {
-            (Some(_), Some(_)) => Err("cannot set both '--auto-scale' and '--manual'".into()),
-            (Some(max), None) => Ok(Some(ThroughputProperties::auto_scale(
+        match (v.autoscale, v.manual) {
+            (Some(_), Some(_)) => Err("cannot set both '--autoscale' and '--manual'".into()),
+            (Some(max), None) => Ok(Some(ThroughputProperties::autoscale(
                 max,
-                v.auto_scale_increment,
+                v.autoscale_increment,
             ))),
             (None, Some(rus)) => Ok(Some(ThroughputProperties::manual(rus))),
             (None, None) => Ok(None),
@@ -37,6 +37,6 @@ impl TryFrom<ThroughputOptions> for ThroughputProperties {
 
     fn try_from(v: ThroughputOptions) -> Result<Self, Box<dyn std::error::Error>> {
         let opt: Option<ThroughputProperties> = v.try_into()?;
-        opt.ok_or("must specify either '--auto-scale' or '--manual'".into())
+        opt.ok_or("must specify either '--autoscale' or '--manual'".into())
     }
 }
