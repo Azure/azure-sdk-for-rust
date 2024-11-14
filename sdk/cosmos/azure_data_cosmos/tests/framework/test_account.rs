@@ -15,7 +15,6 @@ pub struct TestAccount {
     endpoint: String,
     key: Secret,
     cleaned_up: bool,
-    preserve: bool,
 }
 
 const CONNECTION_STRING_ENV_VAR: &str = "AZSDK_COSMOS_CONNECTION_STRING";
@@ -78,10 +77,10 @@ impl TestAccount {
             endpoint,
             key,
             cleaned_up: false,
-            preserve: std::env::var("AZSDK_COSMOS_PRESERVE_DBS").unwrap_or_default() == "true",
         })
     }
 
+    /// Create a [`CosmosClient`](azure_data_cosmos::CosmosClient) that connects to this account using a connection string.
     #[cfg(feature = "key_auth")]
     pub fn connect_with_key(
         &self,
@@ -94,32 +93,35 @@ impl TestAccount {
         )?)
     }
 
-    pub fn unique_id(&self, base_id: &str) -> String {
+    /// Generates a unique database ID including the [`TestAccount::context_id`].
+    ///
+    /// This database will be automatically deleted when [`TestAccount::cleanup`] is called.
+    pub fn unique_db(&self, base_id: &str) -> String {
         format!("{}_{}", base_id, self.context_id)
     }
 
+    /// Cleans up test resources, then drops the [`TestAccount`].
+    ///
+    /// Call this at the end of every test using the [`TestAccount`].
     #[cfg(feature = "key_auth")]
     pub async fn cleanup(mut self) -> Result<(), Box<dyn std::error::Error>> {
-        if !self.preserve {
-            let cosmos_client = self.connect_with_key(None)?;
-            let query =
-                Query::from("SELECT * FROM root r WHERE r.id LIKE CONCAT('%_', @context_id)")
-                    .with_parameter("@context_id", &self.context_id)?;
-            let mut pager = cosmos_client.query_databases(query, None)?;
-            let mut ids = Vec::new();
-            while let Some(page) = pager.next().await {
-                let results = page?.deserialize_body().await?;
-                for db in results.databases {
-                    ids.push(db.id);
-                }
+        let cosmos_client = self.connect_with_key(None)?;
+        let query = Query::from("SELECT * FROM root r WHERE r.id LIKE CONCAT('%_', @context_id)")
+            .with_parameter("@context_id", &self.context_id)?;
+        let mut pager = cosmos_client.query_databases(query, None)?;
+        let mut ids = Vec::new();
+        while let Some(page) = pager.next().await {
+            let results = page?.deserialize_body().await?;
+            for db in results.databases {
+                ids.push(db.id);
             }
+        }
 
-            // Now that we have a list of databases created by this test, we delete them unless we were asked to preserve them.
-            // We COULD choose not to delete them and instead validate that they were deleted, but this is what I've gone with for now.
-            for id in ids {
-                println!("Deleting left-over database: {}", &id);
-                cosmos_client.database_client(&id).delete(None).await?;
-            }
+        // Now that we have a list of databases created by this test, we delete them.
+        // We COULD choose not to delete them and instead validate that they were deleted, but this is what I've gone with for now.
+        for id in ids {
+            println!("Deleting left-over database: {}", &id);
+            cosmos_client.database_client(&id).delete(None).await?;
         }
 
         self.cleaned_up = true;
