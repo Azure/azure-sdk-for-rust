@@ -68,8 +68,9 @@ impl CosmosClient {
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::CosmosClient;
+    /// use azure_core::credentials::Secret;
     ///
-    /// let client = CosmosClient::with_key("https://myaccount.documents.azure.com/", "my_key".into(), None).unwrap();
+    /// let client = CosmosClient::with_key("https://myaccount.documents.azure.com/", Secret::from("my_key"), None).unwrap();
     /// ```
     #[cfg(feature = "key_auth")]
     pub fn with_key(
