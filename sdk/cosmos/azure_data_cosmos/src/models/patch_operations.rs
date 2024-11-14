@@ -237,7 +237,7 @@ impl ToJsonNumber for serde_json::Number {
     }
 }
 
-macro_rules! tojsonnumber_for_int {
+macro_rules! to_json_number_for_int {
     ($t: ty) => {
         impl ToJsonNumber for $t {
             fn to_json_number(self) -> azure_core::Result<serde_json::Number> {
@@ -247,16 +247,16 @@ macro_rules! tojsonnumber_for_int {
     };
 }
 
-tojsonnumber_for_int!(u8);
-tojsonnumber_for_int!(i8);
-tojsonnumber_for_int!(u16);
-tojsonnumber_for_int!(i16);
-tojsonnumber_for_int!(u32);
-tojsonnumber_for_int!(i32);
-tojsonnumber_for_int!(u64);
-tojsonnumber_for_int!(i64);
-tojsonnumber_for_int!(usize);
-tojsonnumber_for_int!(isize);
+to_json_number_for_int!(u8);
+to_json_number_for_int!(i8);
+to_json_number_for_int!(u16);
+to_json_number_for_int!(i16);
+to_json_number_for_int!(u32);
+to_json_number_for_int!(i32);
+to_json_number_for_int!(u64);
+to_json_number_for_int!(i64);
+to_json_number_for_int!(usize);
+to_json_number_for_int!(isize);
 
 #[cfg(test)]
 mod tests {
