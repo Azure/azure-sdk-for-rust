@@ -13,8 +13,6 @@ pub mod package_preview_2021_06;
 pub mod package_preview_2021_11;
 #[cfg(feature = "package-preview-2022-02")]
 pub mod package_preview_2022_02;
-#[cfg(feature = "package-preview-2024-04")]
-pub mod package_preview_2024_04;
 #[cfg(feature = "profile-hybrid-2020-09-01")]
 pub mod profile_hybrid_2020_09_01;
 #[cfg(all(feature = "default_tag", feature = "profile-hybrid-2020-09-01"))]
