@@ -7,7 +7,7 @@ use framework::TestAccount;
 use futures::StreamExt;
 
 #[tokio::test]
-#[cfg(feature = "integration_tests")]
+#[cfg(feature = "test_e2e")]
 pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     let account = TestAccount::from_env()?;
     let cosmos_client = account.connect_with_key(None)?;
