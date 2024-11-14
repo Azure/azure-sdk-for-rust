@@ -119,14 +119,7 @@ impl CosmosPipeline {
 
         // We only have to into_owned here in order to call send_query_request below,
         // since it returns `Pager` which must own it's data.
-        // But in this case, we don't really _need_ the `Pager` to own it's data
-        // because we use it and dispose of it within the body of this method.
-        // If we wanted to optimize this later, we have a few options:
-        // 1. Give Pager a lifetime parameter so it can borrow it's context (proliferates lifetime parameters everywhere though...)
-        // 2. Don't use send_query_request. We expect the offer to be in the first page, so we could just make a regular request
-        // (but what if we get an empty page for some reason? is that something the server could do?)
-        //
-        // For now, we'll risk cloning the context data and I'm just leaving this note to complain about it ;).
+        // See https://github.com/Azure/azure-sdk-for-rust/issues/1911 for further discussion
         let context = context.into_owned();
 
         // Now, query for the offer for this resource.

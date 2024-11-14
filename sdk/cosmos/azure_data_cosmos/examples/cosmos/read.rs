@@ -82,7 +82,7 @@ impl ReadCommand {
                     Some(r) => {
                         let throughput = r.deserialize_body().await?;
                         println!("Throughput:");
-                        println!(" {:#?}", throughput);
+                        crate::utils::print_throughput(throughput);
                     }
                 }
                 Ok(())
@@ -108,7 +108,7 @@ impl ReadCommand {
                     Some(r) => {
                         let throughput = r.deserialize_body().await?;
                         println!("Throughput:");
-                        println!(" {:#?}", throughput);
+                        crate::utils::print_throughput(throughput);
                     }
                 }
                 Ok(())

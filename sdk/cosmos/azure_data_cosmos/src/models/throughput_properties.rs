@@ -13,7 +13,7 @@ use crate::{constants, models::SystemProperties};
 
 const OFFER_VERSION_2: &str = "V2";
 
-#[derive(Model, Clone, Default, Debug, Deserialize, Serialize)]
+#[derive(Model, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ThroughputProperties {
     resource: String,
@@ -104,7 +104,7 @@ impl AsHeaders for ThroughputProperties {
     }
 }
 
-#[derive(Clone, Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Offer {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -113,7 +113,7 @@ pub(crate) struct Offer {
     pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
 }
 
-#[derive(Clone, Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct OfferAutoscaleSettings {
     pub max_throughput: usize,
@@ -121,14 +121,14 @@ pub(crate) struct OfferAutoscaleSettings {
     pub auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
 }
 
-#[derive(Clone, Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AutoscaleAutoUpgradePolicy {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub throughput_policy: Option<AutoscaleThroughputPolicy>,
 }
 
-#[derive(Clone, Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AutoscaleThroughputPolicy {
     pub increment_percent: usize,

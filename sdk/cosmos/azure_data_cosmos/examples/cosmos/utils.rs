@@ -40,3 +40,17 @@ impl TryFrom<ThroughputOptions> for ThroughputProperties {
         opt.ok_or("must specify either '--autoscale' or '--manual'".into())
     }
 }
+
+pub fn print_throughput(throughput: ThroughputProperties) {
+    if let Some(tp) = throughput.throughput() {
+        println!("  Throughput: {}RU/s", tp);
+    } else {
+        println!("  Throughput: Unlimited");
+    }
+    if let Some(autoscale_max) = throughput.autoscale_maximum() {
+        println!("  Autoscale max: {}RU/s", autoscale_max);
+    }
+    if let Some(autoscale_incr) = throughput.autoscale_increment() {
+        println!("  Autoscale increment: {}%", autoscale_incr);
+    }
+}

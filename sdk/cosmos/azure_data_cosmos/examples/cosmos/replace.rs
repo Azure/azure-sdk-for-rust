@@ -96,7 +96,8 @@ impl ReplaceCommand {
                     .await?
                     .deserialize_body()
                     .await?;
-                println!("New Throughput: {:#?}", new_throughput);
+                println!("New Throughput:");
+                crate::utils::print_throughput(new_throughput);
                 Ok(())
             }
             Subcommands::ContainerThroughput {
@@ -112,7 +113,8 @@ impl ReplaceCommand {
                     .await?
                     .deserialize_body()
                     .await?;
-                println!("New Throughput: {:#?}", new_throughput);
+                println!("New Throughput:");
+                crate::utils::print_throughput(new_throughput);
                 Ok(())
             }
         }
