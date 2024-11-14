@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_security_keyvault::{prelude::KeyVaultKey, KeyClient};
 use std::env;
 

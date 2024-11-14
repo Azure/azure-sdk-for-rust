@@ -195,6 +195,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: OAI/OpenAPI-Specification
+          ref: "3.1.1"
           path: OpenAPI-Specification
       # for code style, we only care about `stable`
       - run: azure-sdk-for-rust/eng/scripts/autorust_tests.sh
