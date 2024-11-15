@@ -17,7 +17,7 @@ pub struct TestAccount {
     cleaned_up: bool,
 }
 
-const CONNECTION_STRING_ENV_VAR: &str = "AZSDK_COSMOS_CONNECTION_STRING";
+const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 
 impl TestAccount {

@@ -1,0 +1,14 @@
+# Define a profile for livetests, so that compilation can be properly cached instead of constantly rebuilding the 'test' profile
+# It'd be even better if we could also set the `--cfg=livetest` conditional-compilation flag here, but that's currently an unstable feature:
+# https://doc.rust-lang.org/cargo/reference/unstable.html#profile-rustflags-option
+[profile.livetest]
+inherits = "test"
+
+[alias]
+
+# Because we can't set a '--cfg' value from a profile yet (see '[profile.livetest]' above), we define a Cargo alias: 'cargo livetest' which works like 'cargo test' but sets everything up for live testing
+livetest = [
+  """--config=build.rustflags=["--cfg=livetest"]""",
+  "test",
+  "--profile=livetest"
+]
