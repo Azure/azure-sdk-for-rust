@@ -90,6 +90,13 @@
       ]
     },
     {
+      "filename": ".cargo/config.toml",
+      "dictionaries": [
+        "crates",
+        "rust-custom"
+      ]
+    },
+    {
       "filename": "**/*.md",
       "dictionaries": [
         "rust",
