@@ -23,7 +23,7 @@ const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081
 impl TestAccount {
     /// Creates a new [`TestAccount`] from local environment variables.
     ///
-    /// If the `AZSDK_COSMOS_TEST_ACCOUNT` environment variable is set, it will be used to create the account.
+    /// If the `AZURE_COSMOS_CONNECTION_STRING` environment variable is set, it will be used to create the account.
     /// The value can be either a Cosmos DB Connection String, or the special string `emulator` to use the local emulator.
     pub fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR).map_err(|e| {
