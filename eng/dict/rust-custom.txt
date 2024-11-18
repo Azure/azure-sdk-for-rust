@@ -2,5 +2,6 @@ bindgen
 newtype
 repr
 rustc
+rustflags
 rustls
 turbofish
