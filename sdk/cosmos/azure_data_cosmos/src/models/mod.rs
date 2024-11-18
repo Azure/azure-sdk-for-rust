@@ -10,11 +10,13 @@ mod container_properties;
 mod indexing_policy;
 mod item;
 mod partition_key_definition;
+mod patch_operations;
 
 pub use container_properties::*;
 pub use indexing_policy::*;
 pub use item::*;
 pub use partition_key_definition::*;
+pub use patch_operations::*;
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where
