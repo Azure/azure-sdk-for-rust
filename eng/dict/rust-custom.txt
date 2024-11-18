@@ -1,4 +1,6 @@
 bindgen
+cfg
+cfgs
 newtype
 repr
 rustc
