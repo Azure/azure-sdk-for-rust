@@ -41,6 +41,7 @@
     "hmac",
     "iothub",
     "keyvault",
+    "livetest",
     "msrc",
     "newtonsoft",
     "oidc",

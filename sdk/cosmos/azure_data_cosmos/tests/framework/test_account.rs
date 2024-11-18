@@ -8,7 +8,7 @@ use time::{macros::format_description, OffsetDateTime};
 /// Represents a Cosmos DB account for testing purposes.
 ///
 /// A [`TestAccount`] serves two main purposes:
-/// * Managing connection information to make it easy to connect to whatever account the tests are targetting.
+/// * Managing connection information to make it easy to connect to the account the tests are using.
 /// * Provide a unique ID to each test and automatic clean-up of resources.
 pub struct TestAccount {
     pub context_id: String,

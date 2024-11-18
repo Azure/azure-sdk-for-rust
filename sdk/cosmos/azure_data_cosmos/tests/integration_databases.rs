@@ -7,6 +7,7 @@ use framework::TestAccount;
 use futures::StreamExt;
 
 #[tokio::test]
+#[cfg(feature = "key_auth")]
 #[cfg_attr(not(livetest), ignore)]
 pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     let account = TestAccount::from_env()?;
