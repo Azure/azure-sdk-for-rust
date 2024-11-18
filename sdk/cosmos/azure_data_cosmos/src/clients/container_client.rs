@@ -435,6 +435,7 @@ impl ContainerClient {
         patch: PatchDocument,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response> {
+        let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Patch);
@@ -442,7 +443,7 @@ impl ContainerClient {
         req.set_json(&patch)?;
 
         self.pipeline
-            .send(options.map(|o| o.method_options.context), &mut req, link)
+            .send(options.method_options.context, &mut req, link)
             .await
     }
 
