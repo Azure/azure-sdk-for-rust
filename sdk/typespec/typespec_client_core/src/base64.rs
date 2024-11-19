@@ -60,7 +60,7 @@ where
     let decoded = <Option<String>>::deserialize(deserializer)?;
     match decoded {
         Some(d) => {
-            let d = decode(d).map_err(|e| serde::de::Error::custom(e))?;
+            let d = decode(d).map_err(serde::de::Error::custom)?;
             Ok(Some(d))
         }
         None => Ok(None),
@@ -74,7 +74,7 @@ where
     let decoded = <Option<String>>::deserialize(deserializer)?;
     match decoded {
         Some(d) => {
-            let d = decode_url_safe(d).map_err(|e| serde::de::Error::custom(e))?;
+            let d = decode_url_safe(d).map_err(serde::de::Error::custom)?;
             Ok(Some(d))
         }
         None => Ok(None),
