@@ -61,6 +61,8 @@ where
 /// # Examples
 ///
 /// ```rust,no_run
+/// # use serde::{Deserialize}
+/// #[derive(Deserialize)]
 /// struct SomeType {
 ///     #[serde(deserialize_with = "base64::deserialize")]
 ///     pub value: Vec<u8>,
@@ -88,6 +90,8 @@ where
 /// # Examples
 ///
 /// ```rust,no_run
+/// # use serde::{Deserialize};
+/// #[derive(Deserialize)]
 /// struct SomeType {
 ///     #[serde(deserialize_with = "base64::deserialize_url_safe")]
 ///     pub value: Vec<u8>,
@@ -115,6 +119,8 @@ where
 /// # Examples
 ///
 /// ```rust,no_run
+/// # use serde::{Serialize};
+/// #[derive(Serialize)]
 /// struct SomeType {
 ///     #[serde(serialize_with = "base64::serialize")]
 ///     pub value: Vec<u8>,
@@ -136,6 +142,8 @@ where
 /// # Examples
 ///
 /// ```rust,no_run
+/// # use serde::{Serialize};
+/// #[derive(Serialize)]
 /// struct SomeType {
 ///     #[serde(serialize_with = "base64::serialize_url_safe")]
 ///     pub value: Vec<u8>,
