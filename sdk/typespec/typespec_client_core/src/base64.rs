@@ -110,7 +110,7 @@ where
 /// Helper that can be used in a serde serialize_with derive macro
 /// for struct fields that contain base64 encoded data.
 /// 
-/// Uses the standard base64 decoder.
+/// Uses the standard base64 encoder.
 /// 
 /// # Examples
 /// 
@@ -131,7 +131,7 @@ where
 /// Helper that can be used in a serde serialize_with derive macro
 /// for struct fields that contain base64 encoded data.
 /// 
-/// Uses the URL safe base64 decoder.
+/// Uses the URL safe base64 encoder.
 /// 
 /// # Examples
 /// 
