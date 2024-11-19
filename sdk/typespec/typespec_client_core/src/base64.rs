@@ -85,11 +85,7 @@ pub fn serialize<S>(to_serialize: &Option<Vec<u8>>, serializer: S) -> Result<S::
 where
     S: Serializer,
 {
-    let encoded = match to_serialize {
-        Some(s) => Some(encode(s)),
-        None => None,
-    };
-
+    let encoded = to_serialize.as_ref().map(encode);
     <Option<String>>::serialize(&encoded, serializer)
 }
 
@@ -100,10 +96,6 @@ pub fn serialize_url_safe<S>(
 where
     S: Serializer,
 {
-    let encoded = match to_serialize {
-        Some(s) => Some(encode_url_safe(s)),
-        None => None,
-    };
-
+    let encoded = to_serialize.as_ref().map(encode_url_safe);
     <Option<String>>::serialize(&encoded, serializer)
 }
