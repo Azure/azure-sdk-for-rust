@@ -82,9 +82,11 @@ impl ResourceLink {
     /// See https://learn.microsoft.com/en-us/rest/api/cosmos-db/access-control-on-cosmosdb-resources#constructkeytoken for more details.
     #[cfg_attr(not(feature = "key_auth"), allow(dead_code))] // REASON: Currently only used in key_auth feature but we don't want to conditional-compile it.
     pub fn resource_link(&self) -> String {
-        match self.item_id {
-            Some(_) => self.path(),
-            None => self.parent.clone().unwrap_or_default(),
+        match (self.resource_type, self.item_id.as_ref()) {
+            // Offers have a particular resource link format expected when requesting the offer itself.
+            (ResourceType::Offers, Some(i)) => i.to_lowercase(),
+            (_, Some(_)) => self.path(),
+            (_, None) => self.parent.clone().unwrap_or_default(),
         }
     }
 

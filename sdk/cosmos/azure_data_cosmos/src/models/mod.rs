@@ -11,12 +11,14 @@ mod indexing_policy;
 mod item;
 mod partition_key_definition;
 mod patch_operations;
+mod throughput_properties;
 
 pub use container_properties::*;
 pub use indexing_policy::*;
 pub use item::*;
 pub use partition_key_definition::*;
 pub use patch_operations::*;
+pub use throughput_properties::*;
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where
@@ -87,7 +89,8 @@ pub struct SystemProperties {
 
     /// The system-generated unique identifier associated with the resource.
     #[serde(default)]
-    #[serde(skip_serializing)]
+    // Some APIs do expect the "_rid" to be provided (Replace Offer, for example), so we do want to serialize it if it's provided.
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "_rid")]
     pub resource_id: Option<String>,
 

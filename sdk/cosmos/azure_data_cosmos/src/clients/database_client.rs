@@ -3,11 +3,14 @@
 
 use crate::{
     clients::ContainerClient,
-    models::{ContainerProperties, ContainerQueryResults, DatabaseProperties, Item},
+    models::{
+        ContainerProperties, ContainerQueryResults, DatabaseProperties, Item, ThroughputProperties,
+    },
     options::ReadDatabaseOptions,
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
     CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
+    ThroughputOptions,
 };
 
 use azure_core::{Method, Pager, Request, Response};
@@ -71,14 +74,11 @@ impl DatabaseClient {
         &self,
         options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Get);
         self.pipeline
-            .send(
-                options.map(|o| o.method_options.context),
-                &mut req,
-                self.link.clone(),
-            )
+            .send(options.method_options.context, &mut req, self.link.clone())
             .await
     }
 
@@ -110,11 +110,12 @@ impl DatabaseClient {
         query: impl Into<Query>,
         options: Option<QueryContainersOptions<'_>>,
     ) -> azure_core::Result<Pager<ContainerQueryResults>> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
         let base_request = Request::new(url, Method::Post);
 
         self.pipeline.send_query_request(
-            options.map(|o| o.method_options.context),
+            options.method_options.context,
             query.into(),
             base_request,
             self.containers_link.clone(),
@@ -133,13 +134,15 @@ impl DatabaseClient {
         properties: ContainerProperties,
         options: Option<CreateContainerOptions<'_>>,
     ) -> azure_core::Result<Response<Item<ContainerProperties>>> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
         let mut req = Request::new(url, Method::Post);
+        req.insert_headers(&options.throughput)?;
         req.set_json(&properties)?;
 
         self.pipeline
             .send(
-                options.map(|o| o.method_options.context),
+                options.method_options.context,
                 &mut req,
                 self.containers_link.clone(),
             )
@@ -156,14 +159,59 @@ impl DatabaseClient {
         &self,
         options: Option<DeleteDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Delete);
         self.pipeline
-            .send(
-                options.map(|o| o.method_options.context),
-                &mut req,
-                self.link.clone(),
-            )
+            .send(options.method_options.context, &mut req, self.link.clone())
+            .await
+    }
+
+    /// Reads database throughput properties, if any.
+    ///
+    /// This will return `None` if the database does not have a throughput offer configured.
+    ///
+    /// # Arguments
+    /// * `options` - Optional parameters for the request.
+    pub async fn read_throughput(
+        &self,
+        options: Option<ThroughputOptions<'_>>,
+    ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
+        let options = options.unwrap_or_default();
+
+        // We need to get the RID for the database.
+        let db = self.read(None).await?.deserialize_body().await?;
+        let resource_id = db
+            .system_properties
+            .resource_id
+            .expect("service should always return a '_rid' for a database");
+
+        self.pipeline
+            .read_throughput_offer(options.method_options.context, &resource_id)
+            .await
+    }
+
+    /// Replaces the database throughput properties.
+    ///
+    /// # Arguments
+    /// * `throughput` - The new throughput properties to set.
+    /// * `options` - Optional parameters for the request.
+    pub async fn replace_throughput(
+        &self,
+        throughput: ThroughputProperties,
+        options: Option<ThroughputOptions<'_>>,
+    ) -> azure_core::Result<Response<ThroughputProperties>> {
+        let options = options.unwrap_or_default();
+
+        // We need to get the RID for the database.
+        let db = self.read(None).await?.deserialize_body().await?;
+        let resource_id = db
+            .system_properties
+            .resource_id
+            .expect("service should always return a '_rid' for a database");
+
+        self.pipeline
+            .replace_throughput_offer(options.method_options.context, &resource_id, throughput)
             .await
     }
 }

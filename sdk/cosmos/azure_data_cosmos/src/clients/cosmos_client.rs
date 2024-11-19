@@ -129,11 +129,12 @@ impl CosmosClient {
         query: impl Into<Query>,
         options: Option<QueryDatabasesOptions<'_>>,
     ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>> {
+        let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.databases_link);
         let base_request = Request::new(url, azure_core::Method::Post);
 
         self.pipeline.send_query_request(
-            options.map(|o| o.method_options.context),
+            options.method_options.context,
             query.into(),
             base_request,
             self.databases_link.clone(),
@@ -152,6 +153,8 @@ impl CosmosClient {
         id: &str,
         options: Option<CreateDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<Item<DatabaseProperties>>> {
+        let options = options.unwrap_or_default();
+
         #[derive(Serialize)]
         struct RequestBody<'a> {
             id: &'a str,
@@ -159,11 +162,12 @@ impl CosmosClient {
 
         let url = self.pipeline.url(&self.databases_link);
         let mut req = Request::new(url, Method::Post);
+        req.insert_headers(&options.throughput)?;
         req.set_json(&RequestBody { id })?;
 
         self.pipeline
             .send(
-                options.map(|o| o.method_options.context),
+                options.method_options.context,
                 &mut req,
                 self.databases_link.clone(),
             )

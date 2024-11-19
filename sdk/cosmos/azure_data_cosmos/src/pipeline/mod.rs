@@ -7,12 +7,18 @@ mod signature_target;
 use std::sync::Arc;
 
 pub use authorization_policy::AuthorizationPolicy;
-use azure_core::{ClientOptions, Context, Pager, Request};
-use serde::de::DeserializeOwned;
+use azure_core::{ClientOptions, Context, Method, Model, Pager, Request, Response};
+use futures::StreamExt;
+use serde::{de::DeserializeOwned, Deserialize};
 use typespec_client_core::http::PagerResult;
 use url::Url;
 
-use crate::{constants, resource_context::ResourceLink, Query};
+use crate::{
+    constants,
+    models::ThroughputProperties,
+    resource_context::{ResourceLink, ResourceType},
+    Query,
+};
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
@@ -50,17 +56,17 @@ impl CosmosPipeline {
 
     pub async fn send<T>(
         &self,
-        ctx: Option<Context<'_>>,
+        ctx: Context<'_>,
         request: &mut Request,
         resource_link: ResourceLink,
-    ) -> azure_core::Result<azure_core::Response<T>> {
-        let ctx = ctx.unwrap_or_default().with_value(resource_link);
+    ) -> azure_core::Result<Response<T>> {
+        let ctx = ctx.with_value(resource_link);
         self.pipeline.send(&ctx, request).await
     }
 
     pub fn send_query_request<T: DeserializeOwned>(
         &self,
-        ctx: Option<Context<'_>>,
+        ctx: Context<'_>,
         query: Query,
         mut base_request: Request,
         resource_link: ResourceLink,
@@ -72,10 +78,7 @@ impl CosmosPipeline {
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure
         let pipeline = self.pipeline.clone();
-        let ctx = ctx
-            .unwrap_or_default()
-            .with_value(resource_link)
-            .into_owned();
+        let ctx = ctx.with_value(resource_link).into_owned();
         Ok(Pager::from_callback(move |continuation| {
             // Then we have to clone it again to pass it in to the async block.
             // This is because Pageable can't borrow any data, it has to own it all.
@@ -96,5 +99,87 @@ impl CosmosPipeline {
                 ))
             }
         }))
+    }
+
+    /// Helper function to read a throughput offer given a resource ID.
+    ///
+    /// ## Arguments
+    /// * `context` - The context for the request.
+    /// * `resource_id` - The resource ID to read the throughput offer for.
+    pub async fn read_throughput_offer(
+        &self,
+        context: Context<'_>,
+        resource_id: &str,
+    ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
+        #[derive(Model, Deserialize)]
+        struct OfferResults {
+            #[serde(rename = "Offers")]
+            pub offers: Vec<ThroughputProperties>,
+        }
+
+        // We only have to into_owned here in order to call send_query_request below,
+        // since it returns `Pager` which must own it's data.
+        // See https://github.com/Azure/azure-sdk-for-rust/issues/1911 for further discussion
+        let context = context.into_owned();
+
+        // Now, query for the offer for this resource.
+        let query = Query::from("SELECT * FROM c WHERE c.offerResourceId = @rid")
+            .with_parameter("@rid", resource_id)?;
+        let offers_link = ResourceLink::root(ResourceType::Offers);
+        let mut results: Pager<OfferResults> = self.send_query_request(
+            context.clone(),
+            query,
+            Request::new(self.url(&offers_link), Method::Post),
+            offers_link.clone(),
+        )?;
+        let offers = results
+            .next()
+            .await
+            .expect("the first pager result should always be Some, even when there's an error")?
+            .deserialize_body()
+            .await?
+            .offers;
+
+        if offers.is_empty() {
+            // No offers found for this resource.
+            return Ok(None);
+        }
+
+        let offer_link = offers_link.item(&offers[0].offer_id);
+        let offer_url = self.url(&offer_link);
+
+        // Now we can read the offer itself
+        let mut req = Request::new(offer_url, Method::Get);
+        self.send(context, &mut req, offer_link).await.map(Some)
+    }
+
+    /// Helper function to update a throughput offer given a resource ID.
+    ///
+    /// ## Arguments
+    /// * `context` - The context for the request.
+    /// * `resource_id` - The resource ID to update the throughput offer for.
+    /// * `throughput` - The new throughput to set.
+    pub async fn replace_throughput_offer(
+        &self,
+        context: Context<'_>,
+        resource_id: &str,
+        throughput: ThroughputProperties,
+    ) -> azure_core::Result<Response<ThroughputProperties>> {
+        let response = self
+            .read_throughput_offer(context.clone(), resource_id)
+            .await?;
+        let mut current_throughput = match response {
+            Some(r) => r.deserialize_body().await?,
+            None => Default::default(),
+        };
+        current_throughput.offer = throughput.offer;
+
+        // NOTE: Offers API doesn't allow Enable Content Response On Write to be false, so once we support that option, we'll need to ignore it here.
+        let offer_link =
+            ResourceLink::root(ResourceType::Offers).item(&current_throughput.offer_id);
+        let mut req = Request::new(self.url(&offer_link), Method::Put);
+        req.set_json(&current_throughput)?;
+
+        self.send(context, &mut req, offer_link).await
     }
 }

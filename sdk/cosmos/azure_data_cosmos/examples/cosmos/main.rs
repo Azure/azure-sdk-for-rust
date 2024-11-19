@@ -14,6 +14,7 @@ mod query;
 mod read;
 mod replace;
 mod upsert;
+mod utils;
 
 /// A set of basic examples for interacting with Cosmos.
 ///
