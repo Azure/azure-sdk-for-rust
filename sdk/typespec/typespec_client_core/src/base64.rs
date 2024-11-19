@@ -55,11 +55,11 @@ where
 
 /// Helper that can be used in a serde deserialize_with derive macro
 /// for struct fields that contain base64 encoded data.
-/// 
+///
 /// Uses the standard base64 decoder.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust,no_run
 /// struct SomeType {
 ///     #[serde(deserialize_with = "base64::deserialize")]
@@ -82,11 +82,11 @@ where
 
 /// Helper that can be used in a serde deserialize_with derive macro
 /// for struct fields that contain base64 encoded data.
-/// 
+///
 /// Uses the URL safe base64 decoder.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust,no_run
 /// struct SomeType {
 ///     #[serde(deserialize_with = "base64::deserialize_url_safe")]
@@ -109,11 +109,11 @@ where
 
 /// Helper that can be used in a serde serialize_with derive macro
 /// for struct fields that contain base64 encoded data.
-/// 
+///
 /// Uses the standard base64 encoder.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust,no_run
 /// struct SomeType {
 ///     #[serde(serialize_with = "base64::serialize")]
@@ -130,11 +130,11 @@ where
 
 /// Helper that can be used in a serde serialize_with derive macro
 /// for struct fields that contain base64 encoded data.
-/// 
+///
 /// Uses the URL safe base64 encoder.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust,no_run
 /// struct SomeType {
 ///     #[serde(serialize_with = "base64::serialize_url_safe")]
