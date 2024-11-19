@@ -3,7 +3,29 @@
 
 //! Formatting helpers.
 
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt::Debug};
+
+#[cfg(feature = "derive")]
+pub use typespec_derive::SafeDebug;
+
+/// When deriving this trait, helps prevent leaking personally identifiable information (PII) that deriving [`Debug`] might otherwise.
+///
+/// # Examples
+///
+/// ```
+/// use typespec_client_core::fmt::SafeDebug;
+///
+/// #[derive(SafeDebug)]
+/// struct MyModel {
+///     name: Option<String>,
+/// }
+///
+/// let model = MyModel {
+///     name: Some("Hal Warhol".to_string()),
+/// };
+/// assert_eq!(format!("{model:?}"), "MyModel { .. }");
+/// ```
+pub trait SafeDebug: Debug {}
 
 /// Converts ASCII characters in `value` to lowercase if required; otherwise, returns the original slice.
 ///

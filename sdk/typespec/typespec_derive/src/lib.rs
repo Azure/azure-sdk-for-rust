@@ -6,6 +6,7 @@ use syn::{parse::ParseStream, parse_macro_input, spanned::Spanned, DeriveInput, 
 extern crate proc_macro;
 
 mod model;
+mod safe_debug;
 
 type Result<T> = ::std::result::Result<T, syn::Error>;
 
@@ -38,7 +39,7 @@ fn parse_literal_string(value: ParseStream) -> Result<LitStr> {
     }
 }
 
-/// Derive macro for implementing `Model` trait.
+/// Derive macro for implementing the `Model` trait.
 ///
 /// Deriving this trait allows a type to be deserialized from an HTTP response body.
 /// By default, the type must also implement `serde::Deserialize`, or the generated code will not compile.
@@ -82,4 +83,13 @@ fn parse_literal_string(value: ParseStream) -> Result<LitStr> {
 #[proc_macro_derive(Model, attributes(typespec))]
 pub fn derive_model(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     run_derive_macro(input, model::derive_model_impl)
+}
+
+/// Derive macro for implementing the `SafeDebug` trait.
+///
+/// Deriving this trait will derive a [`std::fmt::Debug`] implementation that should not leak personally identifiable information (PII).
+/// By default, only the structure or enumeration name will be returned.
+#[proc_macro_derive(SafeDebug)]
+pub fn derive_safe_debug(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    run_derive_macro(input, safe_debug::derive_safe_debug_impl)
 }
