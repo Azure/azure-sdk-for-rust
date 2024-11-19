@@ -11,6 +11,7 @@ use base64::{
     },
     Engine,
 };
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 const STANDARD: GeneralPurpose = GeneralPurpose::new(
     &alphabet::STANDARD,
@@ -50,4 +51,59 @@ where
     T: AsRef<[u8]>,
 {
     Ok(URL_SAFE.decode(input)?)
+}
+
+pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Vec<u8>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let decoded = <Option<String>>::deserialize(deserializer)?;
+    match decoded {
+        Some(d) => {
+            let d = decode(d).map_err(|e| serde::de::Error::custom(e))?;
+            Ok(Some(d))
+        }
+        None => Ok(None),
+    }
+}
+
+pub fn deserialize_url_safe<'de, D>(deserializer: D) -> Result<Option<Vec<u8>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let decoded = <Option<String>>::deserialize(deserializer)?;
+    match decoded {
+        Some(d) => {
+            let d = decode_url_safe(d).map_err(|e| serde::de::Error::custom(e))?;
+            Ok(Some(d))
+        }
+        None => Ok(None),
+    }
+}
+
+pub fn serialize<S>(to_serialize: &Option<Vec<u8>>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let encoded = match to_serialize {
+        Some(s) => Some(encode(s)),
+        None => None,
+    };
+
+    <Option<String>>::serialize(&encoded, serializer)
+}
+
+pub fn serialize_url_safe<S>(
+    to_serialize: &Option<Vec<u8>>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let encoded = match to_serialize {
+        Some(s) => Some(encode_url_safe(s)),
+        None => None,
+    };
+
+    <Option<String>>::serialize(&encoded, serializer)
 }
