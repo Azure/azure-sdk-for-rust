@@ -129,9 +129,10 @@ where
 ///     pub value: Option<Vec<u8>>,
 /// }
 /// ```
-pub fn serialize<S>(to_serialize: &Option<Vec<u8>>, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize<S, T>(to_serialize: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
+    T: AsRef<[u8]>,
 {
     let encoded = to_serialize.as_ref().map(encode);
     <Option<String>>::serialize(&encoded, serializer)
@@ -153,12 +154,10 @@ where
 ///     pub value: Option<Vec<u8>>,
 /// }
 /// ```
-pub fn serialize_url_safe<S>(
-    to_serialize: &Option<Vec<u8>>,
-    serializer: S,
-) -> Result<S::Ok, S::Error>
+pub fn serialize_url_safe<S, T>(to_serialize: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
+    T: AsRef<[u8]>,
 {
     let encoded = to_serialize.as_ref().map(encode_url_safe);
     <Option<String>>::serialize(&encoded, serializer)
