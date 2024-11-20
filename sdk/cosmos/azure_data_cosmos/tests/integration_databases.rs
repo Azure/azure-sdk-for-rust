@@ -2,7 +2,7 @@ mod framework;
 
 use std::error::Error;
 
-use azure_data_cosmos::Query;
+use azure_data_cosmos::{models::ThroughputProperties, CreateDatabaseOptions, Query};
 use framework::TestAccount;
 use futures::StreamExt;
 
@@ -42,7 +42,8 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     }
     assert_eq!(vec![test_db_id.clone()], ids);
 
-    // TODO: Read Throughput, once those APIs exist.
+    let current_throughput = db_client.read_throughput(None).await?;
+    assert!(current_throughput.is_none());
 
     // We're testing delete, so we want to manually delete the DB rather than letting the clean-up process do it.
     db_client.delete(None).await?;
@@ -56,6 +57,65 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
         }
     }
     assert!(ids.is_empty());
+
+    account.cleanup().await?;
+    Ok(())
+}
+
+#[tokio::test]
+#[cfg(feature = "key_auth")]
+#[cfg_attr(not(livetest), ignore)]
+pub async fn database_with_offer_crud() -> Result<(), Box<dyn Error>> {
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
+
+    let account = TestAccount::from_env()?;
+    let cosmos_client = account.connect_with_key(None)?;
+
+    let test_db_id = account.unique_db("DatabaseWithOfferCRUD");
+
+    let throughput = ThroughputProperties::manual(400);
+
+    // Create a database
+    let properties = cosmos_client
+        .create_database(
+            &test_db_id,
+            Some(CreateDatabaseOptions {
+                throughput: Some(throughput),
+                ..Default::default()
+            }),
+        )
+        .await?
+        .deserialize_body()
+        .await?
+        .unwrap();
+
+    assert_eq!(&test_db_id, &properties.id);
+
+    let db_client = cosmos_client.database_client(&test_db_id);
+    let read_properties = db_client.read(None).await?.deserialize_body().await?;
+    assert_eq!(&test_db_id, &read_properties.id);
+
+    // Read and then replace throughput
+    let current_throughput = db_client
+        .read_throughput(None)
+        .await?
+        .ok_or("expected a throughput offer")?
+        .deserialize_body()
+        .await?;
+    assert_eq!(Some(400), current_throughput.throughput());
+    assert!(current_throughput.autoscale_increment().is_none());
+    assert!(current_throughput.autoscale_maximum().is_none());
+
+    let new_throughput = db_client
+        .replace_throughput(ThroughputProperties::manual(500), None)
+        .await?
+        .deserialize_body()
+        .await?;
+    assert_eq!(Some(500), new_throughput.throughput());
+    assert!(new_throughput.autoscale_increment().is_none());
+    assert!(new_throughput.autoscale_maximum().is_none());
 
     account.cleanup().await?;
     Ok(())
