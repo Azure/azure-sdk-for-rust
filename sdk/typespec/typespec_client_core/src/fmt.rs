@@ -21,7 +21,7 @@ pub use typespec_derive::SafeDebug;
 /// }
 ///
 /// let model = MyModel {
-///     name: Some("Hal Warhol".to_string()),
+///     name: Some("Kelly Smith".to_string()),
 /// };
 /// assert_eq!(format!("{model:?}"), "MyModel { .. }");
 /// ```

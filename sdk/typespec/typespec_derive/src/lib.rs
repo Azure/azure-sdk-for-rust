@@ -100,7 +100,7 @@ pub fn derive_model(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 /// }
 ///
 /// let model = MyModel {
-///     name: Some("Hal Warhol".to_string()),
+///     name: Some("Kelly Smith".to_string()),
 /// };
 /// assert_eq!(format!("{model:?}"), "MyModel { .. }");
 /// ```
