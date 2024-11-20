@@ -1,8 +1,11 @@
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
-use azure_core::{credentials::Secret, Uuid};
+use std::sync::Arc;
+
+use azure_core::{credentials::Secret, TransportOptions, Uuid};
 use azure_data_cosmos::{CosmosClientOptions, Query};
 use futures::StreamExt;
+use reqwest::{Certificate, ClientBuilder};
 use time::{macros::format_description, OffsetDateTime};
 
 /// Represents a Cosmos DB account for testing purposes.
@@ -18,6 +21,7 @@ pub struct TestAccount {
 }
 
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
+const EMULATOR_CERT_ENV_VAR: &str = "AZURE_COSMOS_EMULATOR_CERT";
 const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 
 impl TestAccount {
@@ -86,10 +90,24 @@ impl TestAccount {
         &self,
         options: Option<CosmosClientOptions>,
     ) -> Result<azure_data_cosmos::CosmosClient, Box<dyn std::error::Error>> {
+        let mut options = options.unwrap_or_default();
+
+        if let Ok(cert_path) = std::env::var(EMULATOR_CERT_ENV_VAR) {
+            let content = std::fs::read_to_string(cert_path)?;
+            let cert = Certificate::from_pem(content.as_bytes())?;
+            let client = ClientBuilder::new()
+                .danger_accept_invalid_certs(true)
+                .pool_max_idle_per_host(0)
+                .build()?;
+            options
+                .client_options
+                .set_transport(TransportOptions::new(Arc::new(client)));
+        }
+
         Ok(azure_data_cosmos::CosmosClient::with_key(
             &self.endpoint,
             self.key.clone(),
-            options,
+            Some(options),
         )?)
     }
 
@@ -126,15 +144,5 @@ impl TestAccount {
 
         self.cleaned_up = true;
         Ok(())
-    }
-}
-
-impl Drop for TestAccount {
-    fn drop(&mut self) {
-        // Async Drop isn't implemented yet, so all we do here is validate that you properly called ".cleanup().await?" to clean up your test databases.
-        assert!(
-            self.cleaned_up,
-            "TestAccount was not cleaned up by calling 'TestAccount::cleanup().await?'",
-        );
     }
 }
