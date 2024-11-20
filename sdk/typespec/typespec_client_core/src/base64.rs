@@ -61,11 +61,12 @@ where
 /// # Examples
 ///
 /// ```rust,no_run
-/// # use serde::{Deserialize}
+/// # use serde::{Deserialize};
+/// # use typespec_client_core::base64;
 /// #[derive(Deserialize)]
 /// struct SomeType {
 ///     #[serde(deserialize_with = "base64::deserialize")]
-///     pub value: Vec<u8>,
+///     pub value: Option<Vec<u8>>,
 /// }
 /// ```
 pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Vec<u8>>, D::Error>
@@ -91,10 +92,11 @@ where
 ///
 /// ```rust,no_run
 /// # use serde::{Deserialize};
+/// # use typespec_client_core::base64;
 /// #[derive(Deserialize)]
 /// struct SomeType {
 ///     #[serde(deserialize_with = "base64::deserialize_url_safe")]
-///     pub value: Vec<u8>,
+///     pub value: Option<Vec<u8>>,
 /// }
 /// ```
 pub fn deserialize_url_safe<'de, D>(deserializer: D) -> Result<Option<Vec<u8>>, D::Error>
@@ -120,10 +122,11 @@ where
 ///
 /// ```rust,no_run
 /// # use serde::{Serialize};
+/// # use typespec_client_core::base64;
 /// #[derive(Serialize)]
 /// struct SomeType {
 ///     #[serde(serialize_with = "base64::serialize")]
-///     pub value: Vec<u8>,
+///     pub value: Option<Vec<u8>>,
 /// }
 /// ```
 pub fn serialize<S>(to_serialize: &Option<Vec<u8>>, serializer: S) -> Result<S::Ok, S::Error>
@@ -143,10 +146,11 @@ where
 ///
 /// ```rust,no_run
 /// # use serde::{Serialize};
+/// # use typespec_client_core::base64;
 /// #[derive(Serialize)]
 /// struct SomeType {
 ///     #[serde(serialize_with = "base64::serialize_url_safe")]
-///     pub value: Vec<u8>,
+///     pub value: Option<Vec<u8>>,
 /// }
 /// ```
 pub fn serialize_url_safe<S>(
