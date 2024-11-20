@@ -3,7 +3,7 @@ resolver = "2"
 members = [
   "sdk/typespec",
   "sdk/typespec/typespec_client_core",
-  "sdk/typespec/typespec_derive",
+  "sdk/typespec/typespec_macros",
   "sdk/core/azure_core",
   "sdk/core/azure_core_amqp",
   "sdk/cosmos/azure_data_cosmos",
@@ -29,8 +29,8 @@ default-features = false
 path = "sdk/typespec/typespec_client_core"
 default-features = false
 
-[workspace.dependencies.typespec_derive]
-path = "sdk/typespec/typespec_derive"
+[workspace.dependencies.typespec_macros]
+path = "sdk/typespec/typespec_macros"
 
 [workspace.dependencies.azure_core]
 path = "sdk/core/azure_core"

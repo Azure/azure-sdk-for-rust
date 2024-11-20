@@ -68,7 +68,7 @@ pub fn compilation_tests() {
         p
     };
     let repo_root = {
-        let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR")); // [root]/sdk/typespec/typespec_derive
+        let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR")); // [root]/sdk/typespec/typespec_macros
         p.pop(); // [root]/sdk/typespec
         p.pop(); // [root]/sdk
         p.pop(); // [root]
