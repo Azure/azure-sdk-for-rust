@@ -13,7 +13,7 @@ pub use typespec_derive::SafeDebug;
 /// # Examples
 ///
 /// ```
-/// use typespec_client_core::fmt::SafeDebug;
+/// use typespec_derive::SafeDebug;
 ///
 /// #[derive(SafeDebug)]
 /// struct MyModel {

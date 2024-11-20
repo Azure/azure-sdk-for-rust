@@ -89,6 +89,21 @@ pub fn derive_model(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 ///
 /// Deriving this trait will derive a [`std::fmt::Debug`] implementation that should not leak personally identifiable information (PII).
 /// By default, only the structure or enumeration name will be returned.
+///
+/// # Examples
+///
+/// ```
+/// # use typespec_derive::SafeDebug;
+/// #[derive(SafeDebug)]
+/// struct MyModel {
+///     name: Option<String>,
+/// }
+///
+/// let model = MyModel {
+///     name: Some("Hal Warhol".to_string()),
+/// };
+/// assert_eq!(format!("{model:?}"), "MyModel { .. }");
+/// ```
 #[proc_macro_derive(SafeDebug)]
 pub fn derive_safe_debug(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     run_derive_macro(input, safe_debug::derive_safe_debug_impl)

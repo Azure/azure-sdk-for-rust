@@ -29,5 +29,8 @@ fn generate_body(ast: DeriveInput) -> Result<TokenStream> {
                 f.debug_struct(stringify!(#name)).finish_non_exhaustive()
             }
         }
+
+        #[automatically_derived]
+        impl #impl_generics ::typespec_client_core::fmt::SafeDebug for #name #ty_generics #where_clause {}
     })
 }
