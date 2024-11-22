@@ -2,19 +2,19 @@
 // Licensed under the MIT license.
 //cspell: words amqp
 
-use super::error::{AmqpIllegalLinkState, AmqpReceiver, AmqpReceiverAttach};
+use super::error::{AmqpIllegalLinkState, AmqpLinkDetach, AmqpReceiver, AmqpReceiverAttach};
 use crate::messaging::{AmqpMessage, AmqpSource};
 use crate::receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode};
 use crate::session::AmqpSession;
 use async_std::sync::Mutex;
 use azure_core::error::Result;
 use std::borrow::BorrowMut;
-use std::sync::{Arc, OnceLock};
-use tracing::trace;
+use std::sync::OnceLock;
+use tracing::{info, trace, warn};
 
 #[derive(Default)]
 pub(crate) struct Fe2o3AmqpReceiver {
-    receiver: OnceLock<Arc<Mutex<fe2o3_amqp::Receiver>>>,
+    receiver: OnceLock<Mutex<fe2o3_amqp::Receiver>>,
 }
 
 impl From<ReceiverCreditMode> for fe2o3_amqp::link::receiver::CreditMode {
@@ -58,30 +58,40 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
             .map_err(AmqpReceiverAttach::from)?;
-        self.receiver
-            .set(Arc::new(Mutex::new(receiver)))
-            .map_err(|_| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Could not set message receiver.",
-                )
-            })?;
+        self.receiver.set(Mutex::new(receiver)).map_err(|_| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Could not set message receiver.",
+            )
+        })?;
         Ok(())
     }
 
-    async fn max_message_size(&self) -> Result<Option<u64>> {
-        Ok(self
-            .receiver
-            .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Message receiver is not set",
-                )
-            })?
-            .lock()
+    async fn detach(mut self) -> Result<()> {
+        let receiver = self.receiver.take().ok_or_else(|| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Message Sender not set.",
+            )
+        })?;
+        let res = receiver
+            .into_inner()
+            .detach()
             .await
-            .max_message_size())
+            .map_err(|e| AmqpLinkDetach::from(e.1));
+        match res {
+            Ok(_) => Ok(()),
+            Err(e) => match e.0 {
+                fe2o3_amqp::link::DetachError::ClosedByRemote => {
+                    info!("Error detaching receiver: {:?} - ignored", e);
+                    Ok(())
+                }
+                _ => {
+                    warn!("Error detaching receiver: {:?}", e);
+                    Err(e.into())
+                }
+            },
+        }
     }
 
     async fn receive(&self) -> Result<AmqpMessage> {

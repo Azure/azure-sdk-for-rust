@@ -8,7 +8,7 @@ This crate is part of a collection of crates: for more information please refer 
 
 ## Example
 
-```rust,no_run
+```rust no_run
 use azure_messaging::*;
 
 #[tokio::main]
