@@ -59,13 +59,14 @@ foreach ($package in $packagesToTest) {
     if ($FunctionalTests) {
       $targets += "--bins"
       $targets += "--examples"
+      $targets += "--tests"
       $targets += "--benches"
     }
 
-    Invoke-LoggedCommand "cargo +$Toolchain test $($targets -join ' ') --no-fail-fast"
+    Invoke-LoggedCommand "cargo +$Toolchain test --all-features $($targets -join ' ') --no-fail-fast"
     Write-Host "`n`n"
 
-    Invoke-LoggedCommand "cargo +$Toolchain test --doc --no-fail-fast"
+    Invoke-LoggedCommand "cargo +$Toolchain test --all-features --doc --no-fail-fast"
     Write-Host "`n`n"
   }
   finally {

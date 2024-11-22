@@ -4,7 +4,7 @@
 //cspell: words eventdata
 
 use async_std::future::timeout;
-use azure_core_macros::recorded;
+use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::consumer::{
     ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition,
@@ -15,7 +15,7 @@ use tracing::{info, trace};
 
 mod common;
 
-#[recorded(live)]
+#[recorded::test(live)]
 async fn test_new() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -32,7 +32,7 @@ async fn test_new() {
     );
 }
 
-#[recorded(live)]
+#[recorded::test(live)]
 async fn test_new_with_error() {
     common::setup();
     trace!("test_new_with_error");
@@ -52,7 +52,7 @@ async fn test_new_with_error() {
     info!("Error: {:?}", result);
 }
 
-#[recorded(live)]
+#[recorded::test(live)]
 async fn test_open() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -69,7 +69,7 @@ async fn test_open() {
     );
     client.open().await.unwrap();
 }
-#[recorded(live)]
+#[recorded::test(live)]
 async fn test_close() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -88,7 +88,7 @@ async fn test_close() {
     client.close().await.unwrap();
 }
 
-#[recorded(live)]
+#[recorded::test(live)]
 async fn test_get_properties() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -112,7 +112,7 @@ async fn test_get_properties() {
     assert_eq!(properties.name, eventhub);
 }
 
-#[recorded(live)]
+#[recorded::test(live)]
 async fn test_get_partition_properties() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -143,7 +143,7 @@ async fn test_get_partition_properties() {
     }
 }
 
-#[recorded(live)]
+#[recorded::test(live)]
 async fn receive_lots_of_events() {
     common::setup();
 

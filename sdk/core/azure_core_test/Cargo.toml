@@ -14,6 +14,8 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-typespec = { workspace = true, features = ["http", "json"] }
-typespec_client_core = { workspace = true, features = ["http", "json"] }
-azure_core.workspace = true
+azure_core = { workspace = true, features = ["test"] }
+azure_core_test_macros.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

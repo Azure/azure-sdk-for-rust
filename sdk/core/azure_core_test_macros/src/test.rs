@@ -1,17 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core_test::TestMode;
+use azure_core::test::TestMode;
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::sync::LazyLock;
 use syn::{parse::Parse, spanned::Spanned, FnArg, ItemFn, Meta, PatType, Result, Token};
 
-const INVALID_RECORDED_ATTRIBUTE_MESSAGE: &str = "expected `#[recorded]` or `#[recorded(live)]`";
+const INVALID_RECORDED_ATTRIBUTE_MESSAGE: &str =
+    "expected `#[recorded::test]` or `#[recorded::test(live)]`";
 const INVALID_RECORDED_FUNCTION_MESSAGE: &str = "expected `fn(TestContext)` function signature";
 
 // cspell:ignore asyncness
-pub fn parse_recorded(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
+pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
     let recorded_attrs: Attributes = syn::parse2(attr)?;
     let ItemFn {
         attrs,
@@ -181,6 +182,18 @@ mod tests {
     }
 
     #[test]
+    fn is_test_context() {
+        let types: Vec<syn::Type> = vec![
+            syn::parse_quote! { ::azure_core_test::TestContext },
+            syn::parse_quote! { azure_core_test::TestContext },
+            syn::parse_quote! { TestContext },
+        ];
+        for ty in types {
+            assert!(super::is_test_context(&ty));
+        }
+    }
+
+    #[test]
     fn parse_recorded_playback() {
         let attr = TokenStream::new();
         let item = quote! {
@@ -188,7 +201,7 @@ mod tests {
                 todo!()
             }
         };
-        parse_recorded(attr, item).unwrap_err();
+        parse_test(attr, item).unwrap_err();
     }
 
     #[test]
@@ -199,7 +212,7 @@ mod tests {
                 todo!()
             }
         };
-        parse_recorded(attr, item).unwrap();
+        parse_test(attr, item).unwrap();
     }
 
     #[test]
@@ -210,7 +223,7 @@ mod tests {
                 todo!()
             }
         };
-        parse_recorded(attr, item).unwrap_err();
+        parse_test(attr, item).unwrap_err();
     }
 
     #[test]
@@ -221,7 +234,7 @@ mod tests {
                 todo!()
             }
         };
-        parse_recorded(attr, item).unwrap();
+        parse_test(attr, item).unwrap();
     }
 
     #[test]
@@ -232,6 +245,6 @@ mod tests {
                 todo!()
             }
         };
-        parse_recorded(attr, item).unwrap();
+        parse_test(attr, item).unwrap();
     }
 }

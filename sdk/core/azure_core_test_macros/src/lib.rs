@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-mod recorded;
+#![doc = include_str!("../README.md")]
+
+mod test;
 
 #[cfg(doc)]
 use azure_core_test::TestContext;
@@ -15,20 +17,18 @@ use proc_macro::TokenStream;
 /// and must take a single [`TestContext`] parameter used to set up to record or play back the HTTP client.
 ///
 /// ```
-/// use azure_core_macros::recorded;
-/// use azure_core_test::TestContext;
+/// use azure_core_test::{recorded, TestContext};
 /// use azure_core::Result;
 ///
-/// #[recorded(live)]
+/// #[recorded::test(live)]
 /// async fn get_secret(ctx: TestContext) -> Result<()> {
 ///     todo!()
 /// }
 /// ```
 ///
-/// To execute tests only when `AZURE_TEST_MODE` is "live", you can optionally pass `live` to the `#[recorded(live)]` attribute.
-
+/// To execute tests only when `AZURE_TEST_MODE` is "live", you can optionally pass `live` to the `#[recorded::test(live)]` attribute.
 #[proc_macro_attribute]
-pub fn recorded(attr: TokenStream, item: TokenStream) -> TokenStream {
-    recorded::parse_recorded(attr.into(), item.into())
+pub fn test(attr: TokenStream, item: TokenStream) -> TokenStream {
+    test::parse_test(attr.into(), item.into())
         .map_or_else(|e| e.into_compile_error().into(), |v| v.into())
 }

@@ -42,24 +42,25 @@ thiserror.workspace = true
 
 [features]
 default = []
+azurite_workaround = []
+hmac_openssl = ["dep:openssl"]
+hmac_rust = ["dep:sha2", "dep:hmac"]
 reqwest = ["typespec_client_core/reqwest"]
 reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
 reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
-hmac_rust = ["dep:sha2", "dep:hmac"]
-hmac_openssl = ["dep:openssl"]
-azurite_workaround = []
-xml = ["typespec_client_core/xml"]
+test = []
 tokio_fs = ["typespec_client_core/tokio_fs"]
 tokio_sleep = ["typespec_client_core/tokio_sleep"]
+xml = ["typespec_client_core/xml"]
 
 [package.metadata.docs.rs]
 features = [
-  "xml",
-  "tokio_fs",
-  "reqwest",
+  "hmac_openssl",
+  "hmac_rust",
   "reqwest_gzip",
   "reqwest_rustls",
-  "hmac_rust",
-  "hmac_openssl",
+  "reqwest",
+  "test",
+  "tokio_fs",
   "xml",
 ]

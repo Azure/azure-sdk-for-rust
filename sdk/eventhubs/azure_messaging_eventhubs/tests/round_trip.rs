@@ -8,7 +8,7 @@ use azure_core_amqp::{
     messaging::{AmqpMessage, AmqpMessageProperties},
     value::{AmqpList, AmqpValue},
 };
-use azure_core_macros::recorded;
+use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
     consumer::{
@@ -23,7 +23,7 @@ use tracing::info;
 
 mod common;
 
-#[recorded(live)]
+#[recorded::test(live)]
 async fn test_round_trip_batch() {
     const EVENTHUB_PARTITION: &str = "1";
     const TEST_NAME: &str = "test_round_trip_batch";

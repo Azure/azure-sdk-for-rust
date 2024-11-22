@@ -30,6 +30,9 @@ pub mod headers;
 pub mod lro;
 pub mod request_options;
 
+#[cfg(feature = "test")]
+pub mod test;
+
 pub mod tokio;
 
 pub use constants::*;

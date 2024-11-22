@@ -6,8 +6,8 @@ members = [
   "sdk/typespec/typespec_macros",
   "sdk/core/azure_core",
   "sdk/core/azure_core_amqp",
-  "sdk/core/azure_core_macros",
   "sdk/core/azure_core_test",
+  "sdk/core/azure_core_test_macros",
   "sdk/cosmos/azure_data_cosmos",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
@@ -40,11 +40,11 @@ path = "sdk/core/azure_core"
 [workspace.dependencies.azure_core_amqp]
 path = "sdk/core/azure_core_amqp"
 
-[workspace.dependencies.azure_core_macros]
-path = "sdk/core/azure_core_macros"
-
 [workspace.dependencies.azure_core_test]
 path = "sdk/core/azure_core_test"
+
+[workspace.dependencies.azure_core_test_macros]
+path = "sdk/core/azure_core_test_macros"
 
 [workspace.dependencies.azure_identity]
 path = "sdk/identity/azure_identity"
