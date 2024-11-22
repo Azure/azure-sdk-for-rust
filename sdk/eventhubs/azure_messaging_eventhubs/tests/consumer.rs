@@ -3,9 +3,8 @@
 
 //cspell: words eventdata
 
-#![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
-
 use async_std::future::timeout;
+use azure_core_macros::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::consumer::{
     ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition,
@@ -16,7 +15,7 @@ use tracing::{info, trace};
 
 mod common;
 
-#[tokio::test]
+#[recorded(live)]
 async fn test_new() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -33,7 +32,7 @@ async fn test_new() {
     );
 }
 
-#[tokio::test]
+#[recorded(live)]
 async fn test_new_with_error() {
     common::setup();
     trace!("test_new_with_error");
@@ -53,7 +52,7 @@ async fn test_new_with_error() {
     info!("Error: {:?}", result);
 }
 
-#[tokio::test]
+#[recorded(live)]
 async fn test_open() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -70,7 +69,7 @@ async fn test_open() {
     );
     client.open().await.unwrap();
 }
-#[tokio::test]
+#[recorded(live)]
 async fn test_close() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -89,7 +88,7 @@ async fn test_close() {
     client.close().await.unwrap();
 }
 
-#[tokio::test]
+#[recorded(live)]
 async fn test_get_properties() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -113,7 +112,7 @@ async fn test_get_properties() {
     assert_eq!(properties.name, eventhub);
 }
 
-#[tokio::test]
+#[recorded(live)]
 async fn test_get_partition_properties() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -144,7 +143,7 @@ async fn test_get_partition_properties() {
     }
 }
 
-#[tokio::test]
+#[recorded(live)]
 async fn receive_lots_of_events() {
     common::setup();
 
