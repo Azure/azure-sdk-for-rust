@@ -8,6 +8,7 @@ use std::sync::LazyLock;
 use syn::{parse::Parse, spanned::Spanned, FnArg, ItemFn, Meta, PatType, Result, Token};
 
 const INVALID_RECORDED_ATTRIBUTE_MESSAGE: &str = "expected `#[recorded]` or `#[recorded(live)]`";
+const INVALID_RECORDED_FUNCTION_MESSAGE: &str = "expected `fn(TestContext)` function signature";
 
 // cspell:ignore asyncness
 pub fn parse_recorded(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
@@ -34,26 +35,32 @@ pub fn parse_recorded(attr: TokenStream, item: TokenStream) -> Result<TokenStrea
         });
     }
 
-    let Some(FnArg::Typed(PatType { pat, ty, .. })) = sig.inputs.first() else {
-        return Err(syn::Error::new(
-            sig.span(),
-            INVALID_RECORDED_ATTRIBUTE_MESSAGE,
-        ));
+    let mut inputs = sig.inputs.iter();
+    let preamble = match inputs.next() {
+        None if recorded_attrs.live => TokenStream::new(),
+        Some(FnArg::Typed(PatType { pat, ty, .. })) if is_test_context(ty.as_ref()) => {
+            let test_mode = test_mode_to_tokens(test_mode);
+            let fn_name = &sig.ident;
+
+            quote! {
+                #[allow(dead_code)]
+                let #pat = #ty::new(#test_mode, stringify!(#fn_name));
+            }
+        }
+        _ => {
+            return Err(syn::Error::new(
+                sig.ident.span(),
+                INVALID_RECORDED_FUNCTION_MESSAGE,
+            ))
+        }
     };
 
-    if !is_test_context(ty.as_ref()) || sig.inputs.len() > 1 {
+    if let Some(arg) = inputs.next() {
         return Err(syn::Error::new(
-            sig.span(),
-            INVALID_RECORDED_ATTRIBUTE_MESSAGE,
+            arg.span(),
+            format!("too many parameters; {INVALID_RECORDED_FUNCTION_MESSAGE}"),
         ));
     }
-
-    let test_mode = test_mode_to_tokens(test_mode);
-    let fn_name = &sig.ident;
-    let preamble = quote! {
-        #[allow(dead_code)]
-        let #pat = #ty::new(#test_mode, stringify!(#fn_name));
-    };
 
     // Empty the parameters and return our rewritten test function.
     sig.inputs.clear();
@@ -171,5 +178,60 @@ mod tests {
             #[recorded(live = true)]
         };
         attr.parse_args::<Attributes>().unwrap_err();
+    }
+
+    #[test]
+    fn parse_recorded_playback() {
+        let attr = TokenStream::new();
+        let item = quote! {
+            async fn recorded() {
+                todo!()
+            }
+        };
+        parse_recorded(attr, item).unwrap_err();
+    }
+
+    #[test]
+    fn parse_recorded_playback_with_context() {
+        let attr = TokenStream::new();
+        let item = quote! {
+            async fn recorded(ctx: TestContext) {
+                todo!()
+            }
+        };
+        parse_recorded(attr, item).unwrap();
+    }
+
+    #[test]
+    fn parse_recorded_playback_with_multiple() {
+        let attr = TokenStream::new();
+        let item = quote! {
+            async fn recorded(ctx: TestContext, name: &'static str) {
+                todo!()
+            }
+        };
+        parse_recorded(attr, item).unwrap_err();
+    }
+
+    #[test]
+    fn parse_recorded_live() {
+        let attr = quote! { live };
+        let item = quote! {
+            async fn live_only() {
+                todo!()
+            }
+        };
+        parse_recorded(attr, item).unwrap();
+    }
+
+    #[test]
+    fn parse_recorded_live_with_context() {
+        let attr = quote! { live };
+        let item = quote! {
+            async fn live_only(ctx: TestContext) {
+                todo!()
+            }
+        };
+        parse_recorded(attr, item).unwrap();
     }
 }
