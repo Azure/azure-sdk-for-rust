@@ -207,30 +207,6 @@ impl ToJsonNumber for f64 {
     }
 }
 
-impl ToJsonNumber for i128 {
-    fn to_json_number(self) -> azure_core::Result<serde_json::Number> {
-        serde_json::Number::from_i128(self).ok_or_else(|| {
-            Error::with_message(ErrorKind::DataConversion, || {
-                // The message here is a little different. JSON has no limit on the size of integers, but serde_json does.
-                // If a user enables the "arbitrary_precision" feature in serde_json within their own app, this error will not occur.
-                format!("{} cannot be represented as a valid JSON number", self)
-            })
-        })
-    }
-}
-
-impl ToJsonNumber for u128 {
-    fn to_json_number(self) -> azure_core::Result<serde_json::Number> {
-        serde_json::Number::from_u128(self).ok_or_else(|| {
-            azure_core::Error::with_message(ErrorKind::DataConversion, || {
-                // The message here is a little different. JSON has no limit on the size of integers, but serde_json does.
-                // If a user enables the "arbitrary_precision" feature in serde_json within their own app, this error will not occur.
-                format!("{} cannot be represented as a valid JSON number", self)
-            })
-        })
-    }
-}
-
 impl ToJsonNumber for serde_json::Number {
     fn to_json_number(self) -> azure_core::Result<serde_json::Number> {
         Ok(self)
@@ -436,40 +412,12 @@ mod tests {
         assert_eq!(serde_json::Number::from(42u64), (42u64).to_json_number()?);
         assert_eq!(serde_json::Number::from(-42i64), (-42i64).to_json_number()?);
         assert_eq!(
-            serde_json::Number::from_u128(42u128).unwrap(),
-            (42u128).to_json_number()?
-        );
-        assert_eq!(
-            serde_json::Number::from_i128(-42i128).unwrap(),
-            (-42i128).to_json_number()?
-        );
-        assert_eq!(
             serde_json::Number::from(42usize),
             (42usize).to_json_number()?
         );
         assert_eq!(
             serde_json::Number::from(-42isize),
             (-42isize).to_json_number()?
-        );
-        Ok(())
-    }
-
-    #[test]
-    pub fn to_json_number_invalid_ints() -> Result<(), Box<dyn std::error::Error>> {
-        // NOTE: This test will fail if the "arbitrary_precision" feature is enabled in serde_json.
-        // However, that shouldn't be possible when building the tests because we don't enable that feature.
-        assert_eq!(
-            "18446744073709551616 cannot be represented as a valid JSON number",
-            format!("{}", (u64::MAX as u128 + 1).to_json_number().unwrap_err())
-        );
-        assert_eq!(
-            "18446744073709551616 cannot be represented as a valid JSON number",
-            // Yes, we mean u64::MAX here. The range for serde_json::Number is i64::MIN to u64::MAX, because it can convert an i64 to a u64.
-            format!("{}", (u64::MAX as i128 + 1).to_json_number().unwrap_err())
-        );
-        assert_eq!(
-            "-9223372036854775809 cannot be represented as a valid JSON number",
-            format!("{}", (i64::MIN as i128 - 1).to_json_number().unwrap_err())
         );
         Ok(())
     }
