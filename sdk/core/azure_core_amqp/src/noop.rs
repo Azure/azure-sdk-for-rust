@@ -181,6 +181,10 @@ impl AmqpReceiverApis for NoopAmqpReceiver {
         unimplemented!();
     }
 
+    async fn detach(self) -> Result<()> {
+        unimplemented!();
+    }
+
     #[allow(unused_variables)]
     async fn receive(&self) -> Result<AmqpMessage> {
         unimplemented!();
