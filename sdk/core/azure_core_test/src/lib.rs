@@ -10,6 +10,10 @@ pub mod recorded {
 
 pub use azure_core::test::TestMode;
 
+/// Context information required by recorded client library tests.
+///
+/// This context is required for any recorded tests not attributed as `#[recorded::test(live)]`
+/// to setup up the HTTP client to record or play back session records.
 #[derive(Clone, Debug)]
 pub struct TestContext {
     test_mode: TestMode,

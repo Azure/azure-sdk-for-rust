@@ -5,28 +5,11 @@
 
 mod test;
 
-#[cfg(doc)]
-use azure_core_test::TestContext;
 use proc_macro::TokenStream;
 
 /// Attribute client library tests to play back recordings, record sessions, or execute tests without recording.
 ///
-/// # Examples
-///
-/// Recorded tests can be synchronous or asynchronous (recommended), can return a `Result`,
-/// and must take a single [`TestContext`] parameter used to set up to record or play back the HTTP client.
-///
-/// ```
-/// use azure_core_test::{recorded, TestContext};
-/// use azure_core::Result;
-///
-/// #[recorded::test(live)]
-/// async fn get_secret(ctx: TestContext) -> Result<()> {
-///     todo!()
-/// }
-/// ```
-///
-/// To execute tests only when `AZURE_TEST_MODE` is "live", you can optionally pass `live` to the `#[recorded::test(live)]` attribute.
+/// Read documentation for `azure_core_test` for more information and examples.
 #[proc_macro_attribute]
 pub fn test(attr: TokenStream, item: TokenStream) -> TokenStream {
     test::parse_test(attr.into(), item.into())
