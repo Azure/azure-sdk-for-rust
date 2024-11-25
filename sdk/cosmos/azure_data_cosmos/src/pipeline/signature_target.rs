@@ -96,7 +96,7 @@ mod tests {
         assert_eq!(
             ret,
             "get
-dbs
+colls
 dbs/MyDatabase/colls/MyCollection
 mon, 01 jan 1900 01:00:00 gmt
 

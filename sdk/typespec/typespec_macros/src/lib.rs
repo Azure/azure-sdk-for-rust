@@ -54,7 +54,7 @@ fn parse_literal_string(value: ParseStream) -> Result<LitStr> {
 /// If compiling with the `xml` feature, the value `xml` is also supported.
 ///
 /// ```rust
-/// # use typespec_derive::Model;
+/// # use typespec_macros::Model;
 /// # use serde::Deserialize;
 /// #[derive(Model, Deserialize)]
 /// #[typespec(format = "xml")]
@@ -70,7 +70,7 @@ fn parse_literal_string(value: ParseStream) -> Result<LitStr> {
 /// The 'crate' attribute specifies an alternate module path, other than the default of `typespec_client_core`, to reference the typespec client crate.
 ///
 /// ```rust
-/// # use typespec_derive::Model;
+/// # use typespec_macros::Model;
 /// # use serde::Deserialize;
 /// extern crate typespec_client_core as my_typespec;
 ///
@@ -93,7 +93,7 @@ pub fn derive_model(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 /// # Examples
 ///
 /// ```
-/// # use typespec_derive::SafeDebug;
+/// # use typespec_macros::SafeDebug;
 /// #[derive(SafeDebug)]
 /// struct MyModel {
 ///     name: Option<String>,

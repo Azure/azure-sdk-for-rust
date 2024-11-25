@@ -32,12 +32,10 @@ rustc_version.workspace = true
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+azure_core_test.workspace = true
 azure_identity.workspace = true
 tokio = { workspace = true, default-features = false, features = [
   "rt-multi-thread",
   "macros",
   "time",
 ] }
-
-[features]
-test_e2e = []

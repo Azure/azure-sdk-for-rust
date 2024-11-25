@@ -99,7 +99,7 @@ mod tests {
     };
     use bytes::Bytes;
     use serde::Deserialize;
-    use typespec_derive::Model;
+    use typespec_macros::Model;
 
     #[tokio::test]
     async fn deserializes_response() {

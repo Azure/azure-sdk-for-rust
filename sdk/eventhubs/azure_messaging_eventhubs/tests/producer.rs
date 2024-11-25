@@ -3,12 +3,11 @@
 
 //cspell: words eventdata amqp
 
-#![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
-
 use azure_core_amqp::{
     messaging::{AmqpMessage, AmqpMessageBody},
     value::{AmqpList, AmqpValue},
 };
+use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::producer::{
     batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions,
@@ -18,7 +17,7 @@ use tracing::{info, trace};
 
 mod common;
 
-#[tokio::test]
+#[recorded::test(live)]
 async fn test_new() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -34,7 +33,7 @@ async fn test_new() {
     );
 }
 
-#[tokio::test]
+#[recorded::test(live)]
 async fn test_new_with_error() {
     common::setup();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
@@ -52,7 +51,7 @@ async fn test_new_with_error() {
     info!("Error: {:?}", result);
 }
 
-#[tokio::test]
+#[recorded::test(live)]
 async fn test_open() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -68,7 +67,7 @@ async fn test_open() {
     );
     client.open().await.unwrap();
 }
-#[tokio::test]
+#[recorded::test(live)]
 async fn test_close() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -86,7 +85,7 @@ async fn test_close() {
     client.close().await.unwrap();
 }
 
-#[tokio::test]
+#[recorded::test(live)]
 async fn test_get_properties() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -109,7 +108,7 @@ async fn test_get_properties() {
     assert_eq!(properties.name, eventhub);
 }
 
-#[tokio::test]
+#[recorded::test(live)]
 async fn test_get_partition_properties() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -139,7 +138,7 @@ async fn test_get_partition_properties() {
     }
 }
 
-#[test]
+#[recorded::test(live)]
 fn test_create_eventdata() {
     common::setup();
     let data = b"hello world";
@@ -163,7 +162,7 @@ fn test_create_eventdata() {
         .build();
 }
 
-#[tokio::test]
+#[recorded::test(live)]
 async fn test_create_batch() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -187,7 +186,7 @@ async fn test_create_batch() {
     }
 }
 
-#[tokio::test]
+#[recorded::test(live)]
 async fn test_create_and_send_batch() {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -239,7 +238,7 @@ async fn test_create_and_send_batch() {
     }
 }
 
-#[tokio::test]
+#[recorded::test(live)]
 async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST").unwrap();
@@ -316,7 +315,7 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
     Ok(())
 }
 
-#[tokio::test]
+#[recorded::test(live)]
 async fn test_overload_batch() {
     common::setup();
 

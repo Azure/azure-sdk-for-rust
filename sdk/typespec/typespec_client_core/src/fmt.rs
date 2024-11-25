@@ -6,14 +6,14 @@
 use std::{borrow::Cow, fmt::Debug};
 
 #[cfg(feature = "derive")]
-pub use typespec_derive::SafeDebug;
+pub use typespec_macros::SafeDebug;
 
 /// When deriving this trait, helps prevent leaking personally identifiable information (PII) that deriving [`Debug`] might otherwise.
 ///
 /// # Examples
 ///
 /// ```
-/// use typespec_derive::SafeDebug;
+/// use typespec_macros::SafeDebug;
 ///
 /// #[derive(SafeDebug)]
 /// struct MyModel {

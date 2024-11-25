@@ -59,6 +59,7 @@ foreach ($package in $packagesToTest) {
     if ($FunctionalTests) {
       $targets += "--bins"
       $targets += "--examples"
+      $targets += "--tests"
       $targets += "--benches"
     }
 

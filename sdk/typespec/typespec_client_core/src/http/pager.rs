@@ -152,7 +152,7 @@ mod tests {
 
     use futures::StreamExt;
     use serde::Deserialize;
-    use typespec_derive::Model;
+    use typespec_macros::Model;
 
     use crate::http::{
         headers::{HeaderName, HeaderValue},

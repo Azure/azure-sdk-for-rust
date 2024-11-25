@@ -3,9 +3,11 @@ resolver = "2"
 members = [
   "sdk/typespec",
   "sdk/typespec/typespec_client_core",
-  "sdk/typespec/typespec_derive",
+  "sdk/typespec/typespec_macros",
   "sdk/core/azure_core",
   "sdk/core/azure_core_amqp",
+  "sdk/core/azure_core_test",
+  "sdk/core/azure_core_test_macros",
   "sdk/cosmos/azure_data_cosmos",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
@@ -19,7 +21,7 @@ authors = ["Microsoft"]
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
-rust-version = "1.76"
+rust-version = "1.80"
 
 [workspace.dependencies.typespec]
 path = "sdk/typespec"
@@ -29,8 +31,8 @@ default-features = false
 path = "sdk/typespec/typespec_client_core"
 default-features = false
 
-[workspace.dependencies.typespec_derive]
-path = "sdk/typespec/typespec_derive"
+[workspace.dependencies.typespec_macros]
+path = "sdk/typespec/typespec_macros"
 
 [workspace.dependencies.azure_core]
 path = "sdk/core/azure_core"
@@ -38,6 +40,11 @@ path = "sdk/core/azure_core"
 [workspace.dependencies.azure_core_amqp]
 path = "sdk/core/azure_core_amqp"
 
+[workspace.dependencies.azure_core_test]
+path = "sdk/core/azure_core_test"
+
+[workspace.dependencies.azure_core_test_macros]
+path = "sdk/core/azure_core_test_macros"
 
 [workspace.dependencies.azure_identity]
 path = "sdk/identity/azure_identity"
@@ -74,6 +81,7 @@ paste = "1.0"
 pin-project = "1.0"
 proc-macro2 = "1.0.86"
 quick-xml = { version = "0.31", features = ["serialize", "serde-types"] }
+quote = "1.0.37"
 rand = "0.8"
 reqwest = { version = "0.12", features = [
   "json",
@@ -87,8 +95,7 @@ serde_json = "1.0"
 serde_test = "1"
 serial_test = "3.0"
 sha2 = { version = "0.10" }
-syn = { version = "2.0.74", features = ["full"] }
-quote = "1.0.36"
+syn = { version = "2.0.87", features = ["full"] }
 thiserror = "1.0"
 time = { version = "0.3.10", features = [
   "serde-well-known",

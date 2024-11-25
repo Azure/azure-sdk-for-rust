@@ -10,7 +10,7 @@ use std::{fmt, marker::PhantomData, pin::Pin};
 use typespec::error::{ErrorKind, ResultExt};
 
 #[cfg(feature = "derive")]
-pub use typespec_derive::Model;
+pub use typespec_macros::Model;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
@@ -121,7 +121,7 @@ impl<T> Response<T> {
     /// # pub struct GetSecretResponse { }
     /// use typespec_client_core::http::{Model, Response};
     /// # #[cfg(not(feature = "derive"))]
-    /// # use typespec_derive::Model;
+    /// # use typespec_macros::Model;
     /// use serde::Deserialize;
     /// use bytes::Bytes;
     ///
@@ -175,7 +175,7 @@ impl<T: Model> Response<T> {
     /// # use serde::Deserialize;
     /// # use typespec_client_core::http::Model;
     /// # #[cfg(not(feature = "derive"))]
-    /// # use typespec_derive::Model;
+    /// # use typespec_macros::Model;
     /// # #[derive(Model, Deserialize)]
     /// # pub struct GetSecretResponse {
     /// #   name: String,
@@ -331,7 +331,7 @@ mod tests {
         use crate::http::Response;
         use http_types::StatusCode;
         use serde::Deserialize;
-        use typespec_derive::Model;
+        use typespec_macros::Model;
 
         /// An example JSON-serialized response type.
         #[derive(Model, Deserialize)]
@@ -422,7 +422,7 @@ mod tests {
         use crate::http::Response;
         use http_types::StatusCode;
         use serde::Deserialize;
-        use typespec_derive::Model;
+        use typespec_macros::Model;
 
         /// An example XML-serialized response type.
         #[derive(Model, Deserialize)]

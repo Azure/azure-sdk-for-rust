@@ -3,13 +3,12 @@
 
 //cspell: words eventdata amqp
 
-#![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
-
 use async_std::stream::StreamExt;
 use azure_core_amqp::{
     messaging::{AmqpMessage, AmqpMessageProperties},
     value::{AmqpList, AmqpValue},
 };
+use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
     consumer::{
@@ -24,7 +23,7 @@ use tracing::info;
 
 mod common;
 
-#[tokio::test]
+#[recorded::test(live)]
 async fn test_round_trip_batch() {
     const EVENTHUB_PARTITION: &str = "1";
     const TEST_NAME: &str = "test_round_trip_batch";

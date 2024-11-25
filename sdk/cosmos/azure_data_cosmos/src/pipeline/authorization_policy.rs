@@ -4,7 +4,7 @@
 //! Defines Cosmos DB's unique Authentication Policy.
 //!
 //! The Cosmos DB data plane doesn't use a standard `Authorization: Bearer` header for authentication.
-//! Instead, it uses a custom header format, as defined in the [official documentation](https://docs.microsoft.com/en-us/rest/api/cosmos-db/access-control-on-cosmosdb-resources).
+//! Instead, it uses a custom header format, as defined in the [official documentation](https://docs.microsoft.com/rest/api/cosmos-db/access-control-on-cosmosdb-resources).
 //! We implement that policy here, because we can't use any standard Azure SDK authentication policy.
 
 #[cfg_attr(not(feature = "key_auth"), allow(unused_imports))]
@@ -237,7 +237,7 @@ mod tests {
         .unwrap();
 
         let expected: String =
-            url_encode(b"type=master&ver=1.0&sig=Qkz/r+1N2+PEnNijxGbGB/ADvLsLBQmZ7uBBMuIwf4I=");
+            url_encode(b"type=master&ver=1.0&sig=vrHmd02almbIg1e4htVWH+Eg/OhEHip3VTwFivZLH0A=");
 
         assert_eq!(ret, expected);
     }

@@ -1,0 +1,21 @@
+[package]
+name = "azure_core_test"
+version = "0.1.0"
+description = "Utilities for testing client libraries built on azure_core."
+readme = "README.md"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_core"
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+categories = ["development-tools::testing"]
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+azure_core = { workspace = true, features = ["test"] }
+azure_core_test_macros.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
