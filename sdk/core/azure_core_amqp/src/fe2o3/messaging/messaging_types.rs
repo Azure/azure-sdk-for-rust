@@ -4,6 +4,12 @@
 
 use crate::messaging::{AmqpOutcome, DistributionMode, TerminusDurability, TerminusExpiryPolicy};
 
+pub(crate) struct AmqpDelivery(
+    pub(crate)  fe2o3_amqp::link::delivery::Delivery<
+        fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
+    >,
+);
+
 impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpOutcome {
     fn from(outcome: fe2o3_amqp_types::messaging::Outcome) -> Self {
         match outcome {

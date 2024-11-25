@@ -5,11 +5,18 @@
 use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 #[cfg(feature = "cplusplus")]
 use crate::Deserializable;
+use crate::Uuid;
 #[cfg(feature = "cplusplus")]
 use azure_core::error::ErrorKind;
 use azure_core::Result;
 
-use crate::Uuid;
+#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+type DeliveryImplementation = super::fe2o3::messaging::messaging_types::AmqpDelivery;
+
+#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+type DeliveryImplementation = super::noop::NoopAmqpDelivery;
+
+pub struct AmqpDelivery(pub(crate) DeliveryImplementation);
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TerminusDurability {
@@ -967,7 +974,6 @@ impl AmqpApplicationProperties {
         self.0.insert(key, value.into());
     }
 }
-
 /// An AMQP message.
 ///
 /// This is a simplified version of the AMQP message
