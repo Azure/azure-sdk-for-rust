@@ -25,7 +25,7 @@ pub use request::{Body, Request, RequestContent};
 pub use response::{Model, Response};
 
 // Re-export important types.
-pub use http_types::{Method, StatusCode};
+pub use typespec::{Method, StatusCode};
 pub use url::Url;
 
 /// Add a new query pair into the target [`Url`]'s query string.

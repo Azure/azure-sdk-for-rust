@@ -6,3 +6,13 @@
 pub mod error;
 
 pub use error::{Error, Result};
+
+#[cfg(feature = "http")]
+mod method;
+#[cfg(feature = "http")]
+pub use crate::method::Method;
+
+#[cfg(feature = "http")]
+mod status_code;
+#[cfg(feature = "http")]
+pub use crate::status_code::StatusCode;

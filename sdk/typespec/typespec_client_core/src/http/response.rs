@@ -139,7 +139,7 @@ impl<T> Response<T> {
     /// # #[tokio::main]
     /// # async fn main() {
     /// #    let r: Response<GetSecretResponse> = typespec_client_core::http::Response::from_bytes(
-    /// #      http_types::StatusCode::Ok,
+    /// #      typespec::StatusCode::Ok,
     /// #      typespec_client_core::http::headers::Headers::new(),
     /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
     /// #    );
@@ -185,7 +185,7 @@ impl<T: Model> Response<T> {
     /// # impl SecretClient {
     /// #   pub async fn get_secret(&self) -> typespec_client_core::http::Response<GetSecretResponse> {
     /// #    typespec_client_core::http::Response::from_bytes(
-    /// #      http_types::StatusCode::Ok,
+    /// #      typespec::StatusCode::Ok,
     /// #      typespec_client_core::http::headers::Headers::new(),
     /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
     /// #    )
@@ -199,7 +199,7 @@ impl<T: Model> Response<T> {
     /// # async fn main() {
     /// let secret_client = create_secret_client();
     /// let response = secret_client.get_secret().await;
-    /// assert_eq!(response.status(), http_types::StatusCode::Ok);
+    /// assert_eq!(response.status(), typespec::StatusCode::Ok);
     /// let model = response.deserialize_body().await.unwrap();
     /// assert_eq!(model.name, "database_password");
     /// assert_eq!(model.value, "hunter2");
@@ -314,7 +314,7 @@ mod tests {
 
         // Create a response that fails as you read the body.
         let response = Response::<()>::new(
-            http_types::StatusCode::Ok,
+            typespec::StatusCode::Ok,
             Headers::new(),
             Box::pin(futures::stream::once(async {
                 Err(ErrorKind::Other.into_error())
@@ -329,8 +329,8 @@ mod tests {
     mod json {
         use crate::http::headers::Headers;
         use crate::http::Response;
-        use http_types::StatusCode;
         use serde::Deserialize;
+        use typespec::StatusCode;
         use typespec_macros::Model;
 
         /// An example JSON-serialized response type.
@@ -420,8 +420,8 @@ mod tests {
     mod xml {
         use crate::http::headers::Headers;
         use crate::http::Response;
-        use http_types::StatusCode;
         use serde::Deserialize;
+        use typespec::StatusCode;
         use typespec_macros::Model;
 
         /// An example XML-serialized response type.
