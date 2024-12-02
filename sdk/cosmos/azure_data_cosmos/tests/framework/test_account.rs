@@ -38,7 +38,7 @@ impl TestAccount {
     /// If the `AZURE_COSMOS_CONNECTION_STRING` environment variable is set, it will be used to create the account.
     /// The value can be either a Cosmos DB Connection String, or the special string `emulator` to use the local emulator.
     pub fn from_env(
-        ctxt: TestContext,
+        context: TestContext,
         options: Option<TestAccountOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR).map_err(|e| {
@@ -48,18 +48,18 @@ impl TestAccount {
             )
         })?;
         match env_var.as_str() {
-            "emulator" => Self::from_connection_string(EMULATOR_CONNECTION_STRING, ctxt, {
+            "emulator" => Self::from_connection_string(EMULATOR_CONNECTION_STRING, context, {
                 let mut options = options.unwrap_or_default();
                 options.allow_invalid_certificates = Some(true);
                 Some(options)
             }),
-            _ => Self::from_connection_string(&env_var, ctxt, None),
+            _ => Self::from_connection_string(&env_var, context, None),
         }
     }
 
     fn from_connection_string(
         connection_string: &str,
-        ctxt: TestContext,
+        context: TestContext,
         options: Option<TestAccountOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let options = options.unwrap_or_default();
@@ -90,7 +90,7 @@ impl TestAccount {
 
         let context_id = format!(
             "{}_{}_{}",
-            ctxt.test_name(),
+            context.test_name(),
             OffsetDateTime::now_utc().format(format_description!(
                 "[year]_[month]_[day]T[hour]_[minute]_[second]"
             ))?,
