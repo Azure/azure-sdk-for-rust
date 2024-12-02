@@ -9,8 +9,8 @@ use futures::StreamExt;
 
 #[recorded::test(live)]
 #[cfg(feature = "key_auth")]
-pub async fn database_crud(ctxt: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(ctxt, None)?;
+pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
+    let account = TestAccount::from_env(context, None)?;
     let cosmos_client = account.connect_with_key(None)?;
 
     let test_db_id = account.unique_db("DatabaseCRUD");
@@ -64,8 +64,8 @@ pub async fn database_crud(ctxt: TestContext) -> Result<(), Box<dyn Error>> {
 
 #[recorded::test(live)]
 #[cfg(feature = "key_auth")]
-pub async fn database_with_offer_crud(ctxt: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(ctxt, None)?;
+pub async fn database_with_offer_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
+    let account = TestAccount::from_env(context, None)?;
     let cosmos_client = account.connect_with_key(None)?;
 
     let test_db_id = account.unique_db("DatabaseWithOfferCRUD");
