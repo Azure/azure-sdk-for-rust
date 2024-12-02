@@ -6,9 +6,5 @@
   "yaml.format.printWidth": 240,
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell",
-  },
-  "rust-analyzer.cargo.cfgs": {
-    "miri": null,
-    "debug_assertions": null
   }
 }

@@ -114,6 +114,3 @@ uuid = { version = "1.0", features = ["v4"] }
 
 [workspace.lints.clippy]
 large_futures = "deny"
-
-[workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(livetest)'] }

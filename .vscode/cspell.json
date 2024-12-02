@@ -41,7 +41,6 @@
     "hmac",
     "iothub",
     "keyvault",
-    "livetest",
     "msrc",
     "newtonsoft",
     "oidc",
@@ -84,13 +83,6 @@
   "overrides": [
     {
       "filename": "**/Cargo.toml",
-      "dictionaries": [
-        "crates",
-        "rust-custom"
-      ]
-    },
-    {
-      "filename": ".cargo/config.toml",
       "dictionaries": [
         "crates",
         "rust-custom"
