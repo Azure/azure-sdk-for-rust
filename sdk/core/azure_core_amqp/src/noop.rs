@@ -181,7 +181,7 @@ impl AmqpReceiverApis for NoopAmqpReceiver {
         unimplemented!();
     }
 
-    async fn max_message_size(&self) -> Result<Option<u64>> {
+    async fn detach(self) -> Result<()> {
         unimplemented!();
     }
 
