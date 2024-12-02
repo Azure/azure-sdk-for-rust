@@ -25,6 +25,7 @@ url.workspace = true
 
 [dev-dependencies]
 azure_identity.workspace = true
+azure_core_test.workspace = true
 clap.workspace = true
 reqwest.workspace = true
 time.workspace = true

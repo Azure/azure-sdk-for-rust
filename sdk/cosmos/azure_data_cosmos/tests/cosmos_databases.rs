@@ -2,15 +2,15 @@ mod framework;
 
 use std::error::Error;
 
+use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{models::ThroughputProperties, CreateDatabaseOptions, Query};
 use framework::TestAccount;
 use futures::StreamExt;
 
-#[tokio::test]
+#[recorded::test(live)]
 #[cfg(feature = "key_auth")]
-#[cfg_attr(not(livetest), ignore)]
-pub async fn database_crud() -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env()?;
+pub async fn database_crud(ctxt: TestContext) -> Result<(), Box<dyn Error>> {
+    let account = TestAccount::from_env(ctxt, None)?;
     let cosmos_client = account.connect_with_key(None)?;
 
     let test_db_id = account.unique_db("DatabaseCRUD");
@@ -62,19 +62,13 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[tokio::test]
+#[recorded::test(live)]
 #[cfg(feature = "key_auth")]
-#[cfg_attr(not(livetest), ignore)]
-pub async fn database_with_offer_crud() -> Result<(), Box<dyn Error>> {
-    tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .init();
-
-    let account = TestAccount::from_env()?;
+pub async fn database_with_offer_crud(ctxt: TestContext) -> Result<(), Box<dyn Error>> {
+    let account = TestAccount::from_env(ctxt, None)?;
     let cosmos_client = account.connect_with_key(None)?;
 
     let test_db_id = account.unique_db("DatabaseWithOfferCRUD");
-
     let throughput = ThroughputProperties::manual(400);
 
     // Create a database
