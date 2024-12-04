@@ -1,2 +1,7 @@
 [properties]
-deny_contains = ["hybrid"]
+deny_contains = [
+  "hybrid",
+
+  # error[E0428]: the name `SystemData` is defined multiple times
+  "package-preview-2024-04",
+]

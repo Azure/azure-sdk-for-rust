@@ -1,6 +1,6 @@
 // cargo test --test openapi_spec_examples
 // These tests require cloning OpenAPI-Specification.
-// git clone git@github.com:OAI/OpenAPI-Specification.git ../OpenAPI-Specification
+// git clone git@github.com:OAI/OpenAPI-Specification.git -b 3.1.1 ../../../../OpenAPI-Specification
 
 mod common;
 use common::*;
