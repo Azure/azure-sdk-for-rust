@@ -44,7 +44,6 @@ default = ["hmac_rust"]
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 key_auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
-test_e2e = ["key_auth"]
 
 [package.metadata.docs.rs]
 features = ["key_auth"]
