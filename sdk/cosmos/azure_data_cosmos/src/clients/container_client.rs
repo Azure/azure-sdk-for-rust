@@ -8,7 +8,7 @@ use crate::{
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
     DeleteContainerOptions, ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
-    ThroughputOptions,
+    ReplaceContainerOptions, ThroughputOptions,
 };
 
 use azure_core::{Method, Pager, Request, Response};
@@ -66,6 +66,50 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Get);
+        self.pipeline
+            .send(options.method_options.context, &mut req, self.link.clone())
+            .await
+    }
+
+    /// Updates the indexing policy of the container.
+    ///
+    /// **NOTE**: The [`ContainerProperties::id`] and [`ContainerProperties::partition_key`] must be the same as the existing container, they cannot be changed.
+    ///
+    /// # Arguments
+    ///
+    /// * `properties` - The [`ContainerProperties`] to update the container with.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() {
+    /// # use azure_data_cosmos::clients::ContainerClient;
+    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// let new_properties = ContainerProperties {
+    ///     id: "MyContainer".into(),
+    ///     partition_key: "/id".into(),
+    ///     indexing_policy: Some(IndexingPolicy {
+    ///         included_paths: vec!["/index_me".into()],
+    ///         ..Default::default()
+    ///     }),
+    ///     ..Default::default()
+    /// };
+    /// let response = container_client.replace(new_properties, None)
+    ///     .await.unwrap()
+    ///     .deserialize_body()
+    ///     .await.unwrap();
+    /// # }
+    /// ```
+    pub async fn replace(
+        &self,
+        properties: ContainerProperties,
+        options: Option<ReplaceContainerOptions<'_>>,
+    ) -> azure_core::Result<Response<Item<ContainerProperties>>> {
+        let options = options.unwrap_or_default();
+        let url = self.pipeline.url(&self.link);
+        let mut req = Request::new(url, Method::Put);
+        req.set_json(&properties)?;
         self.pipeline
             .send(options.method_options.context, &mut req, self.link.clone())
             .await
