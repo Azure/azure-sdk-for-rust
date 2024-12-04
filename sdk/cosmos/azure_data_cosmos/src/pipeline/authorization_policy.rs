@@ -191,10 +191,7 @@ mod tests {
             &url,
             SignatureTarget::new(
                 azure_core::Method::Get,
-                &ResourceLink::root(ResourceType::Databases)
-                    .item("MyDatabase")
-                    .feed(ResourceType::Containers)
-                    .item("MyCollection"),
+                &ResourceLink::root(ResourceType::Databases).item("ToDoList"),
                 &date_string,
             ),
         )

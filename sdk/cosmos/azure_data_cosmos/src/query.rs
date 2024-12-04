@@ -53,7 +53,7 @@ use serde::Serialize;
 ///     .with_parameter("@customer_info", CustomerInfo { id: 42, name: "Contoso".into() }).unwrap();
 /// # assert_eq!(serde_json::to_string(&query).unwrap(), "{\"query\":\"\\n    SELECT * FROM c\\n    WHERE c.id = @customer_info.id\\n    AND c.name = @customer_info.name\",\"parameters\":[{\"name\":\"@customer_info\",\"value\":{\"id\":42,\"name\":\"Contoso\"}}]}");
 /// ```
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Query {
     query: String,
 
@@ -72,7 +72,7 @@ impl Query {
     ) -> azure_core::Result<Self> {
         let parameter = QueryParameter {
             name: name.into(),
-            value: QueryParameterValue(serde_json::to_value(value)?),
+            value: serde_json::to_value(value)?,
         };
         self.parameters.push(parameter);
 
@@ -91,16 +91,11 @@ impl<T: Into<String>> From<T> for Query {
 }
 
 /// Represents a single parameter in a Cosmos DB query.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 struct QueryParameter {
     name: String,
-    value: QueryParameterValue,
+    value: serde_json::Value,
 }
-
-/// Represents a value that can be provided to a query parameter.
-#[derive(Debug, Serialize)]
-#[serde(transparent)]
-struct QueryParameterValue(serde_json::Value);
 
 #[cfg(test)]
 mod tests {
