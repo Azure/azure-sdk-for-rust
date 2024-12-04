@@ -85,6 +85,7 @@ impl ContainerClient {
     /// ```rust,no_run
     /// # async fn doc() {
     /// # use azure_data_cosmos::clients::ContainerClient;
+    /// # use azure_data_cosmos::models::{ContainerProperties, IndexingPolicy};
     /// # let container_client: ContainerClient = panic!("this is a non-running example");
     /// let new_properties = ContainerProperties {
     ///     id: "MyContainer".into(),

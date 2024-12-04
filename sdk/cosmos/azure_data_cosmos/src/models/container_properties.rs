@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::time::Duration;
+use std::{borrow::Cow, time::Duration};
 
 use azure_core::Model;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -34,7 +34,7 @@ where
 /// ```rust
 /// # use azure_data_cosmos::models::ContainerProperties;
 /// let properties = ContainerProperties {
-///     id: "NewContainer".to_string(),
+///     id: "NewContainer".into(),
 ///     partition_key: "/partitionKey".into(),
 ///     ..Default::default()
 /// };
@@ -52,7 +52,7 @@ where
 #[serde(rename_all = "camelCase")]
 pub struct ContainerProperties {
     /// The ID of the container.
-    pub id: String,
+    pub id: Cow<'static, str>,
 
     /// The definition of the partition key for the container.
     pub partition_key: PartitionKeyDefinition,
@@ -260,7 +260,7 @@ mod tests {
         // In rare cases, it's reasonable to update this test, if the new generated JSON is considered _equivalent_ to the original by the server.
         // But in general, a failure in this test means that the same user code will send an unexpected value in a new version of the SDK.
         let properties = ContainerProperties {
-            id: "MyContainer".to_string(),
+            id: "MyContainer".into(),
             partition_key: "/partitionKey".into(),
             ..Default::default()
         };
