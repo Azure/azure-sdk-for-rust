@@ -11,19 +11,24 @@ async fn test_get_secret() {
     println!("Starting test_list_secrets");
     let token = azure_identity::DefaultAzureCredential::new().unwrap();
 
-    let url: String = "https://".to_owned();
-    url.push_str(
+    let vault_url: String = "https://".to_owned();
+    vault_url.push_str(
         common::create_random_name(None, 8)
             .as_deref()
             .unwrap_or("INVALID_VALUE"),
     );
-    url.push_str(".vault.azure.net/".to_owned());
+    vault_url.push_str(".vault.azure.net/");
 
     let secret_client =
-        azure_security_keyvault_secrets::SecretClient::new(&url, token.clone(), None).unwrap();
+        azure_security_keyvault_secrets::SecretClient::new(&vault_url, token.clone(), None)
+            .unwrap();
 
     let secret: SecretBundle = secret_client
-        .get_secret(common::create_random_name(None, 16), "", None)
+        .get_secret(
+            common::create_random_name(None, 16),
+            Option::<String>::None,
+            None,
+        )
         .await?
         .deserialize_body_into()
         .await?;

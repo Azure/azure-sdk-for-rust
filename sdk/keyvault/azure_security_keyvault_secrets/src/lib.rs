@@ -12,4 +12,4 @@ pub mod models {
     pub use crate::generated::models::*;
 }
 
-pub use key_vault_client::SecretClient;
+pub use key_vault_client::KeyVaultClient;
