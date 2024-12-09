@@ -22,8 +22,7 @@ pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
         .create_database(&test_db_id, None)
         .await?
         .into_body()
-        .await?
-        .unwrap();
+        .await?;
 
     assert_eq!(&test_db_id, &properties.id);
 
@@ -84,8 +83,7 @@ pub async fn database_with_offer_crud(context: TestContext) -> Result<(), Box<dy
         )
         .await?
         .into_body()
-        .await?
-        .unwrap();
+        .await?;
 
     assert_eq!(&test_db_id, &properties.id);
 

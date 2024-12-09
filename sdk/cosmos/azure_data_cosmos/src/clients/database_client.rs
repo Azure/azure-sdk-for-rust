@@ -4,7 +4,7 @@
 use crate::{
     clients::ContainerClient,
     models::{
-        ContainerProperties, ContainerQueryResults, DatabaseProperties, Item, ThroughputProperties,
+        ContainerProperties, ContainerQueryResults, DatabaseProperties, ThroughputProperties,
     },
     options::ReadDatabaseOptions,
     pipeline::CosmosPipeline,
@@ -133,7 +133,7 @@ impl DatabaseClient {
         &self,
         properties: ContainerProperties,
         options: Option<CreateContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<Item<ContainerProperties>>> {
+    ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
         let mut req = Request::new(url, Method::Post);
