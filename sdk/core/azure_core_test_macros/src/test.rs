@@ -9,7 +9,8 @@ use syn::{parse::Parse, spanned::Spanned, FnArg, ItemFn, Meta, PatType, Result, 
 
 const INVALID_RECORDED_ATTRIBUTE_MESSAGE: &str =
     "expected `#[recorded::test]` or `#[recorded::test(live)]`";
-const INVALID_RECORDED_FUNCTION_MESSAGE: &str = "expected `fn(TestContext)` function signature";
+const INVALID_RECORDED_FUNCTION_MESSAGE: &str =
+    "expected `async fn(TestContext)` function signature with optional `Result<T, E>` return";
 
 // cspell:ignore asyncness
 pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
@@ -17,15 +18,18 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
     let ItemFn {
         attrs,
         vis,
-        mut sig,
+        sig: original_sig,
         block,
     } = syn::parse2(item)?;
 
-    // Use #[tokio::test] for async functions; otherwise, #[test].
-    let mut test_attr: TokenStream = if sig.asyncness.is_some() {
-        quote! { #[::tokio::test] }
-    } else {
-        quote! { #[::core::prelude::v1::test] }
+    let mut test_attr: TokenStream = match original_sig.asyncness {
+        Some(_) => quote! { #[::tokio::test] },
+        None => {
+            return Err(syn::Error::new(
+                original_sig.span(),
+                INVALID_RECORDED_FUNCTION_MESSAGE,
+            ))
+        }
     };
 
     // Ignore live-only tests if not running live tests.
@@ -36,21 +40,23 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
         });
     }
 
-    let mut inputs = sig.inputs.iter();
-    let preamble = match inputs.next() {
-        None if recorded_attrs.live => TokenStream::new(),
-        Some(FnArg::Typed(PatType { pat, ty, .. })) if is_test_context(ty.as_ref()) => {
+    let fn_name = &original_sig.ident;
+    let mut inputs = original_sig.inputs.iter();
+    let setup = match inputs.next() {
+        None if recorded_attrs.live => quote! {
+            #fn_name().await
+        },
+        Some(FnArg::Typed(PatType { ty, .. })) if is_test_context(ty.as_ref()) => {
             let test_mode = test_mode_to_tokens(test_mode);
-            let fn_name = &sig.ident;
-
             quote! {
                 #[allow(dead_code)]
-                let #pat = #ty::new(#test_mode, stringify!(#fn_name));
+                let ctx = #ty::new(#test_mode, env!("CARGO_MANIFEST_DIR"), stringify!(#fn_name));
+                #fn_name(ctx).await
             }
         }
         _ => {
             return Err(syn::Error::new(
-                sig.ident.span(),
+                original_sig.ident.span(),
                 INVALID_RECORDED_FUNCTION_MESSAGE,
             ))
         }
@@ -63,14 +69,18 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
         ));
     }
 
-    // Empty the parameters and return our rewritten test function.
-    sig.inputs.clear();
+    // Clear the actual test method parameters.
+    let mut outer_sig = original_sig.clone();
+    outer_sig.inputs.clear();
+
     Ok(quote! {
         #test_attr
         #(#attrs)*
-        #vis #sig {
-            #preamble
-            #block
+        #vis #outer_sig {
+            #original_sig {
+                #block
+            }
+            #setup
         }
     })
 }

@@ -17,15 +17,17 @@ pub use azure_core::test::TestMode;
 #[derive(Clone, Debug)]
 pub struct TestContext {
     test_mode: TestMode,
+    crate_dir: &'static str,
     test_name: &'static str,
 }
 
 impl TestContext {
     /// Not intended for use outside the `azure_core` crates.
     #[doc(hidden)]
-    pub fn new(test_mode: TestMode, test_name: &'static str) -> Self {
+    pub fn new(test_mode: TestMode, crate_dir: &'static str, test_name: &'static str) -> Self {
         Self {
             test_mode,
+            crate_dir,
             test_name,
         }
     }
@@ -33,6 +35,11 @@ impl TestContext {
     /// Gets the current [`TestMode`].
     pub fn test_mode(&self) -> TestMode {
         self.test_mode
+    }
+
+    /// Gets the root directory of the crate under test.
+    pub fn crate_dir(&self) -> &'static str {
+        self.crate_dir
     }
 
     /// Gets the current test function name.
@@ -47,8 +54,16 @@ mod tests {
 
     #[test]
     fn test_content_new() {
-        let ctx = TestContext::new(TestMode::default(), "test_content_new");
+        let ctx = TestContext::new(
+            TestMode::default(),
+            env!("CARGO_MANIFEST_DIR"),
+            "test_content_new",
+        );
         assert_eq!(ctx.test_mode(), TestMode::Playback);
+        assert!(ctx
+            .crate_dir()
+            .replace("\\", "/")
+            .ends_with("sdk/core/azure_core_test"));
         assert_eq!(ctx.test_name(), "test_content_new");
     }
 }
