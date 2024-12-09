@@ -19,6 +19,10 @@ pub struct UpsertCommand {
     /// The JSON of the new item.
     #[clap(long, short)]
     json: String,
+
+    /// If set, the updated item will be included in the response.
+    #[clap(long)]
+    show_updated: bool,
 }
 
 impl UpsertCommand {
@@ -29,14 +33,21 @@ impl UpsertCommand {
         let pk = PartitionKey::from(&self.partition_key);
         let item: serde_json::Value = serde_json::from_str(&self.json)?;
 
-        let created = container_client
-            .upsert_item(pk, item, None)
-            .await?
-            .into_body()
-            .await?
-            .unwrap();
-        println!("Created item:");
-        println!("{:#?}", created);
+        let options = ItemOptions {
+            enable_content_response_on_write: self.show_updated,
+            ..Default::default()
+        };
+
+        let response = container_client
+            .upsert_item(pk, item, Some(options))
+            .await?;
+        println!("Upserted item successfully");
+
+        if self.show_updated {
+            let created: serde_json::Value = response.into_json_body().await?;
+            println!("Newly upserted item:");
+            println!("{:#?}", created);
+        }
         Ok(())
     }
 }
