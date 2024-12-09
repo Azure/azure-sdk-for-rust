@@ -139,7 +139,9 @@ impl CreateCommand {
                         }
 
                         ContainerProperties {
-                            id: id.expect("the ID is required when not using '--json'"),
+                            id: id
+                                .expect("the ID is required when not using '--json'")
+                                .into(),
                             partition_key: PartitionKeyDefinition::new(partition_key),
                             ..Default::default()
                         }

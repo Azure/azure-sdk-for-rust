@@ -18,6 +18,12 @@ pub struct CreateContainerOptions<'a> {
     pub throughput: Option<ThroughputProperties>,
 }
 
+/// Options to be passed to [`ContainerClient::replace()`](crate::clients::ContainerClient::replace()).
+#[derive(Clone, Default)]
+pub struct ReplaceContainerOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}
+
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
 #[derive(Clone, Default)]
 pub struct CreateDatabaseOptions<'a> {

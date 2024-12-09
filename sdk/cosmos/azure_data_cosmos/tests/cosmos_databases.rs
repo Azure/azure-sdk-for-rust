@@ -1,3 +1,5 @@
+#![cfg(feature = "key_auth")]
+
 mod framework;
 
 use std::error::Error;
