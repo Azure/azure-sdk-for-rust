@@ -255,7 +255,7 @@ impl ClientCertificateCredential {
             return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
         }
 
-        let response: AadTokenResponse = rsp.deserialize_body_into().await?;
+        let response: AadTokenResponse = rsp.into_json_body().await?;
         Ok(AccessToken::new(
             response.access_token,
             OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),

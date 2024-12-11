@@ -460,7 +460,7 @@ impl ContainerClient {
     ///
     /// The Cosmos service does return the patched item in the response.
     /// However, this method does not return `Response<T>` since that would **force** users to provide a generic type parameter, even when they do not wish to deserialize the body.
-    /// If you want to deserialize the response, you can use [`Response::deserialize_body_into`] to manually deserialize the body.
+    /// If you want to deserialize the response, you can use [`Response::into_json_body`] to manually deserialize the body.
     ///
     /// For example:
     ///
@@ -470,7 +470,7 @@ impl ContainerClient {
     /// # let client: ContainerClient = panic!("this is a non-running example");
     /// let patch = PatchDocument::default().with_add("/some/path", "some value").unwrap();
     /// let response = client.patch_item("partition1", "item1", patch, None).await.unwrap();
-    /// let patched_item: serde_json::Value = response.deserialize_body_into().await.unwrap();
+    /// let patched_item: serde_json::Value = response.into_json_body().await.unwrap();
     /// # }
     /// ```
     pub async fn patch_item(

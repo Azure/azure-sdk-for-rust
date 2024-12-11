@@ -49,7 +49,7 @@ pub async fn authorize(
     let rsp_status = rsp.status();
     debug!("rsp_status == {:?}", rsp_status);
     if rsp_status.is_success() {
-        rsp.deserialize_body_into::<LoginResponse>().await
+        rsp.into_json_body().await
     } else {
         let rsp_body = rsp.into_raw_body().collect().await?;
         let text = std::str::from_utf8(&rsp_body)?;
