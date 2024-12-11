@@ -50,7 +50,7 @@ fn parse_literal_string(value: ParseStream) -> Result<LitStr> {
 ///
 /// ### `#[typespec(format)]`
 ///
-/// The format attribute specifies the format of the response body. The default is `json`.
+/// The `format` attribute specifies the format of the response body. The default is `json`.
 /// If compiling with the `xml` feature, the value `xml` is also supported.
 ///
 /// ```rust
@@ -67,7 +67,7 @@ fn parse_literal_string(value: ParseStream) -> Result<LitStr> {
 ///
 /// ### `#[typespec(crate)]`
 ///
-/// The 'crate' attribute specifies an alternate module path, other than the default of `typespec_client_core`, to reference the typespec client crate.
+/// The `crate` attribute specifies an alternate module path, other than the default of `typespec_client_core`, to reference the typespec client crate.
 ///
 /// ```rust
 /// # use typespec_macros::Model;
