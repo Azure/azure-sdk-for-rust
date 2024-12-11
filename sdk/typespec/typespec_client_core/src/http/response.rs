@@ -328,10 +328,8 @@ impl ResponseBody {
 }
 
 impl Model for ResponseBody {
-    fn from_response_body(
-        body: ResponseBody,
-    ) -> impl Future<Output = crate::Result<Self>> + Send + Sync {
-        std::future::ready(Ok(body))
+    async fn from_response_body(body: ResponseBody) -> crate::Result<Self> {
+        Ok(body)
     }
 }
 
