@@ -55,7 +55,7 @@ impl ContainerClient {
     /// # let container_client: ContainerClient = panic!("this is a non-running example");
     /// let response = container_client.read(None)
     ///     .await.unwrap()
-    ///     .deserialize_body()
+    ///     .into_body()
     ///     .await.unwrap();
     /// # }
     /// ```
@@ -98,7 +98,7 @@ impl ContainerClient {
     /// };
     /// let response = container_client.replace(new_properties, None)
     ///     .await.unwrap()
-    ///     .deserialize_body()
+    ///     .into_body()
     ///     .await.unwrap();
     /// # }
     /// ```
@@ -129,7 +129,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.deserialize_body().await?;
+        let db = self.read(None).await?.into_body().await?;
         let resource_id = db
             .system_properties
             .resource_id
@@ -153,7 +153,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.deserialize_body().await?;
+        let db = self.read(None).await?.into_body().await?;
         let resource_id = db
             .system_properties
             .resource_id
@@ -211,7 +211,7 @@ impl ContainerClient {
     /// let created_item = container_client
     ///     .create_item("category1", p, None)
     ///     .await.unwrap()
-    ///     .deserialize_body()
+    ///     .into_body()
     ///     .await.unwrap()
     ///     .unwrap();
     /// println!("Created: {:#?}", created_item);
@@ -267,7 +267,7 @@ impl ContainerClient {
     /// let updated_item = container_client
     ///     .replace_item("category1", "product1", p, None)
     ///     .await.unwrap()
-    ///     .deserialize_body()
+    ///     .into_body()
     ///     .await.unwrap()
     ///     .unwrap();
     /// println!("Updated Item: {:#?}", updated_item);
@@ -326,7 +326,7 @@ impl ContainerClient {
     /// let updated_item = container_client
     ///     .upsert_item("category1", p, None)
     ///     .await.unwrap()
-    ///     .deserialize_body()
+    ///     .into_body()
     ///     .await.unwrap()
     ///     .unwrap();
     /// println!("Updated Item: {:#?}", updated_item);
@@ -377,7 +377,7 @@ impl ContainerClient {
     /// let item: Product = container_client
     ///     .read_item("partition1", "item1", None)
     ///     .await.unwrap()
-    ///     .deserialize_body()
+    ///     .into_body()
     ///     .await.unwrap()
     ///     .unwrap();
     /// println!("Read Item: {:#?}", item);

@@ -140,7 +140,7 @@ mod tests {
             .send(&Context::default(), &mut request)
             .await
             .unwrap()
-            .deserialize_body()
+            .into_body()
             .await
             .unwrap();
 

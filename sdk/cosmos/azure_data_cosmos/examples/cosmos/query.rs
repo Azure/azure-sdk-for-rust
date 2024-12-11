@@ -57,7 +57,7 @@ impl QueryCommand {
                     container_client.query_items::<serde_json::Value>(&query, pk, None)?;
 
                 while let Some(page) = items.next().await {
-                    let page = page?.deserialize_body().await?;
+                    let page = page?.into_body().await?;
                     println!("Results Page");
                     println!("  Items:");
                     for item in page.items {
@@ -70,7 +70,7 @@ impl QueryCommand {
                 let mut dbs = client.query_databases(query, None)?;
 
                 while let Some(page) = dbs.next().await {
-                    let page = page?.deserialize_body().await?;
+                    let page = page?.into_body().await?;
                     println!("Results Page");
                     println!("  Databases:");
                     for item in page.databases {
@@ -84,7 +84,7 @@ impl QueryCommand {
                 let mut dbs = db_client.query_containers(query, None)?;
 
                 while let Some(page) = dbs.next().await {
-                    let page = page?.deserialize_body().await?;
+                    let page = page?.into_body().await?;
                     println!("Results Page");
                     println!("  Containers:");
                     for item in page.containers {

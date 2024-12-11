@@ -77,7 +77,7 @@ impl ReplaceCommand {
                         println!("Item not found!")
                     }
                     Ok(r) => {
-                        let item: serde_json::Value = r.deserialize_body().await?.unwrap();
+                        let item: serde_json::Value = r.into_body().await?.unwrap();
                         println!("Replaced item:");
                         println!("{:#?}", item);
                     }
@@ -94,7 +94,7 @@ impl ReplaceCommand {
                 let new_throughput = db_client
                     .replace_throughput(throughput_properties, None)
                     .await?
-                    .deserialize_body()
+                    .into_body()
                     .await?;
                 println!("New Throughput:");
                 crate::utils::print_throughput(new_throughput);
@@ -111,7 +111,7 @@ impl ReplaceCommand {
                 let new_throughput = container_client
                     .replace_throughput(throughput_properties, None)
                     .await?
-                    .deserialize_body()
+                    .into_body()
                     .await?;
                 println!("New Throughput:");
                 crate::utils::print_throughput(new_throughput);

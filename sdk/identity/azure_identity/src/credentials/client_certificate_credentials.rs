@@ -251,7 +251,7 @@ impl ClientCertificateCredential {
         let rsp_status = rsp.status();
 
         if !rsp_status.is_success() {
-            let rsp_body = rsp.into_body().collect().await?;
+            let rsp_body = rsp.into_raw_body().collect().await?;
             return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
         }
 

@@ -83,7 +83,7 @@ impl CreateCommand {
                 let created = container_client
                     .create_item(pk, item, None)
                     .await?
-                    .deserialize_body()
+                    .into_body()
                     .await?
                     .unwrap();
                 println!("Created item:");
@@ -105,7 +105,7 @@ impl CreateCommand {
                 let db = client
                     .create_database(&id, options)
                     .await?
-                    .deserialize_body()
+                    .into_body()
                     .await?
                     .unwrap();
                 println!("Created database:");
@@ -151,7 +151,7 @@ impl CreateCommand {
                     .database_client(&database)
                     .create_container(properties, options)
                     .await?
-                    .deserialize_body()
+                    .into_body()
                     .await?
                     .unwrap();
                 println!("Created container:");

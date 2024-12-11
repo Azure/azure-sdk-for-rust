@@ -163,7 +163,7 @@ impl TestAccount {
         let mut pager = cosmos_client.query_databases(query, None)?;
         let mut ids = Vec::new();
         while let Some(page) = pager.next().await {
-            let results = page?.deserialize_body().await?;
+            let results = page?.into_body().await?;
             for db in results.databases {
                 ids.push(db.id);
             }

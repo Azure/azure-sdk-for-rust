@@ -24,7 +24,7 @@ impl HttpError {
     /// Create an error from an HTTP response.
     ///
     /// This does not check whether the response was successful and should only be used with unsuccessful responses.
-    pub async fn new(response: Response<()>) -> Self {
+    pub async fn new<T>(response: Response<T>) -> Self {
         let status = response.status();
         let headers: HashMap<String, String> = response
             .headers()
@@ -32,7 +32,7 @@ impl HttpError {
             .map(|(name, value)| (name.as_str().to_owned(), value.as_str().to_owned()))
             .collect();
         let body = response
-            .into_body()
+            .into_raw_body()
             .collect()
             .await
             .unwrap_or_else(|_| Bytes::from_static(b"(error reading body)"));

@@ -25,12 +25,12 @@ impl MetadataCommand {
             let response = container_client
                 .read(None)
                 .await?
-                .deserialize_body()
+                .into_body()
                 .await?;
             println!("{:#?}", response);
             return Ok(());
         } else {
-            let response = db_client.read(None).await?.deserialize_body().await?;
+            let response = db_client.read(None).await?.into_body().await?;
             println!("{:#?}", response);
         }
         Ok(())
