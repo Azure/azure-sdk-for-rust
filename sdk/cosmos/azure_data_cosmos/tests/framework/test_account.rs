@@ -133,8 +133,7 @@ impl TestAccount {
                 .build()?;
             options = {
                 let mut o = options.unwrap_or_default();
-                o.client_options
-                    .set_transport(TransportOptions::new(Arc::new(client)));
+                o.client_options.transport = Some(TransportOptions::new(Arc::new(client)));
                 Some(o)
             };
         }

@@ -139,7 +139,7 @@ async fn test_get_partition_properties() {
 }
 
 #[recorded::test(live)]
-fn test_create_eventdata() {
+async fn test_create_eventdata() {
     common::setup();
     let data = b"hello world";
     let ed1 = azure_messaging_eventhubs::models::EventData::builder()

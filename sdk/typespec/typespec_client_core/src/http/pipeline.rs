@@ -129,8 +129,10 @@ mod tests {
             bar: String,
         }
 
-        let options =
-            ClientOptions::new(TransportOptions::new_custom_policy(Arc::new(Responder {})));
+        let options = ClientOptions {
+            transport: Some(TransportOptions::new_custom_policy(Arc::new(Responder {}))),
+            ..Default::default()
+        };
         let pipeline = Pipeline::new(options, Vec::new(), Vec::new());
 
         let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
