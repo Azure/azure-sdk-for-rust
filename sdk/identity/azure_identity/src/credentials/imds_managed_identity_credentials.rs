@@ -173,7 +173,7 @@ fn scopes_to_resource<'a>(scopes: &'a [&'a str]) -> azure_core::Result<&'a str> 
 }
 
 // NOTE: expires_on is a String version of unix epoch time, not an integer.
-// https://learn.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet#rest-protocol-examples
+// https://learn.microsoft.com/azure/app-service/overview-managed-identity?tabs=dotnet#rest-protocol-examples
 #[derive(Debug, Clone, Deserialize)]
 #[allow(unused)]
 struct MsiTokenResponse {
