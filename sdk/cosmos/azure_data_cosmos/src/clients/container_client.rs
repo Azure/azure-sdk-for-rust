@@ -11,7 +11,7 @@ use crate::{
     ReplaceContainerOptions, ThroughputOptions,
 };
 
-use azure_core::{Method, Pager, Request, Response};
+use azure_core::{Method, Model, Pager, Request, Response};
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -462,6 +462,10 @@ impl ContainerClient {
 
     /// Reads a specific item from the container.
     ///
+    /// The type `T` must implement both [`serde::Deserialize`] and [`azure_core::Model`].
+    /// Generally, deriving [`azure_core::Model`] is trivial if you already implement [`serde::Deserialize`].
+    /// See the docs for each trait for more details.
+    ///
     /// # Arguments
     /// * `partition_key` - The partition key of the item to read.
     /// * `item_id` - The id of the item to read.
@@ -492,12 +496,12 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn read_item<T: DeserializeOwned>(
+    pub async fn read_item<T: DeserializeOwned + Model>(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response<T>> {
+    ) -> azure_core::Result<Response> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
