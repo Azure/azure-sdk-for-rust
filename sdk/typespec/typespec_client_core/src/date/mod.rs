@@ -53,7 +53,7 @@ pub fn to_rfc3339(date: &OffsetDateTime) -> String {
 /// In REST API specifications it is specified as `"format": "date-time-rfc1123"`.
 ///
 /// In .NET it is the `rfc1123pattern`.
-/// <https://docs.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern>
+/// <https://learn.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern>
 ///
 /// This format is also the preferred HTTP date format.
 /// <https://httpwg.org/specs/rfc9110.html#http.date>
@@ -78,7 +78,7 @@ const RFC1123_FORMAT: &[FormatItem] = format_description!(
 /// In REST API specifications it is specified as `"format": "date-time-rfc1123"`.
 ///
 /// In .NET it is the `rfc1123pattern`.
-/// <https://docs.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern>
+/// <https://learn.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern>
 ///
 /// This format is also the preferred HTTP date format.
 /// <https://httpwg.org/specs/rfc9110.html#http.date>
@@ -92,7 +92,7 @@ pub fn to_rfc1123(date: &OffsetDateTime) -> String {
 
 /// Similar to RFC 1123, but includes milliseconds.
 ///
-/// <https://docs.microsoft.com/rest/api/cosmos-db/patch-a-document>
+/// <https://learn.microsoft.com/rest/api/cosmos-db/patch-a-document>
 ///
 /// x-ms-last-state-change-utc: Fri, 25 Mar 2016 21:27:20.035 GMT
 pub fn parse_last_state_change(s: &str) -> crate::Result<OffsetDateTime> {
@@ -110,7 +110,7 @@ const LAST_STATE_CHANGE_FORMAT: &[FormatItem] = format_description!(
 
 /// Similar to preferred HTTP date format, but includes milliseconds.
 ///
-/// <https://docs.microsoft.com/rest/api/cosmos-db/patch-a-document>
+/// <https://learn.microsoft.com/rest/api/cosmos-db/patch-a-document>
 ///
 /// x-ms-last-state-change-utc: Fri, 25 Mar 2016 21:27:20.035 GMT
 pub fn to_last_state_change(date: &OffsetDateTime) -> String {

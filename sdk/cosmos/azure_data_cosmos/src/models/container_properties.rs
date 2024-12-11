@@ -75,7 +75,7 @@ pub struct ContainerProperties {
 
     /// The time-to-live for items in the container.
     ///
-    /// For more information see <https://docs.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations>
+    /// For more information see <https://learn.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations>
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(deserialize_with = "deserialize_ttl")]
@@ -84,7 +84,7 @@ pub struct ContainerProperties {
 
     /// The time-to-live for the analytical store in the container.
     ///
-    /// For more information see <https://docs.microsoft.com/azure/cosmos-db/analytical-store-introduction#analytical-ttl>
+    /// For more information see <https://learn.microsoft.com/azure/cosmos-db/analytical-store-introduction#analytical-ttl>
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(deserialize_with = "deserialize_ttl")]
@@ -156,7 +156,7 @@ pub enum VectorDistanceFunction {
 
 /// Represents a unique key policy for a container.
 ///
-/// For more information see <https://docs.microsoft.com/azure/cosmos-db/unique-keys>
+/// For more information see <https://learn.microsoft.com/azure/cosmos-db/unique-keys>
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKeyPolicy {

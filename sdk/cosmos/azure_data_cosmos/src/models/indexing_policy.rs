@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 /// Represents the indexing policy for a container.
 ///
-/// For more information see <https://docs.microsoft.com/azure/cosmos-db/index-policy>
+/// For more information see <https://learn.microsoft.com/azure/cosmos-db/index-policy>
 #[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexingPolicy {

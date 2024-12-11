@@ -36,7 +36,7 @@ pub enum ImdsId {
 ///
 /// This authentication type works in Azure VMs, App Service and Azure Functions applications, as well as the Azure Cloud Shell
 ///
-/// Built up from docs at [https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
+/// Built up from docs at [https://learn.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://learn.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
 #[derive(Debug)]
 pub(crate) struct ImdsManagedIdentityCredential {
     http_client: Arc<dyn HttpClient>,
@@ -173,7 +173,7 @@ fn scopes_to_resource<'a>(scopes: &'a [&'a str]) -> azure_core::Result<&'a str> 
 }
 
 // NOTE: expires_on is a String version of unix epoch time, not an integer.
-// https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet#rest-protocol-examples
+// https://learn.microsoft.com/azure/app-service/overview-managed-identity?tabs=dotnet#rest-protocol-examples
 #[derive(Debug, Clone, Deserialize)]
 #[allow(unused)]
 struct MsiTokenResponse {

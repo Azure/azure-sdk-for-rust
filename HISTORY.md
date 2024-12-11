@@ -2,7 +2,7 @@
 
 ## azure_sdk_for_rust crate
 
-@MindFlavor first published the [azure_sdk_for_rust](https://crates.io/crates/azure_sdk_for_rust) crate in January of 2016. The initial commit to <https://github.com/MindFlavor/AzureSDKForRust> was December of 2015. It supported [Azure Storage](https://docs.microsoft.com/azure/storage/) and [Azure Cosmos DB](https://azure.microsoft.com/services/cosmos-db/) services. azure_sdk_for_rust 0.12.0 was last published in June of 2019.
+@MindFlavor first published the [azure_sdk_for_rust](https://crates.io/crates/azure_sdk_for_rust) crate in January of 2016. The initial commit to <https://github.com/MindFlavor/AzureSDKForRust> was December of 2015. It supported [Azure Storage](https://learn.microsoft.com/azure/storage/) and [Azure Cosmos DB](https://azure.microsoft.com/services/cosmos-db/) services. azure_sdk_for_rust 0.12.0 was last published in June of 2019.
 
 ## split into azure_sdk crates
 

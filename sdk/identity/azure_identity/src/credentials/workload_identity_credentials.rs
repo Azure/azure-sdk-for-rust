@@ -18,7 +18,7 @@ const AZURE_FEDERATED_TOKEN: &str = "AZURE_FEDERATED_TOKEN";
 /// Enables authentication to Azure Active Directory using a client secret that was generated for an App Registration.
 ///
 /// More information on how to configure a client secret can be found here:
-/// <https://docs.microsoft.com/azure/active-directory/develop/quickstart-configure-app-access-web-apis#add-credentials-to-your-web-application>
+/// <https://learn.microsoft.com/azure/active-directory/develop/quickstart-configure-app-access-web-apis#add-credentials-to-your-web-application>
 
 #[derive(Debug)]
 pub struct WorkloadIdentityCredential {

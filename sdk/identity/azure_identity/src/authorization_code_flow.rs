@@ -3,7 +3,7 @@
 
 //! Authorize using the authorization code flow
 //!
-//! You can learn more about the `OAuth2` authorization code flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).
+//! You can learn more about the `OAuth2` authorization code flow [here](https://learn.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).
 
 #![allow(dead_code)]
 
