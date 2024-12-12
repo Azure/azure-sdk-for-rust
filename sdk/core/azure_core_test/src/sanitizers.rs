@@ -3,6 +3,8 @@
 
 use azure_core::headers::{AsHeaders, HeaderName, HeaderValue};
 use serde::Serialize;
+#[cfg(test)]
+use std::collections::HashMap;
 use std::{
     convert::Infallible,
     fmt,
@@ -74,11 +76,12 @@ fn test_body_key_sanitizer_as_headers() {
         regex: None,
         group_for_replace: None,
     };
-    let headers = sut.as_headers().expect("expect headers");
-    headers.for_each(|(h, v)| {
-        assert_eq!(h.as_str(), "x-abstraction-identifier");
-        assert_eq!(v.as_str(), "BodyKeySanitizer");
-    });
+    let actual = sut.as_headers().expect("expect headers");
+    let expected: HashMap<HeaderName, HeaderValue> = HashMap::from_iter(vec![(
+        "x-abstraction-identifier".into(),
+        "BodyKeySanitizer".into(),
+    )]);
+    assert!(actual.eq(expected.into_iter()));
 }
 
 /// This sanitizer offers regular expression replacements within raw request and response bodies.
@@ -110,9 +113,10 @@ impl_sanitizer!(BodyRegexSanitizer);
 #[test]
 fn test_body_regex_sanitizer_as_headers() {
     let sut = BodyRegexSanitizer::default();
-    let headers = sut.as_headers().expect("expect headers");
-    headers.for_each(|(h, v)| {
-        assert_eq!(h.as_str(), "x-abstraction-identifier");
-        assert_eq!(v.as_str(), "BodyRegexSanitizer");
-    });
+    let actual = sut.as_headers().expect("expect headers");
+    let expected: HashMap<HeaderName, HeaderValue> = HashMap::from_iter(vec![(
+        "x-abstraction-identifier".into(),
+        "BodyRegexSanitizer".into(),
+    )]);
+    assert!(actual.eq(expected.into_iter()));
 }

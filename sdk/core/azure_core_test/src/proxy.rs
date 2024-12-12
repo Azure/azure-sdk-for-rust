@@ -27,10 +27,8 @@ pub async fn start(
     options: Option<ProxyOptions>,
 ) -> Result<Proxy> {
     if env::var(PROXY_MANUAL_START).is_ok_and(|v| v.to_ascii_lowercase() == "true") {
-        return Err(azure_core::Error::message(
-            ErrorKind::Other,
-            format!("environment variable {PROXY_MANUAL_START} is 'true'; not starting test proxy"),
-        ));
+        tracing::event!(target: crate::SPAN_TARGET, Level::WARN, "environment variable {PROXY_MANUAL_START} is 'true'; not starting test proxy");
+        return Ok(Proxy::default());
     }
 
     // Find root of git repo or work tree: a ".git" directory or file will exist either way.
@@ -67,7 +65,10 @@ pub async fn start(
     let mut stdout = command.stdout.take();
     let url = wait_till_listening(&mut stdout).await?;
 
-    Ok(Proxy { command, url })
+    Ok(Proxy {
+        command: Some(command),
+        url,
+    })
 }
 
 async fn wait_till_listening(stdout: &mut Option<ChildStdout>) -> Result<Url> {
@@ -104,22 +105,28 @@ async fn wait_till_listening(stdout: &mut Option<ChildStdout>) -> Result<Url> {
 /// Represents the running `test-proxy` service.
 #[derive(Debug)]
 pub struct Proxy {
-    command: Child,
+    command: Option<Child>,
     url: Url,
 }
 
 impl Proxy {
     /// Waits for the Test Proxy service to exit, return the process exit code when completed.
     pub async fn wait(&mut self) -> Result<ExitStatus> {
-        Ok(self.command.wait().await?)
+        if let Some(command) = &mut self.command {
+            return Ok(command.wait().await?);
+        }
+        Ok(ExitStatus::default())
     }
 
     /// Attempts to stop the service.
     ///
     /// Waits until the process is killed.
     pub async fn stop(&mut self) -> Result<()> {
-        tracing::event!(target: crate::SPAN_TARGET, Level::DEBUG, "stopping");
-        Ok(self.command.kill().await?)
+        if let Some(command) = &mut self.command {
+            tracing::event!(target: crate::SPAN_TARGET, Level::DEBUG, "stopping");
+            return Ok(command.kill().await?);
+        }
+        Ok(())
     }
 
     /// Gets the [`Url`] to which the test proxy is listening.
@@ -128,12 +135,23 @@ impl Proxy {
     }
 }
 
+impl Default for Proxy {
+    fn default() -> Self {
+        Self {
+            command: None,
+            url: "http://localhost:5000".parse().unwrap(),
+        }
+    }
+}
+
 impl Drop for Proxy {
     /// Attempts to stop the service.
     ///
     /// Does not wait until the process is killed.
     fn drop(&mut self) {
-        let _ = self.command.start_kill();
+        if let Some(command) = &mut self.command {
+            let _ = command.start_kill();
+        }
     }
 }
 
