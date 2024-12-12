@@ -75,6 +75,7 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
     outer_sig.inputs.clear();
 
     Ok(quote! {
+        #[cfg(not(target_arch = "wasm32"))]
         #test_attr
         #(#attrs)*
         #vis #outer_sig {

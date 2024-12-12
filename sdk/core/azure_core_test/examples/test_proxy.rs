@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core_test::proxy::{self, ProxyOptions};
 use clap::Parser;
-use tokio::select;
-use tracing::level_filters::LevelFilter;
 
+#[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use azure_core_test::proxy;
+
     // cspell:ignore ECANCELED ECHILD
     const ECANCELED: i32 = 4;
     const ECHILD: i32 = 5;
@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut proxy = proxy::start(env!("CARGO_MANIFEST_DIR"), Some(args.into())).await?;
 
-    let code = select! {
+    let code = tokio::select! {
         _ = tokio::signal::ctrl_c() => {
             // Try to shutdown the test-proxy.
             proxy.stop().await?;
@@ -57,19 +57,27 @@ struct Args {
     verbose: bool,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl Args {
-    fn trace_level(&self) -> LevelFilter {
+    fn trace_level(&self) -> tracing::level_filters::LevelFilter {
         if self.verbose {
-            return LevelFilter::DEBUG;
+            return tracing::level_filters::LevelFilter::DEBUG;
         }
-        LevelFilter::INFO
+        tracing::level_filters::LevelFilter::INFO
     }
 }
 
-impl From<Args> for ProxyOptions {
+#[cfg(not(target_arch = "wasm32"))]
+impl From<Args> for azure_core_test::proxy::ProxyOptions {
     fn from(args: Args) -> Self {
         Self {
             insecure: args.insecure,
         }
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    let _ = Args::parse();
+    println!("wasm32 target architecture not supported");
 }

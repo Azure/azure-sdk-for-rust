@@ -3,16 +3,17 @@
 
 #![doc = include_str!("../README.md")]
 
+#[cfg(not(target_arch = "wasm32"))]
 pub mod proxy;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod recorded;
 mod sanitizers;
 mod transport;
 
 pub use azure_core::test::TestMode;
-use azure_core::{error::ErrorKind, ClientOptions, Result, TransportOptions};
+use azure_core::{ClientOptions, TransportOptions};
 pub use sanitizers::*;
 use std::{
-    io,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -95,16 +96,17 @@ impl TestContext {
     }
 }
 
-fn find_ancestor(dir: impl AsRef<Path>, name: &str) -> Result<PathBuf> {
+#[cfg(not(target_arch = "wasm32"))]
+fn find_ancestor(dir: impl AsRef<Path>, name: &str) -> azure_core::Result<PathBuf> {
     for dir in dir.as_ref().ancestors() {
         let path = dir.join(name);
         if path.exists() {
             return Ok(path);
         }
     }
-    Err(azure_core::Error::new::<io::Error>(
-        ErrorKind::Io,
-        io::ErrorKind::NotFound.into(),
+    Err(azure_core::Error::new::<std::io::Error>(
+        azure_core::error::ErrorKind::Io,
+        std::io::ErrorKind::NotFound.into(),
     ))
 }
 
