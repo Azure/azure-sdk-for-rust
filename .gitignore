@@ -1,8 +1,15 @@
 # Build output.
 target/
 
+# Track only workspace Cargo.lock
+Cargo.lock
+!/Cargo.lock
+
 # User secrets.
 .env
+
+# Test artifacts.
+.assets/
 
 # Editor user customizations.
 .vscode/launch.json

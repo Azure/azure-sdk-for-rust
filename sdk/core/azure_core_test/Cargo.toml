@@ -14,8 +14,18 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+async-trait.workspace = true
 azure_core = { workspace = true, features = ["test"] }
 azure_core_test_macros.workspace = true
+serde.workspace = true
+tracing.workspace = true
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { workspace = true, features = ["io-util", "process", "sync"] }
 
 [dev-dependencies]
-tokio.workspace = true
+clap.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tokio = { workspace = true, features = ["signal"] }
