@@ -50,7 +50,8 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
             let test_mode = test_mode_to_tokens(test_mode);
             quote! {
                 #[allow(dead_code)]
-                let ctx = #ty::new(#test_mode, env!("CARGO_MANIFEST_DIR"), stringify!(#fn_name));
+                let ctx = ::azure_core_test::TestContext::new(#test_mode, env!("CARGO_MANIFEST_DIR"), stringify!(#fn_name));
+                let _session = ::azure_core_test::recorded::start(&ctx, ::std::option::Option::None).await?;
                 #fn_name(ctx).await
             }
         }

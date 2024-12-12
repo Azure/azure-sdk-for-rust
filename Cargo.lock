@@ -364,9 +364,14 @@ dependencies = [
 name = "azure_core_test"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "azure_core",
  "azure_core_test_macros",
+ "clap",
+ "serde",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -2776,6 +2781,7 @@ dependencies = [
  "libc",
  "mio",
  "pin-project-lite",
+ "signal-hook-registry",
  "socket2",
  "tokio-macros",
  "windows-sys 0.52.0",
