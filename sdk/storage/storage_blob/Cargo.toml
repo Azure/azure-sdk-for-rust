@@ -12,4 +12,5 @@ async-std = { workspace = true }
 azure_core = { workspace = true }
 serde = { workspace = true }
 time = { workspace = true }
-typespec_client_core = { workspace = true }
+typespec_client_core = { workspace = true, features = ["xml"] }
+typespec_macros = { workspace = true }
