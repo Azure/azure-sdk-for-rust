@@ -117,7 +117,7 @@ impl<T> Response<T> {
     ///
     /// This method is intended for situations where:
     ///
-    /// 1. The response was not given a specific type by the service SDK (i.e. the API returned `Response<ResponseBody>`, indicating a raw response).
+    /// 1. The response was not given a specific type by the service SDK e.g., the API returned `Response<ResponseBody>`, indicating a raw response.
     /// 2. You want to deserialize the response into your OWN type, rather than the default type specified by the service SDK.
     ///
     /// # Example
@@ -327,12 +327,6 @@ impl ResponseBody {
     }
 }
 
-impl Model for ResponseBody {
-    async fn from_response_body(body: ResponseBody) -> crate::Result<Self> {
-        Ok(body)
-    }
-}
-
 impl Stream for ResponseBody {
     type Item = crate::Result<Bytes>;
     fn poll_next(
@@ -369,13 +363,6 @@ mod tests {
             let response_raw: Response =
                 Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice());
             let body = response_raw.into_raw_body();
-            assert_eq!(b"Hello", &*body.collect().await?);
-        }
-
-        {
-            let response_raw: Response =
-                Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice());
-            let body = response_raw.into_body().await?;
             assert_eq!(b"Hello", &*body.collect().await?);
         }
 
