@@ -9,6 +9,7 @@ use std::{
     path::Path,
     process::{ExitStatus, Stdio},
     sync::Arc,
+    time::Duration,
 };
 use tokio::{
     io::{AsyncBufReadExt, BufReader},
@@ -16,11 +17,12 @@ use tokio::{
 };
 use tracing::{Level, Span};
 
-// cspell:ignore aspnetcore devcert testproxy
+// cspell:ignore aspnetcore devcert teamprojectid testproxy
 const KESTREL_CERT_PATH_ENV: &str = "ASPNETCORE_Kestrel__Certificates__Default__Path";
 const KESTREL_CERT_PASSWORD_ENV: &str = "ASPNETCORE_Kestrel__Certificates__Default__Password";
 const KESTREL_CERT_PASSWORD: &str = "password";
 const PROXY_MANUAL_START: &str = "PROXY_MANUAL_START";
+const SYSTEM_TEAMPROJECTID: &str = "SYSTEM_TEAMPROJECTID";
 
 pub async fn start(
     test_data_dir: impl AsRef<Path>,
@@ -63,7 +65,14 @@ pub async fn start(
 
     // Wait until the service is listening on a port.
     let mut stdout = command.stdout.take();
-    let url = wait_till_listening(&mut stdout).await?;
+    let max_seconds = Duration::from_secs(env::var(SYSTEM_TEAMPROJECTID).map_or(5, |_| 20));
+    let url = tokio::select! {
+        v = wait_till_listening(&mut stdout) => { v? },
+        _ = tokio::time::sleep(max_seconds) => {
+            command.kill().await?;
+            return Err(azure_core::Error::message(ErrorKind::Other, "timeout waiting for test-proxy to start"));
+        },
+    };
 
     Ok(Proxy {
         command: Some(command),
@@ -79,9 +88,6 @@ async fn wait_till_listening(stdout: &mut Option<ChildStdout>) -> Result<Url> {
         ));
     };
 
-    // cspell:ignore teamprojectid
-    let _max_seconds = env::var("SYSTEM_TEAMPROJECTID").map_or(5, |_| 20);
-
     // Wait for the process to respond to requests and check output until pattern: "Now listening on: http://0.0.0.0:60583" (random port).
     let mut reader = BufReader::new(stdout).lines();
     while let Some(line) = reader.next_line().await? {
@@ -90,7 +96,7 @@ async fn wait_till_listening(stdout: &mut Option<ChildStdout>) -> Result<Url> {
         if let Some(idx) = line.find(PATTERN) {
             let idx = idx + PATTERN.len();
             let url = line[idx..].parse()?;
-            tracing::event!(target: crate::SPAN_TARGET, Level::INFO, "listening on {}", url);
+            tracing::event!(target: crate::SPAN_TARGET, Level::INFO, "listening on {url}");
 
             return Ok(url);
         }
