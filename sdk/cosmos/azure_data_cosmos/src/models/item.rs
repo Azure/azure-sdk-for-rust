@@ -83,7 +83,7 @@ mod tests {
     pub async fn deserialize_present_item() {
         let json = r#"{"id": "item1", "category": "category1"}"#;
         let response = Response::<()>::from_bytes(StatusCode::Ok, Headers::new(), json);
-        let item = Item::<Product>::from_response_body(response.into_body())
+        let item = Item::<Product>::from_response_body(response.into_raw_body())
             .await
             .unwrap();
         let expected = Product {
@@ -98,7 +98,7 @@ mod tests {
     pub async fn deserialize_omitted_item() {
         let json = "";
         let response = Response::<()>::from_bytes(StatusCode::Ok, Headers::new(), json);
-        let item = Item::<Product>::from_response_body(response.into_body())
+        let item = Item::<Product>::from_response_body(response.into_raw_body())
             .await
             .unwrap();
         assert_eq!(Item::Omitted, item);

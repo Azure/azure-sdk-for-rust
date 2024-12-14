@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Normally you'd deserialize into a type or `collect()` the body,
     // but this better simulates fetching multiple chunks from a slow response.
-    let mut body = response.into_body();
+    let mut body = response.into_raw_body();
     while let Some(data) = body.next().await {
         // Assume bytes are a string in this example.
         let page = String::from_utf8(data?.into())?;
@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // You can also deserialize into a model from a slow response.
-    let team = client::get_model()?.deserialize_body().await?;
+    let team = client::get_model()?.into_body().await?;
     println!("{team:#?}");
 
     Ok(())

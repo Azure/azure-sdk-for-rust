@@ -34,7 +34,7 @@ impl Oauth2HttpClient {
         let response = self.http_client.execute_request(&request).await?;
         let status_code = try_from_status(response.status())?;
         let headers = try_from_headers(response.headers())?;
-        let body = response.into_body().collect().await?.to_vec();
+        let body = response.into_raw_body().collect().await?.to_vec();
         Ok(oauth2::HttpResponse {
             status_code,
             headers,

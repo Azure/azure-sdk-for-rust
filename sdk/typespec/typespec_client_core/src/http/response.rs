@@ -59,9 +59,10 @@ impl Model for serde_json::Value {
 /// Service client methods should return a `Response<SomeModel>` where `SomeModel` is the service-specific response type.
 /// For example, a service client method that returns a list of secrets should return `Response<ListSecretsResponse>`.
 ///
-/// Given a `Response<T>`, a user can deserialize the body into the intended body type `T` by calling [`Response::deserialize_body`].
-/// However, because the type `T` is just a marker type, the user can also deserialize the body into a different type by calling [`Response::deserialize_body_into`].
-pub struct Response<T = ()> {
+/// Given a `Response<T>`, a user can deserialize the body into the intended body type `T` by calling [`Response::into_body`].
+/// However, because the type `T` is just a marker type, the user can also deserialize the body into a different type by calling [`Response::into_json_body`] or [`Response::into_xml_body`],
+/// or access the raw body using [`Response::into_raw_body`].
+pub struct Response<T = ResponseBody> {
     status: StatusCode,
     headers: Headers,
     body: ResponseBody,
@@ -104,17 +105,20 @@ impl<T> Response<T> {
         (self.status, self.headers, self.body)
     }
 
-    /// Fetches the entire body and returns it as raw bytes.
+    /// Fetches the entire body and returns it as a raw stream of bytes.
     ///
     /// This method will force the entire body to be downloaded from the server and consume the response.
-    /// If you want to parse the body into a type, use [`read_body`](Response::deserialize_body) instead.
-    pub fn into_body(self) -> ResponseBody {
+    /// If you want to parse the body into a type, use [`Response::into_body`] instead.
+    pub fn into_raw_body(self) -> ResponseBody {
         self.body
     }
 
-    /// Fetches the entire body and tries to convert it into type `U`.
+    /// Fetches the entire body and tries to deserialize it as JSON into type `U`.
     ///
-    /// This method is intended for use in rare cases where the body of a service response should be parsed into a user-provided type.
+    /// This method is intended for situations where:
+    ///
+    /// 1. The response was not given a specific type by the service SDK e.g., the API returned `Response<ResponseBody>`, indicating a raw response.
+    /// 2. You want to deserialize the response into your OWN type, rather than the default type specified by the service SDK.
     ///
     /// # Example
     /// ```rust
@@ -131,8 +135,8 @@ impl<T> Response<T> {
     /// }
     ///
     /// async fn parse_response(response: Response<GetSecretResponse>) {
-    ///   // Calling `deserialize_body_into` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
-    ///   let my_struct: MySecretResponse = response.deserialize_body_into().await.unwrap();
+    ///   // Calling `into_json_body` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
+    ///   let my_struct: MySecretResponse = response.into_json_body().await.unwrap();
     ///   assert_eq!("hunter2", my_struct.value);
     /// }
     ///
@@ -146,16 +150,60 @@ impl<T> Response<T> {
     /// #    parse_response(r).await;
     /// # }
     /// ```
-    pub async fn deserialize_body_into<U: Model>(self) -> crate::Result<U> {
-        U::from_response_body(self.body).await
+    #[cfg(feature = "json")]
+    pub async fn into_json_body<U: DeserializeOwned>(self) -> crate::Result<U> {
+        self.into_raw_body().json().await
+    }
+
+    /// Fetches the entire body and tries to deserialize it as XML into type `U`.
+    ///
+    /// This method is intended for situations where:
+    ///
+    /// 1. The response was not given a specific type by the service SDK (i.e. the API returned `Response<ResponseBody>`, indicating a raw response).
+    /// 2. You want to deserialize the response into your OWN type, rather than the default type specified by the service SDK.
+    ///
+    /// # Example
+    /// ```rust
+    /// # pub struct GetSecretResponse { }
+    /// use typespec_client_core::http::{Model, Response};
+    /// # #[cfg(not(feature = "derive"))]
+    /// # use typespec_macros::Model;
+    /// use serde::Deserialize;
+    /// use bytes::Bytes;
+    ///
+    /// #[derive(Model, Deserialize)]
+    /// struct MySecretResponse {
+    ///    value: String,
+    /// }
+    ///
+    /// async fn parse_response(response: Response<GetSecretResponse>) {
+    ///   // Calling `into_xml_body` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
+    ///   let my_struct: MySecretResponse = response.into_xml_body().await.unwrap();
+    ///   assert_eq!("hunter2", my_struct.value);
+    /// }
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() {
+    /// #    let r: Response<GetSecretResponse> = typespec_client_core::http::Response::from_bytes(
+    /// #      http_types::StatusCode::Ok,
+    /// #      typespec_client_core::http::headers::Headers::new(),
+    /// #      "<Response><name>database_password</name><value>hunter2</value></Response>",
+    /// #    );
+    /// #    parse_response(r).await;
+    /// # }
+    /// ```
+    #[cfg(feature = "xml")]
+    pub async fn into_xml_body<U: DeserializeOwned>(self) -> crate::Result<U> {
+        self.into_raw_body().xml().await
     }
 }
 
-impl Response<()> {
+impl Response<ResponseBody> {
     /// Changes the type of the response body.
     ///
-    /// Used to set the "type" of an untyped `Response<()>`, transforming it into a `Response<T>`.
+    /// Used to set the "type" of an untyped `Response<ResponseBody>`, transforming it into a `Response<T>`.
     pub(crate) fn with_default_deserialize_type<T>(self) -> Response<T> {
+        // This method name is a little clunky, but it's crate-local. If we ever decide it's useful outside this crate (which might happen), we can revisit the name.
         Response {
             status: self.status,
             headers: self.headers,
@@ -200,12 +248,12 @@ impl<T: Model> Response<T> {
     /// let secret_client = create_secret_client();
     /// let response = secret_client.get_secret().await;
     /// assert_eq!(response.status(), http_types::StatusCode::Ok);
-    /// let model = response.deserialize_body().await.unwrap();
+    /// let model = response.into_body().await.unwrap();
     /// assert_eq!(model.name, "database_password");
     /// assert_eq!(model.value, "hunter2");
     /// # }
     /// ```
-    pub async fn deserialize_body(self) -> crate::Result<T> {
+    pub async fn into_body(self) -> crate::Result<T> {
         T::from_response_body(self.body).await
     }
 }
@@ -300,30 +348,33 @@ impl fmt::Debug for ResponseBody {
 mod tests {
     use crate::http::headers::Headers;
     use crate::http::{response::ResponseBody, Model, Response};
-    use typespec::error::ErrorKind;
+    use http_types::StatusCode;
 
     #[tokio::test]
-    pub async fn body_type_controls_consumption_of_response_body() {
-        pub struct LazyBody;
-        impl Model for LazyBody {
+    pub async fn can_extract_raw_body_regardless_of_t() -> Result<(), Box<dyn std::error::Error>> {
+        pub struct MyModel;
+        impl Model for MyModel {
             async fn from_response_body(_body: ResponseBody) -> crate::Result<Self> {
-                // Don't actually consume the body
-                Ok(LazyBody)
+                panic!("Should never be called in this test");
             }
         }
 
-        // Create a response that fails as you read the body.
-        let response = Response::<()>::new(
-            http_types::StatusCode::Ok,
-            Headers::new(),
-            Box::pin(futures::stream::once(async {
-                Err(ErrorKind::Other.into_error())
-            })),
-        );
+        {
+            let response_raw: Response =
+                Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice());
+            let body = response_raw.into_raw_body();
+            assert_eq!(b"Hello", &*body.collect().await?);
+        }
 
-        // Because LazyBody chose not to consume the body, this should succeed.
-        let res: crate::Result<LazyBody> = response.deserialize_body_into().await;
-        assert!(res.is_ok());
+        {
+            let response_t: Response<MyModel> =
+                Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice())
+                    .with_default_deserialize_type();
+            let body = response_t.into_raw_body();
+            assert_eq!(b"Hello", &*body.collect().await?);
+        }
+
+        Ok(())
     }
 
     mod json {
@@ -371,15 +422,14 @@ mod tests {
         #[tokio::test]
         pub async fn deserialize_default_type() {
             let response = get_secret();
-            let secret = response.deserialize_body().await.unwrap();
+            let secret = response.into_body().await.unwrap();
             assert_eq!(secret.name, "my_secret");
             assert_eq!(secret.value, "my_value");
         }
 
         #[tokio::test]
         pub async fn deserialize_alternate_type() {
-            #[derive(Model, Deserialize)]
-            #[typespec(crate = "crate")]
+            #[derive(Deserialize)]
             struct MySecretResponse {
                 #[serde(rename = "name")]
                 yon_name: String,
@@ -388,7 +438,7 @@ mod tests {
             }
 
             let response = get_secret();
-            let secret: MySecretResponse = response.deserialize_body_into().await.unwrap();
+            let secret: MySecretResponse = response.into_json_body().await.unwrap();
             assert_eq!(secret.yon_name, "my_secret");
             assert_eq!(secret.yon_value, "my_value");
         }
@@ -409,7 +459,7 @@ mod tests {
                 Response::from_bytes(status, headers, bytes);
             assert_eq!(response.status(), StatusCode::Ok);
             let model = response
-                .deserialize_body()
+                .into_body()
                 .await
                 .expect("deserialize GetSecretListResponse again");
             assert_eq!(model.next_link, Some("?page=2".to_string()));
@@ -445,16 +495,14 @@ mod tests {
         #[tokio::test]
         pub async fn deserialize_default_type() {
             let response = get_secret();
-            let secret = response.deserialize_body().await.unwrap();
+            let secret = response.into_body().await.unwrap();
             assert_eq!(secret.name, "my_secret");
             assert_eq!(secret.value, "my_value");
         }
 
         #[tokio::test]
         pub async fn deserialize_alternate_type() {
-            #[derive(Model, Deserialize)]
-            #[typespec(crate = "crate")]
-            #[typespec(format = "xml")]
+            #[derive(Deserialize)]
             struct MySecretResponse {
                 #[serde(rename = "name")]
                 yon_name: String,
@@ -463,7 +511,7 @@ mod tests {
             }
 
             let response = get_secret();
-            let secret: MySecretResponse = response.deserialize_body_into().await.unwrap();
+            let secret: MySecretResponse = response.into_xml_body().await.unwrap();
             assert_eq!(secret.yon_name, "my_secret");
             assert_eq!(secret.yon_value, "my_value");
         }

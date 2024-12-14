@@ -136,7 +136,7 @@ impl CosmosPipeline {
             .next()
             .await
             .expect("the first pager result should always be Some, even when there's an error")?
-            .deserialize_body()
+            .into_body()
             .await?
             .offers;
 
@@ -169,7 +169,7 @@ impl CosmosPipeline {
             .read_throughput_offer(context.clone(), resource_id)
             .await?;
         let mut current_throughput = match response {
-            Some(r) => r.deserialize_body().await?,
+            Some(r) => r.into_body().await?,
             None => Default::default(),
         };
         current_throughput.offer = throughput.offer;

@@ -51,7 +51,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
             }),
         )
         .await?
-        .deserialize_body()
+        .into_body()
         .await?
         .unwrap();
 
@@ -88,7 +88,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
     )?;
     let mut ids = vec![];
     while let Some(response) = query_pager.next().await.transpose()? {
-        let results = response.deserialize_body().await?;
+        let results = response.into_body().await?;
         for db in results.containers {
             ids.push(db.id);
         }
@@ -111,7 +111,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
     let update_response = container_client
         .replace(updated_properties, None)
         .await?
-        .deserialize_body()
+        .into_body()
         .await?
         .unwrap();
     let updated_indexing_policy = update_response.indexing_policy.unwrap();
@@ -127,7 +127,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
         .read_throughput(None)
         .await?
         .expect("throughput should be present")
-        .deserialize_body()
+        .into_body()
         .await?;
 
     assert_eq!(Some(400), current_throughput.throughput());
@@ -136,7 +136,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
     let throughput_response = container_client
         .replace_throughput(new_throughput, None)
         .await?
-        .deserialize_body()
+        .into_body()
         .await?;
     assert_eq!(Some(500), throughput_response.throughput());
 
@@ -149,7 +149,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
     )?;
     let mut ids = vec![];
     while let Some(response) = query_pager.next().await.transpose()? {
-        let results = response.deserialize_body().await?;
+        let results = response.into_body().await?;
         for db in results.containers {
             ids.push(db.id);
         }
@@ -194,7 +194,7 @@ pub async fn container_crud_autoscale(context: TestContext) -> Result<(), Box<dy
             }),
         )
         .await?
-        .deserialize_body()
+        .into_body()
         .await?
         .unwrap();
     let container_client = db_client.container_client(&properties.id);
@@ -203,7 +203,7 @@ pub async fn container_crud_autoscale(context: TestContext) -> Result<(), Box<dy
         .read_throughput(None)
         .await?
         .expect("throughput should be present")
-        .deserialize_body()
+        .into_body()
         .await?;
 
     assert_eq!(Some(500), current_throughput.throughput());
@@ -240,7 +240,7 @@ pub async fn container_crud_hierarchical_pk(context: TestContext) -> Result<(), 
     let created_properties = db_client
         .create_container(properties.clone(), None)
         .await?
-        .deserialize_body()
+        .into_body()
         .await?
         .unwrap();
 

@@ -32,7 +32,7 @@ impl UpsertCommand {
         let created = container_client
             .upsert_item(pk, item, None)
             .await?
-            .deserialize_body()
+            .into_body()
             .await?
             .unwrap();
         println!("Created item:");
