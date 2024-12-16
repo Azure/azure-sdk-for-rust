@@ -61,13 +61,13 @@ impl DatabaseClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # async fn doc() {
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # use azure_data_cosmos::clients::DatabaseClient;
     /// # let database_client: DatabaseClient = panic!("this is a non-running example");
     /// let response = database_client.read(None)
-    ///     .await.unwrap()
+    ///     .await?
     ///     .into_body()
-    ///     .await.unwrap();
+    ///     .await?;
     /// # }
     /// ```
     pub async fn read(
@@ -95,12 +95,12 @@ impl DatabaseClient {
     /// This allows simple queries without parameters to be expressed easily:
     ///
     /// ```rust,no_run
-    /// # async fn doc() {
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # use azure_data_cosmos::clients::DatabaseClient;
     /// # let db_client: DatabaseClient = panic!("this is a non-running example");
     /// let containers = db_client.query_containers(
     ///     "SELECT * FROM dbs",
-    ///     None).unwrap();
+    ///     None)?;
     /// # }
     /// ```
     ///

@@ -115,12 +115,12 @@ impl CosmosClient {
     /// This allows simple queries without parameters to be expressed easily:
     ///
     /// ```rust,no_run
-    /// # async fn doc() {
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # use azure_data_cosmos::CosmosClient;
     /// # let client: CosmosClient = panic!("this is a non-running example");
     /// let dbs = client.query_databases(
     ///     "SELECT * FROM dbs",
-    ///     None).unwrap();
+    ///     None)?;
     /// # }
     /// ```
     ///

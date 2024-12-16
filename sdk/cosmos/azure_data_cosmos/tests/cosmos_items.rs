@@ -16,6 +16,7 @@ use std::{borrow::Cow, error::Error};
 struct NestedItem {
     nested_value: String,
 }
+
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct TestItem {
     id: Cow<'static, str>,

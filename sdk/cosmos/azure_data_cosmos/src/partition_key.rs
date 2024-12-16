@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::borrow::Cow;
+
 use azure_core::headers::{AsHeaders, HeaderName, HeaderValue};
 
 use crate::constants;
@@ -162,7 +164,7 @@ pub struct PartitionKeyValue(InnerPartitionKeyValue);
 #[derive(Debug, Clone)]
 enum InnerPartitionKeyValue {
     Null,
-    String(String),
+    String(Cow<'static, str>),
     Number(serde_json::Number), // serde_json::Number has special integer handling, so we'll use that.
 }
 
@@ -178,20 +180,26 @@ impl From<()> for PartitionKeyValue {
     }
 }
 
-impl From<&str> for PartitionKeyValue {
-    fn from(value: &str) -> Self {
-        InnerPartitionKeyValue::String(value.into()).into()
+impl From<&'static str> for PartitionKeyValue {
+    fn from(value: &'static str) -> Self {
+        InnerPartitionKeyValue::String(Cow::Borrowed(value)).into()
     }
 }
 
 impl From<String> for PartitionKeyValue {
     fn from(value: String) -> Self {
-        InnerPartitionKeyValue::String(value).into()
+        InnerPartitionKeyValue::String(Cow::Owned(value)).into()
     }
 }
 
 impl From<&String> for PartitionKeyValue {
     fn from(value: &String) -> Self {
+        InnerPartitionKeyValue::String(Cow::Owned(value.clone())).into()
+    }
+}
+
+impl From<Cow<'static, str>> for PartitionKeyValue {
+    fn from(value: Cow<'static, str>) -> Self {
         InnerPartitionKeyValue::String(value.clone()).into()
     }
 }
