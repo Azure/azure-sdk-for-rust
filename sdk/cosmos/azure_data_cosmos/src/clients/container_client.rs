@@ -11,7 +11,7 @@ use crate::{
     ReplaceContainerOptions, ThroughputOptions,
 };
 
-use azure_core::{Method, Model, Pager, Request, Response};
+use azure_core::{Method, Pager, Request, Response};
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -462,16 +462,14 @@ impl ContainerClient {
 
     /// Reads a specific item from the container.
     ///
-    /// The type `T` must implement both [`serde::Deserialize`] and [`azure_core::Model`].
-    /// Generally, deriving [`azure_core::Model`] is trivial if you already implement [`serde::Deserialize`].
-    /// See the docs for each trait for more details.
-    ///
     /// # Arguments
     /// * `partition_key` - The partition key of the item to read.
     /// * `item_id` - The id of the item to read.
     /// * `options` - Optional parameters for the request
     ///
     /// NOTE: The read item is always returned, so the [`ItemOptions::enable_content_response_on_write`] option is ignored.
+    ///
+    /// Use the [`Response::into_json_body`] method to deserialize the body into your own type.
     ///
     /// # Examples
     ///
@@ -490,13 +488,13 @@ impl ContainerClient {
     /// let item: Product = container_client
     ///     .read_item("partition1", "item1", None)
     ///     .await?
-    ///     .into_body()
+    ///     .into_json-body()
     ///     .await?;
     /// println!("Read Item: {:#?}", item);
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn read_item<T: DeserializeOwned + Model>(
+    pub async fn read_item(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
@@ -577,6 +575,8 @@ impl ContainerClient {
     /// The Cosmos service does return the patched item in the response.
     /// However, this method does not return `Response<T>` since that would **force** users to provide a generic type parameter, even when they do not wish to deserialize the body.
     /// If you want to deserialize the response, you can use [`Response::into_json_body`] to manually deserialize the body.
+    ///
+    /// NOTE: Because the service _always_ returns the patched document, the [`ItemOptions::enable_content_response_on_write`] property is ignored.
     ///
     /// For example:
     ///

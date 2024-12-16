@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{
-    headers::{AsHeaders, HeaderName, HeaderValue},
-    ClientMethodOptions, ClientOptions,
-};
+use azure_core::{ClientMethodOptions, ClientOptions};
 
-use crate::{constants, models::ThroughputProperties};
+use crate::models::ThroughputProperties;
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 #[derive(Clone, Default)]
