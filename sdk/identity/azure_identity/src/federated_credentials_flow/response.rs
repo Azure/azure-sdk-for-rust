@@ -18,7 +18,7 @@ struct RawLoginResponse {
     access_token: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Model, Debug, Clone)]
 pub struct LoginResponse {
     pub token_type: String,
     pub expires_in: u64,

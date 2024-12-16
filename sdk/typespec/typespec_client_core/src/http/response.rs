@@ -22,21 +22,6 @@ pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 /// [`Response<T>`] is designed to work with values that may be serialized in various formats (JSON, XML, etc.).
 /// In order to support that, the `T` provided must implement [`Model`], which provides the [`Model::from_response_body`]
 /// method to deserialize the type from a response body.
-///
-/// This trait is intended to be derived using the [`typespec_macros::Model`] derive macro.
-/// For most types, no configuration is needed.
-/// Any type implementing [`serde::Deserialize`] can simply add `Model` to their `#[derive]` list to get full support for deserializing from JSON:
-///
-/// ```rust,no_compile
-/// # // We don't compile this because it would break on doc builds that don't include the `derive` feature.
-/// #[derive(Deserialize, Model)]
-/// pub struct Product {
-///     pub id: String
-/// }
-/// ```
-///
-/// If you need your model to be deserialized as XML or some other format, you will need to configure the `Model` trait using `#[typespec]` attributes.
-/// See the docs on [`typespec_macros::Model`] for more details.
 pub trait Model: Sized {
     /// Deserialize the response body into type `Self`.
     ///
@@ -225,10 +210,6 @@ impl Response<ResponseBody> {
             body: self.body,
             phantom: PhantomData,
         }
-    }
-
-    pub fn into_body(self) -> ResponseBody {
-        self.into_raw_body()
     }
 }
 

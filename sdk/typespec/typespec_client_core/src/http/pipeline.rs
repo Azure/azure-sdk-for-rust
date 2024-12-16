@@ -102,7 +102,7 @@ mod tests {
     use typespec_macros::Model;
 
     #[tokio::test]
-    async fn deserializes_response() -> Result<(), Box<dyn std::error::Error>> {
+    async fn deserializes_response() {
         #[derive(Debug)]
         struct Responder {}
 
@@ -135,15 +135,16 @@ mod tests {
         };
         let pipeline = Pipeline::new(options, Vec::new(), Vec::new());
 
-        let mut request = Request::new("http://localhost".parse()?, Method::Get);
+        let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
         let model: Model = pipeline
             .send(&Context::default(), &mut request)
-            .await?
+            .await
+            .unwrap()
             .into_body()
-            .await?;
+            .await
+            .unwrap();
 
         assert_eq!(1, model.foo);
         assert_eq!("baz", &model.bar);
-        Ok(())
     }
 }
