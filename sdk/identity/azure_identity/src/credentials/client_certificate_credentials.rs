@@ -326,7 +326,7 @@ impl ClientCertificateCredential {
     }
 }
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Model, Deserialize, Debug, Default)]
 #[serde(default)]
 struct AadTokenResponse {
     token_type: String,
