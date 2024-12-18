@@ -41,11 +41,11 @@ impl UpsertCommand {
         let response = container_client
             .upsert_item(pk, item, Some(options))
             .await?;
-        println!("Upserted item successfully");
+        println!("Item updated successfully");
 
         if self.show_updated {
             let created: serde_json::Value = response.into_json_body().await?;
-            println!("Newly upserted item:");
+            println!("Updated item:");
             println!("{:#?}", created);
         }
         Ok(())
