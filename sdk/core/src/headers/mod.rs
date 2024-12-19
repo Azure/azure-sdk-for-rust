@@ -393,6 +393,7 @@ pub const WWW_AUTHENTICATE: HeaderName = HeaderName::from_static("www-authentica
 pub const ENCRYPTION_ALGORITHM: HeaderName = HeaderName::from_static("x-ms-encryption-algorithm");
 pub const ENCRYPTION_KEY: HeaderName = HeaderName::from_static("x-ms-encryption-key");
 pub const ENCRYPTION_KEY_SHA256: HeaderName = HeaderName::from_static("x-ms-encryption-key-sha256");
+pub const BLOB_APPEND_OFFSET: HeaderName = HeaderName::from_static("x-ms-blob-append-offset");
 pub const BLOB_COMMITTED_BLOCK_COUNT: HeaderName =
     HeaderName::from_static("x-ms-blob-committed-block-count");
 pub const AZURE_ASYNCOPERATION: HeaderName = HeaderName::from_static("azure-asyncoperation");

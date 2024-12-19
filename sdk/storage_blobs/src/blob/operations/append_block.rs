@@ -55,6 +55,8 @@ pub struct AppendBlockResponse {
     pub request_id: RequestId,
     pub date: OffsetDateTime,
     pub request_server_encrypted: bool,
+    pub blob_append_offset: u64,
+    pub blob_committed_block_count: u64,
 }
 
 impl AppendBlockResponse {
@@ -64,6 +66,8 @@ impl AppendBlockResponse {
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
         let request_server_encrypted = request_server_encrypted_from_headers(headers)?;
+        let blob_append_offset = headers.get_as(&BLOB_APPEND_OFFSET)?;
+        let blob_committed_block_count = headers.get_as(&BLOB_COMMITTED_BLOCK_COUNT)?;
 
         Ok(AppendBlockResponse {
             etag,
@@ -72,6 +76,8 @@ impl AppendBlockResponse {
             request_id,
             date,
             request_server_encrypted,
+            blob_append_offset,
+            blob_committed_block_count
         })
     }
 }
