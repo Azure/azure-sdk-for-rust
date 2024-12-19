@@ -71,7 +71,7 @@ impl SecretClient {
         options: Option<SecretClientBackupSecretOptions<'_>>,
     ) -> Result<Response<BackupSecretResult>> {
         let options = options.unwrap_or_default();
-        let mut ctx = Context::with_context(&options.method_options.context);
+        let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/backup");
         path = path.replace("{secret-name}", &secret_name);
@@ -80,7 +80,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&mut ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await
     }
 
     /// Deletes a secret from a specified key vault.
@@ -93,7 +93,7 @@ impl SecretClient {
         options: Option<SecretClientDeleteSecretOptions<'_>>,
     ) -> Result<Response<DeletedSecretBundle>> {
         let options = options.unwrap_or_default();
-        let mut ctx = Context::with_context(&options.method_options.context);
+        let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}");
         path = path.replace("{secret-name}", &secret_name);
@@ -102,7 +102,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&mut ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await
     }
 
     /// Gets the specified deleted secret.
@@ -115,7 +115,7 @@ impl SecretClient {
         options: Option<SecretClientGetDeletedSecretOptions<'_>>,
     ) -> Result<Response<DeletedSecretBundle>> {
         let options = options.unwrap_or_default();
-        let mut ctx = Context::with_context(&options.method_options.context);
+        let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", &secret_name);
@@ -124,7 +124,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&mut ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await
     }
 
     /// Lists deleted secrets for the specified vault.
@@ -148,22 +148,17 @@ impl SecretClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         Ok(Pager::from_callback(move |next_link: Option<Url>| {
-            let url: Url;
-            match next_link {
-                Some(next_link) => {
-                    url = next_link;
-                }
-                None => {
-                    url = first_url.clone();
-                }
+            let url = match next_link {
+                Some(next_link) => next_link,
+                None => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
-            let mut ctx = options.method_options.context.clone();
+            let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
                 let rsp: Response<DeletedSecretListResult> =
-                    pipeline.send(&mut ctx, &mut request).await?;
+                    pipeline.send(&ctx, &mut request).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: DeletedSecretListResult = json::from_json(bytes.clone())?;
@@ -189,7 +184,7 @@ impl SecretClient {
         options: Option<SecretClientGetSecretOptions<'_>>,
     ) -> Result<Response<SecretBundle>> {
         let options = options.unwrap_or_default();
-        let mut ctx = Context::with_context(&options.method_options.context);
+        let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", &secret_name);
@@ -199,7 +194,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&mut ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await
     }
 
     /// List all versions of the specified secret.
@@ -226,21 +221,16 @@ impl SecretClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         Ok(Pager::from_callback(move |next_link: Option<Url>| {
-            let url: Url;
-            match next_link {
-                Some(next_link) => {
-                    url = next_link;
-                }
-                None => {
-                    url = first_url.clone();
-                }
+            let url = match next_link {
+                Some(next_link) => next_link,
+                None => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
-            let mut ctx = options.method_options.context.clone();
+            let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: Response<SecretListResult> = pipeline.send(&mut ctx, &mut request).await?;
+                let rsp: Response<SecretListResult> = pipeline.send(&ctx, &mut request).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: SecretListResult = json::from_json(bytes.clone())?;
@@ -278,21 +268,16 @@ impl SecretClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         Ok(Pager::from_callback(move |next_link: Option<Url>| {
-            let url: Url;
-            match next_link {
-                Some(next_link) => {
-                    url = next_link;
-                }
-                None => {
-                    url = first_url.clone();
-                }
+            let url = match next_link {
+                Some(next_link) => next_link,
+                None => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
-            let mut ctx = options.method_options.context.clone();
+            let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: Response<SecretListResult> = pipeline.send(&mut ctx, &mut request).await?;
+                let rsp: Response<SecretListResult> = pipeline.send(&ctx, &mut request).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: SecretListResult = json::from_json(bytes.clone())?;
@@ -318,7 +303,7 @@ impl SecretClient {
         options: Option<SecretClientPurgeDeletedSecretOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let mut ctx = Context::with_context(&options.method_options.context);
+        let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", &secret_name);
@@ -327,7 +312,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&mut ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await
     }
 
     /// Recovers the deleted secret to the latest version.
@@ -340,7 +325,7 @@ impl SecretClient {
         options: Option<SecretClientRecoverDeletedSecretOptions<'_>>,
     ) -> Result<Response<SecretBundle>> {
         let options = options.unwrap_or_default();
-        let mut ctx = Context::with_context(&options.method_options.context);
+        let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedsecrets/{secret-name}/recover");
         path = path.replace("{secret-name}", &secret_name);
@@ -349,7 +334,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&mut ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await
     }
 
     /// Restores a backed up secret to a vault.
@@ -361,7 +346,7 @@ impl SecretClient {
         options: Option<SecretClientRestoreSecretOptions<'_>>,
     ) -> Result<Response<SecretBundle>> {
         let options = options.unwrap_or_default();
-        let mut ctx = Context::with_context(&options.method_options.context);
+        let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("secrets/restore")?;
         url.query_pairs_mut()
@@ -370,7 +355,7 @@ impl SecretClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&mut ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await
     }
 
     /// Sets a secret in a specified key vault.
@@ -384,7 +369,7 @@ impl SecretClient {
         options: Option<SecretClientSetSecretOptions<'_>>,
     ) -> Result<Response<SecretBundle>> {
         let options = options.unwrap_or_default();
-        let mut ctx = Context::with_context(&options.method_options.context);
+        let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}");
         path = path.replace("{secret-name}", &secret_name);
@@ -395,7 +380,7 @@ impl SecretClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&mut ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await
     }
 
     /// Updates the attributes associated with a specified secret in a given key vault.
@@ -410,7 +395,7 @@ impl SecretClient {
         options: Option<SecretClientUpdateSecretOptions<'_>>,
     ) -> Result<Response<SecretBundle>> {
         let options = options.unwrap_or_default();
-        let mut ctx = Context::with_context(&options.method_options.context);
+        let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", &secret_name);
@@ -422,7 +407,7 @@ impl SecretClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&mut ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await
     }
 }
 
