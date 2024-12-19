@@ -1,8 +1,8 @@
-use time::OffsetDateTime;
 use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, Body, RequestId};
-use azure_storage::{ConsistencyCRC64, ConsistencyMD5};
 use azure_storage::headers::consistency_from_headers;
+use azure_storage::{ConsistencyCRC64, ConsistencyMD5};
+use time::OffsetDateTime;
 
 operation! {
     AppendBlock,
@@ -77,7 +77,7 @@ impl AppendBlockResponse {
             date,
             request_server_encrypted,
             blob_append_offset,
-            blob_committed_block_count
+            blob_committed_block_count,
         })
     }
 }
