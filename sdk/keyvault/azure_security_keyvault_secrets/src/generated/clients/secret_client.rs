@@ -441,6 +441,7 @@ pub struct SecretClientGetDeletedSecretsOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+#[allow(clippy::needless_lifetimes)]
 impl<'a> SecretClientGetDeletedSecretsOptions<'a> {
     pub fn into_owned(self) -> SecretClientGetDeletedSecretsOptions<'static> {
         SecretClientGetDeletedSecretsOptions {
@@ -463,6 +464,7 @@ pub struct SecretClientGetSecretVersionsOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+#[allow(clippy::needless_lifetimes)]
 impl<'a> SecretClientGetSecretVersionsOptions<'a> {
     pub fn into_owned(self) -> SecretClientGetSecretVersionsOptions<'static> {
         SecretClientGetSecretVersionsOptions {
@@ -480,6 +482,7 @@ pub struct SecretClientGetSecretsOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+#[allow(clippy::needless_lifetimes)]
 impl<'a> SecretClientGetSecretsOptions<'a> {
     pub fn into_owned(self) -> SecretClientGetSecretsOptions<'static> {
         SecretClientGetSecretsOptions {
