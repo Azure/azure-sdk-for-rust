@@ -31,7 +31,7 @@ fn main() {
     };
     println!("cargo:rustc-env=AZSDK_RUSTC_VERSION={version}");
 
-    let generate_enabled = env::var("GENERATE_TYPESPEC").unwrap_or("1".to_string());
+    let generate_enabled = env::var("GENERATE_TYPESPEC").unwrap_or("0".to_string());
 
     if generate_enabled == "1" {
         generate_typespec();
