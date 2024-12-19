@@ -10,7 +10,28 @@ fn generate_typespec() {
     println!("Generating typespec...");
 
     let output = Command::new("tsp-client.cmd")
-        .args(&["update"])
+        .args(["update"])
+        //.stdout(Stdio::piped())
+        .output()
+        .unwrap();
+
+    println!("status: {}", output.status);
+    io::stdout().write_all(&output.stdout).unwrap();
+    io::stderr().write_all(&output.stderr).unwrap();
+
+    assert!(output.status.success());
+
+    println!("Generating typespec Completed.");
+}
+
+fn cargo_fmt() {
+    println!("Run cargo fmt on generated files...");
+
+    let output = Command::new("cargo")
+        .args(["+stable"])
+        .args(["fmt"])
+        .args(["--all"])
+        .args(["--"])
         //.stdout(Stdio::piped())
         .output()
         .unwrap();
@@ -35,5 +56,6 @@ fn main() {
 
     if generate_enabled == "1" {
         generate_typespec();
+        cargo_fmt();
     }
 }
