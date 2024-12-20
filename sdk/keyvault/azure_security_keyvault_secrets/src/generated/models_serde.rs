@@ -14,7 +14,7 @@ use typespec_client_core::json::to_json;
 impl TryFrom<Response<BackupSecretResult>> for BackupSecretResult {
     type Error = azure_core::Error;
     fn try_from(value: Response<BackupSecretResult>) -> Result<Self> {
-        let f = || value.into_json_body();
+        let f = || value.into_body();
         let r = block_on(f())?;
         Ok(r)
     }
@@ -23,7 +23,7 @@ impl TryFrom<Response<BackupSecretResult>> for BackupSecretResult {
 impl TryFrom<Response<DeletedSecretBundle>> for DeletedSecretBundle {
     type Error = azure_core::Error;
     fn try_from(value: Response<DeletedSecretBundle>) -> Result<Self> {
-        let f = || value.into_json_body();
+        let f = || value.into_body();
         let r = block_on(f())?;
         Ok(r)
     }
@@ -32,7 +32,7 @@ impl TryFrom<Response<DeletedSecretBundle>> for DeletedSecretBundle {
 impl TryFrom<Response<DeletedSecretListResult>> for DeletedSecretListResult {
     type Error = azure_core::Error;
     fn try_from(value: Response<DeletedSecretListResult>) -> Result<Self> {
-        let f = || value.into_json_body();
+        let f = || value.into_body();
         let r = block_on(f())?;
         Ok(r)
     }
@@ -41,7 +41,7 @@ impl TryFrom<Response<DeletedSecretListResult>> for DeletedSecretListResult {
 impl TryFrom<Response<SecretBundle>> for SecretBundle {
     type Error = azure_core::Error;
     fn try_from(value: Response<SecretBundle>) -> Result<Self> {
-        let f = || value.into_json_body();
+        let f = || value.into_body();
         let r = block_on(f())?;
         Ok(r)
     }
@@ -50,7 +50,7 @@ impl TryFrom<Response<SecretBundle>> for SecretBundle {
 impl TryFrom<Response<SecretListResult>> for SecretListResult {
     type Error = azure_core::Error;
     fn try_from(value: Response<SecretListResult>) -> Result<Self> {
-        let f = || value.into_json_body();
+        let f = || value.into_body();
         let r = block_on(f())?;
         Ok(r)
     }
