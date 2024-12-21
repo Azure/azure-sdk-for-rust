@@ -1,6 +1,6 @@
 # Azure Identity client library for Rust
 
-The Azure Identity library provides [Microsoft Entra ID](https://learn.microsoft.com/entra/fundamentals/whatis) ([formerly Azure Active Directory](https://learn.microsoft.com/entra/fundamentals/new-name)) token authentication support across the Azure SDK. It provides a set of [`TokenCredential`](https://learn.microsoft.com/dotnet/api/azure.core.tokencredential?view=azure-dotnet) implementations that can be used to construct Azure SDK clients that support Microsoft Entra token authentication.
+The Azure Identity library provides [Microsoft Entra ID](https://learn.microsoft.com/entra/fundamentals/whatis) ([formerly Azure Active Directory](https://learn.microsoft.com/entra/fundamentals/new-name)) token authentication support across the Azure SDK. It provides a set of [`TokenCredential`][token_cred_ref] implementations that can be used to construct Azure SDK clients that support Microsoft Entra token authentication.
 
 [Source code][source] | [Package (crates.io)][package] | [API reference documentation][identity_api_docs] | [Microsoft Entra ID documentation][entraid_doc]
 
@@ -379,6 +379,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [managed_id_cred_ref]: <!-- TODO: When Docs.rs page for ImdsManagedIdentityCredential ref docs are available -->
 [package]: https://crates.io/crates/azure_identity
 [source]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
+[token_cred_ref]: <!-- TODO: When Docs.rs page for TokenCredential trait ref docs are available -->
 [workload_id_cred_ref]: <!-- TODO: When Docs.rs page for WorkloadIdentityCredential ref docs are available -->
 
 <!-- LINKS from Python Example for reference>
