@@ -11,7 +11,7 @@ The Azure Identity library provides [Microsoft Entra ID](https://learn.microsoft
 Install the Azure Identity library for Rust with cargo:
 
 ```bash
-    cargo add azure_identity
+cargo add azure_identity
 ```
 
 ### Prerequisites
