@@ -96,5 +96,5 @@ function Get-rust-EmitterName() {
 }
 
 function Get-rust-EmitterAdditionalOptions([string]$projectDirectory) {
-  return "--option @azure-tools/typespec-rust.emitter-output-dir=$projectDirectory/src"
+  return "--option @azure-tools/typespec-rust.emitter-output-dir=$projectDirectory"
 }
