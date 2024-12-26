@@ -90,3 +90,11 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 
   return $allPackageProps
 }
+
+function Get-rust-EmitterName() {
+  return "@azure-tools/typespec-rust"
+}
+
+function Get-rust-EmitterAdditionalOptions([string]$projectDirectory) {
+  return "--option @azure-tools/typespec-rust.emitter-output-dir=$projectDirectory/src"
+}
