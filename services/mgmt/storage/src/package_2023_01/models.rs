@@ -24,13 +24,21 @@ impl AccessPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountImmutabilityPolicyProperties {
     #[doc = "The immutability period for the blobs in the container since the policy creation, in days."]
-    #[serde(rename = "immutabilityPeriodSinceCreationInDays", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "immutabilityPeriodSinceCreationInDays",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub immutability_period_since_creation_in_days: Option<i32>,
     #[doc = "The ImmutabilityPolicy state defines the mode of the policy. Disabled state disables the policy, Unlocked state allows increase and decrease of immutability retention time and also allows toggling allowProtectedAppendWrites property, Locked state only allows the increase of the immutability retention time. A policy can only be created in a Disabled or Unlocked state and can be toggled between the two states. Only a policy in an Unlocked state can transition to a Locked state which cannot be reverted."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<account_immutability_policy_properties::State>,
     #[doc = "This property can only be changed for disabled and unlocked time-based retention policies. When enabled, new blocks can be written to an append blob while maintaining immutability protection and compliance. Only new blocks can be added and any existing blocks cannot be modified or deleted."]
-    #[serde(rename = "allowProtectedAppendWrites", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowProtectedAppendWrites",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub allow_protected_append_writes: Option<bool>,
 }
 impl AccountImmutabilityPolicyProperties {
@@ -982,7 +990,11 @@ pub mod blob_service_properties {
         #[serde(rename = "isVersioningEnabled", default, skip_serializing_if = "Option::is_none")]
         pub is_versioning_enabled: Option<bool>,
         #[doc = "Deprecated in favor of isVersioningEnabled property."]
-        #[serde(rename = "automaticSnapshotPolicyEnabled", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "automaticSnapshotPolicyEnabled",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
         pub automatic_snapshot_policy_enabled: Option<bool>,
         #[doc = "The blob service properties for change feed events."]
         #[serde(rename = "changeFeed", default, skip_serializing_if = "Option::is_none")]
@@ -991,10 +1003,18 @@ pub mod blob_service_properties {
         #[serde(rename = "restorePolicy", default, skip_serializing_if = "Option::is_none")]
         pub restore_policy: Option<RestorePolicyProperties>,
         #[doc = "The service properties for soft delete."]
-        #[serde(rename = "containerDeleteRetentionPolicy", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "containerDeleteRetentionPolicy",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
         pub container_delete_retention_policy: Option<DeleteRetentionPolicy>,
         #[doc = "The blob service properties for Last access time based tracking policy."]
-        #[serde(rename = "lastAccessTimeTrackingPolicy", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "lastAccessTimeTrackingPolicy",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
         pub last_access_time_tracking_policy: Option<LastAccessTimeTrackingPolicy>,
     }
     impl Properties {
@@ -1107,7 +1127,11 @@ pub struct ContainerProperties {
     #[serde(rename = "defaultEncryptionScope", default, skip_serializing_if = "Option::is_none")]
     pub default_encryption_scope: Option<String>,
     #[doc = "Block override of encryption scope from the container default."]
-    #[serde(rename = "denyEncryptionScopeOverride", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "denyEncryptionScopeOverride",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub deny_encryption_scope_override: Option<bool>,
     #[doc = "Specifies whether data in the container may be accessed publicly and the level of access."]
     #[serde(rename = "publicAccess", default, skip_serializing_if = "Option::is_none")]
@@ -1140,7 +1164,11 @@ pub struct ContainerProperties {
     #[serde(rename = "hasImmutabilityPolicy", default, skip_serializing_if = "Option::is_none")]
     pub has_immutability_policy: Option<bool>,
     #[doc = "Object level immutability properties of the container."]
-    #[serde(rename = "immutableStorageWithVersioning", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "immutableStorageWithVersioning",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub immutable_storage_with_versioning: Option<ImmutableStorageWithVersioning>,
     #[doc = "Enable NFSv3 root squash on blob container."]
     #[serde(rename = "enableNfsV3RootSquash", default, skip_serializing_if = "Option::is_none")]
@@ -1358,7 +1386,11 @@ pub struct DateAfterCreation {
     #[serde(rename = "daysAfterCreationGreaterThan")]
     pub days_after_creation_greater_than: f64,
     #[doc = "Value indicating the age in days after last blob tier change time. This property is only applicable for tierToArchive actions and requires daysAfterCreationGreaterThan to be set for snapshots and blob version based actions. The blob will be archived if both the conditions are satisfied."]
-    #[serde(rename = "daysAfterLastTierChangeGreaterThan", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "daysAfterLastTierChangeGreaterThan",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub days_after_last_tier_change_greater_than: Option<f64>,
 }
 impl DateAfterCreation {
@@ -1373,16 +1405,32 @@ impl DateAfterCreation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DateAfterModification {
     #[doc = "Value indicating the age in days after last modification"]
-    #[serde(rename = "daysAfterModificationGreaterThan", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "daysAfterModificationGreaterThan",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub days_after_modification_greater_than: Option<f64>,
     #[doc = "Value indicating the age in days after last blob access. This property can only be used in conjunction with last access time tracking policy"]
-    #[serde(rename = "daysAfterLastAccessTimeGreaterThan", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "daysAfterLastAccessTimeGreaterThan",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub days_after_last_access_time_greater_than: Option<f64>,
     #[doc = "Value indicating the age in days after last blob tier change time. This property is only applicable for tierToArchive actions and requires daysAfterModificationGreaterThan to be set for baseBlobs based actions. The blob will be archived if both the conditions are satisfied."]
-    #[serde(rename = "daysAfterLastTierChangeGreaterThan", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "daysAfterLastTierChangeGreaterThan",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub days_after_last_tier_change_greater_than: Option<f64>,
     #[doc = "Value indicating the age in days after blob creation."]
-    #[serde(rename = "daysAfterCreationGreaterThan", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "daysAfterCreationGreaterThan",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub days_after_creation_greater_than: Option<f64>,
 }
 impl DateAfterModification {
@@ -1514,7 +1562,11 @@ pub struct Encryption {
     #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
     pub key_source: Option<encryption::KeySource>,
     #[doc = "A boolean indicating whether or not the service applies a secondary layer of encryption with platform managed keys for data at rest."]
-    #[serde(rename = "requireInfrastructureEncryption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "requireInfrastructureEncryption",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub require_infrastructure_encryption: Option<bool>,
     #[doc = "Properties of key vault."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1611,10 +1663,18 @@ pub struct EncryptionScopeKeyVaultProperties {
     #[serde(rename = "keyUri", default, skip_serializing_if = "Option::is_none")]
     pub key_uri: Option<String>,
     #[doc = "The object identifier of the current versioned Key Vault Key in use."]
-    #[serde(rename = "currentVersionedKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "currentVersionedKeyIdentifier",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub current_versioned_key_identifier: Option<String>,
     #[doc = "Timestamp of last rotation of the Key Vault Key."]
-    #[serde(rename = "lastKeyRotationTimestamp", default, with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "lastKeyRotationTimestamp",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub last_key_rotation_timestamp: Option<time::OffsetDateTime>,
 }
 impl EncryptionScopeKeyVaultProperties {
@@ -1666,7 +1726,11 @@ pub struct EncryptionScopeProperties {
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<EncryptionScopeKeyVaultProperties>,
     #[doc = "A boolean indicating whether or not the service applies a secondary layer of encryption with platform managed keys for data at rest."]
-    #[serde(rename = "requireInfrastructureEncryption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "requireInfrastructureEncryption",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub require_infrastructure_encryption: Option<bool>,
 }
 impl EncryptionScopeProperties {
@@ -2037,7 +2101,11 @@ pub mod file_service_properties {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub cors: Option<CorsRules>,
         #[doc = "The service properties for soft delete."]
-        #[serde(rename = "shareDeleteRetentionPolicy", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "shareDeleteRetentionPolicy",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
         pub share_delete_retention_policy: Option<DeleteRetentionPolicy>,
         #[doc = "Protocol settings for file service"]
         #[serde(rename = "protocolSettings", default, skip_serializing_if = "Option::is_none")]
@@ -2430,7 +2498,11 @@ pub struct GeoReplicationStats {
     #[serde(rename = "postFailoverRedundancy", default, skip_serializing_if = "Option::is_none")]
     pub post_failover_redundancy: Option<geo_replication_stats::PostFailoverRedundancy>,
     #[doc = "The redundancy type of the account after a planned account failover is performed."]
-    #[serde(rename = "postPlannedFailoverRedundancy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "postPlannedFailoverRedundancy",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub post_planned_failover_redundancy: Option<geo_replication_stats::PostPlannedFailoverRedundancy>,
 }
 impl GeoReplicationStats {
@@ -2705,16 +2777,28 @@ impl ImmutabilityPolicyProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImmutabilityPolicyProperty {
     #[doc = "The immutability period for the blobs in the container since the policy creation, in days."]
-    #[serde(rename = "immutabilityPeriodSinceCreationInDays", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "immutabilityPeriodSinceCreationInDays",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub immutability_period_since_creation_in_days: Option<i64>,
     #[doc = "The ImmutabilityPolicy state of a blob container, possible values include: Locked and Unlocked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<immutability_policy_property::State>,
     #[doc = "This property can only be changed for unlocked time-based retention policies. When enabled, new blocks can be written to an append blob while maintaining immutability protection and compliance. Only new blocks can be added and any existing blocks cannot be modified or deleted. This property cannot be changed with ExtendImmutabilityPolicy API."]
-    #[serde(rename = "allowProtectedAppendWrites", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowProtectedAppendWrites",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub allow_protected_append_writes: Option<bool>,
     #[doc = "This property can only be changed for unlocked time-based retention policies. When enabled, new blocks can be written to both 'Append and Bock Blobs' while maintaining immutability protection and compliance. Only new blocks can be added and any existing blocks cannot be modified or deleted. This property cannot be changed with ExtendImmutabilityPolicy API. The 'allowProtectedAppendWrites' and 'allowProtectedAppendWritesAll' properties are mutually exclusive."]
-    #[serde(rename = "allowProtectedAppendWritesAll", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowProtectedAppendWritesAll",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub allow_protected_append_writes_all: Option<bool>,
 }
 impl ImmutabilityPolicyProperty {
@@ -2875,10 +2959,18 @@ pub struct KeyVaultProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keyvaulturi: Option<String>,
     #[doc = "The object identifier of the current versioned Key Vault Key in use."]
-    #[serde(rename = "currentVersionedKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "currentVersionedKeyIdentifier",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub current_versioned_key_identifier: Option<String>,
     #[doc = "Timestamp of last rotation of the Key Vault Key."]
-    #[serde(rename = "lastKeyRotationTimestamp", default, with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "lastKeyRotationTimestamp",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub last_key_rotation_timestamp: Option<time::OffsetDateTime>,
     #[doc = "This is a read only property that represents the expiration time of the current version of the customer managed key used for encryption."]
     #[serde(
@@ -3150,7 +3242,11 @@ pub struct LegalHold {
     #[doc = "Each tag should be 3 to 23 alphanumeric characters and is normalized to lower case at SRP."]
     pub tags: Vec<String>,
     #[doc = "When enabled, new blocks can be written to both 'Append and Bock Blobs' while maintaining legal hold protection and compliance. Only new blocks can be added and any existing blocks cannot be modified or deleted."]
-    #[serde(rename = "allowProtectedAppendWritesAll", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowProtectedAppendWritesAll",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub allow_protected_append_writes_all: Option<bool>,
 }
 impl LegalHold {
@@ -3176,7 +3272,11 @@ pub struct LegalHoldProperties {
     )]
     pub tags: Vec<TagProperty>,
     #[doc = "Protected append writes history setting for the blob container with Legal holds."]
-    #[serde(rename = "protectedAppendWritesHistory", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectedAppendWritesHistory",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub protected_append_writes_history: Option<ProtectedAppendWritesHistory>,
 }
 impl LegalHoldProperties {
@@ -3524,7 +3624,11 @@ pub struct ManagementPolicyBaseBlob {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub delete: Option<DateAfterModification>,
     #[doc = "This property enables auto tiering of a blob from cool to hot on a blob access. This property requires tierToCool.daysAfterLastAccessTimeGreaterThan."]
-    #[serde(rename = "enableAutoTierToHotFromCool", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enableAutoTierToHotFromCool",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub enable_auto_tier_to_hot_from_cool: Option<bool>,
 }
 impl ManagementPolicyBaseBlob {
@@ -3748,7 +3852,11 @@ pub struct MetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     #[doc = "Account Resource Id."]
-    #[serde(rename = "resourceIdDimensionNameOverride", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceIdDimensionNameOverride",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub resource_id_dimension_name_override: Option<String>,
 }
 impl MetricSpecification {
@@ -4317,7 +4425,11 @@ impl PrivateLinkServiceConnectionState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectedAppendWritesHistory {
     #[doc = "When enabled, new blocks can be written to both 'Append and Bock Blobs' while maintaining legal hold protection and compliance. Only new blocks can be added and any existing blocks cannot be modified or deleted."]
-    #[serde(rename = "allowProtectedAppendWritesAll", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowProtectedAppendWritesAll",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub allow_protected_append_writes_all: Option<bool>,
     #[doc = "Returns the date and time the tag was added."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -5309,7 +5421,9 @@ pub mod storage_account_key {
     #[doc = "Permissions for the key -- read-only or full permissions."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Permissions {
+        #[serde(alias = "read", alias = "READ", alias = "Read")]
         Read,
+        #[serde(alias = "full", alias = "FULL", alias = "Full")]
         Full,
     }
 }
@@ -5421,7 +5535,11 @@ pub mod storage_account_migration {
         #[serde(rename = "migrationFailedReason", default, skip_serializing_if = "Option::is_none")]
         pub migration_failed_reason: Option<String>,
         #[doc = "Reason for migration failure"]
-        #[serde(rename = "migrationFailedDetailedReason", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "migrationFailedDetailedReason",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
         pub migration_failed_detailed_reason: Option<String>,
     }
     impl Properties {
@@ -5530,7 +5648,11 @@ pub struct StorageAccountProperties {
     #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<storage_account_properties::AccessTier>,
     #[doc = "Settings for Azure Files identity based authentication."]
-    #[serde(rename = "azureFilesIdentityBasedAuthentication", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "azureFilesIdentityBasedAuthentication",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub azure_files_identity_based_authentication: Option<AzureFilesIdentityBasedAuthentication>,
     #[doc = "Allows https traffic only to storage service if sets to true."]
     #[serde(rename = "supportsHttpsTrafficOnly", default, skip_serializing_if = "Option::is_none")]
@@ -5583,22 +5705,38 @@ pub struct StorageAccountProperties {
     #[serde(rename = "isNfsV3Enabled", default, skip_serializing_if = "Option::is_none")]
     pub is_nfs_v3_enabled: Option<bool>,
     #[doc = "Allow or disallow cross AAD tenant object replication. Set this property to true for new or existing accounts only if object replication policies will involve storage accounts in different AAD tenants. The default interpretation is false for new accounts to follow best security practices by default."]
-    #[serde(rename = "allowCrossTenantReplication", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowCrossTenantReplication",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub allow_cross_tenant_replication: Option<bool>,
     #[doc = "A boolean flag which indicates whether the default authentication is OAuth or not. The default interpretation is false for this property."]
-    #[serde(rename = "defaultToOAuthAuthentication", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultToOAuthAuthentication",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub default_to_o_auth_authentication: Option<bool>,
     #[doc = "Allow or disallow public network access to Storage Account. Value is optional but if passed in, must be 'Enabled' or 'Disabled'."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<storage_account_properties::PublicNetworkAccess>,
     #[doc = "This property enables and defines account-level immutability. Enabling the feature auto-enables Blob Versioning."]
-    #[serde(rename = "immutableStorageWithVersioning", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "immutableStorageWithVersioning",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub immutable_storage_with_versioning: Option<ImmutableStorageAccount>,
     #[doc = "Restrict copy to and from Storage Accounts within an AAD tenant or with Private Links to the same VNet."]
     #[serde(rename = "allowedCopyScope", default, skip_serializing_if = "Option::is_none")]
     pub allowed_copy_scope: Option<storage_account_properties::AllowedCopyScope>,
     #[doc = "This defines the sku conversion status object for asynchronous sku conversions."]
-    #[serde(rename = "storageAccountSkuConversionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageAccountSkuConversionStatus",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub storage_account_sku_conversion_status: Option<StorageAccountSkuConversionStatus>,
     #[doc = "Allows you to specify the type of endpoint. Set this to AzureDNSZone to create a large number of accounts in a single subscription, which creates accounts in an Azure DNS Zone and the endpoint URL will have an alphanumeric DNS Zone identifier."]
     #[serde(rename = "dnsEndpointType", default, skip_serializing_if = "Option::is_none")]
@@ -5607,7 +5745,11 @@ pub struct StorageAccountProperties {
     #[serde(rename = "isSkuConversionBlocked", default, skip_serializing_if = "Option::is_none")]
     pub is_sku_conversion_blocked: Option<bool>,
     #[doc = "If customer initiated account migration is in progress, the value will be true else it will be null."]
-    #[serde(rename = "accountMigrationInProgress", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "accountMigrationInProgress",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub account_migration_in_progress: Option<bool>,
 }
 impl StorageAccountProperties {
@@ -5869,7 +6011,11 @@ pub struct StorageAccountPropertiesCreateParameters {
     #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<storage_account_properties_create_parameters::AccessTier>,
     #[doc = "Settings for Azure Files identity based authentication."]
-    #[serde(rename = "azureFilesIdentityBasedAuthentication", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "azureFilesIdentityBasedAuthentication",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub azure_files_identity_based_authentication: Option<AzureFilesIdentityBasedAuthentication>,
     #[doc = "Allows https traffic only to storage service if sets to true. The default value is true since API version 2019-04-01."]
     #[serde(rename = "supportsHttpsTrafficOnly", default, skip_serializing_if = "Option::is_none")]
@@ -5902,13 +6048,25 @@ pub struct StorageAccountPropertiesCreateParameters {
     #[serde(rename = "isNfsV3Enabled", default, skip_serializing_if = "Option::is_none")]
     pub is_nfs_v3_enabled: Option<bool>,
     #[doc = "Allow or disallow cross AAD tenant object replication. Set this property to true for new or existing accounts only if object replication policies will involve storage accounts in different AAD tenants. The default interpretation is false for new accounts to follow best security practices by default."]
-    #[serde(rename = "allowCrossTenantReplication", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowCrossTenantReplication",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub allow_cross_tenant_replication: Option<bool>,
     #[doc = "A boolean flag which indicates whether the default authentication is OAuth or not. The default interpretation is false for this property."]
-    #[serde(rename = "defaultToOAuthAuthentication", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultToOAuthAuthentication",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub default_to_o_auth_authentication: Option<bool>,
     #[doc = "This property enables and defines account-level immutability. Enabling the feature auto-enables Blob Versioning."]
-    #[serde(rename = "immutableStorageWithVersioning", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "immutableStorageWithVersioning",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub immutable_storage_with_versioning: Option<ImmutableStorageAccount>,
     #[doc = "Allows you to specify the type of endpoint. Set this to AzureDNSZone to create a large number of accounts in a single subscription, which creates accounts in an Azure DNS Zone and the endpoint URL will have an alphanumeric DNS Zone identifier."]
     #[serde(rename = "dnsEndpointType", default, skip_serializing_if = "Option::is_none")]
@@ -6140,7 +6298,11 @@ pub struct StorageAccountPropertiesUpdateParameters {
     #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<storage_account_properties_update_parameters::AccessTier>,
     #[doc = "Settings for Azure Files identity based authentication."]
-    #[serde(rename = "azureFilesIdentityBasedAuthentication", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "azureFilesIdentityBasedAuthentication",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub azure_files_identity_based_authentication: Option<AzureFilesIdentityBasedAuthentication>,
     #[doc = "Allows https traffic only to storage service if sets to true."]
     #[serde(rename = "supportsHttpsTrafficOnly", default, skip_serializing_if = "Option::is_none")]
@@ -6170,16 +6332,28 @@ pub struct StorageAccountPropertiesUpdateParameters {
     #[serde(rename = "allowSharedKeyAccess", default, skip_serializing_if = "Option::is_none")]
     pub allow_shared_key_access: Option<bool>,
     #[doc = "Allow or disallow cross AAD tenant object replication. Set this property to true for new or existing accounts only if object replication policies will involve storage accounts in different AAD tenants. The default interpretation is false for new accounts to follow best security practices by default."]
-    #[serde(rename = "allowCrossTenantReplication", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowCrossTenantReplication",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub allow_cross_tenant_replication: Option<bool>,
     #[doc = "A boolean flag which indicates whether the default authentication is OAuth or not. The default interpretation is false for this property."]
-    #[serde(rename = "defaultToOAuthAuthentication", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultToOAuthAuthentication",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub default_to_o_auth_authentication: Option<bool>,
     #[doc = "Allow or disallow public network access to Storage Account. Value is optional but if passed in, must be 'Enabled' or 'Disabled'."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<storage_account_properties_update_parameters::PublicNetworkAccess>,
     #[doc = "This property enables and defines account-level immutability. Enabling the feature auto-enables Blob Versioning."]
-    #[serde(rename = "immutableStorageWithVersioning", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "immutableStorageWithVersioning",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub immutable_storage_with_versioning: Option<ImmutableStorageAccount>,
     #[doc = "Restrict copy to and from Storage Accounts within an AAD tenant or with Private Links to the same VNet."]
     #[serde(rename = "allowedCopyScope", default, skip_serializing_if = "Option::is_none")]
@@ -6742,7 +6916,11 @@ pub struct UpdateHistoryProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub update: Option<update_history_property::Update>,
     #[doc = "The immutability period for the blobs in the container since the policy creation, in days."]
-    #[serde(rename = "immutabilityPeriodSinceCreationInDays", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "immutabilityPeriodSinceCreationInDays",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub immutability_period_since_creation_in_days: Option<i64>,
     #[doc = "Returns the date and time the ImmutabilityPolicy was updated."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -6757,10 +6935,18 @@ pub struct UpdateHistoryProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub upn: Option<String>,
     #[doc = "This property can only be changed for unlocked time-based retention policies. When enabled, new blocks can be written to an append blob while maintaining immutability protection and compliance. Only new blocks can be added and any existing blocks cannot be modified or deleted. This property cannot be changed with ExtendImmutabilityPolicy API."]
-    #[serde(rename = "allowProtectedAppendWrites", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowProtectedAppendWrites",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub allow_protected_append_writes: Option<bool>,
     #[doc = "This property can only be changed for unlocked time-based retention policies. When enabled, new blocks can be written to both 'Append and Bock Blobs' while maintaining immutability protection and compliance. Only new blocks can be added and any existing blocks cannot be modified or deleted. This property cannot be changed with ExtendImmutabilityPolicy API. The 'allowProtectedAppendWrites' and 'allowProtectedAppendWritesAll' properties are mutually exclusive."]
-    #[serde(rename = "allowProtectedAppendWritesAll", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowProtectedAppendWritesAll",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub allow_protected_append_writes_all: Option<bool>,
 }
 impl UpdateHistoryProperty {
