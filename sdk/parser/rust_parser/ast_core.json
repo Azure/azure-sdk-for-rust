@@ -1,47 +1,92 @@
 {
   "items": [
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc = \" Endpoints for Azure Resource Manager in different Azure clouds\"] pub mod resource_manager_endpoint { static_url ! (# [doc = \" Azure Resource Manager China cloud endpoint\"] AZURE_CHINA_CLOUD , \"https://management.chinacloudapi.cn\") ; static_url ! (# [doc = \" Azure Resource Manager Germany cloud endpoint\"] AZURE_GERMANY_CLOUD , \"https://management.microsoftazure.de\") ; static_url ! (# [doc = \" Azure Resource Manager public cloud endpoint\"] AZURE_PUBLIC_CLOUD , \"https://management.azure.com\") ; static_url ! (# [doc = \" Azure Resource Manager US government cloud endpoint\"] AZURE_US_GOVERNMENT_CLOUD , \"https://management.usgovcloudapi.net\") ; }"
+      "type": "Mod",
+      "attrs": [
+        "# [doc = \" Endpoints for Azure Resource Manager in different Azure clouds\"]"
+      ],
+      "vis": "pub",
+      "ident": "resource_manager_endpoint",
+      "content": [
+        "static_url ! (# [doc = \" Azure Resource Manager China cloud endpoint\"] AZURE_CHINA_CLOUD , \"https://management.chinacloudapi.cn\") ;",
+        "static_url ! (# [doc = \" Azure Resource Manager Germany cloud endpoint\"] AZURE_GERMANY_CLOUD , \"https://management.microsoftazure.de\") ;",
+        "static_url ! (# [doc = \" Azure Resource Manager public cloud endpoint\"] AZURE_PUBLIC_CLOUD , \"https://management.azure.com\") ;",
+        "static_url ! (# [doc = \" Azure Resource Manager US government cloud endpoint\"] AZURE_US_GOVERNMENT_CLOUD , \"https://management.usgovcloudapi.net\") ;"
+      ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc = \" A list of known Azure authority hosts\"] pub mod authority_hosts { static_url ! (# [doc = \" China-based Azure Authority Host\"] AZURE_CHINA_CLOUD , \"https://login.chinacloudapi.cn\") ; static_url ! (# [doc = \" Germany-based Azure Authority Host\"] AZURE_GERMANY_CLOUD , \"https://login.microsoftonline.de\") ; static_url ! (# [doc = \" US Government Azure Authority Host\"] AZURE_US_GOVERNMENT_CLOUD , \"https://login.microsoftonline.us\") ; static_url ! (# [doc = \" Public Cloud Azure Authority Host\"] AZURE_PUBLIC_CLOUD , \"https://login.microsoftonline.com\") ; }"
+      "type": "Mod",
+      "attrs": [
+        "# [doc = \" A list of known Azure authority hosts\"]"
+      ],
+      "vis": "pub",
+      "ident": "authority_hosts",
+      "content": [
+        "static_url ! (# [doc = \" China-based Azure Authority Host\"] AZURE_CHINA_CLOUD , \"https://login.chinacloudapi.cn\") ;",
+        "static_url ! (# [doc = \" Germany-based Azure Authority Host\"] AZURE_GERMANY_CLOUD , \"https://login.microsoftonline.de\") ;",
+        "static_url ! (# [doc = \" US Government Azure Authority Host\"] AZURE_US_GOVERNMENT_CLOUD , \"https://login.microsoftonline.us\") ;",
+        "static_url ! (# [doc = \" Public Cloud Azure Authority Host\"] AZURE_PUBLIC_CLOUD , \"https://login.microsoftonline.com\") ;"
+      ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc = \" Constants related to the Content-Type header\"] # [doc = \"\"] # [doc = \" <https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Type>\"] pub mod content_type { use crate :: headers :: HeaderValue ; pub const MULTIPART_FORM_DATA : HeaderValue = HeaderValue :: from_static (\"multipart/form-data\") ; pub const APPLICATION_X_WWW_FORM_URLENCODED : HeaderValue = HeaderValue :: from_static (\"application/x-www-form-urlencoded\") ; pub const APPLICATION_XML : HeaderValue = HeaderValue :: from_static (\"application/xml\") ; pub const APPLICATION_JSON : HeaderValue = HeaderValue :: from_static (\"application/json\") ; pub const APPLICATION_OCTET_STREAM : HeaderValue = HeaderValue :: from_static (\"application/octet-stream\") ; pub const TEXT_PLAIN : HeaderValue = HeaderValue :: from_static (\"text/plain\") ; }"
+      "type": "Mod",
+      "attrs": [
+        "# [doc = \" Constants related to the Content-Type header\"]",
+        "# [doc = \"\"]",
+        "# [doc = \" <https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Type>\"]"
+      ],
+      "vis": "pub",
+      "ident": "content_type",
+      "content": [
+        "use crate :: headers :: HeaderValue ;",
+        "pub const MULTIPART_FORM_DATA : HeaderValue = HeaderValue :: from_static (\"multipart/form-data\") ;",
+        "pub const APPLICATION_X_WWW_FORM_URLENCODED : HeaderValue = HeaderValue :: from_static (\"application/x-www-form-urlencoded\") ;",
+        "pub const APPLICATION_XML : HeaderValue = HeaderValue :: from_static (\"application/xml\") ;",
+        "pub const APPLICATION_JSON : HeaderValue = HeaderValue :: from_static (\"application/json\") ;",
+        "pub const APPLICATION_OCTET_STREAM : HeaderValue = HeaderValue :: from_static (\"application/octet-stream\") ;",
+        "pub const TEXT_PLAIN : HeaderValue = HeaderValue :: from_static (\"text/plain\") ;"
+      ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc = \" Constants related to query parameters\"] pub mod query_param { pub const API_VERSION : & str = \"api-version\" ; }"
+      "type": "Mod",
+      "attrs": [
+        "# [doc = \" Constants related to query parameters\"]"
+      ],
+      "vis": "pub",
+      "ident": "query_param",
+      "content": [
+        "pub const API_VERSION : & str = \"api-version\" ;"
+      ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use serde :: { Deserialize , Serialize } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "serde :: { Deserialize , Serialize }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: { borrow :: Cow , fmt :: Debug , time :: Duration } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: { borrow :: Cow , fmt :: Debug , time :: Duration }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use typespec_client_core :: date :: OffsetDateTime ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: date :: OffsetDateTime"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub static DEFAULT_SCOPE_SUFFIX : & str = \"/.default\" ;"
+      "type": "Static",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "DEFAULT_SCOPE_SUFFIX",
+      "ty": "pub static DEFAULT_SCOPE_SUFFIX : & str = \"/.default\" ; . ty",
+      "expr": "\"/.default\""
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Clone , Deserialize , Serialize , Eq)]"
+      ],
+      "vis": "pub",
       "ident": "Secret",
       "fields": [
         "(Cow",
@@ -79,6 +124,11 @@
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [doc = \" Represents an Azure service bearer access token with expiry information.\"]",
+        "# [derive (Debug , Clone , Serialize , Deserialize)]"
+      ],
+      "vis": "pub",
       "ident": "AccessToken",
       "fields": [
         "{",
@@ -122,367 +172,664 @@
       "content": "impl AccessToken { # [doc = \" Create a new `AccessToken`.\"] pub fn new < T > (token : T , expires_on : OffsetDateTime) -> Self where T : Into < Secret > , { Self { token : token . into () , expires_on , } } # [doc = \" Check if the token is expired within a given duration.\"] # [doc = \"\"] # [doc = \" If no duration is provided, then the default duration of 30 seconds is used.\"] pub fn is_expired (& self , window : Option < Duration >) -> bool { self . expires_on < OffsetDateTime :: now_utc () + window . unwrap_or (Duration :: from_secs (30)) } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc = \" Represents a credential capable of providing an OAuth token.\"] # [cfg_attr (target_arch = \"wasm32\" , async_trait :: async_trait (? Send))] # [cfg_attr (not (target_arch = \"wasm32\") , async_trait :: async_trait)] pub trait TokenCredential : Send + Sync + Debug { # [doc = \" Gets a `AccessToken` for the specified resource\"] async fn get_token (& self , scopes : & [& str]) -> crate :: Result < AccessToken > ; # [doc = \" Clear the credential's cache.\"] async fn clear_cache (& self) -> crate :: Result < () > ; }"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use typespec_client_core :: http :: headers :: * ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const ACCOUNT_KIND : HeaderName = HeaderName :: from_static (\"x-ms-account-kind\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const ACL : HeaderName = HeaderName :: from_static (\"x-ms-acl\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const ACTIVITY_ID : HeaderName = HeaderName :: from_static (\"x-ms-activity-id\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const APP : HeaderName = HeaderName :: from_static (\"x-ms-app\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const APPEND_POSITION : HeaderName = HeaderName :: from_static (\"x-ms-blob-condition-appendpos\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const AZURE_ASYNCOPERATION : HeaderName = HeaderName :: from_static (\"azure-asyncoperation\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const BLOB_ACCESS_TIER : HeaderName = HeaderName :: from_static (\"x-ms-access-tier\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const BLOB_CACHE_CONTROL : HeaderName = HeaderName :: from_static (\"x-ms-blob-cache-control\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const BLOB_COMMITTED_BLOCK_COUNT : HeaderName = HeaderName :: from_static (\"x-ms-blob-committed-block-count\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const BLOB_CONTENT_LENGTH : HeaderName = HeaderName :: from_static (\"x-ms-blob-content-length\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const BLOB_PUBLIC_ACCESS : HeaderName = HeaderName :: from_static (\"x-ms-blob-public-access\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const BLOB_SEQUENCE_NUMBER : HeaderName = HeaderName :: from_static (\"x-ms-blob-sequence-number\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const BLOB_TYPE : HeaderName = HeaderName :: from_static (\"x-ms-blob-type\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const CLIENT_REQUEST_ID : HeaderName = HeaderName :: from_static (\"x-ms-client-request-id\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const CLIENT_VERSION : HeaderName = HeaderName :: from_static (\"x-ms-client-version\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const CONTENT_DISPOSITION : HeaderName = HeaderName :: from_static (\"x-ms-blob-content-disposition\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const CONTINUATION : HeaderName = HeaderName :: from_static (\"x-ms-continuation\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const COPY_COMPLETION_TIME : HeaderName = HeaderName :: from_static (\"x-ms-copy-completion-time\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const COPY_PROGRESS : HeaderName = HeaderName :: from_static (\"x-ms-copy-progress\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const COPY_SOURCE : HeaderName = HeaderName :: from_static (\"x-ms-copy-source\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const COPY_STATUS_DESCRIPTION : HeaderName = HeaderName :: from_static (\"x-ms-copy-status-description\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const COPY_STATUS : HeaderName = HeaderName :: from_static (\"x-ms-copy-status\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const CREATION_TIME : HeaderName = HeaderName :: from_static (\"x-ms-creation-time\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const DELETE_SNAPSHOTS : HeaderName = HeaderName :: from_static (\"x-ms-delete-snapshots\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const DELETE_TYPE_PERMANENT : HeaderName = HeaderName :: from_static (\"x-ms-delete-type-permanent\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const ENCRYPTION_ALGORITHM : HeaderName = HeaderName :: from_static (\"x-ms-encryption-algorithm\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const ENCRYPTION_KEY_SHA256 : HeaderName = HeaderName :: from_static (\"x-ms-encryption-key-sha256\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const ENCRYPTION_KEY : HeaderName = HeaderName :: from_static (\"x-ms-encryption-key\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const HAS_IMMUTABILITY_POLICY : HeaderName = HeaderName :: from_static (\"x-ms-has-immutability-policy\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const HAS_LEGAL_HOLD : HeaderName = HeaderName :: from_static (\"x-ms-has-legal-hold\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const IF_SEQUENCE_NUMBER_EQ : HeaderName = HeaderName :: from_static (\"x-ms-if-sequence-number-eq\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const IF_SEQUENCE_NUMBER_LE : HeaderName = HeaderName :: from_static (\"x-ms-if-sequence-number-le\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const IF_SEQUENCE_NUMBER_LT : HeaderName = HeaderName :: from_static (\"x-ms-if-sequence-number-lt\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const IF_TAGS : HeaderName = HeaderName :: from_static (\"x-ms-if-tags\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const ITEM_COUNT : HeaderName = HeaderName :: from_static (\"x-ms-item-count\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const ITEM_TYPE : HeaderName = HeaderName :: from_static (\"x-ms-item-type\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const LEASE_ACTION : HeaderName = HeaderName :: from_static (\"x-ms-lease-action\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const LEASE_BREAK_PERIOD : HeaderName = HeaderName :: from_static (\"x-ms-lease-break-period\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const LEASE_DURATION : HeaderName = HeaderName :: from_static (\"x-ms-lease-duration\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const LEASE_ID : HeaderName = HeaderName :: from_static (\"x-ms-lease-id\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const LEASE_STATE : HeaderName = HeaderName :: from_static (\"x-ms-lease-state\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const LEASE_STATUS : HeaderName = HeaderName :: from_static (\"x-ms-lease-status\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const LEASE_TIME : HeaderName = HeaderName :: from_static (\"x-ms-lease-time\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const MAX_ITEM_COUNT : HeaderName = HeaderName :: from_static (\"x-ms-max-item-count\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const META_PREFIX : HeaderName = HeaderName :: from_static (\"x-ms-meta-\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const MS_DATE : HeaderName = HeaderName :: from_static (\"x-ms-date\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const MS_RANGE : HeaderName = HeaderName :: from_static (\"x-ms-range\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const NAMESPACE_ENABLED : HeaderName = HeaderName :: from_static (\"x-ms-namespace-enabled\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const PAGE_WRITE : HeaderName = HeaderName :: from_static (\"x-ms-page-write\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const PROPERTIES : HeaderName = HeaderName :: from_static (\"x-ms-properties\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const PROPOSED_LEASE_ID : HeaderName = HeaderName :: from_static (\"x-ms-proposed-lease-id\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const RANGE_GET_CONTENT_CRC64 : HeaderName = HeaderName :: from_static (\"x-ms-range-get-content-crc64\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const RANGE_GET_CONTENT_MD5 : HeaderName = HeaderName :: from_static (\"x-ms-range-get-content-md5\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const REQUEST_ID : HeaderName = HeaderName :: from_static (\"x-ms-request-id\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const REQUEST_SERVER_ENCRYPTED : HeaderName = HeaderName :: from_static (\"x-ms-request-server-encrypted\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const REQUIRES_SYNC : HeaderName = HeaderName :: from_static (\"x-ms-requires-sync\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const SERVER_ENCRYPTED : HeaderName = HeaderName :: from_static (\"x-ms-server-encrypted\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const SESSION_TOKEN : HeaderName = HeaderName :: from_static (\"x-ms-session-token\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const SKU_NAME : HeaderName = HeaderName :: from_static (\"x-ms-sku-name\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const SOURCE_IF_MATCH : HeaderName = HeaderName :: from_static (\"x-ms-source-if-match\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const SOURCE_IF_MODIFIED_SINCE : HeaderName = HeaderName :: from_static (\"x-ms-source-if-modified-since\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const SOURCE_IF_NONE_MATCH : HeaderName = HeaderName :: from_static (\"x-ms-source-if-none-match\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const SOURCE_IF_UNMODIFIED_SINCE : HeaderName = HeaderName :: from_static (\"x-ms-source-if-unmodified-since\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const SOURCE_LEASE_ID : HeaderName = HeaderName :: from_static (\"x-ms-source-lease-id\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const SOURCE_RANGE : HeaderName = HeaderName :: from_static (\"x-ms-source-range\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const TAGS : HeaderName = HeaderName :: from_static (\"x-ms-tags\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const USER : HeaderName = HeaderName :: from_static (\"x-ms-user\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub const VERSION : HeaderName = HeaderName :: from_static (\"x-ms-version\") ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: credentials :: Secret ;"
-    },
-    {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [cfg (any (feature = \"hmac_rust\" , feature = \"hmac_openssl\"))] use crate :: { base64 , error :: { ErrorKind , ResultExt } , } ;"
-    },
-    {
-      "type": "Function",
+      "type": "Trait",
+      "attrs": [
+        "# [doc = \" Represents a credential capable of providing an OAuth token.\"]",
+        "# [cfg_attr (target_arch = \"wasm32\" , async_trait :: async_trait (? Send))]",
+        "# [cfg_attr (not (target_arch = \"wasm32\") , async_trait :: async_trait)]"
+      ],
+      "vis": "pub",
+      "ident": "TokenCredential",
+      "items": [
+        "# [doc = \" Gets a `AccessToken` for the specified resource\"] async fn get_token (& self , scopes : & [& str]) -> crate :: Result < AccessToken > ;",
+        "# [doc = \" Clear the credential's cache.\"] async fn clear_cache (& self) -> crate :: Result < () > ;"
+      ]
+    },
+    {
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: http :: headers :: *"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "ACCOUNT_KIND",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-account-kind\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "ACL",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-acl\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "ACTIVITY_ID",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-activity-id\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "APP",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-app\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "APPEND_POSITION",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-blob-condition-appendpos\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "AZURE_ASYNCOPERATION",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"azure-asyncoperation\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "BLOB_ACCESS_TIER",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-access-tier\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "BLOB_CACHE_CONTROL",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-blob-cache-control\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "BLOB_COMMITTED_BLOCK_COUNT",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-blob-committed-block-count\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "BLOB_CONTENT_LENGTH",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-blob-content-length\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "BLOB_PUBLIC_ACCESS",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-blob-public-access\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "BLOB_SEQUENCE_NUMBER",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-blob-sequence-number\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "BLOB_TYPE",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-blob-type\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "CLIENT_REQUEST_ID",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-client-request-id\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "CLIENT_VERSION",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-client-version\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "CONTENT_DISPOSITION",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-blob-content-disposition\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "CONTINUATION",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-continuation\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "COPY_COMPLETION_TIME",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-copy-completion-time\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "COPY_PROGRESS",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-copy-progress\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "COPY_SOURCE",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-copy-source\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "COPY_STATUS_DESCRIPTION",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-copy-status-description\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "COPY_STATUS",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-copy-status\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "CREATION_TIME",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-creation-time\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "DELETE_SNAPSHOTS",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-delete-snapshots\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "DELETE_TYPE_PERMANENT",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-delete-type-permanent\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "ENCRYPTION_ALGORITHM",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-encryption-algorithm\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "ENCRYPTION_KEY_SHA256",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-encryption-key-sha256\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "ENCRYPTION_KEY",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-encryption-key\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "HAS_IMMUTABILITY_POLICY",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-has-immutability-policy\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "HAS_LEGAL_HOLD",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-has-legal-hold\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "IF_SEQUENCE_NUMBER_EQ",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-if-sequence-number-eq\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "IF_SEQUENCE_NUMBER_LE",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-if-sequence-number-le\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "IF_SEQUENCE_NUMBER_LT",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-if-sequence-number-lt\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "IF_TAGS",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-if-tags\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "ITEM_COUNT",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-item-count\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "ITEM_TYPE",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-item-type\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "LEASE_ACTION",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-lease-action\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "LEASE_BREAK_PERIOD",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-lease-break-period\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "LEASE_DURATION",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-lease-duration\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "LEASE_ID",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-lease-id\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "LEASE_STATE",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-lease-state\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "LEASE_STATUS",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-lease-status\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "LEASE_TIME",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-lease-time\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "MAX_ITEM_COUNT",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-max-item-count\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "META_PREFIX",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-meta-\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "MS_DATE",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-date\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "MS_RANGE",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-range\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "NAMESPACE_ENABLED",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-namespace-enabled\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "PAGE_WRITE",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-page-write\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "PROPERTIES",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-properties\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "PROPOSED_LEASE_ID",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-proposed-lease-id\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "RANGE_GET_CONTENT_CRC64",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-range-get-content-crc64\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "RANGE_GET_CONTENT_MD5",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-range-get-content-md5\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "REQUEST_ID",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-request-id\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "REQUEST_SERVER_ENCRYPTED",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-request-server-encrypted\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "REQUIRES_SYNC",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-requires-sync\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "SERVER_ENCRYPTED",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-server-encrypted\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "SESSION_TOKEN",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-session-token\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "SKU_NAME",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-sku-name\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "SOURCE_IF_MATCH",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-source-if-match\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "SOURCE_IF_MODIFIED_SINCE",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-source-if-modified-since\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "SOURCE_IF_NONE_MATCH",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-source-if-none-match\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "SOURCE_IF_UNMODIFIED_SINCE",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-source-if-unmodified-since\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "SOURCE_LEASE_ID",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-source-lease-id\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "SOURCE_RANGE",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-source-range\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "TAGS",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-tags\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "USER",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-user\")"
+    },
+    {
+      "type": "Const",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "VERSION",
+      "generics": "",
+      "ty": "HeaderName",
+      "expr": "HeaderName :: from_static (\"x-ms-version\")"
+    },
+    {
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: credentials :: Secret"
+    },
+    {
+      "type": "Use",
+      "attrs": [
+        "# [cfg (any (feature = \"hmac_rust\" , feature = \"hmac_openssl\"))]"
+      ],
+      "tree": "crate :: { base64 , error :: { ErrorKind , ResultExt } , }"
+    },
+    {
+      "type": "Fn",
+      "attrs": [
+        "# [doc = \" Tries to create an HMAC SHA256 signature from the given `data` and `key`.\"]",
+        "# [doc = \"\"]",
+        "# [doc = \" The `key` is expected to be a base64 encoded string and will be decoded\"]",
+        "# [doc = \" before using it for signing. The returned signature is also base64 encoded.\"]",
+        "# [doc = \"\"]",
+        "# [doc = \" If both `hmac_rust` and `hmac_openssl` are enabled, use `hmac_openssl`.\"]",
+        "# [doc = \"\"]",
+        "# [doc = \" # Errors\"]",
+        "# [doc = \" - If the `key` is not a valid base64 encoded string.\"]",
+        "# [doc = \" - If it fails to create the HMAC from the `key`.\"]",
+        "# [cfg (all (feature = \"hmac_rust\" , not (feature = \"hmac_openssl\")))]"
+      ],
+      "vis": "pub",
       "ident": "hmac_sha256",
       "inputs": [
         "data : & str . pat: data : & str . ty",
@@ -492,7 +839,11 @@
       "block": "{ use hmac :: { Hmac , Mac } ; use sha2 :: Sha256 ; let key = base64 :: decode (key . secret ()) ? ; let mut hmac = Hmac :: < Sha256 > :: new_from_slice (& key) . with_context (ErrorKind :: DataConversion , | | { \"failed to create hmac from key\" }) ? ; hmac . update (data . as_bytes ()) ; let signature = hmac . finalize () . into_bytes () ; Ok (base64 :: encode (signature)) }"
     },
     {
-      "type": "Function",
+      "type": "Fn",
+      "attrs": [
+        "# [cfg (feature = \"hmac_openssl\")]"
+      ],
+      "vis": "pub",
       "ident": "hmac_sha256",
       "inputs": [
         "data : & str . pat: data : & str . ty",
@@ -502,7 +853,11 @@
       "block": "{ use openssl :: { error :: ErrorStack , hash :: MessageDigest , pkey :: PKey , sign :: Signer } ; let decoded = base64 :: decode (key . secret ()) ? ; let signature = | | -> Result < Vec < u8 > , ErrorStack > { let pkey = PKey :: hmac (& decoded) ? ; let mut signer = Signer :: new (MessageDigest :: sha256 () , & pkey) ? ; signer . update (data . as_bytes ()) ? ; signer . sign_to_vec () } () . with_context (ErrorKind :: DataConversion , | | { \"failed to create hmac from key\" }) ? ; Ok (base64 :: encode (signature)) }"
     },
     {
-      "type": "Function",
+      "type": "Fn",
+      "attrs": [
+        "# [cfg (not (any (feature = \"hmac_rust\" , feature = \"hmac_openssl\")))]"
+      ],
+      "vis": "pub",
       "ident": "hmac_sha256",
       "inputs": [
         "_data : & str . pat: _data : & str . ty",
@@ -512,162 +867,246 @@
       "block": "{ unimplemented ! (\"An HMAC signing request was called without an hmac implementation.  Make sure to enable either the `hmac_rust` or `hmac_openssl` feature\") ; }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [cfg (test)] mod tests { use super :: * ; # [allow (dead_code)] # [cfg_attr (any (feature = \"hmac_rust\" , feature = \"hmac_openssl\") , test)] fn test_hmac_sign () { let data = \"create hmac signature for data\" ; let key = Secret :: new (\"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\") ; let sig = hmac_sha256 (data , & key) . unwrap () ; let expected_sig = \"D/y9XyIEdUzEbdV570h8dou/mfkbMA1lKCOPqPDPAd0=\" ; assert_eq ! (sig , expected_sig) ; } }"
+      "type": "Mod",
+      "attrs": [
+        "# [cfg (test)]"
+      ],
+      "vis": "",
+      "ident": "tests",
+      "content": [
+        "use super :: * ;",
+        "# [allow (dead_code)] # [cfg_attr (any (feature = \"hmac_rust\" , feature = \"hmac_openssl\") , test)] fn test_hmac_sign () { let data = \"create hmac signature for data\" ; let key = Secret :: new (\"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\") ; let sig = hmac_sha256 (data , & key) . unwrap () ; let expected_sig = \"D/y9XyIEdUzEbdV570h8dou/mfkbMA1lKCOPqPDPAd0=\" ; assert_eq ! (sig , expected_sig) ; }"
+      ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [macro_use] mod macros ;"
+      "type": "Mod",
+      "attrs": [
+        "# [macro_use]"
+      ],
+      "vis": "",
+      "ident": "macros",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod constants ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "constants",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub mod hmac ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "hmac",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod models ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "models",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod options ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "options",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod pipeline ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "pipeline",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod policies ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "policies",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub mod credentials ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "credentials",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub mod headers ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "headers",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub mod lro ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "lro",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub mod request_options ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "request_options",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [cfg (feature = \"test\")] pub mod test ;"
+      "type": "Mod",
+      "attrs": [
+        "# [cfg (feature = \"test\")]"
+      ],
+      "vis": "pub",
+      "ident": "test",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub mod tokio ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "tokio",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use constants :: * ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "constants :: *"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc (inline)] pub use models :: * ;"
+      "type": "Use",
+      "attrs": [
+        "# [doc (inline)]"
+      ],
+      "tree": "models :: *"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use options :: * ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "options :: *"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use pipeline :: * ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "pipeline :: *"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use policies :: * ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "policies :: *"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use typespec :: { Error , Result } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec :: { Error , Result }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub mod error { pub use typespec :: error :: * ; pub use typespec_client_core :: error :: * ; }"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "error",
+      "content": [
+        "pub use typespec :: error :: * ;",
+        "pub use typespec_client_core :: error :: * ;"
+      ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [cfg (feature = \"xml\")] pub use typespec_client_core :: xml ;"
+      "type": "Use",
+      "attrs": [
+        "# [cfg (feature = \"xml\")]"
+      ],
+      "tree": "typespec_client_core :: xml"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use typespec_client_core :: { base64 , date , http :: { headers :: Header , new_http_client , response :: { Model , PinnedStream , Response , ResponseBody } , AppendToUrlQuery , Body , Context , HttpClient , Method , Pager , Request , RequestContent , StatusCode , Url , } , json , parsing , sleep :: { self , sleep } , stream :: { BytesStream , SeekableStream } , Uuid , } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: { base64 , date , http :: { headers :: Header , new_http_client , response :: { Model , PinnedStream , Response , ResponseBody } , AppendToUrlQuery , Body , Context , HttpClient , Method , Pager , Request , RequestContent , StatusCode , Url , } , json , parsing , sleep :: { self , sleep } , stream :: { BytesStream , SeekableStream } , Uuid , }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc = \" A unique identifier for a request.\"] pub type RequestId = Uuid ;"
+      "type": "Type",
+      "attrs": [
+        "# [doc = \" A unique identifier for a request.\"]"
+      ],
+      "vis": "pub",
+      "ident": "RequestId",
+      "ty": "# [doc = \" A unique identifier for a request.\"] pub type RequestId = Uuid ; . ty"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc = \" A unique session token.\"] pub type SessionToken = String ;"
+      "type": "Type",
+      "attrs": [
+        "# [doc = \" A unique session token.\"]"
+      ],
+      "vis": "pub",
+      "ident": "SessionToken",
+      "ty": "# [doc = \" A unique session token.\"] pub type SessionToken = String ; . ty"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc = \" An empty HTTP body.\"] # [allow (clippy :: declare_interior_mutable_const)] pub const EMPTY_BODY : bytes :: Bytes = bytes :: Bytes :: new () ;"
+      "type": "Const",
+      "attrs": [
+        "# [doc = \" An empty HTTP body.\"]",
+        "# [allow (clippy :: declare_interior_mutable_const)]"
+      ],
+      "vis": "pub",
+      "ident": "EMPTY_BODY",
+      "generics": "",
+      "ty": "bytes :: Bytes",
+      "expr": "bytes :: Bytes :: new ()"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc (hidden)] # [doc = \" Used by macros as an implementation detail\"] pub mod __private { pub use paste :: paste ; }"
+      "type": "Mod",
+      "attrs": [
+        "# [doc (hidden)]",
+        "# [doc = \" Used by macros as an implementation detail\"]"
+      ],
+      "vis": "pub",
+      "ident": "__private",
+      "content": [
+        "pub use paste :: paste ;"
+      ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: Headers ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: Headers"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: time :: Duration ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: time :: Duration"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use typespec_client_core :: date :: OffsetDateTime ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: date :: OffsetDateTime"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc = \" Default retry time for long running operations if no retry-after header is present\"] # [doc = \"\"] # [doc = \" This value is the same as the default used in the Azure SDK for Python.\"] # [doc = \" Ref: <https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/core/azure-mgmt-core/azure/mgmt/core/polling/arm_polling.py#L191>\"] const DEFAULT_RETRY_TIME : Duration = Duration :: from_secs (30) ;"
+      "type": "Const",
+      "attrs": [
+        "# [doc = \" Default retry time for long running operations if no retry-after header is present\"]",
+        "# [doc = \"\"]",
+        "# [doc = \" This value is the same as the default used in the Azure SDK for Python.\"]",
+        "# [doc = \" Ref: <https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/core/azure-mgmt-core/azure/mgmt/core/polling/arm_polling.py#L191>\"]"
+      ],
+      "vis": "",
+      "ident": "DEFAULT_RETRY_TIME",
+      "generics": "",
+      "ty": "Duration",
+      "expr": "Duration :: from_secs (30)"
     },
     {
       "type": "Enum",
+      "attrs": [
+        "# [doc = \" Long Running Operation (LRO) status\"]",
+        "# [doc = \"\"]",
+        "# [doc = \" Ref: <https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations#provisioningstate-values>\"]",
+        "# [derive (Debug)]"
+      ],
+      "vis": "pub",
       "ident": "LroStatus",
       "variants": [
         "InProgress",
@@ -683,7 +1122,9 @@
       "content": "impl From < & str > for LroStatus { fn from (s : & str) -> Self { match s { \"InProgress\" => LroStatus :: InProgress , \"Succeeded\" => LroStatus :: Succeeded , \"Failed\" => LroStatus :: Failed , \"Canceled\" | \"Cancelled\" => LroStatus :: Canceled , _ => LroStatus :: Other (s . to_owned ()) , } } }"
     },
     {
-      "type": "Function",
+      "type": "Fn",
+      "attrs": [],
+      "vis": "pub",
       "ident": "get_retry_after",
       "inputs": [
         "headers : & Headers . pat: headers : & Headers . ty"
@@ -692,14 +1133,31 @@
       "block": "{ crate :: get_retry_after (headers , OffsetDateTime :: now_utc) . unwrap_or (DEFAULT_RETRY_TIME) }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub mod location { use crate :: { headers :: { Headers , AZURE_ASYNCOPERATION , LOCATION , OPERATION_LOCATION } , json :: from_json , lro :: LroStatus , Url , } ; # [derive (Debug , Clone , Copy)] pub enum FinalState { AzureAsyncOperation , Location , OperationLocation , } pub fn get_location (headers : & Headers , final_state : FinalState) -> crate :: Result < Option < Url > > { match final_state { FinalState :: AzureAsyncOperation => headers . get_optional_as (& AZURE_ASYNCOPERATION) , FinalState :: Location => headers . get_optional_as (& LOCATION) , FinalState :: OperationLocation => headers . get_optional_as (& OPERATION_LOCATION) , } } pub fn get_provisioning_state (body : & [u8]) -> Option < LroStatus > { # [derive (serde :: Deserialize)] struct Body { status : String , } let body : Body = from_json (body) . ok () ? ; Some (LroStatus :: from (body . status . as_str ())) } }"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "location",
+      "content": [
+        "use crate :: { headers :: { Headers , AZURE_ASYNCOPERATION , LOCATION , OPERATION_LOCATION } , json :: from_json , lro :: LroStatus , Url , } ;",
+        "# [derive (Debug , Clone , Copy)] pub enum FinalState { AzureAsyncOperation , Location , OperationLocation , }",
+        "pub fn get_location (headers : & Headers , final_state : FinalState) -> crate :: Result < Option < Url > > { match final_state { FinalState :: AzureAsyncOperation => headers . get_optional_as (& AZURE_ASYNCOPERATION) , FinalState :: Location => headers . get_optional_as (& LOCATION) , FinalState :: OperationLocation => headers . get_optional_as (& OPERATION_LOCATION) , } }",
+        "pub fn get_provisioning_state (body : & [u8]) -> Option < LroStatus > { # [derive (serde :: Deserialize)] struct Body { status : String , } let body : Body = from_json (body) . ok () ? ; Some (LroStatus :: from (body . status . as_str ())) }"
+      ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub mod body_content { use crate :: json :: { from_json , to_json } ; use crate :: { lro :: LroStatus , StatusCode } ; use serde :: { Deserialize , Serialize } ; # [doc = \" Extract the provisioning state based on the status code and response body\"] # [doc = \"\"] # [doc = \" Ref: <https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/core/azure-core/azure/core/polling/base_polling.py>\"] pub fn get_provisioning_state < S > (status_code : StatusCode , body : & S) -> crate :: Result < LroStatus > where S : Serialize , { match status_code { StatusCode :: Accepted => Ok (LroStatus :: InProgress) , StatusCode :: Created => { Ok (get_provisioning_state_from_body (body) . unwrap_or (LroStatus :: InProgress)) } StatusCode :: Ok => { Ok (get_provisioning_state_from_body (body) . unwrap_or (LroStatus :: Succeeded)) } StatusCode :: NoContent => Ok (LroStatus :: Succeeded) , _ => Err (crate :: error :: Error :: from (crate :: error :: ErrorKind :: HttpResponse { status : status_code , error_code : Some (\"invalid status found in LRO response\" . to_owned ()) , } ,)) , } } # [derive (Deserialize)] # [serde (rename_all = \"snake_case\")] struct Properties { provisioning_state : String , } # [derive (Deserialize)] struct Body { properties : Properties , } fn get_provisioning_state_from_body < S > (body : & S) -> Option < LroStatus > where S : Serialize , { let body : Body = from_json (to_json (& body) . ok () ?) . ok () ? ; Some (LroStatus :: from (body . properties . provisioning_state . as_str ())) } }"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "pub",
+      "ident": "body_content",
+      "content": [
+        "use crate :: json :: { from_json , to_json } ;",
+        "use crate :: { lro :: LroStatus , StatusCode } ;",
+        "use serde :: { Deserialize , Serialize } ;",
+        "# [doc = \" Extract the provisioning state based on the status code and response body\"] # [doc = \"\"] # [doc = \" Ref: <https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/core/azure-core/azure/core/polling/base_polling.py>\"] pub fn get_provisioning_state < S > (status_code : StatusCode , body : & S) -> crate :: Result < LroStatus > where S : Serialize , { match status_code { StatusCode :: Accepted => Ok (LroStatus :: InProgress) , StatusCode :: Created => { Ok (get_provisioning_state_from_body (body) . unwrap_or (LroStatus :: InProgress)) } StatusCode :: Ok => { Ok (get_provisioning_state_from_body (body) . unwrap_or (LroStatus :: Succeeded)) } StatusCode :: NoContent => Ok (LroStatus :: Succeeded) , _ => Err (crate :: error :: Error :: from (crate :: error :: ErrorKind :: HttpResponse { status : status_code , error_code : Some (\"invalid status found in LRO response\" . to_owned ()) , } ,)) , } }",
+        "# [derive (Deserialize)] # [serde (rename_all = \"snake_case\")] struct Properties { provisioning_state : String , }",
+        "# [derive (Deserialize)] struct Body { properties : Properties , }",
+        "fn get_provisioning_state_from_body < S > (body : & S) -> Option < LroStatus > where S : Serialize , { let body : Body = from_json (to_json (& body) . ok () ?) . ok () ? ; Some (LroStatus :: from (body . properties . provisioning_state . as_str ())) }"
+      ]
     },
     {
       "type": "Other",
@@ -712,9 +1170,9 @@
       "content": "# [macro_export] macro_rules ! static_url { ($ (# [$ outer : meta]) * $ name : ident , $ value : expr) => { $ (# [$ outer]) * pub static $ name : once_cell :: sync :: Lazy <$ crate :: Url > = once_cell :: sync :: Lazy :: new (|| { $ crate :: Url :: parse ($ value) . expect (\"hardcoded URL must parse\") }) ; } ; }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use typespec_client_core :: create_enum ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: create_enum"
     },
     {
       "type": "Other",
@@ -737,42 +1195,51 @@
       "content": "create_enum ! (# [doc = \"The lease action to perform on an Azure resource.\"] LeaseAction , (Acquire , \"acquire\") , (Renew , \"renew \") , (Change , \"change\") , (Release , \"release \") , (Break , \"break\")) ;"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod lease ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "lease",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use lease :: * ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "lease :: *"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use typespec_client_core :: http :: Etag ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: http :: Etag"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod telemetry ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "telemetry",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use telemetry :: * ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "telemetry :: *"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use typespec_client_core :: http :: { builders , AsClientMethodOptions , AsClientOptions , ClientMethodOptions , ClientOptions , ExponentialRetryOptions , FixedRetryOptions , RetryOptions , TransportOptions , } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: http :: { builders , AsClientMethodOptions , AsClientOptions , ClientMethodOptions , ClientOptions , ExponentialRetryOptions , FixedRetryOptions , RetryOptions , TransportOptions , }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use typespec_client_core :: setters ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: setters"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [doc = \" Telemetry options.\"]",
+        "# [derive (Clone , Debug , Default)]"
+      ],
+      "vis": "pub",
       "ident": "TelemetryOptions",
       "fields": [
         "{",
@@ -803,22 +1270,48 @@
       "content": "impl TelemetryOptions { setters ! { # [doc = \"Set the application ID to telemetry.\"] application_id : String => Some (application_id) , } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: { TelemetryOptions , TelemetryPolicy } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: { TelemetryOptions , TelemetryPolicy }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: { ops :: Deref , sync :: Arc } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: { ops :: Deref , sync :: Arc }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use typespec_client_core :: http :: { self , policies :: Policy } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: http :: { self , policies :: Policy }"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [doc = \" Execution pipeline.\"]",
+        "# [doc = \"\"]",
+        "# [doc = \" A pipeline follows a precise flow:\"]",
+        "# [doc = \"\"]",
+        "# [doc = \" 1. Client library-specified per-call policies are executed. Per-call policies can fail and bail out of the pipeline\"]",
+        "# [doc = \"    immediately.\"]",
+        "# [doc = \" 2. User-specified per-call policies are executed.\"]",
+        "# [doc = \" 3. Telemetry policy.\"]",
+        "# [doc = \" 4. Retry policy. It allows to re-execute the following policies.\"]",
+        "# [doc = \" 5. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are re-executed\"]",
+        "# [doc = \"    in case of retries.\"]",
+        "# [doc = \" 6. User-specified per-retry policies are executed.\"]",
+        "# [doc = \" 7. Authorization policy. Authorization can depend on the HTTP headers and/or the request body so it\"]",
+        "# [doc = \"    must be executed right before sending the request to the transport. Also, the authorization\"]",
+        "# [doc = \"    can depend on the current time so it must be executed at every retry.\"]",
+        "# [doc = \" 8. Transport policy. Transport policy is always the last policy and is the policy that\"]",
+        "# [doc = \"    actually constructs the `Response` to be passed up the pipeline.\"]",
+        "# [doc = \"\"]",
+        "# [doc = \" A pipeline is immutable. In other words a policy can either succeed and call the following\"]",
+        "# [doc = \" policy of fail and return to the calling policy. Arbitrary policy \\\"skip\\\" must be avoided (but\"]",
+        "# [doc = \" cannot be enforced by code). All policies except Transport policy can assume there is another following policy (so\"]",
+        "# [doc = \" `self.pipeline[0]` is always valid).\"]",
+        "# [derive (Debug , Clone)]"
+      ],
+      "vis": "pub",
       "ident": "Pipeline",
       "fields": [
         "(http",
@@ -837,32 +1330,36 @@
       "content": "impl Deref for Pipeline { type Target = http :: Pipeline ; fn deref (& self) -> & Self :: Target { & self . 0 } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: { credentials :: { AccessToken , TokenCredential } , error :: { Error , ErrorKind } , headers :: AUTHORIZATION , policies :: { Policy , PolicyResult } , Context , Request , } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: { credentials :: { AccessToken , TokenCredential } , error :: { Error , ErrorKind } , headers :: AUTHORIZATION , policies :: { Policy , PolicyResult } , Context , Request , }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use async_lock :: RwLock ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "async_lock :: RwLock"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use async_trait :: async_trait ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "async_trait :: async_trait"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: sync :: Arc ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: sync :: Arc"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: time :: Duration ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: time :: Duration"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug , Clone)]"
+      ],
+      "vis": "pub",
       "ident": "BearerTokenCredentialPolicy",
       "fields": [
         "{",
@@ -898,9 +1395,15 @@
       ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [doc = \" Default timeout in seconds before refreshing a new token.\"] const DEFAULT_REFRESH_TIME : Duration = Duration :: from_secs (120) ;"
+      "type": "Const",
+      "attrs": [
+        "# [doc = \" Default timeout in seconds before refreshing a new token.\"]"
+      ],
+      "vis": "",
+      "ident": "DEFAULT_REFRESH_TIME",
+      "generics": "",
+      "ty": "Duration",
+      "expr": "Duration :: from_secs (120)"
     },
     {
       "type": "Other",
@@ -913,62 +1416,70 @@
       "content": "# [cfg_attr (target_arch = \"wasm32\" , async_trait (? Send))] # [cfg_attr (not (target_arch = \"wasm32\") , async_trait)] impl Policy for BearerTokenCredentialPolicy { async fn send (& self , ctx : & Context , request : & mut Request , next : & [Arc < dyn Policy >] ,) -> PolicyResult { let access_token = self . access_token . read () . await ; if let Some (token) = & (* access_token) { if token . is_expired (Some (DEFAULT_REFRESH_TIME)) { drop (access_token) ; let mut access_token = self . access_token . write () . await ; * access_token = Some (self . credential . get_token (& self . scopes ()) . await ?) ; } } else { drop (access_token) ; let mut access_token = self . access_token . write () . await ; * access_token = Some (self . credential . get_token (& self . scopes ()) . await ?) ; } let access_token = self . access_token () . await . ok_or_else (| | { Error :: message (ErrorKind :: Credential , \"The request failed due to an error while fetching the access token.\" ,) }) ? ; request . insert_header (AUTHORIZATION , format ! (\"Bearer {}\" , access_token)) ; next [0] . send (ctx , request , & next [1 ..]) . await } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod bearer_token_policy ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "bearer_token_policy",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod telemetry ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "telemetry",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use bearer_token_policy :: BearerTokenCredentialPolicy ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "bearer_token_policy :: BearerTokenCredentialPolicy"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use telemetry :: * ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "telemetry :: *"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use typespec_client_core :: http :: policies :: * ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: http :: policies :: *"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: { HeaderValue , USER_AGENT } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: { HeaderValue , USER_AGENT }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: options :: TelemetryOptions ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: options :: TelemetryOptions"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: { Context , Request } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: { Context , Request }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: env :: consts :: { ARCH , OS } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: env :: consts :: { ARCH , OS }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: sync :: Arc ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: sync :: Arc"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use typespec_client_core :: http :: policies :: { Policy , PolicyResult } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: http :: policies :: { Policy , PolicyResult }"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Clone , Debug)]"
+      ],
+      "vis": "pub",
       "ident": "TelemetryPolicy",
       "fields": [
         "{",
@@ -990,32 +1501,49 @@
       "content": "# [cfg_attr (target_arch = \"wasm32\" , async_trait :: async_trait (? Send))] # [cfg_attr (not (target_arch = \"wasm32\") , async_trait :: async_trait)] impl Policy for TelemetryPolicy { async fn send (& self , ctx : & Context , request : & mut Request , next : & [Arc < dyn Policy >] ,) -> PolicyResult { request . insert_header (USER_AGENT , HeaderValue :: from (self . header . to_string ())) ; next [0] . send (ctx , request , & next [1 ..]) . await } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [cfg (test)] mod test { use super :: * ; # [test] fn test_without_application_id () { let policy = TelemetryPolicy :: new_with_rustc_version (Some (\"azure_test\") , Some (\"1.2.3\") , Some (\"4.5.6\") , & TelemetryOptions :: default () ,) ; assert_eq ! (policy . header , format ! (\"azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})\")) ; } # [test] fn test_with_application_id () { let options = TelemetryOptions { application_id : Some (\"my_app\" . to_string ()) , } ; let policy = TelemetryPolicy :: new_with_rustc_version (Some (\"test\") , Some (\"1.2.3\") , Some (\"4.5.6\") , & options ,) ; assert_eq ! (policy . header , format ! (\"my_app azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})\")) ; } # [test] fn test_missing_env () { let policy = TelemetryPolicy :: new_with_rustc_version (None , None , None , & TelemetryOptions :: default ()) ; assert_eq ! (policy . header , format ! (\"azsdk-rust-unknown/unknown (unknown; {OS}; {ARCH})\")) ; } }"
+      "type": "Mod",
+      "attrs": [
+        "# [cfg (test)]"
+      ],
+      "vis": "",
+      "ident": "test",
+      "content": [
+        "use super :: * ;",
+        "# [test] fn test_without_application_id () { let policy = TelemetryPolicy :: new_with_rustc_version (Some (\"azure_test\") , Some (\"1.2.3\") , Some (\"4.5.6\") , & TelemetryOptions :: default () ,) ; assert_eq ! (policy . header , format ! (\"azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})\")) ; }",
+        "# [test] fn test_with_application_id () { let options = TelemetryOptions { application_id : Some (\"my_app\" . to_string ()) , } ; let policy = TelemetryPolicy :: new_with_rustc_version (Some (\"test\") , Some (\"1.2.3\") , Some (\"4.5.6\") , & options ,) ; assert_eq ! (policy . header , format ! (\"my_app azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})\")) ; }",
+        "# [test] fn test_missing_env () { let policy = TelemetryPolicy :: new_with_rustc_version (None , None , None , & TelemetryOptions :: default ()) ; assert_eq ! (policy . header , format ! (\"azsdk-rust-unknown/unknown (unknown; {OS}; {ARCH})\")) ; }"
+      ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: error :: { Error , ErrorKind , ResultExt } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: error :: { Error , ErrorKind , ResultExt }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: fmt ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: fmt"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: str :: FromStr ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: str :: FromStr"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "const PREFIX : & str = \"bytes \" ;"
+      "type": "Const",
+      "attrs": [],
+      "vis": "",
+      "ident": "PREFIX",
+      "generics": "",
+      "ty": "& str",
+      "expr": "\"bytes \""
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug , Copy , Clone , PartialEq , Eq)]"
+      ],
+      "vis": "pub",
       "ident": "ContentRange",
       "fields": [
         "{",
@@ -1050,17 +1578,36 @@
       "content": "impl fmt :: Display for ContentRange { fn fmt (& self , f : & mut fmt :: Formatter < '_ >) -> fmt :: Result { write ! (f , \"{}{}-{}/{}\" , PREFIX , self . start () , self . end () , self . total_length ()) } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [cfg (test)] mod test { use super :: * ; # [cfg (feature = \"azurite_workaround\")] # [test] fn test_azurite_workaround () { let range = \"bytes 0--1/0\" . parse :: < ContentRange > () . unwrap () ; assert_eq ! (range . start () , 0) ; assert_eq ! (range . end () , 0) ; assert_eq ! (range . total_length () , 0) ; } # [test] fn test_parse () { let range = \"bytes 172032-172489/172490\" . parse :: < ContentRange > () . unwrap () ; assert_eq ! (range . start () , 172032) ; assert_eq ! (range . end () , 172489) ; assert_eq ! (range . total_length () , 172490) ; } # [test] fn test_parse_no_starting_token () { \"something else\" . parse :: < ContentRange > () . unwrap_err () ; } # [test] fn test_parse_no_dash () { \"bytes 100\" . parse :: < ContentRange > () . unwrap_err () ; } # [test] fn test_parse_no_slash () { \"bytes 100-500\" . parse :: < ContentRange > () . unwrap_err () ; } # [test] fn test_display () { let range = ContentRange { start : 100 , end : 501 , total_length : 5000 , } ; let txt = format ! (\"{range}\") ; assert_eq ! (txt , \"bytes 100-501/5000\") ; } }"
+      "type": "Mod",
+      "attrs": [
+        "# [cfg (test)]"
+      ],
+      "vis": "",
+      "ident": "test",
+      "content": [
+        "use super :: * ;",
+        "# [cfg (feature = \"azurite_workaround\")] # [test] fn test_azurite_workaround () { let range = \"bytes 0--1/0\" . parse :: < ContentRange > () . unwrap () ; assert_eq ! (range . start () , 0) ; assert_eq ! (range . end () , 0) ; assert_eq ! (range . total_length () , 0) ; }",
+        "# [test] fn test_parse () { let range = \"bytes 172032-172489/172490\" . parse :: < ContentRange > () . unwrap () ; assert_eq ! (range . start () , 172032) ; assert_eq ! (range . end () , 172489) ; assert_eq ! (range . total_length () , 172490) ; }",
+        "# [test] fn test_parse_no_starting_token () { \"something else\" . parse :: < ContentRange > () . unwrap_err () ; }",
+        "# [test] fn test_parse_no_dash () { \"bytes 100\" . parse :: < ContentRange > () . unwrap_err () ; }",
+        "# [test] fn test_parse_no_slash () { \"bytes 100-500\" . parse :: < ContentRange > () . unwrap_err () ; }",
+        "# [test] fn test_display () { let range = ContentRange { start : 100 , end : 501 , total_length : 5000 , } ; let txt = format ! (\"{range}\") ; assert_eq ! (txt , \"bytes 100-501/5000\") ; }"
+      ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: { headers , Header } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: { headers , Header }"
     },
     {
       "type": "Enum",
+      "attrs": [
+        "# [doc = \" Conditional request header based on the value of the object's sequence number\"]",
+        "# [doc = \"\"]",
+        "# [doc = \" Ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/put-page-from-url>\"]",
+        "# [derive (Debug , Clone , Copy , PartialEq , Eq)]"
+      ],
+      "vis": "pub",
       "ident": "IfSequenceNumber",
       "variants": [
         "LessThan",
@@ -1074,12 +1621,16 @@
       "content": "impl Header for IfSequenceNumber { fn name (& self) -> headers :: HeaderName { match self { IfSequenceNumber :: Equal (_) => headers :: IF_SEQUENCE_NUMBER_EQ , IfSequenceNumber :: LessOrEqual (_) => headers :: IF_SEQUENCE_NUMBER_LE , IfSequenceNumber :: LessThan (_) => headers :: IF_SEQUENCE_NUMBER_LT , } } fn value (& self) -> headers :: HeaderValue { match self { IfSequenceNumber :: Equal (val) | IfSequenceNumber :: LessOrEqual (val) | IfSequenceNumber :: LessThan (val) => val . to_string () . into () , } } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: { self , Header } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: { self , Header }"
     },
     {
       "type": "Enum",
+      "attrs": [
+        "# [derive (Debug , Clone , PartialEq , Eq)]"
+      ],
+      "vis": "pub",
       "ident": "IfSourceMatchCondition",
       "variants": [
         "Match",
@@ -1092,17 +1643,21 @@
       "content": "impl Header for IfSourceMatchCondition { fn name (& self) -> headers :: HeaderName { match self { IfSourceMatchCondition :: Match (_) => headers :: SOURCE_IF_MATCH , IfSourceMatchCondition :: NotMatch (_) => headers :: SOURCE_IF_NONE_MATCH , } } fn value (& self) -> headers :: HeaderValue { match self . clone () { IfSourceMatchCondition :: Match (etag) | IfSourceMatchCondition :: NotMatch (etag) => { etag . into () } } } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: { date , headers :: { self , Header , HeaderName } , } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: { date , headers :: { self , Header , HeaderName } , }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use typespec_client_core :: date :: OffsetDateTime ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: date :: OffsetDateTime"
     },
     {
       "type": "Enum",
+      "attrs": [
+        "# [derive (Debug , Clone , Copy , PartialEq , Eq)]"
+      ],
+      "vis": "pub",
       "ident": "IfSourceModifiedSinceCondition",
       "variants": [
         "Modified",
@@ -1115,22 +1670,26 @@
       "content": "impl Header for IfSourceModifiedSinceCondition { fn name (& self) -> HeaderName { match self { IfSourceModifiedSinceCondition :: Modified (_) => headers :: SOURCE_IF_MODIFIED_SINCE , IfSourceModifiedSinceCondition :: Unmodified (_) => headers :: SOURCE_IF_UNMODIFIED_SINCE , } } fn value (& self) -> headers :: HeaderValue { match self { IfSourceModifiedSinceCondition :: Modified (date) | IfSourceModifiedSinceCondition :: Unmodified (date) => date :: to_rfc1123 (date) . into () , } } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: { self , Header } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: { self , Header }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: str :: FromStr ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: str :: FromStr"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use typespec_client_core :: Uuid ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: Uuid"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug , Clone , Copy , PartialEq , Eq)]"
+      ],
+      "vis": "pub",
       "ident": "LeaseId",
       "fields": [
         "(Uuid)"
@@ -1157,17 +1716,21 @@
       "content": "impl Header for LeaseId { fn name (& self) -> headers :: HeaderName { headers :: LEASE_ID } fn value (& self) -> headers :: HeaderValue { format ! (\"{}\" , self . 0) . into () } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: { self , Header } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: { self , Header }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: time :: Duration ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: time :: Duration"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug , Clone , Copy)]"
+      ],
+      "vis": "pub",
       "ident": "LeaseBreakPeriod",
       "fields": [
         "(Duration)"
@@ -1184,17 +1747,21 @@
       "content": "impl Header for LeaseBreakPeriod { fn name (& self) -> headers :: HeaderName { headers :: LEASE_BREAK_PERIOD } fn value (& self) -> headers :: HeaderValue { format ! (\"{}\" , self . 0 . as_secs ()) . into () } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: { self , Header } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: { self , Header }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: time :: Duration ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: time :: Duration"
     },
     {
       "type": "Enum",
+      "attrs": [
+        "# [derive (Debug , Clone)]"
+      ],
+      "vis": "pub",
       "ident": "LeaseDuration",
       "variants": [
         "Infinite",
@@ -1212,12 +1779,17 @@
       "content": "impl From < Duration > for LeaseDuration { fn from (d : Duration) -> Self { LeaseDuration :: Seconds (d . as_secs () as u8) } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: { self , Header } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: { self , Header }"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [doc = \" The max number of items in the collection\"]",
+        "# [derive (Debug , Clone , Copy)]"
+      ],
+      "vis": "pub",
       "ident": "MaxItemCount",
       "fields": [
         "(i32)"
@@ -1244,17 +1816,21 @@
       "content": "impl Default for MaxItemCount { fn default () -> Self { MaxItemCount :: new (- 1) } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: { AppendToUrlQuery , Url } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: { AppendToUrlQuery , Url }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: num :: NonZeroU32 ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: num :: NonZeroU32"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug , Clone , Copy , PartialEq , PartialOrd , Eq , Ord)]"
+      ],
+      "vis": "pub",
       "ident": "MaxResults",
       "fields": [
         "(NonZeroU32)"
@@ -1281,32 +1857,36 @@
       "content": "impl TryFrom < u32 > for MaxResults { type Error = String ; fn try_from (max_results : u32) -> Result < Self , Self :: Error > { match NonZeroU32 :: new (max_results) { Some (max_results) => Ok (max_results . into ()) , None => Err (format ! (\"number {max_results} is not a valid NonZeroU32 value\")) , } } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: Headers ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: Headers"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: Header ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: Header"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use bytes :: Bytes ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "bytes :: Bytes"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: collections :: HashMap ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: collections :: HashMap"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug , Clone)]"
+      ],
+      "vis": "pub",
       "ident": "Metadata",
       "fields": [
         "(HashMap",
@@ -1334,6 +1914,10 @@
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug)]"
+      ],
+      "vis": "pub",
       "ident": "Metadatum",
       "fields": [
         "(String",
@@ -1352,179 +1936,211 @@
       "content": "impl From < & Headers > for Metadata { fn from (header_map : & Headers) -> Self { let mut metadata = Metadata :: new () ; header_map . iter () . for_each (| (name , value) | { let name = name . as_str () ; let value = value . as_str () ; if let Some (name) = name . strip_prefix (\"x-ms-meta-\") { metadata . insert (name . to_owned () , value . to_owned ()) ; } }) ; metadata } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod content_range ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "content_range",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod if_sequence_number ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "if_sequence_number",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod if_source_match_condition ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "if_source_match_condition",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod if_source_modified_since_condition ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "if_source_modified_since_condition",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod lease ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "lease",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod lease_break_period ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "lease_break_period",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod lease_duration ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "lease_duration",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod max_item_count ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "max_item_count",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod max_results ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "max_results",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod metadata ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "metadata",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod next_marker ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "next_marker",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod proposed_lease_id ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "proposed_lease_id",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod range ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "range",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod sequence_number ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "sequence_number",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod source_lease_id ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "source_lease_id",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "mod timeout ;"
+      "type": "Mod",
+      "attrs": [],
+      "vis": "",
+      "ident": "timeout",
+      "content": null
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: { ACTIVITY_ID , APP , CLIENT_REQUEST_ID , CLIENT_VERSION , CONTENT_DISPOSITION , CONTINUATION , IF_TAGS , USER , VERSION , } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: { ACTIVITY_ID , APP , CLIENT_REQUEST_ID , CLIENT_VERSION , CONTENT_DISPOSITION , CONTINUATION , IF_TAGS , USER , VERSION , }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use content_range :: ContentRange ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "content_range :: ContentRange"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use if_sequence_number :: IfSequenceNumber ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "if_sequence_number :: IfSequenceNumber"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use if_source_match_condition :: IfSourceMatchCondition ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "if_source_match_condition :: IfSourceMatchCondition"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use if_source_modified_since_condition :: IfSourceModifiedSinceCondition ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "if_source_modified_since_condition :: IfSourceModifiedSinceCondition"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use lease :: LeaseId ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "lease :: LeaseId"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use lease_break_period :: LeaseBreakPeriod ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "lease_break_period :: LeaseBreakPeriod"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use lease_duration :: LeaseDuration ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "lease_duration :: LeaseDuration"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use max_item_count :: MaxItemCount ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "max_item_count :: MaxItemCount"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use max_results :: MaxResults ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "max_results :: MaxResults"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use metadata :: Metadata ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "metadata :: Metadata"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use next_marker :: NextMarker ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "next_marker :: NextMarker"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use proposed_lease_id :: ProposedLeaseId ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "proposed_lease_id :: ProposedLeaseId"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use range :: Range ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "range :: Range"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use sequence_number :: SequenceNumber ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "sequence_number :: SequenceNumber"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use source_lease_id :: SourceLeaseId ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "source_lease_id :: SourceLeaseId"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use timeout :: Timeout ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "timeout :: Timeout"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "pub use typespec_client_core :: http :: request :: options :: * ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: http :: request :: options :: *"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use typespec_client_core :: { request_header , request_query } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: { request_header , request_query }"
     },
     {
       "type": "Other",
@@ -1582,17 +2198,21 @@
       "content": "request_query ! (Prefix , \"prefix\") ;"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: { headers :: { self , Headers } , AppendToUrlQuery , Url , } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: { headers :: { self , Headers } , AppendToUrlQuery , Url , }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use serde :: { Deserialize , Serialize } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "serde :: { Deserialize , Serialize }"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug , Clone , PartialEq , Eq , Serialize , Deserialize)]"
+      ],
+      "vis": "pub",
       "ident": "NextMarker",
       "fields": [
         "(String)"
@@ -1619,17 +2239,21 @@
       "content": "impl From < & str > for NextMarker { fn from (next_marker : & str) -> Self { Self :: new (next_marker . to_owned ()) } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use super :: LeaseId ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "super :: LeaseId"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: { headers , Header } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: { headers , Header }"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug , Clone , Copy)]"
+      ],
+      "vis": "pub",
       "ident": "ProposedLeaseId",
       "fields": [
         "(LeaseId)"
@@ -1646,32 +2270,36 @@
       "content": "impl Header for ProposedLeaseId { fn name (& self) -> headers :: HeaderName { headers :: PROPOSED_LEASE_ID } fn value (& self) -> headers :: HeaderValue { format ! (\"{}\" , self . 0) . into () } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: error :: { Error , ErrorKind , ResultExt } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: error :: { Error , ErrorKind , ResultExt }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: { self , AsHeaders , HeaderName , HeaderValue } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: { self , AsHeaders , HeaderName , HeaderValue }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: fmt ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: fmt"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: ops :: { Range as StdRange , RangeFrom } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: ops :: { Range as StdRange , RangeFrom }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: str :: FromStr ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: str :: FromStr"
     },
     {
       "type": "Enum",
+      "attrs": [
+        "# [derive (Debug , Clone , PartialEq , Eq)]"
+      ],
+      "vis": "pub",
       "ident": "Range",
       "variants": [
         "Range",
@@ -1719,17 +2347,31 @@
       "content": "impl fmt :: Display for Range { fn fmt (& self , f : & mut fmt :: Formatter < '_ >) -> fmt :: Result { match self { Range :: Range (r) => write ! (f , \"bytes={}-{}\" , r . start , r . end - 1) , Range :: RangeFrom (r) => write ! (f , \"bytes={}-\" , r . start) , } } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [cfg (test)] mod test { use super :: * ; # [test] fn test_range_parse () { let range = \"1000/2000\" . parse :: < Range > () . unwrap () ; assert_eq ! (range , Range :: new (1000 , 2001)) ; } # [test] fn test_range_parse_panic_1 () { \"abba/2000\" . parse :: < Range > () . unwrap_err () ; } # [test] fn test_range_parse_panic_2 () { \"1000-2000\" . parse :: < Range > () . unwrap_err () ; } # [test] fn test_range_display () { let range = Range :: new (100 , 501) ; let txt = format ! (\"{range}\") ; assert_eq ! (txt , \"bytes=100-500\") ; } }"
+      "type": "Mod",
+      "attrs": [
+        "# [cfg (test)]"
+      ],
+      "vis": "",
+      "ident": "test",
+      "content": [
+        "use super :: * ;",
+        "# [test] fn test_range_parse () { let range = \"1000/2000\" . parse :: < Range > () . unwrap () ; assert_eq ! (range , Range :: new (1000 , 2001)) ; }",
+        "# [test] fn test_range_parse_panic_1 () { \"abba/2000\" . parse :: < Range > () . unwrap_err () ; }",
+        "# [test] fn test_range_parse_panic_2 () { \"1000-2000\" . parse :: < Range > () . unwrap_err () ; }",
+        "# [test] fn test_range_display () { let range = Range :: new (100 , 501) ; let txt = format ! (\"{range}\") ; assert_eq ! (txt , \"bytes=100-500\") ; }"
+      ]
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: { self , Header } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: { self , Header }"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug , Clone , Copy , PartialEq , PartialOrd , Eq , Ord)]"
+      ],
+      "vis": "pub",
       "ident": "SequenceNumber",
       "fields": [
         "(u64)"
@@ -1751,22 +2393,26 @@
       "content": "impl Header for SequenceNumber { fn name (& self) -> headers :: HeaderName { headers :: BLOB_SEQUENCE_NUMBER } fn value (& self) -> headers :: HeaderValue { self . 0 . to_string () . into () } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: headers :: { self , Header } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: headers :: { self , Header }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: str :: FromStr ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: str :: FromStr"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use typespec_client_core :: Uuid ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "typespec_client_core :: Uuid"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug , Clone , Copy , PartialEq , Eq)]"
+      ],
+      "vis": "pub",
       "ident": "SourceLeaseId",
       "fields": [
         "(Uuid)"
@@ -1788,17 +2434,21 @@
       "content": "impl Header for SourceLeaseId { fn name (& self) -> headers :: HeaderName { headers :: SOURCE_LEASE_ID } fn value (& self) -> headers :: HeaderValue { self . 0 . to_string () . into () } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: { AppendToUrlQuery , Url } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: { AppendToUrlQuery , Url }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: time :: Duration ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: time :: Duration"
     },
     {
       "type": "Struct",
+      "attrs": [
+        "# [derive (Debug , Clone , Copy)]"
+      ],
+      "vis": "pub",
       "ident": "Timeout",
       "fields": [
         "(Duration)"
@@ -1820,17 +2470,22 @@
       "content": "impl From < Duration > for Timeout { fn from (d : Duration) -> Self { Self (d) } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use crate :: error :: { Error , ErrorKind } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "crate :: error :: { Error , ErrorKind }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "use std :: { fmt , str :: FromStr } ;"
+      "type": "Use",
+      "attrs": [],
+      "tree": "std :: { fmt , str :: FromStr }"
     },
     {
       "type": "Enum",
+      "attrs": [
+        "# [doc = \" Whether to test client methods by playing back recordings, recording live sessions, or executing live sessions without recording.\"]",
+        "# [derive (Clone , Copy , Default , PartialEq , Eq , PartialOrd , Ord)]"
+      ],
+      "vis": "pub",
       "ident": "TestMode",
       "variants": [
         "Playback",
@@ -1859,9 +2514,11 @@
       "content": "impl FromStr for TestMode { type Err = Error ; fn from_str (s : & str) -> Result < Self , Self :: Err > { match s . to_ascii_lowercase () . as_str () { \"playback\" => Ok (Self :: Playback) , \"record\" => Ok (Self :: Record) , \"live\" => Ok (Self :: Live) , _ => Err (Error :: message (ErrorKind :: DataConversion , \"expected 'playback', 'record', or 'live'\" ,)) , } } }"
     },
     {
-      "type": "Other",
-      "kind": "unknown",
-      "content": "# [cfg (feature = \"tokio_fs\")] pub use typespec_client_core :: fs :: * ;"
+      "type": "Use",
+      "attrs": [
+        "# [cfg (feature = \"tokio_fs\")]"
+      ],
+      "tree": "typespec_client_core :: fs :: *"
     }
   ]
 }
