@@ -42,12 +42,15 @@ struct SerializableFunction {
     ident: String,
     inputs: Vec<String>,
     output: Option<String>,
+    block: String,
 }
+
 #[derive(Serialize)]
 struct SerializableOther {
     kind: String,
     content: String,
 }
+
 fn parse_rust_file(file_path: &str) -> File {
     let content = fs::read_to_string(file_path).expect("Unable to read file");
     syn::parse_file(&content).expect("Unable to parse file")
@@ -109,6 +112,7 @@ fn write_ast_to_json(items: &[Item], output_path: &str) {
                         syn::ReturnType::Default => None,
                         syn::ReturnType::Type(_, ty) => Some(quote::quote!(#ty).to_string()),
                     },
+                    block: fn_item.block.to_token_stream().to_string(),
                 }),
                 _ => SerializableItem::Other(SerializableOther {
                     kind: "unknown".to_string(),

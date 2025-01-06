@@ -488,7 +488,8 @@
         "data : & str . pat: data : & str . ty",
         "key : & Secret . pat: key : & Secret . ty"
       ],
-      "output": "crate :: Result < String >"
+      "output": "crate :: Result < String >",
+      "block": "{ use hmac :: { Hmac , Mac } ; use sha2 :: Sha256 ; let key = base64 :: decode (key . secret ()) ? ; let mut hmac = Hmac :: < Sha256 > :: new_from_slice (& key) . with_context (ErrorKind :: DataConversion , | | { \"failed to create hmac from key\" }) ? ; hmac . update (data . as_bytes ()) ; let signature = hmac . finalize () . into_bytes () ; Ok (base64 :: encode (signature)) }"
     },
     {
       "type": "Function",
@@ -497,7 +498,8 @@
         "data : & str . pat: data : & str . ty",
         "key : & Secret . pat: key : & Secret . ty"
       ],
-      "output": "crate :: Result < String >"
+      "output": "crate :: Result < String >",
+      "block": "{ use openssl :: { error :: ErrorStack , hash :: MessageDigest , pkey :: PKey , sign :: Signer } ; let decoded = base64 :: decode (key . secret ()) ? ; let signature = | | -> Result < Vec < u8 > , ErrorStack > { let pkey = PKey :: hmac (& decoded) ? ; let mut signer = Signer :: new (MessageDigest :: sha256 () , & pkey) ? ; signer . update (data . as_bytes ()) ? ; signer . sign_to_vec () } () . with_context (ErrorKind :: DataConversion , | | { \"failed to create hmac from key\" }) ? ; Ok (base64 :: encode (signature)) }"
     },
     {
       "type": "Function",
@@ -506,7 +508,8 @@
         "_data : & str . pat: _data : & str . ty",
         "_key : & Secret . pat: _key : & Secret . ty"
       ],
-      "output": "crate :: Result < String >"
+      "output": "crate :: Result < String >",
+      "block": "{ unimplemented ! (\"An HMAC signing request was called without an hmac implementation.  Make sure to enable either the `hmac_rust` or `hmac_openssl` feature\") ; }"
     },
     {
       "type": "Other",
@@ -685,7 +688,8 @@
       "inputs": [
         "headers : & Headers . pat: headers : & Headers . ty"
       ],
-      "output": "Duration"
+      "output": "Duration",
+      "block": "{ crate :: get_retry_after (headers , OffsetDateTime :: now_utc) . unwrap_or (DEFAULT_RETRY_TIME) }"
     },
     {
       "type": "Other",
