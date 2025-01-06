@@ -13,7 +13,7 @@ members = [
   "sdk/eventhubs/azure_messaging_eventhubs",
   "eng/test/mock_transport",
   "sdk/storage",
-  "sdk/storage/azure_storage_blob", "sdk/temp-project/docs", "sdk/parser/rust_parser",
+  "sdk/storage/azure_storage_blob", "sdk/temp-project/docs", "sdk/parser/rust_parser", "sdk/parser/rust_parser_from_rustdoc",
 ]
 
 [workspace.package]

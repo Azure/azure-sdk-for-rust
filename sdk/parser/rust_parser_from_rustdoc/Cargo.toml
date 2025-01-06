@@ -1,0 +1,19 @@
+[package]
+name = "rust_parser_from_rustdoc"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "concise_api"
+path = "src/main.rs"
