@@ -6,7 +6,7 @@ use std::sync::OnceLock;
 
 use crate::messaging::{
     AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpOutcome, DeliveryNumber, DeliveryTag,
-    DistributionMode, Handle, TerminusDurability, TerminusExpiryPolicy,
+    DistributionMode, TerminusDurability, TerminusExpiryPolicy,
 };
 
 pub(crate) struct Fe2o3AmqpDelivery {
@@ -38,10 +38,7 @@ impl
 }
 
 impl AmqpDeliveryApis for Fe2o3AmqpDelivery {
-    fn handle(&self) -> Handle {
-        Handle(self.delivery.handle().0)
-    }
-
+    // Return a reference to the message contained in the delivery.
     fn message(&self) -> &AmqpMessage {
         self.message
             .get_or_init(|| AmqpMessage::from(self.delivery.message().clone()))

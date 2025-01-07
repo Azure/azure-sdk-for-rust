@@ -4,7 +4,7 @@
 
 use super::error::{AmqpIllegalLinkState, AmqpLinkDetach, AmqpReceiver, AmqpReceiverAttach};
 use crate::{
-    messaging::{AmqpDelivery, AmqpDeliveryApis, AmqpSource},
+    messaging::{AmqpDelivery, AmqpSource},
     receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::AmqpSession,
 };
@@ -118,8 +118,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         Ok(delivery.into())
     }
 
-    async fn accept_delivery(&self, delivery: AmqpDelivery) -> Result<()> {
-        let delivery = delivery.0;
+    async fn accept_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
         let receiver = self
             .receiver
             .get()
@@ -134,7 +133,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
 
         trace!("Accepting delivery.");
         receiver
-            .accept(delivery.delivery)
+            .accept(&delivery.0.delivery)
             .await
             .map_err(AmqpIllegalLinkState::from)?;
         trace!("Accepted delivery");
@@ -142,8 +141,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         Ok(())
     }
 
-    async fn reject_delivery(&self, delivery: AmqpDelivery) -> Result<()> {
-        let delivery = delivery.0.delivery;
+    async fn reject_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
         let receiver = self
             .receiver
             .get()
@@ -158,7 +156,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
 
         trace!("Rejecting delivery.");
         receiver
-            .reject(delivery, None)
+            .reject(&delivery.0.delivery, None)
             .await
             .map_err(AmqpIllegalLinkState::from)?;
         trace!("Rejected delivery");
@@ -166,8 +164,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         Ok(())
     }
 
-    async fn release_delivery(&self, delivery: AmqpDelivery) -> Result<()> {
-        let delivery = delivery.0.delivery;
+    async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
         let receiver = self
             .receiver
             .get()
@@ -182,7 +179,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
 
         trace!("Releasing delivery.");
         receiver
-            .release(delivery)
+            .release(&delivery.0.delivery)
             .await
             .map_err(AmqpIllegalLinkState::from)?;
         trace!("Released delivery");

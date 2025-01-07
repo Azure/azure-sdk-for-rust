@@ -60,15 +60,15 @@ pub trait AmqpReceiverApis {
     fn receive_delivery(&self) -> impl std::future::Future<Output = Result<AmqpDelivery>>;
     fn accept_delivery(
         &self,
-        delivery: AmqpDelivery,
+        delivery: &AmqpDelivery,
     ) -> impl std::future::Future<Output = Result<()>>;
     fn reject_delivery(
         &self,
-        delivery: AmqpDelivery,
+        delivery: &AmqpDelivery,
     ) -> impl std::future::Future<Output = Result<()>>;
     fn release_delivery(
         &self,
-        delivery: AmqpDelivery,
+        delivery: &AmqpDelivery,
     ) -> impl std::future::Future<Output = Result<()>>;
 }
 
@@ -98,15 +98,15 @@ impl AmqpReceiverApis for AmqpReceiver {
         self.implementation.receive_delivery().await
     }
 
-    async fn accept_delivery(&self, delivery: AmqpDelivery) -> Result<()> {
+    async fn accept_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
         self.implementation.accept_delivery(delivery).await
     }
 
-    async fn reject_delivery(&self, delivery: AmqpDelivery) -> Result<()> {
+    async fn reject_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
         self.implementation.reject_delivery(delivery).await
     }
 
-    async fn release_delivery(&self, delivery: AmqpDelivery) -> Result<()> {
+    async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
         self.implementation.release_delivery(delivery).await
     }
 }

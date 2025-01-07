@@ -5,7 +5,7 @@
 use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 #[cfg(feature = "cplusplus")]
 use crate::Deserializable;
-use crate::{ReceiverSettleMode, Uuid};
+use crate::Uuid;
 #[cfg(feature = "cplusplus")]
 use azure_core::error::ErrorKind;
 use azure_core::Result;
@@ -97,12 +97,10 @@ impl AmqpDelivery {
     }
 }
 
-pub(crate) struct Handle(pub(crate) u32);
 pub type DeliveryNumber = u32;
 pub type DeliveryTag = Vec<u8>;
 
 pub trait AmqpDeliveryApis {
-    fn handle(&self) -> Handle;
     fn message(&self) -> &AmqpMessage;
     fn delivery_id(&self) -> DeliveryNumber;
     fn delivery_tag(&self) -> &DeliveryTag;
@@ -111,14 +109,9 @@ pub trait AmqpDeliveryApis {
 }
 
 impl AmqpDeliveryApis for AmqpDelivery {
-    /// Get the link output handle
-    fn handle(&self) -> Handle {
-        self.0.handle()
-    }
-
     /// Get the message
     fn message(&self) -> &AmqpMessage {
-        &self.0.message()
+        self.0.message()
     }
 
     /// Get the delivery ID
@@ -128,12 +121,12 @@ impl AmqpDeliveryApis for AmqpDelivery {
 
     /// Get the delivery tag
     fn delivery_tag(&self) -> &DeliveryTag {
-        &self.0.delivery_tag()
+        self.0.delivery_tag()
     }
 
     /// Get the message format
     fn message_format(&self) -> &Option<u32> {
-        &self.0.message_format()
+        self.0.message_format()
     }
 
     /// Consume the delivery into the message
