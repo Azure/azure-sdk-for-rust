@@ -2,13 +2,68 @@
 // Licensed under the MIT license.
 // cspell: words amqp servicebus eventhub mgmt
 
-use crate::messaging::{AmqpOutcome, DistributionMode, TerminusDurability, TerminusExpiryPolicy};
+use std::sync::OnceLock;
 
-pub(crate) struct AmqpDelivery(
-    pub(crate)  fe2o3_amqp::link::delivery::Delivery<
+use crate::messaging::{
+    AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpOutcome, DeliveryNumber, DeliveryTag,
+    DistributionMode, Handle, TerminusDurability, TerminusExpiryPolicy,
+};
+
+pub(crate) struct Fe2o3AmqpDelivery {
+    pub(crate) delivery: fe2o3_amqp::link::delivery::Delivery<
         fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
     >,
-);
+    message: OnceLock<AmqpMessage>,
+    delivery_tag: OnceLock<DeliveryTag>,
+}
+
+impl
+    From<
+        fe2o3_amqp::link::delivery::Delivery<
+            fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
+        >,
+    > for AmqpDelivery
+{
+    fn from(
+        delivery: fe2o3_amqp::link::delivery::Delivery<
+            fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
+        >,
+    ) -> Self {
+        AmqpDelivery::new(Fe2o3AmqpDelivery {
+            delivery,
+            message: OnceLock::new(),
+            delivery_tag: OnceLock::new(),
+        })
+    }
+}
+
+impl AmqpDeliveryApis for Fe2o3AmqpDelivery {
+    fn handle(&self) -> Handle {
+        Handle(self.delivery.handle().0)
+    }
+
+    fn message(&self) -> &AmqpMessage {
+        self.message
+            .get_or_init(|| AmqpMessage::from(self.delivery.message().clone()))
+    }
+
+    fn delivery_id(&self) -> DeliveryNumber {
+        *self.delivery.delivery_id()
+    }
+
+    fn delivery_tag(&self) -> &DeliveryTag {
+        self.delivery_tag
+            .get_or_init(|| self.delivery.delivery_tag().to_vec())
+    }
+
+    fn message_format(&self) -> &Option<u32> {
+        self.delivery.message_format()
+    }
+
+    fn into_message(self) -> crate::messaging::AmqpMessage {
+        self.delivery.into_message().into()
+    }
+}
 
 impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpOutcome {
     fn from(outcome: fe2o3_amqp_types::messaging::Outcome) -> Self {

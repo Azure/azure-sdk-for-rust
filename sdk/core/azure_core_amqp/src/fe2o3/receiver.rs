@@ -4,7 +4,7 @@
 
 use super::error::{AmqpIllegalLinkState, AmqpLinkDetach, AmqpReceiver, AmqpReceiverAttach};
 use crate::{
-    messaging::{AmqpDelivery, AmqpMessage, AmqpSource},
+    messaging::{AmqpDelivery, AmqpDeliveryApis, AmqpSource},
     receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::AmqpSession,
 };
@@ -115,9 +115,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
 
         trace!("Received delivery: {:?}", delivery);
 
-        Ok(AmqpDelivery(
-            super::messaging::messaging_types::AmqpDelivery(delivery),
-        ))
+        Ok(delivery.into())
     }
 
     async fn accept_delivery(&self, delivery: AmqpDelivery) -> Result<()> {
@@ -136,7 +134,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
 
         trace!("Accepting delivery.");
         receiver
-            .accept(delivery.0)
+            .accept(delivery.delivery)
             .await
             .map_err(AmqpIllegalLinkState::from)?;
         trace!("Accepted delivery");
@@ -145,7 +143,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
     }
 
     async fn reject_delivery(&self, delivery: AmqpDelivery) -> Result<()> {
-        let delivery = delivery.0;
+        let delivery = delivery.0.delivery;
         let receiver = self
             .receiver
             .get()
@@ -160,7 +158,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
 
         trace!("Rejecting delivery.");
         receiver
-            .reject(delivery.0, None)
+            .reject(delivery, None)
             .await
             .map_err(AmqpIllegalLinkState::from)?;
         trace!("Rejected delivery");
@@ -169,7 +167,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
     }
 
     async fn release_delivery(&self, delivery: AmqpDelivery) -> Result<()> {
-        let delivery = delivery.0;
+        let delivery = delivery.0.delivery;
         let receiver = self
             .receiver
             .get()
@@ -184,7 +182,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
 
         trace!("Releasing delivery.");
         receiver
-            .release(delivery.0)
+            .release(delivery)
             .await
             .map_err(AmqpIllegalLinkState::from)?;
         trace!("Released delivery");
@@ -192,35 +190,35 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         Ok(())
     }
 
-    async fn receive(&self) -> Result<AmqpMessage> {
-        let mut receiver = self
-            .receiver
-            .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Message receiver is not set.",
-                )
-            })?
-            .lock()
-            .await;
+    // async fn receive(&self) -> Result<AmqpMessage> {
+    //     let mut receiver = self
+    //         .receiver
+    //         .get()
+    //         .ok_or_else(|| {
+    //             azure_core::Error::message(
+    //                 azure_core::error::ErrorKind::Other,
+    //                 "Message receiver is not set.",
+    //             )
+    //         })?
+    //         .lock()
+    //         .await;
 
-        let delivery: fe2o3_amqp::link::delivery::Delivery<
-            fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-        > = receiver.recv().await.map_err(AmqpReceiver::from)?;
+    //     let delivery: fe2o3_amqp::link::delivery::Delivery<
+    //         fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
+    //     > = receiver.recv().await.map_err(AmqpReceiver::from)?;
 
-        trace!("Received delivery: {:?}", delivery);
+    //     trace!("Received delivery: {:?}", delivery);
 
-        trace!("Accepting delivery.");
-        receiver
-            .accept(&delivery)
-            .await
-            .map_err(AmqpIllegalLinkState::from)?;
-        trace!("Accepted delivery");
+    //     trace!("Accepting delivery.");
+    //     receiver
+    //         .accept(&delivery)
+    //         .await
+    //         .map_err(AmqpIllegalLinkState::from)?;
+    //     trace!("Accepted delivery");
 
-        let message = AmqpMessage::from(delivery.into_message());
-        Ok(message)
-    }
+    //     let message = AmqpMessage::from(delivery.into_message());
+    //     Ok(message)
+    // }
 }
 
 impl Fe2o3AmqpReceiver {

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 //cspell: words amqp
 
-use super::messaging::{AmqpDelivery, AmqpMessage, AmqpSource, AmqpTarget};
+use super::messaging::{AmqpDelivery, AmqpSource, AmqpTarget};
 use super::session::AmqpSession;
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use super::ReceiverSettleMode;
@@ -56,7 +56,7 @@ pub trait AmqpReceiverApis {
         options: Option<AmqpReceiverOptions>,
     ) -> impl std::future::Future<Output = Result<()>>;
     fn detach(self) -> impl std::future::Future<Output = Result<()>>;
-    fn receive(&self) -> impl std::future::Future<Output = Result<AmqpMessage>>;
+    //    fn receive(&self) -> impl std::future::Future<Output = Result<AmqpMessage>>;
     fn receive_delivery(&self) -> impl std::future::Future<Output = Result<AmqpDelivery>>;
     fn accept_delivery(
         &self,
@@ -89,9 +89,10 @@ impl AmqpReceiverApis for AmqpReceiver {
     async fn detach(self) -> Result<()> {
         self.implementation.detach().await
     }
-    async fn receive(&self) -> Result<AmqpMessage> {
-        self.implementation.receive().await
-    }
+
+    // async fn receive(&self) -> Result<AmqpMessage> {
+    //     self.implementation.receive().await
+    // }
 
     async fn receive_delivery(&self) -> Result<AmqpDelivery> {
         self.implementation.receive_delivery().await
