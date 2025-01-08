@@ -131,6 +131,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             .map_err(AmqpConnection::from)?;
         Ok(())
     }
+
     async fn close_with_error(
         &self,
         condition: AmqpSymbol,
@@ -166,7 +167,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             Err(e) => match e.0 {
                 fe2o3_amqp::connection::Error::TransportError(e) => {
                     info!(
-                        "Transport Error closing connection with error: {:?} - ignored",
+                        "Transport error closing connection with error: {:?} - ignored",
                         e
                     );
                     Ok(())

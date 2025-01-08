@@ -107,32 +107,25 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         }
     }
 
-    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) {
-        let receiver = self
-            .receiver
-            .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Message receiver is not set.",
-                )
-            })
-            .unwrap();
+    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()> {
+        let receiver = self.receiver.get().ok_or_else(|| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Message receiver is not set.",
+            )
+        })?;
         receiver.lock_blocking().set_credit_mode(credit_mode.into());
+        Ok(())
     }
 
-    fn get_credit_mode(&self) -> ReceiverCreditMode {
-        let receiver = self
-            .receiver
-            .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Message receiver is not set.",
-                )
-            })
-            .unwrap();
-        receiver.lock_blocking().credit_mode().into()
+    fn credit_mode(&self) -> Result<ReceiverCreditMode> {
+        let receiver = self.receiver.get().ok_or_else(|| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Message receiver is not set.",
+            )
+        })?;
+        Ok(receiver.lock_blocking().credit_mode().into())
     }
 
     async fn receive_delivery(&self) -> Result<AmqpDelivery> {
@@ -175,7 +168,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .accept(&delivery.0.delivery)
             .await
             .map_err(AmqpIllegalLinkState::from)?;
-        trace!("Accepted delivery");
+        trace!("Accepted delivery.");
 
         Ok(())
     }
@@ -198,7 +191,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .reject(&delivery.0.delivery, None)
             .await
             .map_err(AmqpIllegalLinkState::from)?;
-        trace!("Rejected delivery");
+        trace!("Rejected delivery.");
 
         Ok(())
     }
@@ -221,7 +214,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .release(&delivery.0.delivery)
             .await
             .map_err(AmqpIllegalLinkState::from)?;
-        trace!("Released delivery");
+        trace!("Released delivery.");
 
         Ok(())
     }

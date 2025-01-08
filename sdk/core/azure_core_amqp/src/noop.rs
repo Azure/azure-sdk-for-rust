@@ -191,11 +191,11 @@ impl AmqpReceiverApis for NoopAmqpReceiver {
     }
 
     #[allow(unused_variables)]
-    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) {
+    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()> {
         unimplemented!();
     }
 
-    fn get_credit_mode(&self) -> ReceiverCreditMode {
+    fn credit_mode(&self) -> Result<ReceiverCreditMode> {
         unimplemented!();
     }
 

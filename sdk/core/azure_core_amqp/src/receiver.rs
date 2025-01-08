@@ -57,8 +57,8 @@ pub trait AmqpReceiverApis {
     ) -> impl std::future::Future<Output = Result<()>>;
 
     fn detach(self) -> impl std::future::Future<Output = Result<()>>;
-    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode);
-    fn get_credit_mode(&self) -> ReceiverCreditMode;
+    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()>;
+    fn credit_mode(&self) -> Result<ReceiverCreditMode>;
     fn receive_delivery(&self) -> impl std::future::Future<Output = Result<AmqpDelivery>>;
     fn accept_delivery(
         &self,
@@ -92,12 +92,12 @@ impl AmqpReceiverApis for AmqpReceiver {
         self.implementation.detach().await
     }
 
-    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) {
-        self.implementation.set_credit_mode(credit_mode);
+    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()> {
+        self.implementation.set_credit_mode(credit_mode)
     }
 
-    fn get_credit_mode(&self) -> ReceiverCreditMode {
-        self.implementation.get_credit_mode()
+    fn credit_mode(&self) -> Result<ReceiverCreditMode> {
+        self.implementation.credit_mode()
     }
 
     async fn receive_delivery(&self) -> Result<AmqpDelivery> {
