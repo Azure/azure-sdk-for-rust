@@ -92,6 +92,7 @@ impl From<AmqpSymbol> for DistributionMode {
 pub struct AmqpDelivery(pub(crate) DeliveryImplementation);
 
 impl AmqpDelivery {
+    #[allow(dead_code)]
     pub(crate) fn new(delivery: DeliveryImplementation) -> AmqpDelivery {
         AmqpDelivery(delivery)
     }

@@ -7,8 +7,11 @@ use super::{
     cbs::AmqpClaimsBasedSecurityApis,
     connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
     management::AmqpManagementApis,
-    messaging::{AmqpMessage, AmqpSource, AmqpTarget},
-    receiver::{AmqpReceiverApis, AmqpReceiverOptions},
+    messaging::{
+        AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpSource, AmqpTarget, DeliveryNumber,
+        DeliveryTag,
+    },
+    receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions},
     session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
@@ -30,6 +33,8 @@ pub(crate) struct NoopAmqpReceiver {}
 
 #[derive(Default, Clone)]
 pub(crate) struct NoopAmqpSession {}
+
+pub(crate) struct NoopAmqpDelivery {}
 
 #[derive(Default)]
 pub(crate) struct NoopAmqpClaimsBasedSecurity<'a> {
@@ -186,7 +191,45 @@ impl AmqpReceiverApis for NoopAmqpReceiver {
     }
 
     #[allow(unused_variables)]
-    async fn receive(&self) -> Result<AmqpMessage> {
+    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) {
+        unimplemented!();
+    }
+
+    fn get_credit_mode(&self) -> ReceiverCreditMode {
+        unimplemented!();
+    }
+
+    #[allow(unused_variables)]
+    async fn receive_delivery(&self) -> Result<AmqpDelivery> {
+        unimplemented!();
+    }
+
+    async fn accept_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
+        unimplemented!();
+    }
+    async fn reject_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
+        unimplemented!();
+    }
+    async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
+        unimplemented!();
+    }
+}
+
+impl AmqpDeliveryApis for NoopAmqpDelivery {
+    fn message(&self) -> &AmqpMessage {
+        unimplemented!();
+    }
+    fn delivery_id(&self) -> DeliveryNumber {
+        unimplemented!();
+    }
+    fn delivery_tag(&self) -> &DeliveryTag {
+        unimplemented!();
+    }
+
+    fn message_format(&self) -> &Option<u32> {
+        unimplemented!();
+    }
+    fn into_message(self) -> AmqpMessage {
         unimplemented!();
     }
 }
