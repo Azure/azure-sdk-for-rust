@@ -5,9 +5,10 @@
 
 use azure_core::{error::ErrorKind, Result, Url};
 use std::{
-    env, io,
+    env, fmt, io,
     path::Path,
     process::{ExitStatus, Stdio},
+    str::FromStr,
     sync::Arc,
     time::Duration,
 };
@@ -23,6 +24,11 @@ const KESTREL_CERT_PASSWORD_ENV: &str = "ASPNETCORE_Kestrel__Certificates__Defau
 const KESTREL_CERT_PASSWORD: &str = "password";
 const PROXY_MANUAL_START: &str = "PROXY_MANUAL_START";
 const SYSTEM_TEAMPROJECTID: &str = "SYSTEM_TEAMPROJECTID";
+const MIN_VERSION: Version = Version {
+    major: 20241213,
+    minor: 1,
+    metadata: None,
+};
 
 pub async fn start(
     test_data_dir: impl AsRef<Path>,
@@ -91,10 +97,27 @@ async fn wait_till_listening(stdout: &mut Option<ChildStdout>) -> Result<Url> {
     // Wait for the process to respond to requests and check output until pattern: "Now listening on: http://0.0.0.0:60583" (random port).
     let mut reader = BufReader::new(stdout).lines();
     while let Some(line) = reader.next_line().await? {
-        const PATTERN: &str = "Now listening on: ";
+        const RUNNING_PATTERN: &str = "Running proxy version is Azure.Sdk.Tools.TestProxy ";
+        const LISTENING_PATTERN: &str = "Now listening on: ";
 
-        if let Some(idx) = line.find(PATTERN) {
-            let idx = idx + PATTERN.len();
+        if let Some(idx) = line.find(RUNNING_PATTERN) {
+            let idx = idx + RUNNING_PATTERN.len();
+            let version: Version = line[idx..].parse()?;
+            tracing::event!(target: crate::SPAN_TARGET, Level::INFO, "starting test-proxy version {version}");
+
+            // Need to check version since `test-proxy start` does not fail with unknown parameters.
+            if version < MIN_VERSION {
+                return Err(azure_core::Error::message(
+                    ErrorKind::Io,
+                    format!("test-proxy older than required version {MIN_VERSION}"),
+                ));
+            }
+
+            continue;
+        }
+
+        if let Some(idx) = line.find(LISTENING_PATTERN) {
+            let idx = idx + LISTENING_PATTERN.len();
             let url = line[idx..].parse()?;
             tracing::event!(target: crate::SPAN_TARGET, Level::INFO, "listening on {url}");
 
@@ -166,6 +189,9 @@ impl Drop for Proxy {
 pub struct ProxyOptions {
     /// Allow insecure upstream SSL certs.
     pub insecure: bool,
+
+    /// Number of seconds to automatically shut down when no activity.
+    pub auto_shutdown_in_seconds: u32,
 }
 
 impl ProxyOptions {
@@ -173,6 +199,11 @@ impl ProxyOptions {
         if self.insecure {
             args.push("--insecure".into());
         }
+
+        args.extend_from_slice(&[
+            "--auto-shutdown-in-seconds".into(),
+            self.auto_shutdown_in_seconds.to_string(),
+        ]);
     }
 }
 
@@ -183,4 +214,137 @@ pub struct Session {
 
     #[allow(dead_code)]
     pub(crate) span: Span,
+}
+
+#[derive(Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
+struct Version {
+    major: i32,
+    minor: i32,
+    metadata: Option<String>,
+}
+
+impl fmt::Display for Version {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(metadata) = &self.metadata {
+            return write!(f, "{}.{}-{metadata}", self.major, self.minor);
+        }
+        write!(f, "{}.{}", self.major, self.minor)
+    }
+}
+
+impl FromStr for Version {
+    type Err = azure_core::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let mut v = Version::default();
+
+        // cspell:ignore splitn
+        let mut cur = s.splitn(2, '.');
+        if let Some(major) = cur.next() {
+            v.major = major.parse()?;
+        } else {
+            return Err(azure_core::Error::message(
+                ErrorKind::DataConversion,
+                "major version required",
+            ));
+        }
+        if let Some(minor) = cur.next() {
+            let mut cur = minor.splitn(2, '-');
+            if let Some(minor) = cur.next() {
+                v.minor = minor.parse()?;
+            }
+            v.metadata = cur.next().map(String::from);
+        }
+
+        Ok(v)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn version_eq() {
+        let a = Version {
+            major: 1,
+            ..Default::default()
+        };
+        let b = Version {
+            major: 1,
+            ..Default::default()
+        };
+        assert_eq!(a, b);
+
+        let a = Version {
+            major: 1,
+            minor: 2,
+            metadata: Some("preview".into()),
+        };
+        let b = Version {
+            major: 1,
+            minor: 2,
+            metadata: Some("preview".into()),
+        };
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn version_cmp() {
+        let a = Version {
+            major: 20240107,
+            minor: 1,
+            ..Default::default()
+        };
+        let b = Version {
+            major: 20240107,
+            minor: 2,
+            ..Default::default()
+        };
+        let c = Version {
+            major: 20240109,
+            minor: 1,
+            metadata: Some("1".into()),
+        };
+        let d = Version {
+            major: 20240109,
+            minor: 1,
+            metadata: Some("2".into()),
+        };
+        assert!(a == a);
+        assert!(a < b);
+        assert!(b > a);
+        assert!(b < c);
+        assert!(c != d);
+        assert!(c < d);
+    }
+
+    #[test]
+    fn version_fmt() {
+        let mut v = Version {
+            major: 1,
+            ..Default::default()
+        };
+        assert_eq!(v.to_string(), "1.0");
+
+        v.minor = 2;
+        v.metadata = Some("preview".into());
+        assert_eq!(v.to_string(), "1.2-preview");
+    }
+
+    #[test]
+    fn version_parse() {
+        let mut v = Version {
+            major: 1,
+            ..Default::default()
+        };
+        assert!(matches!("1".parse::<Version>(), Ok(ver) if ver == v));
+        assert!(matches!("1.0".parse::<Version>(), Ok(ver) if ver == v));
+
+        v.minor = 2;
+        assert!(matches!("1.2".parse::<Version>(), Ok(ver) if ver == v));
+
+        v.metadata = Some("preview".into());
+        assert!(matches!("1.2-preview".parse::<Version>(), Ok(ver) if ver == v));
+    }
 }

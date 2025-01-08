@@ -247,6 +247,12 @@ impl From<std::io::Error> for Error {
     }
 }
 
+impl From<std::num::ParseIntError> for Error {
+    fn from(error: std::num::ParseIntError) -> Self {
+        Self::new(ErrorKind::DataConversion, error)
+    }
+}
+
 impl From<base64::DecodeError> for Error {
     fn from(error: base64::DecodeError) -> Self {
         Self::new(ErrorKind::DataConversion, error)

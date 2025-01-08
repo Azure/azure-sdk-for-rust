@@ -50,6 +50,10 @@ struct Args {
     #[arg(long)]
     insecure: bool,
 
+    /// Number of seconds to automatically shut down when no activity.
+    #[arg(long, default_value_t = 300)]
+    pub auto_shutdown_in_seconds: u32,
+
     /// Enable verbose logging.
     #[arg(short, long)]
     verbose: bool,
@@ -70,6 +74,7 @@ impl From<Args> for azure_core_test::proxy::ProxyOptions {
     fn from(args: Args) -> Self {
         Self {
             insecure: args.insecure,
+            auto_shutdown_in_seconds: args.auto_shutdown_in_seconds,
         }
     }
 }
