@@ -20,7 +20,11 @@ proc-macro2.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
-typespec_client_core = { workspace = true, features = ["http", "json", "xml"] }
+typespec_client_core = { path = "../typespec_client_core", features = [
+  "http",
+  "json",
+  "xml",
+] }
 serde.workspace = true
 serde_json.workspace = true
 cargo_metadata.workspace = true
