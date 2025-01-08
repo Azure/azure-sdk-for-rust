@@ -9,7 +9,7 @@ use async_std::sync::Mutex;
 use azure_core::{Result, Url};
 use fe2o3_amqp::connection::ConnectionHandle;
 use std::{borrow::BorrowMut, sync::OnceLock};
-use tracing::debug;
+use tracing::{debug, info, warn};
 
 use super::error::{AmqpConnection, AmqpOpen};
 
@@ -148,7 +148,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             })?
             .lock()
             .await;
-        connection
+        let res = connection
             .borrow_mut()
             .close_with_error(fe2o3_amqp::types::definitions::Error::new(
                 fe2o3_amqp::types::definitions::ErrorCondition::Custom(
@@ -158,7 +158,24 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 info.map(|i| i.into()),
             ))
             .await
-            .map_err(AmqpConnection::from)?;
-        Ok(())
+            .map_err(AmqpConnection::from);
+        // If we're closing with an error, then we might get the transport error back before we get the error back.
+        // that's ok.
+        match res {
+            Ok(_) => Ok(()),
+            Err(e) => match e.0 {
+                fe2o3_amqp::connection::Error::TransportError(e) => {
+                    info!(
+                        "Transport Error closing connection with error: {:?} - ignored",
+                        e
+                    );
+                    Ok(())
+                }
+                _ => {
+                    warn!("Error detaching receiver: {:?}", e);
+                    Err(e.into())
+                }
+            },
+        }
     }
 }

@@ -85,7 +85,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_amqp_connection_options_with_max_frame_size() {
+    fn amqp_connection_options_with_max_frame_size() {
         let connection_options = AmqpConnectionOptions {
             max_frame_size: Some(1024),
             ..Default::default()
@@ -197,7 +197,7 @@ mod tests {
     }
 
     #[test]
-    fn test_amqp_connection_options() {
+    fn amqp_connection_options() {
         let connection_options = AmqpConnectionOptions {
             max_frame_size: Some(1024),
             channel_max: Some(16),
@@ -243,5 +243,69 @@ mod tests {
                 vec![("key".into(), "value".into())].into_iter().collect() // convert to AmqpOrderedMap
             )
         );
+    }
+
+    // Tests disabled until we have a way to start the AMQP test broker in CI
+    #[allow(dead_code)]
+    mod disabled {
+        use super::super::*;
+
+        //    #[tokio::test]
+        async fn amqp_connection_open() {
+            tracing_subscriber::fmt::init();
+            let connection = AmqpConnection::new();
+
+            let url = Url::parse("amqp://localhost:25672").unwrap();
+            connection
+                .open("test".to_string(), url, None)
+                .await
+                .unwrap();
+        }
+
+        //    #[tokio::test]
+        async fn amqp_connection_open_with_error() {
+            tracing_subscriber::fmt::try_init().unwrap();
+            let connection = AmqpConnection::new();
+            let url = Url::parse("amqp://localhost:32767").unwrap();
+            assert!(connection
+                .open("test".to_string(), url, None)
+                .await
+                .is_err());
+        }
+
+        //    #[tokio::test]
+        async fn amqp_connection_close() {
+            let connection = AmqpConnection::new();
+            let url = Url::parse("amqp://localhost:25672").unwrap();
+            connection
+                .open("test".to_string(), url, None)
+                .await
+                .unwrap();
+            connection.close().await.unwrap();
+        }
+
+        //    #[tokio::test]
+        async fn amqp_connection_close_with_error() {
+            tracing_subscriber::fmt::try_init().unwrap();
+            let connection = AmqpConnection::new();
+            let url = Url::parse("amqp://localhost:25672").unwrap();
+            connection
+                .open("test".to_string(), url, None)
+                .await
+                .unwrap();
+            let res = connection
+                .close_with_error(
+                    AmqpSymbol::from("amqp:internal-error"),
+                    Some("Internal error.".to_string()),
+                    None,
+                )
+                .await;
+            match res {
+                Ok(_) => {}
+                Err(err) => {
+                    assert!(err.to_string().contains("Internal error."));
+                }
+            }
+        }
     }
 }

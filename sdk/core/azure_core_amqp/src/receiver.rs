@@ -55,8 +55,10 @@ pub trait AmqpReceiverApis {
         source: impl Into<AmqpSource>,
         options: Option<AmqpReceiverOptions>,
     ) -> impl std::future::Future<Output = Result<()>>;
+
     fn detach(self) -> impl std::future::Future<Output = Result<()>>;
-    //    fn receive(&self) -> impl std::future::Future<Output = Result<AmqpMessage>>;
+    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode);
+    fn get_credit_mode(&self) -> ReceiverCreditMode;
     fn receive_delivery(&self) -> impl std::future::Future<Output = Result<AmqpDelivery>>;
     fn accept_delivery(
         &self,
@@ -90,9 +92,13 @@ impl AmqpReceiverApis for AmqpReceiver {
         self.implementation.detach().await
     }
 
-    // async fn receive(&self) -> Result<AmqpMessage> {
-    //     self.implementation.receive().await
-    // }
+    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) {
+        self.implementation.set_credit_mode(credit_mode);
+    }
+
+    fn get_credit_mode(&self) -> ReceiverCreditMode {
+        self.implementation.get_credit_mode()
+    }
 
     async fn receive_delivery(&self) -> Result<AmqpDelivery> {
         self.implementation.receive_delivery().await
@@ -121,6 +127,7 @@ impl AmqpReceiver {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
@@ -250,4 +257,25 @@ mod tests {
         );
         assert!(!receiver_options.auto_accept);
     }
+
+    // #[test]
+    // async fn test_amqp_receiver_set_credit_mode() {
+    //     let receiver = AmqpReceiver::new();
+
+    //     receiver.attach(session, source, options)
+    //     receiver.set_credit_mode(ReceiverCreditMode::Manual);
+
+    //     // Assuming the implementation has a method to get the current credit mode for testing purposes
+    //     assert_eq!(
+    //         receiver.implementation.get_credit_mode(),
+    //         ReceiverCreditMode::Manual
+    //     );
+
+    //     receiver.set_credit_mode(ReceiverCreditMode::Auto(100));
+
+    //     assert_eq!(
+    //         receiver.implementation.get_credit_mode(),
+    //         ReceiverCreditMode::Auto(100)
+    //     );
+    // }
 }
