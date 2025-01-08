@@ -1,4 +1,18 @@
-//    #[tokio::test]
+// Copyright (c) Microsoft Corporation. All Rights reserved
+// Licensed under the MIT license.
+
+// These tests assume that the AmqpTestBroker is running on localhost:25672.
+// The AmqpTestBroker can be installed by the following steps:
+// 1. Clone the repository:
+//      git clone https://github.com/Azure/azure-amqp
+// 2. Build the project:
+//      dotnet restore
+//      dotnet build
+// 3. Run the broker:
+//      dotnet run --project .\test\TestAmqpBroker\TestAmqpBroker.csproj --framework net462 amqp://localhost:25672
+// 4. Run the tests (from the root of the azure-sdk-for-rust repository):
+//      cargo run --example connection --package azure_core_amqp
+
 use azure_core::Url;
 use azure_core_amqp::{
     connection::{AmqpConnection, AmqpConnectionApis},
@@ -15,7 +29,6 @@ async fn amqp_connection_open() {
         .unwrap();
 }
 
-//    #[tokio::test]
 async fn amqp_connection_open_with_error() {
     let connection = AmqpConnection::new();
     let url = Url::parse("amqp://localhost:32767").unwrap();
@@ -25,7 +38,6 @@ async fn amqp_connection_open_with_error() {
         .is_err());
 }
 
-//    #[tokio::test]
 async fn amqp_connection_close() {
     let connection = AmqpConnection::new();
     let url = Url::parse("amqp://localhost:25672").unwrap();
@@ -36,7 +48,6 @@ async fn amqp_connection_close() {
     connection.close().await.unwrap();
 }
 
-//    #[tokio::test]
 async fn amqp_connection_close_with_error() {
     let connection = AmqpConnection::new();
     let url = Url::parse("amqp://localhost:25672").unwrap();
