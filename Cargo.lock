@@ -462,6 +462,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_storage_blobs"
+version = "0.1.0"
+dependencies = [
+ "azure_core",
+ "serde",
+ "time",
+ "typespec_client_core",
+]
+
+[[package]]
 name = "azure_storage_common"
 version = "0.1.0"
 

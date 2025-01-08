@@ -1,11 +1,12 @@
 {
   "main": "dist/src/index.js",
   "dependencies": {
-    "@azure-tools/typespec-rust": "0.3.0"
+    "@azure-tools/typespec-rust": "0.6.0"
   },
   "devDependencies": {
-    "@azure-tools/typespec-client-generator-core": "0.48.4",
-    "@typespec/compiler": "0.62.0",
-    "@typespec/xml": "0.62.0"
+    "@azure-tools/typespec-client-generator-core": "0.49.1",
+    "@azure-tools/typespec-azure-rulesets": "0.49.0",
+    "@typespec/compiler": "0.63.0",
+    "@typespec/xml": "0.63.0"
   }
 }
