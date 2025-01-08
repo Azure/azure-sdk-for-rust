@@ -355,6 +355,7 @@ dependencies = [
  "serde_amqp",
  "serde_bytes",
  "time",
+ "tokio",
  "tracing",
  "tracing-subscriber",
  "uuid",

@@ -3,9 +3,11 @@
 //cspell: words amqp
 
 use super::error::{AmqpIllegalLinkState, AmqpLinkDetach, AmqpReceiver, AmqpReceiverAttach};
-use crate::messaging::{AmqpMessage, AmqpSource};
-use crate::receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode};
-use crate::session::AmqpSession;
+use crate::{
+    messaging::{AmqpDelivery, AmqpSource},
+    receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
+    session::AmqpSession,
+};
 use async_std::sync::Mutex;
 use azure_core::error::Result;
 use std::borrow::BorrowMut;
@@ -24,6 +26,17 @@ impl From<ReceiverCreditMode> for fe2o3_amqp::link::receiver::CreditMode {
                 fe2o3_amqp::link::receiver::CreditMode::Auto(prefetch)
             }
             ReceiverCreditMode::Manual => fe2o3_amqp::link::receiver::CreditMode::Manual,
+        }
+    }
+}
+
+impl From<&fe2o3_amqp::link::receiver::CreditMode> for ReceiverCreditMode {
+    fn from(credit_mode: &fe2o3_amqp::link::receiver::CreditMode) -> Self {
+        match credit_mode {
+            fe2o3_amqp::link::receiver::CreditMode::Auto(prefetch) => {
+                ReceiverCreditMode::Auto(*prefetch)
+            }
+            fe2o3_amqp::link::receiver::CreditMode::Manual => ReceiverCreditMode::Manual,
         }
     }
 }
@@ -94,7 +107,28 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         }
     }
 
-    async fn receive(&self) -> Result<AmqpMessage> {
+    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()> {
+        let receiver = self.receiver.get().ok_or_else(|| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Message receiver is not set.",
+            )
+        })?;
+        receiver.lock_blocking().set_credit_mode(credit_mode.into());
+        Ok(())
+    }
+
+    fn credit_mode(&self) -> Result<ReceiverCreditMode> {
+        let receiver = self.receiver.get().ok_or_else(|| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Message receiver is not set.",
+            )
+        })?;
+        Ok(receiver.lock_blocking().credit_mode().into())
+    }
+
+    async fn receive_delivery(&self) -> Result<AmqpDelivery> {
         let mut receiver = self
             .receiver
             .get()
@@ -113,15 +147,76 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
 
         trace!("Received delivery: {:?}", delivery);
 
+        Ok(delivery.into())
+    }
+
+    async fn accept_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
+        let receiver = self
+            .receiver
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Message receiver is not set.",
+                )
+            })?
+            .lock()
+            .await;
+
         trace!("Accepting delivery.");
         receiver
-            .accept(&delivery)
+            .accept(&delivery.0.delivery)
             .await
             .map_err(AmqpIllegalLinkState::from)?;
-        trace!("Accepted delivery");
+        trace!("Accepted delivery.");
 
-        let message = AmqpMessage::from(delivery.into_message());
-        Ok(message)
+        Ok(())
+    }
+
+    async fn reject_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
+        let receiver = self
+            .receiver
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Message receiver is not set.",
+                )
+            })?
+            .lock()
+            .await;
+
+        trace!("Rejecting delivery.");
+        receiver
+            .reject(&delivery.0.delivery, None)
+            .await
+            .map_err(AmqpIllegalLinkState::from)?;
+        trace!("Rejected delivery.");
+
+        Ok(())
+    }
+
+    async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
+        let receiver = self
+            .receiver
+            .get()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Message receiver is not set.",
+                )
+            })?
+            .lock()
+            .await;
+
+        trace!("Releasing delivery.");
+        receiver
+            .release(&delivery.0.delivery)
+            .await
+            .map_err(AmqpIllegalLinkState::from)?;
+        trace!("Released delivery.");
+
+        Ok(())
     }
 }
 
