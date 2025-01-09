@@ -6,7 +6,7 @@ param(
   [bool]$UnitTests = $true,
   [bool]$FunctionalTests = $true,
   [string]$PackageInfoPath,
-  [string]$workingDirectory
+  [string]$WorkingDirectory
 )
 
 $ErrorActionPreference = 'Stop'
@@ -19,7 +19,8 @@ Write-Host "Testing packages with
     Toolchain: '$Toolchain'
     UnitTests: '$UnitTests'
     FunctionalTests: '$FunctionalTests'
-    PackageInfoPath: '$PackageInfoPath'"
+    PackageInfoPath: '$PackageInfoPath'
+    WorkingDirectory: '$WorkingDirectory'"
 
 if ($PackageInfoPath) {
   if (!(Test-Path $PackageInfoPath)) {
@@ -47,9 +48,10 @@ $env:RUSTFLAGS = "-Dwarnings"
 foreach ($package in $packagesToTest) {
   Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
   try {
-    if ((Test-Path "Test-Setup.ps1")) {
+    Write-Host "Checking for setup in $package.DirectoryPath'../Test-Setup.ps1'"
+    if (Test-Path $package.DirectoryPath"../Test-Setup.ps1") {
       Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
-      . "Test-Setup.ps1" -packageName $package -workingDirectory $workingDirectory
+      . "Test-Setup.ps1" -packageName $package -workingDirectory $WorkingDirectory
       if ($LASTEXITCODE -ne 0) {
         Write-Error "Test setup script failed for package: '$($package.Name)'"
         exit 1
@@ -79,9 +81,9 @@ foreach ($package in $packagesToTest) {
     Invoke-LoggedCommand "cargo +$Toolchain test --doc --no-fail-fast"
     Write-Host "`n`n"
 
-    if ((Test-Path "Test-Cleanup.ps1")) {
+    if (Test-Path $package.DirectoryPath"../Test-Cleanup.ps1") {
       Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
-      . "Test-Cleanup.ps1" -packageName $package -workingDirectory $workingDirectory
+      . "Test-Cleanup.ps1" -packageName $package -workingDirectory $WorkingDirectory
       # We ignore the exit code of the cleanup script.
     }
   }
