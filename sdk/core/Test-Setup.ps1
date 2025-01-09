@@ -1,24 +1,24 @@
 # cspell: ignore LASTEXITCODE
 param (
-  [string]$packageName,
-  [string]$workingDirectory
+  [string]$PackageName,
+  [string]$WorkingDirectory
 )
 
-if (-not $packageName) {
-  Write-Host "packageName parameter not provided."
+if (-not $PackageName) {
+  Write-Host "PackageName parameter not provided."
   exit 1
 }
 
-if (-not $workingDirectory) {
-  Write-Host "workingDirectory parameter not provided."
+if (-not $WorkingDirectory) {
+  Write-Host "WorkingDirectory parameter not provided."
   exit 1
 }
 
-if ($packageName -eq "azure_core_amqp") {
+if ($PackageName -eq "azure_core_amqp") {
   # Test setup for the azure_core_amqp package.
 
-  Write-Host "Setting current directory to working directory: $workingDirectory"
-  Push-Location -Path $workingDirectory
+  Write-Host "Setting current directory to working directory: $WorkingDirectory"
+  Push-Location -Path $WorkingDirectory
   try {
 
     $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
@@ -57,9 +57,9 @@ if ($packageName -eq "azure_core_amqp") {
     # now that the Test broker has been built, launch the broker on a local address.
     $env:TEST_BROKER_ADDRESS = 'amqp://127.0.0.1:25672'
 
-    $brokerExecutable = "$workingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe"
-    $remoteJob = Start-Process $workingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe -ArgumentList { "$env:TEST_BROKER_ADDRESS, /headless" }
-    Write-Host "Starting test broker..." $remoteJob
+    $brokerExecutable = $WorkingDirectory'/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe'
+    $remoteJob = Start-Process $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe -ArgumentList { $env:TEST_BROKER_ADDRESS, "/headless" }
+    Write-Host "Starting test broker listening on " $env:TEST_BROKER_ADDRESS "..."
     $env:TEST_BROKER_PID = (Get-Process -Name "TestAmqpBroker").Id
     Write-Host "Test broker started with PID: $env:TEST_BROKER_PID"
   }
