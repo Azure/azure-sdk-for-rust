@@ -41,7 +41,7 @@ if ($PackageName -eq "azure_core_amqp") {
         exit 1
       }
 
-      if ($IsLinux) {
+      if ($IsLinux -or $IsMacOS) {
         Write-Host "Setting execute permission for TestAmqpBroker..."
         Invoke-LoggedCommand "chmod +x $workingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe"
         if (!$? -ne 0) {
