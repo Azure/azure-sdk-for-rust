@@ -30,13 +30,13 @@ if ($packageName -eq "azure_core_amqp") {
     Push-Location -Path "./azure-amqp/test/TestAmqpBroker"
     try {
       Invoke-LoggedCommand "dotnet restore"
-      if ($LASTEXITCODE -ne 0) {
+      if (!$? -ne 0) {
         Write-Error "Failed to restore dependencies for TestAmqpBroker."
         exit 1
       }
 
       Invoke-LoggedCommand "dotnet build"
-      if ($LASTEXITCODE -ne 0) {
+      if (!$? -ne 0) {
         Write-Error "Failed to build TestAmqpBroker."
         exit 1
       }
@@ -44,7 +44,7 @@ if ($packageName -eq "azure_core_amqp") {
       if ($IsLinux) {
         Write-Host "Setting execute permission for TestAmqpBroker..."
         Invoke-LoggedCommand "chmod +x $workingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe"
-        if ($LASTEXITCODE -ne 0) {
+        if (!$? -ne 0) {
           Write-Error "Failed to set execute permission for TestAmqpBroker."
           exit 1
         }
