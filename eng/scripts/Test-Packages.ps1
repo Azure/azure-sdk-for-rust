@@ -48,8 +48,10 @@ $env:RUSTFLAGS = "-Dwarnings"
 foreach ($package in $packagesToTest) {
   Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
   try {
-    Write-Host "Checking for setup in "$package.DirectoryPath"'../Test-Setup.ps1'"
-    if (Test-Path ($package.DirectoryPath + "../Test-Setup.ps1")) {
+    $serviceDirectory = $package.DirectoryPath + "../"
+    $testSetup = $serviceDirectory + "Test-Setup.ps1"
+    Write-Host "Checking for setup in $testSetup"
+    if (Test-Path ($testSetup)) {
       Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
       . "Test-Setup.ps1" -packageName $package -workingDirectory $WorkingDirectory
       if ($LASTEXITCODE -ne 0) {
