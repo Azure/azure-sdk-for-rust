@@ -3,6 +3,7 @@ param (
   [string]$PackageName,
   [string]$WorkingDirectory
 )
+. "$PSScriptRoot\..\..\eng\common\scripts\common.ps1"
 
 if (-not $PackageName) {
   Write-Host "PackageName parameter not provided."
@@ -57,7 +58,9 @@ if ($PackageName -eq "azure_core_amqp") {
     # now that the Test broker has been built, launch the broker on a local address.
     $env:TEST_BROKER_ADDRESS = 'amqp://127.0.0.1:25672'
 
-    $brokerExecutable = $WorkingDirectory + '/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe'
+    Set-Location $WorkingDirectory/azure-amqp
+
+    $brokerExecutable = './bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe'
     Write-Host "Test broker is: $brokerExecutable"
     Write-Host "Starting test broker listening on " $env:TEST_BROKER_ADDRESS "..."
 
