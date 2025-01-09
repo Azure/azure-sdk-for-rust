@@ -49,11 +49,11 @@ foreach ($package in $packagesToTest) {
   Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
   try {
     $serviceDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath)) + "/../"
-    $testSetup = $serviceDirectory + "Test-Setup.ps1"
+    #    $testSetup = $serviceDirectory + "Test-Setup.ps1"
     Write-Host "Checking for setup in $testSetup"
-    if (Test-Path ($testSetup)) {
+    if (Test-Path ($serviceDirectory + "Test-Setup.ps1")) {
       Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
-      Invoke-LoggedCommand "$testSetup -packageName $package -workingDirectory $WorkingDirectory"
+      Invoke-LoggedCommand "($serviceDirectory+"Test-Setup.ps1") -packageName $(package.Name) -workingDirectory $WorkingDirectory"
       if ($LASTEXITCODE -ne 0) {
         Write-Error "Test setup script failed for package: '$($package.Name)'"
         exit 1
