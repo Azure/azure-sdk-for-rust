@@ -85,7 +85,7 @@ const RFC1123_FORMAT: &[FormatItem] = format_description!(
 ///
 /// Sun, 06 Nov 1994 08:49:37 GMT
 pub fn to_rfc1123(date: &OffsetDateTime) -> String {
-    date.to_offset(UtcOffset::UTC);
+    let date = date.to_offset(UtcOffset::UTC);
     // known format does not panic
     date.format(&RFC1123_FORMAT).unwrap()
 }
@@ -114,7 +114,7 @@ const LAST_STATE_CHANGE_FORMAT: &[FormatItem] = format_description!(
 ///
 /// x-ms-last-state-change-utc: Fri, 25 Mar 2016 21:27:20.035 GMT
 pub fn to_last_state_change(date: &OffsetDateTime) -> String {
-    date.to_offset(UtcOffset::UTC);
+    let date = date.to_offset(UtcOffset::UTC);
     // known format does not panic
     date.format(LAST_STATE_CHANGE_FORMAT).unwrap()
 }
@@ -181,6 +181,13 @@ mod tests {
     }
 
     #[test]
+    fn test_to_rfc1123_from_offset() -> crate::Result<()> {
+        let dt = datetime!(1994-11-06 08:49:37 +01);
+        assert_eq!("Sun, 06 Nov 1994 07:49:37 GMT", to_rfc1123(&dt));
+        Ok(())
+    }
+
+    #[test]
     fn test_parse_rfc1123() -> crate::Result<()> {
         let dt = datetime!(1994-11-06 08:49:37 UTC);
         assert_eq!(parse_rfc1123("Sun, 06 Nov 1994 08:49:37 GMT")?, dt);
@@ -192,6 +199,26 @@ mod tests {
         assert_eq!(
             datetime!(2020-01-15 23:39:44.369 UTC),
             parse_last_state_change("Wed, 15 Jan 2020 23:39:44.369 GMT")?
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_to_last_state_change() -> crate::Result<()> {
+        let dt = datetime!(1994-11-06 08:49:37 UTC);
+        assert_eq!(
+            "Sun, 06 Nov 1994 08:49:37.000 GMT",
+            to_last_state_change(&dt)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_to_last_state_change_with_offset() -> crate::Result<()> {
+        let dt = datetime!(1994-11-06 08:49:37 +01);
+        assert_eq!(
+            "Sun, 06 Nov 1994 07:49:37.000 GMT",
+            to_last_state_change(&dt)
         );
         Ok(())
     }

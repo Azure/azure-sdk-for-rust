@@ -49,8 +49,8 @@ pub fn serialize<S>(date: &OffsetDateTime, serializer: S) -> Result<S::Ok, S::Er
 where
     S: Serializer,
 {
-    date.to_offset(UtcOffset::UTC);
-    let as_str = to_iso8601(date).map_err(serde::ser::Error::custom)?;
+    let date = date.to_offset(UtcOffset::UTC);
+    let as_str = to_iso8601(&date).map_err(serde::ser::Error::custom)?;
     serializer.serialize_str(&as_str)
 }
 
