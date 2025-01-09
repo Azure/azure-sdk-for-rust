@@ -53,7 +53,7 @@ foreach ($package in $packagesToTest) {
     Write-Host "Checking for setup in $testSetup"
     if (Test-Path ($testSetup)) {
       Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
-      Invoke-LoggedCommand . $testSetup -packageName $package -workingDirectory $WorkingDirectory
+      Invoke-LoggedCommand "$testSetup -packageName $package -workingDirectory $WorkingDirectory"
       if ($LASTEXITCODE -ne 0) {
         Write-Error "Test setup script failed for package: '$($package.Name)'"
         exit 1

@@ -35,7 +35,7 @@ if ($packageName -eq "azure_core_amqp") {
 
     Push-Location -Path "./azure-amqp/test/TestAmqpBroker"
     try {
-      Invoke-LoggedCommand"dotnet restore"
+      Invoke-LoggedCommand "dotnet restore"
       if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to restore dependencies for TestAmqpBroker."
         exit 1
