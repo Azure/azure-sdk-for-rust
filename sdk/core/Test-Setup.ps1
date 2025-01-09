@@ -28,31 +28,26 @@ if ($PackageName -eq "azure_core_amqp") {
     Write-Host "Cloning repository from $repositoryUrl..."
     Invoke-LoggedCommand $cloneCommand
 
-    Push-Location -Path "./azure-amqp/test/TestAmqpBroker"
-    try {
-      Invoke-LoggedCommand "dotnet restore"
-      if (!$? -ne 0) {
-        Write-Error "Failed to restore dependencies for TestAmqpBroker."
-        exit 1
-      }
-
-      Invoke-LoggedCommand "dotnet build"
-      if (!$? -ne 0) {
-        Write-Error "Failed to build TestAmqpBroker."
-        exit 1
-      }
-
-      if ($IsLinux -or $IsMacOS) {
-        Write-Host "Setting execute permission for TestAmqpBroker..."
-        Invoke-LoggedCommand "chmod +x $workingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe"
-        if (!$? -ne 0) {
-          Write-Error "Failed to set execute permission for TestAmqpBroker."
-          exit 1
-        }
-      }
+    Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
+    Invoke-LoggedCommand "dotnet restore"
+    if (!$? -ne 0) {
+      Write-Error "Failed to restore dependencies for TestAmqpBroker."
+      exit 1
     }
-    finally {
-      Pop-Location
+
+    Invoke-LoggedCommand "dotnet build"
+    if (!$? -ne 0) {
+      Write-Error "Failed to build TestAmqpBroker."
+      exit 1
+    }
+
+    if ($IsLinux -or $IsMacOS) {
+      Write-Host "Setting execute permission for TestAmqpBroker..."
+      Invoke-LoggedCommand "chmod +x $workingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe"
+      if (!$? -ne 0) {
+        Write-Error "Failed to set execute permission for TestAmqpBroker."
+        exit 1
+      }
     }
 
     # now that the Test broker has been built, launch the broker on a local address.

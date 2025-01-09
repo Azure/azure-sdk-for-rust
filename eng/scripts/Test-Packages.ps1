@@ -85,8 +85,9 @@ foreach ($package in $packagesToTest) {
     Write-Host "`n`n"
 
     if (Test-Path ($serviceDirectory + 'Test-Cleanup.ps1')) {
-      Write-Host "`n`nRunning test cleanup script for package: '$package.Name'`n"
-      Invoke-LoggedCommand "($serviceDirectory)Test-Cleanup.ps1 -packageName ($package.Name) -workingDirectory $WorkingDirectory"
+      Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
+      $cleanupScript = $serviceDirectory + 'Test-Cleanup.ps1'
+      Invoke-LoggedCommand "$cleanupScript -packageName $packageName -workingDirectory $WorkingDirectory"
       # We ignore the exit code of the cleanup script.
     }
   }

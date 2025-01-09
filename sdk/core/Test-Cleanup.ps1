@@ -1,19 +1,19 @@
 param (
-  [string]$packageName,
-  [string]$workingDirectory
+  [string]$PackageName,
+  [string]$WorkingDirectory
 )
 
-if (-not $packageName) {
+if (-not $PackageName) {
   Write-Host "Please provide a package name."
   exit 1
 }
 
-if (-not $workingDirectory) {
+if (-not $WorkingDirectory) {
   Write-Host "Please provide a working directory."
   exit 1
 }
 
-if (-not($packageName -eq "azure_core_amqp")) {
+if (-not($OackageName -eq "azure_core_amqp")) {
   Write-Host "Skipping test setup for package $packageName."
   exit 0
 }
