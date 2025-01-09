@@ -53,14 +53,15 @@ if ($PackageName -eq "azure_core_amqp") {
     # now that the Test broker has been built, launch the broker on a local address.
     $env:TEST_BROKER_ADDRESS = 'amqp://127.0.0.1:25672'
 
-    Set-Location $WorkingDirectory/azure-amqp
+    Write-Host "Looking for test amqp broker executable..."
+    Get-ChildItem -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/ -Recurse -Filter TestAmqpBroker*
 
-    $brokerExecutable = './bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe'
+    Set-Location $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462
+
+    $brokerExecutable = 'TestAmqpBroker.exe'
     Write-Host "Test broker is: $brokerExecutable"
     Write-Host "Starting test broker listening on " $env:TEST_BROKER_ADDRESS "..."
 
-    Write-Host "Looking for test amqp broker executable..."
-    Get-ChildItem -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/ -Recurse -Filter TestAmqpBroker*
 
     Start-Process $brokerExecutable -ArgumentList { ${env:TEST_BROKER_ADDRESS}, "/headless" }
     $env:TEST_BROKER_PID = (Get-Process -Name "TestAmqpBroker").Id
