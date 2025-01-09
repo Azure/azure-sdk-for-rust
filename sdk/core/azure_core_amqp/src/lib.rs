@@ -22,6 +22,7 @@ use std::fmt::Debug;
 
 // AMQP Settle mode:
 // https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-sender-settle-mode
+
 const AMQP_SENDER_SETTLE_MODE_UNSETTLED: isize = 0;
 const AMQP_SENDER_SETTLE_MODE_SETTLED: isize = 1;
 const AMQP_SENDER_SETTLE_MODE_MIXED: isize = 2;

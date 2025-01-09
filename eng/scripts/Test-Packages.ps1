@@ -5,7 +5,8 @@ param(
   [string]$Toolchain = 'stable',
   [bool]$UnitTests = $true,
   [bool]$FunctionalTests = $true,
-  [string]$PackageInfoPath
+  [string]$PackageInfoPath,
+  [string]$workingDirectory
 )
 
 $ErrorActionPreference = 'Stop'
@@ -46,6 +47,15 @@ $env:RUSTFLAGS = "-Dwarnings"
 foreach ($package in $packagesToTest) {
   Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
   try {
+    if ((Test-Path "Test-Setup.ps1")) {
+      Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
+      . "Test-Setup.ps1" -packageName $package -workingDirectory $workingDirectory
+      if ($LASTEXITCODE -ne 0) {
+        Write-Error "Test setup script failed for package: '$($package.Name)'"
+        exit 1
+      }
+    }
+
     Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
     Invoke-LoggedCommand "cargo +$Toolchain build --keep-going"
@@ -68,6 +78,12 @@ foreach ($package in $packagesToTest) {
 
     Invoke-LoggedCommand "cargo +$Toolchain test --doc --no-fail-fast"
     Write-Host "`n`n"
+
+    if ((Test-Path "Test-Cleanup.ps1")) {
+      Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
+      . "Test-Cleanup.ps1" -packageName $package -workingDirectory $workingDirectory
+      # We ignore the exit code of the cleanup script.
+    }
   }
   finally {
     Pop-Location
