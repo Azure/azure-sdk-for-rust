@@ -16,12 +16,6 @@ if (-not $workingDirectory) {
 
 if ($packageName -eq "azure_core_amqp") {
   # Test setup for the azure_core_amqp package.
-  if (Test-Path $workingDirectory) {
-    Write-Host "Removing existing working directory..."
-    Remove-Item -Recurse -Force $workingDirectory
-  }
-
-  New-Item -ItemType Directory -Path $workingDirectory
 
   Write-Host "Setting current directory to working directory: $workingDirectory"
   Push-Location -Path $workingDirectory
