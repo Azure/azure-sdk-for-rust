@@ -49,9 +49,9 @@ foreach ($package in $packagesToTest) {
     $packageDirectory = Get-Location
     Write-Host "PackageDirectory" $packageDirectory
     $packageName = $package.Name
-    Write-Host "Checking for setup in $packageDirectory + '/Test-Setup.ps1'"
+    $setupScript = $packageDirectory + "/Test-Setup.ps1"
+    Write-Host "Checking for setup in $($packageDirectory+'/Test-Setup.ps1')"
     if (Test-Path ($packageDirectory + "/Test-Setup.ps1")) {
-      $setupScript = $packageDirectory + "/Test-Setup.ps1"
       Write-Host "`n`nRunning test setup script for package: '$($package.Name)': $setupScript`n"
       Invoke-LoggedCommand "$setupScript -packageName $packageName"
       if (!$? -ne 0) {
