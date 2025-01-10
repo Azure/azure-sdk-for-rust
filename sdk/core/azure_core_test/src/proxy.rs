@@ -34,7 +34,7 @@ pub async fn start(
     test_data_dir: impl AsRef<Path>,
     options: Option<ProxyOptions>,
 ) -> Result<Proxy> {
-    if env::var(PROXY_MANUAL_START).is_ok_and(|v| v.to_ascii_lowercase() == "true") {
+    if env::var(PROXY_MANUAL_START).is_ok_and(|v| v.eq_ignore_ascii_case("true")) {
         tracing::event!(target: crate::SPAN_TARGET, Level::WARN, "environment variable {PROXY_MANUAL_START} is 'true'; not starting test proxy");
         return Ok(Proxy::default());
     }
