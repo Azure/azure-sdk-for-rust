@@ -24,7 +24,7 @@ impl Header for IfModifiedSince {
     }
 
     fn value(&self) -> headers::HeaderValue {
-        date::to_rfc1123(&self.0).into()
+        date::to_rfc7231(&self.0).into()
     }
 }
 

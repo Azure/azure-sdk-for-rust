@@ -16,17 +16,16 @@ use typespec::error::{ErrorKind, ResultExt};
 pub use time::serde::rfc3339;
 pub use time::serde::timestamp;
 
-// RFC 3339 vs ISO 8601
-// <https://ijmacd.github.io/rfc3339-iso8601/>
+// RFC 3339 vs ISO 8601: <https://ijmacd.github.io/rfc3339-iso8601/>
 pub mod iso8601;
-pub mod rfc1123;
+pub mod rfc7231;
 
 /// RFC 3339: Date and Time on the Internet: Timestamps.
 ///
 /// <https://www.rfc-editor.org/rfc/rfc3339>
 ///
-/// In (TypeSpec)[https://aka.ms/typespec] fields are specified as `utcDateTime` or `offsetDateTime`.
-/// In OpenAPI 2.0 specifications it is specified as `"format": "date-time"`.
+/// In (TypeSpec)[https://aka.ms/typespec] properties are specified as `utcDateTime` or `offsetDateTime`.
+/// In OpenAPI 2.0 specifications properties are specified as `"format": "date-time"`.
 ///
 /// Example string: `1985-04-12T23:20:50.52Z`.
 pub fn parse_rfc3339(s: &str) -> crate::Result<OffsetDateTime> {
@@ -39,8 +38,8 @@ pub fn parse_rfc3339(s: &str) -> crate::Result<OffsetDateTime> {
 ///
 /// <https://www.rfc-editor.org/rfc/rfc3339>
 ///
-/// In (TypeSpec)[https://aka.ms/typespec] fields are specified as `utcDateTime` or `offsetDateTime`.
-/// In OpenAPI 2.0 specifications it is specified as `"format": "date-time"`.
+/// In (TypeSpec)[https://aka.ms/typespec] properties are specified as `utcDateTime` or `offsetDateTime`.
+/// In OpenAPI 2.0 specifications properties are specified as `"format": "date-time"`.
 ///
 /// Example string: `1985-04-12T23:20:50.52Z`.
 pub fn to_rfc3339(date: &OffsetDateTime) -> String {
@@ -48,50 +47,48 @@ pub fn to_rfc3339(date: &OffsetDateTime) -> String {
     date.format(&Rfc3339).unwrap()
 }
 
-/// RFC 1123: Requirements for Internet Hosts - Application and Support.
+/// RFC 7231: Requirements for Internet Hosts - Application and Support.
 ///
-/// <https://www.rfc-editor.org/rfc/rfc1123>
+/// <https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.1.1>
 ///
-/// In REST API specifications it is specified as `"format": "date-time-rfc1123"`.
+/// In (TypeSpec)[https://aka.ms/typespec] headers are specified as `utcDateTime`.
+/// In REST API specifications headers are specified as `"format": "date-time-rfc1123"`.
 ///
-/// In .NET it is the `rfc1123pattern`.
-/// <https://learn.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern>
+/// This format is also the preferred HTTP date-based header format.
+/// * <https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.1.2>
+/// * <https://datatracker.ietf.org/doc/html/rfc7232>
 ///
-/// This format is also the preferred HTTP date format.
-/// <https://httpwg.org/specs/rfc9110.html#http.date>
-///
-/// Sun, 06 Nov 1994 08:49:37 GMT
-pub fn parse_rfc1123(s: &str) -> crate::Result<OffsetDateTime> {
-    Ok(PrimitiveDateTime::parse(s, RFC1123_FORMAT)
+/// Example string: `Sun, 06 Nov 1994 08:49:37 GMT`.
+pub fn parse_rfc7231(s: &str) -> crate::Result<OffsetDateTime> {
+    Ok(PrimitiveDateTime::parse(s, RFC7231_FORMAT)
         .with_context(ErrorKind::DataConversion, || {
-            format!("unable to parse rfc1123 date '{s}")
+            format!("unable to parse rfc7231 date '{s}")
         })?
         .assume_utc())
 }
 
-const RFC1123_FORMAT: &[FormatItem] = format_description!(
+const RFC7231_FORMAT: &[FormatItem] = format_description!(
     "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT"
 );
 
-/// RFC 1123: Requirements for Internet Hosts - Application and Support.
+/// RFC 7231: Requirements for Internet Hosts - Application and Support.
 ///
-/// <https://www.rfc-editor.org/rfc/rfc1123>
+/// <https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.1.1>
 ///
-/// In REST API specifications it is specified as `"format": "date-time-rfc1123"`.
+/// In (TypeSpec)[https://aka.ms/typespec] headers are specified as `utcDateTime`.
+/// In REST API specifications headers are specified as `"format": "date-time-rfc1123"`.
 ///
-/// In .NET it is the `rfc1123pattern`.
-/// <https://learn.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern>
+/// This format is also the preferred HTTP date-based header format.
+/// * <https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.1.2>
+/// * <https://datatracker.ietf.org/doc/html/rfc7232>
 ///
-/// This format is also the preferred HTTP date format.
-/// <https://httpwg.org/specs/rfc9110.html#http.date>
-///
-/// Sun, 06 Nov 1994 08:49:37 GMT
-pub fn to_rfc1123(date: &OffsetDateTime) -> String {
+/// Example string: `Sun, 06 Nov 1994 08:49:37 GMT`.
+pub fn to_rfc7231(date: &OffsetDateTime) -> String {
     // known format does not panic
-    date.format(&RFC1123_FORMAT).unwrap()
+    date.format(&RFC7231_FORMAT).unwrap()
 }
 
-/// Similar to RFC 1123, but includes milliseconds.
+/// Similar to RFC 7231, but includes milliseconds.
 ///
 /// <https://learn.microsoft.com/rest/api/cosmos-db/patch-a-document>
 ///
@@ -183,34 +180,39 @@ mod tests {
     }
 
     #[test]
-    fn test_to_rfc1123() -> crate::Result<()> {
+    fn test_to_rfc7231() -> crate::Result<()> {
         let dt = datetime!(1994-11-06 08:49:37 UTC);
-        assert_eq!("Sun, 06 Nov 1994 08:49:37 GMT", to_rfc1123(&dt));
+        assert_eq!("Sun, 06 Nov 1994 08:49:37 GMT", to_rfc7231(&dt));
         Ok(())
     }
 
     #[test]
-    fn test_parse_rfc1123() -> crate::Result<()> {
+    fn test_parse_rfc7231() -> crate::Result<()> {
         let dt = datetime!(1994-11-06 08:49:37 UTC);
-        assert_eq!(parse_rfc1123("Sun, 06 Nov 1994 08:49:37 GMT")?, dt);
+        assert_eq!(parse_rfc7231("Sun, 06 Nov 1994 08:49:37 GMT")?, dt);
         Ok(())
     }
 
     #[test]
-    fn roundtrip_rfc1123() -> crate::Result<()> {
+    fn parse_rfc7231_offset() {
+        assert!(parse_rfc7231("Sun, 06 Nov 1994 00:49:37 PST").is_err());
+    }
+
+    #[test]
+    fn roundtrip_rfc7231() -> crate::Result<()> {
         let s = "Sat, 12 Oct 2019 07:20:50 GMT";
-        let dt = parse_rfc1123(s)?;
-        assert_eq!(s, to_rfc1123(&dt));
+        let dt = parse_rfc7231(s)?;
+        assert_eq!(s, to_rfc7231(&dt));
         Ok(())
     }
 
     #[test]
     #[ignore = "https://github.com/Azure/azure-sdk-for-rust/issues/1982"]
-    fn roundtrip_rfc1123_offset() -> crate::Result<()> {
+    fn roundtrip_rfc7231_offset() -> crate::Result<()> {
         let s = "Sat, 12 Oct 2019 07:20:50 PST";
-        let dt = parse_rfc1123(s)?;
+        let dt = parse_rfc7231(s)?;
         assert!(!dt.offset().is_utc());
-        assert_eq!(s, to_rfc1123(&dt));
+        assert_eq!(s, to_rfc7231(&dt));
         Ok(())
     }
 
@@ -228,7 +230,7 @@ mod tests {
         let creation_time = "Thu, 01 Jul 2021 10:45:02 GMT";
         assert_eq!(
             datetime!(2021-07-01 10:45:02 UTC),
-            parse_rfc1123(creation_time)?
+            parse_rfc7231(creation_time)?
         );
         Ok(())
     }
