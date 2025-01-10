@@ -18,7 +18,7 @@ Write-Host Using Working Directory $WorkingDirectory
 
 if (-not (Test-Path $WorkingDirectory)) {
   Write-Host "Working directory does not exist, creating working directory: $WorkingDirectory"
-  Create-Directory $WorkingDirectory
+  New-Item -ItemType Directory -Path $WorkingDirectory
 }
 
 if ($PackageName -eq "azure_core_amqp") {
