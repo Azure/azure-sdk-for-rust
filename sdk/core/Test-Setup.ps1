@@ -60,7 +60,7 @@ if ($PackageName -eq "azure_core_amqp") {
 
     Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0
     #$job = dotnet exec TestAmqpBroker.dll -- $env:TEST_BROKER_ADDRESS /headless &
-    $job = dotnet exec TestAmqpBroker.dll -- amqp://127.0.0.1:25672 /headless &
+    $job = dotnet exec TestAmqpBroker.dll amqp://127.0.0.1:25672 /headless &
     Receive-Job -Job $job
 
     Write-Host Broker job is ($($job).Id)
