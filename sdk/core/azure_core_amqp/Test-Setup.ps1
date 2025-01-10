@@ -49,7 +49,7 @@ try {
     exit 1
   }
 
-  Invoke-LoggedCommand "dotnet publish --framework net6.0"
+  Invoke-LoggedCommand "dotnet publish --self-contained --framework net6.0"
 
   Write-Host "Test broker built successfully."
 
