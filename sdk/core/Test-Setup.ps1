@@ -1,4 +1,7 @@
-# cspell: ignore LASTEXITCODE
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+# cspell: ignore JOBID
+
 param (
   [string]$PackageName,
   [string]$WorkingDirectory
@@ -61,10 +64,11 @@ if ($PackageName -eq "azure_core_amqp") {
     if ($IsLinux -or $IsMacOS) {
       Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0
       $job = dotnet exec TestAmqpBroker.dll $env:TEST_BROKER_ADDRESS /headless &
-      Write-Host Broker job is ($($job).Id)
-      $env:TEST_BROKER_PID = $($job).Id
-
       Receive-Job -Job $job
+
+      Write-Host Broker job is ($($job).Id)
+      $env:TEST_BROKER_JOBID = $($job).Id
+
     }
     else {
       Set-Location $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462

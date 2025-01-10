@@ -1,7 +1,13 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+# cspell: ignore JOBID
+
 param (
   [string]$PackageName,
   [string]$WorkingDirectory
 )
+
+. "$PSScriptRoot\..\..\eng\common\scripts\common.ps1"
 
 if (-not $PackageName) {
   Write-Host "Please provide a package name."
@@ -19,8 +25,21 @@ if (-not($PackageName -eq "azure_core_amqp")) {
 }
 
 # Kill the test broker process started in Test-Setup.ps1
-Write-Host "Stopping test broker with Job ID: $env:TEST_BROKER_PID"
-Stop-Job -Id $env:TEST_BROKER_PID -Force
+Write-Host "Stopping test broker with Job ID: $env:TEST_BROKER_JOBID"
 
-Remove-Job -Id $env:TEST_BROKER_PID
+Write-Host Currently running jobs:
+Get-Job
+
+Write-Host Job output:
+Receive-Job $env:TEST_BROKER_JOBID
+
+Write-Host Stopping job...
+Stop-Job -Id $env:TEST_BROKER_JOBID
+
+Write-Host Removing job...
+Remove-Job -Id $env:TEST_BROKER_JOBID
+
+Write-Host Currently running jobs:
+Get-Job
+
 Write-Host "Test broker stopped."
