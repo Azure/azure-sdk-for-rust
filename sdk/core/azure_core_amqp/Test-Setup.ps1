@@ -7,7 +7,7 @@ param (
 )
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
-$WorkingDirectory = ([System.IO.Path].Combine($RepoRoot, "../TestArtifacts"))
+$WorkingDirectory = ([System.IO.Path]::Combine($RepoRoot, "../TestArtifacts"))
 
 if (-not $PackageName) {
   Write-Host "PackageName parameter not provided."
