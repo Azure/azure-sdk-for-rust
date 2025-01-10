@@ -5,6 +5,8 @@
 param (
   [string]$PackageName
 )
+
+# Load common ES scripts
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
 $WorkingDirectory = ([System.IO.Path]::Combine($RepoRoot, "../TestArtifacts"))
@@ -14,6 +16,7 @@ if (-not $PackageName) {
   exit 1
 }
 
+# Create the working directory if it does not exist.
 Write-Host Using Working Directory $WorkingDirectory
 
 if (-not (Test-Path $WorkingDirectory)) {
@@ -21,9 +24,10 @@ if (-not (Test-Path $WorkingDirectory)) {
   New-Item -ItemType Directory -Path $WorkingDirectory
 }
 
-
 Write-Host "Setting current directory to working directory: $WorkingDirectory"
 Push-Location -Path $WorkingDirectory
+
+# Clone and build the Test Amqp Broker.
 try {
 
   $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
@@ -58,9 +62,6 @@ try {
 
   Write-Host "Test broker built successfully."
 
-  Write-Host "Listing files in TestAmqpBroker publish directory..."
-  Get-ChildItem -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/publish
-
   # now that the Test broker has been built, launch the broker on a local address.
   $env:TEST_BROKER_ADDRESS = 'amqp://127.0.0.1:25672'
 
@@ -68,10 +69,14 @@ try {
 
   Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/publish
   $job = TestAmqpBroker $env:TEST_BROKER_ADDRESS /headless &
-  Receive-Job -Job $job
 
   Write-Host Broker job is ($($job).Id)
   $env:TEST_BROKER_JOBID = $($job).Id
+
+  if (-not((Get-Job.State -Id $env:TEST_BROKER_JOBID) -eq "Running")) {
+    Write-Host "Test broker failed to start."
+    exit 1
+  }
 
   Write-Host "Test broker started with JOB ID: $env:TEST_BROKER_JOBID"
 }

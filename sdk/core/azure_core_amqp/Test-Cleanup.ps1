@@ -19,6 +19,12 @@ Get-Job
 Write-Host Job output:
 Receive-Job -Id $env:TEST_BROKER_JOBID
 
+if (-not((Get-Job.State -Id $env:TEST_BROKER_JOBID) -eq "Running")) {
+  Write-Host "Test broker terminated unexpectedly."
+  exit 1
+}
+
+
 # Stop the test broker job started in Test-Setup.ps1
 Write-Host "Stopping test broker with Job ID: $env:TEST_BROKER_JOBID"
 
