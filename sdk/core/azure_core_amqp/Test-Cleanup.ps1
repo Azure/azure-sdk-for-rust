@@ -17,7 +17,7 @@ Write-Host Currently running jobs:
 Get-Job
 
 Write-Host Job $env:TEST_BROKER_JOBID output:
-Receive-Job -Id $env:TEST_BROKER_JOBID
+Receive-Job -Id $($env:TEST_BROKER_JOBID)
 
 # Check if the test broker job is still running
 $job = Get-Job -Id $env:TEST_BROKER_JOBID
