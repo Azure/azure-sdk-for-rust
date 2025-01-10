@@ -7,7 +7,7 @@ param (
   [string]$WorkingDirectory
 )
 
-. "$PSScriptRoot\..\..\eng\common\scripts\common.ps1"
+. "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
 if (-not $PackageName) {
   Write-Host "Please provide a package name."

@@ -5,7 +5,7 @@
 param (
   [string]$PackageName
 )
-. "$PSScriptRoot\..\..\eng\common\scripts\common.ps1"
+. "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
 $WorkingDirectory = $RepoRoot + "../TestArtifacts"
 
