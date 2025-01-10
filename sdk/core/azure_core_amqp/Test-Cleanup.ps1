@@ -3,8 +3,7 @@
 # cspell: ignore JOBID
 
 param (
-  [string]$PackageName,
-  [string]$WorkingDirectory
+  [string]$PackageName
 )
 
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
@@ -12,16 +11,6 @@ param (
 if (-not $PackageName) {
   Write-Host "Please provide a package name."
   exit 1
-}
-
-if (-not $WorkingDirectory) {
-  Write-Host "Please provide a working directory."
-  exit 1
-}
-
-if (-not($PackageName -eq "azure_core_amqp")) {
-  Write-Host "Skipping test setup for package $PackageName."
-  exit 0
 }
 
 Write-Host Currently running jobs:

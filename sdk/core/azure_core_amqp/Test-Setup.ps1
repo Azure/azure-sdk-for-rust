@@ -21,68 +21,60 @@ if (-not (Test-Path $WorkingDirectory)) {
   New-Item -ItemType Directory -Path $WorkingDirectory
 }
 
-if ($PackageName -eq "azure_core_amqp") {
-  # Test setup for the azure_core_amqp package.
 
-  Write-Host "Setting current directory to working directory: $WorkingDirectory"
-  Push-Location -Path $WorkingDirectory
-  try {
+Write-Host "Setting current directory to working directory: $WorkingDirectory"
+Push-Location -Path $WorkingDirectory
+try {
 
-    $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
-    $cloneCommand = "git clone $repositoryUrl"
+  $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
+  $cloneCommand = "git clone $repositoryUrl"
 
-    Write-Host "Cloning repository from $repositoryUrl..."
-    Invoke-LoggedCommand $cloneCommand
+  Write-Host "Cloning repository from $repositoryUrl..."
+  Invoke-LoggedCommand $cloneCommand
 
-    Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
-    Invoke-LoggedCommand "dotnet restore"
+  Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
+  Invoke-LoggedCommand "dotnet restore"
+  if (!$? -ne 0) {
+    Write-Error "Failed to restore dependencies for TestAmqpBroker."
+    exit 1
+  }
+
+  Invoke-LoggedCommand "dotnet build"
+  if (!$? -ne 0) {
+    Write-Error "Failed to build TestAmqpBroker."
+    exit 1
+  }
+
+  Invoke-LoggedCommand "dotnet publish --framework net6.0"
+
+  if ($IsLinux -or $IsMacOS) {
+    Write-Host "Setting execute permission for TestAmqpBroker..."
+    Invoke-LoggedCommand "chmod +x $workingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe"
     if (!$? -ne 0) {
-      Write-Error "Failed to restore dependencies for TestAmqpBroker."
+      Write-Error "Failed to set execute permission for TestAmqpBroker."
       exit 1
     }
-
-    Invoke-LoggedCommand "dotnet build"
-    if (!$? -ne 0) {
-      Write-Error "Failed to build TestAmqpBroker."
-      exit 1
-    }
-
-    Invoke-LoggedCommand "dotnet publish --framework net6.0"
-
-    if ($IsLinux -or $IsMacOS) {
-      Write-Host "Setting execute permission for TestAmqpBroker..."
-      Invoke-LoggedCommand "chmod +x $workingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe"
-      if (!$? -ne 0) {
-        Write-Error "Failed to set execute permission for TestAmqpBroker."
-        exit 1
-      }
-    }
-
-    Write-Host "Test broker built successfully."
-
-    Write-Host "Listing files in TestAmqpBroker publish directory..."
-    Get-ChildItem -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/publish
-
-    # now that the Test broker has been built, launch the broker on a local address.
-    $env:TEST_BROKER_ADDRESS = 'amqp://127.0.0.1:25672'
-
-    Write-Host "Starting test broker listening on " $env:TEST_BROKER_ADDRESS "..."
-
-    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/publish
-    $job = TestAmqpBroker $env:TEST_BROKER_ADDRESS /headless &
-    Receive-Job -Job $job
-
-    Write-Host Broker job is ($($job).Id)
-    $env:TEST_BROKER_JOBID = $($job).Id
-
-    Write-Host "Test broker started with JOB ID: $env:TEST_BROKER_JOBID"
   }
-  finally {
-    Pop-Location
-  }
+
+  Write-Host "Test broker built successfully."
+
+  Write-Host "Listing files in TestAmqpBroker publish directory..."
+  Get-ChildItem -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/publish
+
+  # now that the Test broker has been built, launch the broker on a local address.
+  $env:TEST_BROKER_ADDRESS = 'amqp://127.0.0.1:25672'
+
+  Write-Host "Starting test broker listening on " $env:TEST_BROKER_ADDRESS "..."
+
+  Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/publish
+  $job = TestAmqpBroker $env:TEST_BROKER_ADDRESS /headless &
+  Receive-Job -Job $job
+
+  Write-Host Broker job is ($($job).Id)
+  $env:TEST_BROKER_JOBID = $($job).Id
+
+  Write-Host "Test broker started with JOB ID: $env:TEST_BROKER_JOBID"
 }
-else {
-  # Other packages do not need any special setup.
-  Write-Host "Skipping test setup for package $packageName."
-  exit 0
+finally {
+  Pop-Location
 }
