@@ -255,6 +255,8 @@ mod tests {
                 .open("test".to_string(), url, None)
                 .await
                 .unwrap();
+        } else {
+            println!("TEST_BROKER_ADDRESS is not set. Skipping test.");
         }
     }
 
@@ -263,11 +265,13 @@ mod tests {
         let address = std::env::var("TEST_BROKER_ADDRESS");
         if address.is_ok() {
             let connection = AmqpConnection::new();
-            let url = Url::parse("amqp://localhost:25672").unwrap();
+            let url = Url::parse("amqp://localhost:32767").unwrap();
             assert!(connection
                 .open("test".to_string(), url, None)
                 .await
                 .is_err());
+        } else {
+            println!("TEST_BROKER_ADDRESS is not set. Skipping test.");
         }
     }
 
@@ -282,6 +286,8 @@ mod tests {
                 .await
                 .unwrap();
             connection.close().await.unwrap();
+        } else {
+            println!("TEST_BROKER_ADDRESS is not set. Skipping test.");
         }
     }
 
@@ -308,6 +314,8 @@ mod tests {
                     assert!(err.to_string().contains("Internal error."));
                 }
             }
+        } else {
+            println!("TEST_BROKER_ADDRESS is not set. Skipping test.");
         }
     }
 }
