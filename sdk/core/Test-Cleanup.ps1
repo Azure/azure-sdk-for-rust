@@ -24,14 +24,14 @@ if (-not($PackageName -eq "azure_core_amqp")) {
   exit 0
 }
 
-# Kill the test broker process started in Test-Setup.ps1
-Write-Host "Stopping test broker with Job ID: $env:TEST_BROKER_JOBID"
-
 Write-Host Currently running jobs:
 Get-Job
 
 Write-Host Job output:
-Receive-Job $env:TEST_BROKER_JOBID
+Receive-Job -Id $env:TEST_BROKER_JOBID
+
+# Stop the test broker job started in Test-Setup.ps1
+Write-Host "Stopping test broker with Job ID: $env:TEST_BROKER_JOBID"
 
 Write-Host Stopping job...
 Stop-Job -Id $env:TEST_BROKER_JOBID
