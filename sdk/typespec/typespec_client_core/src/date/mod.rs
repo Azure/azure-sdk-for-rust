@@ -24,7 +24,7 @@ pub mod rfc7231;
 ///
 /// <https://www.rfc-editor.org/rfc/rfc3339>
 ///
-/// In (TypeSpec)[https://aka.ms/typespec] properties are specified as `utcDateTime` or `offsetDateTime`.
+/// In [TypeSpec](https://aka.ms/typespec) properties are specified as `utcDateTime` or `offsetDateTime`.
 /// In OpenAPI 2.0 specifications properties are specified as `"format": "date-time"`.
 ///
 /// Example string: `1985-04-12T23:20:50.52Z`.
@@ -38,7 +38,7 @@ pub fn parse_rfc3339(s: &str) -> crate::Result<OffsetDateTime> {
 ///
 /// <https://www.rfc-editor.org/rfc/rfc3339>
 ///
-/// In (TypeSpec)[https://aka.ms/typespec] properties are specified as `utcDateTime` or `offsetDateTime`.
+/// In [TypeSpec](https://aka.ms/typespec) properties are specified as `utcDateTime` or `offsetDateTime`.
 /// In OpenAPI 2.0 specifications properties are specified as `"format": "date-time"`.
 ///
 /// Example string: `1985-04-12T23:20:50.52Z`.
@@ -51,7 +51,7 @@ pub fn to_rfc3339(date: &OffsetDateTime) -> String {
 ///
 /// <https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.1.1>
 ///
-/// In (TypeSpec)[https://aka.ms/typespec] headers are specified as `utcDateTime`.
+/// In [TypeSpec](https://aka.ms/typespec) headers are specified as `utcDateTime`.
 /// In REST API specifications headers are specified as `"format": "date-time-rfc1123"`.
 ///
 /// This format is also the preferred HTTP date-based header format.
@@ -75,7 +75,7 @@ const RFC7231_FORMAT: &[FormatItem] = format_description!(
 ///
 /// <https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.1.1>
 ///
-/// In (TypeSpec)[https://aka.ms/typespec] headers are specified as `utcDateTime`.
+/// In [TypeSpec](https://aka.ms/typespec) headers are specified as `utcDateTime`.
 /// In REST API specifications headers are specified as `"format": "date-time-rfc1123"`.
 ///
 /// This format is also the preferred HTTP date-based header format.
