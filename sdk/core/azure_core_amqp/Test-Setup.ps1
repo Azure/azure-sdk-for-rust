@@ -51,15 +51,6 @@ try {
 
   Invoke-LoggedCommand "dotnet publish --framework net6.0"
 
-  if ($IsLinux -or $IsMacOS) {
-    Write-Host "Setting execute permission for TestAmqpBroker..."
-    Invoke-LoggedCommand "chmod +x $workingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe"
-    if (!$? -ne 0) {
-      Write-Error "Failed to set execute permission for TestAmqpBroker."
-      exit 1
-    }
-  }
-
   Write-Host "Test broker built successfully."
 
   # now that the Test broker has been built, launch the broker on a local address.
@@ -73,7 +64,8 @@ try {
   Write-Host Broker job is ($($job).Id)
   $env:TEST_BROKER_JOBID = $($job).Id
 
-  if (-not((Get-Job.State -Id $env:TEST_BROKER_JOBID) -eq "Running")) {
+  $job = Get-Job -Id $env:TEST_BROKER_JOBID
+  if (-not(($($job).State) -eq "Running")) {
     Write-Host "Test broker failed to start."
     exit 1
   }
