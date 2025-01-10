@@ -48,7 +48,6 @@ steps:
       filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
       arguments: >
         -PackageInfoPath '$(Build.ArtifactStagingDirectory)/PackageInfo'
-        -WorkingDirectory '$(Build.SourcesDirectory)'
         -Toolchain '$(Toolchain)'
         -UnitTests $${{ parameters.UnitTests }}
         -FunctionalTests $${{ parameters.FunctionalTests }}

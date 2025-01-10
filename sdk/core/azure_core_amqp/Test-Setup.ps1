@@ -3,20 +3,18 @@
 # cspell: ignore JOBID
 
 param (
-  [string]$PackageName,
-  [string]$WorkingDirectory
+  [string]$PackageName
 )
 . "$PSScriptRoot\..\..\eng\common\scripts\common.ps1"
+
+$WorkingDirectory = $RepoRoot + "../TestArtifacts"
 
 if (-not $PackageName) {
   Write-Host "PackageName parameter not provided."
   exit 1
 }
 
-if (-not $WorkingDirectory) {
-  Write-Host "WorkingDirectory parameter not provided."
-  exit 1
-}
+Write-Host Using Working Directory $WorkingDirectory
 
 if ($PackageName -eq "azure_core_amqp") {
   # Test setup for the azure_core_amqp package.

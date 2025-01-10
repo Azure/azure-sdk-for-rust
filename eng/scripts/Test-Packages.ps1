@@ -5,8 +5,7 @@ param(
   [string]$Toolchain = 'stable',
   [bool]$UnitTests = $true,
   [bool]$FunctionalTests = $true,
-  [string]$PackageInfoPath,
-  [string]$WorkingDirectory
+  [string]$PackageInfoPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -20,7 +19,6 @@ Write-Host "Testing packages with
     UnitTests: '$UnitTests'
     FunctionalTests: '$FunctionalTests'
     PackageInfoPath: '$PackageInfoPath'
-    WorkingDirectory: '$WorkingDirectory'"
 
 if ($PackageInfoPath) {
   if (!(Test-Path $PackageInfoPath)) {
@@ -48,50 +46,51 @@ $env:RUSTFLAGS = "-Dwarnings"
 foreach ($package in $packagesToTest) {
   Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
   try {
-    $serviceDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath)) + "/../"
+    $packageDirectory = [System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath)
     $packageName = $package.Name
     Write-Host "Checking for setup in $serviceDirectory + 'Test-Setup.ps1'"
-    if (Test-Path ($serviceDirectory + "Test-Setup.ps1")) {
-      $setupScript = $serviceDirectory + "Test-Setup.ps1"
+    if (Test-Path ($packageDirectory + "Test-Setup.ps1")) {
+      $setupScript = $packageDirectory + "Test-Setup.ps1"
       Write-Host "`n`nRunning test setup script for package: '$($package.Name)': $setupScript`n"
-      Invoke-LoggedCommand "$setupScript -packageName $packageName -workingDirectory $WorkingDirectory"
+      Invoke-LoggedCommand "$setupScript -packageName $packageName"
       if (!$? -ne 0) {
         Write-Error "Test setup script failed for package: '$($package.Name)'"
-        exit 1
-      }
-    }
+exit 1
+}
+}
 
-    Write-Host "`n`nTesting package: '$($package.Name)'`n"
+Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
-    Invoke-LoggedCommand "cargo +$Toolchain build --keep-going"
-    Write-Host "`n`n"
+Invoke-LoggedCommand "cargo +$Toolchain build --keep-going"
+Write-Host "`n`n"
 
-    $targets = @()
-    if ($UnitTests) {
-      $targets += "--lib"
-    }
+$targets = @()
+if ($UnitTests) {
+  $targets += "--lib"
+}
 
-    if ($FunctionalTests) {
-      $targets += "--bins"
-      $targets += "--examples"
-      $targets += "--tests"
-      $targets += "--benches"
-    }
+if ($FunctionalTests) {
+  $targets += "--bins"
+  $targets += "--examples"
+  $targets += "--tests"
+  $targets += "--benches"
+}
 
-    Invoke-LoggedCommand "cargo +$Toolchain test $($targets -join ' ') --no-fail-fast"
-    Write-Host "`n`n"
+Invoke-LoggedCommand "cargo +$Toolchain test $($targets -join ' ') --no-fail-fast"
+Write-Host "`n`n"
 
-    Invoke-LoggedCommand "cargo +$Toolchain test --doc --no-fail-fast"
-    Write-Host "`n`n"
+Invoke-LoggedCommand "cargo +$Toolchain test --doc --no-fail-fast"
+Write-Host "`n`n"
 
-    if (Test-Path ($serviceDirectory + 'Test-Cleanup.ps1')) {
-      Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
-      $cleanupScript = $serviceDirectory + 'Test-Cleanup.ps1'
-      Invoke-LoggedCommand "$cleanupScript -packageName $packageName -workingDirectory $WorkingDirectory"
-      # We ignore the exit code of the cleanup script.
-    }
-  }
-  finally {
-    Pop-Location
-  }
+if (Test-Path ($packageDirectory + 'Test-Cleanup.ps1')) {
+  Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
+  $cleanupScript = $packageDirectory + 'Test-Cleanup.ps1'
+  Invoke-LoggedCommand "$cleanupScript -packageName $packageName"
+
+  # We ignore the exit code of the cleanup script.
+}
+}
+finally {
+  Pop-Location
+}
 }
