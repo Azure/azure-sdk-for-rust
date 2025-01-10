@@ -36,7 +36,7 @@ impl FromStringOptional<bool> for bool {
 
 impl FromStringOptional<date::OffsetDateTime> for date::OffsetDateTime {
     fn from_str_optional(s: &str) -> crate::Result<date::OffsetDateTime> {
-        date::parse_rfc1123(s).with_context(ErrorKind::DataConversion, || {
+        date::parse_rfc7231(s).with_context(ErrorKind::DataConversion, || {
             format!("error parsing date time '{s}'")
         })
     }
