@@ -48,12 +48,11 @@ foreach ($package in $packagesToTest) {
   try {
     $packageDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
     Write-Host "PackageDirectory" $packageDirectory
-    $packageName = $package.Name
-    $setupScript = $packageDirectory + "/Test-Setup.ps1"
+    #    $setupScript = $packageDirectory + "/Test-Setup.ps1"
     Write-Host "Checking for setup in $($packageDirectory+'/Test-Setup.ps1')"
     if (Test-Path ($packageDirectory + "/Test-Setup.ps1")) {
       Write-Host "`n`nRunning test setup script for package: '$($package.Name)': $setupScript`n"
-      Invoke-LoggedCommand "$setupScript -packageName $packageName"
+      Invoke-LoggedCommand "$($packageDirectory+"/Test-Setup.ps1") -packageName $($package.Name)"
       if (!$? -ne 0) {
         Write-Error "Test setup script failed for package: '$($package.Name)'"
         exit 1
@@ -85,9 +84,9 @@ foreach ($package in $packagesToTest) {
 
     if (Test-Path ($packageDirectory + '/Test-Cleanup.ps1')) {
       Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)': $($packageDirectory+'/Test-Cleanup.ps1')`n"
-      $cleanupScript = $packageDirectory + '/Test-Cleanup.ps1'
-      Write-Host Cleanup script: $cleanupScript
-      Invoke-LoggedCommand "$cleanupScript -packageName $packageName"
+      #      $cleanupScript = $packageDirectory + '/Test-Cleanup.ps1'
+      #      Write-Host Cleanup script: $cleanupScript
+      Invoke-LoggedCommand "$($packageDirectory+'/Test-Cleanup.ps1') -packageName $($package.Name)"
 
       # We ignore the exit code of the cleanup script.
     }
