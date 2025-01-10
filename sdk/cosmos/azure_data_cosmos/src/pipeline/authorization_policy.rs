@@ -104,12 +104,12 @@ impl Policy for AuthorizationPolicy {
 /// In the "aad" case, the signature is the AAD token.
 ///
 /// NOTE: Resource tokens are not yet supported.
-async fn generate_authorization<'a>(
+async fn generate_authorization(
     auth_token: &Credential,
     url: &Url,
 
     // Unused unless feature="key_auth", but I don't want to mess with excluding it since it makes call sites more complicated
-    #[allow(unused_variables)] signature_target: SignatureTarget<'a>,
+    #[allow(unused_variables)] signature_target: SignatureTarget<'_>,
 ) -> azure_core::Result<String> {
     let token = match auth_token {
         Credential::Token(token_credential) => {
