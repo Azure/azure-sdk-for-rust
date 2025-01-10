@@ -68,8 +68,6 @@ try {
     Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/win-x64/publish
   }
 
-  #  Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0
-  Get-ChildItem -Filter TestAmqpBroker*
   $job = ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
 
   Write-Host Broker job is ($($job).Id)

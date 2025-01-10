@@ -245,50 +245,52 @@ mod tests {
         );
     }
 
-    // Tests disabled until we have a way to start the AMQP test broker in CI
-    #[allow(dead_code)]
-    mod disabled {
-        use super::super::*;
-
-        //    #[tokio::test]
-        async fn amqp_connection_open() {
-            tracing_subscriber::fmt::init();
+    #[tokio::test]
+    async fn amqp_connection_open() {
+        let address = std::env::var("TEST_BROKER_ADDRESS");
+        if address.is_ok() {
             let connection = AmqpConnection::new();
-
-            let url = Url::parse("amqp://localhost:25672").unwrap();
+            let url = Url::parse(&address.unwrap()).unwrap();
             connection
                 .open("test".to_string(), url, None)
                 .await
                 .unwrap();
         }
+    }
 
-        //    #[tokio::test]
-        async fn amqp_connection_open_with_error() {
-            tracing_subscriber::fmt::try_init().unwrap();
+    #[tokio::test]
+    async fn amqp_connection_open_with_error() {
+        let address = std::env::var("TEST_BROKER_ADDRESS");
+        if address.is_ok() {
             let connection = AmqpConnection::new();
-            let url = Url::parse("amqp://localhost:32767").unwrap();
+            let url = Url::parse(&address.unwrap()).unwrap();
             assert!(connection
                 .open("test".to_string(), url, None)
                 .await
                 .is_err());
         }
+    }
 
-        //    #[tokio::test]
-        async fn amqp_connection_close() {
+    #[tokio::test]
+    async fn amqp_connection_close() {
+        let address = std::env::var("TEST_BROKER_ADDRESS");
+        if address.is_ok() {
             let connection = AmqpConnection::new();
-            let url = Url::parse("amqp://localhost:25672").unwrap();
+            let url = Url::parse(&address.unwrap()).unwrap();
             connection
                 .open("test".to_string(), url, None)
                 .await
                 .unwrap();
             connection.close().await.unwrap();
         }
+    }
 
-        //    #[tokio::test]
-        async fn amqp_connection_close_with_error() {
-            tracing_subscriber::fmt::try_init().unwrap();
+    #[tokio::test]
+    async fn amqp_connection_close_with_error() {
+        let address = std::env::var("TEST_BROKER_ADDRESS");
+        if address.is_ok() {
             let connection = AmqpConnection::new();
-            let url = Url::parse("amqp://localhost:25672").unwrap();
+            let url = Url::parse(&address.unwrap()).unwrap();
             connection
                 .open("test".to_string(), url, None)
                 .await

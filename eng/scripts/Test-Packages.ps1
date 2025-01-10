@@ -47,9 +47,6 @@ foreach ($package in $packagesToTest) {
   Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
   try {
     $packageDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
-    Write-Host "PackageDirectory" $packageDirectory
-    #    $setupScript = $packageDirectory + "/Test-Setup.ps1"
-    Write-Host "Checking for setup in $($packageDirectory+'/Test-Setup.ps1')"
     if (Test-Path ($packageDirectory + "/Test-Setup.ps1")) {
       Write-Host "`n`nRunning test setup script for package: '$($package.Name)': $($packageDirectory+'/Test-Setup.ps1')`n"
       Invoke-LoggedCommand "$($packageDirectory+"/Test-Setup.ps1") -packageName $($package.Name)"
@@ -84,11 +81,9 @@ foreach ($package in $packagesToTest) {
 
     if (Test-Path ($packageDirectory + '/Test-Cleanup.ps1')) {
       Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)': $($packageDirectory+'/Test-Cleanup.ps1')`n"
-      #      $cleanupScript = $packageDirectory + '/Test-Cleanup.ps1'
-      #      Write-Host Cleanup script: $cleanupScript
       Invoke-LoggedCommand "$($packageDirectory+'/Test-Cleanup.ps1') -packageName $($package.Name)"
-
       # We ignore the exit code of the cleanup script.
+
     }
   }
   finally {
