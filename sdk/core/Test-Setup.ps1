@@ -56,16 +56,13 @@ if ($PackageName -eq "azure_core_amqp") {
     Write-Host "Looking for test amqp broker executable..."
     Get-ChildItem -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker -Recurse -Filter TestAmqpBroker*
 
-    $brokerExecutable = 'dotnet run ./TestAmqpBroker.exe --framework net462'
     Write-Host "Test broker is: $brokerExecutable"
     Write-Host "Starting test broker listening on " $env:TEST_BROKER_ADDRESS "..."
 
     if ($IsLinux -or $IsMacOS) {
       Set-Location $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0
-      $job = dotnet run -framework net60 TestAmqpBroker.dll
+      $job = dotnet run -framework net60 TestAmqpBroker.dll $env:TEST_BROKER_ADDRESS /headless &
       Write-Host Broker job is $job
-      $env:TEST_BROKER_PID = $job.Id
-      $brokerExecutable = "$workingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker"
     }
     else {
       Set-Location $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462
