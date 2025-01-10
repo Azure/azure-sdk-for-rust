@@ -44,6 +44,8 @@ if ($PackageName -eq "azure_core_amqp") {
       exit 1
     }
 
+    Invoke-LoggedCommand "dotnet publish --framework net6.0"
+
     if ($IsLinux -or $IsMacOS) {
       Write-Host "Setting execute permission for TestAmqpBroker..."
       Invoke-LoggedCommand "chmod +x $workingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net462/TestAmqpBroker.exe"
@@ -58,9 +60,9 @@ if ($PackageName -eq "azure_core_amqp") {
 
     Write-Host "Starting test broker listening on " $env:TEST_BROKER_ADDRESS "..."
 
-    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0
-    #$job = dotnet exec TestAmqpBroker.dll -- $env:TEST_BROKER_ADDRESS /headless &
-    $job = dotnet TestAmqpBroker.dll amqp://127.0.0.1:25672 /headless &
+    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/publish
+    $job = dotnet exec TestAmqpBroker.dll -- $env:TEST_BROKER_ADDRESS /headless &
+    #$job = dotnet TestAmqpBroker.dll amqp://127.0.0.1:25672 /headless &
     Receive-Job -Job $job
 
     Write-Host Broker job is ($($job).Id)
