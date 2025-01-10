@@ -59,7 +59,8 @@ if ($PackageName -eq "azure_core_amqp") {
     Write-Host "Starting test broker listening on " $env:TEST_BROKER_ADDRESS "..."
 
     if ($IsLinux -or $IsMacOS) {
-      $job = dotnet run -framework net60 -- $env:TEST_BROKER_ADDRESS /headless &
+      Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0
+      $job = dotnet exec TestAmqpBroker.dll $env:TEST_BROKER_ADDRESS /headless &
       Write-Host Broker job is ($($job).Id)
       $env:TEST_BROKER_PID = $($job).Id
 
