@@ -69,7 +69,7 @@ if ($PackageName -eq "azure_core_amqp") {
     Write-Host "Starting test broker listening on " $env:TEST_BROKER_ADDRESS "..."
 
     Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/publish
-    $job = dotnet TestAmqpBroker.dll $env:TEST_BROKER_ADDRESS /headless &
+    $job = TestAmqpBroker $env:TEST_BROKER_ADDRESS /headless &
     #$job = dotnet TestAmqpBroker.dll amqp://127.0.0.1:25672 /headless &
     Receive-Job -Job $job
 
