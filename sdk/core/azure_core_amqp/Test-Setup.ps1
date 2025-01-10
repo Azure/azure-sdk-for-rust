@@ -58,6 +58,16 @@ try {
 
   Write-Host "Starting test broker listening on " $env:TEST_BROKER_ADDRESS "..."
 
+  if ($IsLinux) {
+    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/linux-x64/publish
+  }
+  elseif ($IsMacOS) {
+    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/osx-x64/publish
+  }
+  else {
+    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/win-x64/publish
+  }
+
   Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/publish
   Get-ChildItem -Filter TestAmqpBroker*
   $job = ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
