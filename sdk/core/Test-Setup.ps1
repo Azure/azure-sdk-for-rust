@@ -56,7 +56,6 @@ if ($PackageName -eq "azure_core_amqp") {
     Write-Host "Looking for test amqp broker executable..."
     Get-ChildItem -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker -Recurse -Filter TestAmqpBroker*
 
-    Write-Host "Test broker is: $brokerExecutable"
     Write-Host "Starting test broker listening on " $env:TEST_BROKER_ADDRESS "..."
 
     if ($IsLinux -or $IsMacOS) {
