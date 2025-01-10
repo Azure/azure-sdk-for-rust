@@ -19,6 +19,7 @@ pub use time::serde::timestamp;
 // RFC 3339 vs ISO 8601: <https://ijmacd.github.io/rfc3339-iso8601/>
 pub mod iso8601;
 pub mod rfc7231;
+pub mod unix_time;
 
 /// RFC 3339: Date and Time on the Internet: Timestamps.
 ///
