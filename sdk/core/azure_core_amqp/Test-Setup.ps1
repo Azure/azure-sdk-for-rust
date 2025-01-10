@@ -69,6 +69,12 @@ try {
 
   $env:TEST_BROKER_JOBID = $($job).Id
 
+  Write-Host "Waiting for test broker to start..."
+  Start-Sleep -Seconds 5
+
+  Write-Host Job Output after 5 seconds:
+  Receive-Job $($job).Id
+
   $job = Get-Job -Id $env:TEST_BROKER_JOBID
   if (-not(($($job).State) -eq "Running")) {
     Write-Host "Test broker failed to start."
