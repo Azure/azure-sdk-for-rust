@@ -13,8 +13,8 @@ if (-not $WorkingDirectory) {
   exit 1
 }
 
-if (-not($OackageName -eq "azure_core_amqp")) {
-  Write-Host "Skipping test setup for package $packageName."
+if (-not($PackageName -eq "azure_core_amqp")) {
+  Write-Host "Skipping test setup for package $PackageName."
   exit 0
 }
 
