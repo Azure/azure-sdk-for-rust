@@ -16,6 +16,11 @@ if (-not $PackageName) {
 
 Write-Host Using Working Directory $WorkingDirectory
 
+if (-not (Test-Path $WorkingDirectory)) {
+  Write-Host "Working directory does not exist, creating working directory: $WorkingDirectory"
+  Create-Directory $WorkingDirectory
+}
+
 if ($PackageName -eq "azure_core_amqp") {
   # Test setup for the azure_core_amqp package.
 
