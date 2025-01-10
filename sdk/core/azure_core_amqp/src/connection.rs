@@ -263,7 +263,7 @@ mod tests {
         let address = std::env::var("TEST_BROKER_ADDRESS");
         if address.is_ok() {
             let connection = AmqpConnection::new();
-            let url = Url::parse(&address.unwrap()).unwrap();
+            let url = Url::parse("amqp://localhost:25672").unwrap();
             assert!(connection
                 .open("test".to_string(), url, None)
                 .await
