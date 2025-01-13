@@ -40,7 +40,8 @@ try {
 
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
 
-  Invoke-LoggedCommand "dotnet publish --self-contained --framework net6.0"
+  #  Invoke-LoggedCommand "dotnet publish --self-contained --framework net6.0"
+  Invoke-LoggedCommand "dotnet build --framework net6.0"
   if (!$? -ne 0) {
     Write-Error "Failed to build TestAmqpBroker."
     exit 1
@@ -53,17 +54,21 @@ try {
 
   Write-Host "Starting test broker listening on $env:TEST_BROKER_ADDRESS ..."
 
-  if ($IsLinux) {
-    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/linux-x64/publish
-  }
-  elseif ($IsMacOS) {
-    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/osx-x64/publish
-  }
-  else {
-    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/win-x64/publish
-  }
+  Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0
 
-  $job = ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
+  #  if ($IsLinux) {
+  #    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/linux-x64/publish
+  #  }
+  #  elseif ($IsMacOS) {
+  #
+  #    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/osx-x64/publish
+  #  }
+  #  else {
+  #    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/win-x64/publish
+  #  }
+
+  #  $job = ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
+  $job = dotnet ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
   $env:TEST_BROKER_JOBID = $($job).Id
 
   Write-Host "Waiting for test broker to start..."
