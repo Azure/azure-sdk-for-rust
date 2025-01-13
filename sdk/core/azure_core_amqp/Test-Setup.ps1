@@ -31,7 +31,8 @@ Push-Location -Path $WorkingDirectory
 try {
 
   $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
-  $cloneCommand = "git clone $repositoryUrl"
+  $repositoryRelease = "v2.6.9"
+  $cloneCommand = "git clone $repositoryUrl/tree/$repositoryRelease"
 
   Write-Host "Cloning repository from $repositoryUrl..."
   Invoke-LoggedCommand $cloneCommand
@@ -56,7 +57,7 @@ try {
   # now that the Test broker has been built, launch the broker on a local address.
   $env:TEST_BROKER_ADDRESS = 'amqp://127.0.0.1:25672'
 
-  Write-Host "Starting test broker listening on $(env:TEST_BROKER_ADDRESS) ..."
+  Write-Host "Starting test broker listening on $env:TEST_BROKER_ADDRESS ..."
 
   if ($IsLinux) {
     Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/linux-x64/publish
