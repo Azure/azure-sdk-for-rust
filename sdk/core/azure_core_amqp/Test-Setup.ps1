@@ -71,7 +71,7 @@ try {
   Get-ChildItem -filter TestAmqpBroker*
 
   #  $job = dotnet --runtimeconfig ./TestAmqpBroker.runtimeconfig.json ./TestAmqpBroker.dll $($env:TEST_BROKER_ADDRESS) /headless &
-  $job = dotnet --runtimeconfig ./TestAmqpBroker.runtimeconfig.json ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
+  $job = dotnet  ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
 
   $env:TEST_BROKER_JOBID = $job.Id
 
