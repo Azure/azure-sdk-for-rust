@@ -38,13 +38,17 @@ try {
   Invoke-LoggedCommand $cloneCommand
 
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
-  #  Invoke-LoggedCommand "dotnet restore"
+  Invoke-LoggedCommand "dotnet restore"
+  if (!$? -ne 0) {
+    Write-Error "Failed to restore dependencies for TestAmqpBroker."
+    exit 1
+  }
+
+  #  Invoke-LoggedCommand "dotnet build"
   #  if (!$? -ne 0) {
   #    Write-Error "Failed to restore dependencies for TestAmqpBroker."
   #    exit 1
   #  }
-  #
-  #  Invoke-LoggedCommand "dotnet build"
 
   Invoke-LoggedCommand "dotnet publish --self-contained --framework net6.0"
   if (!$? -ne 0) {
