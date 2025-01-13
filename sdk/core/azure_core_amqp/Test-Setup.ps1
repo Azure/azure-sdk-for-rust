@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-# cspell: ignore JOBID
+# cspell: ignore JOBID runtimeconfig
 
 param (
   [string]$PackageName
@@ -70,8 +70,8 @@ try {
   #  $job = ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
   Get-ChildItem -filter TestAmqpBroker*
 
-  $job = dotnet ./TestAmqpBroker.dll $($env:TEST_BROKER_ADDRESS) /headless &
-  $env:TEST_BROKER_JOBID = $job.Id
+  #  $job = dotnet --runtimeconfig ./TestAmqpBroker.runtimeconfig.json ./TestAmqpBroker.dll $($env:TEST_BROKER_ADDRESS) /headless &
+  $job = dotnet --runtimeconfig ./TestAmqpBroker.runtimeconfig.json ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &  $env:TEST_BROKER_JOBID = $job.Id
 
   Write-Host "Waiting for test broker to start..."
   Start-Sleep -Seconds 3
