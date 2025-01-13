@@ -32,7 +32,7 @@ try {
 
   $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
   $repositoryRelease = "v2.6.9"
-  $cloneCommand = "git clone $repositoryUrl/tree/$repositoryRelease"
+  $cloneCommand = "git clone $repositoryUrl --branch $repositoryRelease"
 
   Write-Host "Cloning repository from $repositoryUrl..."
   Invoke-LoggedCommand $cloneCommand
