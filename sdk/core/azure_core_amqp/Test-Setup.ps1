@@ -17,7 +17,7 @@ if (-not $PackageName) {
 }
 
 # Create the working directory if it does not exist.
-Write-Host Using Working Directory $WorkingDirectory
+Write-Host "Using Working Directory $WorkingDirectory"
 
 if (-not (Test-Path $WorkingDirectory)) {
   Write-Host "Working directory does not exist, creating working directory: $WorkingDirectory"
@@ -68,8 +68,10 @@ try {
   #  }
 
   #  $job = ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
-  $job = dotnet ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
-  $env:TEST_BROKER_JOBID = $($job).Id
+  Get-ChildItem -filter TestAmqpBroker*
+
+  $job = dotnet ./TestAmqpBroker.dll $($env:TEST_BROKER_ADDRESS) /headless &
+  $env:TEST_BROKER_JOBID = $job.Id
 
   Write-Host "Waiting for test broker to start..."
   Start-Sleep -Seconds 3
@@ -78,7 +80,7 @@ try {
   Receive-Job $job.Id
 
   $job = Get-Job -Id $env:TEST_BROKER_JOBID
-  if (-not(($($job).State) -eq "Running")) {
+  if ($job.State -ne "Running") {
     Write-Host "Test broker failed to start."
     exit 1
   }
