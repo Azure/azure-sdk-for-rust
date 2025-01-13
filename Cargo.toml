@@ -14,7 +14,6 @@ members = [
   "eng/test/mock_transport",
   "sdk/storage",
   "sdk/storage/azure_storage_blob",
-  "sdk/storage/azure_storage_blobs",
 ]
 
 [workspace.package]
