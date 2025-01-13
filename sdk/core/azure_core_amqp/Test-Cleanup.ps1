@@ -14,7 +14,7 @@ if (-not $PackageName) {
 }
 
 
-Write-Host Job $env:TEST_BROKER_JOBID output:
+Write-Host "Test Broker output:"
 Receive-Job -Id $($env:TEST_BROKER_JOBID)
 
 # Check if the test broker job is still running

@@ -64,18 +64,12 @@ try {
   }
 
   $job = ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
-
-  Write-Host Broker job is ($($job).Id)
-
-  Write-Host Job State:
-  Get-Job -Id $($job).Id
-
   $env:TEST_BROKER_JOBID = $($job).Id
 
   Write-Host "Waiting for test broker to start..."
   Start-Sleep -Seconds 3
 
-  Write-Host Job Output after wait:
+  Write-Host "Job Output after wait:"
   Receive-Job $job.Id
 
   $job = Get-Job -Id $env:TEST_BROKER_JOBID
@@ -83,8 +77,6 @@ try {
     Write-Host "Test broker failed to start."
     exit 1
   }
-
-  Write-Host "Test broker started with JOB ID: $env:TEST_BROKER_JOBID"
 }
 finally {
   Pop-Location

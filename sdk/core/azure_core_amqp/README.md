@@ -21,7 +21,7 @@ cd <Test Working Directory>
 git clone https://github.com/Azure/azure-amqp
 ```
 
-Alternately, you can clone to a specific label in the azure-amqp repository:
+Alternately, you can clone to a specific release in the azure-amqp repository:
 
 ```
 git clone https://github.com/Azure/azure-amqp.git --branch v2.6.9
