@@ -31,18 +31,19 @@ Push-Location -Path $WorkingDirectory
 try {
 
   $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
-  $repositoryRelease = "v2.6.9"
+  # $repositoryRelease = "v2.6.9"
+  # $cloneCommand = "git clone $repositoryUrl --branch $repositoryRelease"
   $cloneCommand = "git clone $repositoryUrl --branch $repositoryRelease"
 
   Write-Host "Cloning repository from $repositoryUrl..."
   Invoke-LoggedCommand $cloneCommand
 
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
-  Invoke-LoggedCommand "dotnet restore"
-  if (!$? -ne 0) {
-    Write-Error "Failed to restore dependencies for TestAmqpBroker."
-    exit 1
-  }
+  #  Invoke-LoggedCommand "dotnet restore"
+  #  if (!$? -ne 0) {
+  #    Write-Error "Failed to restore dependencies for TestAmqpBroker."
+  #    exit 1
+  #  }
 
   #  Invoke-LoggedCommand "dotnet build"
   #  if (!$? -ne 0) {
