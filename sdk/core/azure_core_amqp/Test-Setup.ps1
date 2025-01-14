@@ -41,7 +41,7 @@ try {
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
 
   #  Invoke-LoggedCommand "dotnet publish --self-contained --framework net6.0"
-  Invoke-LoggedCommand "dotnet build --roll-forward LatestMajor"
+  Invoke-LoggedCommand "dotnet build --framework net6.0"
   if (!$? -ne 0) {
     Write-Error "Failed to build TestAmqpBroker."
     exit 1
@@ -70,7 +70,7 @@ try {
   #  $job = ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
   Get-ChildItem -filter TestAmqpBroker*
 
-  $job = dotnet exec --depsfile ./TestAmqpBroker.deps.json ./TestAmqpBroker.dll ${env:TEST_BROKER_ADDRESS} /headless &
+  $job = dotnet --roll-forward LatestMajor exec ./TestAmqpBroker.dll ${env:TEST_BROKER_ADDRESS} /headless &
 
   $env:TEST_BROKER_JOBID = $job.Id
 
