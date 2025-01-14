@@ -302,24 +302,31 @@ Configuration is attempted in the preceding order. For example, if values for a 
 As of version 1.14.0, accessing resources protected by [Continuous Access Evaluation (CAE)][cae] is possible on a per-request basis. This behavior can be enabled by setting the `enable_cae` keyword argument to `True` in the credential's `get_token` method. CAE isn't supported for developer and managed identity credentials.
 </!-->
 
-<!-- !:RONNIE'S SCAN LINE: I've either updated or commented out all sections above this line to edit the doc for the Rust Identity library. -->
+<!-- ?: Does our identity library support token caching at this time?>
 ## Token caching
 
 Token caching is a feature provided by the Azure Identity library that allows apps to:
-- Cache tokens in memory (default) or on disk (opt-in).
-- Improve resilience and performance.
-- Reduce the number of requests made to Microsoft Entra ID to obtain access tokens.
+
+* Cache tokens in memory (default) or on disk (opt-in).
+* Improve resilience and performance.
+* Reduce the number of requests made to Microsoft Entra ID to obtain access tokens.
 
 The Azure Identity library offers both in-memory and persistent disk caching. For more information, see the [token caching documentation](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/identity/azure-identity/TOKEN_CACHING.md).
+</!-->
 
+<!-- ?: We don't offer an identity broker library and I don't know if we have plans to ever offer one.>
 ## Brokered authentication
 
 An authentication broker is an application that runs on a user’s machine and manages the authentication handshakes and token maintenance for connected accounts. Currently, only the Windows Web Account Manager (WAM) is supported. To enable support, use the [`azure-identity-broker`][azure_identity_broker] package. For details on authenticating using WAM, see the [broker plugin documentation][azure_identity_broker_readme].
+</!-->
 
+<!-- TODO: Add back in when we have a troubleshooting guide for the identity library.>
 ## Troubleshooting
 
 See the [troubleshooting guide][troubleshooting_guide] for details on how to diagnose various failure scenarios.
+</!-->
 
+<!-- TODO: Update with info on error types returned when there is a lack of data or when authentication fails>
 ### Error handling
 
 Credentials raise `CredentialUnavailableError` when they're unable to attempt authentication because they lack required data or state. For example, [EnvironmentCredential][environment_cred_ref] raises this exception when [its configuration](#environment-variables "its configuration") is incomplete.
@@ -327,7 +334,9 @@ Credentials raise `CredentialUnavailableError` when they're unable to attempt au
 Credentials raise `azure.core.exceptions.ClientAuthenticationError` when they fail to authenticate. `ClientAuthenticationError` has a `message` attribute, which describes why authentication failed. When raised by `DefaultAzureCredential` or `ChainedTokenCredential`, the message collects error messages from each credential in the chain.
 
 For more information on handling specific Microsoft Entra ID errors, see the Microsoft Entra ID [error code documentation](https://learn.microsoft.com/entra/identity-platform/reference-error-codes).
+</!-->
 
+<!-- TODO: Update with info on hwo to configure logging with the identity crate.>
 ### Logging
 
 This library uses the standard [logging](https://docs.python.org/3/library/logging.html) library for logging. Credentials log basic information, including HTTP sessions (URLs, headers, etc.) at INFO level. These log entries don't contain authentication secrets.
@@ -340,22 +349,17 @@ credential = DefaultAzureCredential(logging_enable=True)
 
 > CAUTION: DEBUG-level logs from credentials contain sensitive information.
 > These logs must be protected to avoid compromising account security.
+</!-->
 
 ## Next steps
 
 ### Client library support
 
-Client and management libraries listed on the [Azure SDK release page](https://azure.github.io/azure-sdk/releases/latest/python.html) that support Microsoft Entra authentication accept credentials from this library. You can learn more about using these libraries in their documentation, which is linked from the release page.
-
-### Known issues
-
-This library doesn't support [Azure AD B2C][b2c].
-
-For other open issues, refer to the library's [GitHub repository](https://github.com/Azure/azure-sdk-for-python/issues?q=is%3Aopen+is%3Aissue+label%3AAzure.Identity).
+Client and management libraries <!-- TODO: Update link and uncomment when Rust SDK has a page on the releases site.> listed on the [Azure SDK release page](https://azure.github.io/azure-sdk/releases/latest/python.html)</!--> that support Microsoft Entra authentication accept credentials from this library. You can learn more about using these libraries in their documentation, which is <!-- TODO: uncomment when Rust SDK has a release page.>linked from the release page</!-->available at [Docs.rs](https://Docs.rs).
 
 ### Provide feedback
 
-If you encounter bugs or have suggestions, [open an issue](https://github.com/Azure/azure-sdk-for-python/issues).
+If you encounter bugs or have suggestions, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues).
 
 ## Contributing
 
