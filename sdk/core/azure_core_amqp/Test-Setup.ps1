@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-# cspell: ignore JOBID depsfile rollforward
+# cspell: ignore JOBID depsfile
 
 param (
   [string]$PackageName
@@ -41,7 +41,7 @@ try {
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
 
   #  Invoke-LoggedCommand "dotnet publish --self-contained --framework net6.0"
-  Invoke-LoggedCommand "dotnet build --rollforward LatestMajor"
+  Invoke-LoggedCommand "dotnet build --roll-forward LatestMajor"
   if (!$? -ne 0) {
     Write-Error "Failed to build TestAmqpBroker."
     exit 1
@@ -52,7 +52,7 @@ try {
   # now that the Test broker has been built, launch the broker on a local address.
   $env:TEST_BROKER_ADDRESS = 'amqp://127.0.0.1:25672'
 
-  Write-Host "Starting test broker listening on $env:TEST_BROKER_ADDRESS ..."
+  Write-Host "Starting test broker listening on ${env:TEST_BROKER_ADDRESS} ..."
 
   Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0
 
@@ -70,7 +70,7 @@ try {
   #  $job = ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
   Get-ChildItem -filter TestAmqpBroker*
 
-  $job = dotnet exec --depsfile ./TestAmqpBroker.deps.json ./TestAmqpBroker.dll $($env:TEST_BROKER_ADDRESS) /headless &
+  $job = dotnet exec --depsfile ./TestAmqpBroker.deps.json ./TestAmqpBroker.dll ${env:TEST_BROKER_ADDRESS} /headless &
 
   $env:TEST_BROKER_JOBID = $job.Id
 
