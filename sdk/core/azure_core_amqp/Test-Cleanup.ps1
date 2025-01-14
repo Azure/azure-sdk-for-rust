@@ -19,7 +19,7 @@ Receive-Job -Id $($env:TEST_BROKER_JOBID)
 
 # Check if the test broker job is still running
 $job = Get-Job -Id $env:TEST_BROKER_JOBID
-if (-not(($($job).State) -eq "Running")) {
+if ($job.State -ne "Running") {
   Write-Host "Test broker terminated unexpectedly."
   exit 1
 }
