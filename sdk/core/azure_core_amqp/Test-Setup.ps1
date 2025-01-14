@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-# cspell: ignore JOBID depsfile
+# cspell: ignore JOBID depsfile rollforward
 
 param (
   [string]$PackageName
@@ -41,7 +41,7 @@ try {
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
 
   #  Invoke-LoggedCommand "dotnet publish --self-contained --framework net6.0"
-  Invoke-LoggedCommand "dotnet build --framework net6.0"
+  Invoke-LoggedCommand "dotnet build --rollforward LatestMajor"
   if (!$? -ne 0) {
     Write-Error "Failed to build TestAmqpBroker."
     exit 1
