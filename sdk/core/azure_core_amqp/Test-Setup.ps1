@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-# cspell: ignore JOBID runtimeconfig
+# cspell: ignore JOBID depsfile
 
 param (
   [string]$PackageName
@@ -60,7 +60,6 @@ try {
   #    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/linux-x64/publish
   #  }
   #  elseif ($IsMacOS) {
-  #
   #    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/osx-x64/publish
   #  }
   #  else {
@@ -71,8 +70,7 @@ try {
   #  $job = ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
   Get-ChildItem -filter TestAmqpBroker*
 
-  #  $job = dotnet --runtimeconfig ./TestAmqpBroker.runtimeconfig.json ./TestAmqpBroker.dll $($env:TEST_BROKER_ADDRESS) /headless &
-  $job = dotnet ./TestAmqpBroker.dll $($env:TEST_BROKER_ADDRESS) /headless &
+  $job = dotnet exec --depsfile ./TestAmqpBroker.deps.json ./TestAmqpBroker.dll $($env:TEST_BROKER_ADDRESS) /headless &
 
   $env:TEST_BROKER_JOBID = $job.Id
 
