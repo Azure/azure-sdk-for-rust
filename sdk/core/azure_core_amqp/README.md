@@ -22,7 +22,7 @@ To enable this functionality, there are two ways of installing and running the T
 For Scripted testing, simply run the powershell script in the sdk/core/azure_core_amqp directory:
 
 ```powershell
-PS> .\sdk\core\azure_core_amqp\Test-Setup.ps1
+PS> ./sdk/core/azure_core_amqp/Test-Setup.ps1
 ```
 
 This will download the TestAmqpBroker, build it and run the executable.
@@ -34,7 +34,7 @@ You can then run the azure_core_amqp package tests.
 Once you have finished running your tests, you run:
 
 ```powershell
-PS> .\sdk\core\azure_core_amqp\Test-Cleanup.ps1
+PS> ./sdk/core/azure_core_amqp/Test-Cleanup.ps1
 ```
 
 which will terminate the test broker.
