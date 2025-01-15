@@ -2,19 +2,12 @@
 # Licensed under the MIT License.
 # cspell: ignore JOBID depsfile
 
-param (
-  [string]$PackageName
-)
 
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
+# Create the test binary *outside* the repo root to avoid polluting the repo.
 $WorkingDirectory = ([System.IO.Path]::Combine($RepoRoot, "../TestArtifacts"))
-
-if (-not $PackageName) {
-  Write-Host "PackageName parameter not provided."
-  exit 1
-}
 
 # Create the working directory if it does not exist.
 Write-Host "Using Working Directory $WorkingDirectory"

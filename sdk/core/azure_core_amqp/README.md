@@ -14,7 +14,33 @@ The AMQP package is tested using the standard `cargo test` command line:
 cargo test --package azure_core_amqp --all-features
 ```
 
-Certain functionality of the test requires that the azure-amqp TestAmqpBroker be running at the time of the test. To enable this functionality, first clone the azure-amqp repository to a local directory:
+Certain functionality of the test requires that the azure-amqp TestAmqpBroker be running at the time of the test.
+
+To enable this functionality, there are two ways of installing and running the TestAmqpBroker, Scripted and Manual.
+
+### Scripted Broker Install
+For Scripted testing, simply run the powershell script in the sdk/core/azure_core_amqp directory:
+
+```powershell
+PS> .\sdk\core\azure_core_amqp\Test-Setup.ps1
+```
+
+This will download the TestAmqpBroker, build it and run the executable.
+
+Note that this requires that you have the [.Net SDK](https://dot.net/download) installed on your machine.
+
+You can then run the azure_core_amqp package tests.
+
+Once you have finished running your tests, you run:
+
+```powershell
+PS> .\sdk\core\azure_core_amqp\Test-Cleanup.ps1
+```
+
+which will terminate the test broker.
+
+### Manual Broker Install
+For Manual testing, first clone the azure-amqp repository to a local directory:
 
 ```bash
 cd <Test Working Directory>
