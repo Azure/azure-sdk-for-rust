@@ -28,8 +28,6 @@ pub struct BlobClient<BlobType = Unset> {
 }
 
 impl BlobClient<Unset> {
-    const VERSION_ID: &'static str = ("2024-08-04");
-
     pub fn new(
         endpoint: String,
         container_name: String,
@@ -40,10 +38,11 @@ impl BlobClient<Unset> {
         let mut options = BlobClientOptions::default();
 
         // Now that we don't need the setters/getters, we may be able to directly push it on instead of cloning down and reassigning
-        let mut per_call_policies = options.client_options.per_call_policies.clone();
         let storage_headers_policy = Arc::new(StorageHeadersPolicy::new());
-        per_call_policies.push(storage_headers_policy);
-        options.client_options.per_call_policies = per_call_policies;
+        options
+            .client_options
+            .per_call_policies
+            .push(storage_headers_policy);
 
         // Conditionally add authentication if provided
         if credential.is_some() {
@@ -56,15 +55,12 @@ impl BlobClient<Unset> {
             options.client_options.per_call_policies = per_try_policies;
         }
 
-        // endpoint, credential, continer_name, options
-        // There is no more "with_no_credential"
-        // Credential is required, so is there no auth-less access?
         let client = GeneratedBlobClient::new(
             &endpoint.clone(),
-            credential.clone().unwrap(), // This can't stay
+            credential.clone().unwrap(), // This unwrap() is temporary- this may be a straight passthrough dependent on how we handle auth-less
             container_name.clone(),
             Some(options),
-        );
+        )?;
 
         Ok(Self {
             blob_type: PhantomData::<Unset>,
@@ -72,7 +68,7 @@ impl BlobClient<Unset> {
             container_name: container_name.clone(),
             blob_name: blob_name.clone(),
             credential,
-            client: client.unwrap(), // Cannot unwrap this
+            client: client,
         })
     }
 
@@ -108,6 +104,5 @@ mod tests {
             .await
             .unwrap();
         print!("{:?}", response);
-        print!("\n{:?}", response);
     }
 }
