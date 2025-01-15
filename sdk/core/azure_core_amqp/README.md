@@ -27,7 +27,7 @@ PS> ./sdk/core/azure_core_amqp/Test-Setup.ps1
 
 This will download the TestAmqpBroker, build it and run the executable.
 
-Note that this requires that you have the [.Net SDK](https://dot.net/download) installed on your machine.
+Note that this requires that you have the [.NET SDK](https://dot.net/download) installed on your machine.
 
 You can then run the azure_core_amqp package tests.
 
