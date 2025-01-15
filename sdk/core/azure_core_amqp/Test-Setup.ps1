@@ -24,16 +24,14 @@ Push-Location -Path $WorkingDirectory
 try {
 
   $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
-  # $repositoryRelease = "v2.6.9"
-  # $cloneCommand = "git clone $repositoryUrl --branch $repositoryRelease"
-  $cloneCommand = "git clone $repositoryUrl"
+  $repositoryRelease = "hotfix"
+  $cloneCommand = "git clone $repositoryUrl --branch $repositoryRelease"
 
   Write-Host "Cloning repository from $repositoryUrl..."
   Invoke-LoggedCommand $cloneCommand
 
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
 
-  #  Invoke-LoggedCommand "dotnet publish --self-contained --framework net6.0"
   Invoke-LoggedCommand "dotnet build -p RollForward=LatestMajor --framework net6.0"
   if (!$? -ne 0) {
     Write-Error "Failed to build TestAmqpBroker."
@@ -48,20 +46,6 @@ try {
   Write-Host "Starting test broker listening on ${env:TEST_BROKER_ADDRESS} ..."
 
   Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0
-
-  #  if ($IsLinux) {
-  #    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/linux-x64/publish
-  #  }
-  #  elseif ($IsMacOS) {
-  #    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/osx-x64/publish
-  #  }
-  #  else {
-  #    Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/win-x64/publish
-  #  }
-
-
-  #  $job = ./TestAmqpBroker $($env:TEST_BROKER_ADDRESS) /headless &
-  Get-ChildItem -filter TestAmqpBroker*
 
   $job = dotnet exec ./TestAmqpBroker.dll ${env:TEST_BROKER_ADDRESS} /headless &
 

@@ -5,7 +5,7 @@
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
 Write-Host "Test Broker output:"
-Receive-Job -Id $($env:TEST_BROKER_JOBID)
+Receive-Job -Id $env:TEST_BROKER_JOBID
 
 # Check if the test broker job is still running
 $job = Get-Job -Id $env:TEST_BROKER_JOBID
