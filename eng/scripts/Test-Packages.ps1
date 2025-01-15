@@ -46,6 +46,18 @@ $env:RUSTFLAGS = "-Dwarnings"
 foreach ($package in $packagesToTest) {
   Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
   try {
+    $packageDirectory = ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
+
+    $setupScript = Join-Path $packageDirectory "Test-Setup.ps1"
+    if (Test-Path $setupScript) {
+      Write-Host "`n`nRunning test setup script for package: '$($package.Name)'`n"
+      Invoke-LoggedCommand $setupScript
+      if (!$? -ne 0) {
+        Write-Error "Test setup script failed for package: '$($package.Name)'"
+        exit 1
+      }
+    }
+
     Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
     Invoke-LoggedCommand "cargo +$Toolchain build --keep-going"
@@ -68,6 +80,14 @@ foreach ($package in $packagesToTest) {
 
     Invoke-LoggedCommand "cargo +$Toolchain test --doc --no-fail-fast"
     Write-Host "`n`n"
+
+    $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"
+    if (Test-Path $cleanupScript) {
+      Write-Host "`n`nRunning test cleanup script for package: '$($package.Name)'`n"
+      Invoke-LoggedCommand $cleanupScript
+      # We ignore the exit code of the cleanup script.
+
+    }
   }
   finally {
     Pop-Location
