@@ -4,6 +4,7 @@ mod framework;
 
 use std::error::Error;
 
+// We will get this directly from Azure Core's testing utilities
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{
     models::{
@@ -20,6 +21,7 @@ use futures::StreamExt;
 pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
     use azure_data_cosmos::models::PartitionKeyKind;
 
+    // This seems to be the only use of the TestAccount framework (spinning up acc, giving it a test ID) other than cleanup
     let account = TestAccount::from_env(context, None)?;
     let cosmos_client = account.connect_with_key(None)?;
     let test_db_id = account.unique_db("DatabaseCRUD");
@@ -156,6 +158,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
     }
     assert!(ids.is_empty());
 
+    // This is the only other usage of the TestAccount framework
     account.cleanup().await?;
 
     Ok(())

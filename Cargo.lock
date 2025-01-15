@@ -460,11 +460,14 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "azure_core",
+ "azure_core_test",
  "azure_identity",
  "azure_storage_common",
+ "reqwest",
  "serde",
  "time",
  "tokio",
+ "tracing-subscriber",
  "typespec_client_core",
  "uuid",
 ]
