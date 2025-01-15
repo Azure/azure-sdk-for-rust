@@ -24,8 +24,9 @@ Push-Location -Path $WorkingDirectory
 try {
 
   $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
-  $repositoryRelease = "hotfix"
-  $cloneCommand = "git clone $repositoryUrl --branch $repositoryRelease"
+  # We would like to use the "hotfix" branch because that is current, but unfortunately it references System.Net.Security version 4.0.0
+  $repositoryBranch = "master"
+  $cloneCommand = "git clone $repositoryUrl --branch $repositoryBranch"
 
   Write-Host "Cloning repository from $repositoryUrl..."
   Invoke-LoggedCommand $cloneCommand
