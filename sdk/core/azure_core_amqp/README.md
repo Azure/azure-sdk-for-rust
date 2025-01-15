@@ -50,40 +50,7 @@ git clone https://github.com/Azure/azure-amqp
 Alternately, you can clone to a specific release in the azure-amqp repository:
 
 ```
-git clone https://github.com/Azure/azure-amqp.git --branch v2.6.9
-```
-
-Next build the TestAmqpBroker binary:
-
-```bash
-cd azure-amqp/test/TestAmqpBroker
-dotnet publish --self-contained --framework net6.0
-```
-
-This will create a self-contained executable that functions as an AMQP broker.
-
-Note the output from the dotnet publish command line. It should look something like this:
-
-```
-TestAmqpBroker -> /<Test working directory>/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/linux-x64/publish/
-```
-
-or
-
-```
-  TestAmqpBroker -> <Test working directory>>\azure-amqp\bin\Debug\TestAmqpBroker\net6.0\win-x64\publish\
-```
-
-or
-
-```
-TestAmqpBroker -> <Test working directory>/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/osx-x64/publish/
-```
-
-Set your current directory to that publish location:
-
-```
-cd <Test working directory>/azure-amqp/bin/Debug/TestAmqpBroker/net6.0/osx-x64/publish
+git clone https://github.com/Azure/azure-amqp.git --branch hotfix
 ```
 
 Set an environment variable the test AMQP broker should listen on:
@@ -95,7 +62,8 @@ Set an environment variable the test AMQP broker should listen on:
 And launch the test broker:
 
 ```powershell
-TestAmqpBroker $env:TEST_BROKER_ADDRESS
+cd azure-amqp/test/TestAmqpBroker
+dotnet run -- $env:TEST_BROKER_ADDRESS
 ```
 
 Now, when you run the cargo tests, the networking functionality of the AMQP APIs will be executed.
