@@ -15,12 +15,14 @@ use std::convert::Infallible;
 
 const X_RECORDING_ID: HeaderName = HeaderName::from_static("x-recording-id");
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Client {
     endpoint: Url,
     pipeline: Pipeline,
 }
 
+#[allow(dead_code)]
 impl Client {
     pub fn new(endpoint: &str) -> Result<Self> {
         Ok(Self {
@@ -160,7 +162,7 @@ impl Client {
         Ok(())
     }
 
-    pub async fn reset<'a>(&self, options: Option<ClientResetOptions<'a>>) -> Result<()> {
+    pub async fn reset(&self, options: Option<ClientResetOptions<'_>>) -> Result<()> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -189,7 +191,7 @@ pub struct ClientPlaybackStartOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-impl<'a> AsHeaders for ClientPlaybackStartOptions<'a> {
+impl AsHeaders for ClientPlaybackStartOptions<'_> {
     type Error = Infallible;
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
     fn as_headers(&self) -> std::result::Result<Self::Iter, Self::Error> {

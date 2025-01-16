@@ -48,7 +48,7 @@ impl Skip {
 /// When the `SkipGuard` is dropped, recording requests and responses will begin again.
 pub struct SkipGuard<'a>(&'a Recording);
 
-impl<'a> Drop for SkipGuard<'a> {
+impl Drop for SkipGuard<'_> {
     fn drop(&mut self) {
         if self.0.mode == TestMode::Record {
             // TODO: Tell transport to stop sending `x-recording-skip` header.
