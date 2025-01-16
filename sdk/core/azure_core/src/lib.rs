@@ -62,7 +62,7 @@ pub use typespec_client_core::{
     json, parsing,
     sleep::{self, sleep},
     stream::{BytesStream, SeekableStream},
-    Uuid,
+    Bytes, Uuid,
 };
 
 /// A unique identifier for a request.
