@@ -7,12 +7,14 @@
 pub mod proxy;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod recorded;
+#[cfg(not(target_arch = "wasm32"))]
 mod recording;
 mod transport;
 
-pub use crate::recording::*;
 pub use azure_core::test::TestMode;
 use azure_core::{ClientOptions, TransportOptions};
+#[cfg(not(target_arch = "wasm32"))]
+pub use recording::*;
 use std::{
     path::{Path, PathBuf},
     sync::Arc,

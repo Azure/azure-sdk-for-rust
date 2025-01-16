@@ -3,6 +3,7 @@
 
 //! The [`Recording`] and other types used in recorded tests.
 
+#[cfg(not(target_arch = "wasm32"))]
 use crate::proxy::Proxy;
 use azure_core::test::TestMode;
 use std::sync::Arc;
@@ -11,6 +12,7 @@ use tracing::Span;
 /// Represents a playback or recording session using the [`Proxy`].
 pub struct Recording {
     #[allow(dead_code)]
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) proxy: Arc<Proxy>,
     #[allow(dead_code)]
     pub(crate) span: Span,
