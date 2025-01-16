@@ -10,6 +10,7 @@ pub mod policies;
 pub use crate::generated::clients::*;
 
 pub mod models {
+    pub mod blob_properties;
     pub use crate::generated::enums::*;
     pub use crate::generated::models::*;
 }
