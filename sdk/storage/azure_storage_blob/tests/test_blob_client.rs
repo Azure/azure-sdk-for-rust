@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core_test::{recorded, TestContext};
 use azure_identity::DefaultAzureCredentialBuilder;
 use azure_storage_blob::blob_client::BlobClientOptions;
 use azure_storage_blob::clients::BlobClient;
@@ -15,7 +16,7 @@ mod tests {
 
     use super::*;
 
-    #[tokio::test]
+    #[recorded::test(live)]
     async fn test_get_blob_properties() {
         let credential = DefaultAzureCredentialBuilder::default().build().unwrap();
         let blob_client = BlobClient::new(
