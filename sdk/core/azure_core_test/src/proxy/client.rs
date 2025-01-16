@@ -15,6 +15,9 @@ use std::convert::Infallible;
 
 const X_RECORDING_ID: HeaderName = HeaderName::from_static("x-recording-id");
 
+/// The test-proxy client.
+///
+/// See <https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md> for usage.
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Client {
@@ -60,7 +63,7 @@ impl Client {
             .await?;
         let recording_id = resp.headers().get_str(&X_RECORDING_ID)?.to_string();
         let mut result: RecordStartResult = resp.into_json_body().await?;
-        result.recording_id = Some(recording_id);
+        result.recording_id = recording_id;
         Ok(result)
     }
 
@@ -103,7 +106,7 @@ impl Client {
             .await?;
         let recording_id = resp.headers().get_str(&X_RECORDING_ID)?.to_string();
         let mut result: PlaybackStartResult = resp.into_json_body().await?;
-        result.recording_id = Some(recording_id);
+        result.recording_id = recording_id;
         Ok(result)
     }
 
@@ -170,6 +173,7 @@ impl Client {
         let mut request = Request::new(url, Method::Post);
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
+        request.insert_headers(&options)?;
         self.pipeline.send::<()>(&ctx, &mut request).await?;
         Ok(())
     }
@@ -187,6 +191,10 @@ pub struct ClientRecordStopOptions<'a> {
 
 #[derive(Debug, Default)]
 pub struct ClientPlaybackStartOptions<'a> {
+    /// The recording ID.
+    ///
+    /// Note: this is really only meant for performance testing
+    /// and should not normally be passed for normal client testing.
     pub recording_id: Option<String>,
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -220,5 +228,22 @@ pub struct ClientAddSanitizerOptions<'a> {
 
 #[derive(Debug, Default)]
 pub struct ClientResetOptions<'a> {
+    /// Reset the test-proxy only for the given recording ID.
+    ///
+    /// If `None`, the test-proxy is reset including any per-instance defaults
+    /// not hardcoded into the test-proxy itself.
+    pub recording_id: Option<String>,
     pub method_options: ClientMethodOptions<'a>,
+}
+
+impl AsHeaders for ClientResetOptions<'_> {
+    type Error = Infallible;
+    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
+    fn as_headers(&self) -> std::result::Result<Self::Iter, Self::Error> {
+        let mut v = Vec::with_capacity(1);
+        if let Some(recording_id) = self.recording_id.as_ref() {
+            v.push((X_RECORDING_ID, recording_id.into()));
+        }
+        Ok(v.into_iter())
+    }
 }

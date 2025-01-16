@@ -44,10 +44,18 @@ impl From<Error> for azure_core::Error {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 pub struct StartPayload {
-    #[serde(rename = "x-recording-file", skip_serializing_if = "Option::is_none")]
-    pub recording_file: Option<String>,
+    /// Path to the recording file relative to the repository root.
+    ///
+    /// Example: "sdk/keyvault/azure_security_keyvault_secrets/tests/recordings/SecretClient/get_secret.json".
+    ///
+    /// Note: this is not actually required by test-proxy, but is optional only for performance testing
+    /// and meant to be required for normal client testing, which is reflected by this definition.
+    #[serde(rename = "x-recording-file")]
+    pub recording_file: String,
+
+    /// Path to the assets.json file relative to the repository root.
     #[serde(
         rename = "x-recording-assets-file",
         skip_serializing_if = "Option::is_none"
@@ -62,13 +70,13 @@ impl TryFrom<StartPayload> for RequestContent<StartPayload> {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize)]
 pub struct RecordStartResult {
     #[serde(skip)]
-    pub recording_id: Option<String>,
+    pub recording_id: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 pub struct VariablePayload {
     #[serde(rename = "Variables")]
     pub variables: HashMap<String, String>,
@@ -77,7 +85,8 @@ pub struct VariablePayload {
 #[derive(Debug, Deserialize)]
 pub struct PlaybackStartResult {
     #[serde(skip)]
-    pub recording_id: Option<String>,
+    pub recording_id: String,
+
     #[allow(dead_code)]
     #[serde(flatten)]
     pub variables: HashMap<String, String>,
