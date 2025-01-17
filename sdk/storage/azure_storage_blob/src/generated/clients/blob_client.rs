@@ -33,7 +33,7 @@ impl BlobClient {
         container_name: String,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
-        let options = options.unwrap_or_default();
+        let mut options = options.unwrap_or_default();
         let mut endpoint = Url::parse(endpoint)?;
         endpoint.set_query(None);
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(

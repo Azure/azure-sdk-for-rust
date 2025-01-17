@@ -3,6 +3,7 @@
 
 use crate::blob_blob_client::BlobBlobClientGetPropertiesOptions;
 use crate::blob_client::BlobClientOptions;
+use crate::models::blob_properties::{build_from_response_headers, BlobProperties};
 use crate::policies::storage_headers_policy::StorageHeadersPolicy;
 use crate::BlobClient as GeneratedBlobClient;
 use azure_core::credentials::TokenCredential;
@@ -66,10 +67,13 @@ impl BlobClient {
     pub async fn get_blob_properties(
         &self,
         options: Option<BlobBlobClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<()>> {
-        self.client
+    ) -> Result<BlobProperties> {
+        let response = self
+            .client
             .get_blob_blob_client()
             .get_properties(self.container_name.clone(), self.blob_name.clone(), options)
-            .await
+            .await?;
+
+        Ok(build_from_response_headers(response.headers()))
     }
 }
