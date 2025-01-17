@@ -18,7 +18,9 @@ async-trait.workspace = true
 azure_core = { workspace = true, features = ["test"] }
 azure_core_test_macros.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 tracing.workspace = true
+typespec_client_core = { workspace = true, features = ["derive"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { workspace = true, features = ["io-util", "process", "sync", "time"] }

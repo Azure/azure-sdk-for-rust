@@ -370,9 +370,11 @@ dependencies = [
  "azure_core_test_macros",
  "clap",
  "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "typespec_client_core",
 ]
 
 [[package]]
