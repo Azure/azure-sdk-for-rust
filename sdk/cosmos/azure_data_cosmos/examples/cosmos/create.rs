@@ -2,7 +2,7 @@ use std::error::Error;
 
 use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
-    CosmosClient, CreateContainerOptions, CreateDatabaseOptions, PartitionKey,
+    CosmosClient, CreateContainerOptions, CreateDatabaseOptions, ItemOptions, PartitionKey,
 };
 use clap::{Args, Subcommand};
 
@@ -32,6 +32,10 @@ pub enum Subcommands {
         /// The JSON of the new item.
         #[clap(long, short)]
         json: String,
+
+        /// If set, the updated item will be included in the response.
+        #[clap(long)]
+        show_updated: bool,
     },
 
     /// Create a database (does not support Entra ID).
@@ -73,6 +77,7 @@ impl CreateCommand {
                 container,
                 partition_key,
                 json,
+                show_updated,
             } => {
                 let db_client = client.database_client(&database);
                 let container_client = db_client.container_client(&container);
@@ -80,14 +85,22 @@ impl CreateCommand {
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
 
-                let created = container_client
-                    .create_item(pk, item, None)
-                    .await?
-                    .into_body()
-                    .await?
-                    .unwrap();
-                println!("Created item:");
-                println!("{:#?}", created);
+                let options = ItemOptions {
+                    enable_content_response_on_write: show_updated,
+                    ..Default::default()
+                };
+
+                let response = container_client
+                    .create_item(pk, item, Some(options))
+                    .await?;
+
+                println!("Created item successfully");
+
+                if show_updated {
+                    let created = response.into_json_body::<serde_json::Value>().await?;
+                    println!("Newly created item:");
+                    println!("{:#?}", created);
+                }
                 Ok(())
             }
 
@@ -106,8 +119,7 @@ impl CreateCommand {
                     .create_database(&id, options)
                     .await?
                     .into_body()
-                    .await?
-                    .unwrap();
+                    .await?;
                 println!("Created database:");
                 println!("{:#?}", db);
                 Ok(())
@@ -152,8 +164,7 @@ impl CreateCommand {
                     .create_container(properties, options)
                     .await?
                     .into_body()
-                    .await?
-                    .unwrap();
+                    .await?;
                 println!("Created container:");
                 println!("{:#?}", container);
                 Ok(())

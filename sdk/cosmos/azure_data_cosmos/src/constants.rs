@@ -6,7 +6,10 @@
 
 //! Constants defining HTTP headers and other values relevant to Azure Cosmos DB APIs.
 
-use azure_core::{headers::HeaderName, request_options::ContentType};
+use azure_core::{
+    headers::{HeaderName, HeaderValue},
+    request_options::ContentType,
+};
 
 pub const QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-query");
 pub const PARTITION_KEY: HeaderName = HeaderName::from_static("x-ms-documentdb-partitionkey");
@@ -19,3 +22,5 @@ pub const OFFER_AUTOPILOT_SETTINGS: HeaderName =
     HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
 
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
+
+pub(crate) const PREFER_MINIMAL: HeaderValue = HeaderValue::from_static("return=minimal");

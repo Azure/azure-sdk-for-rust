@@ -47,6 +47,11 @@ pub struct DeleteDatabaseOptions<'a> {
 #[derive(Clone, Default)]
 pub struct ItemOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
+
+    /// When this value is true, write operations will respond with the new value of the resource being written.
+    ///
+    /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
+    pub enable_content_response_on_write: bool,
 }
 
 /// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers())
