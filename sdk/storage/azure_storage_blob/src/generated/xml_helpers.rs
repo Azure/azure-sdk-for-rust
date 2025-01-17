@@ -6,8 +6,12 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use crate::models::{ArrowField, BlobTag, CorsRule, FilterBlobItem};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use crate::models::{
+    ArrowField, BlobTag, CorsRule, FilterBlobItem,
+};
+use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename = "TagSet")]
@@ -17,17 +21,11 @@ pub struct Blob_tag_setBlobTag {
 }
 
 impl Blob_tag_setBlobTag {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<BlobTag>>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<BlobTag>>, D::Error> where D: Deserializer<'de> {
         Ok(Blob_tag_setBlobTag::deserialize(deserializer)?.BlobTag)
     }
 
-    pub fn wrap<S>(to_serialize: &Option<Vec<BlobTag>>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    pub fn wrap<S>(to_serialize: &Option<Vec<BlobTag>>, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         Blob_tag_setBlobTag {
             BlobTag: to_serialize.to_owned(),
         }
@@ -43,20 +41,11 @@ pub struct BlobsFilterBlobItem {
 }
 
 impl BlobsFilterBlobItem {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<FilterBlobItem>>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<FilterBlobItem>>, D::Error> where D: Deserializer<'de> {
         Ok(BlobsFilterBlobItem::deserialize(deserializer)?.FilterBlobItem)
     }
 
-    pub fn wrap<S>(
-        to_serialize: &Option<Vec<FilterBlobItem>>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    pub fn wrap<S>(to_serialize: &Option<Vec<FilterBlobItem>>, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         BlobsFilterBlobItem {
             FilterBlobItem: to_serialize.to_owned(),
         }
@@ -72,17 +61,11 @@ pub struct CorsCorsRule {
 }
 
 impl CorsCorsRule {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<CorsRule>>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<CorsRule>>, D::Error> where D: Deserializer<'de> {
         Ok(CorsCorsRule::deserialize(deserializer)?.CorsRule)
     }
 
-    pub fn wrap<S>(to_serialize: &Option<Vec<CorsRule>>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    pub fn wrap<S>(to_serialize: &Option<Vec<CorsRule>>, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         CorsCorsRule {
             CorsRule: to_serialize.to_owned(),
         }
@@ -98,20 +81,15 @@ pub struct SchemaArrowField {
 }
 
 impl SchemaArrowField {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<ArrowField>>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<ArrowField>>, D::Error> where D: Deserializer<'de> {
         Ok(SchemaArrowField::deserialize(deserializer)?.ArrowField)
     }
 
-    pub fn wrap<S>(to_serialize: &Option<Vec<ArrowField>>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    pub fn wrap<S>(to_serialize: &Option<Vec<ArrowField>>, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         SchemaArrowField {
             ArrowField: to_serialize.to_owned(),
         }
         .serialize(serializer)
     }
 }
+
