@@ -26,7 +26,7 @@ impl Header for IfModifiedSinceCondition {
     fn value(&self) -> headers::HeaderValue {
         match self {
             IfModifiedSinceCondition::Modified(date)
-            | IfModifiedSinceCondition::Unmodified(date) => date::to_rfc1123(date),
+            | IfModifiedSinceCondition::Unmodified(date) => date::to_rfc7231(date),
         }
         .into()
     }

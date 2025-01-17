@@ -6,7 +6,6 @@
 // 1. Clone the repository:
 //      git clone https://github.com/Azure/azure-amqp
 // 2. Build the project:
-//      dotnet restore
 //      dotnet build
 // 3. Run the broker:
 //      dotnet run --project .\test\TestAmqpBroker\TestAmqpBroker.csproj --framework net462 amqp://localhost:25672
@@ -74,8 +73,10 @@ async fn amqp_connection_close_with_error() {
 pub async fn main() {
     tracing_subscriber::fmt::init();
 
-    amqp_connection_open().await;
-    amqp_connection_open_with_error().await;
-    amqp_connection_close().await;
-    amqp_connection_close_with_error().await;
+    tokio::join!(
+        amqp_connection_open(),
+        amqp_connection_open_with_error(),
+        amqp_connection_close(),
+        amqp_connection_close_with_error()
+    );
 }

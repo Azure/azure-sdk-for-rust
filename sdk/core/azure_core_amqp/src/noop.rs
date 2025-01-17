@@ -97,7 +97,7 @@ impl<'a> NoopAmqpClaimsBasedSecurity<'a> {
     }
 }
 
-impl<'a> AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity<'a> {
+impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity<'_> {
     async fn attach(&self) -> Result<()> {
         unimplemented!();
     }

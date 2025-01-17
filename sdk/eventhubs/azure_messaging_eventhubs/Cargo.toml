@@ -2,7 +2,7 @@
 
 [package]
 name = "azure_messaging_eventhubs"
-version = "0.19.0"
+version = "0.1.0"
 description = "Rust client for Azure Eventhubs Service"
 readme = "README.md"
 authors = ["Microsoft Corp."]

@@ -9,7 +9,7 @@ use async_std::sync::Mutex;
 use azure_core::{Result, Url};
 use fe2o3_amqp::connection::ConnectionHandle;
 use std::{borrow::BorrowMut, sync::OnceLock};
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
 use super::error::{AmqpConnection, AmqpOpen};
 
@@ -166,7 +166,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             Ok(_) => Ok(()),
             Err(e) => match e.0 {
                 fe2o3_amqp::connection::Error::TransportError(e) => {
-                    info!(
+                    debug!(
                         "Transport error closing connection with error: {:?} - ignored",
                         e
                     );
