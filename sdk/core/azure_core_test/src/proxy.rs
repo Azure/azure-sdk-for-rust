@@ -2,21 +2,26 @@
 // Licensed under the MIT License.
 
 //! Wrappers for the [Test Proxy](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md) service.
+mod client;
+mod matchers;
+mod models;
+pub mod sanitizers;
 
-use azure_core::{error::ErrorKind, Result, Url};
+use azure_core::{error::ErrorKind, headers::HeaderName, Result, Url};
+pub use matchers::Matcher;
+use serde::Serializer;
 use std::{
     env, fmt, io,
     path::Path,
     process::{ExitStatus, Stdio},
     str::FromStr,
-    sync::Arc,
     time::Duration,
 };
 use tokio::{
     io::{AsyncBufReadExt, BufReader},
     process::{Child, ChildStdout, Command},
 };
-use tracing::{Level, Span};
+use tracing::Level;
 
 // cspell:ignore aspnetcore devcert teamprojectid testproxy
 const KESTREL_CERT_PATH_ENV: &str = "ASPNETCORE_Kestrel__Certificates__Default__Path";
@@ -29,6 +34,7 @@ const MIN_VERSION: Version = Version {
     minor: 1,
     metadata: None,
 };
+const ABSTRACTION_IDENTIFIER: HeaderName = HeaderName::from_static("x-abstraction-identifier");
 
 pub async fn start(
     test_data_dir: impl AsRef<Path>,
@@ -207,15 +213,6 @@ impl ProxyOptions {
     }
 }
 
-/// Represents a playback or recording session using the [`Proxy`].
-pub struct Session {
-    #[allow(dead_code)]
-    pub(crate) proxy: Arc<Proxy>,
-
-    #[allow(dead_code)]
-    pub(crate) span: Span,
-}
-
 #[derive(Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
 struct Version {
     major: i32,
@@ -260,91 +257,94 @@ impl FromStr for Version {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[test]
+fn version_eq() {
+    let a = Version {
+        major: 1,
+        ..Default::default()
+    };
+    let b = Version {
+        major: 1,
+        ..Default::default()
+    };
+    assert_eq!(a, b);
 
-    #[test]
-    fn version_eq() {
-        let a = Version {
-            major: 1,
-            ..Default::default()
-        };
-        let b = Version {
-            major: 1,
-            ..Default::default()
-        };
-        assert_eq!(a, b);
+    let a = Version {
+        major: 1,
+        minor: 2,
+        metadata: Some("preview".into()),
+    };
+    let b = Version {
+        major: 1,
+        minor: 2,
+        metadata: Some("preview".into()),
+    };
+    assert_eq!(a, b);
+}
 
-        let a = Version {
-            major: 1,
-            minor: 2,
-            metadata: Some("preview".into()),
-        };
-        let b = Version {
-            major: 1,
-            minor: 2,
-            metadata: Some("preview".into()),
-        };
-        assert_eq!(a, b);
-    }
+#[test]
+fn version_cmp() {
+    let a = Version {
+        major: 20240107,
+        minor: 1,
+        ..Default::default()
+    };
+    let b = Version {
+        major: 20240107,
+        minor: 2,
+        ..Default::default()
+    };
+    let c = Version {
+        major: 20240109,
+        minor: 1,
+        metadata: Some("1".into()),
+    };
+    let d = Version {
+        major: 20240109,
+        minor: 1,
+        metadata: Some("2".into()),
+    };
+    assert!(a == a);
+    assert!(a < b);
+    assert!(b > a);
+    assert!(b < c);
+    assert!(c != d);
+    assert!(c < d);
+}
 
-    #[test]
-    fn version_cmp() {
-        let a = Version {
-            major: 20240107,
-            minor: 1,
-            ..Default::default()
-        };
-        let b = Version {
-            major: 20240107,
-            minor: 2,
-            ..Default::default()
-        };
-        let c = Version {
-            major: 20240109,
-            minor: 1,
-            metadata: Some("1".into()),
-        };
-        let d = Version {
-            major: 20240109,
-            minor: 1,
-            metadata: Some("2".into()),
-        };
-        assert!(a == a);
-        assert!(a < b);
-        assert!(b > a);
-        assert!(b < c);
-        assert!(c != d);
-        assert!(c < d);
-    }
+#[test]
+fn version_fmt() {
+    let mut v = Version {
+        major: 1,
+        ..Default::default()
+    };
+    assert_eq!(v.to_string(), "1.0");
 
-    #[test]
-    fn version_fmt() {
-        let mut v = Version {
-            major: 1,
-            ..Default::default()
-        };
-        assert_eq!(v.to_string(), "1.0");
+    v.minor = 2;
+    v.metadata = Some("preview".into());
+    assert_eq!(v.to_string(), "1.2-preview");
+}
 
-        v.minor = 2;
-        v.metadata = Some("preview".into());
-        assert_eq!(v.to_string(), "1.2-preview");
-    }
+#[test]
+fn version_parse() {
+    let mut v = Version {
+        major: 1,
+        ..Default::default()
+    };
+    assert!(matches!("1".parse::<Version>(), Ok(ver) if ver == v));
+    assert!(matches!("1.0".parse::<Version>(), Ok(ver) if ver == v));
 
-    #[test]
-    fn version_parse() {
-        let mut v = Version {
-            major: 1,
-            ..Default::default()
-        };
-        assert!(matches!("1".parse::<Version>(), Ok(ver) if ver == v));
-        assert!(matches!("1.0".parse::<Version>(), Ok(ver) if ver == v));
+    v.minor = 2;
+    assert!(matches!("1.2".parse::<Version>(), Ok(ver) if ver == v));
 
-        v.minor = 2;
-        assert!(matches!("1.2".parse::<Version>(), Ok(ver) if ver == v));
+    v.metadata = Some("preview".into());
+    assert!(matches!("1.2-preview".parse::<Version>(), Ok(ver) if ver == v));
+}
 
-        v.metadata = Some("preview".into());
-        assert!(matches!("1.2-preview".parse::<Version>(), Ok(ver) if ver == v));
-    }
+fn join<S>(value: &[&str], serializer: S) -> std::result::Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let s = value.join(",");
+    serializer.serialize_str(s.as_ref())
 }
