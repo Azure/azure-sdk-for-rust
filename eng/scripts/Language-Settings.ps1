@@ -90,3 +90,19 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 
   return $allPackageProps
 }
+
+function Get-rust-EmitterName() {
+  return "@azure-tools/typespec-rust"
+}
+
+function Get-CrateVersion([string]$projectDirectory) {
+  return "0.1.0"
+}
+
+function Get-CrateName(){
+  return (Split-Path $projectDirectory -Leaf)
+}
+
+function Get-rust-EmitterAdditionalOptions([string]$projectDirectory) {
+  return "--option @azure-tools/typespec-rust.emitter-output-dir=$projectDirectory --option @azure-tools/typespec-rust.crate-name=$(Get-CrateName($projectDirectory)) --option @azure-tools/typespec-rust.crate-version=$(Get-CrateVersion($projectDirectory))"
+}
