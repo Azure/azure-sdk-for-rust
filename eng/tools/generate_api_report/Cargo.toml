@@ -1,5 +1,5 @@
 [package]
-name = "rust_parser_from_rustdoc"
+name = "generate_api_report"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
@@ -13,7 +13,3 @@ serde_json = "1.0"
 
 [lints]
 workspace = true
-
-[[bin]]
-name = "concise_api"
-path = "src/main.rs"

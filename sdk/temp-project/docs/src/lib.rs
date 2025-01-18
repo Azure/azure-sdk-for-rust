@@ -12,7 +12,17 @@ pub mod sample_module {
         /// This is a sample field
         pub field: i32,
     }
+
+    /// This is a sample struct
+    #[derive(Debug)]
+    pub struct SampleStructWithDebug {
+        /// This is a sample field
+        pub field: i32,
+    }
 }
+
+#[allow(dead_code)]
+static GLOBAL_FIELD1: i32 = 0;
 
 pub trait MyTrait {
     // Define some methods or associated functions here
@@ -31,4 +41,15 @@ where
 {
     // function implementation
     todo!()
+}
+
+pub static GLOBAL_FIELD2: &(dyn MyTrait + Sync) = &DummyTrait;
+struct DummyTrait;
+
+unsafe impl Sync for DummyTrait {}
+
+impl MyTrait for DummyTrait {
+    fn example_method(&self) {
+        // method implementation
+    }
 }
