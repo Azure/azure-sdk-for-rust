@@ -2,12 +2,17 @@
 // Licensed under the MIT License.
 
 use crate::{credentials::cache::TokenCache, federated_credentials_flow, TokenCredentialOptions};
+use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{ErrorKind, ResultExt},
     Error, HttpClient, Url,
 };
-use std::{str, sync::Arc, time::Duration};
+use std::{
+    str,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 use time::OffsetDateTime;
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
@@ -19,14 +24,13 @@ const AZURE_FEDERATED_TOKEN: &str = "AZURE_FEDERATED_TOKEN";
 ///
 /// More information on how to configure a client secret can be found here:
 /// <https://learn.microsoft.com/azure/active-directory/develop/quickstart-configure-app-access-web-apis#add-credentials-to-your-web-application>
-
 #[derive(Debug)]
 pub struct WorkloadIdentityCredential {
     http_client: Arc<dyn HttpClient>,
     authority_host: Url,
     tenant_id: String,
     client_id: String,
-    token: Secret,
+    token: Token,
     cache: TokenCache,
 }
 
@@ -47,7 +51,7 @@ impl WorkloadIdentityCredential {
             authority_host,
             tenant_id,
             client_id,
-            token: token.into(),
+            token: Token::Value(token.into()),
             cache: TokenCache::new(),
         }))
     }
@@ -100,22 +104,14 @@ impl WorkloadIdentityCredential {
             .var(AZURE_FEDERATED_TOKEN_FILE)
             .map_kind(ErrorKind::Credential)
         {
-            let token = std::fs::read_to_string(token_file.clone()).with_context(
-                ErrorKind::Credential,
-                || {
-                    format!(
-                        "failed to read federated token from file {}",
-                        token_file.as_str()
-                    )
-                },
-            )?;
-            return WorkloadIdentityCredential::new(
+            return Ok(Arc::new(Self {
                 http_client,
                 authority_host,
                 tenant_id,
                 client_id,
-                token,
-            );
+                token: Token::with_file(token_file.as_ref())?,
+                cache: TokenCache::new(),
+            }));
         }
 
         Err(Error::with_message(ErrorKind::Credential, || {
@@ -124,10 +120,11 @@ impl WorkloadIdentityCredential {
     }
 
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        let token = self.token.secret().await?;
         let res: AccessToken = federated_credentials_flow::authorize(
             self.http_client.clone(),
             &self.client_id,
-            self.token.secret(),
+            &token,
             scopes,
             &self.tenant_id,
             &self.authority_host,
@@ -153,5 +150,62 @@ impl TokenCredential for WorkloadIdentityCredential {
 
     async fn clear_cache(&self) -> azure_core::Result<()> {
         self.cache.clear().await
+    }
+}
+
+#[derive(Debug)]
+enum Token {
+    Value(Secret),
+    File {
+        path: String,
+        cache: Arc<RwLock<FileCache>>,
+    },
+}
+
+#[derive(Debug)]
+struct FileCache {
+    token: Secret,
+    last_read: Instant,
+}
+
+impl Token {
+    fn with_file(path: &str) -> azure_core::Result<Self> {
+        let last_read = Instant::now();
+        let token = std::fs::read_to_string(path).with_context(ErrorKind::Credential, || {
+            format!("failed to read federated token from file {}", path)
+        })?;
+
+        Ok(Self::File {
+            path: path.into(),
+            cache: Arc::new(RwLock::new(FileCache {
+                token: Secret::new(token),
+                last_read,
+            })),
+        })
+    }
+
+    async fn secret(&self) -> azure_core::Result<String> {
+        match self {
+            Self::Value(secret) => Ok(secret.secret().into()),
+            Self::File { path, cache } => {
+                const TIMEOUT: Duration = Duration::from_secs(600);
+
+                let now = Instant::now();
+                let cache = cache.upgradable_read().await;
+                if now - cache.last_read > TIMEOUT {
+                    let token = std::fs::read_to_string(path)
+                        .with_context(ErrorKind::Credential, || {
+                            format!("failed to read federated token from file {}", path)
+                        })?;
+                    let mut write_cache = RwLockUpgradableReadGuard::upgrade(cache).await;
+                    write_cache.token = Secret::new(token);
+                    write_cache.last_read = now;
+
+                    return Ok(write_cache.token.secret().into());
+                }
+
+                Ok(cache.token.secret().into())
+            }
+        }
     }
 }
