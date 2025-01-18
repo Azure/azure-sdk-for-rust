@@ -317,7 +317,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "azure_core"
-version = "0.19.0"
+version = "0.22.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -343,7 +343,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.19.0"
+version = "0.1.0"
 dependencies = [
  "async-std",
  "azure_core",
@@ -391,7 +391,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.19.0"
+version = "0.22.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -412,7 +412,7 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "0.19.0"
+version = "0.22.0"
 dependencies = [
  "async-lock",
  "async-process",
@@ -438,7 +438,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.19.0"
+version = "0.1.0"
 dependencies = [
  "async-std",
  "async-stream",
@@ -2937,7 +2937,7 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 
 [[package]]
 name = "typespec"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
  "http-types",
