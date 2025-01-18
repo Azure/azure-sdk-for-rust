@@ -63,7 +63,8 @@ impl BlobBlobClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
-    /// [Update] The Lease Blob operation establishes and manages a lock on a blob for write and delete operations.
+    /// The Acquire Lease operation requests a new lease on a blob. The lease lock duration can be 15 to 60 seconds, or can be
+    /// infinite.
     pub async fn acquire_lease(
         &self,
         options: Option<BlobBlobClientAcquireLeaseOptions<'_>>,
@@ -116,7 +117,8 @@ impl BlobBlobClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
-    /// [Update] The Lease Blob operation establishes and manages a lock on a blob for write and delete operations.
+    /// The Break Lease operation ends a lease and ensures that another client can't acquire a new lease until the current lease
+    /// period has expired.
     pub async fn break_lease(
         &self,
         options: Option<BlobBlobClientBreakLeaseOptions<'_>>,
@@ -166,7 +168,7 @@ impl BlobBlobClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
-    /// [Update] The Lease Blob operation establishes and manages a lock on a blob for write and delete operations.
+    /// The Change Lease operation is used to change the ID of an existing lease.
     pub async fn change_lease(
         &self,
         lease_id: String,
@@ -777,7 +779,8 @@ impl BlobBlobClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
-    /// [Update] The Lease Blob operation establishes and manages a lock on a blob for write and delete operations.
+    /// The Release Lease operation frees the lease if it's no longer needed, so that another client can immediately acquire a
+    /// lease against the blob.
     pub async fn release_lease(
         &self,
         lease_id: String,
@@ -826,7 +829,7 @@ impl BlobBlobClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
-    /// [Update] The Lease Blob operation establishes and manages a lock on a blob for write and delete operations.
+    /// The Renew Lease operation renews an existing lease.
     pub async fn renew_lease(
         &self,
         lease_id: String,
