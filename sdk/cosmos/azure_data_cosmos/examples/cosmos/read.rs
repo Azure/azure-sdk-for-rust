@@ -32,11 +32,11 @@ enum Subcommands {
         container: String,
 
         /// The ID of the item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         item_id: String,
 
         /// The partition key of the item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         partition_key: String,
     },
 }

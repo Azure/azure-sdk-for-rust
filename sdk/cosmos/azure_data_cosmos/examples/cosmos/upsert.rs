@@ -13,15 +13,15 @@ pub struct UpsertCommand {
     container: String,
 
     /// The partition key of the new item.
-    #[clap(long, short)]
+    #[arg(long, short)]
     partition_key: String,
 
     /// The JSON of the new item.
-    #[clap(long, short)]
+    #[arg(long, short)]
     json: String,
 
     /// If set, the updated item will be included in the response.
-    #[clap(long)]
+    #[arg(long)]
     show_updated: bool,
 }
 

@@ -26,15 +26,15 @@ pub enum Subcommands {
         container: String,
 
         /// The partition key of the new item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         partition_key: String,
 
         /// The JSON of the new item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         json: String,
 
         /// If set, the updated item will be included in the response.
-        #[clap(long)]
+        #[arg(long)]
         show_updated: bool,
     },
 
@@ -43,7 +43,7 @@ pub enum Subcommands {
         /// The ID of the new database to create.
         id: String,
 
-        #[clap(flatten)]
+        #[command(flatten)]
         throughput_options: ThroughputOptions,
     },
 
@@ -52,19 +52,19 @@ pub enum Subcommands {
         /// The ID of the database to create the container in.
         database: String,
 
-        #[clap(flatten)]
+        #[command(flatten)]
         throughput_options: ThroughputOptions,
 
         /// The ID of the new container to create.
-        #[clap(long, short)]
+        #[arg(long, short)]
         id: Option<String>,
 
         /// The path to the partition key properties (supports up to 3).
-        #[clap(long, short)]
+        #[arg(long, short)]
         partition_key: Vec<String>,
 
         /// The JSON for a ContainerProperties value. The 'id' and 'partition key' options are ignored if this is set.
-        #[clap(long)]
+        #[arg(long)]
         json: Option<String>,
     },
 }

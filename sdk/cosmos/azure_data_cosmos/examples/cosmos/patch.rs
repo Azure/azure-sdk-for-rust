@@ -17,15 +17,15 @@ pub struct PatchCommand {
     container: String,
 
     /// The ID of the item.
-    #[clap(long, short)]
+    #[arg(long, short)]
     item_id: String,
 
     /// The partition key of the new item.
-    #[clap(long, short)]
+    #[arg(long, short)]
     partition_key: String,
 
     /// A JSON patch operation to apply to the item, can be specified multiple times. See https://learn.microsoft.com/en-us/azure/cosmos-db/partial-document-update
-    #[clap(long, short)]
+    #[arg(long, short)]
     operation: Vec<String>,
 }
 

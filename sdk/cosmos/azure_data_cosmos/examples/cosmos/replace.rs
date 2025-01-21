@@ -23,26 +23,26 @@ pub enum Subcommands {
         container: String,
 
         /// The ID of the item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         item_id: String,
 
         /// The partition key of the new item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         partition_key: String,
 
         /// The JSON of the new item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         json: String,
 
         /// If set, the updated item will be included in the response.
-        #[clap(long)]
+        #[arg(long)]
         show_updated: bool,
     },
     DatabaseThroughput {
         /// The database to update throughput for.
         database: String,
 
-        #[clap(flatten)]
+        #[command(flatten)]
         throughput_options: ThroughputOptions,
     },
     ContainerThroughput {
@@ -52,7 +52,7 @@ pub enum Subcommands {
         /// The container to update throughput for.
         container: String,
 
-        #[clap(flatten)]
+        #[command(flatten)]
         throughput_options: ThroughputOptions,
     },
 }
