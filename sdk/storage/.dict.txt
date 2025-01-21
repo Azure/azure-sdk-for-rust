@@ -1,0 +1,11 @@
+appendblock
+appendpos
+blockid
+blocklist
+blocklisttype
+copyid
+deletetype
+incrementalcopy
+legalhold
+RAGRS
+restype
