@@ -41,6 +41,8 @@
     "hmac",
     "iothub",
     "keyvault",
+    "maxresults",
+    "maxsize",
     "msrc",
     "newtonsoft",
     "oidc",
@@ -54,7 +56,10 @@
     "servicebus",
     "stylesheet",
     "typespec",
+    "undelete",
     "upvote",
+    "userdelegationkey",
+    "versionid",
     "virtualmachine"
   ],
   "dictionaryDefinitions": [
@@ -77,6 +82,11 @@
     {
       "name": "identity",
       "path": "../sdk/identity/.dict.txt",
+      "noSuggest": true
+    },
+    {
+      "name": "storage",
+      "path": "../sdk/storage/.dict.txt",
       "noSuggest": true
     }
   ],
@@ -126,6 +136,14 @@
         "crates",
         "rust-custom",
         "cosmos"
+      ]
+    },
+    {
+      "filename": "sdk/storage/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "storage"
       ]
     }
   ]
