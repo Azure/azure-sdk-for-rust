@@ -51,8 +51,7 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # use azure_data_cosmos::clients::ContainerClient;
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let response = container_client.read(None)
     ///     .await?
     ///     .into_body()
@@ -84,9 +83,8 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # use azure_data_cosmos::clients::ContainerClient;
-    /// # use azure_data_cosmos::models::{ContainerProperties, IndexingPolicy};
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// use azure_data_cosmos::models::{ContainerProperties, IndexingPolicy};
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let new_properties = ContainerProperties {
     ///     id: "MyContainer".into(),
     ///     partition_key: "/id".into(),
@@ -193,8 +191,7 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::clients::ContainerClient;
-    /// # use serde::{Deserialize, Serialize};
+    /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
@@ -208,7 +205,7 @@ impl ContainerClient {
     ///     category_id: "category1".to_string(),
     ///     product_name: "Product #1".to_string(),
     /// };
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// container_client
     ///     .create_item("category1", p, None)
     ///     .await?;
@@ -222,8 +219,8 @@ impl ContainerClient {
     /// You can deserialize the returned item using [`Response::into_json_body`], like this:
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, ItemOptions};
-    /// # use serde::{Deserialize, Serialize};
+    /// use azure_data_cosmos::ItemOptions;
+    /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
@@ -237,7 +234,7 @@ impl ContainerClient {
     ///     category_id: "category1".to_string(),
     ///     product_name: "Product #1".to_string(),
     /// };
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let options = ItemOptions {
     ///     enable_content_response_on_write: true,
     ///     ..Default::default()
@@ -284,8 +281,7 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::clients::ContainerClient;
-    /// # use serde::{Deserialize, Serialize};
+    /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
@@ -299,7 +295,7 @@ impl ContainerClient {
     ///     category_id: "category1".to_string(),
     ///     product_name: "Product #1".to_string(),
     /// };
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// container_client
     ///     .replace_item("category1", "product1", p, None)
     ///     .await?;
@@ -313,8 +309,8 @@ impl ContainerClient {
     /// You can deserialize the returned item using [`Response::into_json_body`], like this:
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, ItemOptions};
-    /// # use serde::{Deserialize, Serialize};
+    /// use azure_data_cosmos::ItemOptions;
+    /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
@@ -328,7 +324,7 @@ impl ContainerClient {
     ///     category_id: "category1".to_string(),
     ///     product_name: "Product #1".to_string(),
     /// };
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let options = ItemOptions {
     ///     enable_content_response_on_write: true,
     ///     ..Default::default()
@@ -374,8 +370,7 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::clients::ContainerClient;
-    /// # use serde::{Deserialize, Serialize};
+    /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
@@ -389,7 +384,7 @@ impl ContainerClient {
     ///     category_id: "category1".to_string(),
     ///     product_name: "Product #1".to_string(),
     /// };
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// container_client
     ///     .upsert_item("category1", p, None)
     ///     .await?;
@@ -404,8 +399,8 @@ impl ContainerClient {
     /// You can deserialize the returned item using [`Response::into_json_body`], like this:
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, ItemOptions};
-    /// # use serde::{Deserialize, Serialize};
+    /// use azure_data_cosmos::ItemOptions;
+    /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
@@ -419,7 +414,7 @@ impl ContainerClient {
     ///     category_id: "category1".to_string(),
     ///     product_name: "Product #1".to_string(),
     /// };
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let options = ItemOptions {
     ///     enable_content_response_on_write: true,
     ///     ..Default::default()
@@ -469,8 +464,7 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::clients::ContainerClient;
-    /// # use serde::{Deserialize, Serialize};
+    /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
@@ -479,7 +473,7 @@ impl ContainerClient {
     ///     category_id: String,
     ///     product_name: String,
     /// }
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let item: Product = container_client
     ///     .read_item("partition1", "item1", None)
     ///     .await?
@@ -517,10 +511,9 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::clients::ContainerClient;
-    /// # use serde::{Deserialize, Serialize};
+    /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// container_client
     ///     .delete_item("partition1", "item1", None)
     ///     .await?;
@@ -553,10 +546,10 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, models::PatchDocument};
-    /// # use serde::{Deserialize, Serialize};
+    /// use azure_data_cosmos::models::PatchDocument;
+    /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let patch = PatchDocument::default().with_add("/some/path", "some value")?;
     /// container_client
     ///     .patch_item("partition1", "item1", patch, None)
@@ -574,10 +567,10 @@ impl ContainerClient {
     /// For example:
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, models::PatchDocument, ItemOptions};
-    /// # use serde::Deserialize;
+    /// use azure_data_cosmos::{models::PatchDocument, ItemOptions};
+    /// use serde::Deserialize;
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # let client: ContainerClient = panic!("this is a non-running example");
+    /// # let client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// #[derive(Debug, Deserialize)]
     /// pub struct Product {
     ///     #[serde(rename = "id")] // Use serde attributes to control serialization
@@ -642,8 +635,7 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # use azure_data_cosmos::clients::ContainerClient;
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
     ///     id: u64,
@@ -660,8 +652,8 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # use azure_data_cosmos::{clients::ContainerClient, Query};
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// use azure_data_cosmos::Query;
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
     ///     id: u64,
