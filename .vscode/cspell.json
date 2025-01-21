@@ -137,6 +137,14 @@
         "rust-custom",
         "cosmos"
       ]
+    },
+    {
+      "filename": "sdk/storage/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "storage"
+      ]
     }
   ]
 }
