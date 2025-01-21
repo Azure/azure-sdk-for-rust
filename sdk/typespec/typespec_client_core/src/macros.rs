@@ -24,7 +24,7 @@
 /// ```
 #[macro_export]
 macro_rules! create_enum {
-    ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)), *) => (
+    ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)),* $(,)?) => (
         $(#[$type_meta])*
         #[derive(Debug, PartialEq, Eq, Clone, Copy)]
         #[non_exhaustive]
@@ -133,7 +133,7 @@ macro_rules! create_enum {
 /// ```
 #[macro_export]
 macro_rules! create_extensible_enum {
-    ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)), *) => (
+    ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)),* $(,)?) => (
         $(#[$type_meta])*
         #[derive(Debug, PartialEq, Eq, Clone)]
         #[non_exhaustive]
@@ -261,7 +261,13 @@ mod test {
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));
 
     // cspell:ignore metasyntactic
-    create_extensible_enum!(Metasyntactic, (Foo, "foo"), (Bar, "bar"));
+    create_extensible_enum!(
+        Metasyntactic,
+        (Foo, "foo"),
+        (Bar, "bar"),
+        (Baz, "baz"),
+        (Qux, "qux"),
+    );
 
     #[derive(Debug, Default, Deserialize, Serialize)]
     #[serde(default)]
