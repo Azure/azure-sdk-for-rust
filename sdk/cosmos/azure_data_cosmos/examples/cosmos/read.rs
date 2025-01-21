@@ -32,11 +32,11 @@ enum Subcommands {
         container: String,
 
         /// The ID of the item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         item_id: String,
 
         /// The partition key of the item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         partition_key: String,
     },
 }
@@ -61,7 +61,7 @@ impl ReadCommand {
                         println!("Item not found!")
                     }
                     Ok(r) => {
-                        let item: serde_json::Value = r.into_body().await?.unwrap();
+                        let item: serde_json::Value = r.into_json_body().await?;
                         println!("Found item:");
                         println!("{:#?}", item);
                     }

@@ -22,7 +22,7 @@ mod utils;
 /// It exists for illustrative purposes and to simplify ad-hoc end-to-end testing.
 #[derive(Clone, Parser)]
 struct ProgramArgs {
-    #[clap(flatten)]
+    #[command(flatten)]
     shared_args: SharedArgs,
 
     #[command(subcommand)]
@@ -35,7 +35,7 @@ struct SharedArgs {
     endpoint: String,
 
     /// An authentication key to use when connecting to the Cosmos DB account. If omitted, the connection will use Entra ID.
-    #[clap(long)]
+    #[arg(long)]
     key: Option<String>,
 }
 
