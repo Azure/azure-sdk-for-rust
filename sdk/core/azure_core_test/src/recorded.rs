@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 //! Live recording and playing back of client library tests.
-#[cfg(not(target_arch = "wasm32"))]
 use crate::proxy::Proxy;
 use crate::{
     proxy::{client::Client, ProxyOptions},
@@ -11,7 +10,6 @@ use crate::{
 };
 use azure_core::{test::TestMode, Result};
 pub use azure_core_test_macros::test;
-#[cfg(not(target_arch = "wasm32"))]
 use std::sync::Arc;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::sync::OnceCell;
@@ -30,7 +28,7 @@ pub async fn start(
     #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] options: Option<ProxyOptions>,
 ) -> Result<()> {
     #[cfg(target_arch = "wasm32")]
-    let proxy = None;
+    let proxy: Option<Arc<Proxy>> = None;
 
     #[cfg(not(target_arch = "wasm32"))]
     let proxy = match test_mode {
