@@ -4,7 +4,11 @@
 //! Live recording and playing back of client library tests.
 #[cfg(not(target_arch = "wasm32"))]
 use crate::proxy::Proxy;
-use crate::{proxy::ProxyOptions, recording::Recording, TestContext};
+use crate::{
+    proxy::{client::Client, ProxyOptions},
+    recording::Recording,
+    TestContext,
+};
 use azure_core::{test::TestMode, Result};
 pub use azure_core_test_macros::test;
 #[cfg(not(target_arch = "wasm32"))]
@@ -45,8 +49,13 @@ pub async fn start(
         ),
     };
 
+    let mut client = None;
+    if let Some(proxy) = &proxy {
+        client = Some(Client::new(proxy.endpoint().clone())?);
+    }
+
     let span = debug_span!(target: crate::SPAN_TARGET, "recording", mode = ?test_mode, test = ?ctx.test_name());
-    ctx.recording = Some(Recording::new(test_mode, span, proxy));
+    ctx.recording = Some(Recording::new(test_mode, span, proxy, client));
 
     Ok(())
 }

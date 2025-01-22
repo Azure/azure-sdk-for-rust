@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 //! Wrappers for the [Test Proxy](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md) service.
-mod client;
+pub(crate) mod client;
 pub(crate) mod matchers;
 mod models;
 pub(crate) mod policy;
@@ -184,7 +184,7 @@ impl Proxy {
 
 impl Proxy {
     /// Gets the [`Url`] to which the test proxy is listening.
-    pub fn url(&self) -> &Url {
+    pub fn endpoint(&self) -> &Url {
         &self.url
     }
 }

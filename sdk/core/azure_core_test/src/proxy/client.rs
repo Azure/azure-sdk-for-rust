@@ -8,10 +8,9 @@ use super::{
 };
 use azure_core::{
     headers::{AsHeaders, HeaderName, HeaderValue, ACCEPT, CONTENT_TYPE},
-    ClientMethodOptions, ClientOptions, Context, Method, Pipeline, Request, RequestContent, Result,
-    Url,
+    ClientMethodOptions, ClientOptions, Context, Header, Method, Pipeline, Request, RequestContent,
+    Result, Url,
 };
-use std::convert::Infallible;
 
 const X_RECORDING_ID: HeaderName = HeaderName::from_static("x-recording-id");
 
@@ -27,9 +26,9 @@ pub struct Client {
 
 #[allow(dead_code)]
 impl Client {
-    pub fn new(endpoint: &str) -> Result<Self> {
+    pub fn new(endpoint: Url) -> Result<Self> {
         Ok(Self {
-            endpoint: endpoint.parse()?,
+            endpoint,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
@@ -98,7 +97,7 @@ impl Client {
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
-        request.insert_headers(&options)?;
+        request.add_optional_header(&options.recording_id);
         request.set_body(body);
         let resp = self
             .pipeline
@@ -140,6 +139,7 @@ impl Client {
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.insert_headers(&matcher)?;
+        request.add_optional_header(&options.recording_id);
         self.pipeline.send::<()>(&ctx, &mut request).await?;
         Ok(())
     }
@@ -161,6 +161,7 @@ impl Client {
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.insert_headers(&sanitizer)?;
+        request.add_optional_header(&options.recording_id);
         self.pipeline.send::<()>(&ctx, &mut request).await?;
         Ok(())
     }
@@ -173,9 +174,22 @@ impl Client {
         let mut request = Request::new(url, Method::Post);
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
-        request.insert_headers(&options)?;
+        request.add_optional_header(&options.recording_id);
         self.pipeline.send::<()>(&ctx, &mut request).await?;
         Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct RecordingId(String);
+
+impl Header for &RecordingId {
+    fn name(&self) -> HeaderName {
+        X_RECORDING_ID
+    }
+
+    fn value(&self) -> HeaderValue {
+        self.0.clone().into()
     }
 }
 
@@ -195,20 +209,8 @@ pub struct ClientPlaybackStartOptions<'a> {
     ///
     /// Note: this is really only meant for performance testing
     /// and should not normally be passed for normal client testing.
-    pub recording_id: Option<String>,
+    pub recording_id: Option<&'a RecordingId>,
     pub method_options: ClientMethodOptions<'a>,
-}
-
-impl AsHeaders for ClientPlaybackStartOptions<'_> {
-    type Error = Infallible;
-    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
-    fn as_headers(&self) -> std::result::Result<Self::Iter, Self::Error> {
-        let mut v = Vec::with_capacity(1);
-        if let Some(recording_id) = self.recording_id.as_ref() {
-            v.push((X_RECORDING_ID, recording_id.into()));
-        }
-        Ok(v.into_iter())
-    }
 }
 
 #[derive(Debug, Default)]
@@ -218,11 +220,13 @@ pub struct ClientPlaybackStopOptions<'a> {
 
 #[derive(Debug, Default)]
 pub struct ClientSetMatcherOptions<'a> {
+    pub recording_id: Option<&'a RecordingId>,
     pub method_options: ClientMethodOptions<'a>,
 }
 
 #[derive(Debug, Default)]
 pub struct ClientAddSanitizerOptions<'a> {
+    pub recording_id: Option<&'a RecordingId>,
     pub method_options: ClientMethodOptions<'a>,
 }
 
@@ -232,18 +236,6 @@ pub struct ClientResetOptions<'a> {
     ///
     /// If `None`, the test-proxy is reset including any per-instance defaults
     /// not hardcoded into the test-proxy itself.
-    pub recording_id: Option<String>,
+    pub recording_id: Option<&'a RecordingId>,
     pub method_options: ClientMethodOptions<'a>,
-}
-
-impl AsHeaders for ClientResetOptions<'_> {
-    type Error = Infallible;
-    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
-    fn as_headers(&self) -> std::result::Result<Self::Iter, Self::Error> {
-        let mut v = Vec::with_capacity(1);
-        if let Some(recording_id) = self.recording_id.as_ref() {
-            v.push((X_RECORDING_ID, recording_id.into()));
-        }
-        Ok(v.into_iter())
-    }
 }
