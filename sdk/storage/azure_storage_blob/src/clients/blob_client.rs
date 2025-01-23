@@ -3,7 +3,7 @@
 
 use crate::blob_blob_client::BlobBlobClientGetPropertiesOptions;
 use crate::blob_client::BlobClientOptions;
-use crate::models::blob_properties::{build_from_response_headers, BlobProperties};
+use crate::models::blob_properties::BlobProperties;
 use crate::policies::storage_headers_policy::StorageHeadersPolicy;
 use crate::BlobClient as GeneratedBlobClient;
 use azure_core::credentials::TokenCredential;
@@ -11,11 +11,10 @@ use azure_core::{BearerTokenCredentialPolicy, Policy, Result};
 use std::sync::Arc;
 
 pub struct BlobClient {
-    pub(crate) endpoint: String,
-    pub(crate) container_name: String,
-    pub(crate) blob_name: String,
-    pub(crate) credential: Arc<dyn TokenCredential>,
-    pub(crate) client: GeneratedBlobClient,
+    pub endpoint: String,
+    pub container_name: String,
+    pub blob_name: String,
+    client: GeneratedBlobClient,
 }
 
 impl BlobClient {
@@ -28,7 +27,7 @@ impl BlobClient {
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
 
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy::new());
+        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
         options
             .client_options
             .per_call_policies
@@ -43,14 +42,12 @@ impl BlobClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client =
-            GeneratedBlobClient::new(&endpoint.clone(), credential.clone(), Some(options))?;
+        let client = GeneratedBlobClient::new(&endpoint, credential, Some(options))?;
 
         Ok(Self {
-            endpoint: endpoint.clone(),
-            container_name: container_name.clone(),
-            blob_name: blob_name.clone(),
-            credential,
+            endpoint,
+            container_name,
+            blob_name,
             client,
         })
     }
@@ -65,6 +62,8 @@ impl BlobClient {
             .get_properties(options)
             .await?;
 
-        Ok(build_from_response_headers(response.headers()))
+        Ok(BlobProperties::build_from_response_headers(
+            response.headers(),
+        ))
     }
 }

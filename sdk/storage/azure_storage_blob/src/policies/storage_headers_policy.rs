@@ -2,18 +2,12 @@
 // Licensed under the MIT License.
 
 use async_trait::async_trait;
-use azure_core::{Context, Policy, PolicyResult, Request};
+use azure_core::{headers::HeaderName, Context, Policy, PolicyResult, Request};
 use std::sync::Arc;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
-pub struct StorageHeadersPolicy {}
-
-impl StorageHeadersPolicy {
-    pub(crate) fn new() -> Self {
-        Self {}
-    }
-}
+pub struct StorageHeadersPolicy;
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
@@ -24,10 +18,17 @@ impl Policy for StorageHeadersPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        // TODO: Check if the header is already set (that means cx set), so don't set if so
-        let request_id = Uuid::new_v4().to_string();
-        request.insert_header("x-ms-client-request-id", request_id);
+        let result = request
+            .headers()
+            .get_str(&HeaderName::from("x-ms-client-request-id"));
 
-        next[0].send(ctx, request, &next[1..]).await
+        match result {
+            Ok(_client_request_id) => next[0].send(ctx, request, &next[1..]).await,
+            Err(_e) => {
+                let request_id = Uuid::new_v4().to_string();
+                request.insert_header("x-ms-client-request-id", request_id);
+                next[0].send(ctx, request, &next[1..]).await
+            }
+        }
     }
 }
