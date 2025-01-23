@@ -9,7 +9,7 @@ pub struct Item {
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub span: Option<Value>,
-    pub visibility: String,
+    pub visibility: Value,
     pub docs: Option<String>,
     pub links: HashMap<String, Value>,
     pub attrs: Vec<String>,

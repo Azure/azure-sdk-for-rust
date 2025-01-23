@@ -5,23 +5,12 @@
 This tool generates a JSON report of the API documentation for a specified Rust package.
 It uses the following command `cargo +nightly rustdoc -Z unstable-options --output-format json --package {package_name} --all-features` to generate the documentation in JSON format, processes the JSON to remove unnecessary attributes, and outputs a cleaned-up version of the JSON.
 
-## Features
-
--   Reads a Rustdoc JSON file (`azure_core.json`).
--   Extracts the exported API surface.
--   Filters items to include only those with public visibility.
--   Writes the exported API surface to a new JSON file (`azure_core.api.json`).
-
-## Prerequisites
-
--   Rust programming language installed. You can install Rust from rust-lang.org.
-
 ## Usage
 
 To run the tool, navigate to the root of the `azure-sdk-for-rust` repository and use the following command:
 
 ```sh
-    cargo run --manifest-path eng/tools/generate_api_report/Cargo.toml -- package_name
+    cargo run --manifest-path eng/tools/generate_api_report/Cargo.toml -- --package package_name
 ```
 
 Generates `package_name_compact.json` in the `target/doc/` directory, adjacent to the rustdoc JSON (`package_name.json`) output.
@@ -29,7 +18,7 @@ Generates `package_name_compact.json` in the `target/doc/` directory, adjacent t
 For example, to generate the report for a package named `docs`, run:
 
 ```bash
-cargo run --manifest-path eng/tools/generate_api_report/Cargo.toml -- docs
+    cargo run --manifest-path eng/tools/generate_api_report/Cargo.toml -- --package docs
 ```
 
 ## Functionality
