@@ -4,9 +4,9 @@
 use azure_core::error::ErrorKind::HttpResponse;
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredentialBuilder;
-use azure_storage_blob::blob_blob_client::BlobBlobClientGetPropertiesOptions;
-use azure_storage_blob::blob_client::BlobClientOptions;
-use azure_storage_blob::clients::BlobClient;
+use azure_storage_blob::BlobBlobClientGetPropertiesOptions;
+use azure_storage_blob::BlobClient;
+use azure_storage_blob::BlobClientOptions;
 use std::env;
 use std::error::Error;
 

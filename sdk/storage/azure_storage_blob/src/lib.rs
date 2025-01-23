@@ -15,4 +15,6 @@ pub mod models {
     pub use crate::generated::models::*;
 }
 
-pub use blob_client::BlobClient;
+pub use crate::generated::clients::blob_blob_client::BlobBlobClientGetPropertiesOptions;
+pub use blob_client::{BlobClient as GeneratedBlobClient, BlobClientOptions};
+pub use clients::BlobClient;
