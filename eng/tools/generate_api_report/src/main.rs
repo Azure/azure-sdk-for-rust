@@ -57,7 +57,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         item.span = None;
     }
 
-    let output_path_str = format!("./target/doc/{}_compact.json", package_name);
+    let output_path_str = format!("./target/doc/{}.rust.json", package_name);
     let output_path = Path::new(&output_path_str);
     let mut output_file = File::create(output_path)?;
     serde_json::to_writer_pretty(&mut output_file, &root)?;
