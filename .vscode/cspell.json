@@ -85,6 +85,11 @@
       "noSuggest": true
     },
     {
+      "name": "keyvault",
+      "path": "../sdk/keyvault/.dict.txt",
+      "noSuggest": true
+    },
+    {
       "name": "storage",
       "path": "../sdk/storage/.dict.txt",
       "noSuggest": true
@@ -121,6 +126,14 @@
         "crates",
         "rust-custom",
         "identity"
+      ]
+    },
+    {
+      "filename": "sdk/keyvault/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "keyvault"
       ]
     },
     {
