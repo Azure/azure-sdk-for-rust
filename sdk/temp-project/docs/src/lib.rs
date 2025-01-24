@@ -53,3 +53,27 @@ impl MyTrait for DummyTrait {
         // method implementation
     }
 }
+
+// ...existing code...
+
+/// This is a sample struct that implements Clone
+#[derive(Debug, Clone)]
+pub struct SampleStructWithClone {
+    /// This is a sample field
+    pub field: i32,
+}
+
+impl MyTrait for SampleStructWithClone {
+    fn example_method(&self) {
+        // method implementation
+        println!("Example method called on SampleStructWithClone with field: {}", self.field);
+    }
+}
+
+// Example usage of the Clone implementation
+pub fn clone_example() {
+    let original = SampleStructWithClone { field: 42 };
+    let cloned = original.clone();
+    println!("Original: {:?}", original);
+    println!("Cloned: {:?}", cloned);
+}
