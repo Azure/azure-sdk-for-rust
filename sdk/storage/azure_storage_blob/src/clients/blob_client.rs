@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::blob_blob_client::BlobBlobClientGetPropertiesOptions;
-use crate::blob_client::BlobClientOptions;
-use crate::models::blob_properties::BlobProperties;
-use crate::policies::storage_headers_policy::StorageHeadersPolicy;
-use crate::BlobClient as GeneratedBlobClient;
-use azure_core::credentials::TokenCredential;
-use azure_core::{BearerTokenCredentialPolicy, Policy, Result};
+use crate::{
+    models::blob_properties::BlobProperties, policies::StorageHeadersPolicy,
+    BlobBlobClientGetPropertiesOptions, BlobClientOptions, GeneratedBlobClient,
+};
+use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Result};
 use std::sync::Arc;
 
 pub struct BlobClient {
