@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    models::blob_properties::BlobProperties, policies::StorageHeadersPolicy,
-    BlobBlobClientGetPropertiesOptions, BlobClientOptions, GeneratedBlobClient,
+    models::BlobProperties, policies::StorageHeadersPolicy, BlobBlobClientGetPropertiesOptions,
+    BlobClientOptions, GeneratedBlobClient,
 };
 use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Result};
 use std::sync::Arc;
