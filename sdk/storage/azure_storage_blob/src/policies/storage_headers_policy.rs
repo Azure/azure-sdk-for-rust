@@ -23,12 +23,12 @@ impl Policy for StorageHeadersPolicy {
             .get_str(&HeaderName::from("x-ms-client-request-id"));
 
         match result {
-            Ok(_client_request_id) => next[0].send(ctx, request, &next[1..]).await,
-            Err(_e) => {
+            Ok(_) => {}
+            Err(_) => {
                 let request_id = Uuid::new_v4().to_string();
                 request.insert_header("x-ms-client-request-id", request_id);
-                next[0].send(ctx, request, &next[1..]).await
             }
         }
+        next[0].send(ctx, request, &next[1..]).await
     }
 }

@@ -1,19 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::error::ErrorKind::HttpResponse;
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredentialBuilder;
-use azure_storage_blob::blob_blob_client::BlobBlobClientGetPropertiesOptions;
-use azure_storage_blob::blob_client::BlobClientOptions;
-use azure_storage_blob::clients::BlobClient;
-use std::env;
-use std::error::Error;
+use azure_storage_blob::{BlobBlobClientGetPropertiesOptions, BlobClient, BlobClientOptions};
+use std::{env, error::Error};
 
 #[cfg(test)]
 mod tests {
-
-    use azure_core::StatusCode;
 
     use super::*;
 
@@ -49,10 +43,6 @@ mod tests {
             .expect("Failed to get environment variable: AZURE_STORAGE_ACCOUNT_NAME");
         let endpoint = format!("https://{}.blob.core.windows.net/", storage_account_name);
         let credential = DefaultAzureCredentialBuilder::default().build()?;
-        let expected_error = HttpResponse {
-            status: StatusCode::NotFound,
-            error_code: Some(String::from("ContainerNotFound")),
-        };
 
         // Act
         let blob_client = BlobClient::new(
@@ -67,8 +57,10 @@ mod tests {
             .await;
 
         // Assert
-        assert!(response.is_err());
-        assert_eq!(expected_error, response.unwrap_err().kind().clone());
+        assert_eq!(
+            String::from("HttpResponse(NotFound, \"ContainerNotFound\")"),
+            response.unwrap_err().kind().to_string()
+        );
 
         Ok(())
     }
