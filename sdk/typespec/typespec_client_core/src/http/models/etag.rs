@@ -31,6 +31,6 @@ impl FromStr for Etag {
 
 impl fmt::Display for Etag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        fmt::Display::fmt(&self.0, f)
     }
 }
