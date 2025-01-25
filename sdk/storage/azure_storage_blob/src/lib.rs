@@ -14,9 +14,9 @@ pub mod policies {
 
 pub mod models {
     pub mod blob_properties;
-    pub use blob_properties::BlobProperties;
     pub use crate::generated::enums::*;
     pub use crate::generated::models::*;
+    pub use blob_properties::BlobProperties;
 }
 
 pub use crate::generated::clients::blob_blob_client::BlobBlobClientGetPropertiesOptions;
