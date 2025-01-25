@@ -8,13 +8,13 @@ use crate::policies::storage_headers_policy::StorageHeadersPolicy;
 use crate::BlobContainerClientGetPropertiesOptions;
 use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Result};
 use std::sync::Arc;
-pub struct ContainerClient {
+pub struct BlobContainerClient {
     pub endpoint: String,
     pub container_name: String,
     client: GeneratedBlobClient,
 }
 
-impl ContainerClient {
+impl BlobContainerClient {
     pub fn new(
         endpoint: String,
         container_name: String,

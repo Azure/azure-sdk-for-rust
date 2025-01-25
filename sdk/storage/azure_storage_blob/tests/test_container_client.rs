@@ -4,7 +4,7 @@
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredentialBuilder;
 use azure_storage_blob::{
-    BlobClientOptions, BlobContainerClientGetPropertiesOptions, ContainerClient,
+    BlobClientOptions, BlobContainerClient, BlobContainerClientGetPropertiesOptions,
 };
 use std::{env, error::Error};
 
@@ -22,7 +22,7 @@ mod tests {
         let credential = DefaultAzureCredentialBuilder::default().build()?;
 
         // Act
-        let container_client = ContainerClient::new(
+        let container_client = BlobContainerClient::new(
             endpoint,
             String::from("testcontainer"),
             credential,
@@ -48,7 +48,7 @@ mod tests {
         let credential = DefaultAzureCredentialBuilder::default().build()?;
 
         // Act
-        let container_client = ContainerClient::new(
+        let container_client = BlobContainerClient::new(
             endpoint,
             String::from("missingcontainer"),
             credential,

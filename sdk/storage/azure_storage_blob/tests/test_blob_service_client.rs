@@ -12,7 +12,7 @@ use std::{env, error::Error};
 mod tests {
     use super::*;
 
-    #[tokio::test]
+    #[recorded::test(live)]
     async fn test_get_service_properties() -> Result<(), Box<dyn Error>> {
         // Setup
         let storage_account_name = env::var("AZURE_STORAGE_ACCOUNT_NAME")
