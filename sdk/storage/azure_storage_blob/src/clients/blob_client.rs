@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    models::BlobProperties, policies::StorageHeadersPolicy, BlobBlobClientGetPropertiesOptions,
+    models::BlobProperties, pipeline::StorageHeadersPolicy, BlobBlobClientGetPropertiesOptions,
     BlobClientOptions, GeneratedBlobClient,
 };
 use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Result};
