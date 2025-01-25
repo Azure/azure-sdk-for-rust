@@ -7,15 +7,10 @@ pub mod clients;
 mod generated;
 pub mod pipeline;
 
-pub mod models {
-    pub mod blob_properties;
-    pub use crate::generated::enums::*;
-    pub use crate::generated::models::*;
-    pub use blob_properties::BlobProperties;
-}
+pub mod models;
 
-pub(crate) use crate::generated::clients::*;
-pub(crate) use blob_client::BlobClient as GeneratedBlobClient;
+pub use crate::generated::clients::*;
+pub use blob_client::BlobClient as GeneratedBlobClient;
 
 pub use crate::blob_client::BlobClientOptions;
 pub use crate::clients::BlobClient;
