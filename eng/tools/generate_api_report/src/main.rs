@@ -1,10 +1,10 @@
+use crate::models::Crate;
 use std::env;
+use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use std::error::Error;
 use std::process::Command;
-use crate::models::Crate;
 
 mod models;
 
@@ -33,7 +33,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         .output()?;
 
     if !output.status.success() {
-        eprintln!("Failed to generate JSON file: {}", String::from_utf8_lossy(&output.stderr));
+        eprintln!(
+            "Failed to generate JSON file: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
         std::process::exit(1);
     }
 
@@ -52,10 +55,24 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut root: Crate = serde_json::from_str(&contents)?;
 
-    // Remove the span attribute from each item
-    for item in root.index.values_mut() {
-        item.span = None;
-    }
+    // Remove items
+    // 1. with item.inner.impl.is_synthetic set to true - [auto traits]
+    // 2. with item.inner.impl.blanket_impl is not null - [blanket impls]
+    root.index.retain(|_id, item| {
+        if let Some(inner_impl) = item.inner.get("impl") {
+            if let Some(is_synthetic) = inner_impl.get("is_synthetic") {
+                if is_synthetic.as_bool().unwrap_or(false) {
+                    return false;
+                }
+            }
+            if let Some(blanket_impl) = inner_impl.get("blanket_impl") {
+                if !blanket_impl.is_null() {
+                    return false;
+                }
+            }
+        }
+        true
+    });
 
     let output_path_str = format!("./target/doc/{}.rust.json", package_name);
     let output_path = Path::new(&output_path_str);
