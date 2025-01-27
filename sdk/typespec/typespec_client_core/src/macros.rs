@@ -75,7 +75,7 @@ macro_rules! create_enum {
             fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                 match self {
                     $(
-                        $name::$variant => write!(f, "{}", $value),
+                        $name::$variant => ::std::fmt::Display::fmt(&$value, f),
                     )*
                 }
             }
