@@ -2,7 +2,7 @@
 
 The Azure Identity library provides [Microsoft Entra ID](https://learn.microsoft.com/entra/fundamentals/whatis) ([formerly Azure Active Directory](https://learn.microsoft.com/entra/fundamentals/new-name)) token authentication support across the Azure SDK. It provides a set of [`TokenCredential`][token_cred_ref] implementations that can be used to construct Azure SDK clients that support Microsoft Entra token authentication.
 
-[Source code][source] | [Package (crates.io)][package] | [API reference documentation][identity_api_docs] | [Microsoft Entra ID documentation][entraid_doc]
+[Source code] | [Package (crates.io)] | [API reference documentation] | [Microsoft Entra ID documentation]
 
 ## Getting started
 
@@ -16,8 +16,8 @@ cargo add azure_identity
 
 ### Prerequisites
 
-* An [Azure subscription][azure_sub].
-* The [Azure CLI][azure_cli] can also be useful for authenticating in a development environment, creating accounts, and managing account roles.
+* An [Azure subscription].
+* The [Azure CLI] can also be useful for authenticating in a development environment, creating accounts, and managing account roles.
 
 ### Authenticate during local development
 
@@ -25,15 +25,15 @@ When debugging and executing code locally, it's typical for developers to use th
 
 #### Authenticate via the Azure CLI
 
-`DefaultAzureCredential` and `AzureCliCredential` can authenticate as the user signed in to the [Azure CLI][azure_cli]. To sign in to the Azure CLI, run `az login`. On a system with a default web browser, the Azure CLI launches the browser to authenticate a user.
+`DefaultAzureCredential` and `AzureCliCredential` can authenticate as the user signed in to the [Azure CLI]. To sign in to the Azure CLI, run `az login`. On a system with a default web browser, the Azure CLI launches the browser to authenticate a user.
 
 When no default browser is available, `az login` uses the device code authentication flow. This flow can also be selected manually by running `az login --use-device-code`.
 
 #### Authenticate via the Azure Developer CLI
 
-Developers coding outside of an IDE can also use the [Azure Developer CLI][azure_developer_cli] to authenticate. Applications using `DefaultAzureCredential` or `AzureDeveloperCliCredential` can then use this account to authenticate calls in their application when running locally.
+Developers coding outside of an IDE can also use the [Azure Developer CLI] to authenticate. Applications using `DefaultAzureCredential` or `AzureDeveloperCliCredential` can then use this account to authenticate calls in their application when running locally.
 
-To authenticate with the [Azure Developer CLI][azure_developer_cli], run the command `azd auth login`. For users running on a system with a default web browser, the Azure Developer CLI launches the browser to authenticate the user.
+To authenticate with the [Azure Developer CLI], run the command `azd auth login`. For users running on a system with a default web browser, the Azure Developer CLI launches the browser to authenticate the user.
 
 For systems without a default web browser, the `azd auth login --use-device-code` command uses the device code authentication flow.
 
@@ -69,7 +69,7 @@ The following examples are provided:
 
 More details on configuring your environment to use `DefaultAzureCredential` can be found in the class's [reference documentation][default_cred_ref].
 
-This example demonstrates authenticating the `CosmosClient` from the [azure_data_cosmos][azure_data_cosmos] library using `DefaultAzureCredential`.
+This example demonstrates authenticating the `CosmosClient` from the [azure_data_cosmos] library using `DefaultAzureCredential`.
 
 ```rust
 use azure_data_cosmos::CosmosClient;
@@ -370,19 +370,19 @@ When you submit a pull request, a CLA-bot will automatically determine whether y
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
 <!-- LINKS -->
-[azure_cli]: https://learn.microsoft.com/cli/azure
+[Azure CLI]: https://learn.microsoft.com/cli/azure
 [azure_data_cosmos]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos
-[azure_developer_cli]: https://learn.microsoft.com/azure/developer/azure-developer-cli/
-[azure_sub]: https://azure.microsoft.com/free/
+[Azure Developer CLI]: https://learn.microsoft.com/azure/developer/azure-developer-cli/
+[Azure subscription]: https://azure.microsoft.com/free/
 [cert_cred_ref]: <!-- TODO: When Docs.rs page for ClientCertificateCredential ref docs are available -->
 [cli_cred_ref]: <!-- TODO: When Docs.rs page for AzureCliCredential ref docs are available>
 [dac_overview]: <!-- TODO: When we have a conceptual doc on Credential chains with a section on DefaultAzureCredential overview. Python example: https://learn.microsoft.com/azure/developer/python/sdk/authentication/credential-chains?tabs=dac#defaultazurecredential-overview -->
-[default_cred_ref]: <!-- TODO: When Docs.rs page for DefautlAzureCredential ref docs are available -->
-[entraid_doc]: https://learn.microsoft.com/entra/identity/
-[identity_api_docs]: https://docs.rs/azure_identity/latest/azure_identity/
+[default_cred_ref]: <!-- TODO: When Docs.rs page for DefaultAzureCredential ref docs are available -->
+[Microsoft Entra ID documentation]: https://learn.microsoft.com/entra/identity/
+[API reference documentation]: https://docs.rs/azure_identity/latest/azure_identity/
 [managed_id_cred_ref]: <!-- TODO: When Docs.rs page for ImdsManagedIdentityCredential ref docs are available -->
-[package]: https://crates.io/crates/azure_identity
-[source]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
+[Package (crates.io)]: https://crates.io/crates/azure_identity
+[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [token_cred_ref]: <!-- TODO: When Docs.rs page for TokenCredential trait ref docs are available -->
 [workload_id_cred_ref]: <!-- TODO: When Docs.rs page for WorkloadIdentityCredential ref docs are available -->
 
