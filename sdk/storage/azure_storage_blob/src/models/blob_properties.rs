@@ -22,7 +22,7 @@ pub struct BlobProperties {
 }
 
 impl BlobProperties {
-    pub fn build_from_response_headers(response_headers: &Headers) -> BlobProperties {
+    pub(crate) fn build_from_response_headers(response_headers: &Headers) -> BlobProperties {
         let mut properties = BlobProperties {
             ..Default::default()
         };
