@@ -2,10 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::{
-    models::BlobProperties, pipeline::StorageHeadersPolicy, BlobBlobClientGetPropertiesOptions,
-    BlobClientOptions, GeneratedBlobClient,
+    models::BlobProperties, pipeline::StorageHeadersPolicy, BlobBlobClientDownloadOptions,
+    BlobBlobClientGetPropertiesOptions, BlobClientOptions, GeneratedBlobClient,
 };
-use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Result, Url};
+use azure_core::{
+    credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Response, Result, Url,
+};
 use std::sync::Arc;
 
 pub struct BlobClient {
@@ -62,5 +64,17 @@ impl BlobClient {
         Ok(BlobProperties::build_from_response_headers(
             response.headers(),
         ))
+    }
+
+    pub async fn download_blob(
+        &self,
+        options: Option<BlobBlobClientDownloadOptions<'_>>,
+    ) -> Result<Response> {
+        let response = self
+            .client
+            .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
+            .download(options)
+            .await?;
+        Ok(response)
     }
 }
