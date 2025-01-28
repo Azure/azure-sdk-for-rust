@@ -51,7 +51,7 @@ The Azure Identity library focuses on OAuth authentication with Microsoft Entra 
 
 #### Continuation policy
 
-As of version 1.14.0<!-- TODO: I'm not sure what version in the rust libraries this statement becomes true at. My guess would be at our first official beta version. Maybe in that case we can just remove the version specification since this will always be true when using the official library. -->, `DefaultAzureCredential` attempts to authenticate with all developer credentials until one succeeds, regardless of any errors previous developer credentials experienced. For example, a developer credential may attempt to get a token and fail, so `DefaultAzureCredential` will continue to the next credential in the flow. Deployed service credentials stop the flow with a thrown exception if they're able to attempt token retrieval, but don't receive one. Prior to version 1.14.0, developer credentials would similarly stop the authentication flow if token retrieval failed, but this is no longer the case.
+As of version 1.14.0, `DefaultAzureCredential` attempts to authenticate with all developer credentials until one succeeds, regardless of any errors previous developer credentials experienced. For example, a developer credential may attempt to get a token and fail, so `DefaultAzureCredential` will continue to the next credential in the flow. Deployed service credentials stop the flow with a thrown exception if they're able to attempt token retrieval, but don't receive one. Prior to version 1.14.0, developer credentials would similarly stop the authentication flow if token retrieval failed, but this is no longer the case.
 
 This allows for trying all of the developer credentials on your machine while having predictable deployed behavior.
 
@@ -60,10 +60,6 @@ This allows for trying all of the developer credentials on your machine while ha
 The following examples are provided:
 <!-- no toc -->
 * [Authenticate with DefaultAzureCredential](#authenticate-with-defaultazurecredential "Authenticate with DefaultAzureCredential")
-<!-- TODO: Un-Comment if/when the sections are added>
-* [Define a custom authentication flow with ChainedTokenCredential](#define-a-custom-authentication-flow-with-chainedtokencredential "Define a custom authentication flow with ChainedTokenCredential")
-* [Async credentials](#async-credentials "Async credentials")
-</!-->
 
 ### Authenticate with `DefaultAzureCredential`
 
@@ -79,125 +75,6 @@ let credential = DefaultAzureCredential::new().unwrap();
 let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
 ```
 
-<!-- TODO: update this section on enabling interactive auth if/when it's configurable in the Rust library>
-#### Enable interactive authentication with `DefaultAzureCredential`
-
-By default, interactive authentication is disabled in `DefaultAzureCredential` and can be enabled with a keyword argument:
-
-```python
-DefaultAzureCredential(exclude_interactive_browser_credential=False)
-```
-
-When enabled, `DefaultAzureCredential` falls back to interactively authenticating via the system's default web browser when no other credential is available.
-</!-->
-
-<!-- TODO: update this section on specifying a user-assigned managed identity if/when it's configurable in the Rust library>
-#### Specify a user-assigned managed identity with `DefaultAzureCredential`
-
-Many Azure hosts allow the assignment of a user-assigned managed identity. To configure `DefaultAzureCredential` to authenticate a user-assigned managed identity, use the `managed_identity_client_id` keyword argument:
-
-```python
-DefaultAzureCredential(managed_identity_client_id=client_id)
-```
-
-Alternatively, set the environment variable `AZURE_CLIENT_ID` to the identity's client ID.
-</!-->
-
-<!-- TODO: I don't believe we currently have support for ChainedTokenCredentials (or at least I couldn't find it in the repo). We'll need to uncomment and update this section when available.>
-### Define a custom authentication flow with `ChainedTokenCredential`
-
-While `DefaultAzureCredential` is generally the quickest way to authenticate apps for Azure, you can create a customized chain of credentials to be considered. `ChainedTokenCredential` enables users to combine multiple credential instances to define a customized chain of credentials. For more information, see [ChainedTokenCredential overview][ctc_overview].
-</!-->
-
-<!-- TODO: Customize this section with Rust Identity library's Managed Identity support>
-## Managed identity support
-
-[Managed identity authentication](https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview) is supported via either `DefaultAzureCredential` or `ImdsManagedIdentityCredential` directly for the following Azure services:
-
-- [Azure App Service and Azure Functions](https://learn.microsoft.com/azure/app-service/overview-managed-identity)
-- [Azure Arc](https://learn.microsoft.com/azure/azure-arc/servers/managed-identity-authentication)
-- [Azure Cloud Shell](https://learn.microsoft.com/azure/cloud-shell/msi-authorization)
-- [Azure Kubernetes Service](https://learn.microsoft.com/azure/aks/use-managed-identity)
-- [Azure Service Fabric](https://learn.microsoft.com/azure/service-fabric/concepts-managed-identity)
-- [Azure Virtual Machines](https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/how-to-use-vm-token)
-- [Azure Virtual Machines Scale Sets](https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/qs-configure-powershell-windows-vmss)
-
-### Examples
-
-These examples demonstrate authenticating `SecretClient` from the [`azure-keyvault-secrets`](https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/keyvault/azure-keyvault-secrets) library with `ManagedIdentityCredential`.
-
-#### Authenticate with a user-assigned managed identity
-
-To authenticate with a user-assigned managed identity, you must specify one of the following IDs for the managed identity.
-
-##### Client ID
-
-```python
-from azure.identity import ManagedIdentityCredential
-from azure.keyvault.secrets import SecretClient
-
-credential = ManagedIdentityCredential(client_id="managed_identity_client_id")
-client = SecretClient("https://my-vault.vault.azure.net", credential)
-```
-
-##### Resource ID
-
-```python
-from azure.identity import ManagedIdentityCredential
-from azure.keyvault.secrets import SecretClient
-
-resource_id = "/subscriptions/<id>/resourceGroups/<rg>/providers/Microsoft.ManagedIdentity/userAssignedIdentities/<mi-name>"
-
-credential = ManagedIdentityCredential(identity_config={"resource_id": resource_id})
-client = SecretClient("https://my-vault.vault.azure.net", credential)
-```
-
-##### Object ID
-
-```python
-from azure.identity import ManagedIdentityCredential
-from azure.keyvault.secrets import SecretClient
-
-credential = ManagedIdentityCredential(identity_config={"object_id": "managed_identity_object_id"})
-client = SecretClient("https://my-vault.vault.azure.net", credential)
-```
-
-#### Authenticate with a system-assigned managed identity
-
-```python
-from azure.identity import ManagedIdentityCredential
-from azure.keyvault.secrets import SecretClient
-
-credential = ManagedIdentityCredential()
-client = SecretClient("https://my-vault.vault.azure.net", credential)
-```
-</!-->
-
-<!-- TODO: Customize this section with Rust Identity library's Cloud Configuration support >
-## Cloud configuration
-
-Credentials default to authenticating to the Microsoft Entra endpoint for Azure Public Cloud. To access resources in other clouds, such as Azure Government or a private cloud, configure credentials with the `authority` argument. [AzureAuthorityHosts](https://aka.ms/azsdk/python/identity/docs#azure.identity.AzureAuthorityHosts) defines authorities for well-known clouds:
-
-```python
-from azure.identity import AzureAuthorityHosts
-
-DefaultAzureCredential(authority=AzureAuthorityHosts.AZURE_GOVERNMENT)
-```
-
-If the authority for your cloud isn't listed in `AzureAuthorityHosts`, you can explicitly specify its URL:
-
-```python
-DefaultAzureCredential(authority="https://login.partner.microsoftonline.cn")
-```
-
-As an alternative to specifying the `authority` argument, you can also set the `AZURE_AUTHORITY_HOST` environment variable to the URL of your cloud's authority. This approach is useful when configuring multiple credentials to authenticate to the same cloud:
-
-```sh
-AZURE_AUTHORITY_HOST=https://login.partner.microsoftonline.cn
-```
-
-Not all credentials require this configuration. Credentials that authenticate through a development tool, such as `AzureCliCredential`, use that tool's configuration. Similarly, `VisualStudioCodeCredential` accepts an `authority` argument but defaults to the authority matching VS Code's "Azure: Cloud" setting.
-</!-->
 
 ## Credential classes
 
