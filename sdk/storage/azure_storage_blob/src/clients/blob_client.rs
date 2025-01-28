@@ -2,14 +2,14 @@
 // Licensed under the MIT License.
 
 use crate::{
-    models::BlobProperties, pipeline::StorageHeadersPolicy, BlobBlobClientGetPropertiesOptions,
-    BlobClientOptions, GeneratedBlobClient,
+    generated::clients::blob_client::BlobClient as GeneratedBlobClient, models::BlobProperties,
+    pipeline::StorageHeadersPolicy, BlobBlobClientGetPropertiesOptions, BlobClientOptions,
 };
-use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Result};
+use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Result, Url};
 use std::sync::Arc;
 
 pub struct BlobClient {
-    pub endpoint: String,
+    pub endpoint: Url,
     pub container_name: String,
     pub blob_name: String,
     client: GeneratedBlobClient,
@@ -17,7 +17,7 @@ pub struct BlobClient {
 
 impl BlobClient {
     pub fn new(
-        endpoint: String,
+        endpoint: &str,
         container_name: String,
         blob_name: String,
         credential: Arc<dyn TokenCredential>,
@@ -40,10 +40,9 @@ impl BlobClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client = GeneratedBlobClient::new(&endpoint, credential, Some(options))?;
-
+        let client = GeneratedBlobClient::new(endpoint, credential, Some(options))?;
         Ok(Self {
-            endpoint,
+            endpoint: endpoint.parse()?,
             container_name,
             blob_name,
             client,
