@@ -71,8 +71,10 @@ This example demonstrates authenticating the `CosmosClient` from the [azure_data
 use azure_data_cosmos::CosmosClient;
 use azure_identity::DefaultAzureCredential;
 
-let credential = DefaultAzureCredential::new().unwrap();
-let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential, None).unwrap();
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential.clone(), None)?;
+}
 ```
 
 
