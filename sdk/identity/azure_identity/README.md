@@ -29,14 +29,6 @@ When debugging and executing code locally, it's typical for developers to use th
 
 When no default browser is available, `az login` uses the device code authentication flow. This flow can also be selected manually by running `az login --use-device-code`.
 
-#### Authenticate via the Azure Developer CLI
-
-Developers coding outside of an IDE can also use the [Azure Developer CLI] to authenticate. Applications using `DefaultAzureCredential` or `AzureDeveloperCliCredential` can then use this account to authenticate calls in their application when running locally.
-
-To authenticate with the [Azure Developer CLI], run the command `azd auth login`. For users running on a system with a default web browser, the Azure Developer CLI launches the browser to authenticate the user.
-
-For systems without a default web browser, the `azd auth login --use-device-code` command uses the device code authentication flow.
-
 ## Key concepts
 
 ### Credentials
@@ -85,150 +77,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 |Credential|Usage
 |-|-
 |[`DefaultAzureCredential`][default_cred_ref]| Provides a simplified authentication experience to quickly start developing applications run in Azure.
-<!-- ?: I don't believe we have a customizable ChainedTokenCredential type yet>
-|[`ChainedTokenCredential`][chain_cred_ref]| Allows users to define custom authentication flows composing multiple credentials.
-</!-->
+
 ### Authenticate Azure-hosted applications
 
 |Credential|Usage
 |-|-
 |[`ImdsManagedIdentityCredential`][managed_id_cred_ref]| Authenticates the managed identity of an Azure resource.
 |[`WorkloadIdentityCredential`][workload_id_cred_ref]| Supports [Microsoft Entra Workload ID](https://learn.microsoft.com/azure/aks/workload-identity-overview) on Kubernetes.
-<!-- ?: I don't believe we have a EnvironmentCredential type yet>
-|[`EnvironmentCredential`][environment_cred_ref]| Authenticates a service principal or user via credential information specified in environment variables.
-</!-->
 
 ### Authenticate service principals
 
 |Credential|Usage|Reference
 |-|-|-
 |[`ClientCertificateCredential`][cert_cred_ref]| Authenticates a service principal using a certificate. | [Service principal authentication](https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals)
-<!-- ?: I don't believe we have a PipelineCredential type yet>
-|[`AzurePipelinesCredential`][az_pipelines_cred_ref]| Supports [Microsoft Entra Workload ID](https://learn.microsoft.com/azure/devops/pipelines/release/configure-workload-identity?view=azure-devops) on Azure Pipelines.
-</!-->
-<!-- ?: I don't believe we have an AssertionCredential type yet>
-|[`ClientAssertionCredential`][client_assertion_cred_ref]| Authenticates a service principal using a signed client assertion.
-</!-->
-<!-- ?: I don't believe we have a SecretCredential type yet>
-|[`ClientSecretCredential`][client_secret_cred_ref]| Authenticates a service principal using a secret. | [Service principal authentication](https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals)
-</!-->
-
-<!-- ?: I don't believe we have any of the Authenticated users credential types yet>
-### Authenticate users
-
-|Credential|Usage| Reference | Notes
-|-|-|-|-
-|[`AuthorizationCodeCredential`][auth_code_cred_ref]| Authenticates a user with a previously obtained authorization code. | [OAuth2 authentication code](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-auth-code-flow)|
-|[`DeviceCodeCredential`][device_code_cred_ref]| Interactively authenticates a user on devices with limited UI. | [Device code authentication](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-device-code)|
-|[`InteractiveBrowserCredential`][interactive_cred_ref]| Interactively authenticates a user with the default system browser. | [OAuth2 authentication code](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-auth-code-flow)| `InteractiveBrowserCredential` doesn't support GitHub Codespaces. As a workaround, use [`DeviceCodeCredential`][device_code_cred_ref].
-|[`OnBehalfOfCredential`][obo_cred_ref]| Propagates the delegated user identity and permissions through the request chain. | [On-behalf-of authentication](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow)|
-|[`UsernamePasswordCredential`][userpass_cred_ref]| Authenticates a user with a username and password (doesn't support multifactor authentication). | [Username + password authentication](https://learn.microsoft.com/entra/identity-platform/v2-oauth-ropc)|
-</!-->
 
 ### Authenticate via development tools
 
 |Credential|Usage|Reference
 |-|-|-
 |[`AzureCliCredential`][cli_cred_ref]| Authenticates in a development environment with the Azure CLI. | [Azure CLI authentication](https://learn.microsoft.com/cli/azure/authenticate-azure-cli)
-<!-- ?: I don't believe we have a SecretCredential type yet>
-|[`AzureDeveloperCliCredential`][azd_cli_cred_ref]| Authenticates in a development environment with the Azure Developer CLI. | [Azure Developer CLI Reference](https://learn.microsoft.com/azure/developer/azure-developer-cli/reference)
-</!-->
-<!-- ?: I don't believe we have a SecretCredential type yet>
-|[`AzurePowerShellCredential`][powershell_cred_ref]| Authenticates in a development environment with the Azure PowerShell. | [Azure PowerShell authentication](https://learn.microsoft.com/powershell/azure/authenticate-azureps)
-</!-->
-<!-- ?: I don't believe we have a SecretCredential type yet>
-|[`VisualStudioCodeCredential`][vscode_cred_ref]| Authenticates as the user signed in to the Visual Studio Code Azure Account extension. | [VS Code Azure Account extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.azure-account)
-</!-->
-
-<!-- ?: I don't believe anything in this section is currently supported in the Rust Identity library yet, as we don't have an EnvironmentCredential type yet, and it doesn't look like DefaultAzureCredential includes the ClientCertificateCredential in it's chain. And I believe we are purposefully not implementing the username and password option as a security stance. >
-## Environment variables
-
-[DefaultAzureCredential][default_cred_ref] and [EnvironmentCredential][environment_cred_ref] can be configured with environment variables. Each type of authentication requires values for specific
-variables:
-
-### Service principal with secret
-
-|Variable name|Value
-|-|-
-|`AZURE_CLIENT_ID`|ID of a Microsoft Entra application
-|`AZURE_TENANT_ID`|ID of the application's Microsoft Entra tenant
-|`AZURE_CLIENT_SECRET`|one of the application's client secrets
-
-### Service principal with certificate
-
-|Variable name|Value|Required
-|-|-|-
-|`AZURE_CLIENT_ID`|ID of a Microsoft Entra application|X
-|`AZURE_TENANT_ID`|ID of the application's Microsoft Entra tenant|X
-|`AZURE_CLIENT_CERTIFICATE_PATH`|path to a PEM or PKCS12 certificate file including private key|X
-|`AZURE_CLIENT_CERTIFICATE_PASSWORD`|password of the certificate file, if any|
-|`AZURE_CLIENT_SEND_CERTIFICATE_CHAIN`|If `True`, the credential sends the public certificate chain in the x5c header of each token request's JWT. This is required for Subject Name/Issuer (SNI) authentication. Defaults to False. There's a [known limitation](https://github.com/Azure/azure-sdk-for-python/issues/13349) that async SNI authentication isn't supported.|
-
-### Username and password
-
-|Variable name|Value
-|-|-
-|`AZURE_CLIENT_ID`|ID of a Microsoft Entra application
-|`AZURE_USERNAME`|a username (usually an email address)
-|`AZURE_PASSWORD`|that user's password
-
-Configuration is attempted in the preceding order. For example, if values for a client secret and certificate are both present, the client secret is used.
-</!-->
-
-<!-- ?: I don't believe we've enable CAE yet as I don't see the option anywhere>
-## Continuous Access Evaluation
-
-As of version 1.14.0, accessing resources protected by [Continuous Access Evaluation (CAE)][cae] is possible on a per-request basis. This behavior can be enabled by setting the `enable_cae` keyword argument to `True` in the credential's `get_token` method. CAE isn't supported for developer and managed identity credentials.
-</!-->
-
-<!-- ?: Does our identity library support token caching at this time?>
-## Token caching
-
-Token caching is a feature provided by the Azure Identity library that allows apps to:
-
-* Cache tokens in memory (default) or on disk (opt-in).
-* Improve resilience and performance.
-* Reduce the number of requests made to Microsoft Entra ID to obtain access tokens.
-
-The Azure Identity library offers both in-memory and persistent disk caching. For more information, see the [token caching documentation](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/identity/azure-identity/TOKEN_CACHING.md).
-</!-->
-
-<!-- ?: We don't offer an identity broker library and I don't know if we have plans to ever offer one.>
-## Brokered authentication
-
-An authentication broker is an application that runs on a user’s machine and manages the authentication handshakes and token maintenance for connected accounts. Currently, only the Windows Web Account Manager (WAM) is supported. To enable support, use the [`azure-identity-broker`][azure_identity_broker] package. For details on authenticating using WAM, see the [broker plugin documentation][azure_identity_broker_readme].
-</!-->
-
-<!-- TODO: Add back in when we have a troubleshooting guide for the identity library.>
-## Troubleshooting
-
-See the [troubleshooting guide][troubleshooting_guide] for details on how to diagnose various failure scenarios.
-</!-->
-
-<!-- TODO: Update with info on error types returned when there is a lack of data or when authentication fails>
-### Error handling
-
-Credentials raise `CredentialUnavailableError` when they're unable to attempt authentication because they lack required data or state. For example, [EnvironmentCredential][environment_cred_ref] raises this exception when [its configuration](#environment-variables "its configuration") is incomplete.
-
-Credentials raise `azure.core.exceptions.ClientAuthenticationError` when they fail to authenticate. `ClientAuthenticationError` has a `message` attribute, which describes why authentication failed. When raised by `DefaultAzureCredential` or `ChainedTokenCredential`, the message collects error messages from each credential in the chain.
-
-For more information on handling specific Microsoft Entra ID errors, see the Microsoft Entra ID [error code documentation](https://learn.microsoft.com/entra/identity-platform/reference-error-codes).
-</!-->
-
-<!-- TODO: Update with info on hwo to configure logging with the identity crate.>
-### Logging
-
-This library uses the standard [logging](https://docs.python.org/3/library/logging.html) library for logging. Credentials log basic information, including HTTP sessions (URLs, headers, etc.) at INFO level. These log entries don't contain authentication secrets.
-
-Detailed DEBUG-level logging, including request/response bodies and header values, isn't enabled by default. It can be enabled with the `logging_enable` argument. For example:
-
-```python
-credential = DefaultAzureCredential(logging_enable=True)
-```
-
-> CAUTION: DEBUG-level logs from credentials contain sensitive information.
-> These logs must be protected to avoid compromising account security.
-</!-->
 
 ## Next steps
 
@@ -251,7 +118,6 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 <!-- LINKS -->
 [Azure CLI]: https://learn.microsoft.com/cli/azure
 [azure_data_cosmos]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos
-[Azure Developer CLI]: https://learn.microsoft.com/azure/developer/azure-developer-cli/
 [Azure subscription]: https://azure.microsoft.com/free/
 [cert_cred_ref]: <!-- TODO: When Docs.rs page for ClientCertificateCredential ref docs are available -->
 [cli_cred_ref]: <!-- TODO: When Docs.rs page for AzureCliCredential ref docs are available>
@@ -264,41 +130,3 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [token_cred_ref]: <!-- TODO: When Docs.rs page for TokenCredential trait ref docs are available -->
 [workload_id_cred_ref]: <!-- TODO: When Docs.rs page for WorkloadIdentityCredential ref docs are available -->
-
-<!-- LINKS from Python Example for reference>
-[auth_code_cred_ref]: https://aka.ms/azsdk/python/identity/authorizationcodecredential
-[az_pipelines_cred_ref]: https://aka.ms/azsdk/python/identity/azurepipelinescredential
-[azd_cli_cred_ref]: https://aka.ms/azsdk/python/identity/azuredeveloperclicredential
-[azure_cli]: https://learn.microsoft.com/cli/azure
-[azure_developer_cli]:https://aka.ms/azure-dev
-[azure_core_transport_doc]: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/core/azure-core/CLIENT_LIBRARY_DEVELOPER.md#transport
-[azure_identity_broker]: https://pypi.org/project/azure-identity-broker
-[azure_identity_broker_readme]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/identity/azure-identity-broker
-[azure_eventhub]: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/eventhub/azure-eventhub
-[azure_keyvault_secrets]: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/keyvault/azure-keyvault-secrets
-[azure_storage_blob]: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/storage/azure-storage-blob
-[b2c]: https://learn.microsoft.com/azure/active-directory-b2c/overview
-[cae]: https://learn.microsoft.com/entra/identity/conditional-access/concept-continuous-access-evaluation
-[cert_cred_ref]: https://aka.ms/azsdk/python/identity/certificatecredential
-[chain_cred_ref]: https://aka.ms/azsdk/python/identity/chainedtokencredential
-[cli_cred_ref]: https://aka.ms/azsdk/python/identity/azclicredential
-[client_assertion_cred_ref]: https://aka.ms/azsdk/python/identity/clientassertioncredential
-[client_secret_cred_ref]: https://aka.ms/azsdk/python/identity/clientsecretcredential
-[ctc_overview]: https://aka.ms/azsdk/python/identity/credential-chains#chainedtokencredential-overview
-[dac_overview]: https://aka.ms/azsdk/python/identity/credential-chains#defaultazurecredential-overview
-[default_cred_ref]: https://aka.ms/azsdk/python/identity/defaultazurecredential
-[device_code_cred_ref]: https://aka.ms/azsdk/python/identity/devicecodecredential
-[environment_cred_ref]: https://aka.ms/azsdk/python/identity/environmentcredential
-[interactive_cred_ref]: https://aka.ms/azsdk/python/identity/interactivebrowsercredential
-[managed_id_cred_ref]: https://aka.ms/azsdk/python/identity/managedidentitycredential
-[obo_cred_ref]: https://aka.ms/azsdk/python/identity/onbehalfofcredential
-[powershell_cred_ref]: https://aka.ms/azsdk/python/identity/powershellcredential
-[ref_docs]: https://aka.ms/azsdk/python/identity/docs
-[ref_docs_aio]: https://aka.ms/azsdk/python/identity/aio/docs
-[token_cred_ref]: https://learn.microsoft.com/python/api/azure-core/azure.core.credentials.tokencredential?view=azure-python
-[supports_token_info_ref]: https://learn.microsoft.com/python/api/azure-core/azure.core.credentials.supportstokeninfo?view=azure-python
-[troubleshooting_guide]: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/identity/azure-identity/TROUBLESHOOTING.md
-[userpass_cred_ref]: https://aka.ms/azsdk/python/identity/usernamepasswordcredential
-[vscode_cred_ref]: https://aka.ms/azsdk/python/identity/vscodecredential
-[workload_id_cred_ref]: https://aka.ms/azsdk/python/identity/workloadidentitycredential
-</!-->
