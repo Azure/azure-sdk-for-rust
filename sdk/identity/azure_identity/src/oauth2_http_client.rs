@@ -6,7 +6,7 @@
 
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
-    Body, Bytes, HttpClient, Request,
+    Body, Bytes, HttpClient, Request, Url,
 };
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 use tracing::warn;
@@ -26,16 +26,13 @@ impl Oauth2HttpClient {
         oauth2_request: oauth2::HttpRequest,
     ) -> Result<oauth2::HttpResponse, azure_core::error::Error> {
         let method = try_from_method(oauth2_request.method())?;
-        let url = match url::Url::parse(&oauth2_request.uri().to_string()) {
-            Ok(url) => url,
-            Err(e) => {
-                return Err(azure_core::error::Error::full(
-                    ErrorKind::Other,
-                    e,
-                    "Failed to parse the http::Uri as a url::Url",
-                ))
-            }
-        };
+        let url: Url = oauth2_request.uri().to_string().parse().map_err(|e| {
+            Error::full(
+                ErrorKind::Other,
+                e,
+                "Failed to parse the http::Uri as a url::Url",
+            )
+        })?;
         let mut request = Request::new(url, method);
         for (name, value) in to_headers(oauth2_request.headers()) {
             request.insert_header(name, value);
