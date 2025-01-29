@@ -60,12 +60,12 @@ More details on configuring your environment to use `DefaultAzureCredential` can
 This example demonstrates authenticating the `CosmosClient` from the [azure_data_cosmos] library using `DefaultAzureCredential`.
 
 ```rust
-use azure_data_cosmos::CosmosClient;
 use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::SecretClient;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
-    let client = CosmosClient::new("https://myaccount.documents.azure.com/", credential.clone(), None)?;
+    let client = SecretClient::new("https://myaccount.documents.azure.com/", credential.clone(), None)?;
 }
 ```
 
