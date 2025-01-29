@@ -6,7 +6,35 @@ $packagePattern = "Cargo.toml"
 $GithubUri = "https://github.com/Azure/azure-sdk-for-rust"
 $PackageRepositoryUri = "https://crates.io/crates"
 
-function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
+function SetPackageVersion ($PackageName, $Version, $ServiceDirectory, $ReleaseDate, $ReplaceLatestEntryTitle=$true)
+{
+  if($null -eq $ReleaseDate)
+  {
+    $ReleaseDate = Get-Date -Format "yyyy-MM-dd"
+  }
+  & "$EngDir/scripts/Update-PackageVersion.ps1" -ServiceDirectory $ServiceDirectory -PackageName $PackageName `
+      -NewVersionString $Version -ReleaseDate $ReleaseDate -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle
+}
+
+function GetExistingPackageVersions ($PackageName, $GroupId=$null)
+{
+  try {
+    $PackageName = $PackageName.ToLower()
+    $response = Invoke-RestMethod -Method GET -Uri "https://crates.io/api/v1/crates/${PackageName}/versions"
+    $existingVersions = $response.versions | Sort-Object -Property created_at
+    return $existingVersions.num
+  }
+  catch {
+    if ($_.Exception.Response.StatusCode -ne 404)
+    {
+      LogError "Failed to retrieve package versions for ${PackageName}. $($_.Exception.Message)"
+    }
+    return $null
+  }
+}
+
+function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory)
+{
   $allPackageProps = @()
   Push-Location $RepoRoot
   try {
