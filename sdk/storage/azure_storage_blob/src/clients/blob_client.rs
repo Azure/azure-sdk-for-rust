@@ -3,10 +3,12 @@
 
 use crate::{
     models::BlobProperties, pipeline::StorageHeadersPolicy, BlobBlobClientDownloadOptions,
-    BlobBlobClientGetPropertiesOptions, BlobClientOptions, GeneratedBlobClient,
+    BlobBlobClientGetPropertiesOptions, BlobBlockBlobClientUploadOptions, BlobClientOptions,
+    GeneratedBlobClient,
 };
 use azure_core::{
-    credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Response, Result, Url,
+    credentials::TokenCredential, BearerTokenCredentialPolicy, Bytes, Policy, RequestContent,
+    Response, Result, Url,
 };
 use std::sync::Arc;
 
@@ -74,6 +76,30 @@ impl BlobClient {
             .client
             .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
             .download(options)
+            .await?;
+        Ok(response)
+    }
+
+    // For now, this is single-shot, block blob hot path only.
+    pub async fn upload_blob(
+        &self,
+        data: RequestContent<Bytes>,
+        overwrite: Option<bool>,
+        content_length: Option<i64>,
+        options: Option<BlobBlockBlobClientUploadOptions<'_>>,
+    ) -> Result<Response<()>> {
+        let mut options = options.unwrap_or_default();
+        let content_length = content_length.unwrap_or(data.body().len() as i64);
+
+        // Check if they want overwrite, by default overwrite=False
+        if !overwrite.unwrap_or(false) {
+            options.if_none_match = Some(String::from("*"));
+        }
+
+        let response = self
+            .client
+            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
+            .upload(data, content_length, Some(options))
             .await?;
         Ok(response)
     }

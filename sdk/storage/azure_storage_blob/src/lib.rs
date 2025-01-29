@@ -16,5 +16,6 @@ pub use crate::blob_client::BlobClientOptions;
 pub use crate::generated::clients::blob_blob_client::{
     BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions,
 };
+pub use crate::generated::clients::blob_block_blob_client::BlobBlockBlobClientUploadOptions;
 pub(crate) use crate::generated::clients::*;
 pub(crate) use blob_client::BlobClient as GeneratedBlobClient;

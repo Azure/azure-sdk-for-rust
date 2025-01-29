@@ -597,6 +597,13 @@ impl BlobBlockBlobClient {
         if let Some(blob_tags_string) = options.blob_tags_string {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
+
+        // Generated Code Issue
+        // Issue: MissingRequiredHeader -- "x-ms-blob-type"
+        // [Proposed Change Start]
+        request.insert_header("x-ms-blob-type", "BlockBlob");
+        // [Proposed Change End]
+
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
         self.pipeline.send(&ctx, &mut request).await
