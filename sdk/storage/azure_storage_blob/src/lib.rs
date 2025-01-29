@@ -12,7 +12,11 @@ pub use clients::*;
 
 pub mod models;
 
-pub use crate::blob_client::BlobClientOptions;
+pub(crate) use crate::generated::clients::{
+    blob_append_blob_client, blob_blob_client, blob_block_blob_client,
+    blob_client::BlobClient as GeneratedBlobClient, blob_container_client, blob_page_blob_client,
+    blob_service_client,
+};
+
 pub use crate::generated::clients::blob_blob_client::BlobBlobClientGetPropertiesOptions;
-pub(crate) use crate::generated::clients::*;
-pub(crate) use blob_client::BlobClient as GeneratedBlobClient;
+pub use crate::generated::clients::blob_client::BlobClientOptions;
