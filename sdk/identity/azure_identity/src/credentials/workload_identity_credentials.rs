@@ -7,7 +7,7 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     Error, HttpClient, Url,
 };
-use std::{str, sync::Arc, time::Duration};
+use std::{borrow::Cow, path::PathBuf, str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
@@ -21,12 +21,40 @@ const AZURE_FEDERATED_TOKEN: &str = "AZURE_FEDERATED_TOKEN";
 /// <https://learn.microsoft.com/azure/active-directory/develop/quickstart-configure-app-access-web-apis#add-credentials-to-your-web-application>
 
 #[derive(Debug)]
+pub enum FederatedToken {
+    Token(Secret),
+    TokenFile(PathBuf),
+}
+
+impl FederatedToken {
+    fn get(&self) -> azure_core::Result<Cow<'_, str>> {
+        match self {
+            Self::Token(token) => Ok(token.secret().into()),
+            Self::TokenFile(token_file) => Ok(std::fs::read_to_string(token_file)
+                .with_context(ErrorKind::Credential, || {
+                    format!(
+                        "failed to read federated token from file {}",
+                        token_file.as_os_str().to_string_lossy()
+                    )
+                })?
+                .into()),
+        }
+    }
+}
+
+impl From<Secret> for FederatedToken {
+    fn from(value: Secret) -> Self {
+        FederatedToken::Token(value)
+    }
+}
+
+#[derive(Debug)]
 pub struct WorkloadIdentityCredential {
     http_client: Arc<dyn HttpClient>,
     authority_host: Url,
     tenant_id: String,
     client_id: String,
-    token: Secret,
+    token: FederatedToken,
     cache: TokenCache,
 }
 
@@ -40,7 +68,7 @@ impl WorkloadIdentityCredential {
         token: T,
     ) -> azure_core::Result<Arc<Self>>
     where
-        T: Into<Secret>,
+        T: Into<FederatedToken>,
     {
         Ok(Arc::new(Self {
             http_client,
@@ -83,51 +111,30 @@ impl WorkloadIdentityCredential {
                     )
                 })?;
 
-        if let Ok(token) = env
+        let token = if let Ok(token) = env
             .var(AZURE_FEDERATED_TOKEN)
             .map_kind(ErrorKind::Credential)
         {
-            return WorkloadIdentityCredential::new(
-                http_client,
-                authority_host,
-                tenant_id,
-                client_id,
-                token,
-            );
-        }
-
-        if let Ok(token_file) = env
+            FederatedToken::Token(token.into())
+        } else if let Ok(token_file) = env
             .var(AZURE_FEDERATED_TOKEN_FILE)
             .map_kind(ErrorKind::Credential)
         {
-            let token = std::fs::read_to_string(token_file.clone()).with_context(
-                ErrorKind::Credential,
-                || {
-                    format!(
-                        "failed to read federated token from file {}",
-                        token_file.as_str()
-                    )
-                },
-            )?;
-            return WorkloadIdentityCredential::new(
-                http_client,
-                authority_host,
-                tenant_id,
-                client_id,
-                token,
-            );
-        }
+            FederatedToken::TokenFile(PathBuf::from(token_file))
+        } else {
+            return Err(Error::with_message(ErrorKind::Credential, || {
+                format!("working identity credential requires {AZURE_FEDERATED_TOKEN} or {AZURE_FEDERATED_TOKEN_FILE} environment variables")
+            }));
+        };
 
-        Err(Error::with_message(ErrorKind::Credential, || {
-            format!("working identity credential requires {AZURE_FEDERATED_TOKEN} or {AZURE_FEDERATED_TOKEN_FILE} environment variables")
-        }))
+        WorkloadIdentityCredential::new(http_client, authority_host, tenant_id, client_id, token)
     }
 
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         let res: AccessToken = federated_credentials_flow::authorize(
             self.http_client.clone(),
             &self.client_id,
-            self.token.secret(),
+            &self.token.get()?,
             scopes,
             &self.tenant_id,
             &self.authority_host,
