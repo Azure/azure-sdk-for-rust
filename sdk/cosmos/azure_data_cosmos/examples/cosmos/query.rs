@@ -24,7 +24,7 @@ enum Subcommands {
         query: String,
 
         /// The partition key to use when querying the container. Currently this only supports a single string partition key.
-        #[clap(long, short)]
+        #[arg(long, short)]
         partition_key: String,
     },
     Databases {

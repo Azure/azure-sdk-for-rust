@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 //cspell: words amqp
 
-use super::messaging::{AmqpMessage, AmqpSource, AmqpTarget};
+use super::messaging::{AmqpDelivery, AmqpSource, AmqpTarget};
 use super::session::AmqpSession;
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use super::ReceiverSettleMode;
@@ -55,8 +55,23 @@ pub trait AmqpReceiverApis {
         source: impl Into<AmqpSource>,
         options: Option<AmqpReceiverOptions>,
     ) -> impl std::future::Future<Output = Result<()>>;
+
     fn detach(self) -> impl std::future::Future<Output = Result<()>>;
-    fn receive(&self) -> impl std::future::Future<Output = Result<AmqpMessage>>;
+    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()>;
+    fn credit_mode(&self) -> Result<ReceiverCreditMode>;
+    fn receive_delivery(&self) -> impl std::future::Future<Output = Result<AmqpDelivery>>;
+    fn accept_delivery(
+        &self,
+        delivery: &AmqpDelivery,
+    ) -> impl std::future::Future<Output = Result<()>>;
+    fn reject_delivery(
+        &self,
+        delivery: &AmqpDelivery,
+    ) -> impl std::future::Future<Output = Result<()>>;
+    fn release_delivery(
+        &self,
+        delivery: &AmqpDelivery,
+    ) -> impl std::future::Future<Output = Result<()>>;
 }
 
 #[derive(Default)]
@@ -76,8 +91,29 @@ impl AmqpReceiverApis for AmqpReceiver {
     async fn detach(self) -> Result<()> {
         self.implementation.detach().await
     }
-    async fn receive(&self) -> Result<AmqpMessage> {
-        self.implementation.receive().await
+
+    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()> {
+        self.implementation.set_credit_mode(credit_mode)
+    }
+
+    fn credit_mode(&self) -> Result<ReceiverCreditMode> {
+        self.implementation.credit_mode()
+    }
+
+    async fn receive_delivery(&self) -> Result<AmqpDelivery> {
+        self.implementation.receive_delivery().await
+    }
+
+    async fn accept_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
+        self.implementation.accept_delivery(delivery).await
+    }
+
+    async fn reject_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
+        self.implementation.reject_delivery(delivery).await
+    }
+
+    async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
+        self.implementation.release_delivery(delivery).await
     }
 }
 
@@ -91,6 +127,7 @@ impl AmqpReceiver {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
@@ -220,4 +257,25 @@ mod tests {
         );
         assert!(!receiver_options.auto_accept);
     }
+
+    // #[test]
+    // async fn test_amqp_receiver_set_credit_mode() {
+    //     let receiver = AmqpReceiver::new();
+
+    //     receiver.attach(session, source, options)
+    //     receiver.set_credit_mode(ReceiverCreditMode::Manual);
+
+    //     // Assuming the implementation has a method to get the current credit mode for testing purposes
+    //     assert_eq!(
+    //         receiver.implementation.get_credit_mode(),
+    //         ReceiverCreditMode::Manual
+    //     );
+
+    //     receiver.set_credit_mode(ReceiverCreditMode::Auto(100));
+
+    //     assert_eq!(
+    //         receiver.implementation.get_credit_mode(),
+    //         ReceiverCreditMode::Auto(100)
+    //     );
+    // }
 }

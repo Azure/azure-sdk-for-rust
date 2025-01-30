@@ -247,6 +247,12 @@ impl From<std::io::Error> for Error {
     }
 }
 
+impl From<std::num::ParseIntError> for Error {
+    fn from(error: std::num::ParseIntError) -> Self {
+        Self::new(ErrorKind::DataConversion, error)
+    }
+}
+
 impl From<base64::DecodeError> for Error {
     fn from(error: base64::DecodeError) -> Self {
         Self::new(ErrorKind::DataConversion, error)
@@ -287,12 +293,10 @@ impl From<core::convert::Infallible> for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.context {
-            ErrorContext::Simple(kind) => write!(f, "{kind}"),
-            ErrorContext::Message { message, .. } => write!(f, "{message}"),
-            ErrorContext::Custom(Custom { error, .. }) => write!(f, "{error}"),
-            ErrorContext::Full(_, message) => {
-                write!(f, "{message}")
-            }
+            ErrorContext::Simple(kind) => std::fmt::Display::fmt(&kind, f),
+            ErrorContext::Message { message, .. } => f.write_str(message),
+            ErrorContext::Custom(Custom { error, .. }) => std::fmt::Display::fmt(&error, f),
+            ErrorContext::Full(_, message) => f.write_str(message),
         }
     }
 }

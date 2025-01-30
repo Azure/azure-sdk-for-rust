@@ -24,7 +24,7 @@ use azure_core_amqp::{
     cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis},
     connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
     management::{AmqpManagement, AmqpManagementApis},
-    messaging::{AmqpSource, AmqpSourceFilter},
+    messaging::{AmqpDeliveryApis, AmqpSource, AmqpSourceFilter},
     receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::{AmqpSession, AmqpSessionApis},
     value::{AmqpDescribed, AmqpOrderedMap, AmqpSymbol, AmqpValue},
@@ -293,8 +293,11 @@ impl ConsumerClient {
             .await?;
 
             loop{
-                let message = receiver.receive().await?;
-                let event: ReceivedEventData= message.into();
+                let delivery = receiver.receive_delivery().await?;
+
+                receiver.accept_delivery(&delivery).await?;
+                let message = delivery.into_message();
+                let event = ReceivedEventData::from(message);
                 yield event;
             }
         }

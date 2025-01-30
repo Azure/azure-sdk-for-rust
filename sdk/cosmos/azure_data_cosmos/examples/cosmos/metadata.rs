@@ -13,7 +13,7 @@ pub struct MetadataCommand {
     database: String,
 
     /// Optionally, the container to fetch information for.
-    #[clap(long, short)]
+    #[arg(long, short)]
     container: Option<String>,
 }
 

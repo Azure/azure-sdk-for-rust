@@ -4,7 +4,7 @@
 use crate::{
     clients::ContainerClient,
     models::{
-        ContainerProperties, ContainerQueryResults, DatabaseProperties, Item, ThroughputProperties,
+        ContainerProperties, ContainerQueryResults, DatabaseProperties, ThroughputProperties,
     },
     options::ReadDatabaseOptions,
     pipeline::CosmosPipeline,
@@ -61,13 +61,13 @@ impl DatabaseClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # async fn doc() {
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # use azure_data_cosmos::clients::DatabaseClient;
     /// # let database_client: DatabaseClient = panic!("this is a non-running example");
     /// let response = database_client.read(None)
-    ///     .await.unwrap()
+    ///     .await?
     ///     .into_body()
-    ///     .await.unwrap();
+    ///     .await?;
     /// # }
     /// ```
     pub async fn read(
@@ -95,12 +95,12 @@ impl DatabaseClient {
     /// This allows simple queries without parameters to be expressed easily:
     ///
     /// ```rust,no_run
-    /// # async fn doc() {
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # use azure_data_cosmos::clients::DatabaseClient;
     /// # let db_client: DatabaseClient = panic!("this is a non-running example");
     /// let containers = db_client.query_containers(
     ///     "SELECT * FROM dbs",
-    ///     None).unwrap();
+    ///     None)?;
     /// # }
     /// ```
     ///
@@ -133,7 +133,7 @@ impl DatabaseClient {
         &self,
         properties: ContainerProperties,
         options: Option<CreateContainerOptions<'_>>,
-    ) -> azure_core::Result<Response<Item<ContainerProperties>>> {
+    ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
         let mut req = Request::new(url, Method::Post);

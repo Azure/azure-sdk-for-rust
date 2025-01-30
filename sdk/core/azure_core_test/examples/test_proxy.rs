@@ -14,12 +14,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = Args::parse();
 
-    tracing_subscriber::fmt()
-        // Default trace level based on command line arguments.
-        .with_max_level(args.trace_level())
-        // RUST_LOG environment variable can override trace level.
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .init();
+    let filter = tracing_subscriber::EnvFilter::builder()
+        .with_default_directive(args.trace_level().into())
+        .from_env_lossy();
+    tracing_subscriber::fmt().with_env_filter(filter).init();
 
     let mut proxy = proxy::start(env!("CARGO_MANIFEST_DIR"), Some(args.into())).await?;
 
@@ -52,13 +50,17 @@ struct Args {
     #[arg(long)]
     insecure: bool,
 
+    /// Number of seconds to automatically shut down when no activity.
+    #[arg(long, default_value_t = 300)]
+    pub auto_shutdown_in_seconds: u32,
+
     /// Enable verbose logging.
     #[arg(short, long)]
     verbose: bool,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl Args {
+    #[cfg(not(target_arch = "wasm32"))]
     fn trace_level(&self) -> tracing::level_filters::LevelFilter {
         if self.verbose {
             return tracing::level_filters::LevelFilter::DEBUG;
@@ -72,6 +74,7 @@ impl From<Args> for azure_core_test::proxy::ProxyOptions {
     fn from(args: Args) -> Self {
         Self {
             insecure: args.insecure,
+            auto_shutdown_in_seconds: args.auto_shutdown_in_seconds,
         }
     }
 }

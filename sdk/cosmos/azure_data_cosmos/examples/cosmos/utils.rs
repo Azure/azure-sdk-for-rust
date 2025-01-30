@@ -4,15 +4,15 @@ use clap::Args;
 #[derive(Args, Clone)]
 pub struct ThroughputOptions {
     /// Enables autoscaling and sets the maximum RUs to support. Cannot be used if `--manual` is set.
-    #[clap(long)]
+    #[arg(long)]
     autoscale: Option<usize>,
 
     /// Sets the increment percentage for autoscale. Ignored unless `--autoscale` is set.
-    #[clap(long)]
+    #[arg(long)]
     autoscale_increment: Option<usize>,
 
     /// Provisions manual throughput, specifying the number of RUs.
-    #[clap(long)]
+    #[arg(long)]
     manual: Option<usize>,
 }
 

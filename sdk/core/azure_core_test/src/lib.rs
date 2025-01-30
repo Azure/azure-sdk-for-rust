@@ -3,20 +3,14 @@
 
 #![doc = include_str!("../README.md")]
 
-#[cfg(not(target_arch = "wasm32"))]
 pub mod proxy;
-#[cfg(not(target_arch = "wasm32"))]
 pub mod recorded;
-mod sanitizers;
-mod transport;
+mod recording;
 
 pub use azure_core::test::TestMode;
-use azure_core::{ClientOptions, TransportOptions};
-pub use sanitizers::*;
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+pub use proxy::{matchers::*, sanitizers::*};
+pub use recording::*;
+use std::path::{Path, PathBuf};
 
 const SPAN_TARGET: &str = "test-proxy";
 
@@ -24,55 +18,22 @@ const SPAN_TARGET: &str = "test-proxy";
 ///
 /// This context is required for any recorded tests not attributed as `#[recorded::test(live)]`
 /// to setup up the HTTP client to record or play back session records.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct TestContext {
-    test_mode: TestMode,
     crate_dir: &'static Path,
     test_name: &'static str,
+    recording: Option<Recording>,
 }
 
 impl TestContext {
     /// Not intended for use outside the `azure_core` crates.
     #[doc(hidden)]
-    pub fn new(test_mode: TestMode, crate_dir: &'static str, test_name: &'static str) -> Self {
+    pub fn new(crate_dir: &'static str, test_name: &'static str) -> Self {
         Self {
-            test_mode,
             crate_dir: Path::new(crate_dir),
             test_name,
+            recording: None,
         }
-    }
-
-    /// Instruments the [`ClientOptions`] to support recording and playing back of session records.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// use azure_core_test::{recorded, TestContext};
-    ///
-    /// # struct MyClient;
-    /// # #[derive(Default)]
-    /// # struct MyClientOptions { client_options: azure_core::ClientOptions };
-    /// # impl MyClient {
-    /// #   fn new(endpoint: impl AsRef<str>, options: Option<MyClientOptions>) -> Self { todo!() }
-    /// #   async fn invoke(&self) -> azure_core::Result<()> { todo!() }
-    /// # }
-    /// #[recorded::test]
-    /// async fn test_invoke(ctx: TestContext) -> azure_core::Result<()> {
-    ///     let mut options = MyClientOptions::default();
-    ///     ctx.instrument(&mut options.client_options);
-    ///
-    ///     let client = MyClient::new("https://azure.net", Some(options));
-    ///     client.invoke().await
-    /// }
-    /// ```
-    pub fn instrument(&self, options: &mut ClientOptions) {
-        let transport = options.transport.clone().unwrap_or_default();
-        options.transport = Some(TransportOptions::new_custom_policy(Arc::new(
-            transport::ProxyTransportPolicy {
-                inner: transport,
-                mode: self.test_mode,
-            },
-        )));
     }
 
     /// Gets the root directory of the crate under test.
@@ -80,14 +41,20 @@ impl TestContext {
         self.crate_dir
     }
 
+    /// Gets the [`Recording`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if a recording or playback has not been started.
+    pub fn recording(&self) -> &Recording {
+        self.recording
+            .as_ref()
+            .expect("not recording or playback started")
+    }
+
     /// Gets the test data directory under [`Self::crate_dir`].
     pub fn test_data_dir(&self) -> PathBuf {
         self.crate_dir.join("tests/data")
-    }
-
-    /// Gets the current [`TestMode`].
-    pub fn test_mode(&self) -> TestMode {
-        self.test_mode
     }
 
     /// Gets the current test function name.
@@ -116,12 +83,8 @@ mod tests {
 
     #[test]
     fn test_content_new() {
-        let ctx = TestContext::new(
-            TestMode::default(),
-            env!("CARGO_MANIFEST_DIR"),
-            "test_content_new",
-        );
-        assert_eq!(ctx.test_mode(), TestMode::Playback);
+        let ctx = TestContext::new(env!("CARGO_MANIFEST_DIR"), "test_content_new");
+        assert!(ctx.recording.is_none());
         assert!(ctx
             .crate_dir()
             .to_str()
