@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::{convert::Infallible, str::FromStr};
+
 use super::{
     matchers::Matcher,
     models::{PlaybackStartResult, RecordStartResult, StartPayload, VariablePayload},
@@ -190,6 +192,19 @@ impl Header for &RecordingId {
 
     fn value(&self) -> HeaderValue {
         self.0.clone().into()
+    }
+}
+
+impl AsRef<str> for RecordingId {
+    fn as_ref(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+impl FromStr for RecordingId {
+    type Err = Infallible;
+    fn from_str(value: &str) -> std::result::Result<Self, Self::Err> {
+        Ok(RecordingId(value.to_string()))
     }
 }
 

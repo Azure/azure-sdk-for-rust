@@ -4,7 +4,7 @@
 //! Wrappers for the [Test Proxy](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md) service.
 pub(crate) mod client;
 pub(crate) mod matchers;
-mod models;
+pub(crate) mod models;
 pub(crate) mod policy;
 pub(crate) mod sanitizers;
 

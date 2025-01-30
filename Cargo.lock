@@ -369,7 +369,9 @@ dependencies = [
  "async-trait",
  "azure_core",
  "azure_core_test_macros",
+ "azure_identity",
  "clap",
+ "futures",
  "serde",
  "serde_json",
  "tokio",
@@ -463,6 +465,7 @@ version = "0.1.0"
 dependencies = [
  "async-std",
  "azure_core",
+ "azure_core_test",
  "azure_identity",
  "futures",
  "rand 0.8.5",

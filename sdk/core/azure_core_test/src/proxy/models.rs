@@ -82,6 +82,13 @@ pub struct VariablePayload {
     pub variables: HashMap<String, String>,
 }
 
+impl TryFrom<VariablePayload> for RequestContent<VariablePayload> {
+    type Error = azure_core::Error;
+    fn try_from(value: VariablePayload) -> Result<Self, Self::Error> {
+        RequestContent::try_from(to_json(&value)?)
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct PlaybackStartResult {
     #[serde(skip)]

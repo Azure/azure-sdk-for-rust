@@ -282,7 +282,6 @@ pub struct SecretRestoreParameters {
 
 /// The secret set parameters.
 #[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
-#[non_exhaustive]
 pub struct SecretSetParameters {
     /// Type of the secret value such as a password.
     #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
