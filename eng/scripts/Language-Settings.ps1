@@ -43,7 +43,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory)
     $searchPath = Join-Path $RepoRoot 'sdk' -Resolve
 
     if ($ServiceDirectory -and $ServiceDirectory -ne 'auto') {
-      $searchPath = Join-Path 'sdk' $ServiceDirectory
+      $searchPath = Join-Path 'sdk' $ServiceDirectory -Resolve
     }
 
     $packages = cargo metadata --format-version 1
