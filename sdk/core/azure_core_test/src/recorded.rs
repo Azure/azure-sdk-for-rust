@@ -47,7 +47,7 @@ pub async fn start(
                     })
                     .await
                     .as_ref()
-                    .map(|proxy| proxy.clone())
+                    .map(Clone::clone)
                     .map_err(|err| azure_core::Error::new(err.kind().clone(), err))?,
             ),
         }

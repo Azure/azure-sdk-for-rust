@@ -224,7 +224,7 @@ mod tests {
     fn parse_recorded_playback() {
         let attr = TokenStream::new();
         let item = quote! {
-            async fn recorded() {
+            async fn recorded() -> azure_core::Result<()> {
                 todo!()
             }
         };
@@ -235,7 +235,7 @@ mod tests {
     fn parse_recorded_playback_with_context() {
         let attr = TokenStream::new();
         let item = quote! {
-            async fn recorded(ctx: TestContext) {
+            async fn recorded(ctx: TestContext) -> azure_core::Result<()> {
                 todo!()
             }
         };
@@ -246,7 +246,7 @@ mod tests {
     fn parse_recorded_playback_with_multiple() {
         let attr = TokenStream::new();
         let item = quote! {
-            async fn recorded(ctx: TestContext, name: &'static str) {
+            async fn recorded(ctx: TestContext, name: &'static str)- > azure_core::Result<()> {
                 todo!()
             }
         };
@@ -257,7 +257,7 @@ mod tests {
     fn parse_recorded_live() {
         let attr = quote! { live };
         let item = quote! {
-            async fn live_only() {
+            async fn live_only() -> azure_core::Result<()> {
                 todo!()
             }
         };
@@ -268,7 +268,7 @@ mod tests {
     fn parse_recorded_live_with_context() {
         let attr = quote! { live };
         let item = quote! {
-            async fn live_only(ctx: TestContext) {
+            async fn live_only(ctx: TestContext) -> azure_core::Result<()> {
                 todo!()
             }
         };
