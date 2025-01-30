@@ -21,8 +21,10 @@ function GetExistingPackageVersions ($PackageName, $GroupId=$null)
   try {
     $PackageName = $PackageName.ToLower()
     $response = Invoke-RestMethod -Method GET -Uri "https://crates.io/api/v1/crates/${PackageName}/versions"
-    $existingVersions = $response.versions | Sort-Object -Property created_at
-    return $existingVersions.num
+    $existingVersions = $response.versions `
+    | Sort-Object { [AzureEngSemanticVersion]::new($_.num) } `
+    | Select-Object -ExpandProperty num
+    return $existingVersions
   }
   catch {
     if ($_.Exception.Response.StatusCode -ne 404)
