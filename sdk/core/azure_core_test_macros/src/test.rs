@@ -5,12 +5,14 @@ use azure_core::test::TestMode;
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::sync::LazyLock;
-use syn::{parse::Parse, spanned::Spanned, FnArg, ItemFn, Meta, PatType, Result, Token};
+use syn::{
+    parse::Parse, spanned::Spanned, FnArg, ItemFn, Meta, PatType, Result, ReturnType, Token,
+};
 
 const INVALID_RECORDED_ATTRIBUTE_MESSAGE: &str =
     "expected `#[recorded::test]` or `#[recorded::test(live)]`";
 const INVALID_RECORDED_FUNCTION_MESSAGE: &str =
-    "expected `async fn(TestContext)` function signature with optional `Result<T, E>` return";
+    "expected `async fn(TestContext)` function signature with `Result<T, E>` return";
 
 // cspell:ignore asyncness
 pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
@@ -31,6 +33,14 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
             ))
         }
     };
+
+    // Assumes the return type is a `Result<T, E>` since that's all `#[test]`s support currently.
+    if let ReturnType::Default = original_sig.output {
+        return Err(syn::Error::new(
+            original_sig.output.span(),
+            INVALID_RECORDED_FUNCTION_MESSAGE,
+        ));
+    }
 
     // Ignore live-only tests if not running live tests.
     let test_mode = *TEST_MODE;

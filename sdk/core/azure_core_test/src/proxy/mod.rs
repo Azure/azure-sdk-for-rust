@@ -96,7 +96,7 @@ mod bootstrap {
             v = wait_till_listening(&mut stdout) => { v? },
             _ = tokio::time::sleep(max_seconds) => {
                 command.kill().await?;
-                return Err(azure_core::Error::message(ErrorKind::Other, "timeout waiting for test-proxy to start"));
+                return Err(azure_core::Error::message(ErrorKind::Other, "timed out waiting for test-proxy to start"));
             },
         };
 

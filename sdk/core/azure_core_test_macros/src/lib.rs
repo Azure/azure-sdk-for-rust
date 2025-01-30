@@ -11,20 +11,19 @@ use proc_macro::TokenStream;
 ///
 /// # Examples
 ///
-/// For live or recorded tests, you must be async and accept a `TestContext`.
-/// You may return a `Result<T, E>`.
+/// For live or recorded tests, you must declare an async function that accepts a `TestContext` and returns a `Result<T, E>`.
 ///
 /// ```
+/// use azure_core::Result;
 /// use azure_core_test::{recorded, TestContext};
 ///
 /// #[recorded::test]
-/// async fn test(ctx: TestContext) {
+/// async fn test(ctx: TestContext) -> Result<()> {
 ///     todo!()
 /// }
 /// ```
 ///
-/// For live-only tests, you must be async and may accept a `TestContext`.
-/// You may return a `Result<T, E>`.
+/// For live-only tests, you must declare an async function that may accept a `TestContext` and must return a `Result<T, E>`.
 ///
 /// ```
 /// use azure_core_test::recorded;

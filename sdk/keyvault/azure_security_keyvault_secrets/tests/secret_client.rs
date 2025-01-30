@@ -3,13 +3,14 @@
 
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
+use azure_core::Result;
 use azure_core_test::{recorded, TestContext};
 use azure_security_keyvault_secrets::{
     models::SecretSetParameters, SecretClient, SecretClientOptions,
 };
 
 #[recorded::test]
-async fn secret_roundtrip(ctx: TestContext) -> Result<(), Box<dyn std::error::Error>> {
+async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = SecretClientOptions::default();
@@ -38,5 +39,6 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<(), Box<dyn std::error::Er
         .await?;
 
     assert_eq!("secret-value", secret.value.unwrap());
+
     Ok(())
 }
