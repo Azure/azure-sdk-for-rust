@@ -33,6 +33,7 @@ async-process.workspace = true
 tz-rs = { workspace = true, optional = true }
 
 [dev-dependencies]
+azure_security_keyvault_secrets.workspace = true
 reqwest.workspace = true
 tokio.workspace = true
 tracing-subscriber.workspace = true
