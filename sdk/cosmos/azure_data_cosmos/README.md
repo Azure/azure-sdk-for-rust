@@ -43,25 +43,29 @@ The following section provides several code snippets covering some of the most c
 
 ### Create Cosmos DB Client
 
-The clients support different forms of authentication. The azcosmos library supports authorization via Microsoft Entra identities or an account key.
-
-**Using Microsoft Entra identities**
-
-```rust
-use azure_data_cosmos::CosmosClient;
-
-let credential = DefaultAzureCredential::new()?;
-let cosmos_client = CosmosClient::new("myAccountEndpointURL", credential, None)?;
-```
-
-**Using account keys**
-
-**IMPORTANT**: It is strongly recommended to use Microsoft Entra identities for authentication. The Azure Cosmos DB SDK for Rust does not support account keys by default. To enable support for account keys, you will need to enable the `key_auth` feature in your Cargo.toml file.
+The clients support different forms of authentication. The Azure Cosmos DB SDK for Rust supports authorization via Microsoft Entra identities or an account key. However, support for account keys is only available when the `key_auth` feature is enabled in your Cargo.toml file.
 
 ```toml
 [dependencies]
 azure_data_cosmos = { version = "...", features = ["key_auth"] }
 ```
+
+We **strongly** recommend using Microsoft Entra ID for authentication, rather than account keys.
+
+**Using Microsoft Entra ID**
+
+```rust
+use azure_identity::DefaultAzureCredential;
+use azure_data_cosmos::CosmosClient;
+
+async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let cosmos_client = CosmosClient::new("myAccountEndpointURL", credential, None)?;
+    Ok(())
+}
+```
+
+**Using account keys**
 
 ```rust
 use azure_core::credentials::Secret;
@@ -70,8 +74,11 @@ use azure_data_cosmos::CosmosClient;
 const COSMOS_DB_ENDPOINT: &str = "someEndpoint";
 const COSMOS_DB_KEY: &str = "someKey";
 
-let key = Secret::from(COSMOS_DB_KEY);
-let cosmos_client = CosmosClient::new(COSMOS_DB_ENDPOINT, key, None)?;
+async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    let key = Secret::from(COSMOS_DB_KEY);
+    let cosmos_client = CosmosClient::with_key(COSMOS_DB_ENDPOINT, key, None)?;
+    Ok(())
+}
 ```
 
 ### Create Database
@@ -81,7 +88,10 @@ let cosmos_client = CosmosClient::new(COSMOS_DB_ENDPOINT, key, None)?;
 Using the client created in previous example, you can create a database like this:
 
 ```rust
-let response = cosmos_client.create_database(dbName, None).await?;
+async fn example(cosmos_client: azure_data_cosmos::CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
+    let response = cosmos_client.create_database("myDatabase", None).await?;
+    Ok(())
+}
 ```
 
 ### Create Container
@@ -91,58 +101,70 @@ let response = cosmos_client.create_database(dbName, None).await?;
 Using the above created database for creating a container, like this:
 
 ```rust
-let properties = ContainerProperties {
-    id: "aContainer".into(),
-    partition_key: PartitionKeyDefinition::new(vec!["/id".into()]),
+use azure_data_cosmos::models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties};
+use azure_data_cosmos::CreateContainerOptions;
+
+async fn example(cosmos_client: azure_data_cosmos::CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
+    let properties = ContainerProperties {
+        id: "aContainer".into(),
+        partition_key: PartitionKeyDefinition::new(vec!["/id".into()]),
+        ..Default::default()
+    };
+    let options = CreateContainerOptions {
+        throughput: Some(ThroughputProperties::manual(400)),
+        ..Default::default()
+    };
+    let database = cosmos_client.database_client("myDatabase");
+    let response = database.create_container(properties, Some(options)).await?;
+    Ok(())
 }
-let options = CreateContainerOptions{
-    throughput: Some(ThroughputProperties::manual(400)),
-    ..Default::default()
-};
-let response = database.create_container(context, properties, Some(options)).await?;
 ```
 
 ### CRUD operation on Items
 
 ```rust
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
+use azure_data_cosmos::models::PatchDocument;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct Item {
     pub id: String,
     pub partition_key: String,
     pub value: String,
 }
 
-let item = Item {
-    id: "1".into(),
-    partition_key: "partition1".into(),
-    value: "2".into(),
-};
+async fn example(cosmos_client: azure_data_cosmos::CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
+    let item = Item {
+        id: "1".into(),
+        partition_key: "partition1".into(),
+        value: "2".into(),
+    };
 
-let container = cosmos_client.database_client(dbName).container_client(containerName);
+    let container = cosmos_client.database_client("myDatabase").container_client("myContainer");
 
-// Create an item
-container.create_item("partition1", item, None).await?;
+    // Create an item
+    container.create_item("partition1", item, None).await?;
 
-// Read an item
-let item_response = container.read_item("partition1", "1", None).await?;
-let mut item: Item = item_response.into_json_body().await?;
+    // Read an item
+    let item_response = container.read_item("partition1", "1", None).await?;
+    let mut item: Item = item_response.into_json_body().await?;
 
-item.value = "3".into();
+    item.value = "3".into();
 
-// Replace an item
-container.replace_item("partition1", "1", item, None).await?;
+    // Replace an item
+    container.replace_item("partition1", "1", item, None).await?;
 
-// Patch an item
-let patch = PatchDocument::default()
-    .with_add("/newField", "newValue")
-    .with_remove("/oldFieldToRemove");
+    // Patch an item
+    let patch = PatchDocument::default()
+        .with_add("/newField", "newValue")?
+        .with_remove("/oldFieldToRemove")?;
 
-container.patch_item("partition1", "1", patch, None).await?;
+    container.patch_item("partition1", "1", patch, None).await?;
 
-// Delete an item
-container.delete_item("partition1", "1", None).await?;
+    // Delete an item
+    container.delete_item("partition1", "1", None).await?;
+    Ok(())
+}
 ```
 
 ## Next steps
