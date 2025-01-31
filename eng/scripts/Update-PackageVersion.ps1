@@ -42,7 +42,6 @@ $pkgProperties = Get-PkgProperties -PackageName $PackageName -ServiceDirectory $
 $packageVersion = $pkgProperties.Version
 
 $packageSemVer = [AzureEngSemanticVersion]::new($packageVersion)
-Write-Host "Current Version: ${PackageVersion}"
 
 if ([System.String]::IsNullOrEmpty($NewVersionString)) {
   $packageSemVer.IncrementAndSetToPrerelease();
@@ -58,23 +57,25 @@ else {
     -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle -ReleaseDate $ReleaseDate
 }
 
-$newVersion = $packageSemVer.ToString()
-Write-Host "New Version: $newVersion"
 
 if ($packageSemVer.HasValidPrereleaseLabel() -ne $true) {
-  Write-Error "Invalid prerelease label"
+  Write-Error "Invalid prerelease label: $packageSemVer"
   exit 1
 }
 
 $tomlPath = Join-Path $pkgProperties.DirectoryPath "Cargo.toml"
 $content = Get-Content -Path $tomlPath -Raw
-$updated = $content -replace '([package](.|\n)+?version\s*=\s*)"(.+?)"', "`$1`"$newVersion`""
+$updated = $content -replace '([package](.|\n)+?version\s*=\s*)"(.+?)"', "`$1`"$packageSemVer`""
 
 if($content -ne $updated)
 {
   $updated | Set-Content -Path $tomlPath  -Encoding utf8 -NoNewLine
-  Write-Host "Updated version in $tomlPath to $packageSemVer."
+  Write-Host "Updated version in $tomlPath from $packageVersion to $packageSemVer."
 
   cargo metadata --format-version 1 | Out-Null
   Write-Host "Updated Cargo.lock using 'cargo metadata'."
+} 
+else
+{
+  Write-Host "$tomlPath already contains version $packageSemVer"
 }
