@@ -26,28 +26,36 @@ rust-version = "1.80"
 
 [workspace.dependencies.typespec]
 path = "sdk/typespec"
+version = "0.2.0"
 default-features = false
 
 [workspace.dependencies.typespec_client_core]
 path = "sdk/typespec/typespec_client_core"
+version = "0.1.0"
 default-features = false
 
 [workspace.dependencies.typespec_macros]
+version = "0.1.0"
 path = "sdk/typespec/typespec_macros"
 
 [workspace.dependencies.azure_core]
+version = "0.22.0"
 path = "sdk/core/azure_core"
 
 [workspace.dependencies.azure_core_amqp]
+version = "0.1.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_core_test]
+version = "0.1.0"
 path = "sdk/core/azure_core_test"
 
 [workspace.dependencies.azure_core_test_macros]
+version = "0.1.0"
 path = "sdk/core/azure_core_test_macros"
 
 [workspace.dependencies.azure_identity]
+version = "0.22.0"
 path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_common]
