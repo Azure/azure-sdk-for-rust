@@ -2,19 +2,18 @@
 
 Azure Key Vault is a cloud service that provides a secure storage of secrets, such as passwords and database connection strings.
 
-The Azure Key Vault secrets client library allows you to securely store and control the access to tokens, passwords, API keys, and other secrets. This library offers operations to create, retrieve, update, delete, purge, backup, restore, and list the secrets and its versions.
+The Azure Key Vault Secrets client library allows you to securely store and control the access to tokens, passwords, API keys, and other secrets. This library offers operations to create, retrieve, update, delete, purge, backup, restore, and list the secrets and its versions.
 
-[Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation] | [Samples] | [Migration guide]
+[Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation]
 
 ## Getting started
 
 ### Install the package
 
-Install the Azure Key Vault secrets client library for Rust with [Cargo].
+Install the Azure Key Vault Secrets client library for Rust with Cargo:
 
-```toml
-[dependencies]
-azure_security_keyvault_secrets = "0.1.0"
+```sh
+cargo add azure_security_keyvault_secrets
 ```
 
 ### Prerequisites
@@ -25,7 +24,7 @@ azure_security_keyvault_secrets = "0.1.0"
 
 If you use the Azure CLI, replace `<your-resource-group-name>` and `<your-key-vault-name>` with your own, unique names:
 
-```sh
+```azurecli
 az keyvault create --resource-group <your-resource-group-name> --name <your-key-vault-name>
 ```
 
@@ -35,11 +34,16 @@ In order to interact with the Azure Key Vault service, you'll need to create an 
 
 The examples shown below use a `DefaultAzureCredential`, which is appropriate for most scenarios including local development and production environments. Additionally, we recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
 
-To use the `DefaultAzureCredential` provider shown below, or other credential providers provided with the Azure SDK, you must first install the `azure_identity` crate:
+To use the `DefaultAzureCredential` provider shown below, or other credential providers from the Azure SDK, you must first install the `azure_identity` crate:
 
-```toml
-[dependencies]
-azure_identity = "0.1.0"
+```sh
+cargo add azure_identity
+```
+
+The `DefaultAzureCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
+
+```azurecli
+az login
 ```
 
 Instantiate a `DefaultAzureCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
@@ -49,14 +53,23 @@ use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::SecretClient;
 use url::Url;
 
-let credential = DefaultAzureCredential::default();
-let client = SecretClient::new(Url::parse(&vault_url).unwrap(), credential);
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::default();
+    let client = SecretClient::new(Url::parse(&vault_url)?, credential);
 
-// Create a new secret using the secret client.
-let secret = client.set_secret("secret-name", "secret-value").await.unwrap();
+    // Create a new secret using the secret client.
+    let secret = client.set_secret("secret-name", "secret-value").await?;
+    println!("{}", secret.name);
+    println!("{}", secret.value);
 
-// Retrieve a secret using the secret client.
-let secret = client.get_secret("secret-name").await.unwrap();
+    // Retrieve a secret using the secret client.
+    let secret = client.get_secret("secret-name").await?;
+    println!("{}", secret.name);
+    println!("{}", secret.value);
+
+    Ok(())
+}
 ```
 
 ## Key concepts
@@ -77,7 +90,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 The `azure_security_keyvault_secrets` crate supports synchronous and asynchronous APIs.
 
-The following section provides several code snippets using the `client` created above, covering some of the most common Azure Key Vault secret service related tasks:
+The following section provides several code snippets using the `client` created above, covering some of the most common Azure Key Vault Secrets service related tasks:
 
 ### Sync examples
 
@@ -99,12 +112,16 @@ The following section provides several code snippets using the `client` created 
 `set_secret` creates a `KeyVaultSecret` to be stored in the Azure Key Vault. If a secret with the same name already exists, then a new version of the secret is created.
 
 ```rust
-let secret = client.set_secret("secret-name", "secret-value").await.unwrap();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let secret = client.set_secret("secret-name", "secret-value").await?;
+    println!("{}", secret.name);
+    println!("{}", secret.value);
+    println!("{}", secret.properties.version);
+    println!("{}", secret.properties.enabled);
 
-println!("{}", secret.name);
-println!("{}", secret.value);
-println!("{}", secret.properties.version);
-println!("{}", secret.properties.enabled);
+    Ok(())
+}
 ```
 
 ### Retrieve a secret
@@ -112,10 +129,14 @@ println!("{}", secret.properties.enabled);
 `get_secret` retrieves a secret previously stored in the Azure Key Vault.
 
 ```rust
-let secret = client.get_secret("secret-name").await.unwrap();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let secret = client.get_secret("secret-name").await?;
+    println!("{}", secret.name);
+    println!("{}", secret.value);
 
-println!("{}", secret.name);
-println!("{}", secret.value);
+    Ok(())
+}
 ```
 
 ### Update an existing secret
@@ -123,19 +144,19 @@ println!("{}", secret.value);
 `update_secret_properties` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
 
 ```rust
-let mut secret = client.get_secret("secret-name").await.unwrap();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut secret = client.get_secret("secret-name").await?;
+    secret.properties.content_type = Some("text/plain".to_string());
+    secret.properties.tags.insert("foo".to_string(), "updated tag".to_string());
 
-// Clients may specify the content type of a secret to assist in interpreting the secret data when its retrieved.
-secret.properties.content_type = Some("text/plain".to_string());
+    let updated_secret_properties = client.update_secret_properties(secret.properties).await?;
+    println!("{}", updated_secret_properties.name);
+    println!("{}", updated_secret_properties.version);
+    println!("{}", updated_secret_properties.content_type.unwrap());
 
-// You can specify additional application-specific metadata in the form of tags.
-secret.properties.tags.insert("foo".to_string(), "updated tag".to_string());
-
-let updated_secret_properties = client.update_secret_properties(secret.properties).await.unwrap();
-
-println!("{}", updated_secret_properties.name);
-println!("{}", updated_secret_properties.version);
-println!("{}", updated_secret_properties.content_type.unwrap());
+    Ok(())
+}
 ```
 
 ### Delete a secret
@@ -143,11 +164,15 @@ println!("{}", updated_secret_properties.content_type.unwrap());
 `start_delete_secret` starts a long-running operation to delete a secret previously stored in the Azure Key Vault. You can retrieve the secret immediately without waiting for the operation to complete. When [soft-delete] is not enabled for the Azure Key Vault, this operation permanently deletes the secret.
 
 ```rust
-let operation = client.start_delete_secret("secret-name").await.unwrap();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let operation = client.start_delete_secret("secret-name").await?;
+    let secret = operation.value;
+    println!("{}", secret.name);
+    println!("{}", secret.value);
 
-let secret = operation.value;
-println!("{}", secret.name);
-println!("{}", secret.value);
+    Ok(())
+}
 ```
 
 ### Delete and purge a secret
@@ -155,18 +180,19 @@ println!("{}", secret.value);
 You will need to wait for the long-running operation to complete before trying to purge or recover the secret. You can do this by calling `update_status` in a loop as shown below:
 
 ```rust
-let mut operation = client.start_delete_secret("secret-name").await.unwrap();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut operation = client.start_delete_secret("secret-name").await?;
+    while !operation.has_completed {
+        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+        operation.update_status().await?;
+    }
 
-// You only need to wait for completion if you want to purge or recover the secret.
-// You should call `update_status` in another thread or after doing additional work like pumping messages.
-while !operation.has_completed {
-    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+    let secret = operation.value;
+    client.purge_deleted_secret(secret.name).await?;
 
-    operation.update_status().await.unwrap();
+    Ok(())
 }
-
-let secret = operation.value;
-client.purge_deleted_secret(secret.name).await.unwrap();
 ```
 
 ### List secrets
@@ -174,10 +200,14 @@ client.purge_deleted_secret(secret.name).await.unwrap();
 This example lists all the secrets in the specified Azure Key Vault. The value is not returned when listing all secrets. You will need to call `SecretClient::get_secret` to retrieve the value.
 
 ```rust
-let all_secrets = client.get_properties_of_secrets().await.unwrap();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let all_secrets = client.get_properties_of_secrets().await?;
+    for secret_properties in all_secrets {
+        println!("{}", secret_properties.name);
+    }
 
-for secret_properties in all_secrets {
-    println!("{}", secret_properties.name);
+    Ok(())
 }
 ```
 
@@ -188,10 +218,14 @@ The asynchronous APIs are identical to their synchronous counterparts, but retur
 This example creates a secret in the Azure Key Vault with the specified optional arguments.
 
 ```rust
-let secret = client.set_secret("secret-name", "secret-value").await.unwrap();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let secret = client.set_secret("secret-name", "secret-value").await?;
+    println!("{}", secret.name);
+    println!("{}", secret.value);
 
-println!("{}", secret.name);
-println!("{}", secret.value);
+    Ok(())
+}
 ```
 
 ### List secrets asynchronously
@@ -199,10 +233,14 @@ println!("{}", secret.value);
 Listing secrets does not rely on awaiting the `get_properties_of_secrets` method, but returns an `AsyncPageable<SecretProperties>` that you can use with the `await` statement:
 
 ```rust
-let all_secrets = client.get_properties_of_secrets().await.unwrap();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let all_secrets = client.get_properties_of_secrets().await?;
+    for secret_properties in all_secrets {
+        println!("{}", secret_properties.name);
+    }
 
-for secret_properties in all_secrets {
-    println!("{}", secret_properties.name);
+    Ok(())
 }
 ```
 
@@ -211,13 +249,15 @@ for secret_properties in all_secrets {
 When deleting a secret asynchronously before you purge it, you can await the `wait_for_completion` method on the operation. By default, this loops indefinitely but you can cancel it by passing a `CancellationToken`.
 
 ```rust
-let mut operation = client.start_delete_secret("secret-name").await.unwrap();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut operation = client.start_delete_secret("secret-name").await?;
+    operation.wait_for_completion().await?;
+    let secret = operation.value;
+    client.purge_deleted_secret(secret.name).await?;
 
-// You only need to wait for completion if you want to purge or recover the secret.
-operation.wait_for_completion().await.unwrap();
-
-let secret = operation.value;
-client.purge_deleted_secret(secret.name).await.unwrap();
+    Ok(())
+}
 ```
 
 ## Troubleshooting
@@ -226,7 +266,7 @@ See our [troubleshooting guide] for details on how to diagnose various failure s
 
 ### General
 
-When you interact with the Azure Key Vault secret client library using the Rust SDK, errors returned by the service correspond to the same HTTP status codes returned for [REST API] requests.
+When you interact with the Azure Key Vault Secrets client library using the Rust SDK, errors returned by the service correspond to the same HTTP status codes returned for [REST API] requests.
 
 For example, if you try to retrieve a secret that doesn't exist in your Azure Key Vault, a `404` error is returned, indicating `Not Found`.
 
@@ -266,7 +306,7 @@ Headers:
 
 ## Next steps
 
-Several Azure Key Vault secrets client library samples are available to you in this GitHub repository. These samples provide example code for additional scenarios commonly encountered while working with Azure Key Vault:
+Several Azure Key Vault Secrets client library samples are available to you in this GitHub repository. These samples provide example code for additional scenarios commonly encountered while working with Azure Key Vault:
 
 * [Sample1_HelloWorld.md] - for working with Azure Key Vault, including:
   * Create a secret
@@ -274,10 +314,10 @@ Several Azure Key Vault secrets client library samples are available to you in t
   * Update an existing secret
   * Delete secret
 
-* [Sample2_BackupAndRestore.md] - contains the code snippets working with Azure Key Vault secrets, including:
+* [Sample2_BackupAndRestore.md] - contains the code snippets working with Azure Key Vault Secrets, including:
   * Backup and recover a secret
 
-* [Sample3_GetSecrets.md] - example code for working with Azure Key Vault secrets, including:
+* [Sample3_GetSecrets.md] - example code for working with Azure Key Vault Secrets, including:
   * Create secrets
   * List all secrets in the Key Vault
   * Update secrets in the Key Vault
