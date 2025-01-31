@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use async_trait::async_trait;
-use azure_core::{headers::HeaderName, Context, Policy, PolicyResult, Request};
+use azure_core::{headers::CLIENT_REQUEST_ID, Context, Policy, PolicyResult, Request};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -18,16 +18,13 @@ impl Policy for StorageHeadersPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        let result = request
+        if request
             .headers()
-            .get_str(&HeaderName::from("x-ms-client-request-id"));
-
-        match result {
-            Ok(_) => {}
-            Err(_) => {
-                let request_id = Uuid::new_v4().to_string();
-                request.insert_header("x-ms-client-request-id", request_id);
-            }
+            .get_optional_string(&CLIENT_REQUEST_ID)
+            .is_none()
+        {
+            let request_id = Uuid::new_v4().to_string();
+            request.insert_header(CLIENT_REQUEST_ID, &request_id);
         }
         next[0].send(ctx, request, &next[1..]).await
     }
