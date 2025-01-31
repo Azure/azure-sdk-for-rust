@@ -58,14 +58,23 @@ else {
     -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle -ReleaseDate $ReleaseDate
 }
 
-Write-Host "New Version: $packageSemVer"
+$newVersion = $packageSemVer.ToString()
+Write-Host "New Version: $newVersion"
 
 if ($packageSemVer.HasValidPrereleaseLabel() -ne $true) {
   Write-Error "Invalid prerelease label"
   exit 1
 }
 
-cargo set-version --package $PackageName $packageSemVer.ToString()
-
 $tomlPath = Join-Path $pkgProperties.DirectoryPath "Cargo.toml"
-Write-Host "Updated version in $tomlPath to $packageSemVer"
+$content = Get-Content -Path $tomlPath -Raw
+$updated = $content -replace '([package](.|\n)+?version\s*=\s*)"(.+?)"', "`$1`"$newVersion`""
+
+if($content -ne $updated)
+{
+  $updated | Set-Content -Path $tomlPath  -Encoding utf8 -NoNewLine
+  Write-Host "Updated version in $tomlPath to $packageSemVer."
+
+  cargo metadata --format-version 1 | Out-Null
+  Write-Host "Updated Cargo.lock using 'cargo metadata'."
+}
