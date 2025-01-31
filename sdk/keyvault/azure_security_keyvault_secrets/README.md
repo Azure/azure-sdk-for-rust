@@ -50,23 +50,25 @@ Instantiate a `DefaultAzureCredential` to pass to the client. The same instance 
 
 ```rust
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::SecretClient;
-use url::Url;
+use azure_security_keyvault_secrets::{SecretClient, models::SecretSetParameters};
+use azure_core::RequestContent;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::default();
-    let client = SecretClient::new(Url::parse(&vault_url)?, credential);
+    let credential = DefaultAzureCredential::new();
+    let client = SecretClient::new("https://your-key-vault-name.vault.azure.net/", credential, None)?;
 
     // Create a new secret using the secret client.
-    let secret = client.set_secret("secret-name", "secret-value").await?;
-    println!("{}", secret.name);
-    println!("{}", secret.value);
+    let secret_parameters = SecretSetParameters {
+        value: Some("secret-value".to_string()),
+        ..Default::default()
+    };
+    let secret = client.set_secret("secret-name".to_string(), RequestContent::from(secret_parameters), None).await?;
+    println!("{:?}", secret.value);
 
     // Retrieve a secret using the secret client.
-    let secret = client.get_secret("secret-name").await?;
-    println!("{}", secret.name);
-    println!("{}", secret.value);
+    let secret = client.get_secret("secret-name".to_string(), "secret-version".to_string(), None).await?;
+    println!("{:?}", secret.value);
 
     Ok(())
 }
