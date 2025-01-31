@@ -28,17 +28,19 @@ If you use the Azure CLI, replace `<your-resource-group-name>` and `<your-key-va
 az keyvault create --resource-group <your-resource-group-name> --name <your-key-vault-name>
 ```
 
+### Install dependencies
+
+Add the following crates to your project:
+
+```sh
+cargo add azure_identity azure_core serde_json tokio
+```
+
 ### Authenticate the client
 
 In order to interact with the Azure Key Vault service, you'll need to create an instance of the `SecretClient` struct. You need a **vault url**, which you may see as "DNS Name" in the portal, and credentials to instantiate a client object.
 
-The examples shown below use a `DefaultAzureCredential`, which is appropriate for most scenarios including local development and production environments. Additionally, we recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
-
-To use the `DefaultAzureCredential` provider shown below, or other credential providers from the Azure SDK, you must first install the `azure_identity` crate:
-
-```sh
-cargo add azure_identity
-```
+The example shown below use a `DefaultAzureCredential`, which is appropriate for most scenarios including local development and production environments. Additionally, we recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
 
 The `DefaultAzureCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
 
@@ -48,26 +50,53 @@ az login
 
 Instantiate a `DefaultAzureCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
 
+### Set and Get a Secret
+
 ```rust
+use azure_core::{RequestContent, Response};
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{SecretClient, models::SecretSetParameters};
-use azure_core::RequestContent;
+use azure_security_keyvault_secrets::{
+    models::{SecretBundle, SecretSetParameters},
+    SecretClient,
+};
+use serde_json::to_vec;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new();
-    let client = SecretClient::new("https://your-key-vault-name.vault.azure.net/", credential, None)?;
+    // Create a new secret client
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential,
+        None,
+    )?;
 
     // Create a new secret using the secret client.
-    let secret_parameters = SecretSetParameters {
-        value: Some("secret-value".to_string()),
-        ..Default::default()
-    };
-    let secret = client.set_secret("secret-name".to_string(), RequestContent::from(secret_parameters), None).await?;
-    println!("{:?}", secret.value);
+    let mut secret_parameters = SecretSetParameters::default();
+    secret_parameters.value = Some("secret-value".to_string());
+
+    // Serialize secret_parameters to Vec<u8>
+    let secret_parameters_bytes: Vec<u8> = to_vec(&secret_parameters)?;
+
+    let secret: Response<SecretBundle> = client
+        .set_secret(
+            "secret-name".to_string(),
+            RequestContent::from(secret_parameters_bytes),
+            None,
+        )
+        .await?;
+    println!("Response Code: {:?}", secret.status());
 
     // Retrieve a secret using the secret client.
-    let secret = client.get_secret("secret-name".to_string(), "secret-version".to_string(), None).await?;
+    let secret: SecretBundle = client
+        .get_secret(
+            "secret-name".to_string(),
+            "secret-version".to_string(),
+            None,
+        )
+        .await?
+        .into_body()
+        .await?;
     println!("{:?}", secret.value);
 
     Ok(())
@@ -82,7 +111,7 @@ A `KeyVaultSecret` is the fundamental resource within Azure Key Vault. From a de
 
 ### SecretClient
 
-A `SecretClient` provides both synchronous and asynchronous operations in the SDK allowing for selection of a client based on an application's use case. Once you've initialized a `SecretClient`, you can interact with secrets in Azure Key Vault.
+A `SecretClient` asynchronous operations in the SDK allowing for selection of a client based on an application's use case. Once you've initialized a `SecretClient`, you can interact with secrets in Azure Key Vault.
 
 ### Thread safety
 
@@ -90,11 +119,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Examples
 
-The `azure_security_keyvault_secrets` crate supports synchronous and asynchronous APIs.
-
-The following section provides several code snippets using the `client` created above, covering some of the most common Azure Key Vault Secrets service related tasks:
-
-### Sync examples
+The following section provides several code snippets using the `SecretClient`, covering some of the most common Azure Key Vault Secrets service related tasks:
 
 * [Create a secret](#create-a-secret)
 * [Retrieve a secret](#retrieve-a-secret)
@@ -103,24 +128,43 @@ The following section provides several code snippets using the `client` created 
 * [Delete and purge a secret](#delete-and-purge-a-secret)
 * [List Secrets](#list-secrets)
 
-### Async examples
-
-* [Create a secret asynchronously](#create-a-secret-asynchronously)
-* [List secrets asynchronously](#list-secrets-asynchronously)
-* [Delete a secret asynchronously](#delete-a-secret-asynchronously)
-
 ### Create a secret
 
 `set_secret` creates a `KeyVaultSecret` to be stored in the Azure Key Vault. If a secret with the same name already exists, then a new version of the secret is created.
 
 ```rust
+use azure_core::{RequestContent, Response};
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::{
+    models::{SecretBundle, SecretSetParameters},
+    SecretClient,
+};
+use serde_json::to_vec;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let secret = client.set_secret("secret-name", "secret-value").await?;
-    println!("{}", secret.name);
-    println!("{}", secret.value);
-    println!("{}", secret.properties.version);
-    println!("{}", secret.properties.enabled);
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential,
+        None,
+    )?;
+
+    // Create a new secret using the secret client.
+    let mut secret_parameters = SecretSetParameters::default();
+    secret_parameters.value = Some("secret-value".to_string());
+
+    // Serialize secret_parameters to Vec<u8>
+    let secret_parameters_bytes: Vec<u8> = to_vec(&secret_parameters)?;
+
+    let secret: Response<SecretBundle> = client
+        .set_secret(
+            "secret-name".to_string(),
+            RequestContent::from(secret_parameters_bytes),
+            None,
+        )
+        .await?;
+    println!("Response Code: {:?}", secret.status());
 
     Ok(())
 }
@@ -131,14 +175,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 `get_secret` retrieves a secret previously stored in the Azure Key Vault.
 
 ```rust
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::{
+    models::SecretBundle,
+    SecretClient,
+};
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let secret = client.get_secret("secret-name").await?;
-    println!("{}", secret.name);
-    println!("{}", secret.value);
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential,
+        None,
+    )?;
+
+    // Retrieve a secret using the secret client.
+    let secret: SecretBundle = client
+        .get_secret(
+            "secret-name".to_string(),
+            "secret-version".to_string(),
+            None,
+        )
+        .await?
+        .into_body()
+        .await?;
+    println!("{:?}", secret.value);
 
     Ok(())
 }
+
 ```
 
 ### Update an existing secret
