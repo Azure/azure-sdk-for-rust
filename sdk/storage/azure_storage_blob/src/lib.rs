@@ -17,3 +17,5 @@ pub(crate) use blob_client::BlobClient as GeneratedBlobClient;
 
 pub use crate::generated::clients::blob_blob_client::BlobBlobClientGetPropertiesOptions;
 pub use crate::generated::clients::blob_client::BlobClientOptions;
+pub use crate::generated::clients::blob_container_client::BlobContainerClientGetPropertiesOptions;
+pub use crate::generated::clients::blob_service_client::BlobServiceClientGetPropertiesOptions;

@@ -4,7 +4,7 @@
 use crate::blob_client::BlobClientOptions;
 use crate::generated::clients::blob_client::BlobClient as GeneratedBlobClient;
 use crate::models::ContainerProperties;
-use crate::policies::storage_headers_policy::StorageHeadersPolicy;
+use crate::pipeline::StorageHeadersPolicy;
 use crate::BlobContainerClientGetPropertiesOptions;
 use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Result};
 use std::sync::Arc;

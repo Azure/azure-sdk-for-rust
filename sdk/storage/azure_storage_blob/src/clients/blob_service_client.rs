@@ -3,8 +3,7 @@
 
 use crate::{
     blob_client::BlobClientOptions, models::StorageServiceProperties,
-    policies::storage_headers_policy::StorageHeadersPolicy, BlobServiceClientGetPropertiesOptions,
-    GeneratedBlobClient,
+    pipeline::StorageHeadersPolicy, BlobServiceClientGetPropertiesOptions, GeneratedBlobClient,
 };
 use azure_core::{
     credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Response, Result,

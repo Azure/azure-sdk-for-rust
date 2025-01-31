@@ -3,7 +3,7 @@
 
 use azure_core::headers::Headers;
 
-/// Properties of an Azure Storage blob.
+/// Properties of an Azure Storage container.
 ///
 #[derive(Clone, Default, Debug)]
 pub struct ContainerProperties {
