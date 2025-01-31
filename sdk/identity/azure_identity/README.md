@@ -57,7 +57,7 @@ The following examples are provided:
 
 More details on configuring your environment to use `DefaultAzureCredential` can be found in the class's [reference documentation][default_cred_ref].
 
-This example demonstrates authenticating the `CosmosClient` from the [azure_data_cosmos] library using `DefaultAzureCredential`.
+This example demonstrates authenticating the `SecretClient` from the [azure_security_keyvault_secrets] library using `DefaultAzureCredential`.
 
 ```rust
 use azure_identity::DefaultAzureCredential;
@@ -65,7 +65,7 @@ use azure_security_keyvault_secrets::SecretClient;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
-    let client = SecretClient::new("https://myaccount.documents.azure.com/", credential.clone(), None)?;
+    let client = SecretClient::new("https://<your-key-vault-name>.vault.azure.net/", credential.clone(), None)?;
     Ok(())
 }
 ```
@@ -117,7 +117,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 <!-- LINKS -->
 [Azure CLI]: https://learn.microsoft.com/cli/azure
-[azure_data_cosmos]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos
+[azure_security_keyvault_secrets]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets
 [Azure subscription]: https://azure.microsoft.com/free/
 [cert_cred_ref]: <!-- TODO: When Docs.rs page for ClientCertificateCredential ref docs are available -->
 [cli_cred_ref]: <!-- TODO: When Docs.rs page for AzureCliCredential ref docs are available>
