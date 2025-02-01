@@ -340,55 +340,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-### Create a secret asynchronously
-
-The asynchronous APIs are identical to their synchronous counterparts, but return with the typical "Async" suffix for asynchronous methods and return a `Future`.
-
-This example creates a secret in the Azure Key Vault with the specified optional arguments.
-
-```rust
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let secret = client.set_secret("secret-name", "secret-value").await?;
-    println!("{}", secret.name);
-    println!("{}", secret.value);
-
-    Ok(())
-}
-```
-
-### List secrets asynchronously
-
-Listing secrets does not rely on awaiting the `get_properties_of_secrets` method, but returns an `AsyncPageable<SecretProperties>` that you can use with the `await` statement:
-
-```rust
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let all_secrets = client.get_properties_of_secrets().await?;
-    for secret_properties in all_secrets {
-        println!("{}", secret_properties.name);
-    }
-
-    Ok(())
-}
-```
-
-### Delete a secret asynchronously
-
-When deleting a secret asynchronously before you purge it, you can await the `wait_for_completion` method on the operation. By default, this loops indefinitely but you can cancel it by passing a `CancellationToken`.
-
-```rust
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut operation = client.start_delete_secret("secret-name").await?;
-    operation.wait_for_completion().await?;
-    let secret = operation.value;
-    client.purge_deleted_secret(secret.name).await?;
-
-    Ok(())
-}
-```
-
 ## Troubleshooting
 
 See our [troubleshooting guide] for details on how to diagnose various failure scenarios.
