@@ -394,27 +394,6 @@ Error: HttpError {
 }
 ```
 
-## Next steps
-
-Several Azure Key Vault Secrets client library samples are available to you in this GitHub repository. These samples provide example code for additional scenarios commonly encountered while working with Azure Key Vault:
-
-* [Sample1_HelloWorld.md] - for working with Azure Key Vault, including:
-  * Create a secret
-  * Get an existing secret
-  * Update an existing secret
-  * Delete secret
-
-* [Sample2_BackupAndRestore.md] - contains the code snippets working with Azure Key Vault Secrets, including:
-  * Backup and recover a secret
-
-* [Sample3_GetSecrets.md] - example code for working with Azure Key Vault Secrets, including:
-  * Create secrets
-  * List all secrets in the Key Vault
-  * Update secrets in the Key Vault
-  * List versions of a specified secret
-  * Delete secrets from the Key Vault
-  * List deleted secrets in the Key Vault
-
 ### Additional Documentation
 
 * For more extensive documentation on Azure Key Vault, see the [API reference documentation].
