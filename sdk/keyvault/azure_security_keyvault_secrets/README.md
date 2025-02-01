@@ -73,14 +73,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a new secret using the secret client.
     let mut secret_set_parameters = SecretSetParameters::default();
-    secret_set_parameters.value = Some("secret_value".to_string());
+    secret_set_parameters.value = Some("secret-value".to_string());
 
     // Serialize secret_set_parameters to Vec<u8>
     let secret_set_parameters_bytes: Vec<u8> = to_vec(&secret_set_parameters)?;
 
     let secret: Response<SecretBundle> = client
         .set_secret(
-            "secret_name".to_string(),
+            "secret-name".to_string(),
             RequestContent::from(secret_set_parameters_bytes),
             None,
         )
@@ -90,8 +90,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Retrieve a secret using the secret client.
     let secret: SecretBundle = client
         .get_secret(
-            "secret_name".to_string(),
-            "secret_version".to_string(),
+            "secret-name".to_string(),
+            "secret-version".to_string(),
             None,
         )
         .await?
@@ -152,14 +152,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a new secret using the secret client.
     let mut secret_set_parameters = SecretSetParameters::default();
-    secret_set_parameters.value = Some("secret_value".to_string());
+    secret_set_parameters.value = Some("secret-value".to_string());
 
     // Serialize secret_set_parameters to Vec<u8>
     let secret_set_parameters_bytes: Vec<u8> = to_vec(&secret_set_parameters)?;
 
     let response: Response<SecretBundle> = client
         .set_secret(
-            "secret_name".to_string(),
+            "secret-name".to_string(),
             RequestContent::from(secret_set_parameters_bytes),
             None,
         )
@@ -193,8 +193,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Retrieve a secret using the secret client.
     let secret: SecretBundle = client
         .get_secret(
-            "secret_name".to_string(),
-            "secret_version".to_string(),
+            "secret-name".to_string(),
+            "secret-version".to_string(),
             None,
         )
         .await?
@@ -204,7 +204,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
 ```
 
 ### Update an existing secret
@@ -237,8 +236,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let response: Response<SecretBundle> = client
         .update_secret(
-            "secret_name".to_string(),
-            "secret_version".to_string(),
+            "secret-name".to_string(),
+            "secret-version".to_string(),
             RequestContent::from(secret_update_parameters_bytes),
             None,
         )
@@ -270,7 +269,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Delete a secret using the secret client.
     let response: Response<DeletedSecretBundle> = client
         .delete_secret(
-            "secret_name".to_string(),
+            "secret-name".to_string(),
             None,
         ).await?;
     println!("Response Code: {:?}", response.status());
@@ -299,13 +298,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Delete a secret using the secret client.
     let response: Response<DeletedSecretBundle> = client
-        .delete_secret("secret_name".to_string(), None)
+        .delete_secret("secret-name".to_string(), None)
         .await?;
     println!("Delete Response Code: {:?}", response.status());
 
     // Purge deleted secret using the secret client.
     let response: Response<()> = client
-        .purge_deleted_secret("secret_name".to_string(), None)
+        .purge_deleted_secret("secret-name".to_string(), None)
         .await?;
     println!("Purge Response Code: {:?}", response.status());
 
@@ -342,8 +341,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Troubleshooting
 
-See our [troubleshooting guide] for details on how to diagnose various failure scenarios.
-
 ### General
 
 When you interact with the Azure Key Vault Secrets client library using the Rust SDK, errors returned by the service correspond to the same HTTP status codes returned for [REST API] requests.
@@ -351,9 +348,31 @@ When you interact with the Azure Key Vault Secrets client library using the Rust
 For example, if you try to retrieve a secret that doesn't exist in your Azure Key Vault, a `404` error is returned, indicating `Not Found`.
 
 ```rust
-match client.get_secret("some_secret").await {
-    Ok(secret) => println!("{}", secret.name),
-    Err(err) => println!("{}", err),
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::SecretClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential,
+        None,
+    )?;
+
+    match client
+        .get_secret(
+            "secret-name".to_string(),
+            "secret-version".to_string(),
+            None,
+        )
+        .await
+    {
+        Ok(response) => println!("Secret Value: {:?}", response.into_body().await?.value),
+        Err(err) => println!("{}", err),
+    }
+
+    Ok(())
 }
 ```
 
