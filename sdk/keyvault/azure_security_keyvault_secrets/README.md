@@ -319,12 +319,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 This example lists all the secrets in the specified Azure Key Vault. The value is not returned when listing all secrets. You will need to call `SecretClient::get_secret` to retrieve the value.
 
 ```rust
+use azure_core::Pager;
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::{models::SecretListResult, SecretClient};
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let all_secrets = client.get_properties_of_secrets().await?;
-    for secret_properties in all_secrets {
-        println!("{}", secret_properties.name);
-    }
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential,
+        None,
+    )?;
+
+    // List secrets using the secret client.
+    let response: Pager<SecretListResult>= client.get_secrets(None)?;
+    println!("{:?}", response);
 
     Ok(())
 }
