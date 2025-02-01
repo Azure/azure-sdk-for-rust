@@ -72,16 +72,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Create a new secret using the secret client.
-    let mut secret_parameters = SecretSetParameters::default();
-    secret_parameters.value = Some("secret-value".to_string());
+    let mut secret_set_parameters = SecretSetParameters::default();
+    secret_set_parameters.value = Some("secret_value".to_string());
 
-    // Serialize secret_parameters to Vec<u8>
-    let secret_parameters_bytes: Vec<u8> = to_vec(&secret_parameters)?;
+    // Serialize secret_set_parameters to Vec<u8>
+    let secret_set_parameters_bytes: Vec<u8> = to_vec(&secret_set_parameters)?;
 
     let secret: Response<SecretBundle> = client
         .set_secret(
-            "secret-name".to_string(),
-            RequestContent::from(secret_parameters_bytes),
+            "secret_name".to_string(),
+            RequestContent::from(secret_set_parameters_bytes),
             None,
         )
         .await?;
@@ -90,8 +90,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Retrieve a secret using the secret client.
     let secret: SecretBundle = client
         .get_secret(
-            "secret-name".to_string(),
-            "secret-version".to_string(),
+            "secret_name".to_string(),
+            "secret_version".to_string(),
             None,
         )
         .await?
@@ -151,16 +151,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Create a new secret using the secret client.
-    let mut secret_parameters = SecretSetParameters::default();
-    secret_parameters.value = Some("secret-value".to_string());
+    let mut secret_set_parameters = SecretSetParameters::default();
+    secret_set_parameters.value = Some("secret_value".to_string());
 
-    // Serialize secret_parameters to Vec<u8>
-    let secret_parameters_bytes: Vec<u8> = to_vec(&secret_parameters)?;
+    // Serialize secret_set_parameters to Vec<u8>
+    let secret_set_parameters_bytes: Vec<u8> = to_vec(&secret_set_parameters)?;
 
-    let secret: Response<SecretBundle> = client
+    let response: Response<SecretBundle> = client
         .set_secret(
-            "secret-name".to_string(),
-            RequestContent::from(secret_parameters_bytes),
+            "secret_name".to_string(),
+            RequestContent::from(secret_set_parameters_bytes),
             None,
         )
         .await?;
@@ -193,8 +193,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Retrieve a secret using the secret client.
     let secret: SecretBundle = client
         .get_secret(
-            "secret-name".to_string(),
-            "secret-version".to_string(),
+            "secret_name".to_string(),
+            "secret_version".to_string(),
             None,
         )
         .await?
@@ -209,19 +209,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Update an existing secret
 
-`update_secret_properties` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
+`update_secret` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
 
 ```rust
+use azure_core::{RequestContent, Response};
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::{models::{SecretBundle, SecretUpdateParameters}, SecretClient};
+use serde_json::to_vec;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut secret = client.get_secret("secret-name").await?;
-    secret.properties.content_type = Some("text/plain".to_string());
-    secret.properties.tags.insert("foo".to_string(), "updated tag".to_string());
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential,
+        None,
+    )?;
 
-    let updated_secret_properties = client.update_secret_properties(secret.properties).await?;
-    println!("{}", updated_secret_properties.name);
-    println!("{}", updated_secret_properties.version);
-    println!("{}", updated_secret_properties.content_type.unwrap());
+    // Update a secret using the secret client.
+    let mut secret_update_parameters = SecretUpdateParameters::default();
+    if let Some(tags) = &mut secret_update_parameters.tags {
+        tags.insert("foo".to_string(), "buzz".to_string());
+    }
+
+    // Serialize secret_update_parameters to Vec<u8>
+    let secret_update_parameters_bytes: Vec<u8> = to_vec(&secret_update_parameters)?;
+
+    let response: Response<SecretBundle> = client
+        .update_secret(
+            "secret_name".to_string(),
+            "secret_version".to_string(),
+            RequestContent::from(secret_update_parameters_bytes),
+            None,
+        )
+        .await?;
+    println!("Response Code: {:?}", response.status());
 
     Ok(())
 }
@@ -229,15 +251,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Delete a secret
 
-`start_delete_secret` starts a long-running operation to delete a secret previously stored in the Azure Key Vault. You can retrieve the secret immediately without waiting for the operation to complete. When [soft-delete] is not enabled for the Azure Key Vault, this operation permanently deletes the secret.
+`delete_secret` starts a long-running operation to delete a secret previously stored in the Azure Key Vault. You can retrieve the secret immediately without waiting for the operation to complete. When [soft-delete] is not enabled for the Azure Key Vault, this operation permanently deletes the secret.
 
 ```rust
+use azure_core::Response;
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::{models::DeletedSecretBundle, SecretClient};
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let operation = client.start_delete_secret("secret-name").await?;
-    let secret = operation.value;
-    println!("{}", secret.name);
-    println!("{}", secret.value);
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential,
+        None,
+    )?;
+
+    // Delete a secret using the secret client.
+    let response: Response<DeletedSecretBundle> = client
+        .delete_secret(
+            "secret_name".to_string(),
+            None,
+        ).await?;
+    println!("Response Code: {:?}", response.status());
 
     Ok(())
 }
@@ -248,19 +284,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 You will need to wait for the long-running operation to complete before trying to purge or recover the secret. You can do this by calling `update_status` in a loop as shown below:
 
 ```rust
+use azure_core::Response;
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::{models::DeletedSecretBundle, SecretClient};
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut operation = client.start_delete_secret("secret-name").await?;
-    while !operation.has_completed {
-        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-        operation.update_status().await?;
-    }
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential,
+        None,
+    )?;
 
-    let secret = operation.value;
-    client.purge_deleted_secret(secret.name).await?;
+    // Delete a secret using the secret client.
+    let response: Response<DeletedSecretBundle> = client
+        .delete_secret("secret_name".to_string(), None)
+        .await?;
+    println!("Delete Response Code: {:?}", response.status());
+
+    // Purge deleted secret using the secret client.
+    let response: Response<()> = client
+        .purge_deleted_secret("secret_name".to_string(), None)
+        .await?;
+    println!("Purge Response Code: {:?}", response.status());
 
     Ok(())
 }
+
 ```
 
 ### List secrets
