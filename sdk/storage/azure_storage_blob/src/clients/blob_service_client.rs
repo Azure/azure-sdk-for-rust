@@ -6,18 +6,18 @@ use crate::{
     pipeline::StorageHeadersPolicy, BlobServiceClientGetPropertiesOptions, GeneratedBlobClient,
 };
 use azure_core::{
-    credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Response, Result,
+    credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Response, Result, Url,
 };
 use std::sync::Arc;
 
 pub struct BlobServiceClient {
-    pub endpoint: String,
+    pub endpoint: Url,
     client: GeneratedBlobClient,
 }
 
 impl BlobServiceClient {
     pub fn new(
-        endpoint: String,
+        endpoint: &str,
         credential: Arc<dyn TokenCredential>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
@@ -38,9 +38,12 @@ impl BlobServiceClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client = GeneratedBlobClient::new(&endpoint, credential, Some(options))?;
+        let client = GeneratedBlobClient::new(endpoint, credential, Some(options))?;
 
-        Ok(Self { endpoint, client })
+        Ok(Self {
+            endpoint: endpoint.parse()?,
+            client,
+        })
     }
 
     pub async fn get_service_properties(

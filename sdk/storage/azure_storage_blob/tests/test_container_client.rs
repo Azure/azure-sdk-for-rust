@@ -23,19 +23,19 @@ mod tests {
 
         // Act
         let container_client = BlobContainerClient::new(
-            endpoint,
-            String::from("testcontainer"),
+            &endpoint,
+            String::from("testcontainerdyn"),
             credential,
             Some(BlobClientOptions::default()),
-        )
-        .unwrap();
+        )?;
+        container_client.create_container(None).await?;
         let response = container_client
             .get_container_properties(Some(BlobContainerClientGetPropertiesOptions::default()))
             .await;
 
         // Assert
         assert!(response.is_ok());
-        println!("{:?}", response.unwrap());
+        container_client.delete_container(None).await?;
         Ok(())
     }
 
@@ -49,17 +49,17 @@ mod tests {
 
         // Act
         let container_client = BlobContainerClient::new(
-            endpoint,
+            &endpoint,
             String::from("missingcontainer"),
             credential,
             Some(BlobClientOptions::default()),
-        )
-        .unwrap();
+        )?;
         let response = container_client
             .get_container_properties(Some(BlobContainerClientGetPropertiesOptions::default()))
             .await;
 
         // Assert
+        //TODO: Bytes comparison
         assert_eq!(
             String::from("HttpResponse(NotFound, \"ContainerNotFound\")"),
             response.unwrap_err().kind().to_string()

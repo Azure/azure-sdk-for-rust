@@ -178,6 +178,13 @@ impl BlobContainerClient {
             }
         }
         request.insert_header("x-ms-version", &self.version);
+
+        // Generated Code Issue
+        // Issue: Hitting "LengthRequired" error
+        // [Proposed Change Start]
+        request.insert_header("content-length", "0");
+        // [Proposed Change End]
+
         self.pipeline.send(&ctx, &mut request).await
     }
 

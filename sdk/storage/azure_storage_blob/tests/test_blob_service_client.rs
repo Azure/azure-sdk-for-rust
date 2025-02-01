@@ -22,20 +22,14 @@ mod tests {
 
         // Act
         let service_client =
-            BlobServiceClient::new(endpoint, credential, Some(BlobClientOptions::default()))
-                .unwrap();
+            BlobServiceClient::new(&endpoint, credential, Some(BlobClientOptions::default()))?;
         let response = service_client
             .get_service_properties(Some(BlobServiceClientGetPropertiesOptions::default()))
-            .await;
+            .await?;
 
         // Assert
-        assert!(response.is_ok());
-        assert!(response
-            .unwrap()
-            .into_body()
-            .await?
-            .default_service_version
-            .is_some());
+        let storage_service_properties = response.into_body().await?;
+        assert!(storage_service_properties.default_service_version.is_some());
         Ok(())
     }
 }

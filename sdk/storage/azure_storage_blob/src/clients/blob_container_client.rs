@@ -5,18 +5,23 @@ use crate::blob_client::BlobClientOptions;
 use crate::generated::clients::blob_client::BlobClient as GeneratedBlobClient;
 use crate::models::ContainerProperties;
 use crate::pipeline::StorageHeadersPolicy;
-use crate::BlobContainerClientGetPropertiesOptions;
-use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Result};
+use crate::{
+    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+    BlobContainerClientGetPropertiesOptions,
+};
+use azure_core::{
+    credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Response, Result, Url,
+};
 use std::sync::Arc;
 pub struct BlobContainerClient {
-    pub endpoint: String,
+    pub endpoint: Url,
     pub container_name: String,
     client: GeneratedBlobClient,
 }
 
 impl BlobContainerClient {
     pub fn new(
-        endpoint: String,
+        endpoint: &str,
         container_name: String,
         credential: Arc<dyn TokenCredential>,
         options: Option<BlobClientOptions>,
@@ -38,13 +43,37 @@ impl BlobContainerClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client = GeneratedBlobClient::new(&endpoint, credential, Some(options))?;
+        let client = GeneratedBlobClient::new(endpoint, credential, Some(options))?;
 
         Ok(Self {
-            endpoint,
+            endpoint: endpoint.parse()?,
             container_name,
             client,
         })
+    }
+
+    pub async fn create_container(
+        &self,
+        options: Option<BlobContainerClientCreateOptions<'_>>,
+    ) -> Result<Response<()>> {
+        let response = self
+            .client
+            .get_blob_container_client(self.container_name.clone())
+            .create(options)
+            .await?;
+        Ok(response)
+    }
+
+    pub async fn delete_container(
+        &self,
+        options: Option<BlobContainerClientDeleteOptions<'_>>,
+    ) -> Result<Response<()>> {
+        let response = self
+            .client
+            .get_blob_container_client(self.container_name.clone())
+            .delete(options)
+            .await?;
+        Ok(response)
     }
 
     pub async fn get_container_properties(
