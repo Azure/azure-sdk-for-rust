@@ -225,9 +225,9 @@ impl fmt::Debug for Headers {
         #[allow(dead_code)]
         const SANITIZED_VALUE: &str = "*****";
 
-        // TODO: Sanitize headers.
+        // TODO: Sanitize all bug safe headers.
         f.debug_map()
-            .entries(self.0.iter().map(|(k, v)| (k.as_str(), v.as_str())))
+            .entries(self.0.keys().map(|k| (k.as_str(), SANITIZED_VALUE)))
             .finish()
     }
 }

@@ -56,13 +56,12 @@ impl Body {
 impl fmt::Debug for Body {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Bytes(v) => match String::from_utf8(v.to_vec()) {
-                Ok(s) => f.write_str(s.as_str()),
-                Err(_) => write!(f, "Bytes(len: {})", v.len()),
-            },
-            // Self::Bytes(v) => write!(f, "Bytes(len: {})", v.len()),
+            Self::Bytes(v) if !v.is_empty() => f.write_str("Bytes { ... }"),
+            Self::Bytes(_) => f.write_str("Bytes {}"),
             #[cfg(not(target_arch = "wasm32"))]
-            Self::SeekableStream(v) => write!(f, "SeekableStream(len: {})", v.len()),
+            Self::SeekableStream(v) if !v.is_empty() => f.write_str("SeekableStream { ... }"),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::SeekableStream(_) => f.write_str("SeekableStream {}"),
         }
     }
 }
