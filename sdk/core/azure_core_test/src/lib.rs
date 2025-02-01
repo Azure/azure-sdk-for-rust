@@ -214,9 +214,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_content_new() {
+    fn test_context_new() {
         let ctx =
-            TestContext::new(env!("CARGO_MANIFEST_DIR"), file!(), "test_content_new").unwrap();
+            TestContext::new(env!("CARGO_MANIFEST_DIR"), file!(), "test_context_new").unwrap();
         assert!(ctx.recording.is_none());
         assert!(ctx
             .crate_dir()
@@ -225,10 +225,10 @@ mod tests {
             .replace("\\", "/")
             .ends_with("sdk/core/azure_core_test"));
         assert_eq!(ctx.test_module(), "lib");
-        assert_eq!(ctx.test_name(), "test_content_new");
+        assert_eq!(ctx.test_name(), "test_context_new");
         assert_eq!(
-            ctx.test_recording_file(),
-            "sdk/core/azure_core_test/tests/data/lib/test_content_new.json"
+            ctx.test_recording_file().replace("\\", "/"),
+            "sdk/core/azure_core_test/tests/data/lib/test_context_new.json"
         );
     }
 
