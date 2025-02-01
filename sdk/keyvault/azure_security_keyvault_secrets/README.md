@@ -10,7 +10,7 @@ The Azure Key Vault Secrets client library allows you to securely store and cont
 
 ### Install the package
 
-Install the Azure Key Vault Secrets client library for Rust with Cargo:
+Install the Azure Key Vault Secrets client library for Rust with [Cargo]:
 
 ```sh
 cargo add azure_security_keyvault_secrets
@@ -415,25 +415,15 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [Azure CLI]: https://learn.microsoft.com/cli/azure
 [Azure subscription]: https://azure.microsoft.com/free/rust/
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
-[backup_and_restore_sample]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_security_keyvault_secrets/samples/Sample2_BackupAndRestore.md
 [Certificates client library]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_certificates
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
-[get_secrets_sample]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_security_keyvault_secrets/samples/Sample3_GetSecrets.md
-[hello_world_sample]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_security_keyvault_secrets/samples/Sample1_HelloWorld.md
 [Keys client library]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_keys
 [Product documentation]: https://learn.microsoft.com/azure/key-vault/
 [REST API]: https://learn.microsoft.com/rest/api/keyvault/
 [Cargo]: https://crates.io/
 [Package (crates.io)]: https://crates.io/crates/azure_security_keyvault_secrets
-[Samples]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets/samples
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets/src
-[soft_delete]: https://learn.microsoft.com/azure/key-vault/general/soft-delete-overview
-[DefaultAzureCredential]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/identity/azure_identity/src/default_azure_credential.rs
 [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/CONTRIBUTING.md
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
-[Migration guide]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_security_keyvault_secrets/MigrationGuide.md
 [access control]: https://learn.microsoft.com/azure/key-vault/general/assign-access-policy
 [RBAC]: https://learn.microsoft.com/azure/key-vault/general/rbac-guide
-[troubleshooting guide]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_security_keyvault_secrets/TROUBLESHOOTING.md
-
-![Impressions](https://azure-sdk-impressions.azurewebsites.net/api/impressions/azure-sdk-for-rust%2Fsdk%2Fkeyvault%2Fazure_security_keyvault_secrets%2FREADME.png)
