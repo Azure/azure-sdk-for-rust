@@ -35,7 +35,6 @@ pub async fn start(
 
     #[cfg(not(target_arch = "wasm32"))]
     let proxy = {
-        let test_data_dir = ctx.test_data_dir();
         match test_mode {
             TestMode::Live => None,
             _ => Some(
@@ -50,9 +49,7 @@ pub async fn start(
                                 .init();
                         }
 
-                        crate::proxy::start(test_data_dir, options)
-                            .await
-                            .map(Arc::new)
+                        crate::proxy::start(crate_dir, options).await.map(Arc::new)
                     })
                     .await
                     .as_ref()

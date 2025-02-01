@@ -45,6 +45,7 @@ tokio = { workspace = true, features = [
 
 [dev-dependencies]
 clap.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tokio = { workspace = true, features = ["signal"] }

@@ -59,7 +59,7 @@ mod bootstrap {
     ///
     /// This is intended for internal use only and should not be called directly in tests.
     pub async fn start(
-        test_data_dir: impl AsRef<Path>,
+        crate_dir: impl AsRef<Path>,
         options: Option<ProxyOptions>,
     ) -> Result<Proxy> {
         if env::var(PROXY_MANUAL_START).is_ok_and(|v| v.eq_ignore_ascii_case("true")) {
@@ -68,7 +68,7 @@ mod bootstrap {
         }
 
         // Find root of git repo or work tree: a ".git" directory or file will exist either way.
-        let git_dir = crate::find_ancestor(test_data_dir, ".git")?;
+        let git_dir = crate::find_ancestor_file(crate_dir, ".git")?;
         let git_dir = git_dir.parent().ok_or_else(|| {
             io::Error::new(io::ErrorKind::NotFound, "parent git repository not found")
         })?;

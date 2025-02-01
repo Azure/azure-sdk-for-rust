@@ -45,7 +45,7 @@ impl TestContext {
             .to_str()
             .ok_or_else(|| Error::message(ErrorKind::Other, "invalid test module"))?;
         Ok(Self {
-            repo_dir: find_parent(crate_dir, ".git")?,
+            repo_dir: find_ancestor_of(crate_dir, ".git")?,
             crate_dir: Path::new(crate_dir),
             service_directory,
             test_module,
@@ -125,7 +125,7 @@ impl TestContext {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let path = match find_ancestor(self.crate_dir, ASSETS_FILE) {
+            let path = match find_ancestor_file(self.crate_dir, ASSETS_FILE) {
                 Ok(path) => path,
                 Err(_) if mode == TestMode::Record => {
                     return Path::new("sdk")
@@ -158,6 +158,9 @@ impl TestContext {
     }
 }
 
+/// Finds `name` under `dir` and returns the path to the parent `dir`.
+///
+/// This function does *not* check the file system.
 fn parent_of<'a>(dir: &'a str, name: &'static str) -> Option<&'a str> {
     let mut child = None;
 
@@ -172,8 +175,11 @@ fn parent_of<'a>(dir: &'a str, name: &'static str) -> Option<&'a str> {
     None
 }
 
+/// Finds `name` under `dir` and returns the path to the named entry.
+///
+/// This function does check the file system.
 #[cfg(not(target_arch = "wasm32"))]
-fn find_ancestor(dir: impl AsRef<Path>, name: &str) -> azure_core::Result<PathBuf> {
+fn find_ancestor_file(dir: impl AsRef<Path>, name: &str) -> azure_core::Result<PathBuf> {
     for dir in dir.as_ref().ancestors() {
         let path = dir.join(name);
         if path.exists() {
@@ -195,7 +201,10 @@ fn find_ancestor(dir: impl AsRef<Path>, name: &str) -> azure_core::Result<PathBu
     ))
 }
 
-fn find_parent(dir: &'static str, name: &'static str) -> azure_core::Result<&'static Path> {
+/// Finds `name` under `dir` and returns the path to the parent `dir`.
+///
+/// This function does check the file system.
+fn find_ancestor_of(dir: &'static str, name: &'static str) -> azure_core::Result<&'static Path> {
     let dir = Path::new(dir);
     for dir in dir.ancestors() {
         let path = dir.join(name);
