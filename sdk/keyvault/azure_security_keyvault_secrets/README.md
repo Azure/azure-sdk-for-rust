@@ -172,7 +172,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Retrieve a secret
 
-`get_secret` retrieves a secret previously stored in the Azure Key Vault.
+`get_secret` retrieves a secret previously stored in the Azure Key Vault. Setting the `secret-version` to an empty string will return the latest version.
 
 ```rust
 use azure_identity::DefaultAzureCredential;
@@ -351,11 +351,12 @@ For example, if you try to retrieve a secret that doesn't exist in your Azure Ke
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::SecretClient;
 
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
+        "https://ronnieg-keyvault.vault.azure.net/",
         credential,
         None,
     )?;
@@ -363,13 +364,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client
         .get_secret(
             "secret-name".to_string(),
-            "secret-version".to_string(),
+            "".to_string(),
             None,
         )
         .await
     {
         Ok(response) => println!("Secret Value: {:?}", response.into_body().await?.value),
-        Err(err) => println!("{}", err),
+        Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }
 
     Ok(())
@@ -379,28 +380,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 You will notice that additional information is logged, like the Client Request ID of the operation.
 
 ```text
-Message:
-    Azure.RequestFailedException : Service request failed.
-    Status: 404 (Not Found)
-Content:
-    {"error":{"code":"SecretNotFound","message":"Secret not found: some_secret"}}
-
-Headers:
-    Cache-Control: no-cache
-    Pragma: no-cache
-    Server: Microsoft-IIS/10.0
-    x-ms-keyvault-region: westus
-    x-ms-request-id: 625f870e-10ea-41e5-8380-282e5cf768f2
-    x-ms-keyvault-service-version: 1.1.0.866
-    x-ms-keyvault-network-info: addr=131.107.174.199;act_addr_fam=InterNetwork;
-    X-AspNet-Version: 4.0.30319
-    X-Powered-By: ASP.NET
-    Strict-Transport-Security: max-age=31536000;includeSubDomains
-    X-Content-Type-Options: nosniff
-    Date: Tue, 18 Jun 2019 16:02:11 GMT
-    Content-Length: 75
-    Content-Type: application/json; charset=utf-8
-    Expires: -1
+Error: HttpError {
+    status: NotFound,
+    details: ErrorDetails {
+        code: Some(
+            "SecretNotFound",
+        ),
+        message: Some(
+            "A secret with (name/id) secret-name1 was not found in this key vault. If you recently deleted this secret you may be able to recover it using the correct recovery command. For help resolving this issue, please see https://go.microsoft.com/fwlink/?linkid=2125182",
+        ),
+    },
+    ..
+}
 ```
 
 ## Next steps
