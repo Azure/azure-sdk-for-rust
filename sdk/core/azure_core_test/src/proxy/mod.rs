@@ -10,7 +10,11 @@ pub(crate) mod sanitizers;
 
 #[cfg(not(target_arch = "wasm32"))]
 use azure_core::Result;
-use azure_core::{error::ErrorKind, headers::HeaderName, Url};
+use azure_core::{
+    error::ErrorKind,
+    headers::{HeaderName, HeaderValue},
+    Header, Url,
+};
 use serde::Serializer;
 #[cfg(not(target_arch = "wasm32"))]
 use std::process::ExitStatus;
@@ -21,6 +25,10 @@ use tokio::process::Child;
 use tracing::Level;
 
 const ABSTRACTION_IDENTIFIER: HeaderName = HeaderName::from_static("x-abstraction-identifier");
+const RECORDING_ID: HeaderName = HeaderName::from_static("x-recording-id");
+const RECORDING_MODE: HeaderName = HeaderName::from_static("x-recording-mode");
+const RECORDING_UPSTREAM_BASE_URI: HeaderName =
+    HeaderName::from_static("x-recording-upstream-base-uri");
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use bootstrap::start;
@@ -212,7 +220,7 @@ impl Drop for Proxy {
 }
 
 /// Options for starting the [`Proxy`].
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct ProxyOptions {
     /// Allow insecure upstream SSL certs.
     pub insecure: bool,
@@ -232,6 +240,51 @@ impl ProxyOptions {
             "--auto-shutdown-in-seconds".into(),
             self.auto_shutdown_in_seconds.to_string(),
         ]);
+    }
+}
+
+impl Default for ProxyOptions {
+    fn default() -> Self {
+        Self {
+            insecure: false,
+            auto_shutdown_in_seconds: 300,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct RecordingId(String);
+
+impl Header for RecordingId {
+    fn name(&self) -> HeaderName {
+        RECORDING_ID
+    }
+
+    fn value(&self) -> HeaderValue {
+        self.0.clone().into()
+    }
+}
+
+impl Header for &RecordingId {
+    fn name(&self) -> HeaderName {
+        RECORDING_ID
+    }
+
+    fn value(&self) -> HeaderValue {
+        self.0.clone().into()
+    }
+}
+
+impl AsRef<str> for RecordingId {
+    fn as_ref(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+impl FromStr for RecordingId {
+    type Err = std::convert::Infallible;
+    fn from_str(value: &str) -> std::result::Result<Self, Self::Err> {
+        Ok(RecordingId(value.to_string()))
     }
 }
 

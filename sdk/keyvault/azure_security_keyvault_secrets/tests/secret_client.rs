@@ -9,7 +9,7 @@ use azure_security_keyvault_secrets::{
     models::SecretSetParameters, SecretClient, SecretClientOptions,
 };
 
-#[recorded::test(live)]
+#[recorded::test]
 async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 

@@ -78,7 +78,7 @@ pub struct RecordStartResult {
 
 #[derive(Debug, Default, Serialize)]
 pub struct VariablePayload {
-    #[serde(rename = "Variables")]
+    #[serde(flatten)]
     pub variables: HashMap<String, String>,
 }
 

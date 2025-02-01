@@ -13,6 +13,8 @@ pub use proxy::{matchers::*, sanitizers::*};
 pub use recording::*;
 use std::path::{Path, PathBuf};
 
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
+const ASSETS_FILE: &str = "assets.json";
 const SPAN_TARGET: &str = "test-proxy";
 
 /// Context information required by recorded client library tests.
@@ -21,6 +23,7 @@ const SPAN_TARGET: &str = "test-proxy";
 /// to setup up the HTTP client to record or play back session records.
 #[derive(Debug)]
 pub struct TestContext {
+    repo_dir: &'static Path,
     crate_dir: &'static Path,
     service_directory: &'static str,
     test_module: &'static str,
@@ -42,6 +45,7 @@ impl TestContext {
             .to_str()
             .ok_or_else(|| Error::message(ErrorKind::Other, "invalid test module"))?;
         Ok(Self {
+            repo_dir: find_parent(crate_dir, ".git")?,
             crate_dir: Path::new(crate_dir),
             service_directory,
             test_module,
@@ -66,6 +70,11 @@ impl TestContext {
             .expect("not recording or playback started")
     }
 
+    /// Gets the repository root.
+    pub fn repo_dir(&self) -> &'static Path {
+        self.repo_dir
+    }
+
     /// Gets the service directory containing the current test.
     ///
     /// This is the directory under `sdk/` within the repository e.g., "core" in `sdk/core`.
@@ -74,8 +83,18 @@ impl TestContext {
     }
 
     /// Gets the test data directory under [`Self::crate_dir`].
+    ///
+    /// The path is relative to the repository root e.g., `sdk/core/azure_core/tests/data`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the [`TestContext::crate_dir()`] is not rooted within a Git repository.
     pub fn test_data_dir(&self) -> PathBuf {
-        self.crate_dir.join("tests/data")
+        self.crate_dir
+            .join("tests/data")
+            .strip_prefix(self.repo_dir)
+            .expect("not rooted within repo")
+            .to_path_buf()
     }
 
     /// Gets the module name containing the current test.
@@ -89,7 +108,16 @@ impl TestContext {
     }
 
     /// Gets the recording assets file under the crate directory.
-    pub(crate) fn test_recording_assets_file(&self) -> Option<String> {
+    ///
+    /// The path is relative to the repository root e.g., `sdk/core/assets.json`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the [`TestContext::crate_dir()`] is not rooted within a Git repository.
+    pub(crate) fn test_recording_assets_file(
+        &self,
+        #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] mode: TestMode,
+    ) -> Option<String> {
         #[cfg(target_arch = "wasm32")]
         {
             None
@@ -97,9 +125,22 @@ impl TestContext {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let path =
-                find_ancestor(self.crate_dir, "assets.json").unwrap_or_else(|err| panic!("{err}"));
-            path.as_path().to_str().map(String::from)
+            let path = match find_ancestor(self.crate_dir, ASSETS_FILE) {
+                Ok(path) => path,
+                Err(_) if mode == TestMode::Record => {
+                    return Path::new("sdk")
+                        .join(self.service_directory)
+                        .join(ASSETS_FILE)
+                        .as_path()
+                        .to_str()
+                        .map(String::from);
+                }
+                Err(err) => panic!("{err}"),
+            };
+            path.strip_prefix(self.repo_dir)
+                .expect("not rooted within repo")
+                .to_str()
+                .map(String::from)
         }
     }
 
@@ -154,6 +195,20 @@ fn find_ancestor(dir: impl AsRef<Path>, name: &str) -> azure_core::Result<PathBu
     ))
 }
 
+fn find_parent(dir: &'static str, name: &'static str) -> azure_core::Result<&'static Path> {
+    let dir = Path::new(dir);
+    for dir in dir.ancestors() {
+        let path = dir.join(name);
+        if path.exists() {
+            return Ok(dir);
+        }
+    }
+    Err(azure_core::Error::new::<std::io::Error>(
+        azure_core::error::ErrorKind::Io,
+        std::io::ErrorKind::NotFound.into(),
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -171,11 +226,10 @@ mod tests {
             .ends_with("sdk/core/azure_core_test"));
         assert_eq!(ctx.test_module(), "lib");
         assert_eq!(ctx.test_name(), "test_content_new");
-        assert!(ctx
-            .test_recording_file()
-            .as_str()
-            .replace("\\", "/")
-            .ends_with("sdk/core/azure_core_test/tests/data/lib/test_content_new.json"));
+        assert_eq!(
+            ctx.test_recording_file(),
+            "sdk/core/azure_core_test/tests/data/lib/test_content_new.json"
+        );
     }
 
     #[test]

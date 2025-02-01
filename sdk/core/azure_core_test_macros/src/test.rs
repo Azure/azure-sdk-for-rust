@@ -25,7 +25,7 @@ pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
     } = syn::parse2(item)?;
 
     let mut test_attr: TokenStream = match original_sig.asyncness {
-        Some(_) => quote! { #[::tokio::test] },
+        Some(_) => quote! { #[::tokio::test(flavor = "multi_thread")] },
         None => {
             return Err(syn::Error::new(
                 original_sig.span(),

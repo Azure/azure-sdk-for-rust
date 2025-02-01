@@ -41,6 +41,15 @@ pub async fn start(
             _ => Some(
                 TEST_PROXY
                     .get_or_init(|| async move {
+                        #[cfg(feature = "tracing")]
+                        {
+                            use tracing_subscriber::EnvFilter;
+
+                            tracing_subscriber::fmt()
+                                .with_env_filter(EnvFilter::from_default_env())
+                                .init();
+                        }
+
                         crate::proxy::start(test_data_dir, options)
                             .await
                             .map(Arc::new)
@@ -55,7 +64,7 @@ pub async fn start(
 
     // TODO: Could we cache the client? Hypothetically, this function should only run once per `tests/*` file so it should be practical.
     let mut client = None;
-    if let Some(proxy) = &proxy {
+    if let Some(proxy) = proxy.as_ref() {
         client = Some(Client::new(proxy.endpoint().clone())?);
     }
 
@@ -69,7 +78,7 @@ pub async fn start(
         client,
         ctx.service_directory(),
         ctx.test_recording_file(),
-        ctx.test_recording_assets_file(),
+        ctx.test_recording_assets_file(test_mode),
     );
     recording.start().await?;
 

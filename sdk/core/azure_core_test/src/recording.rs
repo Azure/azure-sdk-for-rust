@@ -5,10 +5,10 @@
 
 use crate::{
     proxy::{
-        client::{Client, ClientAddSanitizerOptions, ClientSetMatcherOptions, RecordingId},
+        client::{Client, ClientAddSanitizerOptions, ClientSetMatcherOptions},
         models::{StartPayload, VariablePayload},
         policy::RecordingPolicy,
-        Proxy,
+        Proxy, RecordingId,
     },
     Matcher, Sanitizer,
 };
@@ -111,6 +111,8 @@ impl Recording {
             .get_or_init(|| {
                 Arc::new(RecordingPolicy {
                     test_mode: self.test_mode,
+                    host: self.client.as_ref().map(|c| c.endpoint().clone()),
+                    recording_id: self.id.clone(),
                     ..Default::default()
                 })
             })
@@ -232,7 +234,8 @@ impl Recording {
     ///
     /// If playing back a recording, environment variable that were recorded will be reloaded.
     pub(crate) async fn start(&mut self) -> azure_core::Result<()> {
-        let Some(client) = &self.client else {
+        let Some(client) = self.client.as_ref() else {
+            // Assumes running live test.
             return Ok(());
         };
 
@@ -267,17 +270,14 @@ impl Recording {
     ///
     /// If recording, environment variables that were retrieved will be recorded.
     pub(crate) async fn stop(&self) -> azure_core::Result<()> {
-        let Some(client) = &self.client else {
+        let Some(client) = self.client.as_ref() else {
+            // Assumes running live test.
             return Ok(());
         };
 
         let Some(recording_id) = self.id.as_ref() else {
-            tracing::error!(target: crate::SPAN_TARGET, parent: &self.span, "missing recording ID");
-
-            return Err(azure_core::Error::message(
-                ErrorKind::Other,
-                "missing recording ID",
-            ));
+            // Do not return an error or we hide any test-proxy client or client under test error.
+            return Ok(());
         };
 
         match self.test_mode {

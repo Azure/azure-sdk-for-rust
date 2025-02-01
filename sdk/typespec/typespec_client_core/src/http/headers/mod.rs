@@ -222,8 +222,13 @@ impl Headers {
 
 impl fmt::Debug for Headers {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        #[allow(dead_code)]
+        const SANITIZED_VALUE: &str = "*****";
+
         // TODO: Sanitize headers.
-        write!(f, "Headers(len: {})", self.0.len())
+        f.debug_map()
+            .entries(self.0.iter().map(|(k, v)| (k.as_str(), v.as_str())))
+            .finish()
     }
 }
 
