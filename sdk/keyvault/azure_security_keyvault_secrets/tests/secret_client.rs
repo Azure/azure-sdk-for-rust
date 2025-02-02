@@ -12,9 +12,15 @@ use azure_security_keyvault_secrets::{
 use futures::TryStreamExt;
 use std::collections::HashMap;
 
+const REMOVE_SANITIZERS: &[&str] = &[
+    // BodyKeySanitizer("$..id"): the resource ID contains the required name and version.
+    "AZSDK3430",
+];
+
 #[recorded::test]
 async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
 
     let mut options = SecretClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -64,6 +70,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn update_secret_properties(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
 
     let mut options = SecretClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -119,6 +126,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn list_secrets(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
 
     let mut options = SecretClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -131,25 +139,26 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
 
     // Create several secrets.
     let mut names = vec!["list-secrets-1", "list-secrets-2"];
-    let (secret1, secret2) = tokio::try_join!(
-        client
-            .set_secret(
-                names[0].into(),
-                r#"{"value":"secret-value-1"}"#.try_into()?,
-                None
-            )
-            .await?
-            .into_body(),
-        client
-            .set_secret(
-                names[1].into(),
-                r#"{"value":"secret-value-2"}"#.try_into()?,
-                None
-            )
-            .await?
-            .into_body(),
-    )?;
+    let secret1 = client
+        .set_secret(
+            names[0].into(),
+            r#"{"value":"secret-value-1"}"#.try_into()?,
+            None,
+        )
+        .await?
+        .into_body()
+        .await?;
     assert_eq!(secret1.value, Some("secret-value-1".into()));
+
+    let secret2 = client
+        .set_secret(
+            names[1].into(),
+            r#"{"value":"secret-value-2"}"#.try_into()?,
+            None,
+        )
+        .await?
+        .into_body()
+        .await?;
     assert_eq!(secret2.value, Some("secret-value-2".into()));
 
     // List secrets.

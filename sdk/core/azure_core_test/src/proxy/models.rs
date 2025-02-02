@@ -98,3 +98,23 @@ pub struct PlaybackStartResult {
     #[serde(flatten)]
     pub variables: HashMap<String, String>,
 }
+
+#[derive(Debug, Default, Serialize)]
+pub struct SanitizerList {
+    #[serde(rename = "Sanitizers")]
+    pub sanitizers: Vec<String>,
+}
+
+impl TryFrom<SanitizerList> for RequestContent<SanitizerList> {
+    type Error = azure_core::Error;
+    fn try_from(value: SanitizerList) -> Result<Self, Self::Error> {
+        RequestContent::try_from(to_json(&value)?)
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RemovedSanitizers {
+    #[allow(dead_code)]
+    #[serde(rename = "Removed")]
+    pub removed: Vec<String>,
+}
