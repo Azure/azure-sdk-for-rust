@@ -1,8 +1,8 @@
 cbcpad
+ciphertext
 ckmaeskeywrap
 ckmaeskeywrappad
 ckmrsaaeskeywrap
-ciphertext
 deletedkeys
 deletedsecrets
 echsm
@@ -11,7 +11,7 @@ purgeable
 rotationpolicy
 rsaaeskeywrap
 rsahsm
-rsnull
 rsaoaep
+rsnull
 unwrapkey
 wrapkey
