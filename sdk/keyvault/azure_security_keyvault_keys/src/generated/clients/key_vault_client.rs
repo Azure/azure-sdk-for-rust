@@ -12,6 +12,7 @@ use crate::models::{
 };
 use std::sync::Arc;
 use typespec_client_core::json;
+use typespec_client_core::fmt::SafeDebug;
 use typespec_client_core::http::PagerResult;
 
 pub struct KeyVaultClient {
@@ -20,7 +21,7 @@ pub struct KeyVaultClient {
     pipeline: Pipeline,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, SafeDebug)]
 pub struct KeyVaultClientOptions {
     pub api_version: String,
     pub client_options: ClientOptions,
@@ -60,12 +61,12 @@ impl KeyVaultClient {
 /// be backed up. BACKUP / RESTORE can be performed within geographical boundaries only; meaning that a BACKUP from one geographical
 /// area cannot be restored to another geographical area. For example, a backup from the US geographical area cannot be restored
 /// in an EU geographical area. This operation requires the key/backup permission.
-    pub async fn backup_key(&self, key_name: String, options: Option<KeyVaultClientBackupKeyOptions<'_>>) -> Result<Response<BackupKeyResult>> {
+    pub async fn backup_key(&self, key_name: &str, options: Option<KeyVaultClientBackupKeyOptions<'_>>) -> Result<Response<BackupKeyResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/backup");
-        path = path.replace("{key-name}", &key_name);
+        path = path.replace("{key-name}", key_name);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -78,12 +79,12 @@ impl KeyVaultClient {
 ///
 /// The create key operation can be used to create any key type in Azure Key Vault. If the named key already exists, Azure
 /// Key Vault creates a new version of the key. It requires the keys/create permission.
-    pub async fn create_key(&self, key_name: String, parameters: RequestContent<KeyCreateParameters>, options: Option<KeyVaultClientCreateKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
+    pub async fn create_key(&self, key_name: &str, parameters: RequestContent<KeyCreateParameters>, options: Option<KeyVaultClientCreateKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/create");
-        path = path.replace("{key-name}", &key_name);
+        path = path.replace("{key-name}", key_name);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -103,13 +104,13 @@ impl KeyVaultClient {
 /// permission. Microsoft recommends not to use CBC algorithms for decryption without first ensuring the integrity of the
 /// ciphertext using an HMAC, for example. See https://docs.microsoft.com/dotnet/standard/security/vulnerabilities-cbc-mode
 /// for more information.
-    pub async fn decrypt(&self, key_name: String, key_version: String, parameters: RequestContent<KeyOperationsParameters>, options: Option<KeyVaultClientDecryptOptions<'_>>) -> Result<Response<KeyOperationResult>> {
+    pub async fn decrypt(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyOperationsParameters>, options: Option<KeyVaultClientDecryptOptions<'_>>) -> Result<Response<KeyOperationResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/decrypt");
-        path = path.replace("{key-name}", &key_name);
-        path = path.replace("{key-version}", &key_version);
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -125,12 +126,12 @@ impl KeyVaultClient {
 /// The delete key operation cannot be used to remove individual versions of a key. This operation removes the cryptographic
 /// material associated with the key, which means the key is not usable for Sign/Verify, Wrap/Unwrap or Encrypt/Decrypt operations.
 /// This operation requires the keys/delete permission.
-    pub async fn delete_key(&self, key_name: String, options: Option<KeyVaultClientDeleteKeyOptions<'_>>) -> Result<Response<DeletedKeyBundle>> {
+    pub async fn delete_key(&self, key_name: &str, options: Option<KeyVaultClientDeleteKeyOptions<'_>>) -> Result<Response<DeletedKeyBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}");
-        path = path.replace("{key-name}", &key_name);
+        path = path.replace("{key-name}", key_name);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
@@ -147,13 +148,13 @@ impl KeyVaultClient {
 /// Azure Key Vault since protection with an asymmetric key can be performed using public portion of the key. This operation
 /// is supported for asymmetric keys as a convenience for callers that have a key-reference but do not have access to the
 /// public key material. This operation requires the keys/encrypt permission.
-    pub async fn encrypt(&self, key_name: String, key_version: String, parameters: RequestContent<KeyOperationsParameters>, options: Option<KeyVaultClientEncryptOptions<'_>>) -> Result<Response<KeyOperationResult>> {
+    pub async fn encrypt(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyOperationsParameters>, options: Option<KeyVaultClientEncryptOptions<'_>>) -> Result<Response<KeyOperationResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/encrypt");
-        path = path.replace("{key-name}", &key_name);
-        path = path.replace("{key-version}", &key_version);
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -168,12 +169,12 @@ impl KeyVaultClient {
 ///
 /// The Get Deleted Key operation is applicable for soft-delete enabled vaults. While the operation can be invoked on any
 /// vault, it will return an error if invoked on a non soft-delete enabled vault. This operation requires the keys/get permission.
-    pub async fn get_deleted_key(&self, key_name: String, options: Option<KeyVaultClientGetDeletedKeyOptions<'_>>) -> Result<Response<DeletedKeyBundle>> {
+    pub async fn get_deleted_key(&self, key_name: &str, options: Option<KeyVaultClientGetDeletedKeyOptions<'_>>) -> Result<Response<DeletedKeyBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedkeys/{key-name}");
-        path = path.replace("{key-name}", &key_name);
+        path = path.replace("{key-name}", key_name);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
@@ -197,10 +198,14 @@ impl KeyVaultClient {
         if let Some(maxresults) = options.maxresults {
             first_url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
         }
+        let api_version = self.api_version.clone();
         Ok(Pager::from_callback(move |next_link: Option<Url>| {
             let url = match next_link {
                 Some(next_link) => {
-                     next_link
+                    let qp = next_link.query_pairs().filter(|(name, _)| name.ne("api-version"));
+                    let mut next_link = next_link.clone();
+                    next_link.query_pairs_mut().clear().extend_pairs(qp).append_pair("api-version", &api_version);
+                    next_link
                 },
                 None => {
                     first_url.clone()
@@ -233,13 +238,13 @@ impl KeyVaultClient {
 ///
 /// The get key operation is applicable to all key types. If the requested key is symmetric, then no key material is released
 /// in the response. This operation requires the keys/get permission.
-    pub async fn get_key(&self, key_name: String, key_version: String, options: Option<KeyVaultClientGetKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
+    pub async fn get_key(&self, key_name: &str, key_version: &str, options: Option<KeyVaultClientGetKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}");
-        path = path.replace("{key-name}", &key_name);
-        path = path.replace("{key-version}", &key_version);
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
@@ -252,12 +257,12 @@ impl KeyVaultClient {
 ///
 /// The GetKeyRotationPolicy operation returns the specified key policy resources in the specified key vault. This operation
 /// requires the keys/get permission.
-    pub async fn get_key_rotation_policy(&self, key_name: String, options: Option<KeyVaultClientGetKeyRotationPolicyOptions<'_>>) -> Result<Response<KeyRotationPolicy>> {
+    pub async fn get_key_rotation_policy(&self, key_name: &str, options: Option<KeyVaultClientGetKeyRotationPolicyOptions<'_>>) -> Result<Response<KeyRotationPolicy>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/rotationpolicy");
-        path = path.replace("{key-name}", &key_name);
+        path = path.replace("{key-name}", key_name);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
@@ -269,21 +274,25 @@ impl KeyVaultClient {
     /// Retrieves a list of individual key versions with the same key name.
 ///
 /// The full key identifier, attributes, and tags are provided in the response. This operation requires the keys/list permission.
-    pub fn get_key_versions(&self, key_name: String, options: Option<KeyVaultClientGetKeyVersionsOptions<'_>>) -> Result<Pager<KeyListResult>> {
+    pub fn get_key_versions(&self, key_name: &str, options: Option<KeyVaultClientGetKeyVersionsOptions<'_>>) -> Result<Pager<KeyListResult>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/versions");
-        path = path.replace("{key-name}", &key_name);
+        path = path.replace("{key-name}", key_name);
         first_url = first_url.join(&path)?;
         first_url.query_pairs_mut().append_pair("api-version", &self.api_version);
         if let Some(maxresults) = options.maxresults {
             first_url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
         }
+        let api_version = self.api_version.clone();
         Ok(Pager::from_callback(move |next_link: Option<Url>| {
             let url = match next_link {
                 Some(next_link) => {
-                     next_link
+                    let qp = next_link.query_pairs().filter(|(name, _)| name.ne("api-version"));
+                    let mut next_link = next_link.clone();
+                    next_link.query_pairs_mut().clear().extend_pairs(qp).append_pair("api-version", &api_version);
+                    next_link
                 },
                 None => {
                     first_url.clone()
@@ -326,10 +335,14 @@ impl KeyVaultClient {
         if let Some(maxresults) = options.maxresults {
             first_url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
         }
+        let api_version = self.api_version.clone();
         Ok(Pager::from_callback(move |next_link: Option<Url>| {
             let url = match next_link {
                 Some(next_link) => {
-                     next_link
+                    let qp = next_link.query_pairs().filter(|(name, _)| name.ne("api-version"));
+                    let mut next_link = next_link.clone();
+                    next_link.query_pairs_mut().clear().extend_pairs(qp).append_pair("api-version", &api_version);
+                    next_link
                 },
                 None => {
                     first_url.clone()
@@ -379,12 +392,12 @@ impl KeyVaultClient {
 ///
 /// The import key operation may be used to import any key type into an Azure Key Vault. If the named key already exists,
 /// Azure Key Vault creates a new version of the key. This operation requires the keys/import permission.
-    pub async fn import_key(&self, key_name: String, parameters: RequestContent<KeyImportParameters>, options: Option<KeyVaultClientImportKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
+    pub async fn import_key(&self, key_name: &str, parameters: RequestContent<KeyImportParameters>, options: Option<KeyVaultClientImportKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}");
-        path = path.replace("{key-name}", &key_name);
+        path = path.replace("{key-name}", key_name);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Put);
@@ -399,12 +412,12 @@ impl KeyVaultClient {
 ///
 /// The Purge Deleted Key operation is applicable for soft-delete enabled vaults. While the operation can be invoked on any
 /// vault, it will return an error if invoked on a non soft-delete enabled vault. This operation requires the keys/purge permission.
-    pub async fn purge_deleted_key(&self, key_name: String, options: Option<KeyVaultClientPurgeDeletedKeyOptions<'_>>) -> Result<Response<()>> {
+    pub async fn purge_deleted_key(&self, key_name: &str, options: Option<KeyVaultClientPurgeDeletedKeyOptions<'_>>) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedkeys/{key-name}");
-        path = path.replace("{key-name}", &key_name);
+        path = path.replace("{key-name}", key_name);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
@@ -418,12 +431,12 @@ impl KeyVaultClient {
 /// The Recover Deleted Key operation is applicable for deleted keys in soft-delete enabled vaults. It recovers the deleted
 /// key back to its latest version under /keys. An attempt to recover an non-deleted key will return an error. Consider this
 /// the inverse of the delete operation on soft-delete enabled vaults. This operation requires the keys/recover permission.
-    pub async fn recover_deleted_key(&self, key_name: String, options: Option<KeyVaultClientRecoverDeletedKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
+    pub async fn recover_deleted_key(&self, key_name: &str, options: Option<KeyVaultClientRecoverDeletedKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedkeys/{key-name}/recover");
-        path = path.replace("{key-name}", &key_name);
+        path = path.replace("{key-name}", key_name);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -436,13 +449,13 @@ impl KeyVaultClient {
 ///
 /// The release key operation is applicable to all key types. The target key must be marked exportable. This operation requires
 /// the keys/release permission.
-    pub async fn release(&self, key_name: String, key_version: String, parameters: RequestContent<KeyReleaseParameters>, options: Option<KeyVaultClientReleaseOptions<'_>>) -> Result<Response<KeyReleaseResult>> {
+    pub async fn release(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyReleaseParameters>, options: Option<KeyVaultClientReleaseOptions<'_>>) -> Result<Response<KeyReleaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/release");
-        path = path.replace("{key-name}", &key_name);
-        path = path.replace("{key-version}", &key_version);
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -480,12 +493,12 @@ impl KeyVaultClient {
     /// Creates a new key version, stores it, then returns key parameters, attributes and policy to the client.
 ///
 /// The operation will rotate the key based on the key policy. It requires the keys/rotate permission.
-    pub async fn rotate_key(&self, key_name: String, options: Option<KeyVaultClientRotateKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
+    pub async fn rotate_key(&self, key_name: &str, options: Option<KeyVaultClientRotateKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/rotate");
-        path = path.replace("{key-name}", &key_name);
+        path = path.replace("{key-name}", key_name);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -498,13 +511,13 @@ impl KeyVaultClient {
 ///
 /// The SIGN operation is applicable to asymmetric and symmetric keys stored in Azure Key Vault since this operation uses
 /// the private portion of the key. This operation requires the keys/sign permission.
-    pub async fn sign(&self, key_name: String, key_version: String, parameters: RequestContent<KeySignParameters>, options: Option<KeyVaultClientSignOptions<'_>>) -> Result<Response<KeyOperationResult>> {
+    pub async fn sign(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeySignParameters>, options: Option<KeyVaultClientSignOptions<'_>>) -> Result<Response<KeyOperationResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/sign");
-        path = path.replace("{key-name}", &key_name);
-        path = path.replace("{key-version}", &key_version);
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -520,13 +533,13 @@ impl KeyVaultClient {
 /// The UNWRAP operation supports decryption of a symmetric key using the target key encryption key. This operation is the
 /// reverse of the WRAP operation. The UNWRAP operation applies to asymmetric and symmetric keys stored in Azure Key Vault
 /// since it uses the private portion of the key. This operation requires the keys/unwrapKey permission.
-    pub async fn unwrap_key(&self, key_name: String, key_version: String, parameters: RequestContent<KeyOperationsParameters>, options: Option<KeyVaultClientUnwrapKeyOptions<'_>>) -> Result<Response<KeyOperationResult>> {
+    pub async fn unwrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyOperationsParameters>, options: Option<KeyVaultClientUnwrapKeyOptions<'_>>) -> Result<Response<KeyOperationResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/unwrapkey");
-        path = path.replace("{key-name}", &key_name);
-        path = path.replace("{key-version}", &key_version);
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -542,13 +555,13 @@ impl KeyVaultClient {
 ///
 /// In order to perform this operation, the key must already exist in the Key Vault. Note: The cryptographic material of a
 /// key itself cannot be changed. This operation requires the keys/update permission.
-    pub async fn update_key(&self, key_name: String, key_version: String, parameters: RequestContent<KeyUpdateParameters>, options: Option<KeyVaultClientUpdateKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
+    pub async fn update_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyUpdateParameters>, options: Option<KeyVaultClientUpdateKeyOptions<'_>>) -> Result<Response<KeyBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}");
-        path = path.replace("{key-name}", &key_name);
-        path = path.replace("{key-version}", &key_version);
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Patch);
@@ -562,12 +575,12 @@ impl KeyVaultClient {
     /// Updates the rotation policy for a key.
 ///
 /// Set specified members in the key policy. Leave others as undefined. This operation requires the keys/update permission.
-    pub async fn update_key_rotation_policy(&self, key_name: String, key_rotation_policy: RequestContent<KeyRotationPolicy>, options: Option<KeyVaultClientUpdateKeyRotationPolicyOptions<'_>>) -> Result<Response<KeyRotationPolicy>> {
+    pub async fn update_key_rotation_policy(&self, key_name: &str, key_rotation_policy: RequestContent<KeyRotationPolicy>, options: Option<KeyVaultClientUpdateKeyRotationPolicyOptions<'_>>) -> Result<Response<KeyRotationPolicy>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/rotationpolicy");
-        path = path.replace("{key-name}", &key_name);
+        path = path.replace("{key-name}", key_name);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Put);
@@ -584,13 +597,13 @@ impl KeyVaultClient {
 /// keys stored in Azure Key Vault since signature verification can be performed using the public portion of the key but this
 /// operation is supported as a convenience for callers that only have a key-reference and not the public portion of the key.
 /// This operation requires the keys/verify permission.
-    pub async fn verify(&self, key_name: String, key_version: String, parameters: RequestContent<KeyVerifyParameters>, options: Option<KeyVaultClientVerifyOptions<'_>>) -> Result<Response<KeyVerifyResult>> {
+    pub async fn verify(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyVerifyParameters>, options: Option<KeyVaultClientVerifyOptions<'_>>) -> Result<Response<KeyVerifyResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/verify");
-        path = path.replace("{key-name}", &key_name);
-        path = path.replace("{key-version}", &key_version);
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -608,13 +621,13 @@ impl KeyVaultClient {
 /// with an asymmetric key can be performed using the public portion of the key. This operation is supported for asymmetric
 /// keys as a convenience for callers that have a key-reference but do not have access to the public key material. This operation
 /// requires the keys/wrapKey permission.
-    pub async fn wrap_key(&self, key_name: String, key_version: String, parameters: RequestContent<KeyOperationsParameters>, options: Option<KeyVaultClientWrapKeyOptions<'_>>) -> Result<Response<KeyOperationResult>> {
+    pub async fn wrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyOperationsParameters>, options: Option<KeyVaultClientWrapKeyOptions<'_>>) -> Result<Response<KeyOperationResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/wrapkey");
-        path = path.replace("{key-name}", &key_name);
-        path = path.replace("{key-version}", &key_version);
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
@@ -635,43 +648,43 @@ impl Default for KeyVaultClientOptions {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientBackupKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientCreateKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientDecryptOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientDeleteKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientEncryptOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientGetDeletedKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientGetDeletedKeysOptions<'a> {
     pub maxresults: Option<i32>,
     pub method_options: ClientMethodOptions<'a>,
@@ -688,19 +701,19 @@ impl KeyVaultClientGetDeletedKeysOptions<'_> {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientGetKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientGetKeyRotationPolicyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientGetKeyVersionsOptions<'a> {
     pub maxresults: Option<i32>,
     pub method_options: ClientMethodOptions<'a>,
@@ -717,7 +730,7 @@ impl KeyVaultClientGetKeyVersionsOptions<'_> {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientGetKeysOptions<'a> {
     pub maxresults: Option<i32>,
     pub method_options: ClientMethodOptions<'a>,
@@ -734,79 +747,79 @@ impl KeyVaultClientGetKeysOptions<'_> {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientGetRandomBytesOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientImportKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientPurgeDeletedKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientRecoverDeletedKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientReleaseOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientRestoreKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientRotateKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientSignOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientUnwrapKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientUpdateKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientUpdateKeyRotationPolicyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientVerifyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultClientWrapKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
