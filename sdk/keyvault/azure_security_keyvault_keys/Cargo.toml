@@ -1,0 +1,16 @@
+[package]
+name = "azure_security_keyvault_keys"
+version = "0.0.1"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+azure_core = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+time = { workspace = true }
+typespec_client_core = { workspace = true, features = ["derive"] }

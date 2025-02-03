@@ -461,6 +461,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_security_keyvault_keys"
+version = "0.0.1"
+dependencies = [
+ "azure_core",
+ "futures",
+ "serde",
+ "serde_json",
+ "time",
+ "typespec_client_core",
+]
+
+[[package]]
+name = "azure_security_keyvault_keys"
+version = "0.0.1"
+dependencies = [
+ "azure_core",
+ "futures",
+ "serde",
+ "serde_json",
+ "time",
+ "typespec_client_core",
+]
+
+[[package]]
 name = "azure_security_keyvault_secrets"
 version = "0.1.0"
 dependencies = [
