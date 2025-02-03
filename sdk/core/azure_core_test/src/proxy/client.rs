@@ -3,7 +3,10 @@
 
 use super::{
     matchers::Matcher,
-    models::{PlaybackStartResult, RecordStartResult, StartPayload, VariablePayload},
+    models::{
+        PlaybackStartResult, RecordStartResult, RemovedSanitizers, SanitizerList, StartPayload,
+        VariablePayload,
+    },
     sanitizers::Sanitizer,
     RecordingId, RECORDING_ID,
 };
@@ -163,6 +166,27 @@ impl Client {
         Ok(())
     }
 
+    pub async fn remove_sanitizers(
+        &self,
+        body: RequestContent<SanitizerList>,
+        options: Option<ClientRemoveSanitizersOptions<'_>>,
+    ) -> Result<RemovedSanitizers> {
+        let options = options.unwrap_or_default();
+        let ctx = Context::with_context(&options.method_options.context);
+        let mut url = self.endpoint.clone();
+        url = url.join("/Admin/RemoveSanitizers")?;
+        let mut request = Request::new(url, Method::Post);
+        request.insert_header(ACCEPT, "application/json");
+        request.insert_header(CONTENT_TYPE, "application/json");
+        request.add_optional_header(&options.recording_id);
+        request.set_body(body);
+        self.pipeline
+            .send::<RemovedSanitizers>(&ctx, &mut request)
+            .await?
+            .into_json_body()
+            .await
+    }
+
     pub async fn reset(&self, options: Option<ClientResetOptions<'_>>) -> Result<()> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
@@ -220,6 +244,13 @@ pub struct ClientResetOptions<'a> {
     ///
     /// If `None`, the test-proxy is reset including any per-instance defaults
     /// not hardcoded into the test-proxy itself.
+    pub recording_id: Option<&'a RecordingId>,
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+#[derive(Debug, Default)]
+pub struct ClientRemoveSanitizersOptions<'a> {
+    /// Remove sanitizers only for the given recording ID.
     pub recording_id: Option<&'a RecordingId>,
     pub method_options: ClientMethodOptions<'a>,
 }

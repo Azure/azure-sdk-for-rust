@@ -5,8 +5,11 @@
 
 use crate::{
     proxy::{
-        client::{Client, ClientAddSanitizerOptions, ClientSetMatcherOptions},
-        models::{StartPayload, VariablePayload},
+        client::{
+            Client, ClientAddSanitizerOptions, ClientRemoveSanitizersOptions,
+            ClientSetMatcherOptions,
+        },
+        models::{SanitizerList, StartPayload, VariablePayload},
         policy::RecordingPolicy,
         Proxy, RecordingId,
     },
@@ -48,7 +51,7 @@ pub struct Recording {
 
 impl Recording {
     /// Adds a [`Sanitizer`] to sanitize PII for the current test.
-    pub async fn add_sanitizer<S>(&self, _sanitizer: S) -> azure_core::Result<()>
+    pub async fn add_sanitizer<S>(&self, sanitizer: S) -> azure_core::Result<()>
     where
         S: Sanitizer,
         azure_core::Error: From<<S as AsHeaders>::Error>,
@@ -61,7 +64,7 @@ impl Recording {
             recording_id: self.id.as_ref(),
             ..Default::default()
         };
-        client.add_sanitizer(_sanitizer, Some(options)).await
+        client.add_sanitizer(sanitizer, Some(options)).await
     }
 
     /// Gets a [`TokenCredential`] you can use for testing.
@@ -121,8 +124,30 @@ impl Recording {
         options.per_try_policies.push(policy);
     }
 
+    /// Removes the list of sanitizers from the recording.
+    ///
+    /// You can find a list of default sanitizers in [source code](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/Common/SanitizerDictionary.cs).
+    pub async fn remove_sanitizers(&self, sanitizers: &[&str]) -> azure_core::Result<()> {
+        let Some(client) = &self.client else {
+            return Ok(());
+        };
+
+        let body = SanitizerList {
+            sanitizers: Vec::from_iter(sanitizers.iter().map(|s| String::from(*s))),
+        };
+        let options = ClientRemoveSanitizersOptions {
+            recording_id: self.id.as_ref(),
+            ..Default::default()
+        };
+        client
+            .remove_sanitizers(body.try_into()?, Some(options))
+            .await?;
+
+        Ok(())
+    }
+
     /// Sets a [`Matcher`] to compare requests and/or responses.
-    pub async fn set_matcher(&self, _matcher: Matcher) -> azure_core::Result<()> {
+    pub async fn set_matcher(&self, matcher: Matcher) -> azure_core::Result<()> {
         let Some(client) = &self.client else {
             return Ok(());
         };
@@ -131,7 +156,7 @@ impl Recording {
             recording_id: self.id.as_ref(),
             ..Default::default()
         };
-        client.set_matcher(_matcher, Some(options)).await
+        client.set_matcher(matcher, Some(options)).await
     }
 
     /// Skip recording the request body, or the entire request and response until the [`SkipGuard`] is dropped.
