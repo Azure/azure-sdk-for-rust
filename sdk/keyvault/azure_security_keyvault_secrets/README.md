@@ -130,7 +130,7 @@ The following section provides several code snippets using the `SecretClient`, c
 
 ### Create a secret
 
-`set_secret` creates a `KeyVaultSecret` to be stored in the Azure Key Vault. If a secret with the same name already exists, then a new version of the secret is created.
+`set_secret` creates a Key Vault secret to be stored in the Azure Key Vault. If a secret with the same name already exists, then a new version of the secret is created.
 
 ```rust
 use azure_core::{RequestContent, Response};
