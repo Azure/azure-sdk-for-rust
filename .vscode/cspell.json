@@ -41,12 +41,14 @@
     "hmac",
     "iothub",
     "keyvault",
+    "lldb",
     "maxresults",
     "maxsize",
     "msrc",
     "newtonsoft",
     "oidc",
     "pageable",
+    "pageables",
     "pkce",
     "pkcs",
     "posix",
@@ -60,7 +62,8 @@
     "upvote",
     "userdelegationkey",
     "versionid",
-    "virtualmachine"
+    "virtualmachine",
+    "worktree"
   ],
   "dictionaryDefinitions": [
     {

@@ -12,6 +12,7 @@ keywords = ["azure", "cloud", "iot", "rest", "sdk"]
 categories = ["development-tools"]
 edition.workspace = true
 rust-version.workspace = true
+publish = false
 
 [lib]
 proc-macro = true

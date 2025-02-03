@@ -10,38 +10,40 @@ use azure_messaging_eventhubs::consumer::{
     ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition,
 };
 use futures::{pin_mut, StreamExt};
-use std::{env, time::Duration};
+use std::{env, error::Error, time::Duration};
 use tracing::{info, trace};
 
 mod common;
 
 #[recorded::test(live)]
-async fn test_new() {
+async fn test_new() -> Result<(), Box<dyn Error>> {
     common::setup();
-    let host = env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
     let _client = ConsumerClient::new(
         host,
         eventhub,
         None,
-        DefaultAzureCredential::new().unwrap(),
+        DefaultAzureCredential::new()?,
         Some(ConsumerClientOptions {
             application_id: Some("test_new".to_string()),
             ..Default::default()
         }),
     );
+
+    Ok(())
 }
 
 #[recorded::test(live)]
-async fn test_new_with_error() {
+async fn test_new_with_error() -> Result<(), Box<dyn Error>> {
     common::setup();
     trace!("test_new_with_error");
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+    let eventhub = env::var("EVENTHUB_NAME")?;
     let consumer = ConsumerClient::new(
         "invalid_host".into(),
         eventhub,
         None,
-        DefaultAzureCredential::new().unwrap(),
+        DefaultAzureCredential::new()?,
         Some(ConsumerClientOptions {
             application_id: Some("test_new".to_string()),
             ..Default::default()
@@ -50,51 +52,57 @@ async fn test_new_with_error() {
     let result = consumer.open().await;
     assert!(result.is_err());
     info!("Error: {:?}", result);
+
+    Ok(())
 }
 
 #[recorded::test(live)]
-async fn test_open() {
+async fn test_open() -> Result<(), Box<dyn Error>> {
     common::setup();
-    let host = env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
     let client = ConsumerClient::new(
         host,
         eventhub,
         None,
-        azure_identity::DefaultAzureCredential::new().unwrap(),
+        azure_identity::DefaultAzureCredential::new()?,
         Some(ConsumerClientOptions {
             application_id: Some("test_open".to_string()),
             ..Default::default()
         }),
     );
-    client.open().await.unwrap();
+    client.open().await?;
+
+    Ok(())
 }
 #[recorded::test(live)]
-async fn test_close() {
+async fn test_close() -> Result<(), Box<dyn Error>> {
     common::setup();
-    let host = env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
     let client = ConsumerClient::new(
         host,
         eventhub,
         None,
-        azure_identity::DefaultAzureCredential::new().unwrap(),
+        azure_identity::DefaultAzureCredential::new()?,
         Some(ConsumerClientOptions {
             application_id: Some("test_open".to_string()),
             ..Default::default()
         }),
     );
-    client.open().await.unwrap();
-    client.close().await.unwrap();
+    client.open().await?;
+    client.close().await?;
+
+    Ok(())
 }
 
 #[recorded::test(live)]
-async fn test_get_properties() {
+async fn test_get_properties() -> Result<(), Box<dyn Error>> {
     common::setup();
-    let host = env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new().unwrap();
+    let credential = DefaultAzureCredential::new()?;
 
     let client = ConsumerClient::new(
         host,
@@ -106,19 +114,21 @@ async fn test_get_properties() {
             ..Default::default()
         }),
     );
-    client.open().await.unwrap();
-    let properties = client.get_eventhub_properties().await.unwrap();
+    client.open().await?;
+    let properties = client.get_eventhub_properties().await?;
     info!("Properties: {:?}", properties);
     assert_eq!(properties.name, eventhub);
+
+    Ok(())
 }
 
 #[recorded::test(live)]
-async fn test_get_partition_properties() {
+async fn test_get_partition_properties() -> Result<(), Box<dyn Error>> {
     common::setup();
-    let host = env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new().unwrap();
+    let credential = DefaultAzureCredential::new()?;
 
     let client = ConsumerClient::new(
         host,
@@ -130,29 +140,30 @@ async fn test_get_partition_properties() {
             ..Default::default()
         }),
     );
-    client.open().await.unwrap();
-    let properties = client.get_eventhub_properties().await.unwrap();
+    client.open().await?;
+    let properties = client.get_eventhub_properties().await?;
 
     for partition_id in properties.partition_ids {
         let partition_properties = client
             .get_partition_properties(partition_id.clone())
-            .await
-            .unwrap();
+            .await?;
         info!("Partition properties: {:?}", partition_properties);
         assert_eq!(partition_properties.id, partition_id);
     }
+
+    Ok(())
 }
 
 #[recorded::test(live)]
-async fn receive_lots_of_events() {
+async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
     common::setup();
 
-    let host = env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
 
     info!("Establishing credentials.");
 
-    let credential = DefaultAzureCredential::new().unwrap();
+    let credential = DefaultAzureCredential::new()?;
 
     info!("Creating client.");
     let client = ConsumerClient::new(
@@ -167,7 +178,7 @@ async fn receive_lots_of_events() {
     );
 
     info!("Opening client.");
-    client.open().await.unwrap();
+    client.open().await?;
 
     info!("Creating event receive stream.");
     let event_stream = client
@@ -207,4 +218,6 @@ async fn receive_lots_of_events() {
 
     assert!(result.is_err());
     info!("Received {count} messages.");
+
+    Ok(())
 }
