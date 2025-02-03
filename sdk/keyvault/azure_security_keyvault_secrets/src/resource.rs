@@ -2,14 +2,19 @@
 // Licensed under the MIT License.
 
 #[cfg(doc)]
-use crate::SecretClient;
+use crate::{models::SecretBundle, SecretClient};
 use azure_core::{error::ErrorKind, Result, Url};
 
 /// Information about the resource.
+///
+/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`SecretBundle`] to get this information.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResourceId {
-    /// The complete [`Url`] of the resource.
-    pub id: Url,
+    /// The source URL of the resource.
+    pub source_id: String,
+
+    /// The vault URL containing the resource.
+    pub vault_url: String,
 
     /// The name of the resource.
     pub name: String,
@@ -35,6 +40,7 @@ pub trait ResourceExt {
     /// secret.id = Some("https://my-vault.vault.azure.net/secrets/my-secret/abcd1234?api-version=7.5".into());
     ///
     /// let id = secret.resource_id()?;
+    /// assert_eq!(id.vault_url, "https://my-vault.vault.azure.net");
     /// assert_eq!(id.name, "my-secret");
     /// assert_eq!(id.version, Some("abcd1234".into()));
     /// # Ok(())
@@ -61,6 +67,7 @@ where
 }
 
 fn deconstruct(url: Url) -> Result<ResourceId> {
+    let vault_url = format!("{}://{}", url.scheme(), url.authority(),);
     let mut segments = url
         .path_segments()
         .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "invalid url"))?;
@@ -85,7 +92,8 @@ fn deconstruct(url: Url) -> Result<ResourceId> {
     let version = segments.next().and_then(none_if_empty).map(String::from);
 
     Ok(ResourceId {
-        id: url,
+        source_id: url.as_str().into(),
+        vault_url,
         name,
         version,
     })
@@ -149,7 +157,8 @@ mod tests {
         assert_eq!(
             deconstruct(url.clone()).unwrap(),
             ResourceId {
-                id: url,
+                source_id: url.to_string(),
+                vault_url: "https://vault.azure.net".into(),
                 name: "name".into(),
                 version: None
             }
@@ -161,7 +170,34 @@ mod tests {
         assert_eq!(
             deconstruct(url.clone()).unwrap(),
             ResourceId {
-                id: url,
+                source_id: url.to_string(),
+                vault_url: "https://vault.azure.net".into(),
+                name: "name".into(),
+                version: Some("version".into()),
+            }
+        );
+
+        let url: Url = "https://vault.azure.net:443/secrets/name/version"
+            .parse()
+            .unwrap();
+        assert_eq!(
+            deconstruct(url.clone()).unwrap(),
+            ResourceId {
+                source_id: url.to_string(),
+                vault_url: "https://vault.azure.net".into(),
+                name: "name".into(),
+                version: Some("version".into()),
+            }
+        );
+
+        let url: Url = "https://vault.azure.net:8443/secrets/name/version"
+            .parse()
+            .unwrap();
+        assert_eq!(
+            deconstruct(url.clone()).unwrap(),
+            ResourceId {
+                source_id: url.to_string(),
+                vault_url: "https://vault.azure.net:8443".into(),
                 name: "name".into(),
                 version: Some("version".into()),
             }
@@ -183,7 +219,8 @@ mod tests {
         assert_eq!(
             secret.resource_id().unwrap(),
             ResourceId {
-                id: url,
+                source_id: url.to_string(),
+                vault_url: "https://vault.azure.net".into(),
                 name: "name".into(),
                 version: Some("version".into()),
             }
