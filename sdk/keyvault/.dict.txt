@@ -1,2 +1,17 @@
+cbcpad
+ckmaeskeywrap
+ckmaeskeywrappad
+ckmrsaaeskeywrap
+ciphertext
+deletedkeys
 deletedsecrets
+echsm
+oaep
 purgeable
+rotationpolicy
+rsaaeskeywrap
+rsahsm
+rsnull
+rsaoaep
+unwrapkey
+wrapkey
