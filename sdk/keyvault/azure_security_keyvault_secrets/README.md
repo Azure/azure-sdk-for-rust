@@ -1,8 +1,8 @@
-# Azure Key Vault Secret client library for Rust
+# Azure Key Vault secrets client library for Rust
 
 Azure Key Vault is a cloud service that provides a secure storage of secrets, such as passwords and database connection strings.
 
-The Azure Key Vault Secrets client library allows you to securely store and control the access to tokens, passwords, API keys, and other secrets. This library offers operations to create, retrieve, update, delete, purge, backup, restore, and list the secrets and its versions.
+The Azure Key Vault secrets client library allows you to securely store and control the access to tokens, passwords, API keys, and other secrets. This library offers operations to create, retrieve, update, delete, purge, backup, restore, and list the secrets and its versions.
 
 [Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation]
 
@@ -10,7 +10,7 @@ The Azure Key Vault Secrets client library allows you to securely store and cont
 
 ### Install the package
 
-Install the Azure Key Vault Secrets client library for Rust with [Cargo]:
+Install the Azure Key Vault secrets client library for Rust with [Cargo]:
 
 ```sh
 cargo add azure_security_keyvault_secrets
@@ -56,7 +56,7 @@ Instantiate a `DefaultAzureCredential` to pass to the client. The same instance 
 use azure_core::{RequestContent, Response};
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::{
-    models::{SecretBundle, SecretSetParameters},
+    models::{SecretBundle, secretsetParameters},
     SecretClient,
 };
 use serde_json::to_vec;
@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Create a new secret using the secret client.
-    let mut secret_set_parameters = SecretSetParameters::default();
+    let mut secret_set_parameters = secretsetParameters::default();
     secret_set_parameters.value = Some("secret-value".to_string());
 
     // Serialize secret_set_parameters to Vec<u8>
@@ -119,14 +119,14 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Examples
 
-The following section provides several code snippets using the `SecretClient`, covering some of the most common Azure Key Vault Secrets service related tasks:
+The following section provides several code snippets using the `SecretClient`, covering some of the most common Azure Key Vault secrets service related tasks:
 
 * [Create a secret](#create-a-secret)
 * [Retrieve a secret](#retrieve-a-secret)
 * [Update an existing secret](#update-an-existing-secret)
 * [Delete a secret](#delete-a-secret)
 * [Delete and purge a secret](#delete-and-purge-a-secret)
-* [List Secrets](#list-secrets)
+* [List secrets](#list-secrets)
 
 ### Create a secret
 
@@ -136,7 +136,7 @@ The following section provides several code snippets using the `SecretClient`, c
 use azure_core::{RequestContent, Response};
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::{
-    models::{SecretBundle, SecretSetParameters},
+    models::{SecretBundle, secretsetParameters},
     SecretClient,
 };
 use serde_json::to_vec;
@@ -151,7 +151,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Create a new secret using the secret client.
-    let mut secret_set_parameters = SecretSetParameters::default();
+    let mut secret_set_parameters = secretsetParameters::default();
     secret_set_parameters.value = Some("secret-value".to_string());
 
     // Serialize secret_set_parameters to Vec<u8>
@@ -343,7 +343,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### General
 
-When you interact with the Azure Key Vault Secrets client library using the Rust SDK, errors returned by the service correspond to the same HTTP status codes returned for [REST API] requests.
+When you interact with the Azure Key Vault secrets client library using the Rust SDK, errors returned by the service correspond to the same HTTP status codes returned for [REST API] requests.
 
 For example, if you try to retrieve a secret that doesn't exist in your Azure Key Vault, a `404` error is returned, indicating `Not Found`.
 
