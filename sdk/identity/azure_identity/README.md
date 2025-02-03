@@ -57,7 +57,7 @@ The following examples are provided:
 
 More details on configuring your environment to use `DefaultAzureCredential` can be found in the class's [reference documentation][default_cred_ref].
 
-This example demonstrates authenticating the `SecretClient` from the [azure_security_keyvault_secrets] library using `DefaultAzureCredential`.
+This example demonstrates authenticating the `SecretClient` from the [azure_security_keyvault_secrets] crate using `DefaultAzureCredential`.
 
 ```rust
 use azure_identity::DefaultAzureCredential;
