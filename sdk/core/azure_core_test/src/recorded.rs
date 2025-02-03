@@ -73,7 +73,7 @@ pub async fn start(
         span.entered(),
         proxy.clone(),
         client,
-        ctx.service_directory(),
+        ctx.service_dir(),
         ctx.test_recording_file(),
         ctx.test_recording_assets_file(test_mode),
     );

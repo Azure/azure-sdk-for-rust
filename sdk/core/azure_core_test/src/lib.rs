@@ -25,7 +25,7 @@ const SPAN_TARGET: &str = "test-proxy";
 pub struct TestContext {
     repo_dir: &'static Path,
     crate_dir: &'static Path,
-    service_directory: &'static str,
+    service_dir: &'static str,
     test_module: &'static str,
     test_name: &'static str,
     recording: Option<Recording>,
@@ -37,7 +37,7 @@ impl TestContext {
         test_module: &'static str,
         test_name: &'static str,
     ) -> azure_core::Result<Self> {
-        let service_directory = parent_of(crate_dir, "sdk")
+        let service_dir = parent_of(crate_dir, "sdk")
             .ok_or_else(|| Error::message(ErrorKind::Other, "not under 'sdk' folder in repo"))?;
         let test_module = Path::new(test_module)
             .file_stem()
@@ -47,7 +47,7 @@ impl TestContext {
         Ok(Self {
             repo_dir: find_ancestor_of(crate_dir, ".git")?,
             crate_dir: Path::new(crate_dir),
-            service_directory,
+            service_dir,
             test_module,
             test_name,
             recording: None,
@@ -78,8 +78,8 @@ impl TestContext {
     /// Gets the service directory containing the current test.
     ///
     /// This is the directory under `sdk/` within the repository e.g., "core" in `sdk/core`.
-    pub fn service_directory(&self) -> &'static str {
-        self.service_directory
+    pub fn service_dir(&self) -> &'static str {
+        self.service_dir
     }
 
     /// Gets the test data directory under [`Self::crate_dir`].
@@ -129,7 +129,7 @@ impl TestContext {
                 Ok(path) => path,
                 Err(_) if mode == TestMode::Record => {
                     return Path::new("sdk")
-                        .join(self.service_directory)
+                        .join(self.service_dir)
                         .join(ASSETS_FILE)
                         .as_path()
                         .to_str()

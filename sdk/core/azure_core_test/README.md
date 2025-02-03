@@ -17,7 +17,7 @@ async fn get_secret(ctx: TestContext) -> Result<()> {
 }
 ```
 
-The `TestContext` parameter is required unless your test function is attribute as `#[recorded::test(live)]` (live-only).
+The `TestContext` parameter is required unless your test function is attributed as `#[recorded::test(live)]` (live-only).
 You can name the parameter whatever you want.
 The `TestContext` parameter is used to initialize an HTTP client to play back or record tests
 and provides other information to test functions that may be useful.

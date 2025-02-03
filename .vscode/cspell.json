@@ -41,7 +41,7 @@
     "hmac",
     "iothub",
     "keyvault",
-    "LLDB",
+    "lldb",
     "maxresults",
     "maxsize",
     "msrc",
