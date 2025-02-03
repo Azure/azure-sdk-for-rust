@@ -3,11 +3,11 @@
 
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
-use azure_core::{Result, Url};
+use azure_core::Result;
 use azure_core_test::{recorded, TestContext};
 use azure_security_keyvault_secrets::{
     models::{SecretSetParameters, SecretUpdateParameters},
-    SecretClient, SecretClientOptions,
+    ResourceExt as _, SecretClient, SecretClientOptions,
 };
 use futures::TryStreamExt;
 use std::collections::HashMap;
@@ -44,18 +44,8 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
         .await?;
     assert_eq!(secret.value, Some("secret-value".into()));
 
-    // Get the secret version from the ID.
-    let version = secret
-        .id
-        .and_then(|id| Url::parse(id.as_ref()).ok())
-        .and_then(|url| {
-            url.path_segments()
-                .and_then(|mut segments| segments.nth(2))
-                .map(Into::into)
-        })
-        .unwrap_or_default();
-
     // Get a specific version of a secret.
+    let version = secret.resource_id()?.version.unwrap_or_default();
     let secret = client
         // TODO: https://github.com/Azure/typespec-rust/issues/223
         .get_secret("secret-roundtrip".into(), version, None)
@@ -170,16 +160,7 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
 
         for secret in secrets {
             // Get the secret name from the ID.
-            let name: String = secret
-                .id
-                .and_then(|id| Url::parse(id.as_ref()).ok())
-                .and_then(|url| {
-                    url.path_segments()
-                        .and_then(|mut segments| segments.nth(1))
-                        .map(Into::into)
-                })
-                .unwrap_or_default();
-
+            let name = secret.resource_id()?.name;
             if let Some(idx) = names.iter().position(|n| name.eq(*n)) {
                 names.remove(idx);
             }
