@@ -36,13 +36,19 @@ impl fmt::Debug for TestMode {
     }
 }
 
-impl From<&TestMode> for &'static str {
-    fn from(mode: &TestMode) -> Self {
+impl From<TestMode> for &'static str {
+    fn from(mode: TestMode) -> Self {
         match mode {
             TestMode::Playback => "playback",
             TestMode::Record => "record",
             TestMode::Live => "live",
         }
+    }
+}
+
+impl From<&TestMode> for &'static str {
+    fn from(mode: &TestMode) -> Self {
+        TestMode::into(*mode)
     }
 }
 

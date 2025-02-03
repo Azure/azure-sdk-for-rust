@@ -137,9 +137,10 @@ where
             let (last_error, retry_after) = match result {
                 Ok(response) if response.status().is_success() => {
                     trace!(
-                        "Successful response. Request={:?} response={:?}",
-                        request,
-                        response
+                        ?request,
+                        ?response,
+                        "server returned success status {}",
+                        response.status(),
                     );
                     return Ok(response);
                 }

@@ -1,0 +1,229 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+#[cfg(doc)]
+use crate::{models::SecretBundle, SecretClient};
+use azure_core::{error::ErrorKind, Result, Url};
+
+/// Information about the resource.
+///
+/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`SecretBundle`] to get this information.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResourceId {
+    /// The source URL of the resource.
+    pub source_id: String,
+
+    /// The vault URL containing the resource.
+    pub vault_url: String,
+
+    /// The name of the resource.
+    pub name: String,
+
+    /// The optional version of the resource.
+    pub version: Option<String>,
+}
+
+/// Extension methods to get a [`ResourceId`] from models in this crate.
+pub trait ResourceExt {
+    /// Gets the [`ResourceId`] from this model.
+    ///
+    /// You can parse the name and version to pass to subsequent [`SecretClient`] method calls.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use azure_security_keyvault_secrets::{models::SecretBundle, ResourceExt as _};
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// // SecretClient::get_secret() will return a SecretBundle.
+    /// let mut secret = SecretBundle::default();
+    /// secret.id = Some("https://my-vault.vault.azure.net/secrets/my-secret/abcd1234?api-version=7.5".into());
+    ///
+    /// let id = secret.resource_id()?;
+    /// assert_eq!(id.vault_url, "https://my-vault.vault.azure.net");
+    /// assert_eq!(id.name, "my-secret");
+    /// assert_eq!(id.version, Some("abcd1234".into()));
+    /// # Ok(())
+    /// # }
+    /// ```
+    fn resource_id(&self) -> Result<ResourceId>;
+}
+
+impl<T> ResourceExt for T
+where
+    T: private::AsId,
+{
+    fn resource_id(&self) -> Result<ResourceId> {
+        let Some(id) = self.as_id() else {
+            return Err(azure_core::Error::message(
+                ErrorKind::DataConversion,
+                "missing resource id",
+            ));
+        };
+
+        let url: Url = id.parse()?;
+        deconstruct(url)
+    }
+}
+
+fn deconstruct(url: Url) -> Result<ResourceId> {
+    let vault_url = format!("{}://{}", url.scheme(), url.authority(),);
+    let mut segments = url
+        .path_segments()
+        .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "invalid url"))?;
+    segments
+        .next()
+        .and_then(none_if_empty)
+        .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "missing collection"))
+        .and_then(|col| {
+            if col != "secrets" {
+                return Err(azure_core::Error::message(
+                    ErrorKind::DataConversion,
+                    "not in secrets collection",
+                ));
+            }
+            Ok(col)
+        })?;
+    let name = segments
+        .next()
+        .and_then(none_if_empty)
+        .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "missing name"))
+        .map(String::from)?;
+    let version = segments.next().and_then(none_if_empty).map(String::from);
+
+    Ok(ResourceId {
+        source_id: url.as_str().into(),
+        vault_url,
+        name,
+        version,
+    })
+}
+
+fn none_if_empty(s: &str) -> Option<&str> {
+    if s.is_empty() {
+        return None;
+    }
+
+    Some(s)
+}
+
+mod private {
+    use crate::models::{DeletedSecretBundle, DeletedSecretItem, SecretBundle, SecretItem};
+
+    pub trait AsId {
+        fn as_id(&self) -> Option<&String>;
+    }
+
+    impl AsId for SecretBundle {
+        fn as_id(&self) -> Option<&String> {
+            self.id.as_ref()
+        }
+    }
+
+    impl AsId for SecretItem {
+        fn as_id(&self) -> Option<&String> {
+            self.id.as_ref()
+        }
+    }
+
+    impl AsId for DeletedSecretBundle {
+        fn as_id(&self) -> Option<&String> {
+            self.id.as_ref()
+        }
+    }
+
+    impl AsId for DeletedSecretItem {
+        fn as_id(&self) -> Option<&String> {
+            self.id.as_ref()
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::models::SecretBundle;
+
+    use super::*;
+
+    #[test]
+    fn test_deconstruct() {
+        deconstruct("file:///tmp".parse().unwrap()).expect_err("cannot-be-base url");
+        deconstruct("https://vault.azure.net/".parse().unwrap()).expect_err("missing collection");
+        deconstruct("https://vault.azure.net/collection/".parse().unwrap())
+            .expect_err("invalid collection");
+        deconstruct("https://vault.azure.net/secrets/".parse().unwrap()).expect_err("missing name");
+
+        let url: Url = "https://vault.azure.net/secrets/name".parse().unwrap();
+        assert_eq!(
+            deconstruct(url.clone()).unwrap(),
+            ResourceId {
+                source_id: url.to_string(),
+                vault_url: "https://vault.azure.net".into(),
+                name: "name".into(),
+                version: None
+            }
+        );
+
+        let url: Url = "https://vault.azure.net/secrets/name/version"
+            .parse()
+            .unwrap();
+        assert_eq!(
+            deconstruct(url.clone()).unwrap(),
+            ResourceId {
+                source_id: url.to_string(),
+                vault_url: "https://vault.azure.net".into(),
+                name: "name".into(),
+                version: Some("version".into()),
+            }
+        );
+
+        let url: Url = "https://vault.azure.net:443/secrets/name/version"
+            .parse()
+            .unwrap();
+        assert_eq!(
+            deconstruct(url.clone()).unwrap(),
+            ResourceId {
+                source_id: url.to_string(),
+                vault_url: "https://vault.azure.net".into(),
+                name: "name".into(),
+                version: Some("version".into()),
+            }
+        );
+
+        let url: Url = "https://vault.azure.net:8443/secrets/name/version"
+            .parse()
+            .unwrap();
+        assert_eq!(
+            deconstruct(url.clone()).unwrap(),
+            ResourceId {
+                source_id: url.to_string(),
+                vault_url: "https://vault.azure.net:8443".into(),
+                name: "name".into(),
+                version: Some("version".into()),
+            }
+        );
+    }
+
+    #[test]
+    fn from_secret_bundle() {
+        let mut secret = SecretBundle {
+            id: None,
+            ..Default::default()
+        };
+        secret.resource_id().expect_err("missing resource id");
+
+        let url: Url = "https://vault.azure.net/secrets/name/version"
+            .parse()
+            .unwrap();
+        secret.id = Some(url.clone().into());
+        assert_eq!(
+            secret.resource_id().unwrap(),
+            ResourceId {
+                source_id: url.to_string(),
+                vault_url: "https://vault.azure.net".into(),
+                name: "name".into(),
+                version: Some("version".into()),
+            }
+        );
+    }
+}

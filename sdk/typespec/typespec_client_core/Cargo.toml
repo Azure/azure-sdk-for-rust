@@ -43,7 +43,7 @@ once_cell.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
-typespec_macros.workspace = true
+typespec_macros.path = "../typespec_macros"
 
 [features]
 default = ["http", "json", "reqwest", "reqwest_gzip", "reqwest_rustls"]

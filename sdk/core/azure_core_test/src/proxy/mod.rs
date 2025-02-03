@@ -4,13 +4,17 @@
 //! Wrappers for the [Test Proxy](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md) service.
 pub(crate) mod client;
 pub(crate) mod matchers;
-mod models;
+pub(crate) mod models;
 pub(crate) mod policy;
 pub(crate) mod sanitizers;
 
 #[cfg(not(target_arch = "wasm32"))]
 use azure_core::Result;
-use azure_core::{error::ErrorKind, headers::HeaderName, Url};
+use azure_core::{
+    error::ErrorKind,
+    headers::{HeaderName, HeaderValue},
+    Header, Url,
+};
 use serde::Serializer;
 #[cfg(not(target_arch = "wasm32"))]
 use std::process::ExitStatus;
@@ -21,6 +25,10 @@ use tokio::process::Child;
 use tracing::Level;
 
 const ABSTRACTION_IDENTIFIER: HeaderName = HeaderName::from_static("x-abstraction-identifier");
+const RECORDING_ID: HeaderName = HeaderName::from_static("x-recording-id");
+const RECORDING_MODE: HeaderName = HeaderName::from_static("x-recording-mode");
+const RECORDING_UPSTREAM_BASE_URI: HeaderName =
+    HeaderName::from_static("x-recording-upstream-base-uri");
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use bootstrap::start;
@@ -51,7 +59,7 @@ mod bootstrap {
     ///
     /// This is intended for internal use only and should not be called directly in tests.
     pub async fn start(
-        test_data_dir: impl AsRef<Path>,
+        crate_dir: impl AsRef<Path>,
         options: Option<ProxyOptions>,
     ) -> Result<Proxy> {
         if env::var(PROXY_MANUAL_START).is_ok_and(|v| v.eq_ignore_ascii_case("true")) {
@@ -60,7 +68,7 @@ mod bootstrap {
         }
 
         // Find root of git repo or work tree: a ".git" directory or file will exist either way.
-        let git_dir = crate::find_ancestor(test_data_dir, ".git")?;
+        let git_dir = crate::find_ancestor_file(crate_dir, ".git")?;
         let git_dir = git_dir.parent().ok_or_else(|| {
             io::Error::new(io::ErrorKind::NotFound, "parent git repository not found")
         })?;
@@ -96,7 +104,7 @@ mod bootstrap {
             v = wait_till_listening(&mut stdout) => { v? },
             _ = tokio::time::sleep(max_seconds) => {
                 command.kill().await?;
-                return Err(azure_core::Error::message(ErrorKind::Other, "timeout waiting for test-proxy to start"));
+                return Err(azure_core::Error::message(ErrorKind::Other, "timed out waiting for test-proxy to start"));
             },
         };
 
@@ -212,7 +220,7 @@ impl Drop for Proxy {
 }
 
 /// Options for starting the [`Proxy`].
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct ProxyOptions {
     /// Allow insecure upstream SSL certs.
     pub insecure: bool,
@@ -232,6 +240,51 @@ impl ProxyOptions {
             "--auto-shutdown-in-seconds".into(),
             self.auto_shutdown_in_seconds.to_string(),
         ]);
+    }
+}
+
+impl Default for ProxyOptions {
+    fn default() -> Self {
+        Self {
+            insecure: false,
+            auto_shutdown_in_seconds: 300,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct RecordingId(String);
+
+impl Header for RecordingId {
+    fn name(&self) -> HeaderName {
+        RECORDING_ID
+    }
+
+    fn value(&self) -> HeaderValue {
+        self.0.clone().into()
+    }
+}
+
+impl Header for &RecordingId {
+    fn name(&self) -> HeaderName {
+        RECORDING_ID
+    }
+
+    fn value(&self) -> HeaderValue {
+        self.0.clone().into()
+    }
+}
+
+impl AsRef<str> for RecordingId {
+    fn as_ref(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+impl FromStr for RecordingId {
+    type Err = std::convert::Infallible;
+    fn from_str(value: &str) -> std::result::Result<Self, Self::Err> {
+        Ok(RecordingId(value.to_string()))
     }
 }
 
