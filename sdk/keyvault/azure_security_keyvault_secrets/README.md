@@ -53,11 +53,10 @@ Instantiate a `DefaultAzureCredential` to pass to the client. The same instance 
 ### Set and Get a Secret
 
 ```rust no_run
-use azure_core::Response;
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::{
     models::{SecretBundle, SecretSetParameters},
-    SecretClient,
+    ResourceExt, SecretClient,
 };
 
 #[tokio::main]
@@ -72,25 +71,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a new secret using the secret client.
     let secret_set_parameters = SecretSetParameters {
-        value: Some("secret-value".to_string()),
+        value: Some("secret-value".into()),
         ..Default::default()
     };
 
-    let secret: Response<SecretBundle> = client
+    let secret: SecretBundle = client
         .set_secret(
-            "secret-name".to_string(),
+            "secret-name".into(),
             secret_set_parameters.try_into()?,
             None,
         )
+        .await?
+        .into_body()
         .await?;
+
+    // Get version of created secret.
+    let version = secret.resource_id()?.version.unwrap_or_default();
 
     // Retrieve a secret using the secret client.
     let secret: SecretBundle = client
-        .get_secret(
-            "secret-name".to_string(),
-            "secret-version".to_string(),
-            None,
-        )
+        .get_secret("secret-name".into(), version, None)
         .await?
         .into_body()
         .await?;
@@ -130,11 +130,10 @@ The following section provides several code snippets using the `SecretClient`, c
 `set_secret` creates a Key Vault secret to be stored in the Azure Key Vault. If a secret with the same name already exists, then a new version of the secret is created.
 
 ```rust no_run
-use azure_core::Response;
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::{
     models::{SecretBundle, SecretSetParameters},
-    SecretClient,
+    ResourceExt, SecretClient,
 };
 
 #[tokio::main]
@@ -148,18 +147,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a new secret using the secret client.
     let secret_set_parameters = SecretSetParameters {
-        value: Some("secret-value".to_string()),
+        value: Some("secret-value".into()),
         ..Default::default()
     };
 
-    let response: Response<SecretBundle> = client
+    let secret: SecretBundle = client
         .set_secret(
-            "secret-name".to_string(),
+            "secret-name".into(),
             secret_set_parameters.try_into()?,
             None,
         )
+        .await?
+        .into_body()
         .await?;
-    println!("Response Code: {:?}", secret.status());
+
+    println!(
+        "Secret Name: {:?}, Value: {:?}, Version: {:?}",
+        secret.resource_id()?.name,
+        secret.value,
+        secret.resource_id()?.version
+    );
 
     Ok(())
 }
@@ -171,10 +178,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{
-    models::SecretBundle,
-    SecretClient,
-};
+use azure_security_keyvault_secrets::{models::SecretBundle, SecretClient};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -187,15 +191,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Retrieve a secret using the secret client.
     let secret: SecretBundle = client
-        .get_secret(
-            "secret-name".to_string(),
-            "secret-version".to_string(),
-            None,
-        )
+        .get_secret("secret-name".into(), "secret-version".into(), None)
         .await?
         .into_body()
         .await?;
-    println!("{:?}", secret.value);
+
+    println!("Secret Value: {:?}", secret.value);
 
     Ok(())
 }
@@ -206,9 +207,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 `update_secret` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
 
 ```rust no_run
-use azure_core::Response;
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{models::{SecretBundle, SecretUpdateParameters}, SecretClient};
+use azure_security_keyvault_secrets::{
+    models::{SecretAttributes, SecretUpdateParameters},
+    SecretClient,
+};
+use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -221,19 +225,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Update a secret using the secret client.
     let secret_update_parameters = SecretUpdateParameters {
-        value: Some("secret-value".to_string()),
-        ..Default::default()
+        content_type: Some("text/plain".into()),
+        secret_attributes: Some(SecretAttributes::default()),
+        tags: Some(HashMap::from_iter(vec![(
+            "tag-name".into(),
+            "tag-value".into(),
+        )])),
     };
 
-    let response: Response<SecretBundle> = client
+    client
         .update_secret(
-            "secret-name".to_string(),
-            "secret-version".to_string(),
-            secret_update_parameters_bytes.try_into()?,
+            "secret-name".into(),
+            "".into(),
+            secret_update_parameters.try_into()?,
             None,
         )
+        .await?
+        .into_body()
         .await?;
-    println!("Response Code: {:?}", response.status());
 
     Ok(())
 }
@@ -244,9 +253,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 `delete_secret` starts a long-running operation to delete a secret previously stored in the Azure Key Vault. You can retrieve the secret immediately without waiting for the operation to complete. When [soft-delete] is not enabled for the Azure Key Vault, this operation permanently deletes the secret.
 
 ```rust no_run
-use azure_core::Response;
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{models::DeletedSecretBundle, SecretClient};
+use azure_security_keyvault_secrets::SecretClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -258,12 +266,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Delete a secret using the secret client.
-    let response: Response<DeletedSecretBundle> = client
-        .delete_secret(
-            "secret-name".to_string(),
-            None,
-        ).await?;
-    println!("Response Code: {:?}", response.status());
+    client
+        .delete_secret("secret-name".into(), None)
+        .await?;
 
     Ok(())
 }
@@ -274,9 +279,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 You will need to wait for the long-running operation to complete before trying to purge or recover the secret. You can do this by calling `update_status` in a loop as shown below:
 
 ```rust no_run
-use azure_core::Response;
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{models::DeletedSecretBundle, SecretClient};
+use azure_security_keyvault_secrets::SecretClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -288,20 +292,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Delete a secret using the secret client.
-    let response: Response<DeletedSecretBundle> = client
-        .delete_secret("secret-name".to_string(), None)
-        .await?;
-    println!("Delete Response Code: {:?}", response.status());
+    client.delete_secret("secret-name".into(), None).await?;
 
     // Purge deleted secret using the secret client.
-    let response: Response<()> = client
-        .purge_deleted_secret("secret-name".to_string(), None)
+    client
+        .purge_deleted_secret("secret-name".into(), None)
         .await?;
-    println!("Purge Response Code: {:?}", response.status());
 
     Ok(())
 }
-
 ```
 
 ### List secrets
