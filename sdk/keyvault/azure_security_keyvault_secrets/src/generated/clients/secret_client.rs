@@ -13,6 +13,7 @@ use azure_core::{
     Pipeline, Policy, Request, RequestContent, Response, Result, Url,
 };
 use std::sync::Arc;
+use typespec_client_core::fmt::SafeDebug;
 use typespec_client_core::http::PagerResult;
 use typespec_client_core::json;
 
@@ -22,7 +23,7 @@ pub struct SecretClient {
     pipeline: Pipeline,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, SafeDebug)]
 pub struct SecretClientOptions {
     pub api_version: String,
     pub client_options: ClientOptions,
@@ -65,14 +66,14 @@ impl SecretClient {
     /// This operation requires the secrets/backup permission.
     pub async fn backup_secret(
         &self,
-        secret_name: String,
+        secret_name: &str,
         options: Option<SecretClientBackupSecretOptions<'_>>,
     ) -> Result<Response<BackupSecretResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/backup");
-        path = path.replace("{secret-name}", &secret_name);
+        path = path.replace("{secret-name}", secret_name);
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -87,14 +88,14 @@ impl SecretClient {
     /// of a secret. This operation requires the secrets/delete permission.
     pub async fn delete_secret(
         &self,
-        secret_name: String,
+        secret_name: &str,
         options: Option<SecretClientDeleteSecretOptions<'_>>,
     ) -> Result<Response<DeletedSecretBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}");
-        path = path.replace("{secret-name}", &secret_name);
+        path = path.replace("{secret-name}", secret_name);
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -109,14 +110,14 @@ impl SecretClient {
     /// the secrets/get permission.
     pub async fn get_deleted_secret(
         &self,
-        secret_name: String,
+        secret_name: &str,
         options: Option<SecretClientGetDeletedSecretOptions<'_>>,
     ) -> Result<Response<DeletedSecretBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedsecrets/{secret-name}");
-        path = path.replace("{secret-name}", &secret_name);
+        path = path.replace("{secret-name}", secret_name);
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -145,9 +146,21 @@ impl SecretClient {
                 .query_pairs_mut()
                 .append_pair("maxresults", &maxresults.to_string());
         }
+        let api_version = self.api_version.clone();
         Ok(Pager::from_callback(move |next_link: Option<Url>| {
             let url = match next_link {
-                Some(next_link) => next_link,
+                Some(next_link) => {
+                    let qp = next_link
+                        .query_pairs()
+                        .filter(|(name, _)| name.ne("api-version"));
+                    let mut next_link = next_link.clone();
+                    next_link
+                        .query_pairs_mut()
+                        .clear()
+                        .extend_pairs(qp)
+                        .append_pair("api-version", &api_version);
+                    next_link
+                }
                 None => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
@@ -177,16 +190,16 @@ impl SecretClient {
     /// The GET operation is applicable to any secret stored in Azure Key Vault. This operation requires the secrets/get permission.
     pub async fn get_secret(
         &self,
-        secret_name: String,
-        secret_version: String,
+        secret_name: &str,
+        secret_version: &str,
         options: Option<SecretClientGetSecretOptions<'_>>,
     ) -> Result<Response<SecretBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/{secret-version}");
-        path = path.replace("{secret-name}", &secret_name);
-        path = path.replace("{secret-version}", &secret_version);
+        path = path.replace("{secret-name}", secret_name);
+        path = path.replace("{secret-version}", secret_version);
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -201,14 +214,14 @@ impl SecretClient {
     /// requires the secrets/list permission.
     pub fn get_secret_versions(
         &self,
-        secret_name: String,
+        secret_name: &str,
         options: Option<SecretClientGetSecretVersionsOptions<'_>>,
     ) -> Result<Pager<SecretListResult>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/versions");
-        path = path.replace("{secret-name}", &secret_name);
+        path = path.replace("{secret-name}", secret_name);
         first_url = first_url.join(&path)?;
         first_url
             .query_pairs_mut()
@@ -218,9 +231,21 @@ impl SecretClient {
                 .query_pairs_mut()
                 .append_pair("maxresults", &maxresults.to_string());
         }
+        let api_version = self.api_version.clone();
         Ok(Pager::from_callback(move |next_link: Option<Url>| {
             let url = match next_link {
-                Some(next_link) => next_link,
+                Some(next_link) => {
+                    let qp = next_link
+                        .query_pairs()
+                        .filter(|(name, _)| name.ne("api-version"));
+                    let mut next_link = next_link.clone();
+                    next_link
+                        .query_pairs_mut()
+                        .clear()
+                        .extend_pairs(qp)
+                        .append_pair("api-version", &api_version);
+                    next_link
+                }
                 None => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
@@ -265,9 +290,21 @@ impl SecretClient {
                 .query_pairs_mut()
                 .append_pair("maxresults", &maxresults.to_string());
         }
+        let api_version = self.api_version.clone();
         Ok(Pager::from_callback(move |next_link: Option<Url>| {
             let url = match next_link {
-                Some(next_link) => next_link,
+                Some(next_link) => {
+                    let qp = next_link
+                        .query_pairs()
+                        .filter(|(name, _)| name.ne("api-version"));
+                    let mut next_link = next_link.clone();
+                    next_link
+                        .query_pairs_mut()
+                        .clear()
+                        .extend_pairs(qp)
+                        .append_pair("api-version", &api_version);
+                    next_link
+                }
                 None => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
@@ -297,14 +334,14 @@ impl SecretClient {
     /// can only be enabled on a soft-delete enabled vault. This operation requires the secrets/purge permission.
     pub async fn purge_deleted_secret(
         &self,
-        secret_name: String,
+        secret_name: &str,
         options: Option<SecretClientPurgeDeletedSecretOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedsecrets/{secret-name}");
-        path = path.replace("{secret-name}", &secret_name);
+        path = path.replace("{secret-name}", secret_name);
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -319,14 +356,14 @@ impl SecretClient {
     /// This operation requires the secrets/recover permission.
     pub async fn recover_deleted_secret(
         &self,
-        secret_name: String,
+        secret_name: &str,
         options: Option<SecretClientRecoverDeletedSecretOptions<'_>>,
     ) -> Result<Response<SecretBundle>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedsecrets/{secret-name}/recover");
-        path = path.replace("{secret-name}", &secret_name);
+        path = path.replace("{secret-name}", secret_name);
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -362,7 +399,7 @@ impl SecretClient {
     /// new version of that secret. This operation requires the secrets/set permission.
     pub async fn set_secret(
         &self,
-        secret_name: String,
+        secret_name: &str,
         parameters: RequestContent<SecretSetParameters>,
         options: Option<SecretClientSetSecretOptions<'_>>,
     ) -> Result<Response<SecretBundle>> {
@@ -370,7 +407,7 @@ impl SecretClient {
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}");
-        path = path.replace("{secret-name}", &secret_name);
+        path = path.replace("{secret-name}", secret_name);
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -387,8 +424,8 @@ impl SecretClient {
     /// request are left unchanged. The value of a secret itself cannot be changed. This operation requires the secrets/set permission.
     pub async fn update_secret(
         &self,
-        secret_name: String,
-        secret_version: String,
+        secret_name: &str,
+        secret_version: &str,
         parameters: RequestContent<SecretUpdateParameters>,
         options: Option<SecretClientUpdateSecretOptions<'_>>,
     ) -> Result<Response<SecretBundle>> {
@@ -396,8 +433,8 @@ impl SecretClient {
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/{secret-version}");
-        path = path.replace("{secret-name}", &secret_name);
-        path = path.replace("{secret-version}", &secret_version);
+        path = path.replace("{secret-name}", secret_name);
+        path = path.replace("{secret-version}", secret_version);
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -418,22 +455,22 @@ impl Default for SecretClientOptions {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientBackupSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientDeleteSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientGetDeletedSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientGetDeletedSecretsOptions<'a> {
     pub maxresults: Option<i32>,
     pub method_options: ClientMethodOptions<'a>,
@@ -450,12 +487,12 @@ impl SecretClientGetDeletedSecretsOptions<'_> {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientGetSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientGetSecretVersionsOptions<'a> {
     pub maxresults: Option<i32>,
     pub method_options: ClientMethodOptions<'a>,
@@ -472,7 +509,7 @@ impl SecretClientGetSecretVersionsOptions<'_> {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientGetSecretsOptions<'a> {
     pub maxresults: Option<i32>,
     pub method_options: ClientMethodOptions<'a>,
@@ -489,27 +526,27 @@ impl SecretClientGetSecretsOptions<'_> {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientPurgeDeletedSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientRecoverDeletedSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientRestoreSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientSetSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct SecretClientUpdateSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }

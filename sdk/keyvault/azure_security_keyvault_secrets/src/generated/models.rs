@@ -8,9 +8,10 @@ use azure_core::base64;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use time::OffsetDateTime;
+use typespec_client_core::fmt::SafeDebug;
 
 /// The backup secret result, containing the backup blob.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 #[non_exhaustive]
 pub struct BackupSecretResult {
     /// The backup blob containing the backed up secret.
@@ -24,7 +25,7 @@ pub struct BackupSecretResult {
 }
 
 /// A Deleted Secret consisting of its previous id, attributes and its tags, as well as information on when it will be purged.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 #[non_exhaustive]
 pub struct DeletedSecretBundle {
     /// The secret management attributes.
@@ -80,7 +81,7 @@ pub struct DeletedSecretBundle {
 }
 
 /// The deleted secret item containing metadata about the deleted secret.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 #[non_exhaustive]
 pub struct DeletedSecretItem {
     /// The secret management attributes.
@@ -127,7 +128,7 @@ pub struct DeletedSecretItem {
 }
 
 /// The deleted secret list result
-#[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 #[non_exhaustive]
 pub struct DeletedSecretListResult {
     /// The URL to get the next set of deleted secrets.
@@ -141,8 +142,7 @@ pub struct DeletedSecretListResult {
 }
 
 /// The secret management attributes.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
-#[non_exhaustive]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 pub struct SecretAttributes {
     /// Creation time in UTC.
     #[serde(
@@ -194,7 +194,7 @@ pub struct SecretAttributes {
 }
 
 /// A secret consisting of a value, id and its attributes.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 #[non_exhaustive]
 pub struct SecretBundle {
     /// The secret management attributes.
@@ -228,7 +228,7 @@ pub struct SecretBundle {
 }
 
 /// The secret item containing secret metadata.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 #[non_exhaustive]
 pub struct SecretItem {
     /// The secret management attributes.
@@ -253,7 +253,7 @@ pub struct SecretItem {
 }
 
 /// The secret list result.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 #[non_exhaustive]
 pub struct SecretListResult {
     /// The URL to get the next set of secrets.
@@ -266,8 +266,7 @@ pub struct SecretListResult {
 }
 
 /// The secret restore parameters.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
-#[non_exhaustive]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 pub struct SecretRestoreParameters {
     /// The backup blob associated with a secret bundle.
     #[serde(
@@ -281,7 +280,7 @@ pub struct SecretRestoreParameters {
 }
 
 /// The secret set parameters.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 pub struct SecretSetParameters {
     /// Type of the secret value such as a password.
     #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
@@ -301,7 +300,7 @@ pub struct SecretSetParameters {
 }
 
 /// The secret update parameters.
-#[derive(Clone, Debug, Default, Deserialize, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 pub struct SecretUpdateParameters {
     /// Type of the secret value such as a password.
     #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
