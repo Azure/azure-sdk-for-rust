@@ -5,11 +5,16 @@
 use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 #[cfg(feature = "cplusplus")]
 use crate::Deserializable;
+use crate::Uuid;
 #[cfg(feature = "cplusplus")]
 use azure_core::error::ErrorKind;
 use azure_core::Result;
 
-use crate::Uuid;
+#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+type DeliveryImplementation = super::fe2o3::messaging::messaging_types::Fe2o3AmqpDelivery;
+
+#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+type DeliveryImplementation = super::noop::NoopAmqpDelivery;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TerminusDurability {
@@ -81,6 +86,53 @@ impl From<AmqpSymbol> for DistributionMode {
             "copy" => DistributionMode::Copy,
             _ => panic!("Invalid symbol for DistributionMode"),
         }
+    }
+}
+
+pub struct AmqpDelivery(pub(crate) DeliveryImplementation);
+
+impl AmqpDelivery {
+    #[allow(dead_code)]
+    pub(crate) fn new(delivery: DeliveryImplementation) -> AmqpDelivery {
+        AmqpDelivery(delivery)
+    }
+}
+
+pub type DeliveryNumber = u32;
+pub type DeliveryTag = Vec<u8>;
+
+pub trait AmqpDeliveryApis {
+    fn message(&self) -> &AmqpMessage;
+    fn delivery_id(&self) -> DeliveryNumber;
+    fn delivery_tag(&self) -> &DeliveryTag;
+    fn message_format(&self) -> &Option<u32>;
+    fn into_message(self) -> AmqpMessage;
+}
+
+impl AmqpDeliveryApis for AmqpDelivery {
+    /// Get the message
+    fn message(&self) -> &AmqpMessage {
+        self.0.message()
+    }
+
+    /// Get the delivery ID
+    fn delivery_id(&self) -> DeliveryNumber {
+        self.0.delivery_id()
+    }
+
+    /// Get the delivery tag
+    fn delivery_tag(&self) -> &DeliveryTag {
+        self.0.delivery_tag()
+    }
+
+    /// Get the message format
+    fn message_format(&self) -> &Option<u32> {
+        self.0.message_format()
+    }
+
+    /// Consume the delivery into the message
+    fn into_message(self) -> AmqpMessage {
+        self.0.into_message()
     }
 }
 
@@ -967,7 +1019,6 @@ impl AmqpApplicationProperties {
         self.0.insert(key, value.into());
     }
 }
-
 /// An AMQP message.
 ///
 /// This is a simplified version of the AMQP message

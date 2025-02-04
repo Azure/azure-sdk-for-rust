@@ -2,7 +2,7 @@ use std::error::Error;
 
 use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
-    CosmosClient, CreateContainerOptions, CreateDatabaseOptions, PartitionKey,
+    CosmosClient, CreateContainerOptions, CreateDatabaseOptions, ItemOptions, PartitionKey,
 };
 use clap::{Args, Subcommand};
 
@@ -26,12 +26,16 @@ pub enum Subcommands {
         container: String,
 
         /// The partition key of the new item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         partition_key: String,
 
         /// The JSON of the new item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         json: String,
+
+        /// If set, the updated item will be included in the response.
+        #[arg(long)]
+        show_updated: bool,
     },
 
     /// Create a database (does not support Entra ID).
@@ -39,7 +43,7 @@ pub enum Subcommands {
         /// The ID of the new database to create.
         id: String,
 
-        #[clap(flatten)]
+        #[command(flatten)]
         throughput_options: ThroughputOptions,
     },
 
@@ -48,19 +52,19 @@ pub enum Subcommands {
         /// The ID of the database to create the container in.
         database: String,
 
-        #[clap(flatten)]
+        #[command(flatten)]
         throughput_options: ThroughputOptions,
 
         /// The ID of the new container to create.
-        #[clap(long, short)]
+        #[arg(long, short)]
         id: Option<String>,
 
         /// The path to the partition key properties (supports up to 3).
-        #[clap(long, short)]
+        #[arg(long, short)]
         partition_key: Vec<String>,
 
         /// The JSON for a ContainerProperties value. The 'id' and 'partition key' options are ignored if this is set.
-        #[clap(long)]
+        #[arg(long)]
         json: Option<String>,
     },
 }
@@ -73,6 +77,7 @@ impl CreateCommand {
                 container,
                 partition_key,
                 json,
+                show_updated,
             } => {
                 let db_client = client.database_client(&database);
                 let container_client = db_client.container_client(&container);
@@ -80,14 +85,22 @@ impl CreateCommand {
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
 
-                let created = container_client
-                    .create_item(pk, item, None)
-                    .await?
-                    .deserialize_body()
-                    .await?
-                    .unwrap();
-                println!("Created item:");
-                println!("{:#?}", created);
+                let options = ItemOptions {
+                    enable_content_response_on_write: show_updated,
+                    ..Default::default()
+                };
+
+                let response = container_client
+                    .create_item(pk, item, Some(options))
+                    .await?;
+
+                println!("Created item successfully");
+
+                if show_updated {
+                    let created = response.into_json_body::<serde_json::Value>().await?;
+                    println!("Newly created item:");
+                    println!("{:#?}", created);
+                }
                 Ok(())
             }
 
@@ -105,9 +118,8 @@ impl CreateCommand {
                 let db = client
                     .create_database(&id, options)
                     .await?
-                    .deserialize_body()
-                    .await?
-                    .unwrap();
+                    .into_body()
+                    .await?;
                 println!("Created database:");
                 println!("{:#?}", db);
                 Ok(())
@@ -139,7 +151,9 @@ impl CreateCommand {
                         }
 
                         ContainerProperties {
-                            id: id.expect("the ID is required when not using '--json'"),
+                            id: id
+                                .expect("the ID is required when not using '--json'")
+                                .into(),
                             partition_key: PartitionKeyDefinition::new(partition_key),
                             ..Default::default()
                         }
@@ -149,9 +163,8 @@ impl CreateCommand {
                     .database_client(&database)
                     .create_container(properties, options)
                     .await?
-                    .deserialize_body()
-                    .await?
-                    .unwrap();
+                    .into_body()
+                    .await?;
                 println!("Created container:");
                 println!("{:#?}", container);
                 Ok(())

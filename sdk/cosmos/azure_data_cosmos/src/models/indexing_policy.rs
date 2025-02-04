@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 
 /// Represents the indexing policy for a container.
 ///
-/// For more information see <https://docs.microsoft.com/azure/cosmos-db/index-policy>
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+/// For more information see <https://learn.microsoft.com/azure/cosmos-db/index-policy>
+#[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexingPolicy {
     /// Indicates that the indexing policy is automatic.
@@ -58,6 +58,12 @@ pub enum IndexingMode {
 pub struct PropertyPath {
     // The path to the property referenced in this index.
     pub path: String,
+}
+
+impl<T: Into<String>> From<T> for PropertyPath {
+    fn from(value: T) -> Self {
+        PropertyPath { path: value.into() }
+    }
 }
 
 /// Represents a spatial index

@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use azure_core::StatusCode;
-use azure_data_cosmos::{CosmosClient, PartitionKey};
+use azure_data_cosmos::{CosmosClient, ItemOptions, PartitionKey};
 use clap::{Args, Subcommand};
 
 use crate::utils::ThroughputOptions;
@@ -23,22 +23,26 @@ pub enum Subcommands {
         container: String,
 
         /// The ID of the item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         item_id: String,
 
         /// The partition key of the new item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         partition_key: String,
 
         /// The JSON of the new item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         json: String,
+
+        /// If set, the updated item will be included in the response.
+        #[arg(long)]
+        show_updated: bool,
     },
     DatabaseThroughput {
         /// The database to update throughput for.
         database: String,
 
-        #[clap(flatten)]
+        #[command(flatten)]
         throughput_options: ThroughputOptions,
     },
     ContainerThroughput {
@@ -48,7 +52,7 @@ pub enum Subcommands {
         /// The container to update throughput for.
         container: String,
 
-        #[clap(flatten)]
+        #[command(flatten)]
         throughput_options: ThroughputOptions,
     },
 }
@@ -62,6 +66,7 @@ impl ReplaceCommand {
                 item_id,
                 partition_key,
                 json,
+                show_updated,
             } => {
                 let db_client = client.database_client(&database);
                 let container_client = db_client.container_client(&container);
@@ -69,17 +74,26 @@ impl ReplaceCommand {
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
 
+                let options = ItemOptions {
+                    enable_content_response_on_write: show_updated,
+                    ..Default::default()
+                };
+
                 let response = container_client
-                    .replace_item(pk, &item_id, item, None)
+                    .replace_item(pk, &item_id, item, Some(options))
                     .await;
                 match response {
                     Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
                         println!("Item not found!")
                     }
                     Ok(r) => {
-                        let item: serde_json::Value = r.deserialize_body().await?.unwrap();
-                        println!("Replaced item:");
-                        println!("{:#?}", item);
+                        println!("Replaced item successfully");
+
+                        if show_updated {
+                            let created: serde_json::Value = r.into_json_body().await?;
+                            println!("Newly replaced item:");
+                            println!("{:#?}", created);
+                        }
                     }
                     Err(e) => return Err(e.into()),
                 };
@@ -94,7 +108,7 @@ impl ReplaceCommand {
                 let new_throughput = db_client
                     .replace_throughput(throughput_properties, None)
                     .await?
-                    .deserialize_body()
+                    .into_body()
                     .await?;
                 println!("New Throughput:");
                 crate::utils::print_throughput(new_throughput);
@@ -111,7 +125,7 @@ impl ReplaceCommand {
                 let new_throughput = container_client
                     .replace_throughput(throughput_properties, None)
                     .await?
-                    .deserialize_body()
+                    .into_body()
                     .await?;
                 println!("New Throughput:");
                 crate::utils::print_throughput(new_throughput);

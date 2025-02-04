@@ -32,11 +32,11 @@ enum Subcommands {
         container: String,
 
         /// The ID of the item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         item_id: String,
 
         /// The partition key of the item.
-        #[clap(long, short)]
+        #[arg(long, short)]
         partition_key: String,
     },
 }
@@ -61,7 +61,7 @@ impl ReadCommand {
                         println!("Item not found!")
                     }
                     Ok(r) => {
-                        let item: serde_json::Value = r.deserialize_body().await?.unwrap();
+                        let item: serde_json::Value = r.into_json_body().await?;
                         println!("Found item:");
                         println!("{:#?}", item);
                     }
@@ -71,7 +71,7 @@ impl ReadCommand {
             }
             Subcommands::Database { database } => {
                 let db_client = client.database_client(&database);
-                let response = db_client.read(None).await?.deserialize_body().await?;
+                let response = db_client.read(None).await?.into_body().await?;
                 println!("Database:");
                 println!(" {:#?}", response);
 
@@ -80,7 +80,7 @@ impl ReadCommand {
                 match resp {
                     None => println!("Database does not have provisioned throughput"),
                     Some(r) => {
-                        let throughput = r.deserialize_body().await?;
+                        let throughput = r.into_body().await?;
                         println!("Throughput:");
                         crate::utils::print_throughput(throughput);
                     }
@@ -93,11 +93,7 @@ impl ReadCommand {
             } => {
                 let db_client = client.database_client(&database);
                 let container_client = db_client.container_client(&container);
-                let response = container_client
-                    .read(None)
-                    .await?
-                    .deserialize_body()
-                    .await?;
+                let response = container_client.read(None).await?.into_body().await?;
                 println!("Container:");
                 println!("  {:#?}", response);
 
@@ -106,7 +102,7 @@ impl ReadCommand {
                 match resp {
                     None => println!("Container does not have provisioned throughput"),
                     Some(r) => {
-                        let throughput = r.deserialize_body().await?;
+                        let throughput = r.into_body().await?;
                         println!("Throughput:");
                         crate::utils::print_throughput(throughput);
                     }

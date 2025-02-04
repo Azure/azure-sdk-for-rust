@@ -1,11 +1,22 @@
+# Build output.
 target/
 
-.env
+# Track only workspace Cargo.lock
 Cargo.lock
+!/Cargo.lock
 
+# User secrets.
+.env
+
+# Test artifacts.
+.assets/
+tests/data/
+
+# Editor user customizations.
 .vscode/launch.json
 .idea/
 
+# Editor temp files.
 *~
 *.code-workspace
 *.rs.bk
@@ -13,5 +24,5 @@ Cargo.lock
 *.swp
 *.vim
 
-# temporary folder to refresh SDK with TypeSpec
+# Temporary folder to refresh SDK with TypeSpec.
 TempTypeSpecFiles/

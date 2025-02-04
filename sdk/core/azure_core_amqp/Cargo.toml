@@ -3,7 +3,7 @@
 # AMQP Stack for consumption by packages in the Azure SDK.
 [package]
 name = "azure_core_amqp"
-version = "0.19.0"
+version = "0.1.0"
 description = "Rust client Azure SDK"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -33,6 +33,7 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
+tokio = { workspace = true }
 
 [features]
 default = ["fe2o3-amqp"]

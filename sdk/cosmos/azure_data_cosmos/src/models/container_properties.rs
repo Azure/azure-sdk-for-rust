@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::time::Duration;
+use std::{borrow::Cow, time::Duration};
 
 use azure_core::Model;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -34,7 +34,7 @@ where
 /// ```rust
 /// # use azure_data_cosmos::models::ContainerProperties;
 /// let properties = ContainerProperties {
-///     id: "NewContainer".to_string(),
+///     id: "NewContainer".into(),
 ///     partition_key: "/partitionKey".into(),
 ///     ..Default::default()
 /// };
@@ -52,7 +52,7 @@ where
 #[serde(rename_all = "camelCase")]
 pub struct ContainerProperties {
     /// The ID of the container.
-    pub id: String,
+    pub id: Cow<'static, str>,
 
     /// The definition of the partition key for the container.
     pub partition_key: PartitionKeyDefinition,
@@ -75,7 +75,7 @@ pub struct ContainerProperties {
 
     /// The time-to-live for items in the container.
     ///
-    /// For more information see <https://docs.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations>
+    /// For more information see <https://learn.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations>
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(deserialize_with = "deserialize_ttl")]
@@ -84,7 +84,7 @@ pub struct ContainerProperties {
 
     /// The time-to-live for the analytical store in the container.
     ///
-    /// For more information see <https://docs.microsoft.com/azure/cosmos-db/analytical-store-introduction#analytical-ttl>
+    /// For more information see <https://learn.microsoft.com/azure/cosmos-db/analytical-store-introduction#analytical-ttl>
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(deserialize_with = "deserialize_ttl")]
@@ -156,7 +156,7 @@ pub enum VectorDistanceFunction {
 
 /// Represents a unique key policy for a container.
 ///
-/// For more information see <https://docs.microsoft.com/azure/cosmos-db/unique-keys>
+/// For more information see <https://learn.microsoft.com/azure/cosmos-db/unique-keys>
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct UniqueKeyPolicy {
@@ -260,7 +260,7 @@ mod tests {
         // In rare cases, it's reasonable to update this test, if the new generated JSON is considered _equivalent_ to the original by the server.
         // But in general, a failure in this test means that the same user code will send an unexpected value in a new version of the SDK.
         let properties = ContainerProperties {
-            id: "MyContainer".to_string(),
+            id: "MyContainer".into(),
             partition_key: "/partitionKey".into(),
             ..Default::default()
         };

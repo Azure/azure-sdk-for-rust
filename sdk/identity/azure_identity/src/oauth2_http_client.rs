@@ -6,7 +6,7 @@
 
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
-    HttpClient, Request,
+    Body, Bytes, HttpClient, Request, Url,
 };
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 use tracing::warn;
@@ -25,21 +25,31 @@ impl Oauth2HttpClient {
         &self,
         oauth2_request: oauth2::HttpRequest,
     ) -> Result<oauth2::HttpResponse, azure_core::error::Error> {
-        let method = try_from_method(&oauth2_request.method)?;
-        let mut request = Request::new(oauth2_request.url, method);
-        for (name, value) in to_headers(&oauth2_request.headers) {
+        let method = try_from_method(oauth2_request.method())?;
+        let url: Url = oauth2_request.uri().to_string().parse().map_err(|e| {
+            Error::full(
+                ErrorKind::Other,
+                e,
+                "Failed to parse the http::Uri as a url::Url",
+            )
+        })?;
+        let mut request = Request::new(url, method);
+        for (name, value) in to_headers(oauth2_request.headers()) {
             request.insert_header(name, value);
         }
-        request.set_body(oauth2_request.body);
+        request.set_body(Body::Bytes(Bytes::copy_from_slice(
+            oauth2_request.body().as_slice(),
+        )));
         let response = self.http_client.execute_request(&request).await?;
         let status_code = try_from_status(response.status())?;
         let headers = try_from_headers(response.headers())?;
-        let body = response.into_body().collect().await?.to_vec();
-        Ok(oauth2::HttpResponse {
-            status_code,
-            headers,
-            body,
-        })
+        let body = response.into_raw_body().collect().await?.to_vec();
+
+        let mut oauth_response = oauth2::HttpResponse::new(body);
+        *oauth_response.headers_mut() = headers;
+        *oauth_response.status_mut() = status_code;
+
+        Ok(oauth_response)
     }
 }
 

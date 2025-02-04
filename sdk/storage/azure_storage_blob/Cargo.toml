@@ -11,6 +11,10 @@ rust-version.workspace = true
 
 [dependencies]
 azure_storage_common.workspace = true
+azure_core = { workspace = true, features = ["xml"] }
+serde = { workspace = true }
+time = { workspace = true }
+typespec_client_core = { workspace = true, features = ["derive"] }
 
 [lints]
 workspace = true

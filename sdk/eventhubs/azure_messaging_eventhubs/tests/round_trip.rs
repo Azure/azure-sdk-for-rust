@@ -18,22 +18,22 @@ use azure_messaging_eventhubs::{
     producer::{batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions},
 };
 use futures::pin_mut;
-use std::env;
+use std::{env, error::Error};
 use tracing::info;
 
 mod common;
 
 #[recorded::test(live)]
-async fn test_round_trip_batch() {
+async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     const EVENTHUB_PARTITION: &str = "1";
     const TEST_NAME: &str = "test_round_trip_batch";
     common::setup();
-    let host = env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
     let producer = ProducerClient::new(
         host.clone(),
         eventhub.clone(),
-        DefaultAzureCredential::new().unwrap(),
+        DefaultAzureCredential::new()?,
         Some(ProducerClientOptions {
             application_id: Some(TEST_NAME.to_string()),
             ..Default::default()
@@ -44,8 +44,7 @@ async fn test_round_trip_batch() {
 
     let partition_properties = producer
         .get_partition_properties(EVENTHUB_PARTITION.to_string())
-        .await
-        .unwrap();
+        .await?;
 
     info!(
         "Start receiving messages from sequence: {:?}",
@@ -59,64 +58,55 @@ async fn test_round_trip_batch() {
             partition_key: Some("My Partition Key.".to_string()),
             ..Default::default()
         }))
-        .await
-        .unwrap();
+        .await?;
 
-    assert!(batch
-        .try_add_event_data(
-            EventData::builder()
-                .with_body(b"Hello, World!")
-                .add_property("Message#".to_string(), 1)
-                .with_message_id(1)
-                .build(),
-            None
-        )
-        .unwrap());
+    assert!(batch.try_add_event_data(
+        EventData::builder()
+            .with_body(b"Hello, World!")
+            .add_property("Message#".to_string(), 1)
+            .with_message_id(1)
+            .build(),
+        None
+    )?);
 
-    assert!(batch
-        .try_add_amqp_message(
-            AmqpMessage::builder()
-                .with_body(AmqpValue::from("Hello, World!"))
-                .add_application_property("Message#".to_string(), 2)
-                .with_properties(AmqpMessageProperties {
-                    message_id: Some(2.into()),
-                    ..Default::default()
-                })
-                .build(),
-            None,
-        )
-        .unwrap());
+    assert!(batch.try_add_amqp_message(
+        AmqpMessage::builder()
+            .with_body(AmqpValue::from("Hello, World!"))
+            .add_application_property("Message#".to_string(), 2)
+            .with_properties(AmqpMessageProperties {
+                message_id: Some(2.into()),
+                ..Default::default()
+            })
+            .build(),
+        None,
+    )?);
 
-    assert!(batch
-        .try_add_amqp_message(
-            AmqpMessage::builder()
-                .with_body(AmqpList::from(vec![
-                    AmqpValue::from("Hello, World!"),
-                    3.into(),
-                    5.into()
-                ]))
-                .add_application_property("Message#".to_string(), 3)
-                .with_properties(AmqpMessageProperties {
-                    message_id: Some(3.into()),
-                    ..Default::default()
-                })
-                .build(),
-            None,
-        )
-        .unwrap());
+    assert!(batch.try_add_amqp_message(
+        AmqpMessage::builder()
+            .with_body(AmqpList::from(vec![
+                AmqpValue::from("Hello, World!"),
+                3.into(),
+                5.into()
+            ]))
+            .add_application_property("Message#".to_string(), 3)
+            .with_properties(AmqpMessageProperties {
+                message_id: Some(3.into()),
+                ..Default::default()
+            })
+            .build(),
+        None,
+    )?);
 
-    assert!(batch
-        .try_add_amqp_message(
-            AmqpMessage::builder()
-                .add_application_property("Message#".to_string(), 4)
-                .with_properties(AmqpMessageProperties {
-                    message_id: Some(4.into()),
-                    ..Default::default()
-                })
-                .build(),
-            None
-        )
-        .unwrap());
+    assert!(batch.try_add_amqp_message(
+        AmqpMessage::builder()
+            .add_application_property("Message#".to_string(), 4)
+            .with_properties(AmqpMessageProperties {
+                message_id: Some(4.into()),
+                ..Default::default()
+            })
+            .build(),
+        None
+    )?);
 
     assert!(producer.submit_batch(&batch).await.is_ok());
 
@@ -124,7 +114,7 @@ async fn test_round_trip_batch() {
         host,
         eventhub,
         None,
-        DefaultAzureCredential::new().unwrap(),
+        DefaultAzureCredential::new()?,
         Some(ConsumerClientOptions {
             application_id: Some(TEST_NAME.to_string()),
             ..Default::default()
@@ -176,4 +166,6 @@ async fn test_round_trip_batch() {
             }
         })
         .await;
+
+    Ok(())
 }

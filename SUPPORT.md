@@ -18,10 +18,10 @@ To ensure the relevance and manageability of our issue queue, we have an automat
 
 - Take a look at the [Azure SDK blog](https://devblogs.microsoft.com/azure-sdk/).
 - Search for similar issues in [our GitHub repository](https://github.com/Azure/azure-sdk-for-rust/issues)
-- Ask a question on [StackOverflow](https://stackoverflow.com/questions/tagged/azure-sdk-rust) and tag it with azure-sdk-.net
+- Ask a question on [StackOverflow](https://stackoverflow.com/questions/tagged/azure-sdk-rust) and tag it with azure-sdk-rust
 - Share or upvote feature requests on [Feedback Page](https://feedback.azure.com/forums/34192--general-feedback).
 - Ask a question on [Twitter](https://twitter.com/AzureSDK)
-- Ask a question at [Microsoft Q&A](https://docs.microsoft.com/answers/products/azure?WT.mc_id=Portal-Microsoft_Azure_Support&product=all)
+- Ask a question at [Microsoft Q&A](https://learn.microsoft.com/answers/products/azure?WT.mc_id=Portal-Microsoft_Azure_Support&product=all)
 - Ask a question at [Microsoft Tech Community](https://techcommunity.microsoft.com/t5/azure/ct-p/Azure)
 
 ### Security bugs

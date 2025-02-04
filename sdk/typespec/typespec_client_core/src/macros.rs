@@ -24,7 +24,7 @@
 /// ```
 #[macro_export]
 macro_rules! create_enum {
-    ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)), *) => (
+    ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)),* $(,)?) => (
         $(#[$type_meta])*
         #[derive(Debug, PartialEq, Eq, Clone, Copy)]
         #[non_exhaustive]
@@ -75,7 +75,7 @@ macro_rules! create_enum {
             fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                 match self {
                     $(
-                        $name::$variant => write!(f, "{}", $value),
+                        $name::$variant => ::std::fmt::Display::fmt(&$value, f),
                     )*
                 }
             }
@@ -133,7 +133,7 @@ macro_rules! create_enum {
 /// ```
 #[macro_export]
 macro_rules! create_extensible_enum {
-    ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)), *) => (
+    ($(#[$type_meta:meta])* $name:ident, $($(#[$value_meta:meta])* ($variant:ident, $value:expr)),* $(,)?) => (
         $(#[$type_meta])*
         #[derive(Debug, PartialEq, Eq, Clone)]
         #[non_exhaustive]
@@ -261,7 +261,13 @@ mod test {
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));
 
     // cspell:ignore metasyntactic
-    create_extensible_enum!(Metasyntactic, (Foo, "foo"), (Bar, "bar"));
+    create_extensible_enum!(
+        Metasyntactic,
+        (Foo, "foo"),
+        (Bar, "bar"),
+        (Baz, "baz"),
+        (Qux, "qux"),
+    );
 
     #[derive(Debug, Default, Deserialize, Serialize)]
     #[serde(default)]

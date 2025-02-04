@@ -3,12 +3,12 @@
 
 use crate::{
     constants,
-    models::{ContainerProperties, Item, PatchDocument, QueryResults, ThroughputProperties},
+    models::{ContainerProperties, PatchDocument, QueryResults, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
     DeleteContainerOptions, ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
-    ThroughputOptions,
+    ReplaceContainerOptions, ThroughputOptions,
 };
 
 use azure_core::{Method, Pager, Request, Response};
@@ -50,13 +50,12 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # async fn doc() {
-    /// # use azure_data_cosmos::clients::ContainerClient;
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let response = container_client.read(None)
-    ///     .await.unwrap()
-    ///     .deserialize_body()
-    ///     .await.unwrap();
+    ///     .await?
+    ///     .into_body()
+    ///     .await?;
     /// # }
     /// ```
     pub async fn read(
@@ -66,6 +65,51 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Get);
+        self.pipeline
+            .send(options.method_options.context, &mut req, self.link.clone())
+            .await
+    }
+
+    /// Updates the indexing policy of the container.
+    ///
+    /// **NOTE**: The [`ContainerProperties::id`] and [`ContainerProperties::partition_key`] must be the same as the existing container, they cannot be changed.
+    ///
+    /// # Arguments
+    ///
+    /// * `properties` - The [`ContainerProperties`] to update the container with.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// use azure_data_cosmos::models::{ContainerProperties, IndexingPolicy};
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let new_properties = ContainerProperties {
+    ///     id: "MyContainer".into(),
+    ///     partition_key: "/id".into(),
+    ///     indexing_policy: Some(IndexingPolicy {
+    ///         included_paths: vec!["/index_me".into()],
+    ///         ..Default::default()
+    ///     }),
+    ///     ..Default::default()
+    /// };
+    /// let response = container_client.replace(new_properties, None)
+    ///     .await?
+    ///     .into_body()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn replace(
+        &self,
+        properties: ContainerProperties,
+        options: Option<ReplaceContainerOptions<'_>>,
+    ) -> azure_core::Result<Response<ContainerProperties>> {
+        let options = options.unwrap_or_default();
+        let url = self.pipeline.url(&self.link);
+        let mut req = Request::new(url, Method::Put);
+        req.set_json(&properties)?;
         self.pipeline
             .send(options.method_options.context, &mut req, self.link.clone())
             .await
@@ -84,7 +128,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.deserialize_body().await?;
+        let db = self.read(None).await?.into_body().await?;
         let resource_id = db
             .system_properties
             .resource_id
@@ -108,7 +152,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.deserialize_body().await?;
+        let db = self.read(None).await?.into_body().await?;
         let resource_id = db
             .system_properties
             .resource_id
@@ -147,9 +191,8 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, models::Item};
-    /// # use serde::{Deserialize, Serialize};
-    /// # async fn doc() {
+    /// use serde::{Deserialize, Serialize};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
     ///     #[serde(rename = "id")] // Use serde attributes to control serialization
@@ -162,14 +205,46 @@ impl ContainerClient {
     ///     category_id: "category1".to_string(),
     ///     product_name: "Product #1".to_string(),
     /// };
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
-    /// let created_item = container_client
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// container_client
     ///     .create_item("category1", p, None)
-    ///     .await.unwrap()
-    ///     .deserialize_body()
-    ///     .await.unwrap()
-    ///     .unwrap();
-    /// println!("Created: {:#?}", created_item);
+    ///     .await?;
+    /// # }
+    /// ```
+    ///
+    /// # Content Response on Write
+    ///
+    /// By default, the newly created item is *not* returned in the HTTP response.
+    /// If you want the new item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
+    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::ItemOptions;
+    /// use serde::{Deserialize, Serialize};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// pub struct Product {
+    ///     #[serde(rename = "id")] // Use serde attributes to control serialization
+    ///     product_id: String,
+    ///     category_id: String,
+    ///     product_name: String,
+    /// }
+    /// let p = Product {
+    ///     product_id: "product1".to_string(),
+    ///     category_id: "category1".to_string(),
+    ///     product_name: "Product #1".to_string(),
+    /// };
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let options = ItemOptions {
+    ///     enable_content_response_on_write: true,
+    ///     ..Default::default()
+    /// };
+    /// let created_item = container_client
+    ///     .create_item("category1", p, Some(options))
+    ///     .await?
+    ///     .into_json_body::<Product>()
+    ///     .await?;
+    /// # Ok(())
     /// # }
     /// ```
     pub async fn create_item<T: Serialize>(
@@ -177,10 +252,13 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response<Item<T>>> {
+    ) -> azure_core::Result<Response> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
+        if !options.enable_content_response_on_write {
+            req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
+        }
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
         self.pipeline
@@ -203,9 +281,8 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, models::Item};
-    /// # use serde::{Deserialize, Serialize};
-    /// # async fn doc() {
+    /// use serde::{Deserialize, Serialize};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
     ///     #[serde(rename = "id")] // Use serde attributes to control serialization
@@ -218,14 +295,45 @@ impl ContainerClient {
     ///     category_id: "category1".to_string(),
     ///     product_name: "Product #1".to_string(),
     /// };
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
-    /// let updated_item = container_client
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// container_client
     ///     .replace_item("category1", "product1", p, None)
-    ///     .await.unwrap()
-    ///     .deserialize_body()
-    ///     .await.unwrap()
-    ///     .unwrap();
-    /// println!("Updated Item: {:#?}", updated_item);
+    ///     .await?;
+    /// # }
+    /// ```
+    ///
+    /// # Content Response on Write
+    ///
+    /// By default, the replaced item is *not* returned in the HTTP response.
+    /// If you want the replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
+    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::ItemOptions;
+    /// use serde::{Deserialize, Serialize};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// pub struct Product {
+    ///     #[serde(rename = "id")] // Use serde attributes to control serialization
+    ///     product_id: String,
+    ///     category_id: String,
+    ///     product_name: String,
+    /// }
+    /// let p = Product {
+    ///     product_id: "product1".to_string(),
+    ///     category_id: "category1".to_string(),
+    ///     product_name: "Product #1".to_string(),
+    /// };
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let options = ItemOptions {
+    ///     enable_content_response_on_write: true,
+    ///     ..Default::default()
+    /// };
+    /// let updated_product: Product = container_client
+    ///     .replace_item("category1", "product1", p, Some(options))
+    ///     .await?
+    ///     .into_json_body()
+    ///     .await?;
     /// # }
     /// ```
     pub async fn replace_item<T: Serialize>(
@@ -233,15 +341,15 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         item: T,
-
-        #[allow(unused_variables)]
-        // REASON: This is a documented public API so prefixing with '_' is undesirable.
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response<Item<T>>> {
+    ) -> azure_core::Result<Response> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Put);
+        if !options.enable_content_response_on_write {
+            req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
+        }
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
         self.pipeline
@@ -262,9 +370,8 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, models::Item};
-    /// # use serde::{Deserialize, Serialize};
-    /// # async fn doc() {
+    /// use serde::{Deserialize, Serialize};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
     ///     #[serde(rename = "id")] // Use serde attributes to control serialization
@@ -277,25 +384,60 @@ impl ContainerClient {
     ///     category_id: "category1".to_string(),
     ///     product_name: "Product #1".to_string(),
     /// };
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
-    /// let updated_item = container_client
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// container_client
     ///     .upsert_item("category1", p, None)
-    ///     .await.unwrap()
-    ///     .deserialize_body()
-    ///     .await.unwrap()
-    ///     .unwrap();
-    /// println!("Updated Item: {:#?}", updated_item);
+    ///     .await?;
+    /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Content Response on Write
+    ///
+    /// By default, the created/replaced item is *not* returned in the HTTP response.
+    /// If you want the created/replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
+    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::ItemOptions;
+    /// use serde::{Deserialize, Serialize};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// pub struct Product {
+    ///     #[serde(rename = "id")] // Use serde attributes to control serialization
+    ///     product_id: String,
+    ///     category_id: String,
+    ///     product_name: String,
+    /// }
+    /// let p = Product {
+    ///     product_id: "product1".to_string(),
+    ///     category_id: "category1".to_string(),
+    ///     product_name: "Product #1".to_string(),
+    /// };
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let options = ItemOptions {
+    ///     enable_content_response_on_write: true,
+    ///     ..Default::default()
+    /// };
+    /// let updated_product = container_client
+    ///     .upsert_item("category1", p, Some(options))
+    ///     .await?
+    ///     .into_json_body::<Product>()
+    ///     .await?;
+    /// Ok(())
+    /// # }
     pub async fn upsert_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response<Item<T>>> {
+    ) -> azure_core::Result<Response> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
+        if !options.enable_content_response_on_write {
+            req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
+        }
         req.insert_header(constants::IS_UPSERT, "true");
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
@@ -315,12 +457,15 @@ impl ContainerClient {
     /// * `item_id` - The id of the item to read.
     /// * `options` - Optional parameters for the request
     ///
+    /// NOTE: The read item is always returned, so the [`ItemOptions::enable_content_response_on_write`] option is ignored.
+    ///
+    /// Use the [`Response::into_json_body`] method to deserialize the body into your own type.
+    ///
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, models::Item};
-    /// # use serde::{Deserialize, Serialize};
-    /// # async fn doc() {
+    /// use serde::{Deserialize, Serialize};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
     /// pub struct Product {
     ///     #[serde(rename = "id")] // Use serde attributes to control serialization
@@ -328,22 +473,22 @@ impl ContainerClient {
     ///     category_id: String,
     ///     product_name: String,
     /// }
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let item: Product = container_client
     ///     .read_item("partition1", "item1", None)
-    ///     .await.unwrap()
-    ///     .deserialize_body()
-    ///     .await.unwrap()
-    ///     .unwrap();
+    ///     .await?
+    ///     .into_json_body()
+    ///     .await?;
     /// println!("Read Item: {:#?}", item);
+    /// # Ok(())
     /// # }
     /// ```
-    pub async fn read_item<T: DeserializeOwned>(
+    pub async fn read_item(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response<Item<T>>> {
+    ) -> azure_core::Result<Response> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
@@ -361,16 +506,17 @@ impl ContainerClient {
     /// * `item_id` - The id of the item to delete.
     /// * `options` - Optional parameters for the request
     ///
+    /// NOTE: The deleted item is never returned by the Cosmos API, so the [`ItemOptions::enable_content_response_on_write`] option is ignored.
+    ///
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, models::Item};
-    /// # use serde::{Deserialize, Serialize};
-    /// # async fn doc() {
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// use serde::{Deserialize, Serialize};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// container_client
     ///     .delete_item("partition1", "item1", None)
-    ///     .await.unwrap();
+    ///     .await?;
     /// # }
     /// ```
     pub async fn delete_item(
@@ -400,32 +546,49 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, models::PatchDocument};
-    /// # use serde::{Deserialize, Serialize};
-    /// # async fn doc() {
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
-    /// let patch = PatchDocument::default().with_add("/some/path", "some value").unwrap();
+    /// use azure_data_cosmos::models::PatchDocument;
+    /// use serde::{Deserialize, Serialize};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let patch = PatchDocument::default().with_add("/some/path", "some value")?;
     /// container_client
     ///     .patch_item("partition1", "item1", patch, None)
-    ///     .await.unwrap();
+    ///     .await?;
+    /// # Ok(())
     /// # }
     /// ```
     ///
-    /// # Note
+    /// # Content Response on Write
     ///
-    /// The Cosmos service does return the patched item in the response.
-    /// However, this method does not return `Response<T>` since that would **force** users to provide a generic type parameter, even when they do not wish to deserialize the body.
-    /// If you want to deserialize the response, you can use [`Response::deserialize_body_into`] to manually deserialize the body.
+    /// By default, the patched item is *not* returned in the HTTP response.
+    /// If you want the patched item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
+    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
     ///
     /// For example:
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, models::PatchDocument};
-    /// # async fn doc() {
-    /// # let client: ContainerClient = panic!("this is a non-running example");
-    /// let patch = PatchDocument::default().with_add("/some/path", "some value").unwrap();
-    /// let response = client.patch_item("partition1", "item1", patch, None).await.unwrap();
-    /// let patched_item: serde_json::Value = response.deserialize_body_into().await.unwrap();
+    /// use azure_data_cosmos::{models::PatchDocument, ItemOptions};
+    /// use serde::Deserialize;
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// #[derive(Debug, Deserialize)]
+    /// pub struct Product {
+    ///     #[serde(rename = "id")] // Use serde attributes to control serialization
+    ///     product_id: String,
+    ///     category_id: String,
+    ///     product_name: String,
+    /// }
+    /// let options = ItemOptions {
+    ///     enable_content_response_on_write: true,
+    ///     ..Default::default()
+    /// };
+    /// let patch = PatchDocument::default().with_add("/some/path", "some value")?;
+    /// let patched_item = client
+    ///     .patch_item("partition1", "item1", patch, Some(options))
+    ///     .await?
+    ///     .into_json_body::<Product>()
+    ///     .await?;
+    /// # Ok(())
     /// # }
     /// ```
     pub async fn patch_item(
@@ -439,6 +602,9 @@ impl ContainerClient {
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Patch);
+        if !options.enable_content_response_on_write {
+            req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
+        }
         req.insert_headers(&partition_key.into())?;
         req.set_json(&patch)?;
 
@@ -468,9 +634,8 @@ impl ContainerClient {
     /// This allows simple queries without parameters to be expressed easily:
     ///
     /// ```rust,no_run
-    /// # async fn doc() {
-    /// # use azure_data_cosmos::clients::ContainerClient;
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
     ///     id: u64,
@@ -479,24 +644,24 @@ impl ContainerClient {
     /// let items = container_client.query_items::<Customer>(
     ///     "SELECT * FROM c",
     ///     "some_partition_key",
-    ///     None).unwrap();
+    ///     None)?;
     /// # }
     /// ```
     ///
     /// You can specify parameters by using [`Query::from()`] and [`Query::with_parameter()`]:
     ///
     /// ```rust,no_run
-    /// # async fn doc() {
-    /// # use azure_data_cosmos::{clients::ContainerClient, Query};
-    /// # let container_client: ContainerClient = panic!("this is a non-running example");
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// use azure_data_cosmos::Query;
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
     ///     id: u64,
     ///     name: String,
     /// }
     /// let query = Query::from("SELECT COUNT(*) FROM c WHERE c.customer_id = @customer_id")
-    ///     .with_parameter("@customer_id", 42).unwrap();
-    /// let items = container_client.query_items::<Customer>(query, "some_partition_key", None).unwrap();
+    ///     .with_parameter("@customer_id", 42)?;
+    /// let items = container_client.query_items::<Customer>(query, "some_partition_key", None)?;
     /// # }
     /// ```
     ///

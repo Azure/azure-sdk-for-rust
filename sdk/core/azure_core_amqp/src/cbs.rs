@@ -68,7 +68,7 @@ impl<'a> AmqpClaimsBasedSecurity<'a> {
     }
 }
 
-impl<'a> AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity<'a> {
+impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity<'_> {
     async fn authorize_path(
         &self,
         path: String,

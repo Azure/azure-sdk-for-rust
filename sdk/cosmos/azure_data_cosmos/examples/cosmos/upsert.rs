@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use azure_data_cosmos::{CosmosClient, PartitionKey};
+use azure_data_cosmos::{CosmosClient, ItemOptions, PartitionKey};
 use clap::Args;
 
 /// Creates a new item or replaces an existing item, if a matching item already exists.
@@ -13,12 +13,16 @@ pub struct UpsertCommand {
     container: String,
 
     /// The partition key of the new item.
-    #[clap(long, short)]
+    #[arg(long, short)]
     partition_key: String,
 
     /// The JSON of the new item.
-    #[clap(long, short)]
+    #[arg(long, short)]
     json: String,
+
+    /// If set, the updated item will be included in the response.
+    #[arg(long)]
+    show_updated: bool,
 }
 
 impl UpsertCommand {
@@ -29,14 +33,21 @@ impl UpsertCommand {
         let pk = PartitionKey::from(&self.partition_key);
         let item: serde_json::Value = serde_json::from_str(&self.json)?;
 
-        let created = container_client
-            .upsert_item(pk, item, None)
-            .await?
-            .deserialize_body()
-            .await?
-            .unwrap();
-        println!("Created item:");
-        println!("{:#?}", created);
+        let options = ItemOptions {
+            enable_content_response_on_write: self.show_updated,
+            ..Default::default()
+        };
+
+        let response = container_client
+            .upsert_item(pk, item, Some(options))
+            .await?;
+        println!("Item updated successfully");
+
+        if self.show_updated {
+            let created: serde_json::Value = response.into_json_body().await?;
+            println!("Updated item:");
+            println!("{:#?}", created);
+        }
         Ok(())
     }
 }

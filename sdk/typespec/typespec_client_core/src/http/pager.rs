@@ -216,7 +216,7 @@ mod tests {
                     .headers()
                     .get_optional_string(&HeaderName::from_static("x-test-header"))
                     .unwrap();
-                let body = r.deserialize_body().await.unwrap();
+                let body = r.into_body().await.unwrap();
                 (header, body)
             })
             .collect()
@@ -269,7 +269,7 @@ mod tests {
                     .headers()
                     .get_optional_string(&HeaderName::from_static("x-test-header"))
                     .unwrap();
-                let body = r.deserialize_body().await?;
+                let body = r.into_body().await?;
                 Ok((header, body))
             })
             .collect()

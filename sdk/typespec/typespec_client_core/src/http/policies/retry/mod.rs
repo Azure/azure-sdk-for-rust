@@ -24,10 +24,10 @@ use std::{sync::Arc, time::Duration};
 use tracing::{debug, trace};
 use typespec::error::{Error, ErrorKind, ResultExt};
 
-/// Attempts to parse the supplied string as an HTTP date, of the form defined by RFC 1123 (e.g. `Fri, 01 Jan 2021 00:00:00 GMT`).
+/// Attempts to parse the supplied string as an HTTP date, of the form defined by RFC 7231 (e.g. `Fri, 01 Jan 2021 00:00:00 GMT`).
 /// Returns `None` if the string is not a valid HTTP date.
 fn try_parse_retry_after_http_date(http_date: &str) -> Option<OffsetDateTime> {
-    crate::date::parse_rfc1123(http_date).ok()
+    crate::date::parse_rfc7231(http_date).ok()
 }
 
 /// A function that returns an `OffsetDateTime`.
@@ -137,9 +137,10 @@ where
             let (last_error, retry_after) = match result {
                 Ok(response) if response.status().is_success() => {
                     trace!(
-                        "Successful response. Request={:?} response={:?}",
-                        request,
-                        response
+                        ?request,
+                        ?response,
+                        "server returned success status {}",
+                        response.status(),
                     );
                     return Ok(response);
                 }

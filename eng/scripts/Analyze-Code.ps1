@@ -34,7 +34,7 @@ if ($CheckWasm) {
   Invoke-LoggedCommand "cargo +$Toolchain clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps"
 }
 
-Invoke-LoggedCommand "cargo +$Toolchain doc --workspace --no-deps"
+Invoke-LoggedCommand "cargo +$Toolchain doc --workspace --no-deps --all-features"
 
 # Verify package dependencies
 

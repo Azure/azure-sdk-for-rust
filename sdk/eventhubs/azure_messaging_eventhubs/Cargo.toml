@@ -2,7 +2,7 @@
 
 [package]
 name = "azure_messaging_eventhubs"
-version = "0.19.0"
+version = "0.1.0"
 description = "Rust client for Azure Eventhubs Service"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -32,8 +32,8 @@ rustc_version.workspace = true
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
-azure_core_test.workspace = true
-azure_identity.workspace = true
+azure_core_test.path = "../../core/azure_core_test"
+azure_identity.path = "../../identity/azure_identity"
 tokio = { workspace = true, default-features = false, features = [
   "rt-multi-thread",
   "macros",

@@ -33,7 +33,7 @@ impl Policy for TransportPolicy {
         // there must be no more policies
         assert_eq!(0, next.len());
 
-        debug!("the following request will be passed to the transport policy: {request:#?}");
+        debug!(?request, "sending request '{}'", request.url);
         let response = { self.transport_options.send(ctx, request) };
 
         response.await

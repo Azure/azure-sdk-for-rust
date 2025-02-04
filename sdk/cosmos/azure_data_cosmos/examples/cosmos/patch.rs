@@ -17,15 +17,15 @@ pub struct PatchCommand {
     container: String,
 
     /// The ID of the item.
-    #[clap(long, short)]
+    #[arg(long, short)]
     item_id: String,
 
     /// The partition key of the new item.
-    #[clap(long, short)]
+    #[arg(long, short)]
     partition_key: String,
 
     /// A JSON patch operation to apply to the item, can be specified multiple times. See https://learn.microsoft.com/en-us/azure/cosmos-db/partial-document-update
-    #[clap(long, short)]
+    #[arg(long, short)]
     operation: Vec<String>,
 }
 
@@ -48,7 +48,7 @@ impl PatchCommand {
         match response {
             Err(e) if e.http_status() == Some(StatusCode::NotFound) => println!("Item not found!"),
             Ok(r) => {
-                let item: serde_json::Value = r.deserialize_body_into().await?;
+                let item: serde_json::Value = r.into_json_body().await?;
                 println!("Patched item:");
                 println!("{:#?}", item);
             }

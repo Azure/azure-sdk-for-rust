@@ -13,7 +13,7 @@ pub struct MetadataCommand {
     database: String,
 
     /// Optionally, the container to fetch information for.
-    #[clap(long, short)]
+    #[arg(long, short)]
     container: Option<String>,
 }
 
@@ -22,15 +22,11 @@ impl MetadataCommand {
         let db_client = client.database_client(&self.database);
         if let Some(container_name) = &self.container {
             let container_client = db_client.container_client(container_name);
-            let response = container_client
-                .read(None)
-                .await?
-                .deserialize_body()
-                .await?;
+            let response = container_client.read(None).await?.into_body().await?;
             println!("{:#?}", response);
             return Ok(());
         } else {
-            let response = db_client.read(None).await?.deserialize_body().await?;
+            let response = db_client.read(None).await?.into_body().await?;
             println!("{:#?}", response);
         }
         Ok(())
