@@ -198,7 +198,7 @@ pub struct JsonWebKey {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kid: Option<String>,
 
-    /// JsonWebKey Key Type (kty), as defined in https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40.
+    /// JsonWebKey Key Type (kty), as defined in <https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40>.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kty: Option<JsonWebKeyType>,
 

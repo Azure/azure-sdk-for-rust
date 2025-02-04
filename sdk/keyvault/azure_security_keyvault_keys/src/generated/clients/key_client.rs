@@ -123,7 +123,7 @@ impl KeyClient {
     /// block is dependent on the target key and the algorithm to be used. The DECRYPT operation applies to asymmetric and symmetric
     /// keys stored in Azure Key Vault since it uses the private portion of the key. This operation requires the keys/decrypt
     /// permission. Microsoft recommends not to use CBC algorithms for decryption without first ensuring the integrity of the
-    /// ciphertext using an HMAC, for example. See https://docs.microsoft.com/dotnet/standard/security/vulnerabilities-cbc-mode
+    /// ciphertext using an HMAC, for example. See <https://docs.microsoft.com/dotnet/standard/security/vulnerabilities-cbc-mode>
     /// for more information.
     pub async fn decrypt(
         &self,
