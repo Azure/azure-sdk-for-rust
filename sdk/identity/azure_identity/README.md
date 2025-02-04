@@ -39,7 +39,7 @@ The Azure Identity library focuses on OAuth authentication with Microsoft Entra 
 
 ### DefaultAzureCredential
 
-`DefaultAzureCredential` simplifies authentication while developing apps that deploy to Azure by combining credentials used in Azure hosting environments with credentials used in local development. For more information, see [DefaultAzureCredential overview][dac_overview].
+`DefaultAzureCredential` simplifies authentication while developing apps that deploy to Azure by combining credentials used in Azure hosting environments with credentials used in local development.
 
 #### Continuation policy
 
@@ -101,7 +101,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Client library support
 
-Client and management libraries <!-- TODO: Update link and uncomment when Rust SDK has a page on the releases site.> listed on the [Azure SDK release page](https://azure.github.io/azure-sdk/releases/latest/python.html)</!--> that support Microsoft Entra authentication accept credentials from this library. You can learn more about using these libraries in their documentation, which is <!-- TODO: uncomment when Rust SDK has a release page.>linked from the release page</!-->available at [Docs.rs](https://Docs.rs).
+Client and management libraries listed on the [Azure SDK release page](https://azure.github.io/azure-sdk/releases/latest/rust.html)that support Microsoft Entra authentication accept credentials from this library. You can learn more about using these libraries in their documentation, which is available at [Docs.rs](https://Docs.rs).
 
 ### Provide feedback
 
@@ -119,14 +119,13 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Azure CLI]: https://learn.microsoft.com/cli/azure
 [azure_security_keyvault_secrets]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets
 [Azure subscription]: https://azure.microsoft.com/free/
-[cert_cred_ref]: <!-- TODO: When Docs.rs page for ClientCertificateCredential ref docs are available -->
-[cli_cred_ref]: <!-- TODO: When Docs.rs page for AzureCliCredential ref docs are available>
-[dac_overview]: <!-- TODO: When we have a conceptual doc on Credential chains with a section on DefaultAzureCredential overview. Python example: https://learn.microsoft.com/azure/developer/python/sdk/authentication/credential-chains?tabs=dac#defaultazurecredential-overview -->
-[default_cred_ref]: <!-- TODO: When Docs.rs page for DefaultAzureCredential ref docs are available -->
+[cert_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientCertificateCredential.html
+[cli_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.AzureauthCliCredential.html
+[default_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.DefaultAzureCredential.html
 [Microsoft Entra ID documentation]: https://learn.microsoft.com/entra/identity/
 [API reference documentation]: https://docs.rs/azure_identity/latest/azure_identity/
-[managed_id_cred_ref]: <!-- TODO: When Docs.rs page for ImdsManagedIdentityCredential ref docs are available -->
+[managed_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ImdsManagedIdentityCredential.html
 [Package (crates.io)]: https://crates.io/crates/azure_identity
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
-[token_cred_ref]: <!-- TODO: When Docs.rs page for TokenCredential trait ref docs are available -->
-[workload_id_cred_ref]: <!-- TODO: When Docs.rs page for WorkloadIdentityCredential ref docs are available -->
+[token_cred_ref]: https://docs.rs/azure_core/latest/azure_core/struct.TokenCredential.html
+[workload_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.WorkloadIdentityCredential.html
