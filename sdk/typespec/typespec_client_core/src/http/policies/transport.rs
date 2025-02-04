@@ -2,11 +2,13 @@
 // Licensed under the MIT License.
 
 use crate::http::{
+    headers::{HeaderValue, CONTENT_LENGTH},
     options::TransportOptions,
     policies::{Policy, PolicyResult},
-    Context, Request,
+    Context, Header, Request,
 };
 use async_trait::async_trait;
+use http_types::Method;
 use std::sync::Arc;
 use tracing::debug;
 
@@ -33,9 +35,111 @@ impl Policy for TransportPolicy {
         // there must be no more policies
         assert_eq!(0, next.len());
 
+        if request.body().is_empty()
+            && matches!(
+                *request.method(),
+                Method::Patch | Method::Post | Method::Put
+            )
+        {
+            request.add_mandatory_header(EMPTY_CONTENT_LENGTH);
+        }
+
         debug!(?request, "sending request '{}'", request.url);
         let response = { self.transport_options.send(ctx, request) };
 
         response.await
+    }
+}
+
+const EMPTY_CONTENT_LENGTH: &EmptyContentLength = &EmptyContentLength;
+
+struct EmptyContentLength;
+
+impl Header for EmptyContentLength {
+    fn name(&self) -> crate::http::headers::HeaderName {
+        CONTENT_LENGTH
+    }
+    fn value(&self) -> crate::http::headers::HeaderValue {
+        HeaderValue::from("0")
+    }
+}
+
+#[cfg(all(test, not(target_family = "wasm")))]
+mod tests {
+    use super::*;
+    use crate::http::{headers::Headers, Response};
+    use http_types::StatusCode;
+
+    #[derive(Debug)]
+    struct MockTransport;
+
+    #[async_trait]
+    impl Policy for MockTransport {
+        async fn send(
+            &self,
+            _ctx: &Context,
+            _request: &mut Request,
+            _next: &[Arc<dyn Policy>],
+        ) -> PolicyResult {
+            PolicyResult::Ok(Response::from_bytes(
+                StatusCode::Ok,
+                Headers::new(),
+                Vec::new(),
+            ))
+        }
+    }
+
+    #[tokio::test]
+    async fn test_content_length() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let transport =
+            TransportPolicy::new(TransportOptions::new_custom_policy(Arc::new(MockTransport)));
+
+        let mut request = Request::new("http://localhost".parse()?, Method::Get);
+        transport.send(&Context::new(), &mut request, &[]).await?;
+        assert!(!request.headers().iter().any(|h| CONTENT_LENGTH.eq(h.0)));
+
+        request.headers = Headers::new();
+        request.method = Method::Patch;
+        transport.send(&Context::new(), &mut request, &[]).await?;
+        assert_eq!(
+            request
+                .headers()
+                .get_with(&CONTENT_LENGTH, |v| v.as_str().parse::<u16>())
+                .unwrap(),
+            0u16
+        );
+
+        request.headers = Headers::new();
+        request.method = Method::Post;
+        transport.send(&Context::new(), &mut request, &[]).await?;
+        assert_eq!(
+            request
+                .headers()
+                .get_with(&CONTENT_LENGTH, |v| v.as_str().parse::<u16>())
+                .unwrap(),
+            0u16
+        );
+
+        request.headers = Headers::new();
+        request.method = Method::Put;
+        transport.send(&Context::new(), &mut request, &[]).await?;
+        assert_eq!(
+            request
+                .headers()
+                .get_with(&CONTENT_LENGTH, |v| v.as_str().parse::<u16>())
+                .unwrap(),
+            0u16
+        );
+
+        // The HttpClient would add this normally.
+        request.headers = Headers::new();
+        request.body = "{}".into();
+        transport.send(&Context::new(), &mut request, &[]).await?;
+        request
+            .headers()
+            .get_with(&CONTENT_LENGTH, |v| v.as_str().parse::<u16>())
+            .expect_err("expected no content-length header");
+
+        Ok(())
     }
 }
