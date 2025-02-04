@@ -122,7 +122,6 @@ The following section provides several code snippets using the `SecretClient`, c
 * [Retrieve a secret](#retrieve-a-secret)
 * [Update an existing secret](#update-an-existing-secret)
 * [Delete a secret](#delete-a-secret)
-* [Delete and purge a secret](#delete-and-purge-a-secret)
 * [List secrets](#list-secrets)
 
 ### Create a secret
@@ -274,46 +273,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-### Delete and purge a secret
-
-You will need to wait for the long-running operation to complete before trying to purge or recover the secret. You can do this by calling `update_status` in a loop as shown below:
-
-```rust no_run
-use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::SecretClient;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
-    let client = SecretClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
-        credential,
-        None,
-    )?;
-
-    // Delete a secret using the secret client.
-    client.delete_secret("secret-name".into(), None).await?;
-
-    // Purge deleted secret using the secret client.
-    client
-        .purge_deleted_secret("secret-name".into(), None)
-        .await?;
-
-    Ok(())
-}
-```
-
 ### List secrets
 
 This example lists all the secrets in the specified Azure Key Vault. The value is not returned when listing all secrets. You will need to call `SecretClient::get_secret` to retrieve the value.
 
 ```rust no_run
-use azure_core::Pager;
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{models::SecretListResult, SecretClient};
+use azure_security_keyvault_secrets::{ResourceExt, SecretClient};
+use futures::TryStreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a new secret client
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
         "https://your-key-vault-name.vault.azure.net/",
@@ -321,9 +292,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    // List secrets using the secret client.
-    let response: Pager<SecretListResult>= client.get_secrets(None)?;
-    println!("{:?}", response);
+    let mut pager = client.get_secrets(None)?.into_stream();
+    while let Some(secrets) = pager.try_next().await? {
+        let Some(secrets) = secrets.into_body().await?.value else {
+            continue;
+        };
+
+        for secret in secrets {
+            // Get the secret name from the ID.
+            let name = secret.resource_id()?.name;
+            println!("Found Secret with Name: {}", name);
+        }
+    }
 
     Ok(())
 }
