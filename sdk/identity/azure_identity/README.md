@@ -43,7 +43,7 @@ The Azure Identity library focuses on OAuth authentication with Microsoft Entra 
 
 #### Continuation policy
 
-As of version 0.22.0, `DefaultAzureCredential` attempts to authenticate with all developer credentials until one succeeds, regardless of any errors previous developer credentials experienced. For example, a developer credential may attempt to get a token and fail, so `DefaultAzureCredential` will continue to the next credential in the flow. Deployed service credentials stop the flow with a thrown exception if they're able to attempt token retrieval, but don't receive one. Prior to version 0.22.0, developer credentials would similarly stop the authentication flow if token retrieval failed, but this is no longer the case.
+`DefaultAzureCredential` attempts to authenticate with all developer credentials until one succeeds, regardless of any errors previous developer credentials experienced. For example, a developer credential may attempt to get a token and fail, so `DefaultAzureCredential` will continue to the next credential in the flow. Deployed service credentials stop the flow with a thrown exception if they're able to attempt token retrieval, but don't receive one.
 
 This allows for trying all of the developer credentials on your machine while having predictable deployed behavior.
 
