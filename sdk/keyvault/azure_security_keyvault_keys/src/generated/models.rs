@@ -138,7 +138,7 @@ pub struct GetRandomBytesRequest {
     pub count: Option<i32>,
 }
 
-/// As of http://tools.ietf.org/html/draft-ietf-jose-json-web-key-18
+/// As of <http://tools.ietf.org/html/draft-ietf-jose-json-web-key-18>
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 pub struct JsonWebKey {
     /// Elliptic curve name. For valid values, see JsonWebKeyCurveName.
