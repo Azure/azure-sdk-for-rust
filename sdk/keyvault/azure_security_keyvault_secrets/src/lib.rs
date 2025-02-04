@@ -6,10 +6,22 @@
 mod generated;
 mod resource;
 
-pub use generated::clients::secret_client::*;
-pub use resource::*;
+pub mod clients {
+    pub use crate::generated::clients::*;
+}
 
 pub mod models {
     pub use crate::generated::enums::*;
     pub use crate::generated::models::*;
 }
+
+pub use crate::generated::clients::{
+    SecretClient, SecretClientBackupSecretOptions, SecretClientDeleteSecretOptions,
+    SecretClientGetDeletedSecretOptions, SecretClientGetDeletedSecretsOptions,
+    SecretClientGetSecretOptions, SecretClientGetSecretVersionsOptions,
+    SecretClientGetSecretsOptions, SecretClientOptions, SecretClientPurgeDeletedSecretOptions,
+    SecretClientRecoverDeletedSecretOptions, SecretClientRestoreSecretOptions,
+    SecretClientSetSecretOptions, SecretClientUpdateSecretOptions,
+};
+
+pub use resource::*;

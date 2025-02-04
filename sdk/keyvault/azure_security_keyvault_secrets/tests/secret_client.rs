@@ -37,8 +37,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let secret = client
-        // TODO: https://github.com/Azure/typespec-rust/issues/223
-        .set_secret("secret-roundtrip".into(), body.try_into()?, None)
+        .set_secret("secret-roundtrip", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -47,8 +46,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
     // Get a specific version of a secret.
     let version = secret.resource_id()?.version.unwrap_or_default();
     let secret = client
-        // TODO: https://github.com/Azure/typespec-rust/issues/223
-        .get_secret("secret-roundtrip".into(), version, None)
+        .get_secret("secret-roundtrip", version.as_ref(), None)
         .await?
         .into_body()
         .await?;
@@ -77,8 +75,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let secret = client
-        // TODO: https://github.com/Azure/typespec-rust/issues/223
-        .set_secret("update-secret".into(), body.try_into()?, None)
+        .set_secret("update-secret", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -94,13 +91,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
         )])),
     };
     let secret = client
-        .update_secret(
-            // TODO: https://github.com/Azure/typespec-rust/issues/223
-            "update-secret".into(),
-            "".into(),
-            properties.try_into()?,
-            None,
-        )
+        .update_secret("update-secret", "", properties.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -130,22 +121,14 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
     // Create several secrets.
     let mut names = vec!["list-secrets-1", "list-secrets-2"];
     let secret1 = client
-        .set_secret(
-            names[0].into(),
-            r#"{"value":"secret-value-1"}"#.try_into()?,
-            None,
-        )
+        .set_secret(names[0], r#"{"value":"secret-value-1"}"#.try_into()?, None)
         .await?
         .into_body()
         .await?;
     assert_eq!(secret1.value, Some("secret-value-1".into()));
 
     let secret2 = client
-        .set_secret(
-            names[1].into(),
-            r#"{"value":"secret-value-2"}"#.try_into()?,
-            None,
-        )
+        .set_secret(names[1], r#"{"value":"secret-value-2"}"#.try_into()?, None)
         .await?
         .into_body()
         .await?;
