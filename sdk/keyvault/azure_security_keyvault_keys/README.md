@@ -30,25 +30,30 @@ The `KeyClient` struct provides methods to manage keys in the Azure Key Vault. Y
 
 ### Creating a key
 
-```rust
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_keys::{models::KeyCreateParameters, KeyClient};
 
 #[tokio::main]
-async fn main() -> azure_core::Result<()> {
-    let credential = DefaultAzureCredential::new().unwrap();
-
-    let mut options = KeyClientOptions::default();
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
 
     let client = KeyClient::new(
         "https://<your-key-vault-name>.vault.azure.net",
         credential.clone(),
-        Some(options));
+        None,
+    )?;
 
-    let key = client.create_key("my-key", None).await?.into_body().await?;
+    let key = client
+        .create_key("my-key", KeyCreateParameters::default().try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    
     println!("Created key: {:?}", key);
 
     Ok(())
 }
-```
 
 ## Contributing
 
