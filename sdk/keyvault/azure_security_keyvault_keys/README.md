@@ -6,12 +6,10 @@ Azure Key Vault is a cloud service that provides secure storage and management o
 
 ### Install the crate
 
-Add the following to your `Cargo.toml` file:
+Install the Azure Key Vault keys library for Rust with cargo: 
 
-```toml
-[dependencies]
-azure_security_keyvault_keys = "0.1"
-```
+```bash
+cargo add azure_security_keyvault_keys
 
 ### Prerequisites
 
