@@ -1,0 +1,22 @@
+[package]
+name = "azure_security_keyvault_keys"
+version = "0.1.0"
+description = "Rust wrappers around Microsoft Azure REST APIs - Azure KeyVault Keys"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_security_keyvault_keys"
+keywords = ["sdk", "azure", "rest", "cloud", "keyvault", "security", "keys"]
+categories = ["api-bindings"]
+
+[dependencies]
+azure_core = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+time = { workspace = true }
+typespec_client_core = { workspace = true, features = ["derive"] }
