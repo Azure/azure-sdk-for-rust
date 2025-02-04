@@ -249,7 +249,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Delete a secret
 
-`delete_secret` starts a long-running operation to delete a secret previously stored in the Azure Key Vault. You can retrieve the secret immediately without waiting for the operation to complete. When [soft-delete] is not enabled for the Azure Key Vault, this operation permanently deletes the secret.
+`delete_secret` starts a long-running operation to delete a secret previously stored in the Azure Key Vault. You can retrieve the secret immediately without waiting for the operation to complete.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
@@ -364,17 +364,11 @@ Error: HttpError {
 }
 ```
 
-### Additional Documentation
-
-* For more extensive documentation on Azure Key Vault, see the [API reference documentation].
-* For Keys client library see [Keys client library].
-* For Certificates client library see [Certificates client library].
-
 ## Contributing
 
 See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.
 
-This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit <https://cla.microsoft.com>.
+This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit <https://opensource.microsoft.com/cla/>.
 
 When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA.
 
@@ -383,7 +377,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 <!-- LINKS -->
 [API reference documentation]: https://docs.rs/azure_security_keyvault_secrets/latest/azure_security_keyvault_secrets
 [Azure CLI]: https://learn.microsoft.com/cli/azure
-[Azure subscription]: https://azure.microsoft.com/free/rust/
+[Azure subscription]: https://azure.microsoft.com/free/
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [Certificates client library]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_certificates
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
@@ -393,7 +387,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [Cargo]: https://crates.io/
 [Package (crates.io)]: https://crates.io/crates/azure_security_keyvault_secrets
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets/src
-[CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/CONTRIBUTING.md
+[CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [access control]: https://learn.microsoft.com/azure/key-vault/general/assign-access-policy
 [RBAC]: https://learn.microsoft.com/azure/key-vault/general/rbac-guide
