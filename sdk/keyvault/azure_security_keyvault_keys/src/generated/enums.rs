@@ -28,23 +28,23 @@ create_extensible_enum!(
 
 create_extensible_enum!(
     JsonWebKeyEncryptionAlgorithm,
-    (A128CBC, "A128CBC"),
-    (A128CBCPAD, "A128CBCPAD"),
-    (A128GCM, "A128GCM"),
-    (A128KW, "A128KW"),
-    (A192CBC, "A192CBC"),
-    (A192CBCPAD, "A192CBCPAD"),
-    (A192GCM, "A192GCM"),
-    (A192KW, "A192KW"),
-    (A256CBC, "A256CBC"),
-    (A256CBCPAD, "A256CBCPAD"),
-    (A256GCM, "A256GCM"),
-    (A256KW, "A256KW"),
-    (CKMAESKEYWRAP, "CKM_AES_KEY_WRAP"),
-    (CKMAESKEYWRAPPAD, "CKM_AES_KEY_WRAP_PAD"),
+    (A128Cbc, "A128CBC"),
+    (A128Cbcpad, "A128CBCPAD"),
+    (A128Gcm, "A128GCM"),
+    (A128Kw, "A128KW"),
+    (A192Cbc, "A192CBC"),
+    (A192Cbcpad, "A192CBCPAD"),
+    (A192Gcm, "A192GCM"),
+    (A192Kw, "A192KW"),
+    (A256Cbc, "A256CBC"),
+    (A256Cbcpad, "A256CBCPAD"),
+    (A256Gcm, "A256GCM"),
+    (A256Kw, "A256KW"),
+    (CkmAesKeyWrap, "CKM_AES_KEY_WRAP"),
+    (CkmAesKeyWrapPad, "CKM_AES_KEY_WRAP_PAD"),
     (RSA1_5, "RSA1_5"),
-    (RSAOAEP, "RSA-OAEP"),
-    (RSAOAEP256, "RSA-OAEP-256")
+    (RsaOAEP256, "RSA-OAEP-256"),
+    (RsaOaep, "RSA-OAEP")
 );
 
 create_extensible_enum!(
@@ -77,18 +77,18 @@ create_extensible_enum!(
 create_extensible_enum!(
     JsonWebKeyType,
     (EC, "EC"),
-    (ECHSM, "EC-HSM"),
+    (EcHsm, "EC-HSM"),
     (Oct, "oct"),
-    (OctHSM, "oct-HSM"),
+    (OctHsm, "oct-HSM"),
     (RSA, "RSA"),
-    (RSAHSM, "RSA-HSM")
+    (RsaHsm, "RSA-HSM")
 );
 
 create_extensible_enum!(
     KeyEncryptionAlgorithm,
-    (CKMRSAAESKEYWRAP, "CKM_RSA_AES_KEY_WRAP"),
-    (RSAAESKEYWRAP_256, "RSA_AES_KEY_WRAP_256"),
-    (RSAAESKEYWRAP_384, "RSA_AES_KEY_WRAP_384")
+    (CkmRsaAesKeyWrap, "CKM_RSA_AES_KEY_WRAP"),
+    (RsaAesKeyWrap256, "RSA_AES_KEY_WRAP_256"),
+    (RsaAesKeyWrap384, "RSA_AES_KEY_WRAP_384")
 );
 
 create_enum!(
