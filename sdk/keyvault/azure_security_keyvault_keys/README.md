@@ -10,6 +10,7 @@ Install the Azure Key Vault keys library for Rust with cargo:
 
 ```bash
 cargo add azure_security_keyvault_keys
+```
 
 ### Prerequisites
 
