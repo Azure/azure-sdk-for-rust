@@ -353,8 +353,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match client
         .get_secret(
-            "secret-name".to_string(),
-            "".to_string(),
+            "secret-name".into(),
+            "".into(),
             None,
         )
         .await
