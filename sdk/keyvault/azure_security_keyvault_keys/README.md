@@ -1,4 +1,4 @@
-# Azure KeyVault Keys client library for Rust
+# Azure KeyVault keys client library for Rust
 
 Azure Key Vault is a cloud service that provides secure storage and management of sensitive information such as API keys, passwords, certificates, and cryptographic keys. The `azure_security_keyvault_keys` crate provides a client library for interacting with the Azure Key Vault Keys service.
 
