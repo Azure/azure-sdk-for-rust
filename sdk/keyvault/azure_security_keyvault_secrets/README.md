@@ -249,7 +249,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Delete a secret
 
-`delete_secret` starts a long-running operation to delete a secret previously stored in the Azure Key Vault. You can retrieve the secret immediately without waiting for the operation to complete.
+`delete_secret` will tell Key Vault to delete a secret but it is not deleted immediately. It is not deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_secret` on the returned `DeletedSecretBundle.id`.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
