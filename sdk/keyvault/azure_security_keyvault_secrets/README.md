@@ -65,7 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
         "https://your-key-vault-name.vault.azure.net/",
-        credential,
+        credential.clone(),
         None,
     )?;
 
@@ -140,7 +140,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
         "https://your-key-vault-name.vault.azure.net/",
-        credential,
+        credential.clone(),
         None,
     )?;
 
@@ -184,7 +184,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
         "https://your-key-vault-name.vault.azure.net/",
-        credential,
+        credential.clone(),
         None,
     )?;
 
@@ -218,7 +218,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
         "https://your-key-vault-name.vault.azure.net/",
-        credential,
+        credential.clone(),
         None,
     )?;
 
@@ -260,7 +260,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
         "https://your-key-vault-name.vault.azure.net/",
-        credential,
+        credential.clone(),
         None,
     )?;
 
@@ -288,7 +288,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
         "https://your-key-vault-name.vault.azure.net/",
-        credential,
+        credential.clone(),
         None,
     )?;
 
@@ -327,7 +327,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
         "https://ronnieg-keyvault.vault.azure.net/",
-        credential,
+        credential.clone(),
         None,
     )?;
 
