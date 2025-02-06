@@ -1,0 +1,36 @@
+parameters:
+  - name: ServiceDirectory
+    type: string
+    default: auto
+  - name: Toolchain
+    type: string
+    default: stable
+  - name: Artifacts
+    type: object
+    default: []
+
+steps:
+- template: /eng/pipelines/templates/steps/use-rust.yml@self
+  parameters:
+    Toolchain: ${{ parameters.Toolchain }}
+
+- template: /eng/common/pipelines/templates/steps/set-default-branch.yml@self
+
+- template: /eng/common/pipelines/templates/steps/save-package-properties.yml@self
+  parameters:
+    ServiceDirectory: ${{ parameters.ServiceDirectory }}
+    PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
+
+- task: Powershell@2
+  displayName: "Pack Crates"
+  condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
+  inputs:
+    pwsh: true
+    filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
+    ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+      arguments: >
+        -OutputPath '$(Build.ArtifactStagingDirectory)'
+    ${{ else }}:
+      arguments: >
+        -OutputPath '$(Build.ArtifactStagingDirectory)'
+        -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'

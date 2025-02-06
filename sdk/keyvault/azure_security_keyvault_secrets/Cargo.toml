@@ -17,16 +17,16 @@ categories = ["api-bindings"]
 
 [dependencies]
 async-std = { workspace = true, features = ["attributes", "tokio1"] }
-azure_core = { workspace = true }
+azure_core = { path = "../../core/azure_core" }
 futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 time = { workspace = true }
-typespec_client_core = { workspace = true, features = ["derive"] }
+typespec_client_core = { path = "../../typespec/typespec_client_core", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
-azure_core_test = { workspace = true, features = ["tracing"] }
-azure_identity.path = "../../identity/azure_identity"
+azure_core_test = { path = "../../core/azure_core_test", features = ["tracing"] }
+azure_identity = { path = "../../identity/azure_identity" }
 rand.workspace = true
 tokio.workspace = true
 

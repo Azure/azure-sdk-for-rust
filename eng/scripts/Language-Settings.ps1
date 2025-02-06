@@ -43,7 +43,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory)
     $searchPath = Join-Path $RepoRoot 'sdk' -Resolve
 
     if ($ServiceDirectory -and $ServiceDirectory -ne 'auto') {
-      $searchPath = Join-Path 'sdk' $ServiceDirectory -Resolve
+      $searchPath = Join-Path $searchPath $ServiceDirectory -Resolve
     }
 
     $packages = cargo metadata --format-version 1
@@ -119,4 +119,9 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory)
   }
 
   return $allPackageProps
+}
+
+function Get-rust-PackageInfoFromPackageFile()
+{
+
 }

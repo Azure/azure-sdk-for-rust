@@ -38,44 +38,47 @@ Param (
 
 . (Join-Path $PSScriptRoot '../common/scripts/common.ps1')
 
+Write-Host "Getting package properties for $PackageName in $ServiceDirectory."
 $pkgProperties = Get-PkgProperties -PackageName $PackageName -ServiceDirectory $ServiceDirectory
-$packageVersion = $pkgProperties.Version
 
-$packageSemVer = [AzureEngSemanticVersion]::new($packageVersion)
+Write-Host "Found package:"
+Write-Host "  Name: $($pkgProperties.Name)"
+Write-Host "  Version: $($pkgProperties.Version)"
+Write-Host "  Directory: $($pkgProperties.DirectoryPath)"
+Write-Host "  ChangeLogPath: $($pkgProperties.ChangeLogPath)"
 
-if ([System.String]::IsNullOrEmpty($NewVersionString)) {
+$packageSemVer = [AzureEngSemanticVersion]::new($pkgProperties.Version)
+$isUnreleased = !$NewVersionString
+if ($isUnreleased) {
   $packageSemVer.IncrementAndSetToPrerelease();
-
-  & "$EngCommonScriptsDir/Update-ChangeLog.ps1" -Version $packageSemVer.ToString() `
-    -ChangelogPath $pkgProperties.ChangeLogPath -Unreleased $True
 }
 else {
   $packageSemVer = [AzureEngSemanticVersion]::new($NewVersionString)
-
-  & "$EngCommonScriptsDir/Update-ChangeLog.ps1" -Version $packageSemVer.ToString() `
-    -ChangelogPath $pkgProperties.ChangeLogPath -Unreleased $False `
-    -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle -ReleaseDate $ReleaseDate
 }
-
 
 if ($packageSemVer.HasValidPrereleaseLabel() -ne $true) {
   Write-Error "Invalid prerelease label: $packageSemVer"
   exit 1
 }
 
+if ($pkgProperties.ChangeLogPath) {
+  Write-Host "Updating changelog for $PackageName in $ServiceDirectory."
+  & "$EngCommonScriptsDir/Update-ChangeLog.ps1" -Version $packageSemVer.ToString() `
+    -ChangelogPath $pkgProperties.ChangeLogPath -Unreleased $isUnreleased `
+    -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle -ReleaseDate $ReleaseDate
+}
+
 $tomlPath = Join-Path $pkgProperties.DirectoryPath "Cargo.toml"
 $content = Get-Content -Path $tomlPath -Raw
 $updated = $content -replace '([package](.|\n)+?version\s*=\s*)"(.+?)"', "`$1`"$packageSemVer`""
 
-if($content -ne $updated)
-{
+if ($content -ne $updated) {
   $updated | Set-Content -Path $tomlPath  -Encoding utf8 -NoNewLine
-  Write-Host "Updated version in $tomlPath from $packageVersion to $packageSemVer."
+  Write-Host "Updated version in $tomlPath from $($pkgProperties.Version) to $packageSemVer."
 
   cargo metadata --format-version 1 | Out-Null
   Write-Host "Updated Cargo.lock using 'cargo metadata'."
 } 
-else
-{
+else {
   Write-Host "$tomlPath already contains version $packageSemVer"
 }

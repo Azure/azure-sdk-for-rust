@@ -1,0 +1,179 @@
+parameters:
+- name: Artifacts
+  type: object
+- name: TestPipeline
+  type: boolean
+  default: false
+- name: PipelineArtifactName
+  type: string
+- name: ServiceDirectory
+  type: string
+- name: DependsOn
+  type: string
+  default: Build
+- name: DevFeedName
+  type: string
+  default: 'public/azure-sdk-for-rust'
+- name: Environment
+  type: string
+  default: 'cratesio'
+
+stages:
+- ${{ if eq(variables['System.TeamProject'], 'internal') }}:
+  - ${{ if in(variables['Build.Reason'], 'Manual', '') }}:
+    - ${{ each artifact in parameters.Artifacts }}:
+      - stage: Release_${{artifact.safeName}}
+        displayName: "Release: ${{artifact.name}}"
+        dependsOn: ${{parameters.DependsOn}}
+        condition: and(succeeded(), ne(variables['SetDevVersion'], 'true'), ne(variables['Skip.Release'], 'true'), ne(variables['Build.Repository.Name'], 'Azure/azure-sdk-for-rust-pr'))
+        variables:
+        - template: /eng/pipelines/templates/variables/globals.yml
+        - template: /eng/pipelines/templates/variables/image.yml
+        
+        pool:
+          name: $(LINUXPOOL)
+          image: $(LINUXVMIMAGE)
+          os: linux
+
+        jobs:
+        - job: TagRepository
+          displayName: "Create release tag"
+          condition: and(succeeded(), ne(variables['Skip.TagRepository'], 'true'))
+
+          steps:
+          - download: current
+            displayName: Download ${{parameters.PipelineArtifactName}} artifact
+            artifact: ${{parameters.PipelineArtifactName}}
+
+          - template: /eng/common/pipelines/templates/steps/retain-run.yml
+          
+          - script: |
+              echo "##vso[build.addbuildtag]${{artifact.name}}"
+            displayName: Add build tag '${{artifact.name}}'
+          
+          - template: /eng/common/pipelines/templates/steps/create-tags-and-git-release.yml
+            parameters:
+              ArtifactLocation: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/${{artifact.name}}
+              PackageRepository: Crates.io
+              ReleaseSha: $(Build.SourceVersion)
+
+        - deployment: PublishPackage
+          displayName: "Publish to Crates.io"
+          condition: and(succeeded(), ne(variables['Skip.PublishPackage'], 'true'))
+          environment: ${{parameters.Environment}}
+          # This timeout shouldn't be necessary once we're able to parallelize better. Right now,
+          # this is here to ensure larger areas (30+) libraries don't time out.
+          timeoutInMinutes: 120
+          dependsOn: TagRepository
+          pool:
+            name: azsdk-pool-mms-ubuntu-2004-general
+            image: azsdk-pool-mms-ubuntu-2004-1espt
+            os: linux
+          strategy:
+            runOnce:
+              deploy:
+                steps:
+                - checkout: self
+
+                - download: current
+                  displayName: Download ${{parameters.PipelineArtifactName}} artifact
+                  artifact: ${{parameters.PipelineArtifactName}}
+
+                - task: PowerShell@2
+                  displayName: Publish Crate
+                  inputs:
+                    targetType: filePath
+                    filePath: /eng/scripts/Publish-Crates.ps1
+                    arguments:
+                      -PackagesPath '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}'
+                      -PackageNames "${{artifact.name}}"
+                      -Token $(azure-sdk-cratesio-token)
+
+        - job: CreateApiReview
+          displayName: "Api Review"
+          condition: and(succeeded(), ne(variables['Skip.CreateApiReview'], 'true'))
+          dependsOn: PublishPackage
+          steps:
+          - template: /eng/common/pipelines/templates/steps/create-apireview.yml
+            parameters:
+              ArtifactPath: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}
+              Artifacts: ${{parameters.Artifacts}}
+              ConfigFileDir: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo
+              MarkPackageAsShipped: true
+              ArtifactName: ${{parameters.PipelineArtifactName}}
+              SourceRootPath: $(Pipeline.Workspace)/azure-sdk-for-rust
+              PackageName: ${{artifact.name}}
+
+        - job: UpdatePackageVersion
+          displayName: "Update Package Versions"
+          condition: and(succeeded(), ne(variables['Skip.UpdatePackageVersion'], 'true'))
+          dependsOn: PublishPackage
+          steps:
+          # Apply the version increment to each library, which only updates the version_client.txt file,
+          # and then call to update_versions will then apply all of the updates.
+          - task: PowerShell@2
+            displayName: Increment ${{artifact.name}} version
+            inputs:
+              targetType: filePath
+              filePath: /eng/scripts/Update-PackageVersion.ps1
+              arguments: >
+                -ServiceDirectory '${{parameters.ServiceDirectory}}'
+                -PackageName '${{artifact.name}}'
+
+          - template: /eng/common/pipelines/templates/steps/create-pull-request.yml
+            parameters:
+              PRBranchName: increment-package-version-${{parameters.ServiceDirectory}}-$(Build.BuildId)
+              CommitMsg: "Increment package versions for ${{parameters.ServiceDirectory}} releases"
+              PRTitle: "Increment versions for ${{parameters.ServiceDirectory}} releases"
+              CloseAfterOpenForTesting: '${{parameters.TestPipeline}}'
+
+        - ${{ if eq(parameters.TestPipeline, true) }}:
+          - job: YankCrates
+            displayName: "Yank Crates"
+            dependsOn: PublishPackage
+            condition: and(succeeded(), ne(variables['Skip.PublishPackage'], 'true'))
+            steps:
+            - download: current
+              displayName: Download ${{parameters.PipelineArtifactName}} artifact
+              artifact: ${{parameters.PipelineArtifactName}}
+              
+            - task: PowerShell@2
+              displayName: Yank Crates
+              inputs:
+                targetType: filePath
+                filePath: /eng/scripts/Yank-Crates.ps1
+                arguments:
+                  -PackagesPath '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}'
+                  -Token $(azure-sdk-cratesio-token)
+
+        # - job: PublishDocsMs
+
+        # - job: PublishDocs
+
+  # - stage: Integration
+  #   dependsOn: ${{parameters.DependsOn}}
+  #   condition: succeededOrFailed('${{parameters.DependsOn}}')
+  #   jobs:
+  #   - job: PublishPackages
+  #     displayName: "Publish package to daily feed"
+  #     condition: or(eq(variables['SetDevVersion'], 'true'), eq(variables['Build.Reason'],'Schedule')))
+  #     pool:
+  #       image: azsdk-pool-mms-ubuntu-2004-1espt
+  #       name: azsdk-pool-mms-ubuntu-2004-general
+  #       os: linux
+  #     steps:
+  #     - download: current
+  #       artifact: ${{parameters.PipelineArtifactName}}
+  #       timeoutInMinutes: 5
+
+  #     - template: ../steps/auth-dev-feed.yml
+  #       parameters:
+  #         DevFeedName: ${{parameters.DevFeedName}}
+
+  #     - ${{each artifact in parameters.Artifacts}}:
+  #       - ${{if ne(artifact.skipPublishDevFeed, 'true')}}:
+  #         - pwsh: |
+  #           displayName: 'Publish ${{artifact.name}} package'
+
+    # - job: PublishDocsToNightlyBranch
+

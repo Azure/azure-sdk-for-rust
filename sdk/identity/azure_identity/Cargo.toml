@@ -13,7 +13,7 @@ categories = ["api-bindings"]
 edition.workspace = true
 
 [dependencies]
-azure_core.workspace = true
+azure_core = { path = "../../core/azure_core" }
 async-lock.workspace = true
 oauth2.workspace = true
 url.workspace = true
@@ -24,7 +24,7 @@ tracing.workspace = true
 async-trait.workspace = true
 openssl = { workspace = true, optional = true }
 pin-project.workspace = true
-typespec_client_core = { workspace = true, features = ["derive"] }
+typespec_client_core = { path = "../../typespec/typespec_client_core", default-features = false, features = ["derive"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 async-process.workspace = true

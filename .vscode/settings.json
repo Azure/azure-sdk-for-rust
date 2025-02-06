@@ -6,5 +6,6 @@
   "yaml.format.printWidth": 240,
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell",
-  }
+  },
+  "azure-pipelines.1ESPipelineTemplatesSchemaFile": true
 }
