@@ -1,1 +1,5 @@
 variables:
+  skipComponentGovernanceDetection: true
+  # Disable CodeQL injections except for where we specifically enable it
+  Codeql.SkipTaskAutoInjection: true
+  ComponentDetection.Timeout: 1200

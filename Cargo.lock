@@ -507,6 +507,20 @@ name = "azure_storage_common"
 version = "0.1.0"
 
 [[package]]
+name = "azure_template"
+version = "0.1.0"
+dependencies = [
+ "azure_template_core",
+]
+
+[[package]]
+name = "azure_template_core"
+version = "0.1.0"
+dependencies = [
+ "azure_template",
+]
+
+[[package]]
 name = "backtrace"
 version = "0.3.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"

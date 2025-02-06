@@ -5,7 +5,7 @@ edition.workspace = true
 publish = false
 
 [dependencies]
-azure_core.workspace = true
+azure_core = { path = "../../../sdk/core/azure_core" }
 log.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true

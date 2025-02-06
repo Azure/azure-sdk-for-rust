@@ -14,13 +14,13 @@ keywords = ["sdk", "azure", "rest", "cloud", "cosmos", "database"]
 categories = ["api-bindings"]
 
 [dependencies]
+azure_core = { path = "../../core/azure_core" }
 async-trait.workspace = true
-azure_core.workspace = true
 futures.workspace = true
 serde_json.workspace = true
 serde.workspace = true
 tracing.workspace = true
-typespec_client_core = { workspace = true, features = ["derive"] }
+typespec_client_core = { path = "../../typespec/typespec_client_core", default-features = false, features = ["derive"] }
 url.workspace = true
 
 [dev-dependencies]

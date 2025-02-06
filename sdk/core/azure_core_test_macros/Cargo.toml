@@ -18,7 +18,7 @@ publish = false
 proc-macro = true
 
 [dependencies]
-azure_core = { workspace = true, features = ["test"] }
+azure_core = { path = "../azure_core", features = ["test"] }
 proc-macro2.workspace = true
 quote.workspace = true
 syn.workspace = true
