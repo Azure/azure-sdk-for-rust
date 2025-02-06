@@ -83,7 +83,7 @@ stages:
                   displayName: Publish Crate
                   inputs:
                     targetType: filePath
-                    filePath: /eng/scripts/Publish-Crates.ps1
+                    filePath: $(Build.SourcesDirectory)/eng/scripts/Publish-Crates.ps1
                     arguments:
                       -PackagesPath '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}'
                       -PackageNames "${{artifact.name}}"
@@ -115,7 +115,7 @@ stages:
             displayName: Increment ${{artifact.name}} version
             inputs:
               targetType: filePath
-              filePath: /eng/scripts/Update-PackageVersion.ps1
+              filePath: $(Build.SourcesDirectory)/eng/scripts/Update-PackageVersion.ps1
               arguments: >
                 -ServiceDirectory '${{parameters.ServiceDirectory}}'
                 -PackageName '${{artifact.name}}'
@@ -141,7 +141,7 @@ stages:
               displayName: Yank Crates
               inputs:
                 targetType: filePath
-                filePath: /eng/scripts/Yank-Crates.ps1
+                filePath: $(Build.SourcesDirectory)/eng/scripts/Yank-Crates.ps1
                 arguments:
                   -PackagesPath '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}'
                   -Token $(azure-sdk-cratesio-token)
