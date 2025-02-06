@@ -20,12 +20,14 @@ use typespec_client_core::fmt::SafeDebug;
 use typespec_client_core::http::PagerResult;
 use typespec_client_core::json;
 
+/// The key vault client performs cryptographic key operations and vault operations against the Key Vault service.
 pub struct KeyClient {
     api_version: String,
     endpoint: Url,
     pipeline: Pipeline,
 }
 
+/// Options used when creating a [`KeyClient`](crate::KeyClient)
 #[derive(Clone, SafeDebug)]
 pub struct KeyClientOptions {
     pub api_version: String,
@@ -33,6 +35,14 @@ pub struct KeyClientOptions {
 }
 
 impl KeyClient {
+    /// Creates a new KeyClient, using Entra ID authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - Service host
+    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
+    ///   Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -73,6 +83,11 @@ impl KeyClient {
     /// be backed up. BACKUP / RESTORE can be performed within geographical boundaries only; meaning that a BACKUP from one geographical
     /// area cannot be restored to another geographical area. For example, a backup from the US geographical area cannot be restored
     /// in an EU geographical area. This operation requires the key/backup permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key.
+    /// * `options` - Optional parameters for the request.
     pub async fn backup_key(
         &self,
         key_name: &str,
@@ -95,6 +110,14 @@ impl KeyClient {
     ///
     /// The create key operation can be used to create any key type in Azure Key Vault. If the named key already exists, Azure
     /// Key Vault creates a new version of the key. It requires the keys/create permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name for the new key. The system will generate the version name for the new key. The value you provide
+    ///   may be copied globally for the purpose of running the service. The value provided should not include personally identifiable
+    ///   or sensitive information.
+    /// * `parameters` - The parameters to create a key.
+    /// * `options` - Optional parameters for the request.
     pub async fn create_key(
         &self,
         key_name: &str,
@@ -123,8 +146,15 @@ impl KeyClient {
     /// block is dependent on the target key and the algorithm to be used. The DECRYPT operation applies to asymmetric and symmetric
     /// keys stored in Azure Key Vault since it uses the private portion of the key. This operation requires the keys/decrypt
     /// permission. Microsoft recommends not to use CBC algorithms for decryption without first ensuring the integrity of the
-    /// ciphertext using an HMAC, for example. See <https://docs.microsoft.com/dotnet/standard/security/vulnerabilities-cbc-mode>
+    /// ciphertext using an HMAC, for example. See https://docs.microsoft.com/dotnet/standard/security/vulnerabilities-cbc-mode
     /// for more information.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
+    /// * `parameters` - The parameters for the decryption operation.
+    /// * `options` - Optional parameters for the request.
     pub async fn decrypt(
         &self,
         key_name: &str,
@@ -153,6 +183,11 @@ impl KeyClient {
     /// The delete key operation cannot be used to remove individual versions of a key. This operation removes the cryptographic
     /// material associated with the key, which means the key is not usable for Sign/Verify, Wrap/Unwrap or Encrypt/Decrypt operations.
     /// This operation requires the keys/delete permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key to delete.
+    /// * `options` - Optional parameters for the request.
     pub async fn delete_key(
         &self,
         key_name: &str,
@@ -179,6 +214,13 @@ impl KeyClient {
     /// Azure Key Vault since protection with an asymmetric key can be performed using public portion of the key. This operation
     /// is supported for asymmetric keys as a convenience for callers that have a key-reference but do not have access to the
     /// public key material. This operation requires the keys/encrypt permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
+    /// * `parameters` - The parameters for the encryption operation.
+    /// * `options` - Optional parameters for the request.
     pub async fn encrypt(
         &self,
         key_name: &str,
@@ -206,6 +248,11 @@ impl KeyClient {
     ///
     /// The Get Deleted Key operation is applicable for soft-delete enabled vaults. While the operation can be invoked on any
     /// vault, it will return an error if invoked on a non soft-delete enabled vault. This operation requires the keys/get permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key.
+    /// * `options` - Optional parameters for the request.
     pub async fn get_deleted_key(
         &self,
         key_name: &str,
@@ -230,6 +277,10 @@ impl KeyClient {
     /// This operation includes deletion-specific information. The Get Deleted Keys operation is applicable for vaults enabled
     /// for soft-delete. While the operation can be invoked on any vault, it will return an error if invoked on a non soft-delete
     /// enabled vault. This operation requires the keys/list permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
     pub fn get_deleted_keys(
         &self,
         options: Option<KeyClientGetDeletedKeysOptions<'_>>,
@@ -288,6 +339,13 @@ impl KeyClient {
     ///
     /// The get key operation is applicable to all key types. If the requested key is symmetric, then no key material is released
     /// in the response. This operation requires the keys/get permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key to get.
+    /// * `key_version` - Adding the version parameter retrieves a specific version of a key. This URI fragment is optional. If
+    ///   not specified, the latest version of the key is returned.
+    /// * `options` - Optional parameters for the request.
     pub async fn get_key(
         &self,
         key_name: &str,
@@ -308,10 +366,46 @@ impl KeyClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
+    /// Gets the public part of a stored key along with its attestation blob.
+    ///
+    /// The get key attestation operation returns the key along with its attestation blob. This operation requires the keys/get
+    /// permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key to retrieve attestation for.
+    /// * `key_version` - Adding the version parameter retrieves attestation blob for specific version of a key. This URI fragment
+    ///   is optional. If not specified, the latest version of the key attestation blob is returned.
+    /// * `options` - Optional parameters for the request.
+    pub async fn get_key_attestation(
+        &self,
+        key_name: &str,
+        key_version: &str,
+        options: Option<KeyClientGetKeyAttestationOptions<'_>>,
+    ) -> Result<Response<KeyBundle>> {
+        let options = options.unwrap_or_default();
+        let ctx = Context::with_context(&options.method_options.context);
+        let mut url = self.endpoint.clone();
+        let mut path = String::from("keys/{key-name}/{key-version}/attestation");
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
+        url = url.join(&path)?;
+        url.query_pairs_mut()
+            .append_pair("api-version", &self.api_version);
+        let mut request = Request::new(url, Method::Get);
+        request.insert_header("accept", "application/json");
+        self.pipeline.send(&ctx, &mut request).await
+    }
+
     /// Lists the policy for a key.
     ///
     /// The GetKeyRotationPolicy operation returns the specified key policy resources in the specified key vault. This operation
     /// requires the keys/get permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key in a given key vault.
+    /// * `options` - Optional parameters for the request.
     pub async fn get_key_rotation_policy(
         &self,
         key_name: &str,
@@ -333,6 +427,11 @@ impl KeyClient {
     /// Retrieves a list of individual key versions with the same key name.
     ///
     /// The full key identifier, attributes, and tags are provided in the response. This operation requires the keys/list permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key.
+    /// * `options` - Optional parameters for the request.
     pub fn get_key_versions(
         &self,
         key_name: &str,
@@ -395,6 +494,10 @@ impl KeyClient {
     /// Retrieves a list of the keys in the Key Vault as JSON Web Key structures that contain the public part of a stored key.
     /// The LIST operation is applicable to all key types, however only the base key identifier, attributes, and tags are provided
     /// in the response. Individual versions of a key are not listed in the response. This operation requires the keys/list permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
     pub fn get_keys(
         &self,
         options: Option<KeyClientGetKeysOptions<'_>>,
@@ -452,6 +555,11 @@ impl KeyClient {
     /// Get the requested number of bytes containing random values.
     ///
     /// Get the requested number of bytes containing random values from a managed HSM.
+    ///
+    /// # Arguments
+    ///
+    /// * `parameters` - The request object to get random bytes.
+    /// * `options` - Optional parameters for the request.
     pub async fn get_random_bytes(
         &self,
         parameters: RequestContent<GetRandomBytesRequest>,
@@ -474,6 +582,13 @@ impl KeyClient {
     ///
     /// The import key operation may be used to import any key type into an Azure Key Vault. If the named key already exists,
     /// Azure Key Vault creates a new version of the key. This operation requires the keys/import permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - Name for the imported key. The value you provide may be copied globally for the purpose of running the
+    ///   service. The value provided should not include personally identifiable or sensitive information.
+    /// * `parameters` - The parameters to import a key.
+    /// * `options` - Optional parameters for the request.
     pub async fn import_key(
         &self,
         key_name: &str,
@@ -499,6 +614,11 @@ impl KeyClient {
     ///
     /// The Purge Deleted Key operation is applicable for soft-delete enabled vaults. While the operation can be invoked on any
     /// vault, it will return an error if invoked on a non soft-delete enabled vault. This operation requires the keys/purge permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key
+    /// * `options` - Optional parameters for the request.
     pub async fn purge_deleted_key(
         &self,
         key_name: &str,
@@ -522,6 +642,11 @@ impl KeyClient {
     /// The Recover Deleted Key operation is applicable for deleted keys in soft-delete enabled vaults. It recovers the deleted
     /// key back to its latest version under /keys. An attempt to recover an non-deleted key will return an error. Consider this
     /// the inverse of the delete operation on soft-delete enabled vaults. This operation requires the keys/recover permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the deleted key.
+    /// * `options` - Optional parameters for the request.
     pub async fn recover_deleted_key(
         &self,
         key_name: &str,
@@ -544,6 +669,13 @@ impl KeyClient {
     ///
     /// The release key operation is applicable to all key types. The target key must be marked exportable. This operation requires
     /// the keys/release permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key to get.
+    /// * `key_version` - Adding the version parameter retrieves a specific version of a key.
+    /// * `parameters` - The parameters for the key release operation.
+    /// * `options` - Optional parameters for the request.
     pub async fn release(
         &self,
         key_name: &str,
@@ -577,6 +709,11 @@ impl KeyClient {
     /// all versions and preserve version identifiers. The RESTORE operation is subject to security constraints: The target Key
     /// Vault must be owned by the same Microsoft Azure Subscription as the source Key Vault The user must have RESTORE permission
     /// in the target Key Vault. This operation requires the keys/restore permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `parameters` - The parameters to restore the key.
+    /// * `options` - Optional parameters for the request.
     pub async fn restore_key(
         &self,
         parameters: RequestContent<KeyRestoreParameters>,
@@ -598,6 +735,11 @@ impl KeyClient {
     /// Creates a new key version, stores it, then returns key parameters, attributes and policy to the client.
     ///
     /// The operation will rotate the key based on the key policy. It requires the keys/rotate permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of key to be rotated. The system will generate a new version in the specified key.
+    /// * `options` - Optional parameters for the request.
     pub async fn rotate_key(
         &self,
         key_name: &str,
@@ -620,6 +762,13 @@ impl KeyClient {
     ///
     /// The SIGN operation is applicable to asymmetric and symmetric keys stored in Azure Key Vault since this operation uses
     /// the private portion of the key. This operation requires the keys/sign permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
+    /// * `parameters` - The parameters for the signing operation.
+    /// * `options` - Optional parameters for the request.
     pub async fn sign(
         &self,
         key_name: &str,
@@ -648,6 +797,13 @@ impl KeyClient {
     /// The UNWRAP operation supports decryption of a symmetric key using the target key encryption key. This operation is the
     /// reverse of the WRAP operation. The UNWRAP operation applies to asymmetric and symmetric keys stored in Azure Key Vault
     /// since it uses the private portion of the key. This operation requires the keys/unwrapKey permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
+    /// * `parameters` - The parameters for the key operation.
+    /// * `options` - Optional parameters for the request.
     pub async fn unwrap_key(
         &self,
         key_name: &str,
@@ -676,6 +832,13 @@ impl KeyClient {
     ///
     /// In order to perform this operation, the key must already exist in the Key Vault. Note: The cryptographic material of a
     /// key itself cannot be changed. This operation requires the keys/update permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of key to update.
+    /// * `key_version` - The version of the key to update.
+    /// * `parameters` - The parameters of the key to update.
+    /// * `options` - Optional parameters for the request.
     pub async fn update_key(
         &self,
         key_name: &str,
@@ -702,6 +865,12 @@ impl KeyClient {
     /// Updates the rotation policy for a key.
     ///
     /// Set specified members in the key policy. Leave others as undefined. This operation requires the keys/update permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key in the given vault.
+    /// * `key_rotation_policy` - The policy for the key.
+    /// * `options` - Optional parameters for the request.
     pub async fn update_key_rotation_policy(
         &self,
         key_name: &str,
@@ -729,6 +898,13 @@ impl KeyClient {
     /// keys stored in Azure Key Vault since signature verification can be performed using the public portion of the key but this
     /// operation is supported as a convenience for callers that only have a key-reference and not the public portion of the key.
     /// This operation requires the keys/verify permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
+    /// * `parameters` - The parameters for verify operations.
+    /// * `options` - Optional parameters for the request.
     pub async fn verify(
         &self,
         key_name: &str,
@@ -759,6 +935,13 @@ impl KeyClient {
     /// with an asymmetric key can be performed using the public portion of the key. This operation is supported for asymmetric
     /// keys as a convenience for callers that have a key-reference but do not have access to the public key material. This operation
     /// requires the keys/wrapKey permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
+    /// * `parameters` - The parameters for wrap operation.
+    /// * `options` - Optional parameters for the request.
     pub async fn wrap_key(
         &self,
         key_name: &str,
@@ -786,45 +969,61 @@ impl KeyClient {
 impl Default for KeyClientOptions {
     fn default() -> Self {
         Self {
-            api_version: String::from("7.6-preview.1"),
+            api_version: String::from("7.6-preview.2"),
             client_options: ClientOptions::default(),
         }
     }
 }
 
+/// Options to be passed to [`KeyClient::backup_key()`](crate::KeyClient::backup_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientBackupKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::create_key()`](crate::KeyClient::create_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientCreateKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::decrypt()`](crate::KeyClient::decrypt())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientDecryptOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::delete_key()`](crate::KeyClient::delete_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientDeleteKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::encrypt()`](crate::KeyClient::encrypt())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientEncryptOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::get_deleted_key()`](crate::KeyClient::get_deleted_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientGetDeletedKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::get_deleted_keys()`](crate::KeyClient::get_deleted_keys())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientGetDeletedKeysOptions<'a> {
+    /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
@@ -839,19 +1038,34 @@ impl KeyClientGetDeletedKeysOptions<'_> {
     }
 }
 
+/// Options to be passed to [`KeyClient::get_key()`](crate::KeyClient::get_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientGetKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::get_key_attestation()`](crate::KeyClient::get_key_attestation())
+#[derive(Clone, Default, SafeDebug)]
+pub struct KeyClientGetKeyAttestationOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`KeyClient::get_key_rotation_policy()`](crate::KeyClient::get_key_rotation_policy())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientGetKeyRotationPolicyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::get_key_versions()`](crate::KeyClient::get_key_versions())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientGetKeyVersionsOptions<'a> {
+    /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
@@ -866,9 +1080,13 @@ impl KeyClientGetKeyVersionsOptions<'_> {
     }
 }
 
+/// Options to be passed to [`KeyClient::get_keys()`](crate::KeyClient::get_keys())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientGetKeysOptions<'a> {
+    /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
@@ -883,67 +1101,93 @@ impl KeyClientGetKeysOptions<'_> {
     }
 }
 
+/// Options to be passed to [`KeyClient::get_random_bytes()`](crate::KeyClient::get_random_bytes())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientGetRandomBytesOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::import_key()`](crate::KeyClient::import_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientImportKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::purge_deleted_key()`](crate::KeyClient::purge_deleted_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientPurgeDeletedKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::recover_deleted_key()`](crate::KeyClient::recover_deleted_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientRecoverDeletedKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::release()`](crate::KeyClient::release())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientReleaseOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::restore_key()`](crate::KeyClient::restore_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientRestoreKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::rotate_key()`](crate::KeyClient::rotate_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientRotateKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::sign()`](crate::KeyClient::sign())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientSignOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::unwrap_key()`](crate::KeyClient::unwrap_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientUnwrapKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::update_key()`](crate::KeyClient::update_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientUpdateKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::update_key_rotation_policy()`](crate::KeyClient::update_key_rotation_policy())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientUpdateKeyRotationPolicyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::verify()`](crate::KeyClient::verify())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientVerifyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::wrap_key()`](crate::KeyClient::wrap_key())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientWrapKeyOptions<'a> {
+    /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }

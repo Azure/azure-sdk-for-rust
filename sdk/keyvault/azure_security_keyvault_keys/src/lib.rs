@@ -17,11 +17,11 @@ pub mod models {
 pub use crate::generated::clients::{
     KeyClient, KeyClientBackupKeyOptions, KeyClientCreateKeyOptions, KeyClientDecryptOptions,
     KeyClientDeleteKeyOptions, KeyClientEncryptOptions, KeyClientGetDeletedKeyOptions,
-    KeyClientGetDeletedKeysOptions, KeyClientGetKeyOptions, KeyClientGetKeyRotationPolicyOptions,
-    KeyClientGetKeyVersionsOptions, KeyClientGetKeysOptions, KeyClientGetRandomBytesOptions,
-    KeyClientImportKeyOptions, KeyClientOptions, KeyClientPurgeDeletedKeyOptions,
-    KeyClientRecoverDeletedKeyOptions, KeyClientReleaseOptions, KeyClientRestoreKeyOptions,
-    KeyClientRotateKeyOptions, KeyClientSignOptions, KeyClientUnwrapKeyOptions,
-    KeyClientUpdateKeyOptions, KeyClientUpdateKeyRotationPolicyOptions, KeyClientVerifyOptions,
-    KeyClientWrapKeyOptions,
+    KeyClientGetDeletedKeysOptions, KeyClientGetKeyAttestationOptions, KeyClientGetKeyOptions,
+    KeyClientGetKeyRotationPolicyOptions, KeyClientGetKeyVersionsOptions, KeyClientGetKeysOptions,
+    KeyClientGetRandomBytesOptions, KeyClientImportKeyOptions, KeyClientOptions,
+    KeyClientPurgeDeletedKeyOptions, KeyClientRecoverDeletedKeyOptions, KeyClientReleaseOptions,
+    KeyClientRestoreKeyOptions, KeyClientRotateKeyOptions, KeyClientSignOptions,
+    KeyClientUnwrapKeyOptions, KeyClientUpdateKeyOptions, KeyClientUpdateKeyRotationPolicyOptions,
+    KeyClientVerifyOptions, KeyClientWrapKeyOptions,
 };
