@@ -9,7 +9,7 @@ use crate::{
         ManagementInstance,
     },
     error::ErrorKind,
-    models::{EventHubPartitionProperties, EventHubProperties},
+    models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
 };
 use async_std::sync::Mutex;
 use azure_core::{
@@ -57,6 +57,10 @@ struct SenderInstance {
     sender: Arc<Mutex<AmqpSender>>,
 }
 
+#[derive(Default, Debug, Clone)]
+/// Represents the options that can be set when submitting a batch of event data.
+pub struct SubmitBatchOptions {}
+
 /// A client that can be used to send events to an Event Hub.
 ///
 /// The `ProducerClient` is used to send events to an Event Hub. It can be used to send events to a specific partition or to allow the Event Hub to automatically select the partition.
@@ -93,6 +97,17 @@ pub struct ProducerClient {
     eventhub: String,
     url: String,
     authorization_scopes: Mutex<HashMap<String, AccessToken>>,
+}
+
+/// Options used when sending a message to an Event Hub.
+///
+/// The `SendMessageOptions` can be used to specify the partition to which the message should be sent.
+/// If the partition is not specified, the Event Hub will automatically select a partition.
+///
+#[derive(Default, Debug)]
+pub struct SendMessageOptions {
+    /// The id of the partition to which the message should be sent.
+    pub partition_id: Option<String>,
 }
 
 impl ProducerClient {
@@ -197,6 +212,7 @@ impl ProducerClient {
     /// # Arguments
     ///
     /// * `batch` - The batch of events to submit.
+    /// * `options` - The options to use when submitting the batch.
     ///
     /// # Returns
     ///
@@ -222,12 +238,16 @@ impl ProducerClient {
     ///   producer.open().await?;
     ///   let mut batch = producer.create_batch(None).await?;
     ///   batch.try_add_event_data("Hello, World!", None)?;
-    ///   producer.submit_batch(&batch).await?;
+    ///   producer.submit_batch(&batch, None).await?;
     ///   Ok(())
     /// }
     /// ```
     ///
-    pub async fn submit_batch(&self, batch: &EventDataBatch<'_>) -> Result<()> {
+    pub async fn submit_batch(
+        &self,
+        batch: &EventDataBatch<'_>,
+        #[allow(unused_variables)] options: Option<SubmitBatchOptions>,
+    ) -> Result<()> {
         let sender = self.ensure_sender(batch.get_batch_path()).await?;
         let messages = batch.get_messages();
 
@@ -238,6 +258,49 @@ impl ProducerClient {
                 messages,
                 Some(AmqpSendOptions {
                     message_format: Some(Self::BATCH_MESSAGE_FORMAT),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(())
+    }
+
+    /// Sends an event to the Event Hub.
+    /// # Arguments
+    /// * `event_data` - The event to send.
+    /// * `options` - The options to use when sending the event.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or failure.
+    ///
+    pub async fn send(
+        &self,
+        message: impl Into<EventData>,
+        options: Option<SendMessageOptions>,
+    ) -> Result<()> {
+        let sender = self.ensure_sender(self.url.clone()).await.unwrap();
+        let message = message.into();
+        let mut message = AmqpMessage::from(message);
+
+        if message.properties().is_none() || message.properties().unwrap().message_id.is_none() {
+            message.set_message_id(Uuid::new_v4());
+        }
+        if let Some(options) = options {
+            if let Some(partition_id) = options.partition_id {
+                message.add_message_annotation(
+                    AmqpSymbol::from("x-opt-partition-id"),
+                    partition_id.clone(),
+                );
+            }
+        }
+
+        sender
+            .lock()
+            .await
+            .send(
+                message,
+                Some(AmqpSendOptions {
+                    message_format: None,
                     ..Default::default()
                 }),
             )

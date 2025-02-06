@@ -81,6 +81,9 @@
         "name": "Standard",
         "tier": "Standard",
         "capacity": 5
+      },
+      "properties": {
+        "disableLocalAuth": true
       }
     },
     {
@@ -88,9 +91,15 @@
       "apiVersion": "[variables('apiVersion')]",
       "name": "[variables('authorizationName')]",
       "location": "[parameters('location')]",
-      "dependsOn": [ "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubsNamespace'))]" ],
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubsNamespace'))]"
+      ],
       "properties": {
-        "rights": [ "Listen", "Manage", "Send" ]
+        "rights": [
+          "Listen",
+          "Manage",
+          "Send"
+        ]
       }
     },
     {
@@ -98,7 +107,9 @@
       "apiVersion": "[variables('apiVersion')]",
       "name": "[concat(variables('eventHubsNamespace'), '/', variables('eventHubName'))]",
       "location": "[parameters('location')]",
-      "dependsOn": [ "[resourceId('Microsoft.EventHub/Namespaces', variables('eventHubsNamespace'))]" ],
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/Namespaces', variables('eventHubsNamespace'))]"
+      ],
       "properties": {
         "messageRetentionInDays": 1,
         "partitionCount": 4
@@ -109,7 +120,9 @@
       "apiVersion": "[variables('apiVersion')]",
       "name": "[concat(variables('eventHubsNamespace'), '/default')]",
       "location": "[parameters('location')]",
-      "dependsOn": [ "[resourceId('Microsoft.EventHub/Namespaces', variables('eventHubsNamespace'))]" ],
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/Namespaces', variables('eventHubsNamespace'))]"
+      ],
       "properties": {
         "defaultAction": "Deny",
         "virtualNetworkRules": [],
@@ -144,6 +157,7 @@
           "ipRules": [],
           "defaultAction": "Allow"
         },
+        "allowSharedKeyAccess": false,
         "supportsHttpsTrafficOnly": true,
         "encryption": {
           "services": {
@@ -239,10 +253,6 @@
       "type": "string",
       "value": "[parameters('perTestExecutionLimitMinutes')]"
     },
-    "EVENTHUB_CONNECTION_STRING": {
-      "type": "string",
-      "value": "[listkeys(variables('eventHubsAuthRuleResourceId'), '2015-08-01').primaryConnectionString]"
-    },
     "EVENTHUB_CONSUMER_GROUP": {
       "type": "string",
       "value": "[variables('consumerGroup')]"
@@ -250,10 +260,6 @@
     "CHECKPOINTSTORE_STORAGE_URL": {
       "type": "string",
       "value": "[concat('https://', variables('storageAccount'), '.blob.', parameters('storageEndpointSuffix'))]"
-    },
-    "CHECKPOINTSTORE_STORAGE_CONNECTION_STRING": {
-      "type": "string",
-      "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccount'), ';AccountKey=', listKeys(variables('storageAccountId'), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value, ';EndpointSuffix=', parameters('storageEndpointSuffix'))]"
     },
     "AZURE_SUBSCRIPTION_ID": {
       "type": "string",

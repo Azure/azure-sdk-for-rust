@@ -180,7 +180,7 @@ impl<'a> EventDataBatch<'a> {
     pub fn try_add_event_data(
         &mut self,
         event_data: impl Into<EventData>,
-        #[allow(unused_variables)] options: Option<AddEventDataOptions>,
+        options: Option<AddEventDataOptions>,
     ) -> Result<bool> {
         let event_data = event_data.into();
         self.try_add_amqp_message(event_data, options)

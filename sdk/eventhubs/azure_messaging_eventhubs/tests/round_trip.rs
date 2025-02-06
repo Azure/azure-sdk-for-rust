@@ -108,7 +108,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
         None
     )?);
 
-    assert!(producer.submit_batch(&batch).await.is_ok());
+    assert!(producer.submit_batch(&batch, None).await.is_ok());
 
     let consumer = ConsumerClient::new(
         host,

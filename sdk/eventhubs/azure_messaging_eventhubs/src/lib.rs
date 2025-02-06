@@ -19,6 +19,13 @@ pub mod error;
 /// Types to create and send events to an Event Hub.
 pub mod producer;
 
+pub use producer::batch::*;
+pub use producer::ProducerClient;
+pub use producer::ProducerClientOptions;
+
+pub use azure_core_amqp::messaging::AmqpMessage;
+pub use azure_core_amqp::value::AmqpValue;
+
 /// Model types sent to and received from an Event Hub.
 pub mod models {
     /// An AMQP Message sent to the eventhubs service.
@@ -341,10 +348,7 @@ pub mod models {
         fn from(body: T) -> Self {
             Self {
                 body: Some(body.into()),
-                content_type: None,
-                correlation_id: None,
-                message_id: None,
-                properties: None,
+                ..Default::default()
             }
         }
     }
