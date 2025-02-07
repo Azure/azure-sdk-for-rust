@@ -1,23 +1,20 @@
 $Language = "rust"
 $LanguageDisplayName = "Rust"
 $PackageRepository = "crates.io"
-$packagePattern = "Cargo.toml"
+$packagePattern = "cargo-metadata.json"
 #$MetadataUri = "https://raw.githubusercontent.com/Azure/azure-sdk/main/_data/releases/latest/rust-packages.csv"
 $GithubUri = "https://github.com/Azure/azure-sdk-for-rust"
 $PackageRepositoryUri = "https://crates.io/crates"
 
-function SetPackageVersion ($PackageName, $Version, $ServiceDirectory, $ReleaseDate, $ReplaceLatestEntryTitle=$true)
-{
-  if($null -eq $ReleaseDate)
-  {
+function SetPackageVersion ($PackageName, $Version, $ServiceDirectory, $ReleaseDate, $ReplaceLatestEntryTitle = $true) {
+  if ($null -eq $ReleaseDate) {
     $ReleaseDate = Get-Date -Format "yyyy-MM-dd"
   }
   & "$EngDir/scripts/Update-PackageVersion.ps1" -ServiceDirectory $ServiceDirectory -PackageName $PackageName `
-      -NewVersionString $Version -ReleaseDate $ReleaseDate -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle
+    -NewVersionString $Version -ReleaseDate $ReleaseDate -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle
 }
 
-function GetExistingPackageVersions ($PackageName, $GroupId=$null)
-{
+function GetExistingPackageVersions ($PackageName, $GroupId = $null) {
   try {
     $PackageName = $PackageName.ToLower()
     $response = Invoke-RestMethod -Method GET -Uri "https://crates.io/api/v1/crates/${PackageName}/versions"
@@ -27,16 +24,14 @@ function GetExistingPackageVersions ($PackageName, $GroupId=$null)
     return $existingVersions
   }
   catch {
-    if ($_.Exception.Response.StatusCode -ne 404)
-    {
+    if ($_.Exception.Response.StatusCode -ne 404) {
       LogError "Failed to retrieve package versions for ${PackageName}. $($_.Exception.Message)"
     }
     return $null
   }
 }
 
-function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory)
-{
+function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
   $allPackageProps = @()
   Push-Location $RepoRoot
   try {
@@ -121,7 +116,43 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory)
   return $allPackageProps
 }
 
-function Get-rust-PackageInfoFromPackageFile()
-{
+function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
+  #$pkg will be a FileInfo object for the cargo-metadata.json file in a package artifact directory
+  $package = Get-Content -Path $pkg.FullName -Raw | ConvertFrom-Json
+  $packageName = $package.name
+  $packageVersion = $package.vers
+  $docsReadMeName = $packageName -replace "^azure_" , ""
 
+  $crateFile = Get-ChildItem $pkg.DirectoryName -Filter '*.crate'
+  
+  New-Item -Path $workingDirectory -ItemType Directory -Force | Out-Null
+  $workFolder = Join-Path $workingDirectory $crateFile.BaseName
+  if (Test-Path $workFolder) {
+    Remove-item $workFolder -Recurse -Force
+  }
+
+  # This will extract the contents of the crate file into a folder matching the file name
+  tar -xvzf $crateFile.FullName -C $workingDirectory
+
+  $changeLogLoc = Get-ChildItem -Path $workFolder -Filter "CHANGELOG.md" | Select-Object -First 1
+  if ($changeLogLoc) {
+    $releaseNotes = Get-ChangeLogEntryAsString -ChangeLogLocation $changeLogLoc -VersionString $packageVersion
+  }
+
+  $readmeContentLoc = Get-ChildItem -Path $workFolder -Filter "README.md" | Select-Object -First 1
+  if ($readmeContentLoc) {
+    $readmeContent = Get-Content -Raw $readmeContentLoc
+  }
+
+  $existingVersions = GetExistingPackageVersions -PackageName $packageName
+
+  return New-Object PSObject -Property @{
+    PackageId      = $packageName
+    PackageVersion = $packageVersion
+    ReleaseTag     = "$packageName`_$packageVersion"
+    Deployable     = $existingVersions -notcontains $packageVersion
+    ReleaseNotes   = $releaseNotes
+    ReadmeContent  = $readmeContent
+    DocsReadMeName = $docsReadMeName
+  }
 }
