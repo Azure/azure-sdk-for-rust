@@ -13,7 +13,7 @@ use crate::{
         policy::RecordingPolicy,
         Proxy, RecordingId,
     },
-    Matcher, Sanitizer,
+    Matcher, MockCredential, Sanitizer,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -73,9 +73,12 @@ impl Recording {
     ///
     /// Panics if the [`TokenCredential`] could not be created.
     pub fn credential(&self) -> Arc<dyn TokenCredential> {
-        match DefaultAzureCredential::new() {
-            Ok(credential) => credential as Arc<dyn TokenCredential>,
-            Err(err) => panic!("{err}"),
+        match self.test_mode {
+            TestMode::Playback => Arc::new(MockCredential) as Arc<dyn TokenCredential>,
+            _ => DefaultAzureCredential::new().map_or_else(
+                |err| panic!("failed to create DefaultAzureCredential: {err}"),
+                |cred| cred as Arc<dyn TokenCredential>,
+            ),
         }
     }
 
