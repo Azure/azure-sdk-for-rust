@@ -64,7 +64,8 @@ jobs:
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:
-      paths: /*
+      paths:
+      - "/*"
 
   - ${{ if and(eq(variables['System.TeamProject'], 'internal'), ne(variables['Build.Reason'], '')) }}:
     - script: |
@@ -101,7 +102,8 @@ jobs:
       steps:
       - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
         parameters:
-          paths: /*
+          paths:
+          - "/*"
 
       - download: current
         artifact: ${{ parameters.PipelineArtifactName }}
@@ -127,7 +129,8 @@ jobs:
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:
-      paths: /*
+      paths:
+      - "/*"
       
   - ${{ if ne(parameters.AnalyzeToolchain, 'nightly') }}:
       - template: /eng/pipelines/templates/steps/use-rust.yml@self
