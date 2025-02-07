@@ -4,7 +4,6 @@
 //cspell: words amqp mgmt amqps
 
 use crate::models::ReceivedEventData;
-
 use async_stream::try_stream;
 use azure_core::error::Result;
 use azure_core_amqp::{
@@ -25,15 +24,15 @@ use tracing::trace;
 /// use azure_identity::DefaultAzureCredential;
 /// use futures::stream::StreamExt;
 /// use std::error::Error;
-/// use tracing_subscriber::prelude::*;
 /// ```
 pub struct MessageReceiver {
     receiver: AmqpReceiver,
+    timeout: Option<std::time::Duration>,
 }
 
 impl MessageReceiver {
-    pub(crate) fn new(receiver: AmqpReceiver) -> Self {
-        Self { receiver }
+    pub(crate) fn new(receiver: AmqpReceiver, timeout: Option<std::time::Duration>) -> Self {
+        Self { receiver, timeout }
     }
 
     /// Receives messages from the Event Hub.
@@ -41,16 +40,34 @@ impl MessageReceiver {
     /// The stream will continue to yield messages as long as the receiver is not closed.
     /// The stream will yield an error if there is an issue receiving messages from the Event Hub.
     ///
-    ///
     pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
         try_stream! {
             loop {
-                let delivery = self.receiver.receive_delivery().await?;
-                self.receiver.accept_delivery(&delivery).await?;
-                let message = delivery.into_message();
-                let message = ReceivedEventData::from(message);
-                trace!("Received message: {:?}", message);
-                yield message;
+                if let Some(delivery_timeout) = self.timeout {
+                    let delivery_or_timeout =  tokio::time::timeout(delivery_timeout,
+                        self.receiver.receive_delivery()).await;
+                    match delivery_or_timeout {
+                        Ok(delivery_or_error) => {
+                            let delivery = delivery_or_error?;
+                            self.receiver.accept_delivery(&delivery).await?;
+                            let message = delivery.into_message();
+                            let message = ReceivedEventData::from(message);
+                            trace!("Received message: {:?}", message);
+                            yield message;
+                        }
+                        Err(e) => {
+                            trace!("Timeout receiving delivery: {e:?}");
+                            break;
+                        }
+                    }
+                } else {
+                        let delivery = self.receiver.receive_delivery().await?;
+                        self.receiver.accept_delivery(&delivery).await?;
+                        let message = delivery.into_message();
+                        let message = ReceivedEventData::from(message);
+                        trace!("Received message: {:?}", message);
+                        yield message;
+                }
             }
         }
     }

@@ -34,6 +34,7 @@ use std::{
     default::Default,
     fmt::Debug,
     sync::{Arc, OnceLock},
+    time::Duration,
 };
 use tracing::{debug, trace};
 use url::Url;
@@ -290,7 +291,7 @@ impl ConsumerClient {
             .attach(&session, message_source, Some(receiver_options))
             .await?;
 
-        Ok(MessageReceiver::new(receiver))
+        Ok(MessageReceiver::new(receiver, options.receive_timeout))
     }
 
     /// Retrieves the properties of the Event Hub.
@@ -559,6 +560,9 @@ pub struct ReceiveOptions {
     pub prefetch: Option<u32>,
     /// The starting position for messages being retrieved.
     pub start_position: Option<StartPosition>,
+
+    /// Optional timeout for receiving messages. If not provided, the default timeout is infinite.
+    pub receive_timeout: Option<Duration>,
 }
 /// Represents the options for receiving events from an Event Hub.
 impl ReceiveOptions {}

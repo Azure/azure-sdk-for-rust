@@ -12,6 +12,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = ProducerClient::new(eventhub_namespace, eventhub_name, credential, None);
 
+    println!("Created producer client.");
+
     // Open the client
     client.open().await?;
 
@@ -27,6 +29,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }),
         )
         .await?;
+
+    println!("Sent messages. Closing client.");
 
     client.close().await?;
     Ok(())

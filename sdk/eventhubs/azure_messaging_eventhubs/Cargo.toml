@@ -1,4 +1,7 @@
 # Copyright (c) Microsoft Corp. All Rights Reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+# cspell: ignore chrono
 
 [package]
 name = "azure_messaging_eventhubs"
@@ -17,15 +20,16 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
+tokio = { workspace = true, features = ["time"] }
+async-std.workspace = true
+async-stream.workspace = true
 azure_core.workspace = true
 azure_core_amqp.workspace = true
+futures.workspace = true
 time.workspace = true
 tracing.workspace = true
 url.workspace = true
 uuid.workspace = true
-futures.workspace = true
-async-std.workspace = true
-async-stream.workspace = true
 
 [build-dependencies]
 rustc_version.workspace = true

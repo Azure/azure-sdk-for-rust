@@ -30,6 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     location: StartLocation::Earliest,
                     ..Default::default()
                 }),
+                receive_timeout: Some(std::time::Duration::from_secs(5)),
                 ..Default::default()
             }),
         )

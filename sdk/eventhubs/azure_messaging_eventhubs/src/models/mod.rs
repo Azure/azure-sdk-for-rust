@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 // cspell: ignore eventdata
 
-pub mod event_data;
+mod event_data;
 
 /// An AMQP Message sent to the eventhubs service.
 pub type AmqpMessage = azure_core_amqp::messaging::AmqpMessage;
@@ -19,12 +19,13 @@ pub type AmqpMessageProperties = azure_core_amqp::messaging::AmqpMessageProperti
 /// An AMQP Value.
 pub type AmqpValue = azure_core_amqp::value::AmqpValue;
 
-use azure_core_amqp::messaging::AmqpAnnotationKey;
-use std::{
-    collections::HashMap,
-    fmt::{Debug, Display, Formatter},
-};
-use tracing::warn;
+/// An event received from an Event Hub.
+pub type ReceivedEventData = event_data::ReceivedEventData;
+
+/// Event sent to an Event Hub.
+pub type EventData = event_data::EventData;
+
+use std::fmt::Debug;
 
 /// Represents the properties of an Event Hub.
 ///
@@ -233,7 +234,7 @@ impl From<MessageId> for AmqpMessageId {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core_amqp::{messaging::AmqpMessageId, value::AmqpValue};
+    use azure_core_amqp::messaging::AmqpMessageId;
 
     #[test]
     fn test_message_id_from_u64() {

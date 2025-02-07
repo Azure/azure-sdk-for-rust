@@ -31,6 +31,3 @@ pub use consumer::ConsumerClientOptions;
 pub use consumer::ReceiveOptions;
 pub use consumer::StartLocation;
 pub use consumer::StartPosition;
-
-pub use azure_core_amqp::messaging::AmqpMessage;
-pub use azure_core_amqp::value::AmqpValue;
