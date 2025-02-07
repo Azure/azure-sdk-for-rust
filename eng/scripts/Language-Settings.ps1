@@ -128,11 +128,11 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
   New-Item -Path $workingDirectory -ItemType Directory -Force | Out-Null
   $workFolder = Join-Path $workingDirectory $crateFile.BaseName
   if (Test-Path $workFolder) {
-    Remove-item $workFolder -Recurse -Force
+    Remove-item $workFolder -Recurse -Force | Out-Null
   }
 
   # This will extract the contents of the crate file into a folder matching the file name
-  tar -xvzf $crateFile.FullName -C $workingDirectory
+  tar -xvzf $crateFile.FullName -C $workingDirectory | Out-Null
 
   $changeLogLoc = Get-ChildItem -Path $workFolder -Filter "CHANGELOG.md" | Select-Object -First 1
   if ($changeLogLoc) {
@@ -149,7 +149,7 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
   return New-Object PSObject -Property @{
     PackageId      = $packageName
     PackageVersion = $packageVersion
-    ReleaseTag     = "$packageName`_$packageVersion"
+    ReleaseTag     = "$packageName-$packageVersion"
     Deployable     = $existingVersions -notcontains $packageVersion
     ReleaseNotes   = $releaseNotes
     ReadmeContent  = $readmeContent
