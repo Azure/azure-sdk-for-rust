@@ -13,7 +13,7 @@ $ErrorActionPreference = 'Stop'
 $hasErrors = $false
 foreach ($crateName in $crateNames) {
   $crate = Get-Content "$PackagesPath/$crateName/cargo-metadata.json" -Raw | ConvertFrom-Json
-  $crateVersion = $crate.version
+  $crateVersion = $crate.vers
 
   Write-Host "Yanking crate: '$crateName@$crateVersion'"
 
