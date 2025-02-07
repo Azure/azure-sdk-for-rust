@@ -2,27 +2,43 @@
 
 #Requires -Version 7.0
 param(
-  [string]$PackagePath,
+  [string]$PackagesPath,
   [string[]]$PackageNames,
+  [string[]]$AdditionalOwners,
   [string]$Token
 )
 
 $ErrorActionPreference = 'Stop'
-#Set-StrictMode -Version 2.0
+Set-StrictMode -Version 2.0
 
-. (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
-. (Join-Path $EngCommonScriptsDir 'Helpers' 'CommandInvocation-Helpers.ps1')
+function TryAddOwners($packageName) {
+  foreach ($owner in $AdditionalOwners) {
+    Write-Host "Adding owner: '$owner' to package: '$packageName'"
+    # https://doc.rust-lang.org/cargo/reference/registry-web-api.html#owners-add
+    # ignore errors is owner already exists
+    $body = @{ users = @($owner) } | ConvertTo-Json
 
-$request = @{
-  'Headers' = @{ 'Authorization' = $Token };
-  'Uri'     = 'https://api.crates.io/api/v1/crates/new/';
-  'Method'  = 'PUT';
+    $response = Invoke-WebRequest -Method Put -Uri "https://crates.io/api/v1/crates/$packageName/owners" `
+      -Headers @{ Accept = 'application/json'; Authorization = $Token } `
+      -ContentType 'application/json' `
+      -Body $body`
+      -SkipHttpErrorCheck
+
+    if ($response.StatusCode -ge 400 -and $response.Content -notmatch 'already an owner') {
+      Write-Host "Failed to add owner: '$owner' to package: '$packageName'"
+      Write-Host "Response: $($response.Content)"
+      exit 1
+    }
+  }
 }
 
 foreach ($packageName in $packageNames) {
-  $crateFile = Get-ChildItem "$PackagesPath/$packageName" -Filter '*.crate'
-
-  Write-Host "Publishing package: '$packageName'"
+  Write-Host "Publishing packae: '$packageName'"
   # https://doc.rust-lang.org/cargo/reference/registry-web-api.html#publish
-  # Invoke-WebRequest @request -InFile $crateFile
+  Invoke-WebRequest -Method Put -Uri 'https://crates.io/api/v1/crates/new' `
+    -Headers @{ Accept = 'application/json'; Authorization = $Token } `
+    -ContentType 'application/json' `
+    -InFile "$PackagesPath/$packageName/cargo-put.bin"
+
+  TryAddOwners $packageName
 }

@@ -84,25 +84,26 @@ stages:
                   inputs:
                     targetType: filePath
                     filePath: $(Build.SourcesDirectory)/eng/scripts/Publish-Crates.ps1
-                    arguments:
+                    arguments: >
                       -PackagesPath '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}'
-                      -PackageNames "${{artifact.name}}"
+                      -PackageNames '${{artifact.name}}'
                       -Token $(azure-sdk-cratesio-token)
+                      -AdditionalOwners 'heaths','hallipr'
 
-        - job: CreateApiReview
-          displayName: "Api Review"
-          condition: and(succeeded(), ne(variables['Skip.CreateApiReview'], 'true'))
-          dependsOn: PublishPackage
-          steps:
-          - template: /eng/common/pipelines/templates/steps/create-apireview.yml
-            parameters:
-              ArtifactPath: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}
-              Artifacts: ${{parameters.Artifacts}}
-              ConfigFileDir: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo
-              MarkPackageAsShipped: true
-              ArtifactName: ${{parameters.PipelineArtifactName}}
-              SourceRootPath: $(Pipeline.Workspace)/azure-sdk-for-rust
-              PackageName: ${{artifact.name}}
+        # - job: CreateApiReview
+        #   displayName: "Api Review"
+        #   condition: and(succeeded(), ne(variables['Skip.CreateApiReview'], 'true'))
+        #   dependsOn: PublishPackage
+        #   steps:
+        #   - template: /eng/common/pipelines/templates/steps/create-apireview.yml
+        #     parameters:
+        #       ArtifactPath: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}
+        #       Artifacts: ${{parameters.Artifacts}}
+        #       ConfigFileDir: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo
+        #       MarkPackageAsShipped: true
+        #       ArtifactName: ${{parameters.PipelineArtifactName}}
+        #       SourceRootPath: $(Pipeline.Workspace)/azure-sdk-for-rust
+        #       PackageName: ${{artifact.name}}
 
         - job: UpdatePackageVersion
           displayName: "Update Package Versions"
@@ -123,7 +124,7 @@ stages:
           - template: /eng/common/pipelines/templates/steps/create-pull-request.yml
             parameters:
               PRBranchName: increment-package-version-${{parameters.ServiceDirectory}}-$(Build.BuildId)
-              CommitMsg: "Increment package versions for ${{parameters.ServiceDirectory}} releases"
+              CommitMsg: "Increment package version after release of ${{ artifact.name }}"
               PRTitle: "Increment versions for ${{parameters.ServiceDirectory}} releases"
               CloseAfterOpenForTesting: '${{parameters.TestPipeline}}'
 
