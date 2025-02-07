@@ -267,6 +267,7 @@ async fn receive_events(client : &ConsumerClient) {
     let event_stream = message_receiver.stream_events();
 
     pin_mut!(event_stream); // Needed for iteration.
+
     while let Some(event_result) = event_stream.next().await {
         match event_result {
             Ok(event) => {

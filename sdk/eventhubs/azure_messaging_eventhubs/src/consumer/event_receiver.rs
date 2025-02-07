@@ -54,12 +54,12 @@ use tracing::trace;
 /// }
 /// ```
 /// ```
-pub struct MessageReceiver {
+pub struct EventReceiver {
     receiver: AmqpReceiver,
     timeout: Option<std::time::Duration>,
 }
 
-impl MessageReceiver {
+impl EventReceiver {
     pub(crate) fn new(receiver: AmqpReceiver, timeout: Option<std::time::Duration>) -> Self {
         Self { receiver, timeout }
     }

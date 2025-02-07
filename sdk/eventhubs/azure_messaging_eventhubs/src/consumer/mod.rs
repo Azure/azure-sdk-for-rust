@@ -28,7 +28,7 @@ use azure_core_amqp::{
     session::{AmqpSession, AmqpSessionApis},
     value::{AmqpDescribed, AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
-use message_receiver::MessageReceiver;
+use event_receiver::EventReceiver;
 use std::{
     collections::HashMap,
     default::Default,
@@ -40,7 +40,7 @@ use tracing::{debug, trace};
 use url::Url;
 
 /// Receive messages from a partition.
-pub mod message_receiver;
+pub mod event_receiver;
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
@@ -245,7 +245,7 @@ impl ConsumerClient {
         &self,
         partition_id: String,
         options: Option<ReceiveOptions>,
-    ) -> Result<MessageReceiver> {
+    ) -> Result<EventReceiver> {
         let options = options.unwrap_or_default();
 
         let receiver_name = self
@@ -292,7 +292,7 @@ impl ConsumerClient {
             .attach(&session, message_source, Some(receiver_options))
             .await?;
 
-        Ok(MessageReceiver::new(receiver, options.receive_timeout))
+        Ok(EventReceiver::new(receiver, options.receive_timeout))
     }
 
     /// Retrieves the properties of the Event Hub.
