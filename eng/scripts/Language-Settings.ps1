@@ -121,7 +121,6 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
   $package = Get-Content -Path $pkg.FullName -Raw | ConvertFrom-Json
   $packageName = $package.name
   $packageVersion = $package.vers
-  $docsReadMeName = $packageName -replace "^azure_" , ""
 
   $crateFile = Get-ChildItem $pkg.DirectoryName -Filter '*.crate'
   
@@ -153,6 +152,5 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
     Deployable     = $existingVersions -notcontains $packageVersion
     ReleaseNotes   = $releaseNotes
     ReadmeContent  = $readmeContent
-    DocsReadMeName = $docsReadMeName
   }
 }
