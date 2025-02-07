@@ -4,6 +4,7 @@
 //cspell: words amqp mgmt amqps
 
 use crate::models::ReceivedEventData;
+use async_std::future::timeout;
 use async_stream::try_stream;
 use azure_core::error::Result;
 use azure_core_amqp::{
@@ -73,7 +74,7 @@ impl EventReceiver {
         try_stream! {
             loop {
                 if let Some(delivery_timeout) = self.timeout {
-                    let delivery_or_timeout =  async_std::future::timeout(delivery_timeout,
+                    let delivery_or_timeout = timeout(delivery_timeout,
                         self.receiver.receive_delivery()).await;
                     match delivery_or_timeout {
                         Ok(delivery_or_error) => {
@@ -85,6 +86,8 @@ impl EventReceiver {
                             yield message;
                         }
                         Err(e) => {
+                            // timeout returns an error if the timeout is reached.
+                            // Stop the stream when that happens rather than handle the error.
                             trace!("Timeout receiving delivery: {e:?}");
                             break;
                         }
