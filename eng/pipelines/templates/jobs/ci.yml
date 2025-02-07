@@ -99,6 +99,10 @@ jobs:
       pool: ${{ matrix.pool }}
 
       steps:
+      - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+        parameters:
+          paths: /*
+
       - download: current
         artifact: ${{ parameters.PipelineArtifactName }}
 
@@ -121,9 +125,30 @@ jobs:
     image: $(LINUXVMIMAGE)
 
   steps:
-  - template: /eng/pipelines/templates/steps/analyze.yml
+  - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+    parameters:
+      paths: /*
+      
+  - ${{ if ne(parameters.AnalyzeToolchain, 'nightly') }}:
+      - template: /eng/pipelines/templates/steps/use-rust.yml@self
+        parameters:
+          Toolchain: nightly
+
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
       Toolchain: ${{ parameters.AnalyzeToolchain }}
+
+  - template: /eng/common/pipelines/templates/steps/save-package-properties.yml
+
+  - task: Powershell@2
+    displayName: "Run source analysis"
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/eng/scripts/Analyze-Code.ps1
+      arguments: >
+        -Toolchain '$(Toolchain)'
+        -PackageInfoPath '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
 
   - template: /eng/common/pipelines/templates/steps/check-spelling.yml
     parameters:
