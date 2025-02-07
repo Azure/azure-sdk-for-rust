@@ -65,6 +65,8 @@ jobs:
   - checkout: self
     ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
       fetchDepth: 0 # Fetch all history for PR builds
+    ${{ else }}:
+      fetchDepth: 1 # Fetch only the latest commit for non-PR builds
 
   - ${{ if ne(variables['Build.Reason'], '') }}:
     - script: |
