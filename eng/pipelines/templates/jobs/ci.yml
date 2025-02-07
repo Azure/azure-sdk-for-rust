@@ -62,11 +62,9 @@ jobs:
     os: linux
 
   steps:
-  - checkout: self
-    ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-      fetchDepth: 0 # Fetch all history for PR builds
-    ${{ else }}:
-      fetchDepth: 1 # Fetch only the latest commit for non-PR builds
+  - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+    parameters:
+      paths: /*
 
   - ${{ if and(eq(variables['System.TeamProject'], 'internal'), ne(variables['Build.Reason'], '')) }}:
     - script: |
