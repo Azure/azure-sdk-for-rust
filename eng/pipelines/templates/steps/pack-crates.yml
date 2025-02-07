@@ -27,10 +27,6 @@ steps:
   inputs:
     pwsh: true
     filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
-    ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-      arguments: >
-        -OutputPath '$(Build.ArtifactStagingDirectory)'
-    ${{ else }}:
-      arguments: >
-        -OutputPath '$(Build.ArtifactStagingDirectory)'
-        -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+    arguments: >
+      -OutputPath '$(Build.ArtifactStagingDirectory)'
+      -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
