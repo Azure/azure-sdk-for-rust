@@ -3,32 +3,32 @@
 #Requires -Version 7.0
 param(
   [string]$PackagesPath,
-  [string[]]$PackageNames,
+  [string[]]$CrateNames,
   [string]$Token
 )
 
 $ErrorActionPreference = 'Stop'
 #Set-StrictMode -Version 2.0
 
-. (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
-. (Join-Path $EngCommonScriptsDir 'Helpers' 'CommandInvocation-Helpers.ps1')
+$hasErrors = $false
+foreach ($crateName in $crateNames) {
+  $crate = Get-Content "$PackagesPath/$crateName/cargo-metadata.json" -Raw | ConvertFrom-Json
+  $crateVersion = $crate.version
 
-$request = @{
-  'Headers' = @{ Authorization = $Token; Accept = 'application/json' };
-  'Uri'     = 'https://crates.io/api/v1/crates/new';
-  'Method'  = 'PUT';
+  Write-Host "Yanking crate: '$crateName@$crateVersion'"
+
+  # https://doc.rust-lang.org/cargo/reference/registry-web-api.html#yank
+  $response = Invoke-WebRequest -Method Delete -Uri "https://crates.io/api/v1/crates/$crateName/$crateVersion/yank" `
+    -Headers @{ Accept = 'application/json'; Authorization = $Token } `
+    -SkipHttpErrorCheck
+  
+  if ($response.StatusCode -ge 400) {
+    Write-Host "Failed to yank crate: '$crateName@$crateVersion'"
+    Write-Host "Response: $($response.Content)"
+    $hasErrors = $true
+  }
 }
 
-foreach ($packageName in $packageNames) {
-  $crateFile = Get-ChildItem "$PackagesPath/$packageName" -Filter '*.crate'
-
-  Write-Host "Publishing package: '$packageName'"
-  Write-Host "Request:"
-  Write-Host "  Uri: $($request.Uri)"
-  Write-Host "  Method: $($request.Method)"
-  Write-Host "  Headers: { Authorization = <API TOKEN> }"
-  Write-Host "  Body: $($crateFile.FullName)"
-
-  # https://doc.rust-lang.org/cargo/reference/registry-web-api.html#publish
-  Invoke-WebRequest @request -InFile $crateFile
+if ($hasErrors) {
+  exit 1
 }
