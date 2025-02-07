@@ -3,6 +3,7 @@ parameters:
   type: string
 - name: Artifacts
   type: object
+  default: []
 - name: TestTimeoutInMinutes
   type: number
   default: 60
