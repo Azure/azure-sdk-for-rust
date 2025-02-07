@@ -1,3 +1,8 @@
+use crate::{models::MessageId, AmqpMessage, AmqpValue};
+use azure_core_amqp::messaging::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
+use std::collections::HashMap;
+use std::fmt::{Debug, Display, Formatter};
+
 /// The EventData struct represents the data associated with an event in an Event Hub.
 ///
 /// This struct provides the body, content type, correlation identifier, message identifier, and properties of an event.
@@ -396,6 +401,7 @@ pub mod builders {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{AmqpValue, MessageId};
 
     #[test]
     fn test_event_data_builder_with_body() {
