@@ -146,7 +146,7 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
 
   $existingVersions = GetExistingPackageVersions -PackageName $packageName
 
-  return New-Object PSObject -Property @{
+  return @{
     PackageId      = $packageName
     PackageVersion = $packageVersion
     ReleaseTag     = "$packageName-$packageVersion"

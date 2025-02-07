@@ -209,7 +209,6 @@ function Add-PathVersions($packages) {
 function Get-ApiMetadata($package) {
   $packagePath = Split-Path -Path $package.manifest_path -Parent
   $readmePath = Join-Path -Path $packagePath -ChildPath $package.readme
-
   $jsonBody = [ordered]@{
     'name'          = $package.name
     'vers'          = $package.version
@@ -219,7 +218,7 @@ function Get-ApiMetadata($package) {
     'description'   = $package.description
     'documentation' = $package.documentation
     'homepage'      = $package.homepage
-    'readme'        = if (Test-Path -Path $readmePath) {
+    'readme'        = if ($package.readme -and (Test-Path -Path $readmePath)) {
       Get-Content -Path $readmePath -Raw
     }
     else {
@@ -287,6 +286,11 @@ try {
       -Command "cargo package --package $packageName --config `"source.crates-io.replace-with='local'`" --config `"source.local.local-registry='$localRegistryPath'`" --allow-dirty"
 
     $crateFile = "$RepoRoot/target/package/$packageName-$packageVersion.crate"
+
+    if (-not (Test-Path -Path $crateFile)) {
+      Write-Error "Building the package '$packageName' didn't produce a crate file in the expected location: '$crateFile'"
+      exit 1
+    }
 
     # copy the package to the local registry
     Add-CrateToLocalRegistry `
