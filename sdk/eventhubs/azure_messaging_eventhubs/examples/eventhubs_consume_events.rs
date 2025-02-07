@@ -22,8 +22,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("EventHub Properties: {:?}", properties);
 
     // The default is to receive messages from the end of the partition, so specify a start position at the start of the partition.
-    let receive_stream = consumer
-        .receive_events_on_partition(
+    let receiver = consumer
+        .attach_receiver_to_partition(
             properties.partition_ids[0].clone(),
             Some(ReceiveOptions {
                 start_position: Some(StartPosition {
@@ -33,7 +33,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ..Default::default()
             }),
         )
-        .await;
+        .await?;
+
+    println!("Created receiver");
+
+    // Create a stream of events from the receiver
+    let receive_stream = receiver.stream_events();
 
     println!("Created receive stream");
 

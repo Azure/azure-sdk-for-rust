@@ -10,11 +10,10 @@ use super::{
         ManagementInstance,
     },
     error::ErrorKind,
-    models::{EventHubPartitionProperties, EventHubProperties, ReceivedEventData},
+    models::{EventHubPartitionProperties, EventHubProperties},
 };
 
 use async_std::sync::Mutex;
-use async_stream::try_stream;
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::{Error, Result},
@@ -24,12 +23,12 @@ use azure_core_amqp::{
     cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis},
     connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
     management::{AmqpManagement, AmqpManagementApis},
-    messaging::{AmqpDeliveryApis, AmqpSource, AmqpSourceFilter},
+    messaging::{AmqpSource, AmqpSourceFilter},
     receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::{AmqpSession, AmqpSessionApis},
     value::{AmqpDescribed, AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
-use futures::stream::Stream;
+use message_receiver::MessageReceiver;
 use std::{
     collections::HashMap,
     default::Default,
@@ -38,6 +37,9 @@ use std::{
 };
 use tracing::{debug, trace};
 use url::Url;
+
+/// Receive messages from a partition.
+pub mod message_receiver;
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
@@ -189,10 +191,9 @@ impl ConsumerClient {
         Ok(())
     }
 
-    /// Receives events from a specific partition of the Event Hub.
+    /// Attaches a message receiver to a specific partition of the Event Hub.
     ///
-    /// This function establishes a connection to the specified partition of the Event Hub and starts receiving events from it.
-    /// It returns a stream of `ReceivedEventData` items, representing the events received from the partition.
+    /// This function establishes a connection to the specified partition of the Event Hub and returns a MessageReceiver which can be used to receive messages from it.
     ///
     /// # Arguments
     ///
@@ -201,7 +202,7 @@ impl ConsumerClient {
     ///
     /// # Returns
     ///
-    /// A stream of `Result<ReceivedEventData>`, where each item represents an event received from the partition.
+    /// A MessageReceiver which can be used to receive messages from the partition.
     ///
     /// # Example
     ///
@@ -219,7 +220,9 @@ impl ConsumerClient {
     ///
     ///     consumer.open().await.unwrap();
     ///
-    ///     let event_stream = consumer.receive_events_on_partition(partition_id.to_string(), options).await;
+    ///     let receiver  = consumer.attach_receiver_to_partition(partition_id.to_string(), options).await?;
+    ///
+    ///     let event_stream = receiver.stream_events();
     ///
     ///     tokio::pin!(event_stream);
     ///     while let Some(event_result) = event_stream.next().await {
@@ -236,11 +239,11 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    pub async fn receive_events_on_partition(
+    pub async fn attach_receiver_to_partition(
         &self,
         partition_id: String,
         options: Option<ReceiveOptions>,
-    ) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
+    ) -> Result<MessageReceiver> {
         let options = options.unwrap_or_default();
 
         let receiver_name = self
@@ -251,8 +254,6 @@ impl ConsumerClient {
         let start_expression = StartPosition::start_expression(&options.start_position);
         let source_url = format!("{}/Partitions/{}", self.url, partition_id);
 
-        try_stream! {
-            // Authorize access to the source address.
         self.authorize_path(source_url.clone()).await?;
 
         let session = self.get_session(&partition_id).await?;
@@ -266,16 +267,17 @@ impl ConsumerClient {
                 )),
             )
             .build();
-        let mut receiver_properties : AmqpOrderedMap<AmqpSymbol, AmqpValue> = vec![("com.microsoft.com:receiver-name", receiver_name.clone())]
-            .into_iter()
-            .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
-            .collect();
+        let mut receiver_properties: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
+            vec![("com.microsoft.com:receiver-name", receiver_name.clone())]
+                .into_iter()
+                .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
+                .collect();
 
         if let Some(owner_level) = options.owner_level {
             receiver_properties.insert("com.microsoft:epoch".into(), AmqpValue::from(owner_level));
         }
 
-        let receiver_options = AmqpReceiverOptions{
+        let receiver_options = AmqpReceiverOptions {
             name: Some(receiver_name),
             properties: Some(receiver_properties),
             credit_mode: Some(ReceiverCreditMode::Auto(options.prefetch.unwrap_or(300))),
@@ -285,22 +287,10 @@ impl ConsumerClient {
 
         let receiver = AmqpReceiver::new();
         receiver
-            .attach(
-                &session,
-                message_source,
-                Some(receiver_options),
-            )
+            .attach(&session, message_source, Some(receiver_options))
             .await?;
 
-            loop{
-                let delivery = receiver.receive_delivery().await?;
-
-                receiver.accept_delivery(&delivery).await?;
-                let message = delivery.into_message();
-                let event = ReceivedEventData::from(message);
-                yield event;
-            }
-        }
+        Ok(MessageReceiver::new(receiver))
     }
 
     /// Retrieves the properties of the Event Hub.

@@ -1,10 +1,7 @@
 /// This sample demonstrates how to send events to an Event Hub partition using the `ProducerClient`.
-/// It also demonstrates how to send events to all partitions using a batch sender.
 ///
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::{
-    producer::SendMessageOptions, EventDataBatchOptions, ProducerClient,
-};
+use azure_messaging_eventhubs::{producer::SendMessageOptions, ProducerClient};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -18,15 +15,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Open the client
     client.open().await?;
 
-    // Get the partition IDs
-    let properties = client.get_eventhub_properties().await?;
-    println!("EventHub Properties: {:?}", properties);
-
-    // Create a message to send
-    let message = "Hello, Event Hub!";
-
-    // Send a message to an eventhub instance directly.
-    client.send(message, None).await?;
+    // Send a message to an eventhub instance directly. The message will be sent to a random partition.
+    client.send("Hello, Event Hub!", None).await?;
 
     // Send an array of bytes to partition 0 of the eventhubs instance.
     client
@@ -38,19 +28,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
 
-    // Send the message to each partition using a batch sender.
-    for partition_id in properties.partition_ids {
-        let mut batch = client
-            .create_batch(Some(EventDataBatchOptions {
-                partition_id: Some(partition_id.clone()),
-                ..Default::default()
-            }))
-            .await?;
-        if batch.try_add_event_data(message, None)? {
-            println!("Message sent to partition: {}", partition_id);
-        }
-        client.submit_batch(&batch, None).await?;
-    }
-
+    client.close().await?;
     Ok(())
 }

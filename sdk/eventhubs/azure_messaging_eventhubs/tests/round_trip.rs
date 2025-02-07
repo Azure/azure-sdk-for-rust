@@ -123,8 +123,8 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
 
     assert!(consumer.open().await.is_ok());
 
-    let receive_stream = consumer
-        .receive_events_on_partition(
+    let receiver = consumer
+        .attach_receiver_to_partition(
             EVENTHUB_PARTITION.to_string(),
             Some(ReceiveOptions {
                 start_position: Some(StartPosition {
@@ -134,7 +134,9 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
                 ..Default::default()
             }),
         )
-        .await;
+        .await?;
+
+    let receive_stream = receiver.stream_events();
 
     pin_mut!(receive_stream);
 

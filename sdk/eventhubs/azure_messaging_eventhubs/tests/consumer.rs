@@ -180,9 +180,8 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
     info!("Opening client.");
     client.open().await?;
 
-    info!("Creating event receive stream.");
-    let event_stream = client
-        .receive_events_on_partition(
+    let receiver = client
+        .attach_receiver_to_partition(
             "0".to_string(),
             Some(ReceiveOptions {
                 start_position: Some(StartPosition {
@@ -192,7 +191,10 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
                 ..Default::default()
             }),
         )
-        .await;
+        .await?;
+
+    info!("Creating event receive stream.");
+    let event_stream = receiver.stream_events();
 
     pin_mut!(event_stream); // Needed for iteration.
 
