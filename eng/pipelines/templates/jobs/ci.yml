@@ -62,6 +62,10 @@ jobs:
     os: linux
 
   steps:
+  - checkout: self
+    ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+      fetchDepth: 0 # Fetch all history for PR builds
+
   - ${{ if ne(variables['Build.Reason'], '') }}:
     - script: |
         echo "##vso[build.addbuildtag]$(Build.Reason)"
