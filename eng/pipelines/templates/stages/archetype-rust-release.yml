@@ -56,6 +56,7 @@ stages:
               ArtifactLocation: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/${{artifact.name}}
               PackageRepository: Crates.io
               ReleaseSha: $(Build.SourceVersion)
+              WorkingDirectory: $(Pipeline.Workspace)/_work
 
         - deployment: PublishPackage
           displayName: "Publish to Crates.io"
