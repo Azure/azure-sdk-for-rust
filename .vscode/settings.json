@@ -1,4 +1,5 @@
 {
+  "azure-pipelines.1ESPipelineTemplatesSchemaFile": true,
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
   "rust-analyzer.cargo.features": "all",
@@ -7,5 +8,4 @@
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell",
   },
-  "azure-pipelines.1ESPipelineTemplatesSchemaFile": true
 }

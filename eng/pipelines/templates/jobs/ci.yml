@@ -68,7 +68,7 @@ jobs:
     ${{ else }}:
       fetchDepth: 1 # Fetch only the latest commit for non-PR builds
 
-  - ${{ if ne(variables['Build.Reason'], '') }}:
+  - ${{ if and(eq(variables['System.TeamProject'], 'internal'), ne(variables['Build.Reason'], '')) }}:
     - script: |
         echo "##vso[build.addbuildtag]$(Build.Reason)"
       displayName: Tag build reason
@@ -83,7 +83,6 @@ jobs:
   - template: /eng/pipelines/templates/steps/pack-crates.yml
     parameters:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
-      Toolchain: stable
 
   - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
     parameters:
