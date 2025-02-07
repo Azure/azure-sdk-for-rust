@@ -157,65 +157,99 @@ More information about Event Hubs features and terminology can be found here: [l
 Examples for various scenarios can be found on in the samples directory in our GitHub repo for
 [Event Hubs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure-messaging-eventhubs/samples).
 
-## Send events
-
-The following example shows how to send events to an event hub:
+## Open an eventhubs message producer on an eventhubs instance.
 
 ```rust
-async fn send_events() {
-    let host = std::env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = std::env::var("EVENTHUB_NAME").unwrap();
+use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
 
-    let credential = azure_identity::DefaultAzureCredential::new().unwrap();
+async fn open_producer_client() -> Result<ProducerClient, Box<dyn std::error::Error>>
+{
+    let host = std::env::var("EVENTHUBS_HOST")?;
+    let eventhub = std::env::var("EVENTHUB_NAME")?;
 
-    let client = azure_messaging_eventhubs::producer::ProducerClient::new(
+    let credential = azure_identity::DefaultAzureCredential::new()?;
+
+    let producer = azure_messaging_eventhubs::ProducerClient::new(
         host,
         eventhub.clone(),
         credential,
-        Some(azure_messaging_eventhubs::producer::ProducerClientOptions{
-          application_id: Some("test_create_batch".to_string()),
-          ..Default::default()
+        Some(azure_messaging_eventhubs::ProducerClientOptions{
+            application_id: Some("test_create_batch".to_string()),
+            ..Default::default()
         }),
-      );
-    client.open().await.unwrap();
-    {
-        let mut batch = client.create_batch(None).await.unwrap();
-        assert_eq!(batch.len(), 0);
-        assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None).unwrap());
+        );
+    producer.open().await?;
 
-        let res = client.submit_batch(&batch, None).await;
-        assert!(res.is_ok());
+    Ok(producer)
     }
+```
+
+## Open an eventhubs message consumer on an eventhubs instance.
+
+```rust
+use azure_messaging_eventhubs::{ConsumerClient, ConsumerClientOptions};
+
+async fn open_consumer_client() -> Result<ConsumerClient, Box<dyn std::error::Error>>
+{
+    let host = std::env::var("EVENTHUBS_HOST")?;
+    let eventhub = std::env::var("EVENTHUB_NAME")?;
+
+    let credential = azure_identity::DefaultAzureCredential::new()?;
+
+    let consumer = azure_messaging_eventhubs::ConsumerClient::new(
+        host,
+        eventhub.clone(),
+        None,
+        credential,
+        Some(azure_messaging_eventhubs::ConsumerClientOptions{
+            application_id: Some("test_create_batch".to_string()),
+            ..Default::default()
+        }),
+        );
+    consumer.open().await?;
+    Ok(consumer)
+}
+```
+
+## Send events
+
+There are two mechanisms used to send events to an event hub. The first directly
+sends individual messages to the eventhub, the second uses a "batch" operation to
+send multiple messages in a single network request to the service.
+
+### Send events directly
+
+### Send events using a batch operation
+
+```rust
+use azure_messaging_eventhubs::ProducerClient;
+
+async fn send_events(producer: &ProducerClient) {
+    let mut batch = producer.create_batch(None).await.unwrap();
+    assert_eq!(batch.len(), 0);
+    assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None).unwrap());
+
+    let res = producer.submit_batch(&batch, None).await;
+    assert!(res.is_ok());
 }
 ```
 
 ## Receive events
 
-The following example shows how to receive events from partition 1 on an event hub:
+The following example shows how to receive events from partition 0 on an event hub.
+
+It assumes that the caller has provided a consumer client which will be used to receive
+events.
+
+Each message receiver can only receive messages from a single eventhubs partition
 
 ```rust no_run
-async fn receive_events() {
-    use futures::pin_mut;
-    use async_std::stream::StreamExt;
 
-    let host = std::env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = std::env::var("EVENTHUB_NAME").unwrap();
+use azure_messaging_eventhubs::ConsumerClient;
+use futures::pin_mut;
+use async_std::stream::StreamExt;
 
-    let credential = azure_identity::DefaultAzureCredential::new().unwrap();
-    let client = azure_messaging_eventhubs::consumer::ConsumerClient::new(
-        host,
-        eventhub,
-        None,
-        credential,
-        Some(
-            azure_messaging_eventhubs::consumer::ConsumerClientOptions{
-                application_id: Some("receive_lots_of_events".to_string()),
-                ..Default::default()}
-        ),
-    );
-
-    client.open().await.unwrap();
-
+async fn receive_events(client : &ConsumerClient) {
     let message_receiver = client
         .open_receiver_on_partition(
             "0".to_string(),
