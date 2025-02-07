@@ -211,21 +211,21 @@ impl ConsumerClient {
     /// use azure_messaging_eventhubs::consumer::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use async_std::stream::StreamExt;
+    /// use futures::pin_mut;
     ///
     /// #[tokio::main]
-    /// async fn main() {
-    ///     let my_credential = DefaultAzureCredential::new().unwrap();
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let my_credential = DefaultAzureCredential::new()?;
     ///     let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
     ///     let partition_id = "0";
-    ///     let options = None;
     ///
-    ///     consumer.open().await.unwrap();
+    ///     consumer.open().await?;
     ///
-    ///     let receiver  = consumer.attach_receiver_to_partition(partition_id.to_string(), options).await?;
+    ///     let receiver  = consumer.open_receiver_on_partition(partition_id.to_string(), None).await?;
     ///
     ///     let event_stream = receiver.stream_events();
     ///
-    ///     tokio::pin!(event_stream);
+    ///     pin_mut!(event_stream);
     ///     while let Some(event_result) = event_stream.next().await {
     ///         match event_result {
     ///             Ok(event) => {
@@ -238,9 +238,10 @@ impl ConsumerClient {
     ///             }
     ///         }
     ///     }
+    ///     Ok(())
     /// }
     /// ```
-    pub async fn attach_receiver_to_partition(
+    pub async fn open_receiver_on_partition(
         &self,
         partition_id: String,
         options: Option<ReceiveOptions>,

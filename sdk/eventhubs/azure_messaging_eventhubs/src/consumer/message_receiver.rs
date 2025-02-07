@@ -20,10 +20,39 @@ use tracing::trace;
 /// # Example
 ///
 /// ```no_run
-/// use azure_messaging_eventhubs::EventHubClient;
-/// use azure_identity::DefaultAzureCredential;
-/// use futures::stream::StreamExt;
-/// use std::error::Error;
+/// use azure_messaging_eventhubs::consumer::ConsumerClient;
+/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+/// use async_std::stream::StreamExt;
+/// use futures::pin_mut;
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let my_credential = DefaultAzureCredential::new()?;
+///     let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
+///     let partition_id = "0";
+///
+///     consumer.open().await?;
+///
+///     let receiver  = consumer.open_receiver_on_partition(partition_id.to_string(), None).await?;
+///
+///     let event_stream = receiver.stream_events();
+///
+///     pin_mut!(event_stream);
+///     while let Some(event_result) = event_stream.next().await {
+///         match event_result {
+///             Ok(event) => {
+///                 // Process the received event
+///                 println!("Received event: {:?}", event);
+///             }
+///             Err(err) => {
+///                 // Handle the error
+///                 eprintln!("Error receiving event: {:?}", err);
+///             }
+///         }
+///     }
+///     Ok(())
+/// }
+/// ```
 /// ```
 pub struct MessageReceiver {
     receiver: AmqpReceiver,
@@ -44,7 +73,7 @@ impl MessageReceiver {
         try_stream! {
             loop {
                 if let Some(delivery_timeout) = self.timeout {
-                    let delivery_or_timeout =  tokio::time::timeout(delivery_timeout,
+                    let delivery_or_timeout =  async_std::future::timeout(delivery_timeout,
                         self.receiver.receive_delivery()).await;
                     match delivery_or_timeout {
                         Ok(delivery_or_error) => {

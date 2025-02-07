@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // The default is to receive messages from the end of the partition, so specify a start position at the start of the partition.
     let receiver = consumer
-        .attach_receiver_to_partition(
+        .open_receiver_on_partition(
             properties.partition_ids[0].clone(),
             Some(ReceiveOptions {
                 start_position: Some(StartPosition {
@@ -46,10 +46,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Pin the receive stream on the stack so that it can be polled
     pin_mut!(receive_stream);
 
-    // Poll the receive stream until it is exhausted.
+    // Receive events until the receive_timeout has been reached.
     while let Some(event) = receive_stream.next().await {
         println!("Received: {:?}", event);
     }
+
+    consumer.close().await?;
 
     Ok(())
 }

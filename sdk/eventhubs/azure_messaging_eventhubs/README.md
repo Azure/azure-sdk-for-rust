@@ -183,7 +183,7 @@ async fn send_events() {
         assert_eq!(batch.len(), 0);
         assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None).unwrap());
 
-        let res = client.submit_batch(&batch).await;
+        let res = client.submit_batch(&batch, None).await;
         assert!(res.is_ok());
     }
 }
@@ -216,19 +216,21 @@ async fn receive_events() {
 
     client.open().await.unwrap();
 
-    let event_stream = client
-        .receive_events_on_partition(
+    let message_receiver = client
+        .open_receiver_on_partition(
             "0".to_string(),
             Some(
-                azure_messaging_eventhubs::consumer::ReceiveOptions{
-                    start_position: Some(azure_messaging_eventhubs::consumer::StartPosition{
-                        location: azure_messaging_eventhubs::consumer::StartLocation::Earliest,
+                azure_messaging_eventhubs::ReceiveOptions{
+                    start_position: Some(azure_messaging_eventhubs::StartPosition{
+                        location: azure_messaging_eventhubs::StartLocation::Earliest,
                         ..Default::default()
                     }),
                     ..Default::default()
                 },
             ))
-        .await;
+        .await.unwrap();
+
+    let event_stream = message_receiver.stream_events();
 
     pin_mut!(event_stream); // Needed for iteration.
     while let Some(event_result) = event_stream.next().await {

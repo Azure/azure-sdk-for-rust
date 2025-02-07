@@ -79,19 +79,26 @@ async fn main() {
 use azure_messaging_eventhubs::consumer::ConsumerClient;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 use async_std::stream::StreamExt;
+use futures::pin_mut;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>>  {
     let my_credential = DefaultAzureCredential::new().unwrap();
     let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
     let partition_id = "0";
-    let options = None;
 
-    consumer.open().await.unwrap();
+    consumer.open().await?;
 
-    let event_stream = consumer.receive_events_on_partition(partition_id.to_string(), options).await;
+    let message_receiver = consumer
+        .open_receiver_on_partition(
+            partition_id.to_string(),
+            None)
+        .await?;
 
-    tokio::pin!(event_stream);
+    let event_stream = message_receiver.stream_events();
+
+    pin_mut!(event_stream);
+
     while let Some(event_result) = event_stream.next().await {
         match event_result {
             Ok(event) => {
@@ -104,5 +111,6 @@ async fn main() {
             }
         }
     }
+    Ok(())
 }
 ```

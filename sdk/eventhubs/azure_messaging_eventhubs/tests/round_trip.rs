@@ -124,7 +124,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     assert!(consumer.open().await.is_ok());
 
     let receiver = consumer
-        .attach_receiver_to_partition(
+        .open_receiver_on_partition(
             EVENTHUB_PARTITION.to_string(),
             Some(ReceiveOptions {
                 start_position: Some(StartPosition {
