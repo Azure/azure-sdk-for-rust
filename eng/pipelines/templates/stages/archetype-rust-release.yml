@@ -86,7 +86,7 @@ stages:
                     filePath: $(Build.SourcesDirectory)/eng/scripts/Publish-Crates.ps1
                     arguments: >
                       -PackagesPath '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}'
-                      -PackageNames '${{artifact.name}}'
+                      -CrateNames '${{artifact.name}}'
                       -Token $(azure-sdk-cratesio-token)
                       -AdditionalOwners 'heaths','hallipr'
 
@@ -110,8 +110,7 @@ stages:
           condition: and(succeeded(), ne(variables['Skip.UpdatePackageVersion'], 'true'))
           dependsOn: PublishPackage
           steps:
-          # Apply the version increment to each library, which only updates the version_client.txt file,
-          # and then call to update_versions will then apply all of the updates.
+          # Apply the version increment to each library, which updates the Cargo.toml and changelog files.
           - task: PowerShell@2
             displayName: Increment ${{artifact.name}} version
             inputs:
@@ -144,6 +143,7 @@ stages:
                 targetType: filePath
                 filePath: $(Build.SourcesDirectory)/eng/scripts/Yank-Crates.ps1
                 arguments:
+                  -CrateNames '${{artifact.name}}'
                   -PackagesPath '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}'
                   -Token $(azure-sdk-cratesio-token)
 
@@ -155,26 +155,4 @@ stages:
   #   dependsOn: ${{parameters.DependsOn}}
   #   condition: succeededOrFailed('${{parameters.DependsOn}}')
   #   jobs:
-  #   - job: PublishPackages
-  #     displayName: "Publish package to daily feed"
-  #     condition: or(eq(variables['SetDevVersion'], 'true'), eq(variables['Build.Reason'],'Schedule')))
-  #     pool:
-  #       image: azsdk-pool-mms-ubuntu-2004-1espt
-  #       name: azsdk-pool-mms-ubuntu-2004-general
-  #       os: linux
-  #     steps:
-  #     - download: current
-  #       artifact: ${{parameters.PipelineArtifactName}}
-  #       timeoutInMinutes: 5
-
-  #     - template: ../steps/auth-dev-feed.yml
-  #       parameters:
-  #         DevFeedName: ${{parameters.DevFeedName}}
-
-  #     - ${{each artifact in parameters.Artifacts}}:
-  #       - ${{if ne(artifact.skipPublishDevFeed, 'true')}}:
-  #         - pwsh: |
-  #           displayName: 'Publish ${{artifact.name}} package'
-
-    # - job: PublishDocsToNightlyBranch
-
+  #   - job: PublishDocsToNightlyBranch
