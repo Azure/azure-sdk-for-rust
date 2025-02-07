@@ -115,7 +115,8 @@ stages:
           steps:
           - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
             parameters:
-              paths: /*
+              paths:
+              - "/*"
 
           # Apply the version increment to each library, which updates the Cargo.toml and changelog files.
           - task: PowerShell@2
