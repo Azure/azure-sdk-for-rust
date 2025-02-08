@@ -9,16 +9,14 @@ trigger:
   paths:
     include:
     - sdk/storage/
-    # - sdk/core/  # python triggers on core changes, .net does not
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: storage
-    TestProxy: true
     TestTimeoutInMinutes: 120
     Artifacts:
     - name: azure_storage_blob
-      safeName: azurestorageblob
+      safeName: AzureStorageBlob
     - name: azure_storage_common
-      safeName: azurestoragecommon
+      safeName: AzureStorageCommon

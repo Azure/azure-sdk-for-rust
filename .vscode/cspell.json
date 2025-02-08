@@ -51,6 +51,7 @@
     "pageables",
     "pkce",
     "pkcs",
+    "pwsh",
     "posix",
     "reqwest",
     "rustup",

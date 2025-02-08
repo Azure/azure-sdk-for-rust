@@ -6,17 +6,16 @@ trigger:
     - main
     - hotfix/*
     - release/*
-    - restapi*
   paths:
     include:
     - sdk/template/
 
 extends:
-  template: ../../eng/pipelines/templates/stages/archetype-sdk-client.yml
+  template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: template
     Artifacts:
     - name: azure_template_core
-      safeName: azuretemplatecore
+      safeName: AzureTemplateCore
     - name: azure_template
-      safeName: azuretemplate
+      safeName: AzureTemplate
