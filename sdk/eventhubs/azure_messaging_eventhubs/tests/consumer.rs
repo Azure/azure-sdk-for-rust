@@ -3,6 +3,7 @@
 
 //cspell: words eventdata
 
+use async_std::future::timeout;
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::consumer::{
@@ -179,7 +180,6 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
     info!("Opening client.");
     client.open().await?;
 
-    const TEST_DURATION: std::time::Duration = Duration::from_secs(10);
     let receiver = client
         .open_receiver_on_partition(
             "0".to_string(),
@@ -188,7 +188,8 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
                     location: azure_messaging_eventhubs::consumer::StartLocation::Earliest,
                     ..Default::default()
                 }),
-                receive_timeout: Some(TEST_DURATION),
+                // Timeout for individual receive operations.
+                receive_timeout: Some(Duration::from_secs(5)),
                 ..Default::default()
             }),
         )
@@ -201,21 +202,31 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
 
     let mut count = 0;
 
+    const TEST_DURATION: std::time::Duration = Duration::from_secs(10);
     info!("Receiving events for {:?}.", TEST_DURATION);
+
     // Read events from the stream for a bit of time.
-    while let Some(event) = event_stream.next().await {
-        match event {
-            Ok(_event) => {
-                //                    info!("Received the following message:: {:?}", event);
-                count += 1;
-            }
-            Err(err) => {
-                info!("Error while receiving message: {:?}", err);
+
+    let result = timeout(TEST_DURATION, async {
+        while let Some(event) = event_stream.next().await {
+            match event {
+                Ok(_event) => {
+                    //                    info!("Received the following message:: {:?}", event);
+                    count += 1;
+                }
+                Err(err) => {
+                    info!("Error while receiving message: {:?}", err);
+                }
             }
         }
-    }
+    })
+    .await;
 
-    info!("Received {count} messages.");
+    // We should timeout after the specified duration - there are undoubtedly more
+    // events in the event hub than can be received in TEST_DURATION seconds.
+    assert!(result.is_err());
+
+    info!("Received {count} messages in {TEST_DURATION:?} seconds.");
 
     Ok(())
 }

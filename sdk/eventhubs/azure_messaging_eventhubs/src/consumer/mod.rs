@@ -172,7 +172,7 @@ impl ConsumerClient {
     ///     let result = consumer.close().await;
     ///
     ///     match result {
-    ///         Ok(()) => {
+    ///         Ok(_) => {
     ///             // Connection closed successfully
     ///             println!("Connection closed successfully");
     ///         }
@@ -204,6 +204,10 @@ impl ConsumerClient {
     /// # Returns
     ///
     /// A MessageReceiver which can be used to receive messages from the partition.
+    ///
+    /// Note that by default, a message receiver will receive events starting from the latest event in the partition (in
+    /// other words, it will receive new events only). To receive events from another location within the partition you can
+    /// specify a different starting position using the `options` parameter.
     ///
     /// # Example
     ///
