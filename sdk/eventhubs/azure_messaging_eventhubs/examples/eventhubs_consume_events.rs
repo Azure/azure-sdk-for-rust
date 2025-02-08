@@ -1,7 +1,9 @@
 /// This sample demonstrates how to send events to an Event Hub partition using the `ProducerClient`.
 ///
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::{ConsumerClient, ReceiveOptions, StartLocation, StartPosition};
+use azure_messaging_eventhubs::{
+    ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
+};
 use futures::{pin_mut, StreamExt};
 
 #[tokio::main]
@@ -25,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let receiver = consumer
         .open_receiver_on_partition(
             properties.partition_ids[0].clone(),
-            Some(ReceiveOptions {
+            Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::Earliest,
                     ..Default::default()

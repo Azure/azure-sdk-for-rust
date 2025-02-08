@@ -6,7 +6,7 @@
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::consumer::{
-    ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition,
+    ConsumerClient, ConsumerClientOptions, OpenReceiverOptions, StartPosition,
 };
 use futures::{pin_mut, StreamExt};
 use std::{env, error::Error, time::Duration};
@@ -183,7 +183,7 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
     let receiver = client
         .open_receiver_on_partition(
             "0".to_string(),
-            Some(ReceiveOptions {
+            Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: azure_messaging_eventhubs::consumer::StartLocation::Earliest,
                     ..Default::default()

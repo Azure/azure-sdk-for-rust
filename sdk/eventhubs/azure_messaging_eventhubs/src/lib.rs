@@ -23,11 +23,12 @@ pub mod models;
 pub use producer::batch::*;
 pub use producer::ProducerClient;
 pub use producer::ProducerClientOptions;
+pub use producer::SendEventOptions;
 pub use producer::SendMessageOptions;
 pub use producer::SubmitBatchOptions;
 
 pub use consumer::ConsumerClient;
 pub use consumer::ConsumerClientOptions;
-pub use consumer::ReceiveOptions;
+pub use consumer::OpenReceiverOptions;
 pub use consumer::StartLocation;
 pub use consumer::StartPosition;

@@ -7,14 +7,8 @@ mod event_data;
 /// An AMQP Message sent to the eventhubs service.
 pub type AmqpMessage = azure_core_amqp::messaging::AmqpMessage;
 
-/// The body of an AMQP message.
+/// The body of an AMQP Message sent to the eventhubs service.
 pub type AmqpMessageBody = azure_core_amqp::messaging::AmqpMessageBody;
-
-/// The unique identifier of an AMQP message.
-pub type AmqpMessageId = azure_core_amqp::messaging::AmqpMessageId;
-
-/// The properties of an AMQP message.
-pub type AmqpMessageProperties = azure_core_amqp::messaging::AmqpMessageProperties;
 
 /// An AMQP Value.
 pub type AmqpValue = azure_core_amqp::value::AmqpValue;
@@ -25,6 +19,7 @@ pub type ReceivedEventData = event_data::ReceivedEventData;
 /// Event sent to an Event Hub.
 pub type EventData = event_data::EventData;
 
+use azure_core_amqp::messaging::AmqpMessageId;
 use std::fmt::Debug;
 
 /// Represents the properties of an Event Hub.

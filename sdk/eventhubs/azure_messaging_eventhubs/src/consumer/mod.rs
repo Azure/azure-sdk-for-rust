@@ -244,7 +244,7 @@ impl ConsumerClient {
     pub async fn open_receiver_on_partition(
         &self,
         partition_id: String,
-        options: Option<ReceiveOptions>,
+        options: Option<OpenReceiverOptions>,
     ) -> Result<EventReceiver> {
         let options = options.unwrap_or_default();
 
@@ -554,7 +554,7 @@ impl ConsumerClientOptions {}
 
 /// Represents the options for receiving events from an Event Hub.
 #[derive(Debug, Clone, Default)]
-pub struct ReceiveOptions {
+pub struct OpenReceiverOptions {
     /// The owner level for messages being retrieved.
     pub owner_level: Option<i64>,
     /// The prefetch count for messages being retrieved.
@@ -563,10 +563,13 @@ pub struct ReceiveOptions {
     pub start_position: Option<StartPosition>,
 
     /// Optional timeout for receiving messages. If not provided, the default timeout is infinite.
+    ///
+    /// Note: This is the timeout for individual messages, not the entire receive operation.
+    /// As long as there are messages available, then they will be included in the stream events regardless of the timeout.
     pub receive_timeout: Option<Duration>,
 }
 /// Represents the options for receiving events from an Event Hub.
-impl ReceiveOptions {}
+impl OpenReceiverOptions {}
 
 /// Represents the starting position of a consumer when receiving events from an Event Hub.
 #[derive(Debug, Default, PartialEq, Clone)]

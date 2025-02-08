@@ -51,9 +51,10 @@ use tracing::trace;
 ///             }
 ///         }
 ///     }
+///
+///     consumer.close().await?;
 ///     Ok(())
 /// }
-/// ```
 /// ```
 pub struct EventReceiver {
     receiver: AmqpReceiver,
@@ -69,6 +70,37 @@ impl EventReceiver {
     /// This method returns a stream of `ReceivedEventData` that can be used to receive messages from the Event Hub.
     /// The stream will continue to yield messages as long as the receiver is not closed.
     /// The stream will yield an error if there is an issue receiving messages from the Event Hub.
+    ///
+    /// # Returns
+    ///
+    /// A stream of `ReceivedEventData` that can be used to receive messages from the Event Hub.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::consumer::event_receiver::EventReceiver;
+    /// use async_std::stream::StreamExt;
+    /// use futures::pin_mut;
+    ///
+    /// async fn receive_events(receiver: &EventReceiver) {
+    ///     let event_stream = receiver.stream_events();
+    ///
+    ///     pin_mut!(event_stream);
+    ///     while let Some(event_result) = event_stream.next().await {
+    ///         match event_result {
+    ///             Ok(event) => {
+    ///                 // Process the received event
+    ///                 println!("Received event: {:?}", event);
+    ///             }
+    ///             Err(err) => {
+    ///                 // Handle the error
+    ///                 eprintln!("Error receiving event: {:?}", err);
+    ///             }
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// ```
     ///
     pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
         try_stream! {

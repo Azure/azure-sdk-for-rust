@@ -1,7 +1,7 @@
 /// This sample demonstrates how to send events to an Event Hub partition using the `ProducerClient`.
 ///
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::{producer::SendMessageOptions, ProducerClient};
+use azure_messaging_eventhubs::{ProducerClient, SendEventOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -18,13 +18,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client.open().await?;
 
     // Send a message to an eventhub instance directly. The message will be sent to a random partition.
-    client.send("Hello, Event Hub!", None).await?;
+    client.send_event("Hello, Event Hub!", None).await?;
 
     // Send an array of bytes to partition 0 of the eventhubs instance.
     client
-        .send(
+        .send_event(
             vec![2, 4, 8, 16],
-            Some(SendMessageOptions {
+            Some(SendEventOptions {
                 partition_id: Some("0".to_string()),
             }),
         )

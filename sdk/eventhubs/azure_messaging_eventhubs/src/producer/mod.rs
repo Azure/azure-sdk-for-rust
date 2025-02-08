@@ -26,8 +26,8 @@ use azure_core_amqp::{
     value::{AmqpSymbol, AmqpValue},
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
-use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
+use std::{collections::HashMap, fmt::Debug};
 use tracing::{debug, trace};
 use url::Url;
 
@@ -105,10 +105,14 @@ pub struct ProducerClient {
 /// If the partition is not specified, the Event Hub will automatically select a partition.
 ///
 #[derive(Default, Debug)]
-pub struct SendMessageOptions {
+pub struct SendEventOptions {
     /// The id of the partition to which the message should be sent.
     pub partition_id: Option<String>,
 }
+
+/// Options used when sending an AMQP message to an Event Hub.
+#[derive(Default, Debug)]
+pub struct SendMessageOptions {}
 
 impl ProducerClient {
     /// Creates a new instance of `ProducerClient`.
@@ -143,7 +147,7 @@ impl ProducerClient {
 
     /// Opens the connection to the Event Hub.
     ///
-    /// This method must be called before any other operation.
+    /// This method must be called before any other operation on the EventHub producer.
     ///
     pub async fn open(&self) -> Result<()> {
         self.ensure_connection(&self.url).await?;
@@ -163,6 +167,69 @@ impl ProducerClient {
             .await?;
         Ok(())
     }
+
+    /// Sends an event to the Event Hub.
+    ///
+    /// # Arguments
+    /// * `event` - The event data to send.
+    /// * `options` - The options to use when sending the event.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or failure.
+    ///
+    pub async fn send_event(
+        &self,
+        event: impl Into<EventData>,
+        options: Option<SendEventOptions>,
+    ) -> Result<()> {
+        let event = event.into();
+        let mut message = AmqpMessage::from(event);
+
+        if message.properties().is_none() || message.properties().unwrap().message_id.is_none() {
+            message.set_message_id(Uuid::new_v4());
+        }
+        if let Some(options) = options {
+            if let Some(partition_id) = options.partition_id {
+                message.add_message_annotation(
+                    AmqpSymbol::from("x-opt-partition-id"),
+                    partition_id.clone(),
+                );
+            }
+        }
+
+        self.send_message(message, None).await
+    }
+
+    /// Sends an AMQP message to the Event Hub.
+    ///
+    /// # Arguments
+    /// * `message` - The event to send.
+    /// * `options` - The options to use when sending the event.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or failure.
+    ///
+    pub async fn send_message(
+        &self,
+        message: impl Into<AmqpMessage> + Debug,
+        #[allow(unused_variables)] options: Option<SendMessageOptions>,
+    ) -> Result<()> {
+        let sender = self.ensure_sender(self.url.clone()).await.unwrap();
+
+        sender
+            .lock()
+            .await
+            .send(
+                message,
+                Some(AmqpSendOptions {
+                    message_format: None,
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(())
+    }
+
     const BATCH_MESSAGE_FORMAT: u32 = 0x80013700;
 
     /// Creates a new batch of events to send to the Event Hub.
@@ -258,49 +325,6 @@ impl ProducerClient {
                 messages,
                 Some(AmqpSendOptions {
                     message_format: Some(Self::BATCH_MESSAGE_FORMAT),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(())
-    }
-
-    /// Sends an event to the Event Hub.
-    /// # Arguments
-    /// * `event_data` - The event to send.
-    /// * `options` - The options to use when sending the event.
-    ///
-    /// # Returns
-    /// A `Result` indicating success or failure.
-    ///
-    pub async fn send(
-        &self,
-        message: impl Into<EventData>,
-        options: Option<SendMessageOptions>,
-    ) -> Result<()> {
-        let sender = self.ensure_sender(self.url.clone()).await.unwrap();
-        let message = message.into();
-        let mut message = AmqpMessage::from(message);
-
-        if message.properties().is_none() || message.properties().unwrap().message_id.is_none() {
-            message.set_message_id(Uuid::new_v4());
-        }
-        if let Some(options) = options {
-            if let Some(partition_id) = options.partition_id {
-                message.add_message_annotation(
-                    AmqpSymbol::from("x-opt-partition-id"),
-                    partition_id.clone(),
-                );
-            }
-        }
-
-        sender
-            .lock()
-            .await
-            .send(
-                message,
-                Some(AmqpSendOptions {
-                    message_format: None,
                     ..Default::default()
                 }),
             )

@@ -12,7 +12,7 @@ use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
     consumer::{
-        ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartLocation, StartPosition,
+        ConsumerClient, ConsumerClientOptions, OpenReceiverOptions, StartLocation, StartPosition,
     },
     models::{EventData, MessageId},
     producer::{batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions},
@@ -126,7 +126,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     let receiver = consumer
         .open_receiver_on_partition(
             EVENTHUB_PARTITION.to_string(),
-            Some(ReceiveOptions {
+            Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::SequenceNumber(start_sequence),
                     ..Default::default()

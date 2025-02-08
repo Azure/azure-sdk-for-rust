@@ -4,7 +4,7 @@
 //cspell: words eventdata amqp
 
 use azure_core_amqp::{
-    messaging::{AmqpMessage, AmqpMessageBody},
+    messaging::{AmqpApplicationProperties, AmqpMessage, AmqpMessageBody, AmqpMessageProperties},
     value::{AmqpList, AmqpValue},
 };
 use azure_core_test::recorded;
@@ -171,6 +171,106 @@ async fn test_create_eventdata() -> Result<(), Box<dyn Error>> {
         .with_message_id(35u64)
         .add_property("key".to_string(), "value")
         .build();
+
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn send_eventdata() -> Result<(), Box<dyn Error>> {
+    common::setup();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
+
+    let credential = DefaultAzureCredential::new()?;
+
+    let client = ProducerClient::new(
+        host,
+        eventhub.clone(),
+        credential,
+        Some(ProducerClientOptions {
+            application_id: Some("send_eventdata".to_string()),
+            ..Default::default()
+        }),
+    );
+    client.open().await?;
+    {
+        let data = b"hello world";
+        let ed1 = azure_messaging_eventhubs::models::EventData::builder()
+            .with_body(data.to_vec())
+            .build();
+
+        let res = client.send_event(ed1, None).await;
+        assert!(res.is_ok());
+    }
+    {
+        let data = b"hello world";
+        let ed1 = azure_messaging_eventhubs::models::EventData::builder()
+            .with_body(data.to_vec())
+            .with_content_type("text/plain".to_string())
+            .with_correlation_id("correlation_id")
+            .with_message_id(35u64)
+            .add_property("key".to_string(), "value")
+            .build();
+
+        let res = client.send_event(ed1, None).await;
+        assert!(res.is_ok());
+    }
+
+    // Simple send.
+    assert!(client.send_event("Hello, Event Hub!", None).await.is_ok());
+
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn send_message() -> Result<(), Box<dyn Error>> {
+    use azure_messaging_eventhubs::models::{AmqpMessage, AmqpMessageBody};
+    common::setup();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
+
+    let credential = DefaultAzureCredential::new()?;
+
+    let client = ProducerClient::new(
+        host,
+        eventhub.clone(),
+        credential,
+        Some(ProducerClientOptions {
+            application_id: Some("send_eventdata".to_string()),
+            ..Default::default()
+        }),
+    );
+    client.open().await?;
+    {
+        let data = b"hello world";
+        let em1 = AmqpMessage::builder()
+            .with_body(AmqpMessageBody::Binary(vec![data.to_vec()]))
+            .build();
+
+        let res = client.send_message(em1, None).await;
+        assert!(res.is_ok());
+    }
+    {
+        let data = b"hello world";
+        let mut application_properties = AmqpApplicationProperties::new();
+        application_properties.insert("key".to_string(), AmqpValue::from("value"));
+        let em1 = AmqpMessage::builder()
+            .with_body(AmqpMessageBody::Value(AmqpValue::Binary(data.to_vec())))
+            .with_application_properties(application_properties)
+            .with_properties(AmqpMessageProperties {
+                message_id: Some(35u64.into()),
+                content_type: Some("text/plain".into()),
+                correlation_id: Some("correlation_id".into()),
+                ..Default::default()
+            })
+            .build();
+
+        let res = client.send_message(em1, None).await;
+        assert!(res.is_ok());
+    }
+
+    // Simple send.
+    assert!(client.send_event("Hello, Event Hub!", None).await.is_ok());
 
     Ok(())
 }
