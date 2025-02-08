@@ -177,6 +177,10 @@ impl ProducerClient {
     /// # Returns
     /// A `Result` indicating success or failure.
     ///
+    /// Note:
+    /// - If the event being sent does not have a message ID, a new message ID will be generated.
+    /// - If the event options contain a partition ID, the event will be sent to the specified partition.
+    ///
     pub async fn send_event(
         &self,
         event: impl Into<EventData>,
@@ -208,6 +212,9 @@ impl ProducerClient {
     ///
     /// # Returns
     /// A `Result` indicating success or failure.
+    ///
+    /// Note:
+    /// - The message is sent to the service unmodified.
     ///
     pub async fn send_message(
         &self,

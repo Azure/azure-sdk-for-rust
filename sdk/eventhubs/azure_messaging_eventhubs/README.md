@@ -254,7 +254,7 @@ async fn receive_events(client : &ConsumerClient) {
         .open_receiver_on_partition(
             "0".to_string(),
             Some(
-                azure_messaging_eventhubs::ReceiveOptions{
+                azure_messaging_eventhubs::OpenReceiverOptions{
                     start_position: Some(azure_messaging_eventhubs::StartPosition{
                         location: azure_messaging_eventhubs::StartLocation::Earliest,
                         ..Default::default()
