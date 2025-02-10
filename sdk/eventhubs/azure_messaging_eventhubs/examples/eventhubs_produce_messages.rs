@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client
         .send_message(
             AmqpMessage::builder()
-                .with_body(AmqpValue::from("Hello, Event Hub from AMQP!"))
+                .with_body(AmqpValue::from("Hello, Event Hubs from AMQP!"))
                 .build(),
             None,
         )

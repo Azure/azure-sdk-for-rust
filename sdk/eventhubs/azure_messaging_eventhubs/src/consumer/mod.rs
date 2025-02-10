@@ -106,8 +106,9 @@ impl ConsumerClient {
 
     /// Opens a connection to the Event Hub.
     ///
-    /// This method establishes a connection to the Event Hub associated with the `ConsumerClient`.
-    /// It returns a `Result` indicating whether the operation was successful or not.
+    /// This method establishes a connection to the Event Hubs instance associated
+    /// with the `ConsumerClient`. It returns a `Result` indicating whether the
+    /// operation was successful or not.
     ///
     /// # Returns
     ///
@@ -145,7 +146,7 @@ impl ConsumerClient {
 
     /// Closes the connection to the Event Hub.
     ///
-    /// This method closes the connection to the Event Hub associated with the `ConsumerClient`.
+    /// This method closes the connection to the Event Hubs instance associated with the `ConsumerClient`.
     /// It returns a `Result` indicating whether the operation was successful or not.
     ///
     /// Note that closing a consumer will cancel all outstanding receive requests.
@@ -192,7 +193,7 @@ impl ConsumerClient {
 
     /// Attaches a message receiver to a specific partition of the Event Hub.
     ///
-    /// This function establishes a connection to the specified partition of the Event Hub and returns a MessageReceiver which can be used to receive messages from it.
+    /// This function establishes a connection to the specified partition of the Event Hubs instance and returns a MessageReceiver which can be used to receive messages from it.
     ///
     /// # Arguments
     ///
@@ -321,12 +322,12 @@ impl ConsumerClient {
     ///
     ///     match eventhub_properties {
     ///         Ok(properties) => {
-    ///             // Process the Event Hub properties
+    ///             // Process the Event Hub instance properties
     ///             println!("Event Hub properties: {:?}", properties);
     ///         }
     ///         Err(err) => {
     ///             // Handle the error
-    ///             eprintln!("Error retrieving Event Hub properties: {:?}", err);
+    ///             eprintln!("Error retrieving Event Hubs properties: {:?}", err);
     ///         }
     ///     }
     /// }

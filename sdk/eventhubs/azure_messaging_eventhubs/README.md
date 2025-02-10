@@ -33,7 +33,7 @@ cargo add azure_messaging_eventhubs
 -   A Rust Compiler. See [here](https://www.rust-lang.org/tools/install) for installation instructions.
 -   An [Azure subscription](https://azure.microsoft.com/free/)
 -   An [Event Hub namespace](https://learn.microsoft.com/azure/event-hubs/).
--   An Event Hub. You can create an event hub in your Event Hubs Namespace using the [Azure Portal](https://learn.microsoft.com/azure/event-hubs/event-hubs-create), or the [Azure CLI](https://learn.microsoft.com/azure/event-hubs/event-hubs-quickstart-cli).
+-   An Event Hub instance. You can create an Event Hub instance in your Event Hubs Namespace using the [Azure Portal](https://learn.microsoft.com/azure/event-hubs/event-hubs-create), or the [Azure CLI](https://learn.microsoft.com/azure/event-hubs/event-hubs-quickstart-cli).
 
 #### Create a namespace using the Azure CLI
 
@@ -132,23 +132,25 @@ That should output something like:
 
 ### Authenticate the client
 
-Event Hub clients are created using a credential from the [Azure Identity package][azure_identity_pkg], like [DefaultAzureCredential][default_azure_credential].
+Event Hubs clients are created using a credential from the [Azure Identity package][azure_identity_pkg], like [DefaultAzureCredential][default_azure_credential].
 
 # Key concepts
 
 An Event Hub [**namespace**](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#namespace) can have multiple event hubs.
-Each event hub, in turn, contains [**partitions**](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#partitions) which
-store events.
+Each Event Hub instance, in turn, contains [**partitions**](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#partitions) which store events.
 
 <!-- NOTE: Fix dead links -->
 
-Events are published to an event hub using an [event publisher](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#event-publishers). In this package, the event publisher is the [ProducerClient]()
+Events are published to an Event Hub instance using an [event publisher](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#event-publishers). In this package, the event publisher is the [ProducerClient]()
 
-Events can be consumed from an event hub using an [event consumer](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#event-consumers). In this package there are two types for consuming events:
+Events can be consumed from an Event Hub instance using an [event consumer](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#event-consumers).
 
--   The basic event consumer is the PartitionClient, in the [ConsumerClient][consumer_client]. This consumer is useful if you already known which partitions you want to receive from.
+Consuming events is done using an [`EventReceiver`], in the [ConsumerClient][consumer_client]. This consumer is useful if you already known which partitions you want to receive from.
+
+<!--
 -   A distributed event consumer, which uses Azure Blobs for checkpointing and coordination. This is implemented in the [Processor](https://azure.github.io/azure-sdk-for-cpp/storage.html).
     The Processor is useful when you want to have the partition assignment be dynamically chosen, and balanced with other Processor instances.
+    -->
 
 More information about Event Hubs features and terminology can be found here: [link](https://learn.microsoft.com/azure/event-hubs/event-hubs-features)
 

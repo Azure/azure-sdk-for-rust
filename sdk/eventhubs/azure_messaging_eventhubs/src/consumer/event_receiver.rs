@@ -14,7 +14,7 @@ use tracing::trace;
 
 /// A message receiver that can be used to receive messages from an Event Hub.
 ///
-/// This is the main type for receiving messages from an Event Hub. It can be used to receive messages from an Event Hub partition.
+/// This is the main type for receiving messages from an Event Hub. It can be used to receive messages from an Event Hubs partition.
 ///
 /// # Example
 ///

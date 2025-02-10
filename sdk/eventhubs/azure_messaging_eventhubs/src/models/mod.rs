@@ -18,15 +18,15 @@ pub type EventData = event_data::EventData;
 use azure_core_amqp::messaging::AmqpMessageId;
 use std::fmt::Debug;
 
-/// Represents the properties of an Event Hub.
+/// Represents the properties of an Event Hubs instance.
 ///
-/// This struct provides detailed information about an Event Hub, including its name, creation time, and the unique identifiers of its partitions.
+/// This struct provides detailed information about an Event Hubs instance, including its name, creation time, and the unique identifiers of its partitions.
 ///
 /// # Fields
 ///
-/// - `name`: A `String` representing the name of the Event Hub.
-/// - `created_on`: A `std::time::SystemTime` representing the UTC time when the Event Hub was created.
-/// - `partition_ids`: A `Vec<String>` containing the unique identifiers of the partitions in the Event Hub.
+/// - `name`: A `String` representing the name of the Event Hubs instance.
+/// - `created_on`: An `Option<std::time::SystemTime>` representing the UTC time when the Event Hubs instance was created.
+/// - `partition_ids`: A `Vec<String>` containing the unique identifiers of the partitions in the Event Hubs instance.
 ///
 /// # Examples
 ///
@@ -49,24 +49,24 @@ use std::fmt::Debug;
 ///
 #[derive(Debug)]
 pub struct EventHubProperties {
-    /// The name of the Event Hub.
+    /// The name of the Event Hubs instance.
     pub name: String,
 
-    /// The time when the Event Hub was created.
+    /// The time when the Event Hubs instance was created.
     pub created_on: Option<std::time::SystemTime>,
 
     /// The unique identifiers of the partitions in the Event Hub.
     pub partition_ids: Vec<String>,
 }
 
-/// Represents the properties of an Event Hub partition.
+/// Represents the properties of an Event Hubs partition.
 ///
-/// This struct provides detailed information about a specific partition within an Event Hub, including its unique identifier, the Event Hub it belongs to, sequence numbers for events, and more.
+/// This struct provides detailed information about a specific partition within an Event Hubs instance, including its unique identifier, the Event Hubs instance it belongs to, sequence numbers for events, and more.
 ///
 /// # Fields
 ///
 /// - `id`: A `String` representing the unique identifier of the partition.
-/// - `eventhub`: A `String` representing the name of the Event Hub this partition belongs to.
+/// - `eventhub`: A `String` representing the name of the Event Hubs instance this partition belongs to.
 /// - `beginning_sequence_number`: An `i64` representing the sequence number of the earliest event that can be received from this partition.
 /// - `last_enqueued_sequence_number`: An `i64` representing the sequence number of the latest event that has been enqueued in this partition.
 /// - `last_enqueued_offset`: A `String` representing the offset of the latest event that has been enqueued in this partition. This can be used to start receiving from this event onwards.

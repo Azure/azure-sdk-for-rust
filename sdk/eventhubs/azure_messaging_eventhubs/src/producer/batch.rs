@@ -26,7 +26,11 @@ struct EventDataBatchState {
 
 /// Represents a batch of event data that can be sent to an Event Hub.
 ///
-/// The `EventDataBatch` struct is used to create and manage a batch of event data that can be sent to an Event Hub using the `ProducerClient`. It provides methods to add event data to the batch, calculate the size of the batch, and check if the batch is empty. The batch can be attached to a sender and the messages can be retrieved as an `AmqpMessage` to be sent to the Event Hub.
+/// The `EventDataBatch` struct is used to create and manage a batch of event data
+/// that can be sent to an Event Hubs instance using the `ProducerClient`. It provides
+/// methods to add event data to the batch, calculate the size of the batch, and
+/// check if the batch is empty. The batch can be attached to a sender and the
+/// messages can be retrieved as an `AmqpMessage` to be sent to the Event Hubs instance.
 ///
 /// # Examples
 ///
