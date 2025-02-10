@@ -134,6 +134,22 @@
       ]
     },
     {
+      "filename": "sdk/core/azure_core_amqp/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "azure_core_amqp"
+      ]
+    },
+    {
+      "filename": "sdk/eventhubs/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "eventhubs"
+      ]
+    },
+    {
       "filename": "sdk/identity/**",
       "dictionaries": [
         "crates",
