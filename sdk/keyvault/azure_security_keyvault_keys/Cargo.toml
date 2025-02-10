@@ -14,9 +14,9 @@ keywords = ["sdk", "azure", "rest", "cloud", "keyvault", "security", "keys"]
 categories = ["api-bindings"]
 
 [dependencies]
-azure_core = { path = "../../core/azure_core" }
+azure_core = { workspace = true }
 futures = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 time = { workspace = true }
-typespec_client_core = { path = "../../typespec/typespec_client_core", default-features = false, features = ["derive"] }
+typespec_client_core = { workspace = true, features = ["derive"] }

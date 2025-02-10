@@ -26,8 +26,8 @@ serde_json.workspace = true
 time.workspace = true
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
-typespec = { path = "..", default-features = false }
-typespec_macros = { path = "../typespec_macros", optional = true }
+typespec = { workspace = true, default-features = false }
+typespec_macros = { workspace = true, optional = true }
 uuid.workspace = true
 url.workspace = true
 

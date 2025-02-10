@@ -19,7 +19,7 @@ edition = "2021"
 
 [dependencies]
 async-std.workspace = true
-azure_core = { path = "../azure_core", default-features = false }
+azure_core.workspace = true
 time.workspace = true
 tracing.workspace = true
 fe2o3-amqp = { workspace = true, optional = true }

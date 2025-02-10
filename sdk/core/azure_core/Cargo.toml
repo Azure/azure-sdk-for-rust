@@ -14,6 +14,8 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+typespec = { workspace = true, features = ["http", "json"] }
+typespec_client_core = { workspace = true, features = ["http", "json"] }
 async-lock = { workspace = true }
 async-trait.workspace = true
 bytes.workspace = true
@@ -28,8 +30,6 @@ hmac = { workspace = true, optional = true }
 sha2 = { workspace = true, optional = true }
 openssl = { workspace = true, optional = true }
 once_cell.workspace = true
-typespec = { path = "../../typespec", default-features = false, features = ["http", "json"] }
-typespec_client_core = { path = "../../typespec/typespec_client_core", default-features = false, features = ["http", "json"] }
 
 [build-dependencies]
 rustc_version.workspace = true
