@@ -3,7 +3,6 @@
 
 #![recursion_limit = "128"]
 #![warn(missing_docs)]
-// cspell: words amqp eventdata
 #![doc = include_str!("../README.md")]
 
 pub(crate) mod common;

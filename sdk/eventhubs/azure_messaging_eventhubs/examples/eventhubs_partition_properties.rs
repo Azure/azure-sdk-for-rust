@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-// cspell: words
 use azure_core::error::Result;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};

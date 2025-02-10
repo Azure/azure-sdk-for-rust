@@ -1,0 +1,6 @@
+amqp
+amqps
+eventdata
+eventhubs
+mgmt
+rustc

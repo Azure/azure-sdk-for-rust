@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words amqp amqps servicebus mgmt
-
 use crate::{
     common::{
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},

@@ -83,6 +83,11 @@
       "noSuggest": true
     },
     {
+      "name": "eventhubs",
+      "path": "../sdk/eventhubs/.dict.txt",
+      "noSuggest": true
+    },
+    {
       "name": "identity",
       "path": "../sdk/identity/.dict.txt",
       "noSuggest": true

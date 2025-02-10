@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 // Licensed under the MIT License.
 
-// cspell: words amqp
 use azure_core_amqp::error::Error;
 
 /// Represents the different kinds of errors that can occur in the Eventhubs module.

@@ -41,6 +41,7 @@ pub struct AmqpReceiverOptions {
     pub target: Option<AmqpTarget>,
     pub name: Option<String>,
     pub credit_mode: Option<ReceiverCreditMode>,
+    /// If set, then the receiver will automatically accept messages as they are received.
     pub auto_accept: bool,
     pub properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
 }
@@ -100,6 +101,13 @@ impl AmqpReceiverApis for AmqpReceiver {
         self.implementation.credit_mode()
     }
 
+    /// Receives a delivery from the AMQP receiver.
+    ///
+    /// This method returns a single `AmqpDelivery` that can be used to receive a message from the AMQP receiver.
+    ///
+    /// If the receiver options are set to `auto_accept`, the delivery will have already been accepted, and no
+    /// further actions are required to accept the message.
+    ///
     async fn receive_delivery(&self) -> Result<AmqpDelivery> {
         self.implementation.receive_delivery().await
     }

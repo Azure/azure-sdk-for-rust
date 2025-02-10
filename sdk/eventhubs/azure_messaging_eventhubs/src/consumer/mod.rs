@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words amqp mgmt amqps
-
 #![doc = include_str!("README.md")]
 use super::{
     common::{

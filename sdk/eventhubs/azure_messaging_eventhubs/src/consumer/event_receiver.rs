@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words amqp mgmt amqps
-
 use crate::models::ReceivedEventData;
 use async_std::future::timeout;
 use async_stream::try_stream;
@@ -111,7 +109,6 @@ impl EventReceiver {
                     match delivery_or_timeout {
                         Ok(delivery_or_error) => {
                             let delivery = delivery_or_error?;
-                            self.receiver.accept_delivery(&delivery).await?;
                             let message = delivery.into_message();
                             let message = ReceivedEventData::from(message);
                             trace!("Received message: {:?}", message);
@@ -126,7 +123,6 @@ impl EventReceiver {
                     }
                 } else {
                         let delivery = self.receiver.receive_delivery().await?;
-                        self.receiver.accept_delivery(&delivery).await?;
                         let message = delivery.into_message();
                         let message = ReceivedEventData::from(message);
                         trace!("Received message: {:?}", message);

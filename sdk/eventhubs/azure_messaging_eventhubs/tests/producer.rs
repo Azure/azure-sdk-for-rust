@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words eventdata amqp
-
 use azure_core_amqp::{
     messaging::{AmqpApplicationProperties, AmqpMessage, AmqpMessageBody, AmqpMessageProperties},
     value::{AmqpList, AmqpValue},
