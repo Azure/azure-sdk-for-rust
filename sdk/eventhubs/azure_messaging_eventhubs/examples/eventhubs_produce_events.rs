@@ -1,7 +1,10 @@
+use core::f32;
+
 /// This sample demonstrates how to send events to an Event Hub partition using the `ProducerClient`.
 ///
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::{ProducerClient, SendEventOptions};
+use azure_messaging_eventhubs::{models::EventData, ProducerClient, SendEventOptions};
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -27,6 +30,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Some(SendEventOptions {
                 partition_id: Some("0".to_string()),
             }),
+        )
+        .await?;
+
+    // Send an event built using the `EventData` builder which allows for more control over the event.
+    client
+        .send_event(
+            EventData::builder()
+                .with_content_type("text/plain".to_string())
+                .with_correlation_id(Uuid::new_v4())
+                .with_body("This is some text")
+                .add_property("Event Property".to_string(), "Property Value")
+                .add_property("Pi".to_string(), f32::consts::PI)
+                .add_property("Binary".to_string(), vec![0x08, 0x09, 0x0A])
+                .build(),
+            None,
         )
         .await?;
 

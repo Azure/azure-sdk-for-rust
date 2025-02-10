@@ -217,7 +217,17 @@ There are two mechanisms used to send events to an event hub. The first directly
 sends individual messages to the eventhub, the second uses a "batch" operation to
 send multiple messages in a single network request to the service.
 
-### Send events directly
+### Send events directly to the eventhub.
+
+```rust
+use azure_messaging_eventhubs::ProducerClient;
+
+async fn send_events(producer: &ProducerClient) {
+    assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None).unwrap());
+
+    let res = producer.send(vec![1,2,3,4], None).await;
+}
+```
 
 ### Send events using a batch operation
 
