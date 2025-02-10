@@ -78,6 +78,11 @@
       "noSuggest": true
     },
     {
+      "name": "azure_core_amqp",
+      "path": "../sdk/core/azure_core_amqp/.dict.txt",
+      "noSuggest": true
+    },
+    {
       "name": "cosmos",
       "path": "../sdk/cosmos/.dict.txt",
       "noSuggest": true
