@@ -3,4 +3,3 @@ amqps
 eventdata
 eventhubs
 mgmt
-rustc
