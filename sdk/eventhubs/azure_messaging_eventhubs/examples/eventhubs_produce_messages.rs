@@ -24,9 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client
         .send_message(
             AmqpMessage::builder()
-                .with_body(AmqpMessageBody::Binary(vec!["Hello, Event Hub!"
-                    .as_bytes()
-                    .to_vec()]))
+                .with_body(AmqpMessageBody::Value("Hello, Event Hub from AMQP!".into()))
                 .build(),
             None,
         )
@@ -36,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client
         .send_message(
             AmqpMessage::builder()
-                .with_body(AmqpMessageBody::Binary(vec![vec![2, 4, 8, 16]]))
+                .with_body(AmqpMessageBody::Binary(vec![vec![2, 13, 8, 16]]))
                 .build(),
             None,
         )
