@@ -223,9 +223,7 @@ send multiple messages in a single network request to the service.
 use azure_messaging_eventhubs::ProducerClient;
 
 async fn send_events(producer: &ProducerClient) {
-    assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None).unwrap());
-
-    let res = producer.send(vec![1,2,3,4], None).await;
+    let res = producer.send_event(vec![1,2,3,4], None).await;
 }
 ```
 

@@ -9,11 +9,11 @@ use azure_core_amqp::{
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
-    consumer::{
-        ConsumerClient, ConsumerClientOptions, OpenReceiverOptions, StartLocation, StartPosition,
-    },
     models::{EventData, MessageId},
-    producer::{batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions},
+    {
+        ConsumerClient, ConsumerClientOptions, EventDataBatchOptions, OpenReceiverOptions,
+        ProducerClient, ProducerClientOptions, StartLocation, StartPosition,
+    },
 };
 use futures::pin_mut;
 use std::{env, error::Error};

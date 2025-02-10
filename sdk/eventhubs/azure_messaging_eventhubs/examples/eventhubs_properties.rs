@@ -3,7 +3,7 @@
 
 use azure_core::error::Result;
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
 
 use std::env;
 use tracing::info;

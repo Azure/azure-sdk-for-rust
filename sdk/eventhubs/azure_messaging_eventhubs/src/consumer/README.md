@@ -10,7 +10,7 @@ and manage the lifecycle of the consumer client.
 ### Creating a new `ConsumerClient` instance
 
 ```rust no_run
-use azure_messaging_eventhubs::consumer::ConsumerClient;
+use azure_messaging_eventhubs::ConsumerClient;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 
 let my_credential = DefaultAzureCredential::new().unwrap();
@@ -20,7 +20,7 @@ let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_
 ### Opening a connection to the Event Hub
 
 ```rust no_run
-use azure_messaging_eventhubs::consumer::ConsumerClient;
+use azure_messaging_eventhubs::ConsumerClient;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 
 #[tokio::main]
@@ -46,7 +46,7 @@ async fn main() {
 ### Closing the connection to the Event Hub
 
 ```rust no_run
-use azure_messaging_eventhubs::consumer::ConsumerClient;
+use azure_messaging_eventhubs::ConsumerClient;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 
 #[tokio::main]

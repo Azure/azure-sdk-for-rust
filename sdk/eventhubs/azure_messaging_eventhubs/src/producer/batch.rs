@@ -31,9 +31,8 @@ struct EventDataBatchState {
 /// # Examples
 ///
 /// ``` no_run
-/// # use azure_messaging_eventhubs::producer::ProducerClient;
-/// # use azure_messaging_eventhubs::producer::ProducerClientOptions;
-/// # use azure_messaging_eventhubs::producer::batch::EventDataBatch;
+/// # use azure_messaging_eventhubs::ProducerClient;
+/// # use azure_messaging_eventhubs::ProducerClientOptions;
 /// # use azure_identity::TokenCredentialOptions;
 ///
 /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
@@ -156,10 +155,7 @@ impl<'a> EventDataBatch<'a> {
     ///
     /// ```no_run
     ///
-    /// # use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
-    /// # use azure_messaging_eventhubs::producer::batch::EventDataBatch;
-    /// # use azure_messaging_eventhubs::producer::batch::EventDataBatchOptions;
-    /// # use azure_messaging_eventhubs::producer::batch::AddEventDataOptions;
+    /// # use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
     /// # use azure_messaging_eventhubs::models::EventData;
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
@@ -173,7 +169,7 @@ impl<'a> EventDataBatch<'a> {
     /// # Ok(())
     /// # }
     /// ```
-    /// # use azure_messaging_eventhubs::producer::batch::EventDataBatch;
+    /// # use azure_messaging_eventhubs::EventDataBatch;
     ///
     pub fn try_add_event_data(
         &mut self,
@@ -202,10 +198,7 @@ impl<'a> EventDataBatch<'a> {
     /// # Examples
     ///
     /// ```no_run
-    /// # use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
-    /// # use azure_messaging_eventhubs::producer::batch::EventDataBatch;
-    /// # use azure_messaging_eventhubs::producer::batch::EventDataBatchOptions;
-    /// # use azure_messaging_eventhubs::producer::batch::AddEventDataOptions;
+    /// # use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
     /// # use azure_messaging_eventhubs::models::EventData;
     /// # use azure_messaging_eventhubs::models::AmqpMessage;
     ///
@@ -338,7 +331,7 @@ impl<'a> EventDataBatch<'a> {
 /// # Examples
 ///
 /// ```
-/// use azure_messaging_eventhubs::producer::batch::EventDataBatchOptions;
+/// use azure_messaging_eventhubs::EventDataBatchOptions;
 ///
 /// let options = EventDataBatchOptions{
 ///    max_size_in_bytes: Some(1024),

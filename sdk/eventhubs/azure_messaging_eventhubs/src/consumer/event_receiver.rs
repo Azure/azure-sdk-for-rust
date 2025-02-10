@@ -19,7 +19,7 @@ use tracing::trace;
 /// # Example
 ///
 /// ```no_run
-/// use azure_messaging_eventhubs::consumer::ConsumerClient;
+/// use azure_messaging_eventhubs::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 /// use async_std::stream::StreamExt;
 /// use futures::pin_mut;

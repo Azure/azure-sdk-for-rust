@@ -7,9 +7,7 @@ use azure_core_amqp::{
 };
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::producer::{
-    batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions,
-};
+use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient, ProducerClientOptions};
 use std::{env, error::Error};
 use tracing::{info, trace};
 
@@ -355,6 +353,7 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
 #[recorded::test(live)]
 async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Error>> {
     use azure_messaging_eventhubs::models::AmqpValue;
+
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;

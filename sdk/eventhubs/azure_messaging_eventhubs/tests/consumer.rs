@@ -4,7 +4,7 @@
 use async_std::future::timeout;
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::consumer::{
+use azure_messaging_eventhubs::{
     ConsumerClient, ConsumerClientOptions, OpenReceiverOptions, StartPosition,
 };
 use futures::{pin_mut, StreamExt};
@@ -183,7 +183,7 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
             "0".to_string(),
             Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
-                    location: azure_messaging_eventhubs::consumer::StartLocation::Earliest,
+                    location: azure_messaging_eventhubs::StartLocation::Earliest,
                     ..Default::default()
                 }),
                 // Timeout for individual receive operations.

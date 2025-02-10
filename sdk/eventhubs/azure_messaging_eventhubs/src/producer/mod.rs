@@ -68,7 +68,7 @@ pub struct SubmitBatchOptions {}
 /// # Examples
 ///
 /// ```no_run
-/// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+/// use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 /// use std::error::Error;
 ///
@@ -249,7 +249,7 @@ impl ProducerClient {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
@@ -293,7 +293,7 @@ impl ProducerClient {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
@@ -344,7 +344,7 @@ impl ProducerClient {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
@@ -381,7 +381,7 @@ impl ProducerClient {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///

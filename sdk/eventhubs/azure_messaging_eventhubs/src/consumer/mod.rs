@@ -73,7 +73,7 @@ impl ConsumerClient {
     /// ```no_run
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     ///     let my_credential = DefaultAzureCredential::new()?;
@@ -116,7 +116,7 @@ impl ConsumerClient {
     /// # Example
     ///
     /// ```
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
@@ -157,7 +157,7 @@ impl ConsumerClient {
     /// # Example
     ///
     /// ``` no_run
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
@@ -210,7 +210,7 @@ impl ConsumerClient {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use async_std::stream::StreamExt;
     /// use futures::pin_mut;
@@ -309,7 +309,7 @@ impl ConsumerClient {
     /// # Example
     ///
     /// ``` no_run
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
@@ -359,7 +359,7 @@ impl ConsumerClient {
     /// # Example
     ///
     /// ``` no_run
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
@@ -605,7 +605,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// Basic usage:
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
+/// use azure_messaging_eventhubs::{StartPosition, StartLocation};
 ///
 /// let start_position = StartPosition{
 ///   location: StartLocation::SequenceNumber(12345),
@@ -613,7 +613,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// ```
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
+/// use azure_messaging_eventhubs::{StartPosition, StartLocation};
 ///
 /// let start_position = StartPosition{
 ///  location: StartLocation::EnqueuedTime(std::time::SystemTime::now()),
@@ -622,7 +622,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// ```
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
+/// use azure_messaging_eventhubs::{StartPosition, StartLocation};
 ///
 /// let start_position = StartPosition{
 ///   location: StartLocation::Offset("12345".to_string()),
@@ -631,7 +631,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// ```
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
+/// use azure_messaging_eventhubs::{StartPosition, StartLocation};
 ///
 /// let start_position = StartPosition{
 ///   location: StartLocation::Earliest,
@@ -640,7 +640,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// ```
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
+/// use azure_messaging_eventhubs::{StartPosition, StartLocation};
 ///
 /// let start_position = StartPosition{
 ///   location: StartLocation::Latest,
@@ -649,7 +649,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// ```
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::StartPosition;
+/// use azure_messaging_eventhubs::StartPosition;
 ///
 /// let start_position = StartPosition::default();
 /// ```
