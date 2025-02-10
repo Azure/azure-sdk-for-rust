@@ -7,16 +7,16 @@
 
 pub(crate) mod common;
 
-/// Types related to consuming events from an Event Hub.
+/// Types related to consuming events from an Event Hubs instance.
 pub mod consumer;
 
 /// Types related to errors processing events.
 pub mod error;
 
-/// Types to create and send events to an Event Hub.
+/// Types to create and send events to an Event Hubs instance.
 pub mod producer;
 
-/// Types sent to and received from the EventHubs service.
+/// Types sent to and received from the Event Hubs service.
 pub mod models;
 
 pub use producer::batch::*;

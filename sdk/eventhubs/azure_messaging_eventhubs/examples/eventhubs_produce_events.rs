@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Note that this uses an implicit builder to create the EventData being sent to the service.
     client.send_event("Hello, Event Hub!", None).await?;
 
-    // Send an array of bytes to partition 0 of the eventhubs instance.
+    // Send an array of bytes to partition 0 of the Event Hubs instance.
     // Note that this uses an implicit builder to create the EventData being sent to the service.
     client
         .send_event(

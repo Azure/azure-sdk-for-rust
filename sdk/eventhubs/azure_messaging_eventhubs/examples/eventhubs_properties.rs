@@ -10,9 +10,8 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .finish();
+    // Initialize tracing subscriber from environment.
+    tracing_subscriber::fmt().init();
 
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();

@@ -102,9 +102,9 @@ impl AmqpReceiverApis for AmqpReceiver {
 
     /// Receives a delivery from the AMQP receiver.
     ///
-    /// This method returns a single `AmqpDelivery` that can be used to receive a message from the AMQP receiver.
+    /// This method returns a single [`AmqpDelivery`] that can be used to receive a message from the AMQP receiver.
     ///
-    /// If the receiver options are set to `auto_accept`, the delivery will have already been accepted, and no
+    /// If the receiver options are set to [`AmqpReceiverOptions::auto_accept`], the delivery will have already been accepted, and no
     /// further actions are required to accept the message.
     ///
     async fn receive_delivery(&self) -> Result<AmqpDelivery> {

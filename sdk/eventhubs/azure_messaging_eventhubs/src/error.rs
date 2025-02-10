@@ -41,17 +41,17 @@ pub enum ErrorKind {
     UnableToAddAuthenticationToken,
 
     /// Represents the source of the AMQP error.
-    /// This is used to wrap an AMQP error in an Eventhubs error.
+    /// This is used to wrap an AMQP error in an Even Hubs error.
     ///
     AmqpError(Error),
 }
 
-/// Represents an error that can occur in the Eventhubs module.
-pub struct EventhubsError {
+/// Represents an error that can occur in the Event Hubs module.
+pub struct EventHubsError {
     kind: ErrorKind,
 }
 
-impl std::error::Error for EventhubsError {
+impl std::error::Error for EventHubsError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.kind {
             ErrorKind::AmqpError(source) => Some(source),
@@ -60,7 +60,7 @@ impl std::error::Error for EventhubsError {
     }
 }
 
-impl std::fmt::Display for EventhubsError {
+impl std::fmt::Display for EventHubsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
             ErrorKind::MissingMessageSender => f.write_str("Missing message sender."),
@@ -84,14 +84,14 @@ impl std::fmt::Display for EventhubsError {
     }
 }
 
-impl std::fmt::Debug for EventhubsError {
+impl std::fmt::Debug for EventHubsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "EventhubsError: {}", self)
+        write!(f, "Event Hubs Error: {}", self)
     }
 }
 
-impl From<EventhubsError> for azure_core::Error {
-    fn from(e: EventhubsError) -> Self {
+impl From<EventHubsError> for azure_core::Error {
+    fn from(e: EventHubsError) -> Self {
         Self::new(azure_core::error::ErrorKind::Other, Box::new(e))
     }
 }
@@ -100,7 +100,7 @@ impl From<ErrorKind> for azure_core::Error {
     fn from(e: ErrorKind) -> Self {
         Self::new(
             azure_core::error::ErrorKind::Other,
-            Box::new(EventhubsError { kind: e }),
+            Box::new(EventHubsError { kind: e }),
         )
     }
 }

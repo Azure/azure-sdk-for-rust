@@ -157,9 +157,9 @@ More information about Event Hubs features and terminology can be found here: [l
 Examples for various scenarios can be found on in the samples directory in our GitHub repo for
 [Event Hubs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure-messaging-eventhubs/samples).
 
-## Open an eventhubs message producer on an eventhubs instance.
+## Open an Event Hubs message producer on an Event Hubs instance.
 
-```rust
+```rust no_run
 use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
 
 async fn open_producer_client() -> Result<ProducerClient, Box<dyn std::error::Error>>
@@ -184,9 +184,9 @@ async fn open_producer_client() -> Result<ProducerClient, Box<dyn std::error::Er
     }
 ```
 
-## Open an eventhubs message consumer on an eventhubs instance.
+## Open an Event Hubs message consumer on an Event Hubs instance.
 
-```rust
+```rust no_run
 use azure_messaging_eventhubs::{ConsumerClient, ConsumerClientOptions};
 
 async fn open_consumer_client() -> Result<ConsumerClient, Box<dyn std::error::Error>>
@@ -213,13 +213,13 @@ async fn open_consumer_client() -> Result<ConsumerClient, Box<dyn std::error::Er
 
 ## Send events
 
-There are two mechanisms used to send events to an event hub. The first directly
-sends individual messages to the eventhub, the second uses a "batch" operation to
+There are two mechanisms used to send events to an Event Hub instance. The first directly
+sends individual messages to the Event Hub, the second uses a "batch" operation to
 send multiple messages in a single network request to the service.
 
-### Send events directly to the eventhub.
+### Send events directly to the Event Hub.
 
-```rust
+```rust no_run
 use azure_messaging_eventhubs::ProducerClient;
 
 async fn send_events(producer: &ProducerClient) {
@@ -229,7 +229,7 @@ async fn send_events(producer: &ProducerClient) {
 
 ### Send events using a batch operation
 
-```rust
+```rust no_run
 use azure_messaging_eventhubs::ProducerClient;
 
 async fn send_events(producer: &ProducerClient) {
@@ -244,12 +244,12 @@ async fn send_events(producer: &ProducerClient) {
 
 ## Receive events
 
-The following example shows how to receive events from partition 0 on an event hub.
+The following example shows how to receive events from partition 0 on an Event Hubs instance.
 
 It assumes that the caller has provided a consumer client which will be used to receive
 events.
 
-Each message receiver can only receive messages from a single eventhubs partition
+Each message receiver can only receive messages from a single Event Hubs partition
 
 ```rust no_run
 

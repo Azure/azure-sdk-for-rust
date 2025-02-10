@@ -1,8 +1,10 @@
 use crate::models::{AmqpMessage, AmqpValue, MessageId};
 use azure_core_amqp::messaging::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
-use std::collections::HashMap;
-use std::fmt::{Debug, Display, Formatter};
-use std::sync::OnceLock;
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Formatter},
+    sync::OnceLock,
+};
 
 /// The EventData struct represents the data associated with an event in an Event Hub.
 ///
@@ -26,7 +28,7 @@ use std::sync::OnceLock;
 /// println!("{:?}", event_data);
 /// ```
 ///
-#[derive(Default, PartialEq, Clone)]
+#[derive(Default, PartialEq, Clone, Debug)]
 pub struct EventData {
     body: Option<Vec<u8>>,
     content_type: Option<String>,
@@ -100,30 +102,6 @@ impl EventData {
     }
 }
 
-impl Debug for EventData {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("EventData")
-            .field("body", &self.body)
-            .field("content_type", &self.content_type)
-            .field("correlation_id", &self.correlation_id)
-            .field("message_id", &self.message_id)
-            .field("properties", &self.properties)
-            .finish()
-    }
-}
-
-impl Display for EventData {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "EventData: [")?;
-        write!(f, "  body: {:?}, ", self.body)?;
-        write!(f, "  content_type: {:?}, ", self.content_type)?;
-        write!(f, "  correlation_id: {:?}, ", self.correlation_id)?;
-        write!(f, "  message_id: {:?}, ", self.message_id)?;
-        write!(f, "  properties: {:?}", self.properties)?;
-        write!(f, "]")
-    }
-}
-
 impl<T> From<T> for EventData
 where
     T: Into<Vec<u8>>,
@@ -182,15 +160,11 @@ pub struct ReceivedEventData {
     system_properties: OnceLock<HashMap<String, AmqpValue>>,
 }
 
+/// Display the [`ReceivedEventData`]. Since all the fields in `ReceivedEventData` are lazy loaded, we only display the raw AMQP message.
 impl Debug for ReceivedEventData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ReceivedEventData")
-            .field("event_data", self.event_data())
-            .field("enqueued_time", &self.enqueued_time())
-            .field("offset", &self.offset())
-            .field("sequence_number", &self.sequence_number())
-            .field("partition_key", &self.partition_key())
-            .field("system_properties", &self.system_properties())
+            .field("message", self.raw_amqp_message())
             .finish()
     }
 }
@@ -217,17 +191,18 @@ impl ReceivedEventData {
     /// The time when the event was sent to the the Event Hub.
     pub fn enqueued_time(&self) -> Option<std::time::SystemTime> {
         *self.enqueued_time.get_or_init(|| {
-            if let Some(annotations) = self.message.message_annotations() {
-                for (key, value) in annotations.0.iter() {
-                    if let AmqpAnnotationKey::Symbol(symbol) = key {
-                        if symbol == ENQUEUED_TIME_UTC {
-                            if let AmqpValue::TimeStamp(timestamp) = value {
-                                return timestamp.0;
-                            }
+            let annotations = self.message.message_annotations()?;
+
+            for (key, value) in annotations.0.iter() {
+                if let AmqpAnnotationKey::Symbol(symbol) = key {
+                    if symbol == ENQUEUED_TIME_UTC {
+                        if let AmqpValue::TimeStamp(timestamp) = value {
+                            return timestamp.0;
                         }
                     }
                 }
             }
+
             None
         })
     }
@@ -235,13 +210,12 @@ impl ReceivedEventData {
     /// The offset of the event in the Event Hub partition.
     pub fn offset(&self) -> &Option<String> {
         self.offset.get_or_init(|| {
-            if let Some(annotations) = self.message.message_annotations() {
-                for (key, value) in annotations.0.iter() {
-                    if let AmqpAnnotationKey::Symbol(symbol) = key {
-                        if symbol == OFFSET {
-                            if let AmqpValue::String(offset_value) = value {
-                                return Some(offset_value);
-                            }
+            let annotations = self.message.message_annotations()?;
+            for (key, value) in annotations.0.iter() {
+                if let AmqpAnnotationKey::Symbol(symbol) = key {
+                    if symbol == OFFSET {
+                        if let AmqpValue::String(offset_value) = value {
+                            return Some(offset_value);
                         }
                     }
                 }
@@ -253,13 +227,12 @@ impl ReceivedEventData {
     /// The sequence number of the event in the Event Hub partition.
     pub fn sequence_number(&self) -> Option<i64> {
         *self.sequence_number.get_or_init(|| {
-            if let Some(annotations) = self.message.message_annotations() {
-                for (key, value) in annotations.0.iter() {
-                    if let AmqpAnnotationKey::Symbol(symbol) = key {
-                        if symbol == SEQUENCE_NUMBER {
-                            if let AmqpValue::Long(sequence_number_value) = value {
-                                return Some(sequence_number_value);
-                            }
+            let annotations = self.message.message_annotations()?;
+            for (key, value) in annotations.0.iter() {
+                if let AmqpAnnotationKey::Symbol(symbol) = key {
+                    if symbol == SEQUENCE_NUMBER {
+                        if let AmqpValue::Long(sequence_number_value) = value {
+                            return Some(sequence_number_value);
                         }
                     }
                 }
@@ -273,13 +246,12 @@ impl ReceivedEventData {
     /// If no partition key is set, then the method will return `None`.
     pub fn partition_key(&self) -> &Option<String> {
         self.partition_key.get_or_init(|| {
-            if let Some(annotations) = self.message.message_annotations() {
-                for (key, value) in annotations.0.iter() {
-                    if let AmqpAnnotationKey::Symbol(symbol) = key {
-                        if symbol == PARTITION_KEY {
-                            if let AmqpValue::String(partition_key_value) = value {
-                                return Some(partition_key_value);
-                            }
+            let annotations = self.message.message_annotations()?;
+            for (key, value) in annotations.0.iter() {
+                if let AmqpAnnotationKey::Symbol(symbol) = key {
+                    if symbol == PARTITION_KEY {
+                        if let AmqpValue::String(partition_key_value) = value {
+                            return Some(partition_key_value);
                         }
                     }
                 }
@@ -328,7 +300,7 @@ impl From<AmqpMessage> for ReceivedEventData {
     }
 }
 
-/// Contains builders for types in the EventHubs Model module.
+/// Contains builders for types in the Event Hubs Model module.
 pub mod builders {
     use super::*;
 

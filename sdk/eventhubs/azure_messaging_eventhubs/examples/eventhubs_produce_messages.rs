@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
 
-    // Send an array of bytes to partition 0 of the eventhubs instance.
+    // Send an AMQP message whose body is an array of bytes to a random partition of the Event Hubs instance.
     client
         .send_message(
             AmqpMessage::builder().with_body(vec![2, 13, 8, 16]).build(),
@@ -38,6 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
 
+    // Send an AMQP message whose body is an AMQP Value to a random partition.
     client
         .send_message(
             AmqpMessage::builder()
