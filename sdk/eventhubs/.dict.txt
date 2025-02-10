@@ -1,5 +1,4 @@
-amqp
 amqps
+consts
 eventdata
-eventhubs
 mgmt
