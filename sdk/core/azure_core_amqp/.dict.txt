@@ -1,4 +1,5 @@
+mgmt
+sasl
 sastoken
-serial_testmgmt
 smallulong
 smalluint
