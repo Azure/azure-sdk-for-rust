@@ -1,7 +1,8 @@
 /// This sample demonstrates how to send events to all partitions using a batch sender.
 ///
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient};
+use azure_messaging_eventhubs::{models::EventData, EventDataBatchOptions, ProducerClient};
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -37,6 +38,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if batch.try_add_event_data(vec![2, 4, 8, 16, 32], None)? {
             println!("Array Message sent to partition: {}", partition_id);
         }
+
+        // Send an event built using the `EventData` builder which allows for more control over the event.
+        if batch.try_add_event_data(
+            EventData::builder()
+                .with_content_type("text/plain".to_string())
+                .with_correlation_id(Uuid::new_v4())
+                .with_body("This is some text")
+                .add_property("Event Property".to_string(), "Property Value")
+                .add_property("Pi".to_string(), std::f32::consts::PI)
+                .add_property("Binary".to_string(), vec![0x08, 0x09, 0x0A])
+                .build(),
+            None,
+        )? {
+            println!("EventData message sent to partition: {}", partition_id);
+        }
+
         client.submit_batch(&batch, None).await?;
     }
 

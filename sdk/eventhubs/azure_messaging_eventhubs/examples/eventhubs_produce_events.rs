@@ -20,10 +20,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Open the client
     client.open().await?;
 
-    // Send a message to an eventhub instance directly. The message will be sent to a random partition.
+    // Send an event to an eventhub instance directly. The message will be sent to a random partition.
+    // Note that this uses an implicit builder to create the EventData being sent to the service.
     client.send_event("Hello, Event Hub!", None).await?;
 
     // Send an array of bytes to partition 0 of the eventhubs instance.
+    // Note that this uses an implicit builder to create the EventData being sent to the service.
     client
         .send_event(
             vec![2, 4, 8, 16],
@@ -34,6 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Send an event built using the `EventData` builder which allows for more control over the event.
+    // This message will be sent to a random partition.
     client
         .send_event(
             EventData::builder()
