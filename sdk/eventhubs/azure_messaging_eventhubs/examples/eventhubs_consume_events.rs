@@ -1,4 +1,4 @@
-/// This sample demonstrates how to send events to an Event Hub partition using the `ProducerClient`.
+/// This sample demonstrates how to consume events from an Event Hub partition using the `ConsumerClient`.
 ///
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
