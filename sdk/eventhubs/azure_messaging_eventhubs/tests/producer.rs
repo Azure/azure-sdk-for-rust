@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 use azure_core_amqp::{
-    messaging::{AmqpApplicationProperties, AmqpMessage, AmqpMessageBody, AmqpMessageProperties},
-    value::{AmqpList, AmqpValue},
+    messaging::{AmqpApplicationProperties, AmqpMessage, AmqpMessageProperties},
+    value::AmqpList,
 };
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
@@ -222,7 +222,7 @@ async fn send_eventdata() -> Result<(), Box<dyn Error>> {
 
 #[recorded::test(live)]
 async fn send_message() -> Result<(), Box<dyn Error>> {
-    use azure_messaging_eventhubs::models::{AmqpMessage, AmqpMessageBody};
+    use azure_messaging_eventhubs::models::{AmqpMessage, AmqpValue};
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -242,7 +242,7 @@ async fn send_message() -> Result<(), Box<dyn Error>> {
     {
         let data = b"hello world";
         let em1 = AmqpMessage::builder()
-            .with_body(AmqpMessageBody::Binary(vec![data.to_vec()]))
+            .with_body(vec![data.to_vec()])
             .build();
 
         let res = client.send_message(em1, None).await;
@@ -253,7 +253,7 @@ async fn send_message() -> Result<(), Box<dyn Error>> {
         let mut application_properties = AmqpApplicationProperties::new();
         application_properties.insert("key".to_string(), AmqpValue::from("value"));
         let em1 = AmqpMessage::builder()
-            .with_body(AmqpMessageBody::Value(AmqpValue::Binary(data.to_vec())))
+            .with_body(AmqpValue::Binary(data.to_vec()))
             .with_application_properties(application_properties)
             .with_properties(AmqpMessageProperties {
                 message_id: Some(35u64.into()),
@@ -354,6 +354,7 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
 
 #[recorded::test(live)]
 async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Error>> {
+    use azure_messaging_eventhubs::models::AmqpValue;
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -377,7 +378,7 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
     // Message with AMQP Value body
     assert!(batch.try_add_amqp_message(
         AmqpMessage::builder()
-            .with_body(AmqpMessageBody::Value("This is data".into()))
+            .with_body(AmqpValue::from("This is data"))
             .build(),
         None
     )?);

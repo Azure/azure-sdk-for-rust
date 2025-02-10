@@ -6,9 +6,6 @@ mod event_data;
 /// An AMQP Message sent to the eventhubs service.
 pub type AmqpMessage = azure_core_amqp::messaging::AmqpMessage;
 
-/// The body of an AMQP Message sent to the eventhubs service.
-pub type AmqpMessageBody = azure_core_amqp::messaging::AmqpMessageBody;
-
 /// An AMQP Value.
 pub type AmqpValue = azure_core_amqp::value::AmqpValue;
 

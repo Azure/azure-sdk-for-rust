@@ -2,7 +2,7 @@
 ///
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
-    models::{AmqpMessage, AmqpMessageBody},
+    models::{AmqpMessage, AmqpValue},
     ProducerClient,
 };
 
@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client
         .send_message(
             AmqpMessage::builder()
-                .with_body(AmqpMessageBody::Value("Hello, Event Hub from AMQP!".into()))
+                .with_body(AmqpValue::from("Hello, Event Hub from AMQP!"))
                 .build(),
             None,
         )
@@ -33,8 +33,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Send an array of bytes to partition 0 of the eventhubs instance.
     client
         .send_message(
+            AmqpMessage::builder().with_body(vec![2, 13, 8, 16]).build(),
+            None,
+        )
+        .await?;
+
+    client
+        .send_message(
             AmqpMessage::builder()
-                .with_body(AmqpMessageBody::Binary(vec![vec![2, 13, 8, 16]]))
+                .with_body(AmqpValue::from("String Value"))
                 .build(),
             None,
         )
