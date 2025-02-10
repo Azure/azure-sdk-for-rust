@@ -147,8 +147,9 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
             assert!(f.is_ok());
             let received_event_data = f.unwrap();
             info!("Received: {:?}", received_event_data);
+            assert!(received_event_data.sequence_number().is_some());
             assert_eq!(
-                received_event_data.sequence_number(),
+                received_event_data.sequence_number().unwrap(),
                 start_sequence + message_index
             );
             if let Some(message_id) = received_event_data.event_data().message_id() {

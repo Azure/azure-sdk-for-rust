@@ -2,7 +2,7 @@ use crate::models::{AmqpMessage, AmqpValue, MessageId};
 use azure_core_amqp::messaging::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
 use std::collections::HashMap;
 use std::fmt::{Debug, Display, Formatter};
-use tracing::warn;
+use std::sync::OnceLock;
 
 /// The EventData struct represents the data associated with an event in an Event Hub.
 ///
@@ -64,6 +64,39 @@ impl EventData {
     /// The message identifier of the event, if one was specified.
     pub fn message_id(&self) -> Option<&MessageId> {
         self.message_id.as_ref()
+    }
+
+    /// Convert the provided AMQP message into an EventData object.
+    fn from_message(message: &AmqpMessage) -> Self {
+        // // Create an EventData from the message.
+        let mut event_data_builder = EventData::builder();
+
+        // If the AMQP message body is a single binary value, copy it to
+        // the event data body.
+        if let AmqpMessageBody::Binary(binary) = message.body() {
+            if binary.len() == 1 {
+                event_data_builder = event_data_builder.with_body(binary[0].clone());
+            }
+        }
+
+        if let Some(properties) = message.properties() {
+            if let Some(content_type) = &properties.content_type {
+                event_data_builder = event_data_builder
+                    .with_content_type(Into::<String>::into(content_type.clone()));
+            }
+            if let Some(correlation_id) = &properties.correlation_id {
+                event_data_builder = event_data_builder.with_correlation_id(correlation_id.clone());
+            }
+            if let Some(message_id) = &properties.message_id {
+                event_data_builder = event_data_builder.with_message_id(message_id.clone());
+            }
+        }
+        if let Some(application_properties) = message.application_properties() {
+            for (key, value) in application_properties.0.clone() {
+                event_data_builder = event_data_builder.add_property(key, value);
+            }
+        }
+        event_data_builder.build()
     }
 }
 
@@ -141,62 +174,24 @@ impl From<EventData> for AmqpMessage {
 /// This struct provides the event data, enqueued time, offset, sequence number, partition key, and system properties of the event.
 pub struct ReceivedEventData {
     message: AmqpMessage,
-    event_data: EventData,
-    enqueued_time: Option<std::time::SystemTime>,
-    offset: String,
-    sequence_number: i64,
-    partition_key: String,
-    system_properties: HashMap<String, AmqpValue>,
+    event_data: OnceLock<EventData>,
+    enqueued_time: OnceLock<Option<std::time::SystemTime>>,
+    offset: OnceLock<Option<String>>,
+    sequence_number: OnceLock<Option<i64>>,
+    partition_key: OnceLock<Option<String>>,
+    system_properties: OnceLock<HashMap<String, AmqpValue>>,
 }
 
 impl Debug for ReceivedEventData {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ReceivedEventData")
-            //                .field("message", &self.message)
-            .field("event_data", &self.event_data)
-            .field("enqueued_time", &self.enqueued_time)
-            .field("offset", &self.offset)
-            .field("sequence_number", &self.sequence_number)
-            .field("partition_key", &self.partition_key)
-            .field("system_properties", &self.system_properties)
+            .field("event_data", self.event_data())
+            .field("enqueued_time", &self.enqueued_time())
+            .field("offset", &self.offset())
+            .field("sequence_number", &self.sequence_number())
+            .field("partition_key", &self.partition_key())
+            .field("system_properties", &self.system_properties())
             .finish()
-    }
-}
-
-impl ReceivedEventData {
-    /// The raw AMQP message received from the Event Hubs Service.
-    pub fn raw_amqp_message(&self) -> &AmqpMessage {
-        &self.message
-    }
-
-    /// The Event Data contained within the received event.
-    pub fn event_data(&self) -> &EventData {
-        &self.event_data
-    }
-
-    /// The time when the event was sent to the the Event Hub.
-    pub fn enqueued_time(&self) -> Option<std::time::SystemTime> {
-        self.enqueued_time
-    }
-
-    /// The offset of the event in the Event Hub partition.
-    pub fn offset(&self) -> &str {
-        &self.offset
-    }
-
-    /// The sequence number of the event in the Event Hub partition.
-    pub fn sequence_number(&self) -> i64 {
-        self.sequence_number
-    }
-
-    /// The partition key of the event.
-    pub fn partition_key(&self) -> &str {
-        &self.partition_key
-    }
-
-    /// The system properties of the event.
-    pub fn system_properties(&self) -> &HashMap<String, AmqpValue> {
-        &self.system_properties
     }
 }
 
@@ -205,81 +200,130 @@ const OFFSET: &str = "x-opt-offset";
 const SEQUENCE_NUMBER: &str = "x-opt-sequence-number";
 const PARTITION_KEY: &str = "x-opt-partition-key";
 
-impl From<AmqpMessage> for ReceivedEventData {
-    fn from(message: AmqpMessage) -> Self {
-        // Create an EventData from the message.
-        let mut event_data_builder = EventData::builder();
+impl ReceivedEventData {
+    /// The raw AMQP message received from the Event Hubs Service.
+    pub fn raw_amqp_message(&self) -> &AmqpMessage {
+        &self.message
+    }
 
-        // If the AMQP message body is a single binary value, copy it to
-        // the event data body.
-        if let AmqpMessageBody::Binary(binary) = message.body() {
-            if binary.len() == 1 {
-                event_data_builder = event_data_builder.with_body(binary[0].clone());
-            }
-        }
+    /// The Event Data contained within the received event.
+    ///
+    /// Note that the conversion of AMQP message to EventData is deferred until it is needed.
+    pub fn event_data(&self) -> &EventData {
+        self.event_data
+            .get_or_init(|| EventData::from_message(&self.message))
+    }
 
-        if let Some(properties) = message.properties() {
-            if let Some(content_type) = &properties.content_type {
-                event_data_builder = event_data_builder
-                    .with_content_type(Into::<String>::into(content_type.clone()));
-            }
-            if let Some(correlation_id) = &properties.correlation_id {
-                event_data_builder = event_data_builder.with_correlation_id(correlation_id.clone());
-            }
-            if let Some(message_id) = &properties.message_id {
-                event_data_builder = event_data_builder.with_message_id(message_id.clone());
-            }
-        }
-        if let Some(application_properties) = message.application_properties() {
-            for (key, value) in application_properties.0.clone() {
-                event_data_builder = event_data_builder.add_property(key, value);
-            }
-        }
-        let event_data = event_data_builder.build();
-
-        // Extract the Eventhubs specific properties from the message.
-        let mut enqueued_time: Option<std::time::SystemTime> = Some(std::time::SystemTime::now());
-        let mut sequence_number: i64 = 0;
-        let mut partition_key: String = String::new();
-        let mut offset: String = String::new();
-        let mut system_properties: HashMap<String, AmqpValue> = HashMap::new();
-        if let Some(annotations) = message.message_annotations() {
-            for (key, value) in annotations.0.clone() {
-                if let AmqpAnnotationKey::Symbol(symbol) = key {
-                    if symbol == ENQUEUED_TIME_UTC {
-                        if let AmqpValue::TimeStamp(timestamp) = value {
-                            enqueued_time = timestamp.0;
+    /// The time when the event was sent to the the Event Hub.
+    pub fn enqueued_time(&self) -> Option<std::time::SystemTime> {
+        *self.enqueued_time.get_or_init(|| {
+            if let Some(annotations) = self.message.message_annotations() {
+                for (key, value) in annotations.0.iter() {
+                    if let AmqpAnnotationKey::Symbol(symbol) = key {
+                        if symbol == ENQUEUED_TIME_UTC {
+                            if let AmqpValue::TimeStamp(timestamp) = value {
+                                return timestamp.0;
+                            }
                         }
-                    } else if symbol == OFFSET {
-                        if let AmqpValue::String(offset_value) = value {
-                            offset = offset_value;
-                        }
-                    } else if symbol == SEQUENCE_NUMBER {
-                        if let AmqpValue::Long(sequence_number_value) = value {
-                            sequence_number = sequence_number_value;
-                        }
-                    } else if symbol == PARTITION_KEY {
-                        if let AmqpValue::String(partition_key_value) = value {
-                            partition_key = partition_key_value;
-                        }
-                    } else {
-                        if system_properties.contains_key(&symbol.0) {
-                            warn!("Duplicate system property found: {}", symbol.0);
-                        }
-                        system_properties.insert(symbol.0, value);
                     }
                 }
             }
-        }
+            None
+        })
+    }
 
+    /// The offset of the event in the Event Hub partition.
+    pub fn offset(&self) -> &Option<String> {
+        self.offset.get_or_init(|| {
+            if let Some(annotations) = self.message.message_annotations() {
+                for (key, value) in annotations.0.iter() {
+                    if let AmqpAnnotationKey::Symbol(symbol) = key {
+                        if symbol == OFFSET {
+                            if let AmqpValue::String(offset_value) = value {
+                                return Some(offset_value);
+                            }
+                        }
+                    }
+                }
+            }
+            None
+        })
+    }
+
+    /// The sequence number of the event in the Event Hub partition.
+    pub fn sequence_number(&self) -> Option<i64> {
+        *self.sequence_number.get_or_init(|| {
+            if let Some(annotations) = self.message.message_annotations() {
+                for (key, value) in annotations.0.iter() {
+                    if let AmqpAnnotationKey::Symbol(symbol) = key {
+                        if symbol == SEQUENCE_NUMBER {
+                            if let AmqpValue::Long(sequence_number_value) = value {
+                                return Some(sequence_number_value);
+                            }
+                        }
+                    }
+                }
+            }
+            None
+        })
+    }
+
+    /// The partition key of the event.
+    ///
+    /// If no partition key is set, then the method will return `None`.
+    pub fn partition_key(&self) -> &Option<String> {
+        self.partition_key.get_or_init(|| {
+            if let Some(annotations) = self.message.message_annotations() {
+                for (key, value) in annotations.0.iter() {
+                    if let AmqpAnnotationKey::Symbol(symbol) = key {
+                        if symbol == PARTITION_KEY {
+                            if let AmqpValue::String(partition_key_value) = value {
+                                return Some(partition_key_value);
+                            }
+                        }
+                    }
+                }
+            }
+            None
+        })
+    }
+
+    /// The system properties of the event.
+    /// These are properties that are set by the Event Hubs service.
+    ///
+    /// Note that if there are no system properties, this method will return an empty HashMap.
+    pub fn system_properties(&self) -> &HashMap<String, AmqpValue> {
+        self.system_properties.get_or_init(|| {
+            let mut system_properties = HashMap::new();
+            if let Some(annotations) = self.message.message_annotations() {
+                for (key, value) in annotations.0.iter() {
+                    if let AmqpAnnotationKey::Symbol(symbol) = key {
+                        if symbol != ENQUEUED_TIME_UTC
+                            && symbol != OFFSET
+                            && symbol != SEQUENCE_NUMBER
+                            && symbol != PARTITION_KEY
+                        {
+                            system_properties.insert(symbol.0.clone(), value.clone());
+                        }
+                    }
+                }
+            }
+            system_properties
+        })
+    }
+}
+
+impl From<AmqpMessage> for ReceivedEventData {
+    fn from(message: AmqpMessage) -> Self {
+        // Note that we defer calculation of all of the eventhubs specific properties until they are needed.
         Self {
-            event_data,
             message,
-            enqueued_time,
-            offset,
-            sequence_number,
-            partition_key,
-            system_properties,
+            event_data: OnceLock::new(),
+            enqueued_time: OnceLock::new(),
+            offset: OnceLock::new(),
+            sequence_number: OnceLock::new(),
+            partition_key: OnceLock::new(),
+            system_properties: OnceLock::new(),
         }
     }
 }
