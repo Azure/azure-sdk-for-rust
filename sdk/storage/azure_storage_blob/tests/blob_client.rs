@@ -3,7 +3,9 @@
 
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredentialBuilder;
-use azure_storage_blob::{BlobBlobClientGetPropertiesOptions, BlobClient, BlobClientOptions};
+use azure_storage_blob::{
+    clients::BlobClient, models::BlobBlobClientGetPropertiesOptions, BlobClientOptions,
+};
 use std::{env, error::Error};
 
 #[recorded::test(live)]

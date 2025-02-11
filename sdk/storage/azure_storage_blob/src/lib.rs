@@ -8,11 +8,14 @@ mod generated;
 
 pub mod clients {
     pub mod blob_client;
+    pub mod blob_container_client;
+    pub use blob_client::BlobClient;
+    pub use blob_container_client::BlobContainerClient;
 
     pub use crate::generated::clients::{
         BlobAppendBlobClient, BlobBlobClient, BlobBlockBlobClient,
-        BlobClient as GeneratedBlobClient, BlobClientOptions, BlobContainerClient,
-        BlobPageBlobClient, BlobServiceClient,
+        BlobClient as GeneratedBlobClient, BlobClientOptions,
+        BlobContainerClient as GeneratedContainerClient, BlobPageBlobClient, BlobServiceClient,
     };
 }
 
