@@ -46,13 +46,13 @@ tracing-subscriber.workspace = true
 typespec_macros.path = "../typespec_macros"
 
 [features]
-default = ["http", "json", "reqwest", "reqwest_gzip", "reqwest_rustls"]
+default = ["http", "json", "reqwest", "reqwest_gzip"]
 derive = ["dep:typespec_macros"]
 http = ["dep:http-types", "typespec/http"]
 json = ["typespec/json"]
-reqwest = ["dep:reqwest", "reqwest/default-tls"]
+reqwest = ["dep:reqwest"]
 reqwest_gzip = ["reqwest/gzip"]
-reqwest_rustls = ["reqwest/rustls-tls"]
+reqwest_rustls = ["reqwest/rustls-tls-native-roots"]
 tokio_fs = ["tokio/fs", "tokio/sync", "tokio/io-util"]
 tokio_sleep = ["tokio/time"]
 xml = ["dep:quick-xml"]

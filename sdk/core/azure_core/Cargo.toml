@@ -57,10 +57,11 @@ xml = ["typespec_client_core/xml"]
 features = [
   "hmac_openssl",
   "hmac_rust",
+  "reqwest",
   "reqwest_gzip",
   "reqwest_rustls",
-  "reqwest",
   "test",
   "tokio_fs",
+  "tokio_sleep",
   "xml",
 ]
