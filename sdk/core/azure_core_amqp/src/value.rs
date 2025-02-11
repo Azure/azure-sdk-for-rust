@@ -16,14 +16,11 @@ use crate::{Deserializable, Serializable};
 #[cfg(feature = "cplusplus")]
 use azure_core::Result;
 
+/// An AMQP symbol.
+///
+/// Symbols are used to identify a type of data. They are similar to strings, and represent symbolic values from a constrained domain.
 #[derive(Debug, PartialEq, Clone, Default, Eq)]
 pub struct AmqpSymbol(pub String);
-
-// impl PartialEq<str> for AmqpSymbol {
-//     fn eq(&self, other: &str) -> bool {
-//         self.0.as_str() == other
-//     }
-// }
 
 impl PartialEq<AmqpSymbol> for str {
     fn eq(&self, other: &AmqpSymbol) -> bool {
@@ -77,6 +74,7 @@ impl Borrow<str> for AmqpSymbol {
     }
 }
 
+/// A sequence of AMQP values
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct AmqpList(pub Vec<AmqpValue>);
 
@@ -132,6 +130,10 @@ impl From<std::time::SystemTime> for AmqpTimestamp {
     }
 }
 
+/// An ordered mapping from distinct keys to values.
+///
+/// This is a simple implementation of a map that is backed by a vector.
+/// It is not intended to be used for large maps, but rather for small maps where the order of the keys is important.
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct AmqpOrderedMap<K, V>
 where
@@ -212,26 +214,48 @@ impl AmqpComposite {
 pub enum AmqpValue {
     #[default]
     Null,
+    /// A boolean (true/false) value.
     Boolean(bool),
+    /// An unsigned byte value.
     UByte(u8),
+    /// An unsigned short value.
     UShort(u16),
+    /// An unsigned integer value.
     UInt(u32),
+    /// An unsigned long value.
     ULong(u64),
+    /// A signed byte value.
     Byte(i8),
+    /// A signed short value.
     Short(i16),
+    /// A signed integer value.
     Int(i32),
+    /// A signed long value.
     Long(i64),
+    /// A 32-bit floating point value.
     Float(f32),
+    /// A 64-bit floating point value.
     Double(f64),
+    /// A single Unicode character.
     Char(char),
+    /// A point in time.
     TimeStamp(AmqpTimestamp),
+    /// A universally unique identifier.
     Uuid(Uuid),
+    /// A sequence of octets.
     Binary(Vec<u8>),
+    /// A sequence of Unicode characters.
     String(String),
+    /// An AMQP Symbol.
     Symbol(AmqpSymbol),
+
+    /// An ordered list of AMQP values.
     List(AmqpList),
+    /// An ordered map of AMQP values.
     Map(AmqpOrderedMap<AmqpValue, AmqpValue>),
+    /// An array of AMQP values.
     Array(Vec<AmqpValue>),
+    /// A described value.
     Described(Box<AmqpDescribed>),
     #[cfg(feature = "cplusplus")]
     Composite(Box<AmqpComposite>),
@@ -509,7 +533,6 @@ where
 mod tests {
     use super::*;
     use std::vec;
-    use Uuid;
 
     #[test]
     fn test_value_create_specific() {

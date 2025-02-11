@@ -5,10 +5,7 @@ use crate::models::ReceivedEventData;
 use async_std::future::timeout;
 use async_stream::try_stream;
 use azure_core::error::Result;
-use azure_core_amqp::{
-    messaging::AmqpDeliveryApis,
-    receiver::{AmqpReceiver, AmqpReceiverApis},
-};
+use azure_core_amqp::{AmqpDeliveryApis, AmqpReceiver, AmqpReceiverApis};
 use futures::stream::Stream;
 use tracing::trace;
 
@@ -76,7 +73,7 @@ impl EventReceiver {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::consumer::EventReceiver;
+    /// use azure_messaging_eventhubs::EventReceiver;
     /// use async_std::stream::StreamExt;
     /// use futures::pin_mut;
     ///

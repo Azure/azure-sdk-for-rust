@@ -16,12 +16,10 @@ use azure_core::{
     RetryOptions, Uuid,
 };
 use azure_core_amqp::{
-    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis},
-    connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
-    management::{AmqpManagement, AmqpManagementApis},
-    sender::{AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSenderOptions},
-    session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
-    value::{AmqpSymbol, AmqpValue},
+    AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis, AmqpConnection, AmqpConnectionApis,
+    AmqpConnectionOptions, AmqpManagement, AmqpManagementApis, AmqpSendOptions, AmqpSender,
+    AmqpSenderApis, AmqpSenderOptions, AmqpSession, AmqpSessionApis, AmqpSessionOptions,
+    AmqpSymbol, AmqpValue,
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::sync::{Arc, OnceLock};
@@ -30,7 +28,7 @@ use tracing::{debug, trace};
 use url::Url;
 
 /// Types used to collect messages into a "batch" before submitting them to an Event Hub.
-pub mod batch;
+pub(crate) mod batch;
 
 const DEFAULT_EVENTHUBS_APPLICATION: &str = "DefaultApplicationName";
 

@@ -1,5 +1,5 @@
 use crate::models::{AmqpMessage, AmqpValue, MessageId};
-use azure_core_amqp::messaging::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
+use azure_core_amqp::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
 use std::{
     collections::HashMap,
     fmt::{Debug, Formatter},

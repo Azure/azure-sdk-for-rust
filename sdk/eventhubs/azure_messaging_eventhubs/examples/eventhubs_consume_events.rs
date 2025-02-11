@@ -56,7 +56,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Receive events until the receive_timeout has been reached.
     while let Some(event) = receive_stream.next().await {
-        println!("Received: {:?}", event?);
+        let event = event?;
+        println!("Received: {:?}", event);
+
+        println!("Partition ID: {:?}", event.partition_key());
+        println!("Event offset: {:?}", event.offset());
     }
 
     consumer.close().await?;

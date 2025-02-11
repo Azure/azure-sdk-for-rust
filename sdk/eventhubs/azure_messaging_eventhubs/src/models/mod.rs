@@ -1,21 +1,26 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+/// [`EventData`] and [`ReceivedEventData`] types.
 mod event_data;
 
 /// An AMQP Message sent to the eventhubs service.
-pub type AmqpMessage = azure_core_amqp::messaging::AmqpMessage;
+pub use azure_core_amqp::AmqpMessage;
 
 /// An AMQP Value.
-pub type AmqpValue = azure_core_amqp::value::AmqpValue;
+pub use azure_core_amqp::AmqpValue;
 
 /// An event received from an Event Hub.
-pub type ReceivedEventData = event_data::ReceivedEventData;
+pub use event_data::ReceivedEventData;
 
+/// Event data builders.
+pub mod builders {
+    pub use crate::models::event_data::builders::EventDataBuilder;
+}
 /// Event sent to an Event Hub.
-pub type EventData = event_data::EventData;
+pub use event_data::EventData;
 
-use azure_core_amqp::messaging::AmqpMessageId;
+use azure_core_amqp::AmqpMessageId;
 use std::fmt::Debug;
 
 /// Represents the properties of an Event Hubs instance.
@@ -37,7 +42,7 @@ use std::fmt::Debug;
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// # let my_credentials = DefaultAzureCredential::new()?;
-/// let consumer_client = azure_messaging_eventhubs::consumer::ConsumerClient::new("fully_qualified_domain".to_string(), "eventhub_name".to_string(), None, my_credentials.clone(), None);
+/// let consumer_client = azure_messaging_eventhubs::ConsumerClient::new("fully_qualified_domain".to_string(), "eventhub_name".to_string(), None, my_credentials.clone(), None);
 ///
 /// let eventhub_properties = consumer_client.get_eventhub_properties().await?;
 ///
@@ -82,7 +87,7 @@ pub struct EventHubProperties {
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// # let my_credentials = DefaultAzureCredential::new()?;
-/// let consumer_client = azure_messaging_eventhubs::consumer::ConsumerClient::new("fully_qualified_domain".to_string(), "eventhub_name".to_string(), None, my_credentials.clone(), None);
+/// let consumer_client = azure_messaging_eventhubs::ConsumerClient::new("fully_qualified_domain".to_string(), "eventhub_name".to_string(), None, my_credentials.clone(), None);
 ///
 /// let partition_properties = consumer_client.get_partition_properties("0".to_string()).await?;
 /// # Ok(()) }
@@ -225,7 +230,7 @@ impl From<MessageId> for AmqpMessageId {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core_amqp::messaging::AmqpMessageId;
+    use azure_core_amqp::AmqpMessageId;
 
     #[test]
     fn test_message_id_from_u64() {

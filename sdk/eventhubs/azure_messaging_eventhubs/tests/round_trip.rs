@@ -2,10 +2,7 @@
 // Licensed under the MIT license.
 
 use async_std::stream::StreamExt;
-use azure_core_amqp::{
-    messaging::{AmqpMessage, AmqpMessageProperties},
-    value::{AmqpList, AmqpValue},
-};
+use azure_core_amqp::{AmqpList, AmqpMessage, AmqpMessageProperties, AmqpValue};
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{

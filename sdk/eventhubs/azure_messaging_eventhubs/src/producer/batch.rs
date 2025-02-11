@@ -7,11 +7,7 @@ use super::ProducerClient;
 
 use crate::{error::ErrorKind, models::EventData};
 use azure_core::{error::Result, Error};
-use azure_core_amqp::{
-    messaging::{AmqpMessage, AmqpMessageBody},
-    sender::AmqpSenderApis,
-    value::AmqpSymbol,
-};
+use azure_core_amqp::{AmqpMessage, AmqpSenderApis, AmqpSymbol};
 use tracing::debug;
 use uuid::Uuid;
 
@@ -281,7 +277,7 @@ impl<'a> EventDataBatch<'a> {
         let mut serialized_messages = Vec::<Vec<u8>>::new();
         serialized_messages.append(&mut batch_state.serialized_messages);
 
-        batch_envelope.set_message_body(AmqpMessageBody::Binary(serialized_messages));
+        batch_envelope.set_message_body(serialized_messages);
 
         // Reset the batch state for the next batch
         batch_state.batch_envelope = None;

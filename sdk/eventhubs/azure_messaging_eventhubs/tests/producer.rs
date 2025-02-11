@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use azure_core_amqp::{messaging::AmqpMessageProperties, value::AmqpList};
+use azure_core_amqp::{AmqpList, AmqpMessageProperties};
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient, ProducerClientOptions};

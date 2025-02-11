@@ -2,6 +2,11 @@
 // Licensed under the MIT license.
 
 #![doc = include_str!("README.md")]
+/// Receive messages from a partition.
+pub(crate) mod event_receiver;
+
+pub use event_receiver::EventReceiver;
+
 use super::{
     common::{
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
@@ -18,15 +23,11 @@ use azure_core::{
     RetryOptions,
 };
 use azure_core_amqp::{
-    cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis},
-    connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
-    management::{AmqpManagement, AmqpManagementApis},
-    messaging::{AmqpSource, AmqpSourceFilter},
-    receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
-    session::{AmqpSession, AmqpSessionApis},
-    value::{AmqpDescribed, AmqpOrderedMap, AmqpSymbol, AmqpValue},
+    AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis, AmqpConnection, AmqpConnectionApis,
+    AmqpConnectionOptions, AmqpDescribed, AmqpManagement, AmqpManagementApis, AmqpOrderedMap,
+    AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSessionApis, AmqpSource,
+    AmqpSourceFilter, AmqpSymbol, AmqpValue, ReceiverCreditMode,
 };
-pub use event_receiver::EventReceiver;
 use std::{
     collections::HashMap,
     default::Default,
@@ -36,9 +37,6 @@ use std::{
 };
 use tracing::{debug, trace};
 use url::Url;
-
-/// Receive messages from a partition.
-mod event_receiver;
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {

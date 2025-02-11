@@ -5,19 +5,31 @@ mod fe2o3;
 #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
 mod noop;
 
-pub mod cbs;
-pub mod connection;
-pub mod error;
-pub mod management;
-pub mod messaging;
-pub mod receiver;
-pub mod sender;
-pub mod session;
-pub mod value;
+pub(crate) mod cbs;
+pub(crate) mod connection;
+pub(crate) mod error;
+pub(crate) mod management;
+pub(crate) mod messaging;
+pub(crate) mod receiver;
+pub(crate) mod sender;
+pub(crate) mod session;
+pub(crate) mod value;
 
-pub use uuid::Uuid;
-
+pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
+pub use connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions};
+pub use error::Error;
+pub use management::{AmqpManagement, AmqpManagementApis};
+pub use messaging::{
+    AmqpAnnotationKey, AmqpAnnotations, AmqpDelivery, AmqpDeliveryApis, AmqpMessage,
+    AmqpMessageBody, AmqpMessageHeader, AmqpMessageId, AmqpMessageProperties, AmqpSource,
+    AmqpSourceFilter, AmqpTarget,
+};
+pub use receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode};
+pub use sender::{AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSenderOptions};
+pub use session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions};
 use std::fmt::Debug;
+pub use uuid::Uuid;
+pub use value::{AmqpDescribed, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 
 // AMQP Settle mode:
 // https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-sender-settle-mode
