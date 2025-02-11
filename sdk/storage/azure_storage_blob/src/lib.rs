@@ -7,9 +7,12 @@
 mod generated;
 
 pub mod clients {
+    pub mod blob_client;
+
     pub use crate::generated::clients::{
-        BlobAppendBlobClient, BlobBlobClient, BlobBlockBlobClient, BlobClient, BlobClientOptions,
-        BlobContainerClient, BlobPageBlobClient, BlobServiceClient,
+        BlobAppendBlobClient, BlobBlobClient, BlobBlockBlobClient,
+        BlobClient as GeneratedBlobClient, BlobClientOptions, BlobContainerClient,
+        BlobPageBlobClient, BlobServiceClient,
     };
 }
 
@@ -52,7 +55,10 @@ pub mod models {
     pub use crate::generated::enums::*;
     pub use crate::generated::models::*;
     mod blob_properties;
+    pub use blob_properties::BlobProperties;
 }
 
 pub use crate::generated::clients::{BlobClient, BlobClientOptions};
 // END GENERATED CODE
+
+pub(crate) mod pipeline;

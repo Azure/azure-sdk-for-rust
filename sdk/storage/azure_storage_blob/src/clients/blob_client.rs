@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 
 use crate::{
-    models::BlobProperties, pipeline::StorageHeadersPolicy, BlobBlobClientGetPropertiesOptions,
-    BlobClientOptions, GeneratedBlobClient,
+    clients::GeneratedBlobClient,
+    models::{BlobBlobClientGetPropertiesOptions, BlobProperties},
+    pipeline::StorageHeadersPolicy,
+    BlobClientOptions,
 };
 use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Result, Url};
 use std::sync::Arc;
@@ -40,7 +42,8 @@ impl BlobClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client = GeneratedBlobClient::new(endpoint, credential, Some(options))?;
+        let client =
+            GeneratedBlobClient::new(endpoint, credential, container_name.clone(), Some(options))?;
         Ok(Self {
             endpoint: endpoint.parse()?,
             container_name,
@@ -53,14 +56,22 @@ impl BlobClient {
         &self.endpoint
     }
 
+    pub fn container_name(&self) -> &String {
+        &self.container_name
+    }
+
+    pub fn blob_name(&self) -> &String {
+        &self.blob_name
+    }
+
     pub async fn get_blob_properties(
         &self,
         options: Option<BlobBlobClientGetPropertiesOptions<'_>>,
     ) -> Result<BlobProperties> {
         let response = self
             .client
-            .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
-            .get_properties(options)
+            .get_blob_blob_client()
+            .get_properties(self.container_name(), self.blob_name(), options)
             .await?;
 
         let blob_properties: Option<BlobProperties> = response.headers().get_optional()?;
