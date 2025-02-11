@@ -65,7 +65,7 @@ jobs:
     sdl:
       sbom:
         enabled: true
-        additionalComponentDetectorArgs: '--DirectoryExclusionList target/vendor'
+        additionalComponentDetectorArgs: '--DirectoryExclusionList vendor'
 
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
