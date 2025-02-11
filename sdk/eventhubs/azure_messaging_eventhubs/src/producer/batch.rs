@@ -15,7 +15,7 @@ use azure_core_amqp::{
 use tracing::debug;
 use uuid::Uuid;
 
-/// Represents the options that can be set when adding event data to an `EventDataBatch`.
+/// Represents the options that can be set when adding event data to an [`EventDataBatch`].
 pub struct AddEventDataOptions {}
 
 struct EventDataBatchState {
@@ -24,13 +24,12 @@ struct EventDataBatchState {
     batch_envelope: Option<AmqpMessage>,
 }
 
-/// Represents a batch of event data that can be sent to an Event Hub.
+/// Represents a collections of event data that can be sent to an Event Hubs instance in one operation.
 ///
-/// The `EventDataBatch` struct is used to create and manage a batch of event data
-/// that can be sent to an Event Hubs instance using the `ProducerClient`. It provides
+/// The [`EventDataBatch`] struct is used to create and manage a batch of event data
+/// that can be sent to an Event Hubs instance using the [`ProducerClient`]. It provides
 /// methods to add event data to the batch, calculate the size of the batch, and
-/// check if the batch is empty. The batch can be attached to a sender and the
-/// messages can be retrieved as an `AmqpMessage` to be sent to the Event Hubs instance.
+/// check if the batch is empty.
 ///
 /// # Examples
 ///
@@ -41,7 +40,7 @@ struct EventDataBatchState {
 ///
 /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credentials = azure_identity::DefaultAzureCredential::new()?;
-/// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), credentials, None);
+/// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), credentials.clone(), None);
 ///
 /// let mut batch = producer_client.create_batch(None).await?;
 ///
@@ -164,7 +163,7 @@ impl<'a> EventDataBatch<'a> {
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential, None);
+    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone(), None);
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let event_data = EventData::builder().build();
@@ -208,7 +207,7 @@ impl<'a> EventDataBatch<'a> {
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential, None);
+    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone(), None);
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let amqp_message = AmqpMessage::builder().build();
@@ -329,7 +328,7 @@ impl<'a> EventDataBatch<'a> {
     }
 }
 
-/// Represents the options that can be set when creating an `EventDataBatch`.
+/// Represents the options that can be set when creating an [`EventDataBatch`].
 /// The options include the maximum size of the batch, the partition key, and the partition ID.
 ///
 /// # Examples

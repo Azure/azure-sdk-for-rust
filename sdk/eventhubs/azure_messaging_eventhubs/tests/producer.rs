@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use azure_core_amqp::{
-    messaging::{AmqpApplicationProperties, AmqpMessage, AmqpMessageProperties},
-    value::AmqpList,
-};
+use azure_core_amqp::{messaging::AmqpMessageProperties, value::AmqpList};
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient, ProducerClientOptions};
@@ -100,7 +97,7 @@ async fn test_get_properties() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_get_properties".to_string()),
             ..Default::default()
@@ -125,7 +122,7 @@ async fn test_get_partition_properties() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_get_partition_properties".to_string()),
             ..Default::default()
@@ -182,7 +179,7 @@ async fn send_eventdata() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("send_eventdata".to_string()),
             ..Default::default()
@@ -230,7 +227,7 @@ async fn send_message() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("send_eventdata".to_string()),
             ..Default::default()
@@ -248,11 +245,9 @@ async fn send_message() -> Result<(), Box<dyn Error>> {
     }
     {
         let data = b"hello world";
-        let mut application_properties = AmqpApplicationProperties::new();
-        application_properties.insert("key".to_string(), AmqpValue::from("value"));
         let em1 = AmqpMessage::builder()
             .with_body(AmqpValue::Binary(data.to_vec()))
-            .with_application_properties(application_properties)
+            .add_application_property("key".to_string(), AmqpValue::from("value"))
             .with_properties(AmqpMessageProperties {
                 message_id: Some(35u64.into()),
                 content_type: Some("text/plain".into()),
@@ -282,7 +277,7 @@ async fn test_create_batch() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_create_batch".to_string()),
             ..Default::default()
@@ -308,7 +303,7 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_create_and_send_batch".to_string()),
             ..Default::default()
@@ -352,7 +347,7 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
 
 #[recorded::test(live)]
 async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Error>> {
-    use azure_messaging_eventhubs::models::AmqpValue;
+    use azure_messaging_eventhubs::models::{AmqpMessage, AmqpValue};
 
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
@@ -363,7 +358,7 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_add_amqp_messages_to_batch".to_string()),
             ..Default::default()
@@ -439,7 +434,7 @@ async fn test_overload_batch() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_overload_batch".to_string()),
             ..Default::default()

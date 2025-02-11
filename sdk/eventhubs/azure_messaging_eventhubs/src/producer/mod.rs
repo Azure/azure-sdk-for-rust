@@ -59,11 +59,14 @@ struct SenderInstance {
 /// Represents the options that can be set when submitting a batch of event data.
 pub struct SubmitBatchOptions {}
 
-/// A client that can be used to send events to an Event Hub.
+/// A client that can be used to send events to an Event Hubs instance.
 ///
-/// The `ProducerClient` is used to send events to an Event Hub. It can be used to send events to a specific partition or to allow the Event Hub to automatically select the partition.
+/// The [`ProducerClient`] is used to send events to an Event Hub. It can be used to send events to a specific partition
+/// or to allow the Event Hubs instance to automatically select the partition.
 ///
-/// The `ProducerClient` can be created using the `new` method. The `new` method requires the fully qualified namespace of the Event Hub, the name of the Event Hub, a `TokenCredential` implementation, and `ProducerClientOptions`.
+/// The [`ProducerClient`] can be created with the fully qualified namespace of the Event
+/// Hubs instance, the name of the Event Hub, a [`TokenCredential`] implementation,
+/// and [`ProducerClientOptions`].
 ///
 /// # Examples
 ///
@@ -81,7 +84,7 @@ pub struct SubmitBatchOptions {}
 ///      application_id: Some("your_application_id".to_string()),
 ///      ..Default::default()
 ///   };
-///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, Some(options));
+///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials.clone(), Some(options));
 ///   producer.open().await?;
 ///   Ok(())
 /// }
@@ -113,18 +116,18 @@ pub struct SendEventOptions {
 pub struct SendMessageOptions {}
 
 impl ProducerClient {
-    /// Creates a new instance of `ProducerClient`.
+    /// Creates a new instance of [`ProducerClient`].
     ///
     /// # Arguments
     ///
     /// * `fully_qualified_namespace` - The fully qualified namespace of the Event Hubs instance.
     /// * `eventhub` - The name of the Event Hub.
     /// * `credential` - The token credential used for authorization.
-    /// * `options` - The options for configuring the `ProducerClient`.
+    /// * `options` - The options for configuring the [`ProducerClient`].
     ///
     /// # Returns
     ///
-    /// A new instance of `ProducerClient`.
+    /// A new instance of [`ProducerClient`].
     pub fn new(
         fully_qualified_namespace: String,
         eventhub: String,
@@ -262,7 +265,7 @@ impl ProducerClient {
     ///     application_id: Some("your_application_id".to_string()),
     ///     ..Default::default()
     ///   };
-    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, Some(options));
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials.clone(), Some(options));
     ///   producer.open().await?;
     ///   let mut batch = producer.create_batch(None).await?;
     ///   Ok(())
@@ -306,7 +309,7 @@ impl ProducerClient {
     ///     application_id: Some("your_application_id".to_string()),
     ///     ..Default::default()
     ///   };
-    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, Some(options));
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials.clone(), Some(options));
     ///   producer.open().await?;
     ///   let mut batch = producer.create_batch(None).await?;
     ///   batch.try_add_event_data("Hello, World!", None)?;
@@ -353,7 +356,7 @@ impl ProducerClient {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///   let my_credentials = DefaultAzureCredential::new()?;
-    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, None);
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials.clone(), None);
     ///   producer.open().await?;
     ///   let properties = producer.get_eventhub_properties().await?;
     ///   println!("Event Hub: {:?}", properties);
@@ -391,7 +394,7 @@ impl ProducerClient {
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let my_credentials = DefaultAzureCredential::new()?;
-    ///     let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, None);
+    ///     let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials.clone(), None);
     ///     producer.open().await?;
     ///     let partition_properties = producer.get_partition_properties("0".to_string()).await?;
     ///     println!("Event Hub: {:?}", partition_properties);

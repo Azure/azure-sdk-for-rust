@@ -1,4 +1,4 @@
-/// This sample demonstrates how to consume events from an Event Hub partition using the `ConsumerClient`.
+/// This sample demonstrates how to consume events from an Event Hub partition using the [`ConsumerClient`].
 ///
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
@@ -13,7 +13,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventhub_name = std::env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
 
-    let consumer = ConsumerClient::new(eventhub_namespace, eventhub_name, None, credential, None);
+    let consumer = ConsumerClient::new(
+        eventhub_namespace,
+        eventhub_name,
+        None,
+        credential.clone(),
+        None,
+    );
 
     println!("Created consumer client");
     // Open the client
@@ -50,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Receive events until the receive_timeout has been reached.
     while let Some(event) = receive_stream.next().await {
-        println!("Received: {:?}", event);
+        println!("Received: {:?}", event?);
     }
 
     consumer.close().await?;

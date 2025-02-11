@@ -26,7 +26,7 @@ use azure_core_amqp::{
     session::{AmqpSession, AmqpSessionApis},
     value::{AmqpDescribed, AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
-use event_receiver::EventReceiver;
+pub use event_receiver::EventReceiver;
 use std::{
     collections::HashMap,
     default::Default,
@@ -38,7 +38,7 @@ use tracing::{debug, trace};
 use url::Url;
 
 /// Receive messages from a partition.
-pub mod event_receiver;
+mod event_receiver;
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
@@ -52,9 +52,9 @@ pub struct ConsumerClient {
     authorization_scopes: Mutex<HashMap<String, AccessToken>>,
 }
 impl ConsumerClient {
-    /// Creates a new `ConsumerClient` instance.
+    /// Creates a new [`ConsumerClient`] instance.
     ///
-    /// This function creates a new `ConsumerClient` instance with the specified parameters.
+    /// This function creates a new [`ConsumerClient`] instance with the specified parameters.
     ///
     /// # Arguments
     ///
@@ -62,13 +62,13 @@ impl ConsumerClient {
     /// * `eventhub_name` - The name of the Event Hub.
     /// * `consumer_group` - Optional consumer group name. If not provided, the default consumer group will be used.
     /// * `credential` - The token credential used to authenticate with the Event Hubs service.
-    /// * `options` - Optional `ConsumerClientOptions` to configure the behavior of the consumer client.
+    /// * `options` - Optional [`ConsumerClientOptions`] to configure the behavior of the consumer client.
     ///
     /// # Returns
     ///
-    /// A new `ConsumerClient` instance.
+    /// A new [`ConsumerClient`] instance.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```no_run
     /// # #[tokio::main]
@@ -77,7 +77,7 @@ impl ConsumerClient {
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     ///     let my_credential = DefaultAzureCredential::new()?;
-    /// let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
+    /// let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential.clone(), None);
     /// # Ok(())}
     /// ```
     pub fn new(
@@ -107,14 +107,14 @@ impl ConsumerClient {
     /// Opens a connection to the Event Hub.
     ///
     /// This method establishes a connection to the Event Hubs instance associated
-    /// with the `ConsumerClient`. It returns a `Result` indicating whether the
+    /// with the [`ConsumerClient`]. It returns a `Result` indicating whether the
     /// operation was successful or not.
     ///
     /// # Returns
     ///
     /// A `Result` indicating whether the operation was successful or not.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```
     /// use azure_messaging_eventhubs::ConsumerClient;
@@ -146,16 +146,16 @@ impl ConsumerClient {
 
     /// Closes the connection to the Event Hub.
     ///
-    /// This method closes the connection to the Event Hubs instance associated with the `ConsumerClient`.
-    /// It returns a `Result` indicating whether the operation was successful or not.
+    /// This method closes the connection to the Event Hubs instance associated with the [`ConsumerClient`].
+    /// It returns a [`Result`] indicating whether the operation was successful or not.
     ///
     /// Note that closing a consumer will cancel all outstanding receive requests.
     ///
     /// # Returns
     ///
-    /// A `Result` indicating whether the operation was successful or not.
+    /// A [`Result`] indicating whether the operation was successful or not.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
@@ -198,7 +198,7 @@ impl ConsumerClient {
     /// # Arguments
     ///
     /// * `partition_id` - The ID of the partition to receive events from.
-    /// * `options` - Optional `ReceiveOptions` to configure the behavior of the receiver.
+    /// * `options` - Optional [`ReceiveOptions`] to configure the behavior of the receiver.
     ///
     /// # Returns
     ///
@@ -208,7 +208,7 @@ impl ConsumerClient {
     /// other words, it will receive new events only). To receive events from another location within the partition you can
     /// specify a different starting position using the `options` parameter.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
@@ -300,14 +300,14 @@ impl ConsumerClient {
 
     /// Retrieves the properties of the Event Hub.
     ///
-    /// This function retrieves the properties of the Event Hub associated with the `ConsumerClient`.
-    /// It returns a `Result` containing the `EventHubProperties` if the operation is successful.
+    /// This function retrieves the properties of the Event Hub associated with the [`ConsumerClient`].
+    /// It returns a [`Result`] containing the [`EventHubProperties`] if the operation is successful.
     ///
     /// # Returns
     ///
-    /// A `Result` containing the `EventHubProperties` if the operation is successful.
+    /// A [`Result`] containing the [`EventHubProperties`] if the operation is successful.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
@@ -347,7 +347,7 @@ impl ConsumerClient {
     /// Retrieves the properties of a specific partition in the Event Hub.
     ///
     /// This function retrieves the properties of the specified partition in the Event Hub.
-    /// It returns a `Result` containing the `EventHubPartitionProperties` if the operation is successful.
+    /// It returns a [`Result`] containing the [`EventHubPartitionProperties`] if the operation is successful.
     ///
     /// # Arguments
     ///
@@ -355,9 +355,9 @@ impl ConsumerClient {
     ///
     /// # Returns
     ///
-    /// A `Result` containing the `EventHubPartitionProperties` if the operation is successful.
+    /// A [`Result`] containing the [`EventHubPartitionProperties`] if the operation is successful.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;

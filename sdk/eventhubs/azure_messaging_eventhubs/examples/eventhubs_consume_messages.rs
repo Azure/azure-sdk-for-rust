@@ -13,7 +13,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventhub_name = std::env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
 
-    let consumer = ConsumerClient::new(eventhub_namespace, eventhub_name, None, credential, None);
+    let consumer = ConsumerClient::new(
+        eventhub_namespace,
+        eventhub_name,
+        None,
+        credential.clone(),
+        None,
+    );
 
     println!("Created consumer client");
     // Open the client

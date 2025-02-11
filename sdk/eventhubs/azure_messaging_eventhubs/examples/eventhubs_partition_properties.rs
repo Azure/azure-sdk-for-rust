@@ -20,7 +20,7 @@ async fn main() -> Result<()> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_get_properties".to_string()),
             ..Default::default()

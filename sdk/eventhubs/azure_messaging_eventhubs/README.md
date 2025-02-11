@@ -164,21 +164,18 @@ Examples for various scenarios can be found on in the samples directory in our G
 ```rust no_run
 use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
 
-async fn open_producer_client() -> Result<ProducerClient, Box<dyn std::error::Error>>
+async fn open_producer_client() -> Result<ProducerClient,azure_core::Error>
 {
-    let host = std::env::var("EVENTHUBS_HOST")?;
-    let eventhub = std::env::var("EVENTHUB_NAME")?;
+    let host = "<EVENTHUBS_HOST>";
+    let eventhub = "<EVENTHUB_NAME>";
 
     let credential = azure_identity::DefaultAzureCredential::new()?;
 
     let producer = azure_messaging_eventhubs::ProducerClient::new(
-        host,
-        eventhub.clone(),
-        credential,
-        Some(azure_messaging_eventhubs::ProducerClientOptions{
-            application_id: Some("test_create_batch".to_string()),
-            ..Default::default()
-        }),
+        host.to_string(),
+        eventhub.to_string(),
+        credential.clone(),
+        None,
         );
     producer.open().await?;
 
@@ -191,22 +188,19 @@ async fn open_producer_client() -> Result<ProducerClient, Box<dyn std::error::Er
 ```rust no_run
 use azure_messaging_eventhubs::{ConsumerClient, ConsumerClientOptions};
 
-async fn open_consumer_client() -> Result<ConsumerClient, Box<dyn std::error::Error>>
+async fn open_consumer_client() -> Result<ConsumerClient, azure_core::Error>
 {
-    let host = std::env::var("EVENTHUBS_HOST")?;
-    let eventhub = std::env::var("EVENTHUB_NAME")?;
+    let host = "<EVENTHUBS_HOST>";
+    let eventhub = "<EVENTHUB_NAME>";
 
     let credential = azure_identity::DefaultAzureCredential::new()?;
 
     let consumer = azure_messaging_eventhubs::ConsumerClient::new(
-        host,
-        eventhub.clone(),
+        host.to_string(),
+        eventhub.to_string(),
         None,
-        credential,
-        Some(azure_messaging_eventhubs::ConsumerClientOptions{
-            application_id: Some("test_create_batch".to_string()),
-            ..Default::default()
-        }),
+        credential.clone(),
+        None
         );
     consumer.open().await?;
     Ok(consumer)

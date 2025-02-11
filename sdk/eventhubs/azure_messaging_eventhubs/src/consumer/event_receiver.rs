@@ -16,7 +16,7 @@ use tracing::trace;
 ///
 /// This is the main type for receiving messages from an Event Hub. It can be used to receive messages from an Event Hubs partition.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```no_run
 /// use azure_messaging_eventhubs::ConsumerClient;
@@ -64,19 +64,19 @@ impl EventReceiver {
         Self { receiver, timeout }
     }
 
-    /// Receives messages from the Event Hub.
-    /// This method returns a stream of `ReceivedEventData` that can be used to receive messages from the Event Hub.
+    /// Receives messages from the Event Hub partition.
+    /// This method returns a stream of [`ReceivedEventData`] that can be used to receive messages from the Event Hub.
     /// The stream will continue to yield messages as long as the receiver is not closed.
     /// The stream will yield an error if there is an issue receiving messages from the Event Hub.
     ///
     /// # Returns
     ///
-    /// A stream of `ReceivedEventData` that can be used to receive messages from the Event Hub.
+    /// A stream of [`ReceivedEventData`] that can be used to receive messages from the Event Hub.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::consumer::event_receiver::EventReceiver;
+    /// use azure_messaging_eventhubs::consumer::EventReceiver;
     /// use async_std::stream::StreamExt;
     /// use futures::pin_mut;
     ///

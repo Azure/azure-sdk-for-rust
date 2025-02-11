@@ -6,12 +6,12 @@ use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Set up the Event Hub client
+    // Set up the Event Hubs client
     let eventhub_namespace = std::env::var("EVENTHUBS_HOST")?;
     let eventhub_name = std::env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::new(eventhub_namespace, eventhub_name, credential, None);
+    let client = ProducerClient::new(eventhub_namespace, eventhub_name, credential.clone(), None);
 
     // Open the client
     client.open().await?;

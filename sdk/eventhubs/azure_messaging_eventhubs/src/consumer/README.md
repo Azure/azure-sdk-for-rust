@@ -1,13 +1,13 @@
 # Consumer Module Overview
 
-This module contains the `ConsumerClient` struct and related types, which are used for receiving events from an Event Hub.
+This module contains the [`ConsumerClient`] struct and related types, which are used for receiving events from an Event Hub.
 
-The `ConsumerClient` provides functionality to establish a connection to an Event Hub, receive events from a specific partition,
+The [`ConsumerClient`] provides functionality to establish a connection to an Event Hub, receive events from a specific partition,
 and manage the lifecycle of the consumer client.
 
 ## Examples
 
-### Creating a new `ConsumerClient` instance
+### Creating a new [`ConsumerClient`] instance
 
 ```rust no_run
 use azure_messaging_eventhubs::ConsumerClient;

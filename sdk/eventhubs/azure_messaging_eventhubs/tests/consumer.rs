@@ -106,7 +106,7 @@ async fn test_get_properties() -> Result<(), Box<dyn Error>> {
         host,
         eventhub.clone(),
         None,
-        credential,
+        credential.clone(),
         Some(ConsumerClientOptions {
             application_id: Some("test_open".to_string()),
             ..Default::default()
@@ -132,7 +132,7 @@ async fn test_get_partition_properties() -> Result<(), Box<dyn Error>> {
         host,
         eventhub,
         None,
-        credential,
+        credential.clone(),
         Some(ConsumerClientOptions {
             application_id: Some("test_open".to_string()),
             ..Default::default()
@@ -168,7 +168,7 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
         host,
         eventhub,
         None,
-        credential,
+        credential.clone(),
         Some(ConsumerClientOptions {
             application_id: Some("test_open".to_string()),
             ..Default::default()
