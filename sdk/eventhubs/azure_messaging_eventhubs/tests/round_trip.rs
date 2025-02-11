@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words eventdata amqp
-
 use async_std::stream::StreamExt;
 use azure_core_amqp::{
     messaging::{AmqpMessage, AmqpMessageProperties},
@@ -11,11 +9,11 @@ use azure_core_amqp::{
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
-    consumer::{
-        ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartLocation, StartPosition,
-    },
     models::{EventData, MessageId},
-    producer::{batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions},
+    {
+        ConsumerClient, ConsumerClientOptions, EventDataBatchOptions, OpenReceiverOptions,
+        ProducerClient, ProducerClientOptions, StartLocation, StartPosition,
+    },
 };
 use futures::pin_mut;
 use std::{env, error::Error};
@@ -108,7 +106,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
         None
     )?);
 
-    assert!(producer.submit_batch(&batch).await.is_ok());
+    assert!(producer.submit_batch(&batch, None).await.is_ok());
 
     let consumer = ConsumerClient::new(
         host,
@@ -123,10 +121,10 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
 
     assert!(consumer.open().await.is_ok());
 
-    let receive_stream = consumer
-        .receive_events_on_partition(
+    let receiver = consumer
+        .open_receiver_on_partition(
             EVENTHUB_PARTITION.to_string(),
-            Some(ReceiveOptions {
+            Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::SequenceNumber(start_sequence),
                     ..Default::default()
@@ -134,7 +132,9 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
                 ..Default::default()
             }),
         )
-        .await;
+        .await?;
+
+    let receive_stream = receiver.stream_events();
 
     pin_mut!(receive_stream);
 
@@ -145,8 +145,9 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
             assert!(f.is_ok());
             let received_event_data = f.unwrap();
             info!("Received: {:?}", received_event_data);
+            assert!(received_event_data.sequence_number().is_some());
             assert_eq!(
-                received_event_data.sequence_number(),
+                received_event_data.sequence_number().unwrap(),
                 start_sequence + message_index
             );
             if let Some(message_id) = received_event_data.event_data().message_id() {

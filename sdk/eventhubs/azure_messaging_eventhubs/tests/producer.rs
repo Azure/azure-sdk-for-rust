@@ -1,17 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words eventdata amqp
-
-use azure_core_amqp::{
-    messaging::{AmqpMessage, AmqpMessageBody},
-    value::{AmqpList, AmqpValue},
-};
+use azure_core_amqp::{messaging::AmqpMessageProperties, value::AmqpList};
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::producer::{
-    batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions,
-};
+use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient, ProducerClientOptions};
 use std::{env, error::Error};
 use tracing::{info, trace};
 
@@ -104,7 +97,7 @@ async fn test_get_properties() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_get_properties".to_string()),
             ..Default::default()
@@ -129,7 +122,7 @@ async fn test_get_partition_properties() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_get_partition_properties".to_string()),
             ..Default::default()
@@ -176,6 +169,104 @@ async fn test_create_eventdata() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
+async fn send_eventdata() -> Result<(), Box<dyn Error>> {
+    common::setup();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
+
+    let credential = DefaultAzureCredential::new()?;
+
+    let client = ProducerClient::new(
+        host,
+        eventhub.clone(),
+        credential.clone(),
+        Some(ProducerClientOptions {
+            application_id: Some("send_eventdata".to_string()),
+            ..Default::default()
+        }),
+    );
+    client.open().await?;
+    {
+        let data = b"hello world";
+        let ed1 = azure_messaging_eventhubs::models::EventData::builder()
+            .with_body(data.to_vec())
+            .build();
+
+        let res = client.send_event(ed1, None).await;
+        assert!(res.is_ok());
+    }
+    {
+        let data = b"hello world";
+        let ed1 = azure_messaging_eventhubs::models::EventData::builder()
+            .with_body(data.to_vec())
+            .with_content_type("text/plain".to_string())
+            .with_correlation_id("correlation_id")
+            .with_message_id(35u64)
+            .add_property("key".to_string(), "value")
+            .build();
+
+        let res = client.send_event(ed1, None).await;
+        assert!(res.is_ok());
+    }
+
+    // Simple send.
+    assert!(client.send_event("Hello, Event Hub!", None).await.is_ok());
+
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn send_message() -> Result<(), Box<dyn Error>> {
+    use azure_messaging_eventhubs::models::{AmqpMessage, AmqpValue};
+    common::setup();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
+
+    let credential = DefaultAzureCredential::new()?;
+
+    let client = ProducerClient::new(
+        host,
+        eventhub.clone(),
+        credential.clone(),
+        Some(ProducerClientOptions {
+            application_id: Some("send_eventdata".to_string()),
+            ..Default::default()
+        }),
+    );
+    client.open().await?;
+    {
+        let data = b"hello world";
+        let em1 = AmqpMessage::builder()
+            .with_body(vec![data.to_vec()])
+            .build();
+
+        let res = client.send_message(em1, None).await;
+        assert!(res.is_ok());
+    }
+    {
+        let data = b"hello world";
+        let em1 = AmqpMessage::builder()
+            .with_body(AmqpValue::Binary(data.to_vec()))
+            .add_application_property("key".to_string(), AmqpValue::from("value"))
+            .with_properties(AmqpMessageProperties {
+                message_id: Some(35u64.into()),
+                content_type: Some("text/plain".into()),
+                correlation_id: Some("correlation_id".into()),
+                ..Default::default()
+            })
+            .build();
+
+        let res = client.send_message(em1, None).await;
+        assert!(res.is_ok());
+    }
+
+    // Simple send.
+    assert!(client.send_event("Hello, Event Hub!", None).await.is_ok());
+
+    Ok(())
+}
+
+#[recorded::test(live)]
 async fn test_create_batch() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
@@ -186,7 +277,7 @@ async fn test_create_batch() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_create_batch".to_string()),
             ..Default::default()
@@ -212,7 +303,7 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_create_and_send_batch".to_string()),
             ..Default::default()
@@ -224,7 +315,7 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
         assert_eq!(batch.len(), 0);
         assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None)?);
 
-        let res = client.submit_batch(&batch).await;
+        let res = client.submit_batch(&batch, None).await;
         assert!(res.is_ok());
     }
     {
@@ -247,7 +338,7 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
         assert!(batch.try_add_event_data("&data", None)?);
         assert!(batch.try_add_event_data("&data", None)?);
 
-        let res = client.submit_batch(&batch).await;
+        let res = client.submit_batch(&batch, None).await;
         assert!(res.is_ok());
     }
 
@@ -256,6 +347,8 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
 
 #[recorded::test(live)]
 async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Error>> {
+    use azure_messaging_eventhubs::models::{AmqpMessage, AmqpValue};
+
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -265,7 +358,7 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_add_amqp_messages_to_batch".to_string()),
             ..Default::default()
@@ -279,7 +372,7 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
     // Message with AMQP Value body
     assert!(batch.try_add_amqp_message(
         AmqpMessage::builder()
-            .with_body(AmqpMessageBody::Value("This is data".into()))
+            .with_body(AmqpValue::from("This is data"))
             .build(),
         None
     )?);
@@ -322,7 +415,7 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
         None
     )?);
 
-    client.submit_batch(&batch).await?;
+    client.submit_batch(&batch, None).await?;
 
     Ok(())
 }
@@ -341,7 +434,7 @@ async fn test_overload_batch() -> Result<(), Box<dyn Error>> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_overload_batch".to_string()),
             ..Default::default()
@@ -370,14 +463,14 @@ async fn test_overload_batch() -> Result<(), Box<dyn Error>> {
                     "Batch is full at {i} ({} bytes), sending batch",
                     batch.size()
                 );
-                let result = client.submit_batch(&batch).await;
+                let result = client.submit_batch(&batch, None).await;
                 if result.is_err() {
                     info!("Batch submit failed. {:?}", result);
                 }
                 assert!(result.is_ok());
             }
         }
-        let result = client.submit_batch(&batch).await;
+        let result = client.submit_batch(&batch, None).await;
         if result.is_err() {
             info!("Batch submit failed. {:?}", result);
         }

@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words eventdata
-
 use async_std::future::timeout;
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::consumer::{
-    ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartPosition,
+use azure_messaging_eventhubs::{
+    ConsumerClient, ConsumerClientOptions, OpenReceiverOptions, StartPosition,
 };
 use futures::{pin_mut, StreamExt};
 use std::{env, error::Error, time::Duration};
@@ -108,7 +106,7 @@ async fn test_get_properties() -> Result<(), Box<dyn Error>> {
         host,
         eventhub.clone(),
         None,
-        credential,
+        credential.clone(),
         Some(ConsumerClientOptions {
             application_id: Some("test_open".to_string()),
             ..Default::default()
@@ -134,7 +132,7 @@ async fn test_get_partition_properties() -> Result<(), Box<dyn Error>> {
         host,
         eventhub,
         None,
-        credential,
+        credential.clone(),
         Some(ConsumerClientOptions {
             application_id: Some("test_open".to_string()),
             ..Default::default()
@@ -170,7 +168,7 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
         host,
         eventhub,
         None,
-        credential,
+        credential.clone(),
         Some(ConsumerClientOptions {
             application_id: Some("test_open".to_string()),
             ..Default::default()
@@ -180,27 +178,33 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
     info!("Opening client.");
     client.open().await?;
 
-    info!("Creating event receive stream.");
-    let event_stream = client
-        .receive_events_on_partition(
+    let receiver = client
+        .open_receiver_on_partition(
             "0".to_string(),
-            Some(ReceiveOptions {
+            Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
-                    location: azure_messaging_eventhubs::consumer::StartLocation::Earliest,
+                    location: azure_messaging_eventhubs::StartLocation::Earliest,
                     ..Default::default()
                 }),
+                // Timeout for individual receive operations.
+                receive_timeout: Some(Duration::from_secs(5)),
                 ..Default::default()
             }),
         )
-        .await;
+        .await?;
+
+    info!("Creating event receive stream.");
+    let event_stream = receiver.stream_events();
 
     pin_mut!(event_stream); // Needed for iteration.
 
     let mut count = 0;
-    const TEST_DURATION: std::time::Duration = Duration::from_secs(10);
 
+    const TEST_DURATION: std::time::Duration = Duration::from_secs(10);
     info!("Receiving events for {:?}.", TEST_DURATION);
-    // Read events from the stream for 10 seconds.
+
+    // Read events from the stream for a bit of time.
+
     let result = timeout(TEST_DURATION, async {
         while let Some(event) = event_stream.next().await {
             match event {
@@ -216,8 +220,7 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
     })
     .await;
 
-    assert!(result.is_err());
-    info!("Received {count} messages.");
+    info!("Received {count} messages in {TEST_DURATION:?}. Timeout: {result:?}");
 
     Ok(())
 }

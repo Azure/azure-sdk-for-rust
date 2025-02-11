@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-// cspell: words thiserror amqp
 
 macro_rules! impl_from_external_error {
     ($(($amqp_error:ident, $foreign_error:ty)),*) => {

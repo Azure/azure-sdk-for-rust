@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-// cspell: words amqp mgmt
-
 use super::error::AmqpBegin;
 use crate::{
     connection::AmqpConnection,

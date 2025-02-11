@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-// cspell: words amqp servicebus eventhub mgmt
 
 pub mod message_fields;
 pub mod message_source;
