@@ -192,11 +192,13 @@ impl AmqpDescribed {
 /// The descriptor is used to identify the type of the value.
 /// The value is the actual value.
 #[derive(Debug, PartialEq, Clone)]
+#[cfg(feature = "cplusplus")]
 pub struct AmqpComposite {
     descriptor: AmqpDescriptor,
     value: AmqpList,
 }
 
+#[cfg(feature = "cplusplus")]
 impl AmqpComposite {
     pub fn new(descriptor: impl Into<AmqpDescriptor>, value: impl Into<AmqpList>) -> Self {
         Self {
@@ -918,6 +920,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "cplusplus")]
     fn amqp_composite() {
         let composite =
             AmqpComposite::new(0x270, AmqpList::from(vec![AmqpValue::from("String value")]));
