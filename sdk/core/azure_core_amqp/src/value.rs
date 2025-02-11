@@ -166,8 +166,8 @@ where
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AmqpDescribed {
-    pub descriptor: AmqpDescriptor,
-    pub value: AmqpValue,
+    descriptor: AmqpDescriptor,
+    value: AmqpValue,
 }
 
 impl AmqpDescribed {
@@ -187,10 +187,14 @@ impl AmqpDescribed {
     }
 }
 
+/// An AMQP Composite type.
+/// This is a complex type that is composed of a descriptor and a value.
+/// The descriptor is used to identify the type of the value.
+/// The value is the actual value.
 #[derive(Debug, PartialEq, Clone)]
 pub struct AmqpComposite {
-    pub descriptor: AmqpDescriptor,
-    pub value: AmqpList,
+    descriptor: AmqpDescriptor,
+    value: AmqpList,
 }
 
 impl AmqpComposite {
