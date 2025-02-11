@@ -61,6 +61,12 @@ jobs:
     image: $(LINUXVMIMAGE)
     os: linux
 
+  templateContext:
+    sdl:
+      sbom:
+        enabled: true
+        additionalComponentDetectorArgs: '--DirectoryExclusionList target/vendor'
+
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:

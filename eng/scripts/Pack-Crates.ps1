@@ -288,6 +288,8 @@ try {
       Get-ApiMetadata $package | ConvertTo-Json -Depth 100 | Out-File -FilePath "$packageOutputPath/cargo-metadata.json" -Encoding utf8
     }
   }
+
+  Remove-Item $localRegistryPath -Force -Recurse | Out-Null
 }
 finally {
   Pop-Location
