@@ -14,7 +14,7 @@ pub mod models {
     pub use crate::generated::clients::method_options::{
         KeyClientBackupKeyOptions, KeyClientCreateKeyOptions, KeyClientDecryptOptions,
         KeyClientDeleteKeyOptions, KeyClientEncryptOptions, KeyClientGetDeletedKeyOptions,
-        KeyClientGetDeletedKeysOptions, KeyClientGetKeyOptions,
+        KeyClientGetDeletedKeysOptions, KeyClientGetKeyAttestationOptions, KeyClientGetKeyOptions,
         KeyClientGetKeyRotationPolicyOptions, KeyClientGetKeyVersionsOptions,
         KeyClientGetKeysOptions, KeyClientGetRandomBytesOptions, KeyClientImportKeyOptions,
         KeyClientPurgeDeletedKeyOptions, KeyClientRecoverDeletedKeyOptions,

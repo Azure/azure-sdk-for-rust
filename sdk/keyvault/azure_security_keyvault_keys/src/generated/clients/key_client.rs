@@ -367,6 +367,37 @@ impl KeyClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
+    /// Gets the public part of a stored key along with its attestation blob.
+    ///
+    /// The get key attestation operation returns the key along with its attestation blob. This operation requires the keys/get
+    /// permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key to retrieve attestation for.
+    /// * `key_version` - Adding the version parameter retrieves attestation blob for specific version of a key. This URI fragment
+    ///   is optional. If not specified, the latest version of the key attestation blob is returned.
+    /// * `options` - Optional parameters for the request.
+    pub async fn get_key_attestation(
+        &self,
+        key_name: &str,
+        key_version: &str,
+        options: Option<KeyClientGetKeyAttestationOptions<'_>>,
+    ) -> Result<Response<KeyBundle>> {
+        let options = options.unwrap_or_default();
+        let ctx = Context::with_context(&options.method_options.context);
+        let mut url = self.endpoint.clone();
+        let mut path = String::from("keys/{key-name}/{key-version}/attestation");
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
+        url = url.join(&path)?;
+        url.query_pairs_mut()
+            .append_pair("api-version", &self.api_version);
+        let mut request = Request::new(url, Method::Get);
+        request.insert_header("accept", "application/json");
+        self.pipeline.send(&ctx, &mut request).await
+    }
+
     /// Lists the policy for a key.
     ///
     /// The GetKeyRotationPolicy operation returns the specified key policy resources in the specified key vault. This operation
@@ -939,7 +970,7 @@ impl KeyClient {
 impl Default for KeyClientOptions {
     fn default() -> Self {
         Self {
-            api_version: String::from("7.6-preview.1"),
+            api_version: String::from("7.6-preview.2"),
             client_options: ClientOptions::default(),
         }
     }

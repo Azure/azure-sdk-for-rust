@@ -524,7 +524,7 @@ impl SecretClient {
 impl Default for SecretClientOptions {
     fn default() -> Self {
         Self {
-            api_version: String::from("7.6-preview.1"),
+            api_version: String::from("7.6-preview.2"),
             client_options: ClientOptions::default(),
         }
     }

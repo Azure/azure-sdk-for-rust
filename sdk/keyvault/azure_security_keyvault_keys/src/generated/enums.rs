@@ -143,6 +143,12 @@ create_extensible_enum!(
     (ES384, "ES384"),
     #[doc = r#"/// ECDSA using P-521 and SHA-512, as described in <https://tools.ietf.org/html/rfc7518>"#]
     (ES512, "ES512"),
+    #[doc = r#"/// HMAC using SHA-256, as described in <https://tools.ietf.org/html/rfc7518>"#]
+    (HS256, "HS256"),
+    #[doc = r#"/// HMAC using SHA-384, as described in <https://tools.ietf.org/html/rfc7518>"#]
+    (HS384, "HS384"),
+    #[doc = r#"/// HMAC using SHA-512, as described in <https://tools.ietf.org/html/rfc7518>"#]
+    (HS512, "HS512"),
     #[doc = r#"/// RSASSA-PSS using SHA-256 and MGF1 with SHA-256, as described in <https://tools.ietf.org/html/rfc7518>"#]
     (PS256, "PS256"),
     #[doc = r#"/// RSASSA-PSS using SHA-384 and MGF1 with SHA-384, as described in <https://tools.ietf.org/html/rfc7518>"#]

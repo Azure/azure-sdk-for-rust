@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Initial publish to [crates.io](https://crates.io/crates/azure_security_keyvault_keys) built on Azure Key Vault service version 7.6-preview.1.
+- Initial publish to [crates.io](https://crates.io/crates/azure_security_keyvault_keys) built on Azure Key Vault service version 7.6-preview.2.
 
 ### Breaking Changes
 

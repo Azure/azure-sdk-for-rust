@@ -13,5 +13,7 @@ rsaaeskeywrap
 rsahsm
 rsaoaep
 rsnull
+secg
+secp
 unwrapkey
 wrapkey

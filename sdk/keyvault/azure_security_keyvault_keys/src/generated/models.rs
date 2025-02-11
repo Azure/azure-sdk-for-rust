@@ -267,9 +267,51 @@ pub struct JsonWebKey {
     pub y: Option<Vec<u8>>,
 }
 
+/// The key attestation information.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+pub struct KeyAttestation {
+    /// A base64url-encoded string containing certificates in PEM format, used for attestation validation.
+    #[serde(
+        default,
+        deserialize_with = "base64::deserialize_url_safe",
+        rename = "certificatePemFile",
+        serialize_with = "base64::serialize_url_safe",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub certificate_pem_file: Option<Vec<u8>>,
+
+    /// The attestation blob bytes encoded as base64url string corresponding to a private key.
+    #[serde(
+        default,
+        deserialize_with = "base64::deserialize_url_safe",
+        rename = "privateKeyAttestation",
+        serialize_with = "base64::serialize_url_safe",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub private_key_attestation: Option<Vec<u8>>,
+
+    /// The attestation blob bytes encoded as base64url string corresponding to a public key in case of asymmetric key.
+    #[serde(
+        default,
+        deserialize_with = "base64::deserialize_url_safe",
+        rename = "publicKeyAttestation",
+        serialize_with = "base64::serialize_url_safe",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub public_key_attestation: Option<Vec<u8>>,
+
+    /// The version of the attestation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+
 /// The attributes of a key managed by the key vault service.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
 pub struct KeyAttributes {
+    /// The key or key version attestation information.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attestation: Option<KeyAttestation>,
+
     /// Creation time in UTC.
     #[serde(
         default,

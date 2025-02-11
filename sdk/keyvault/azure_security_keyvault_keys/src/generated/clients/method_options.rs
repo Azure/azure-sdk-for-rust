@@ -76,6 +76,13 @@ pub struct KeyClientGetKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::get_key_attestation()`](crate::KeyClient::get_key_attestation())
+#[derive(Clone, Default, SafeDebug)]
+pub struct KeyClientGetKeyAttestationOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
 /// Options to be passed to [`KeyClient::get_key_rotation_policy()`](crate::KeyClient::get_key_rotation_policy())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientGetKeyRotationPolicyOptions<'a> {
