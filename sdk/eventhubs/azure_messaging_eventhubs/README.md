@@ -145,7 +145,7 @@ Events are published to an Event Hub instance using an [event publisher](https:/
 
 Events can be consumed from an Event Hub instance using an [event consumer](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#event-consumers).
 
-Consuming events is done using an [`EventReceiver`], in the [ConsumerClient][consumer_client]. This consumer is useful if you already known which partitions you want to receive from.
+Consuming events is done using an [`consumer_client::EventReceiver`], in the [ConsumerClient][consumer_client]. This consumer is useful if you already known which partitions you want to receive from.
 
 <!--
 -   A distributed event consumer, which uses Azure Blobs for checkpointing and coordination. This is implemented in the [Processor](https://azure.github.io/azure-sdk-for-cpp/storage.html).

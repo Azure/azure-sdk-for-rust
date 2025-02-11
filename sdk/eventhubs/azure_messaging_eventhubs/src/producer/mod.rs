@@ -65,7 +65,7 @@ pub struct SubmitBatchOptions {}
 /// or to allow the Event Hubs instance to automatically select the partition.
 ///
 /// The [`ProducerClient`] can be created with the fully qualified namespace of the Event
-/// Hubs instance, the name of the Event Hub, a [`TokenCredential`] implementation,
+/// Hubs instance, the name of the Event Hub, a `TokenCredential` implementation,
 /// and [`ProducerClientOptions`].
 ///
 /// # Examples

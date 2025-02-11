@@ -198,7 +198,7 @@ impl ConsumerClient {
     /// # Arguments
     ///
     /// * `partition_id` - The ID of the partition to receive events from.
-    /// * `options` - Optional [`ReceiveOptions`] to configure the behavior of the receiver.
+    /// * `options` - Optional [`OpenReceiverOptions`] to configure the behavior of the receiver.
     ///
     /// # Returns
     ///
