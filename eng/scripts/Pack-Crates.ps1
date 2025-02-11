@@ -14,24 +14,8 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
 . (Join-Path $EngCommonScriptsDir 'Helpers' 'CommandInvocation-Helpers.ps1')
 
-$cargoLocalRegistryVersion = "0.2.7"
-
 if ($OutputPath) {
   $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
-}
-
-function Initialize-LocalRegistry() {
-  $localRegistryPath = "$RepoRoot/target/local-registry"
-
-  Invoke-LoggedCommand `
-    -GroupOutput `
-    -Command "cargo install cargo-local-registry@$cargoLocalRegistryVersion --locked" | Out-Host
-
-  Invoke-LoggedCommand `
-    -GroupOutput `
-    -Command "cargo local-registry --sync . '$localRegistryPath'" | Out-NUll
-
-  return $localRegistryPath
 }
 
 function Get-OutputPackageNames($workspacePackageNames) {
@@ -134,46 +118,24 @@ function Get-PackagesToBuild() {
   return $buildOrder
 }
 
-function Add-CrateToLocalRegistry($LocalRegistryPath, $Package, $CrateFilePath) {
+function Initialize-VendorDirectory() {
+  $path = "$RepoRoot/target/vendor"
+  Invoke-LoggedCommand "cargo vendor $path" | Out-Host
+  return $path
+}
+
+function Add-CrateToLocalRegistry($LocalRegistryPath, $Package) {
   $packageName = $Package.name
   $packageVersion = $Package.version
 
   # create an index entry for the package
-  $indexEntry = [ordered]@{
-    name     = $packageName
-    vers     = $packageVersion
-    deps     = @($Package.dependencies | ForEach-Object {
-        [ordered]@{
-          name             = $_.rename ? $_.rename : $_.name
-          req              = $_.req
-          features         = $_.features
-          optional         = $_.optional
-          default_features = $_.uses_default_features
-          target           = $_.target
-          kind             = $_.kind
-          package          = $_.rename ? $_.name : $null
-        }
-      })
-    cksum    = (Get-FileHash -Path $CrateFilePath -Algorithm SHA256).Hash.ToLower()
-    features = $Package.features
-    yanked   = $false
-  }
+  $packagePath = "$RepoRoot/target/package/$packageName-$packageVersion"
 
-  $indexFolder = if ($packageName.Length -lt 3) {
-    "$LocalRegistryPath/index/$($packageName.Length)"
-  }
-  elseif ($packageName.Length -eq 3) {
-    "$LocalRegistryPath/index/$($packageName.Length)/$($packageName[0])"
-  }
-  else {
-    "$LocalRegistryPath/index/$($packageName.Substring(0, 2))/$($packageName.Substring(2, 2))"
-  }
+  Write-Host "Copying package '$packageName' to '$destination'"
+  Copy-Item -Path $packagePath -Destination $LocalRegistryPath -Recurse
 
-  Write-Host "Copying package '$packageName' to local registry"
-  Copy-Item -Path $CrateFilePath -Destination $LocalRegistryPath
-
-  New-Item -ItemType Directory -Path $indexFolder -Force | Out-Null
-  $indexEntry | ConvertTo-Json -Depth 100 -Compress | Out-File -Path "$indexFolder/$packageName" -Encoding utf8 -Append
+  #write an empty checksum file
+  '{"files":{}}' | Out-File -FilePath "$LocalRegistryPath/$packageName-$packageVersion/.cargo-checksum.json" -Encoding utf8
 }
 
 # For all dependencies with paths, but no versions, add the version from the path
@@ -263,7 +225,7 @@ function New-ApiPutFile($crateMetadata, $CrateFilePath) {
 
 Push-Location $RepoRoot
 try {
-  $localRegistryPath = Initialize-LocalRegistry
+  $localRegistryPath = Initialize-VendorDirectory
 
   [array]$packages = Get-PackagesToBuild
 
@@ -283,7 +245,7 @@ try {
 
     Invoke-LoggedCommand `
       -GroupOutput `
-      -Command "cargo package --package $packageName --config `"source.crates-io.replace-with='local'`" --config `"source.local.local-registry='$localRegistryPath'`" --allow-dirty"
+      -Command "cargo package --package $packageName --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
 
     $crateFile = "$RepoRoot/target/package/$packageName-$packageVersion.crate"
 
@@ -295,8 +257,7 @@ try {
     # copy the package to the local registry
     Add-CrateToLocalRegistry `
       -LocalRegistryPath $localRegistryPath `
-      -Package $package `
-      -CrateFilePath $crateFile
+      -Package $package
 
     if ($OutputPath -and $package.OutputPackage) {
       $packageOutputPath = "$OutputPath/$packageName"
@@ -331,4 +292,3 @@ try {
 finally {
   Pop-Location
 }
-
