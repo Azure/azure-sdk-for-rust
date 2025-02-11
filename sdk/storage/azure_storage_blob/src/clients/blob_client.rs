@@ -9,9 +9,9 @@ use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Poli
 use std::sync::Arc;
 
 pub struct BlobClient {
-    pub endpoint: Url,
-    pub container_name: String,
-    pub blob_name: String,
+    endpoint: Url,
+    container_name: String,
+    blob_name: String,
     client: GeneratedBlobClient,
 }
 
@@ -49,6 +49,10 @@ impl BlobClient {
         })
     }
 
+    pub fn endpoint(&self) -> &Url {
+        &self.endpoint
+    }
+
     pub async fn get_blob_properties(
         &self,
         options: Option<BlobBlobClientGetPropertiesOptions<'_>>,
@@ -59,8 +63,7 @@ impl BlobClient {
             .get_properties(options)
             .await?;
 
-        Ok(BlobProperties::build_from_response_headers(
-            response.headers(),
-        ))
+        let blob_properties: Option<BlobProperties> = response.headers().get_optional()?;
+        Ok(blob_properties.unwrap())
     }
 }

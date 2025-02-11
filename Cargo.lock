@@ -469,6 +469,7 @@ dependencies = [
  "time",
  "tokio",
  "typespec_client_core",
+ "url",
  "uuid",
 ]
 
