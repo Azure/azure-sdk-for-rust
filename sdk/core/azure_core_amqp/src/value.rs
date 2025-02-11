@@ -916,4 +916,15 @@ mod tests {
         assert_eq!(unknown_value, AmqpValue::Unknown);
         assert_eq!(AmqpValue::Unknown, unknown_value);
     }
+
+    #[test]
+    fn amqp_composite() {
+        let composite =
+            AmqpComposite::new(0x270, AmqpList::from(vec![AmqpValue::from("String value")]));
+        assert_eq!(composite.descriptor(), &AmqpDescriptor::Code(0x270));
+        assert_eq!(
+            composite.value(),
+            &AmqpList::from(vec![AmqpValue::from("String value")])
+        );
+    }
 }

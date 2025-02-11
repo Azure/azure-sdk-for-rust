@@ -545,20 +545,6 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "cplusplus")]
-    #[test]
-    fn amqp_composite() {
-        use crate::value::AmqpComposite;
-
-        let composite =
-            AmqpComposite::new(0x270, AmqpList::from(vec![AmqpValue::from("String value")]));
-        assert_eq!(composite.descriptor(), &AmqpDescriptor::Code(0x270));
-        assert_eq!(
-            composite.value(),
-            &AmqpList::from(vec![AmqpValue::from("String value")])
-        );
-    }
-
     #[test]
     fn test_from_amqp_value_to_fe2o3_amqp_types_primitives_value() {
         let value = AmqpValue::String("test".to_string());
