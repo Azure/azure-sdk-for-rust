@@ -85,6 +85,7 @@ impl From<Box<dyn SeekableStream>> for Body {
 #[cfg(test)]
 impl PartialEq for Body {
     fn eq(&self, other: &Self) -> bool {
+        #[cfg_attr(target_arch = "wasm32", allow(irrefutable_let_patterns))]
         if let Self::Bytes(this) = self {
             if let Self::Bytes(other) = other {
                 return this.eq(other);
