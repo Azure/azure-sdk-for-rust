@@ -2,6 +2,9 @@ parameters:
   - name: Toolchain
     type: string
     default: stable
+  - name: MaxAttempts
+    type: number
+    default: 3
 
 steps:
   - pwsh: |
@@ -14,6 +17,22 @@ steps:
       Write-Host "Setting Toolchain variable to $toolchain"
       Write-Host "##vso[task.setvariable variable=Toolchain]$toolchain"
 
-      Write-Host "> rustup update --no-self-update $toolchain"
-      rustup update --no-self-update $toolchain
+      $attempts = 0
+      $maxAttempts = ${{ parameters.MaxAttempts }}
+
+      while ($true) {
+        $attempts++
+        Write-Host "> rustup toolchain install --no-self-update $toolchain"
+        rustup toolchain install --no-self-update $toolchain
+        
+        if ($LASTEXITCODE -eq 0) { exit 0 }
+
+        if ($attempts -lt $maxAttempts) { 
+          Write-Host "Failed to install $toolchain, attempt $attempts, retrying..."
+        } else {
+          Write-Host "Failed to install $toolchain after $attempts attempts."
+          exit 1
+        }        
+      }
+
     displayName: "Use Rust ${{ parameters.Toolchain }}"
