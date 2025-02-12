@@ -660,6 +660,10 @@ impl BlobBlockBlobClient {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
+
+        // Handedit (do not commit)
+        request.insert_header("x-ms-blob-type", "BlockBlob");
+
         request.set_body(body);
         self.pipeline.send(&ctx, &mut request).await
     }

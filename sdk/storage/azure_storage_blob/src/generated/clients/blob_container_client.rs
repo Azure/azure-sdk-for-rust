@@ -203,6 +203,10 @@ impl BlobContainerClient {
             }
         }
         request.insert_header("x-ms-version", &self.version);
+
+        // Handedit (do not release)
+        request.insert_header("content-length", "0");
+
         self.pipeline.send(&ctx, &mut request).await
     }
 

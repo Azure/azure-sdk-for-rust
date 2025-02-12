@@ -11,8 +11,8 @@ use crate::{
     BlobClientOptions,
 };
 use azure_core::{
-    credentials::TokenCredential, BearerTokenCredentialPolicy, Bytes, Policy, RequestContent,
-    Response, Result, Url,
+    credentials::TokenCredential, xml::content, BearerTokenCredentialPolicy, Bytes, Policy,
+    RequestContent, Response, Result, Url,
 };
 use std::sync::Arc;
 
@@ -100,15 +100,14 @@ impl BlobClient {
     pub async fn upload_blob(
         &self,
         data: RequestContent<Bytes>,
-        overwrite: Option<bool>,
-        content_length: Option<i64>,
+        overwrite: bool,
+        content_length: i64,
         options: Option<BlobBlockBlobClientUploadOptions<'_>>,
     ) -> Result<Response<()>> {
         let mut options = options.unwrap_or_default();
-        let content_length = content_length.unwrap_or(data.body().len() as i64);
 
         // Check if they want overwrite, by default overwrite=False
-        if !overwrite.unwrap_or(false) {
+        if !overwrite {
             options.if_none_match = Some(String::from("*"));
         }
 
