@@ -83,6 +83,8 @@ jobs:
       parameters:
         PackageNames: ${{ join(',', parameters.Artifacts.*.name) }}
         ServiceDirectory: ${{parameters.ServiceDirectory}}
+        # crate names contain '_' and prerelease versions contain '-'
+        TagSeparator: '@'
         TestPipeline: true
 
   - template: /eng/pipelines/templates/steps/pack-crates.yml
