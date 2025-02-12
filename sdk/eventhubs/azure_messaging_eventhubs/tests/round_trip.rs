@@ -44,7 +44,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     );
 
     let start_sequence = partition_properties.last_enqueued_sequence_number;
-    let mut batch = producer
+    let batch = producer
         .create_batch(Some(EventDataBatchOptions {
             partition_id: Some(EVENTHUB_PARTITION.to_string()),
             partition_key: Some("My Partition Key.".to_string()),

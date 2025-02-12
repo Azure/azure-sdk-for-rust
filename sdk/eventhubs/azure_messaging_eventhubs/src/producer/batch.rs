@@ -172,7 +172,7 @@ impl<'a> EventDataBatch<'a> {
     /// # use azure_messaging_eventhubs::EventDataBatch;
     ///
     pub fn try_add_event_data(
-        &mut self,
+        &self,
         event_data: impl Into<EventData>,
         options: Option<AddEventDataOptions>,
     ) -> Result<bool> {

@@ -260,7 +260,7 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
         .await?;
 
     {
-        let mut batch = client.create_batch(None).await?;
+        let batch = client.create_batch(None).await?;
         assert_eq!(batch.len(), 0);
         assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None)?);
 
@@ -268,7 +268,7 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
         assert!(res.is_ok());
     }
     {
-        let mut batch = client
+        let batch = client
             .create_batch(Some(EventDataBatchOptions {
                 partition_id: Some("0".to_string()),
                 ..Default::default()
@@ -381,7 +381,7 @@ async fn test_overload_batch() -> Result<(), Box<dyn Error>> {
 
     info!("Client is open.");
     {
-        let mut batch = client
+        let batch = client
             .create_batch(Some(EventDataBatchOptions {
                 partition_id: Some("0".to_string()),
                 ..Default::default()

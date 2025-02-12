@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Send the message to each partition using a batch sender.
     for partition_id in properties.partition_ids {
-        let mut batch = client
+        let batch = client
             .create_batch(Some(EventDataBatchOptions {
                 partition_id: Some(partition_id.clone()),
                 ..Default::default()
