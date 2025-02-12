@@ -6,6 +6,7 @@ ckmrsaaeskeywrap
 deletedkeys
 deletedsecrets
 echsm
+fips
 oaep
 purgeable
 rotationpolicy
