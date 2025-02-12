@@ -80,7 +80,7 @@ jobs:
       parameters:
         PackageNames: ${{ join(',', parameters.Artifacts.*.name) }}
         ServiceDirectory: ${{parameters.ServiceDirectory}}
-        # crate names contain '_' and prerelease versions contain '-'
+        # Crate names contain '_' and prerelease versions contain '-' e.g., `azure_core@1.0.1-beta.1`.
         TagSeparator: '@'
         TestPipeline: true
 
