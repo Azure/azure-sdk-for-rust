@@ -11,8 +11,8 @@ use crate::{
     BlobClientOptions,
 };
 use azure_core::{
-    credentials::TokenCredential, xml::content, BearerTokenCredentialPolicy, Bytes, Policy,
-    RequestContent, Response, Result, Url,
+    credentials::TokenCredential, BearerTokenCredentialPolicy, Bytes, Policy, RequestContent,
+    Response, Result, Url,
 };
 use std::sync::Arc;
 

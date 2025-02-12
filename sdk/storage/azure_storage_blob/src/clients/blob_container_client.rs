@@ -3,9 +3,8 @@
 
 use crate::clients::GeneratedBlobClient;
 use crate::models::{
-    BlobContainerClientCreateOptions,
-    BlobContainerClientDeleteOptions,
-    // BlobContainerClientGetPropertiesOptions,
+    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+    BlobContainerClientGetPropertiesOptions, ContainerProperties,
 };
 use crate::pipeline::StorageHeadersPolicy;
 use crate::BlobClientOptions;
@@ -85,18 +84,18 @@ impl BlobContainerClient {
         Ok(response)
     }
 
-    // pub async fn get_container_properties(
-    //     &self,
-    //     options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
-    // ) -> Result<ContainerProperties> {
-    //     let response = self
-    //         .client
-    //         .get_blob_container_client(self.container_name.clone())
-    //         .get_properties(options)
-    //         .await?;
+    pub async fn get_container_properties(
+        &self,
+        options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
+    ) -> Result<ContainerProperties> {
+        let response = self
+            .client
+            .get_blob_container_client()
+            .get_properties(self.container_name(), options)
+            .await?;
 
-    //     Ok(ContainerProperties::build_from_response_headers(
-    //         response.headers(),
-    //     ))
-    // }
+        Ok(ContainerProperties::build_from_response_headers(
+            response.headers(),
+        ))
+    }
 }

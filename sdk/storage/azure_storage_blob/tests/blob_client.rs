@@ -6,7 +6,7 @@ use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredentialBuilder;
 use azure_storage_blob::{
     clients::{BlobClient, BlobContainerClient},
-    models::{BlobBlobClientGetPropertiesOptions, BlobBlockBlobClientUploadOptions, BlobType},
+    models::{BlobBlobClientGetPropertiesOptions, BlobType},
     BlobClientOptions,
 };
 use std::{env, error::Error};
@@ -50,6 +50,7 @@ async fn test_get_blob_properties() -> Result<(), Box<dyn Error>> {
 
     // Assert
     assert!(response.is_ok());
+
     let blob_properties = response?;
     assert_eq!(blob_properties.blob_type, Some(BlobType::BlockBlob));
     assert_eq!(blob_properties.content_length, Some(17));
@@ -79,10 +80,9 @@ async fn test_get_blob_properties_invalid_container() -> Result<(), Box<dyn Erro
         .await;
 
     // Assert
-    assert_eq!(
-        String::from("HttpResponse(NotFound, \"ContainerNotFound\")"),
-        response.unwrap_err().kind().to_string()
-    );
+    assert!(response.is_err());
+    let error = response.unwrap_err().http_status();
+    assert_eq!(Some(StatusCode::NotFound), error);
 
     Ok(())
 }
@@ -172,8 +172,60 @@ async fn test_upload_blob() -> Result<(), Box<dyn Error>> {
     let response = blob_client
         .upload_blob(
             RequestContent::from(data.to_vec()),
-            false, // overwrite=True to make re-running easier
+            false,
             data.len() as i64,
+            None,
+        )
+        .await?;
+
+    // Assert
+    assert_eq!(response.status(), StatusCode::Created);
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn test_upload_blob_overwrite() -> Result<(), Box<dyn Error>> {
+    // Setup
+    let storage_account_name = env::var("AZURE_STORAGE_ACCOUNT_NAME")
+        .expect("Failed to get environment variable: AZURE_STORAGE_ACCOUNT_NAME");
+    let endpoint = format!("https://{}.blob.core.windows.net/", storage_account_name);
+    let credential = DefaultAzureCredentialBuilder::default().build()?;
+
+    // Act
+    let container_client = BlobContainerClient::new(
+        &endpoint,
+        String::from("testcontainer4"),
+        credential.clone(),
+        None,
+    )?;
+    container_client.create_container(None).await?;
+
+    let blob_client = BlobClient::new(
+        &endpoint,
+        String::from("testcontainer4"),
+        String::from("test_upload_blob_overwrite.txt"),
+        credential,
+        Some(BlobClientOptions::default()),
+    )?;
+
+    let data = b"hello rusty world";
+    blob_client
+        .upload_blob(
+            RequestContent::from(data.to_vec()),
+            false,
+            data.len() as i64,
+            None,
+        )
+        .await?;
+
+    let data2 = b"hello overwritten rusty world";
+    let response = blob_client
+        .upload_blob(
+            RequestContent::from(data2.to_vec()),
+            true,
+            data2.len() as i64,
             None,
         )
         .await?;
