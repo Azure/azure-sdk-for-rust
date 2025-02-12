@@ -76,11 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let secret: SecretBundle = client
-        .set_secret(
-            "secret-name".into(),
-            secret_set_parameters.try_into()?,
-            None,
-        )
+        .set_secret("secret-name", secret_set_parameters.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -90,7 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Retrieve a secret using the secret client.
     let secret: SecretBundle = client
-        .get_secret("secret-name".into(), version, None)
+        .get_secret("secret-name", version.as_ref(), None)
         .await?
         .into_body()
         .await?;
@@ -151,11 +147,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let secret: SecretBundle = client
-        .set_secret(
-            "secret-name".into(),
-            secret_set_parameters.try_into()?,
-            None,
-        )
+        .set_secret("secret-name", secret_set_parameters.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -190,7 +182,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Retrieve a secret using the secret client.
     let secret: SecretBundle = client
-        .get_secret("secret-name".into(), "secret-version".into(), None)
+        .get_secret("secret-name", "secret-version", None)
         .await?
         .into_body()
         .await?;
@@ -234,8 +226,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     client
         .update_secret(
-            "secret-name".into(),
-            "".into(),
+            "secret-name",
+            "",
             secret_update_parameters.try_into()?,
             None,
         )
@@ -265,9 +257,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Delete a secret using the secret client.
-    client
-        .delete_secret("secret-name".into(), None)
-        .await?;
+    client.delete_secret("secret-name", None).await?;
 
     Ok(())
 }
@@ -321,7 +311,6 @@ For example, if you try to retrieve a secret that doesn't exist in your Azure Ke
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::SecretClient;
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
@@ -331,14 +320,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    match client
-        .get_secret(
-            "secret-name".into(),
-            "".into(),
-            None,
-        )
-        .await
-    {
+    match client.get_secret("secret-name", "", None).await {
         Ok(response) => println!("Secret Value: {:?}", response.into_body().await?.value),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }

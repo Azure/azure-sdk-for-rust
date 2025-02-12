@@ -66,7 +66,7 @@ Instantiate a `DefaultAzureCredential` to pass to the client. The same instance 
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
+use azure_messaging_eventhubs::ProducerClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     producer.open().await?;
 
-    Ok(producer)
+    Ok(())
 }
 ```
 
@@ -136,7 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     producer.open().await?;
 
     // Send an event to the Event Hub
-    let res = producer.send_event(vec![1,2,3,4], None).await;
+    let _ = producer.send_event(vec![1, 2, 3, 4], None).await;
 
     Ok(())
 }
@@ -167,9 +167,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     producer.open().await?;
 
     // Create a batch of events
-    let mut batch = producer.create_batch(None).await.unwrap();
+    let mut batch = producer.create_batch(None).await?;
     assert_eq!(batch.len(), 0);
-    assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None).unwrap());
+    assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None)?);
 
     // Submit the batch of events to the Event Hub
     let res = producer.submit_batch(&batch, None).await;
@@ -184,10 +184,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 The following example shows how to receive events from partition 0 on an Event Hubs instance.
 
 ```rust no_run
+use async_std::stream::StreamExt;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::ConsumerClient;
 use futures::pin_mut;
-use async_std::stream::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -202,6 +202,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = ConsumerClient::new(
         host.to_string(),
         eventhub.to_string(),
+        None,
         credential.clone(),
         None,
     );
@@ -211,16 +212,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let message_receiver = client
         .open_receiver_on_partition(
             "0".to_string(),
-            Some(
-                azure_messaging_eventhubs::OpenReceiverOptions{
-                    start_position: Some(azure_messaging_eventhubs::StartPosition{
-                        location: azure_messaging_eventhubs::StartLocation::Earliest,
-                        ..Default::default()
-                    }),
+            Some(azure_messaging_eventhubs::OpenReceiverOptions {
+                start_position: Some(azure_messaging_eventhubs::StartPosition {
+                    location: azure_messaging_eventhubs::StartLocation::Earliest,
                     ..Default::default()
-                },
-            ))
-        .await.unwrap();
+                }),
+                ..Default::default()
+            }),
+        )
+        .await?;
 
     // Create a stream of events
     let event_stream = message_receiver.stream_events();
