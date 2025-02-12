@@ -4,9 +4,11 @@
 #[cfg(not(target_arch = "wasm32"))]
 use crate::AzureCliCredential;
 use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
+#[cfg(not(target_arch = "wasm32"))]
+use azure_core::error::ResultExt;
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
-    error::{Error, ErrorKind, ResultExt},
+    error::{Error, ErrorKind},
 };
 use std::sync::Arc;
 
@@ -17,6 +19,7 @@ pub struct DefaultAzureCredentialBuilder {
     include_azure_cli_credential: bool,
 }
 
+#[cfg_attr(target_arch = "wasm32", allow(clippy::derivable_impls))]
 impl Default for DefaultAzureCredentialBuilder {
     fn default() -> Self {
         Self {
@@ -47,6 +50,7 @@ impl DefaultAzureCredentialBuilder {
 
     /// Get a list of the credential types to include.
     fn included(&self) -> Vec<DefaultAzureCredentialType> {
+        #[cfg_attr(target_arch = "wasm32", allow(unused_mut))]
         let mut sources = Vec::new();
         #[cfg(not(target_arch = "wasm32"))]
         if self.include_azure_cli_credential {
@@ -61,8 +65,11 @@ impl DefaultAzureCredentialBuilder {
         &self,
         included: &Vec<DefaultAzureCredentialType>,
     ) -> azure_core::Result<Vec<DefaultAzureCredentialKind>> {
+        #[cfg_attr(target_arch = "wasm32", allow(unused_mut))]
         let mut sources = Vec::<DefaultAzureCredentialKind>::with_capacity(included.len());
         let errors = Vec::new();
+
+        #[cfg_attr(target_arch = "wasm32", allow(clippy::never_loop))]
         for source in included {
             match source {
                 #[cfg(not(target_arch = "wasm32"))]
@@ -70,6 +77,12 @@ impl DefaultAzureCredentialBuilder {
                     if let Ok(credential) = AzureCliCredential::new() {
                         sources.push(DefaultAzureCredentialKind::AzureCli(credential));
                     }
+                }
+                #[cfg(target_arch = "wasm32")]
+                _ => {
+                    return Err(Error::with_message(ErrorKind::Credential, || {
+                        "No credential providers available"
+                    }));
                 }
             }
         }
@@ -107,7 +120,7 @@ pub(crate) enum DefaultAzureCredentialKind {
     AzureCli(Arc<AzureCliCredential>),
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send), allow(unused_variables))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for DefaultAzureCredentialKind {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
@@ -119,6 +132,12 @@ impl TokenCredential for DefaultAzureCredentialKind {
                     "error getting token credential from Azure CLI",
                 )
             }
+            #[cfg(target_arch = "wasm32")]
+            _ => {
+                return Err(Error::with_message(ErrorKind::Credential, || {
+                    "No credential providers available"
+                }));
+            }
         }
     }
 
@@ -127,6 +146,12 @@ impl TokenCredential for DefaultAzureCredentialKind {
         match self {
             #[cfg(not(target_arch = "wasm32"))]
             DefaultAzureCredentialKind::AzureCli(credential) => credential.clear_cache().await,
+            #[cfg(target_arch = "wasm32")]
+            _ => {
+                return Err(Error::with_message(ErrorKind::Credential, || {
+                    "No credential providers available"
+                }));
+            }
         }
     }
 }
