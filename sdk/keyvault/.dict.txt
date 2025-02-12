@@ -10,8 +10,12 @@ oaep
 purgeable
 rotationpolicy
 rsaaeskeywrap
+rsaes
 rsahsm
 rsaoaep
+rsassa
 rsnull
+secg
+secp
 unwrapkey
 wrapkey
