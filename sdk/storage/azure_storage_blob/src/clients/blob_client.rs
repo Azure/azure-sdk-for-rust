@@ -3,11 +3,17 @@
 
 use crate::{
     clients::GeneratedBlobClient,
-    models::{BlobBlobClientGetPropertiesOptions, BlobProperties},
+    models::{
+        BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions,
+        BlobBlockBlobClientUploadOptions, BlobProperties,
+    },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions,
 };
-use azure_core::{credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Result, Url};
+use azure_core::{
+    credentials::TokenCredential, BearerTokenCredentialPolicy, Bytes, Policy, RequestContent,
+    Response, Result, Url,
+};
 use std::sync::Arc;
 
 pub struct BlobClient {
@@ -76,5 +82,47 @@ impl BlobClient {
 
         let blob_properties: Option<BlobProperties> = response.headers().get_optional()?;
         Ok(blob_properties.unwrap())
+    }
+
+    pub async fn download_blob(
+        &self,
+        options: Option<BlobBlobClientDownloadOptions<'_>>,
+    ) -> Result<Response> {
+        let response = self
+            .client
+            .get_blob_blob_client()
+            .download(self.container_name(), self.blob_name(), options)
+            .await?;
+        Ok(response)
+    }
+
+    // For now, this is single-shot, block blob hot path only.
+    pub async fn upload_blob(
+        &self,
+        data: RequestContent<Bytes>,
+        overwrite: Option<bool>,
+        content_length: Option<i64>,
+        options: Option<BlobBlockBlobClientUploadOptions<'_>>,
+    ) -> Result<Response<()>> {
+        let mut options = options.unwrap_or_default();
+        let content_length = content_length.unwrap_or(data.body().len() as i64);
+
+        // Check if they want overwrite, by default overwrite=False
+        if !overwrite.unwrap_or(false) {
+            options.if_none_match = Some(String::from("*"));
+        }
+
+        let response = self
+            .client
+            .get_blob_block_blob_client()
+            .upload(
+                self.container_name(),
+                self.blob_name(),
+                data,
+                content_length,
+                Some(options),
+            )
+            .await?;
+        Ok(response)
     }
 }
