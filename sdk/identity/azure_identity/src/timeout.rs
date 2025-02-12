@@ -23,6 +23,7 @@ pub(crate) struct Timeout<F, D> {
 }
 
 impl<F, D> Timeout<F, D> {
+    #[allow(dead_code)]
     pub(crate) fn new(future: F, deadline: D) -> Self {
         Self {
             future,
@@ -59,6 +60,7 @@ impl<F: Future, D: Future> Future for Timeout<F, D> {
     }
 }
 
+#[allow(dead_code)]
 pub(crate) trait TimeoutExt: Future {
     fn timeout(self, duration: Duration) -> Timeout<Self, Sleep>
     where
