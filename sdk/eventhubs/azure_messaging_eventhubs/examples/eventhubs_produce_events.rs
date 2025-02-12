@@ -13,9 +13,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventhub_name = std::env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::builder(eventhub_namespace, eventhub_name, credential.clone())
-        .open()
-        .await?;
+    let client = ProducerClient::builder(
+        eventhub_namespace.as_str(),
+        eventhub_name.as_str(),
+        credential.clone(),
+    )
+    .open()
+    .await?;
 
     println!("Created producer client.");
 
@@ -39,12 +43,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client
         .send_event(
             EventData::builder()
-                .with_content_type("text/plain".to_string())
+                .with_content_type("text/plain")
                 .with_correlation_id(Uuid::new_v4())
                 .with_body("This is some text")
-                .add_property("Event Property".to_string(), "Property Value")
-                .add_property("Pi".to_string(), f32::consts::PI)
-                .add_property("Binary".to_string(), vec![0x08, 0x09, 0x0A])
+                .add_property("Event Property", "Property Value")
+                .add_property("Pi", f32::consts::PI)
+                .add_property("Binary", vec![0x08, 0x09, 0x0A])
                 .build(),
             None,
         )

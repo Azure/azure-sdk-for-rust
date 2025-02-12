@@ -17,8 +17,8 @@ async fn main() -> Result<()> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let result = ProducerClient::builder(host, eventhub.clone(), credential.clone())
-        .with_application_id("test_get_properties".to_string())
+    let result = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_get_properties")
         .open()
         .await;
     if let Err(err) = result {

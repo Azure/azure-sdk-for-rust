@@ -13,9 +13,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventhub_name = std::env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::builder(eventhub_namespace, eventhub_name, credential.clone())
-        .open()
-        .await?;
+    let client = ProducerClient::builder(
+        eventhub_namespace.as_str(),
+        eventhub_name.as_str(),
+        credential.clone(),
+    )
+    .open()
+    .await?;
 
     println!("Created producer client.");
 

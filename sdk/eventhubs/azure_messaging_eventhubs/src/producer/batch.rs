@@ -35,7 +35,7 @@ struct EventDataBatchState {
 ///
 /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credentials = azure_identity::DefaultAzureCredential::new()?;
-/// # let producer_client = ProducerClient::builder("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), credentials.clone())
+/// # let producer_client = ProducerClient::builder("fully_qualified_domain_name", "event_hub_name", credentials.clone())
 /// #     .open().await?;
 /// #
 ///
@@ -44,7 +44,7 @@ struct EventDataBatchState {
 /// batch.try_add_event_data("Hello, Event Hub!", None)?;
 /// batch.try_add_event_data("This is another event.", None)?;
 ///
-/// producer_client.submit_batch(&batch, None).await?;
+/// producer_client.send_batch(&batch, None).await?;
 ///
 /// # Ok(())
 /// # }
@@ -160,7 +160,7 @@ impl<'a> EventDataBatch<'a> {
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::builder("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone()).open().await?;
+    /// # let producer_client = ProducerClient::builder("fully_qualified_domain_name", "event_hub_name", my_credential.clone()).open().await?;
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let event_data = EventData::builder().build();
@@ -204,7 +204,7 @@ impl<'a> EventDataBatch<'a> {
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::builder("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone()).open().await?;
+    /// # let producer_client = ProducerClient::builder("fully_qualified_domain_name", "event_hub_name", my_credential.clone()).open().await?;
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let amqp_message = AmqpMessage::builder().build();

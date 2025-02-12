@@ -21,7 +21,7 @@ pub mod models;
 
 pub use producer::{
     batch::{EventDataBatch, EventDataBatchOptions},
-    ProducerClient, SendEventOptions, SendMessageOptions, SubmitBatchOptions,
+    ProducerClient, SendBatchOptions, SendEventOptions, SendMessageOptions,
 };
 
 pub use consumer::{

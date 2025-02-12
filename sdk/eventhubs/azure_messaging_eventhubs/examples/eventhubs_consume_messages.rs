@@ -13,10 +13,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventhub_name = std::env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
 
-    let consumer =
-        ConsumerClient::builder(eventhub_namespace, eventhub_name, None, credential.clone())
-            .open()
-            .await?;
+    let consumer = ConsumerClient::builder(
+        eventhub_namespace.as_str(),
+        eventhub_name.as_str(),
+        None,
+        credential.clone(),
+    )
+    .open()
+    .await?;
 
     println!("Opened consumer client");
 
@@ -27,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The default is to receive messages from the end of the partition, so specify a start position at the start of the partition.
     let receiver = consumer
         .open_receiver_on_partition(
-            properties.partition_ids[0].clone(),
+            properties.partition_ids[0].as_str(),
             Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::Earliest,

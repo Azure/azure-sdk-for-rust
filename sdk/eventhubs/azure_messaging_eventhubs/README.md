@@ -172,10 +172,7 @@ async fn open_producer_client() -> Result<ProducerClient,azure_core::Error>
     let credential = azure_identity::DefaultAzureCredential::new()?;
 
     let producer = azure_messaging_eventhubs::ProducerClient::builder(
-        host.to_string(),
-        eventhub.to_string(),
-        credential.clone())
-        .open().await?;
+        host, eventhub, credential.clone()).open().await?;
 
     Ok(producer)
     }
@@ -194,8 +191,8 @@ async fn open_consumer_client() -> Result<ConsumerClient, azure_core::Error>
     let credential = azure_identity::DefaultAzureCredential::new()?;
 
     let consumer = azure_messaging_eventhubs::ConsumerClient::builder(
-        host.to_string(),
-        eventhub.to_string(),
+        host,
+        eventhub,
         None,
         credential.clone())
         .open().await?;
@@ -229,7 +226,7 @@ async fn send_events(producer: &ProducerClient) {
     assert_eq!(batch.len(), 0);
     assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None).unwrap());
 
-    let res = producer.submit_batch(&batch, None).await;
+    let res = producer.send_batch(&batch, None).await;
     assert!(res.is_ok());
 }
 ```
@@ -252,7 +249,7 @@ use async_std::stream::StreamExt;
 async fn receive_events(client : &ConsumerClient) {
     let message_receiver = client
         .open_receiver_on_partition(
-            "0".to_string(),
+            "0",
             Some(
                 azure_messaging_eventhubs::OpenReceiverOptions{
                     start_position: Some(azure_messaging_eventhubs::StartPosition{

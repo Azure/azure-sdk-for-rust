@@ -16,8 +16,8 @@ async fn main() -> Result<()> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let result = ProducerClient::builder(host, eventhub.clone(), credential.clone())
-        .with_application_id("test_get_properties".to_string())
+    let result = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_get_properties")
         .open()
         .await;
 
@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
 
     for partition in properties.partition_ids.iter() {
         let partition_properties = client
-            .get_partition_properties(partition.clone())
+            .get_partition_properties(partition.as_str())
             .await
             .unwrap();
         println!(

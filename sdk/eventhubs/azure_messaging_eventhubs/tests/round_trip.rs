@@ -25,17 +25,14 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let producer = ProducerClient::builder(
-        host.clone(),
-        eventhub.clone(),
-        DefaultAzureCredential::new()?,
-    )
-    .with_application_id(TEST_NAME.to_string())
-    .open()
-    .await?;
+    let credential = DefaultAzureCredential::new()?;
+    let producer = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id(TEST_NAME)
+        .open()
+        .await?;
 
     let partition_properties = producer
-        .get_partition_properties(EVENTHUB_PARTITION.to_string())
+        .get_partition_properties(EVENTHUB_PARTITION)
         .await?;
 
     info!(
@@ -55,7 +52,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     assert!(batch.try_add_event_data(
         EventData::builder()
             .with_body(b"Hello, World!")
-            .add_property("Message#".to_string(), 1)
+            .add_property("Message#", 1)
             .with_message_id(1)
             .build(),
         None
@@ -102,13 +99,14 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
 
     assert!(producer.send_batch(&batch, None).await.is_ok());
 
-    let consumer = ConsumerClient::builder(host, eventhub, None, DefaultAzureCredential::new()?)
-        .with_application_id(TEST_NAME.to_string())
+    let credential = DefaultAzureCredential::new()?;
+    let consumer = ConsumerClient::builder(host.as_str(), eventhub.as_str(), None, credential)
+        .with_application_id(TEST_NAME)
         .open()
         .await?;
     let receiver = consumer
         .open_receiver_on_partition(
-            EVENTHUB_PARTITION.to_string(),
+            EVENTHUB_PARTITION,
             Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::SequenceNumber(start_sequence),
