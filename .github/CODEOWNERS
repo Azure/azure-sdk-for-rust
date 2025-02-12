@@ -54,7 +54,7 @@
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Storage
 # PRLabel: %Storage
-/sdk/storage/           @heaths @RickWinter @JeffreyRichter @LarryOsterman
+/sdk/storage/           @heaths @RickWinter @JeffreyRichter @LarryOsterman @vincenttran-msft @jalauzon-msft
 
 # AzureSDKOwners: @heaths
 # ServiceOwner: @Pilchie
