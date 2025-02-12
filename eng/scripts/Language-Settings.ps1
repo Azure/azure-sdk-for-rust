@@ -118,6 +118,15 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
   return $allPackageProps
 }
 
+function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChanges, $diff, $allPackageProperties) {
+  # if the change was outside of the package folders and no package was changed, we use core and template for validation
+  $core = $allPackageProperties | Where-Object { $_.Name -eq "azure_core" } | Select-Object -First 1
+  $template = $allPackageProperties | Where-Object { $_.Name -eq "azure_template" } | Select-Object -First 1
+  if ($packagesWithChanges.Length -eq 0) {
+    return @($core, $template)
+  }
+}
+
 function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
   #$pkg will be a FileInfo object for the cargo-metadata.json file in a package artifact directory
   $package = Get-Content -Path $pkg.FullName -Raw | ConvertFrom-Json
