@@ -8,9 +8,11 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     Error, HttpClient, Url,
 };
+use futures::channel::oneshot;
 use std::{
-    str,
+    fs, str,
     sync::Arc,
+    thread,
     time::{Duration, Instant},
 };
 use time::OffsetDateTime;
@@ -193,11 +195,22 @@ impl Token {
                 let now = Instant::now();
                 let cache = cache.upgradable_read().await;
                 if now - cache.last_read > TIMEOUT {
-                    let token = std::fs::read_to_string(path)
-                        .with_context(ErrorKind::Credential, || {
-                            format!("failed to read federated token from file {}", path)
-                        })?;
+                    // TODO: https://github.com/Azure/azure-sdk-for-rust/issues/2002
+                    let path = path.clone();
+                    let (tx, rx) = oneshot::channel();
+                    thread::spawn(move || {
+                        let token = fs::read_to_string(&path)
+                            .with_context(ErrorKind::Credential, || {
+                                format!("failed to read federated token from file {}", &path)
+                            });
+                        tx.send(token)
+                    });
+
                     let mut write_cache = RwLockUpgradableReadGuard::upgrade(cache).await;
+                    let token = rx.await.map_err(|err| {
+                        azure_core::Error::full(ErrorKind::Io, err, "canceled reading certificate")
+                    })??;
+
                     write_cache.token = Secret::new(token);
                     write_cache.last_read = now;
 
