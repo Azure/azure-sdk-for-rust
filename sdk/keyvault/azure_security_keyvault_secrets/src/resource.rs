@@ -4,6 +4,7 @@
 #[cfg(doc)]
 use crate::{models::SecretBundle, SecretClient};
 use azure_core::{error::ErrorKind, Result, Url};
+use std::str::FromStr;
 
 /// Information about the resource.
 ///
@@ -21,6 +22,27 @@ pub struct ResourceId {
 
     /// The optional version of the resource.
     pub version: Option<String>,
+}
+
+impl FromStr for ResourceId {
+    type Err = azure_core::Error;
+    fn from_str(s: &str) -> Result<Self> {
+        s.parse::<Url>()?.try_into()
+    }
+}
+
+impl TryFrom<Url> for ResourceId {
+    type Error = azure_core::Error;
+    fn try_from(url: Url) -> Result<Self> {
+        ResourceId::try_from(&url)
+    }
+}
+
+impl TryFrom<&Url> for ResourceId {
+    type Error = azure_core::Error;
+    fn try_from(url: &Url) -> Result<Self> {
+        deconstruct(url)
+    }
 }
 
 /// Extension methods to get a [`ResourceId`] from models in this crate.
@@ -62,11 +84,11 @@ where
         };
 
         let url: Url = id.parse()?;
-        deconstruct(url)
+        deconstruct(&url)
     }
 }
 
-fn deconstruct(url: Url) -> Result<ResourceId> {
+fn deconstruct(url: &Url) -> Result<ResourceId> {
     let vault_url = format!("{}://{}", url.scheme(), url.authority(),);
     let mut segments = url
         .path_segments()
@@ -146,16 +168,49 @@ mod tests {
     use super::*;
 
     #[test]
+    fn try_from_str() {
+        assert_eq!(
+            "https://vault.azure.net/secrets/name/version"
+                .parse::<ResourceId>()
+                .unwrap(),
+            ResourceId {
+                source_id: "https://vault.azure.net/secrets/name/version".to_string(),
+                vault_url: "https://vault.azure.net".into(),
+                name: "name".into(),
+                version: Some("version".into()),
+            }
+        );
+    }
+
+    #[test]
+    fn try_from_url() {
+        let url: Url = "https://vault.azure.net/secrets/name/version"
+            .parse()
+            .unwrap();
+        let resource: ResourceId = url.try_into().unwrap();
+        assert_eq!(
+            resource,
+            ResourceId {
+                source_id: "https://vault.azure.net/secrets/name/version".to_string(),
+                vault_url: "https://vault.azure.net".into(),
+                name: "name".into(),
+                version: Some("version".into()),
+            }
+        );
+    }
+
+    #[test]
     fn test_deconstruct() {
-        deconstruct("file:///tmp".parse().unwrap()).expect_err("cannot-be-base url");
-        deconstruct("https://vault.azure.net/".parse().unwrap()).expect_err("missing collection");
-        deconstruct("https://vault.azure.net/collection/".parse().unwrap())
+        deconstruct(&"file:///tmp".parse().unwrap()).expect_err("cannot-be-base url");
+        deconstruct(&"https://vault.azure.net/".parse().unwrap()).expect_err("missing collection");
+        deconstruct(&"https://vault.azure.net/collection/".parse().unwrap())
             .expect_err("invalid collection");
-        deconstruct("https://vault.azure.net/secrets/".parse().unwrap()).expect_err("missing name");
+        deconstruct(&"https://vault.azure.net/secrets/".parse().unwrap())
+            .expect_err("missing name");
 
         let url: Url = "https://vault.azure.net/secrets/name".parse().unwrap();
         assert_eq!(
-            deconstruct(url.clone()).unwrap(),
+            deconstruct(&url).unwrap(),
             ResourceId {
                 source_id: url.to_string(),
                 vault_url: "https://vault.azure.net".into(),
@@ -168,7 +223,7 @@ mod tests {
             .parse()
             .unwrap();
         assert_eq!(
-            deconstruct(url.clone()).unwrap(),
+            deconstruct(&url).unwrap(),
             ResourceId {
                 source_id: url.to_string(),
                 vault_url: "https://vault.azure.net".into(),
@@ -181,7 +236,7 @@ mod tests {
             .parse()
             .unwrap();
         assert_eq!(
-            deconstruct(url.clone()).unwrap(),
+            deconstruct(&url).unwrap(),
             ResourceId {
                 source_id: url.to_string(),
                 vault_url: "https://vault.azure.net".into(),
@@ -194,7 +249,7 @@ mod tests {
             .parse()
             .unwrap();
         assert_eq!(
-            deconstruct(url.clone()).unwrap(),
+            deconstruct(&url).unwrap(),
             ResourceId {
                 source_id: url.to_string(),
                 vault_url: "https://vault.azure.net:8443".into(),
