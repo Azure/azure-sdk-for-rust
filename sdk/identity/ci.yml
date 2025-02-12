@@ -8,15 +8,12 @@ trigger:
     - release/*
   paths:
     include:
-    - sdk/storage/
+    - sdk/identity/
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
-    ServiceDirectory: storage
-    TestTimeoutInMinutes: 120
+    ServiceDirectory: identity
     Artifacts:
-    - name: azure_storage_common
-      safeName: AzureStorageCommon
-    - name: azure_storage_blob
-      safeName: AzureStorageBlob
+    - name: azure_identity
+      safeName: AzureIdentity

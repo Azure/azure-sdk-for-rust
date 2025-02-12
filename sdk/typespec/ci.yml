@@ -8,15 +8,16 @@ trigger:
     - release/*
   paths:
     include:
-    - sdk/storage/
+    - sdk/typespec/
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
-    ServiceDirectory: storage
-    TestTimeoutInMinutes: 120
+    ServiceDirectory: typespec
     Artifacts:
-    - name: azure_storage_common
-      safeName: AzureStorageCommon
-    - name: azure_storage_blob
-      safeName: AzureStorageBlob
+    - name: typespec
+      safeName: Typespec
+    - name: typespec_macros
+      safeName: TypespecMacros
+    - name: typespec_client_core
+      safeName: TypespecClientCore

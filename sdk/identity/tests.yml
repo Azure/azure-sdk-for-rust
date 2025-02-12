@@ -1,0 +1,5 @@
+trigger: none
+
+steps:
+  - pwsh: |
+      Write-Host "No-Op"
