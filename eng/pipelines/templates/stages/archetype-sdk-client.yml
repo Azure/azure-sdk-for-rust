@@ -1,38 +1,51 @@
 parameters:
-  - name: ServiceDirectory
-    type: string
-    default: auto
-  - name: TestTimeoutInMinutes
-    type: number
-    default: 60
-  - name: BuildDocs
-    type: boolean
-    default: true
-  - name: TestProxy
-    type: boolean
-    default: true
-  - name: GenerateApiReviewForManualOnly
-    type: boolean
-    default: false
-  - name: oneESTemplateTag
-    type: string
-    default: release
+- name: ServiceDirectory
+  type: string
+- name: Artifacts
+  type: object
+  default: []
+- name: TestTimeoutInMinutes
+  type: number
+  default: 60
+- name: TestProxy
+  type: boolean
+  default: true
+- name: BuildDocs
+  type: boolean
+  default: true
+- name: GenerateApiReviewForManualOnly
+  type: boolean
+  default: false
+- name: oneESTemplateTag
+  type: string
+  default: release
 
 extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
   parameters:
     oneESTemplateTag: ${{ parameters.oneESTemplateTag }}
     stages:
-      - stage: Build
-        variables:
-          - template: /eng/pipelines/templates/variables/image.yml
-        jobs:
-          - template: /eng/pipelines/templates/jobs/ci.yml
-            parameters:
-              ServiceDirectory: ${{ parameters.ServiceDirectory }}
-              ${{ if eq(parameters.ServiceDirectory, 'template') }}:
-                TestPipeline: true
-              TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
-              BuildDocs: ${{ parameters.BuildDocs }}
-              TestProxy: ${{ parameters.TestProxy }}
-              GenerateApiReviewForManualOnly: ${{ parameters.GenerateApiReviewForManualOnly }}
+    - stage: Build
+      variables:
+      - template: /eng/pipelines/templates/variables/image.yml
+      jobs:
+      - template: /eng/pipelines/templates/jobs/ci.yml
+        parameters:
+          ServiceDirectory: ${{ parameters.ServiceDirectory }}
+          Artifacts: ${{ parameters.Artifacts }}
+          ${{ if eq(parameters.ServiceDirectory, 'template') }}:
+            TestPipeline: true
+          TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+          BuildDocs: ${{ parameters.BuildDocs }}
+          TestProxy: ${{ parameters.TestProxy }}
+          PipelineArtifactName: packages
+          GenerateApiReviewForManualOnly: ${{ parameters.GenerateApiReviewForManualOnly }}
+
+    - template: archetype-rust-release.yml
+      parameters:
+        DependsOn: "Build"
+        ServiceDirectory: ${{ parameters.ServiceDirectory }}
+        Artifacts: ${{ parameters.Artifacts }}
+        ${{ if eq(parameters.ServiceDirectory, 'template') }}:
+          TestPipeline: true
+        PipelineArtifactName: packages

@@ -51,7 +51,7 @@ extends:
       credscan:
         suppressionsFile: $(Build.SourcesDirectory)/eng/CredScanSuppression.json
         toolVersion: "2.3.12.23"
-        baselineFiles: $(Build.SourcesDirectory)/eng/python.gdnbaselines
+        baselineFiles: $(Build.SourcesDirectory)/eng/rust.gdnbaselines
       psscriptanalyzer:
         compiled: true
         break: true
