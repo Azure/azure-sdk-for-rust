@@ -25,6 +25,11 @@ pub use producer::{
 };
 
 pub use consumer::{
-    ConsumerClient, ConsumerClientOptions, EventReceiver, OpenReceiverOptions, StartLocation,
-    StartPosition,
+    ConsumerClient, EventReceiver, OpenReceiverOptions, StartLocation, StartPosition,
 };
+
+/// Builders for producer client and consumer client.
+pub mod builders {
+    pub use crate::consumer::builders::ConsumerClientBuilder;
+    pub use crate::producer::builders::ProducerClientBuilder;
+}

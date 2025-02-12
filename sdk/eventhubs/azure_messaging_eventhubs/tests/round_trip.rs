@@ -8,8 +8,8 @@ use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
     models::{AmqpMessage, AmqpValue, EventData, MessageId},
     {
-        ConsumerClient, ConsumerClientOptions, EventDataBatchOptions, OpenReceiverOptions,
-        ProducerClient, StartLocation, StartPosition,
+        ConsumerClient, EventDataBatchOptions, OpenReceiverOptions, ProducerClient, StartLocation,
+        StartPosition,
     },
 };
 use futures::pin_mut;
@@ -100,21 +100,12 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
         None
     )?);
 
-    assert!(producer.submit_batch(&batch, None).await.is_ok());
+    assert!(producer.send_batch(&batch, None).await.is_ok());
 
-    let consumer = ConsumerClient::new(
-        host,
-        eventhub,
-        None,
-        DefaultAzureCredential::new()?,
-        Some(ConsumerClientOptions {
-            application_id: Some(TEST_NAME.to_string()),
-            ..Default::default()
-        }),
-    );
-
-    assert!(consumer.open().await.is_ok());
-
+    let consumer = ConsumerClient::builder(host, eventhub, None, DefaultAzureCredential::new()?)
+        .with_application_id(TEST_NAME.to_string())
+        .open()
+        .await?;
     let receiver = consumer
         .open_receiver_on_partition(
             EVENTHUB_PARTITION.to_string(),

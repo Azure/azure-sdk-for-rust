@@ -28,5 +28,6 @@ async fn main() -> Result<()> {
     let client = result?;
     let properties = client.get_eventhub_properties().await.unwrap();
     println!("Eventhub Properties for: {eventhub} {:?}", properties);
+
     Ok(())
 }

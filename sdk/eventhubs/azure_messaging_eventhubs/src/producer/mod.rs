@@ -18,8 +18,7 @@ use azure_core::{
 use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis, AmqpConnection, AmqpConnectionApis,
     AmqpConnectionOptions, AmqpManagement, AmqpManagementApis, AmqpSendOptions, AmqpSender,
-    AmqpSenderApis, AmqpSenderOptions, AmqpSession, AmqpSessionApis, AmqpSessionOptions,
-    AmqpSymbol, AmqpValue,
+    AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSymbol, AmqpValue,
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::sync::{Arc, OnceLock};
@@ -82,9 +81,6 @@ pub struct ProducerClient {
     /// The options used to configure retry operations.
     #[allow(dead_code)]
     retry_options: Option<RetryOptions>,
-
-    /// The maximum size of a message that can be sent to the Event Hub.
-    max_message_size: Option<u64>,
 }
 
 /// Options used when sending a message to an Event Hub.
@@ -109,7 +105,6 @@ impl ProducerClient {
         credential: Arc<dyn azure_core::credentials::TokenCredential>,
         application_id: Option<String>,
         retry_options: Option<RetryOptions>,
-        max_message_size: Option<u64>,
     ) -> Self {
         Self {
             sender_instances: Mutex::new(HashMap::new()),
@@ -121,7 +116,6 @@ impl ProducerClient {
             authorization_scopes: Mutex::new(HashMap::new()),
             application_id,
             retry_options,
-            max_message_size,
         }
     }
 
@@ -305,7 +299,7 @@ impl ProducerClient {
     /// }
     /// ```
     ///
-    pub async fn submit_batch(
+    pub async fn send_batch(
         &self,
         batch: &EventDataBatch<'_>,
         #[allow(unused_variables)] options: Option<SubmitBatchOptions>,
@@ -511,10 +505,7 @@ impl ProducerClient {
                             .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
                     ),
                     path.clone(),
-                    Some(AmqpSenderOptions {
-                        max_message_size: Some(self.max_message_size.unwrap_or(u64::MAX)),
-                        ..Default::default()
-                    }),
+                    None,
                 )
                 .await?;
             sender_instances.insert(
@@ -583,6 +574,23 @@ pub mod builders {
     use azure_core::RetryOptions;
     use std::sync::Arc;
 
+    /// A builder for creating a [`ProducerClient`].
+    ///
+    /// This builder is used to create a new [`ProducerClient`] with the specified parameters.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use azure_messaging_eventhubs::ProducerClient;
+    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///    let my_credential = DefaultAzureCredential::new().unwrap();
+    ///   let producer = ProducerClient::builder("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential)
+    ///      .open().await.unwrap();
+    /// }
+    /// ```
     pub struct ProducerClientBuilder {
         url: String,
         eventhub: String,
@@ -592,9 +600,6 @@ pub mod builders {
 
         /// The options used to configure retry operations.
         retry_options: Option<RetryOptions>,
-
-        /// The maximum size of a message that can be sent to the Event Hub.
-        max_message_size: Option<u64>,
     }
 
     impl ProducerClientBuilder {
@@ -608,7 +613,7 @@ pub mod builders {
         /// # Returns
         ///
         /// A new instance of [`ProducerClientBuilder`].
-        pub fn new(
+        pub(super) fn new(
             fully_qualified_namespace: String,
             eventhub: String,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
@@ -619,13 +624,26 @@ pub mod builders {
                 eventhub,
                 application_id: None,
                 retry_options: None,
-                max_message_size: None,
             }
         }
 
         /// Sets the application id that will be used to identify the client.
         pub fn with_application_id(mut self, application_id: String) -> Self {
             self.application_id = Some(application_id);
+            self
+        }
+
+        /// Sets the options used to configure retry operations.
+        ///
+        /// # Arguments
+        ///
+        /// * `retry_options` - The options used to configure retry operations.
+        ///
+        /// # Returns
+        ///
+        /// The updated [`ProducerClientBuilder`].
+        pub fn with_retry_options(mut self, retry_options: RetryOptions) -> Self {
+            self.retry_options = Some(retry_options);
             self
         }
 
@@ -640,7 +658,6 @@ pub mod builders {
                 self.credential,
                 self.application_id.clone(),
                 self.retry_options.clone(),
-                self.max_message_size,
             );
 
             client.ensure_connection(&self.url).await?;

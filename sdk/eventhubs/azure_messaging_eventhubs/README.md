@@ -184,7 +184,7 @@ async fn open_producer_client() -> Result<ProducerClient,azure_core::Error>
 ## Open an Event Hubs message consumer on an Event Hubs instance.
 
 ```rust no_run
-use azure_messaging_eventhubs::{ConsumerClient, ConsumerClientOptions};
+use azure_messaging_eventhubs::ConsumerClient;
 
 async fn open_consumer_client() -> Result<ConsumerClient, azure_core::Error>
 {
@@ -193,14 +193,12 @@ async fn open_consumer_client() -> Result<ConsumerClient, azure_core::Error>
 
     let credential = azure_identity::DefaultAzureCredential::new()?;
 
-    let consumer = azure_messaging_eventhubs::ConsumerClient::new(
+    let consumer = azure_messaging_eventhubs::ConsumerClient::builder(
         host.to_string(),
         eventhub.to_string(),
         None,
-        credential.clone(),
-        None
-        );
-    consumer.open().await?;
+        credential.clone())
+        .open().await?;
     Ok(consumer)
 }
 ```

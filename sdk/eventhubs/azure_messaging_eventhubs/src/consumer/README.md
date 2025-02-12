@@ -10,11 +10,16 @@ and manage the lifecycle of the consumer client.
 ### Creating a new [`ConsumerClient`] instance
 
 ```rust no_run
+# #[tokio::main]
+# async fn main() -> Result<(), azure_core::Error>{
 use azure_messaging_eventhubs::ConsumerClient;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 
-let my_credential = DefaultAzureCredential::new().unwrap();
-let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
+let my_credential = DefaultAzureCredential::new()?;
+let consumer = ConsumerClient::builder("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential)
+    .open().await?;
+# Ok(())
+# }
 ```
 
 ### Opening a connection to the Event Hub
@@ -26,12 +31,11 @@ use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 #[tokio::main]
 async fn main() {
     let my_credential = DefaultAzureCredential::new().unwrap();
-    let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
-
-    let result = consumer.open().await;
+    let result = ConsumerClient::builder("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential)
+        .open().await;
 
      match result {
-        Ok(()) => {
+        Ok(consumer) => {
             // Connection opened successfully
             println!("Connection opened successfully");
         }
@@ -52,9 +56,8 @@ use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 #[tokio::main]
 async fn main() {
     let my_credential = DefaultAzureCredential::new().unwrap();
-    let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
-
-    consumer.open().await.unwrap();
+    let consumer = ConsumerClient::builder("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential)
+        .open().await.unwrap();
 
     let result = consumer.close().await;
 
@@ -82,10 +85,11 @@ use futures::pin_mut;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>>  {
     let my_credential = DefaultAzureCredential::new().unwrap();
-    let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
+    let consumer = ConsumerClient::builder("my_namespace".to_string(),
+        "my_eventhub".to_string(),
+        None,
+        my_credential).open().await?;
     let partition_id = "0";
-
-    consumer.open().await?;
 
     let message_receiver = consumer
         .open_receiver_on_partition(

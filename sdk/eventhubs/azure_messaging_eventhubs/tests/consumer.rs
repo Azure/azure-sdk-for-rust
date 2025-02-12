@@ -4,9 +4,7 @@
 use async_std::future::timeout;
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::{
-    ConsumerClient, ConsumerClientOptions, OpenReceiverOptions, StartPosition,
-};
+use azure_messaging_eventhubs::{ConsumerClient, OpenReceiverOptions, StartPosition};
 use futures::{pin_mut, StreamExt};
 use std::{env, error::Error, time::Duration};
 use tracing::{info, trace};
@@ -18,16 +16,10 @@ async fn test_new() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let _client = ConsumerClient::new(
-        host,
-        eventhub,
-        None,
-        DefaultAzureCredential::new()?,
-        Some(ConsumerClientOptions {
-            application_id: Some("test_new".to_string()),
-            ..Default::default()
-        }),
-    );
+    let _client = ConsumerClient::builder(host, eventhub, None, DefaultAzureCredential::new()?)
+        .with_application_id("test_new".to_string())
+        .open()
+        .await?;
 
     Ok(())
 }
@@ -37,19 +29,17 @@ async fn test_new_with_error() -> Result<(), Box<dyn Error>> {
     common::setup();
     trace!("test_new_with_error");
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let consumer = ConsumerClient::new(
+    let result = ConsumerClient::builder(
         "invalid_host".into(),
         eventhub,
         None,
         DefaultAzureCredential::new()?,
-        Some(ConsumerClientOptions {
-            application_id: Some("test_new".to_string()),
-            ..Default::default()
-        }),
-    );
-    let result = consumer.open().await;
+    )
+    .with_application_id("test_new".to_string())
+    .open()
+    .await;
     assert!(result.is_err());
-    info!("Error: {:?}", result);
+    info!("Error: {:?}", result.err());
 
     Ok(())
 }
@@ -59,17 +49,15 @@ async fn test_open() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let client = ConsumerClient::new(
+    let _client = ConsumerClient::builder(
         host,
         eventhub,
         None,
         azure_identity::DefaultAzureCredential::new()?,
-        Some(ConsumerClientOptions {
-            application_id: Some("test_open".to_string()),
-            ..Default::default()
-        }),
-    );
-    client.open().await?;
+    )
+    .with_application_id("test_open".to_string())
+    .open()
+    .await?;
 
     Ok(())
 }
@@ -78,17 +66,15 @@ async fn test_close() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let client = ConsumerClient::new(
+    let client = ConsumerClient::builder(
         host,
         eventhub,
         None,
         azure_identity::DefaultAzureCredential::new()?,
-        Some(ConsumerClientOptions {
-            application_id: Some("test_open".to_string()),
-            ..Default::default()
-        }),
-    );
-    client.open().await?;
+    )
+    .with_application_id("test_open".to_string())
+    .open()
+    .await?;
     client.close().await?;
 
     Ok(())
@@ -102,17 +88,10 @@ async fn test_get_properties() -> Result<(), Box<dyn Error>> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ConsumerClient::new(
-        host,
-        eventhub.clone(),
-        None,
-        credential.clone(),
-        Some(ConsumerClientOptions {
-            application_id: Some("test_open".to_string()),
-            ..Default::default()
-        }),
-    );
-    client.open().await?;
+    let client = ConsumerClient::builder(host, eventhub.clone(), None, credential.clone())
+        .with_application_id("test_open".to_string())
+        .open()
+        .await?;
     let properties = client.get_eventhub_properties().await?;
     info!("Properties: {:?}", properties);
     assert_eq!(properties.name, eventhub);
@@ -128,17 +107,10 @@ async fn test_get_partition_properties() -> Result<(), Box<dyn Error>> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ConsumerClient::new(
-        host,
-        eventhub,
-        None,
-        credential.clone(),
-        Some(ConsumerClientOptions {
-            application_id: Some("test_open".to_string()),
-            ..Default::default()
-        }),
-    );
-    client.open().await?;
+    let client = ConsumerClient::builder(host, eventhub, None, credential.clone())
+        .with_application_id("test_open".to_string())
+        .open()
+        .await?;
     let properties = client.get_eventhub_properties().await?;
 
     for partition_id in properties.partition_ids {
@@ -164,19 +136,10 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
     let credential = DefaultAzureCredential::new()?;
 
     info!("Creating client.");
-    let client = ConsumerClient::new(
-        host,
-        eventhub,
-        None,
-        credential.clone(),
-        Some(ConsumerClientOptions {
-            application_id: Some("test_open".to_string()),
-            ..Default::default()
-        }),
-    );
-
-    info!("Opening client.");
-    client.open().await?;
+    let client = ConsumerClient::builder(host, eventhub, None, credential.clone())
+        .with_application_id("test_open".to_string())
+        .open()
+        .await?;
 
     let receiver = client
         .open_receiver_on_partition(

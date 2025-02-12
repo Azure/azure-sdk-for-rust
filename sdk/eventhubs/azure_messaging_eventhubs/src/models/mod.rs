@@ -42,7 +42,8 @@ use std::fmt::Debug;
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// # let my_credentials = DefaultAzureCredential::new()?;
-/// let consumer_client = azure_messaging_eventhubs::ConsumerClient::new("fully_qualified_domain".to_string(), "eventhub_name".to_string(), None, my_credentials.clone(), None);
+/// let consumer_client = azure_messaging_eventhubs::ConsumerClient::builder("fully_qualified_domain".to_string(), "eventhub_name".to_string(), None, my_credentials.clone())
+///    .open().await?;
 ///
 /// let eventhub_properties = consumer_client.get_eventhub_properties().await?;
 ///
@@ -87,7 +88,8 @@ pub struct EventHubProperties {
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// # let my_credentials = DefaultAzureCredential::new()?;
-/// let consumer_client = azure_messaging_eventhubs::ConsumerClient::new("fully_qualified_domain".to_string(), "eventhub_name".to_string(), None, my_credentials.clone(), None);
+/// let consumer_client = azure_messaging_eventhubs::ConsumerClient::builder("fully_qualified_domain".to_string(), "eventhub_name".to_string(), None, my_credentials.clone())
+///   .open().await?;
 ///
 /// let partition_properties = consumer_client.get_partition_properties("0".to_string()).await?;
 /// # Ok(()) }
