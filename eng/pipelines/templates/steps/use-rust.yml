@@ -25,7 +25,7 @@ steps:
         Write-Host "> rustup toolchain install --no-self-update $toolchain"
         rustup toolchain install --no-self-update $toolchain
         
-        if ($LASTEXITCODE -eq 0) { exit 0 }
+        if ($?) { exit 0 }
 
         if ($attempts -lt $maxAttempts) { 
           Write-Host "Failed to install $toolchain, attempt $attempts, retrying..."
