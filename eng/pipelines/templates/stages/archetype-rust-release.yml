@@ -82,6 +82,10 @@ stages:
                   displayName: Download ${{parameters.PipelineArtifactName}} artifact
                   artifact: ${{parameters.PipelineArtifactName}}
 
+                - template: /eng/pipelines/templates/steps/use-rust.yml@self
+                  parameters:
+                    Toolchain: stable
+
                 - task: PowerShell@2
                   displayName: Publish Crate
                   inputs:

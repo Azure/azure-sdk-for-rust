@@ -1,10 +1,12 @@
 $Language = "rust"
 $LanguageDisplayName = "Rust"
 $PackageRepository = "crates.io"
-$packagePattern = "cargo-metadata.json"
+$packagePattern = "Cargo.toml"
 #$MetadataUri = "https://raw.githubusercontent.com/Azure/azure-sdk/main/_data/releases/latest/rust-packages.csv"
 $GithubUri = "https://github.com/Azure/azure-sdk-for-rust"
 $PackageRepositoryUri = "https://crates.io/crates"
+
+. (Join-Path $EngCommonScriptsDir "Helpers" "PSModule-Helpers.ps1")
 
 function SetPackageVersion ($PackageName, $Version, $ServiceDirectory, $ReleaseDate, $ReplaceLatestEntryTitle = $true) {
   if ($null -eq $ReleaseDate) {
@@ -119,28 +121,21 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 }
 
 function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
-  #$pkg will be a FileInfo object for the cargo-metadata.json file in a package artifact directory
-  $package = Get-Content -Path $pkg.FullName -Raw | ConvertFrom-Json
-  $packageName = $package.name
-  $packageVersion = $package.vers
+  InstallAndImport-ModuleIfNotInstalled "PSToml" "0.3.1"
 
-  $crateFile = Get-ChildItem $pkg.DirectoryName -Filter '*.crate'
+  #$pkg will be a FileInfo object for the Cargo.toml file in a package artifact directory
+  $toml = Get-Content -Path $pkg.FullName -Raw | ConvertFrom-Toml
   
-  New-Item -Path $workingDirectory -ItemType Directory -Force | Out-Null
-  $workFolder = Join-Path $workingDirectory $crateFile.BaseName
-  if (Test-Path $workFolder) {
-    Remove-item $workFolder -Recurse -Force | Out-Null
-  }
+  $packageName = $toml.package.name
+  $packageVersion = $toml.package.version
 
-  # This will extract the contents of the crate file into a folder matching the file name
-  tar -xvzf $crateFile.FullName -C $workingDirectory | Out-Null
+  $changeLogLoc = Get-ChildItem -Path $pkg.DirectoryName -Filter "CHANGELOG.md" | Select-Object -First 1
+  $readmeContentLoc = Get-ChildItem -Path $pkg.DirectoryName -Filter "README.md" | Select-Object -First 1
 
-  $changeLogLoc = Get-ChildItem -Path $workFolder -Filter "CHANGELOG.md" | Select-Object -First 1
   if ($changeLogLoc) {
     $releaseNotes = Get-ChangeLogEntryAsString -ChangeLogLocation $changeLogLoc -VersionString $packageVersion
   }
 
-  $readmeContentLoc = Get-ChildItem -Path $workFolder -Filter "README.md" | Select-Object -First 1
   if ($readmeContentLoc) {
     $readmeContent = Get-Content -Raw $readmeContentLoc
   }
