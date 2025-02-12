@@ -1,0 +1,16 @@
+# DEPRECATED - This file is replaced by ./pullrequest.yml
+# Once all PRs contain the new file, the pipeline can target the new file and this file can be deleted.
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+      - feature/*
+      - hotfix/*
+      - release/*
+
+extends:
+  template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
+  parameters:
+    ServiceDirectory: auto
