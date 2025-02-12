@@ -9,7 +9,7 @@ use azure_messaging_eventhubs::{
     models::{AmqpMessage, AmqpValue, EventData, MessageId},
     {
         ConsumerClient, ConsumerClientOptions, EventDataBatchOptions, OpenReceiverOptions,
-        ProducerClient, ProducerClientOptions, StartLocation, StartPosition,
+        ProducerClient, StartLocation, StartPosition,
     },
 };
 use futures::pin_mut;
@@ -25,17 +25,14 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let producer = ProducerClient::new(
+    let producer = ProducerClient::builder(
         host.clone(),
         eventhub.clone(),
         DefaultAzureCredential::new()?,
-        Some(ProducerClientOptions {
-            application_id: Some(TEST_NAME.to_string()),
-            ..Default::default()
-        }),
-    );
-
-    assert!(producer.open().await.is_ok());
+    )
+    .with_application_id(TEST_NAME.to_string())
+    .open()
+    .await?;
 
     let partition_properties = producer
         .get_partition_properties(EVENTHUB_PARTITION.to_string())

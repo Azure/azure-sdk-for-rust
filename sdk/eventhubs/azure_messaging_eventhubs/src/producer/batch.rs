@@ -31,12 +31,13 @@ struct EventDataBatchState {
 ///
 /// ``` no_run
 /// # use azure_messaging_eventhubs::ProducerClient;
-/// # use azure_messaging_eventhubs::ProducerClientOptions;
 /// # use azure_identity::TokenCredentialOptions;
 ///
 /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credentials = azure_identity::DefaultAzureCredential::new()?;
-/// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), credentials.clone(), None);
+/// # let producer_client = ProducerClient::builder("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), credentials.clone())
+/// #     .open().await?;
+/// #
 ///
 /// let mut batch = producer_client.create_batch(None).await?;
 ///
@@ -154,12 +155,12 @@ impl<'a> EventDataBatch<'a> {
     ///
     /// ```no_run
     ///
-    /// # use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
+    /// # use azure_messaging_eventhubs::ProducerClient;
     /// # use azure_messaging_eventhubs::models::EventData;
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone(), None);
+    /// # let producer_client = ProducerClient::builder("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone()).open().await?;
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let event_data = EventData::builder().build();
@@ -197,13 +198,13 @@ impl<'a> EventDataBatch<'a> {
     /// # Examples
     ///
     /// ```no_run
-    /// # use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
+    /// # use azure_messaging_eventhubs::ProducerClient;
     /// # use azure_messaging_eventhubs::models::EventData;
     /// # use azure_messaging_eventhubs::models::AmqpMessage;
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone(), None);
+    /// # let producer_client = ProducerClient::builder("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone()).open().await?;
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let amqp_message = AmqpMessage::builder().build();

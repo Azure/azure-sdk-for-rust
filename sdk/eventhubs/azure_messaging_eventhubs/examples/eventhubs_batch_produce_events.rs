@@ -11,10 +11,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventhub_name = std::env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::new(eventhub_namespace, eventhub_name, credential.clone(), None);
-
-    // Open the client
-    client.open().await?;
+    let client = ProducerClient::builder(eventhub_namespace, eventhub_name, credential.clone())
+        .open()
+        .await?;
 
     // Get the partition IDs
     let properties = client.get_eventhub_properties().await?;

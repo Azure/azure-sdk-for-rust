@@ -162,7 +162,7 @@ Examples for various scenarios can be found on in the samples directory in our G
 ## Open an Event Hubs message producer on an Event Hubs instance.
 
 ```rust no_run
-use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
+use azure_messaging_eventhubs::ProducerClient;
 
 async fn open_producer_client() -> Result<ProducerClient,azure_core::Error>
 {
@@ -171,13 +171,11 @@ async fn open_producer_client() -> Result<ProducerClient,azure_core::Error>
 
     let credential = azure_identity::DefaultAzureCredential::new()?;
 
-    let producer = azure_messaging_eventhubs::ProducerClient::new(
+    let producer = azure_messaging_eventhubs::ProducerClient::builder(
         host.to_string(),
         eventhub.to_string(),
-        credential.clone(),
-        None,
-        );
-    producer.open().await?;
+        credential.clone())
+        .open().await?;
 
     Ok(producer)
     }
