@@ -3,14 +3,11 @@
 #Requires -Version 7.0
 param(
   [string]$PackageInfoDirectory,
-  [string[]]$CrateNames,
-  [string]$Token
+  [string[]]$CrateNames
 )
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
-
-$env:CARGO_REGISTRY_TOKEN = $Token
 
 $hasErrors = $false
 foreach ($crateName in $crateNames) {

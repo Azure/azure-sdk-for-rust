@@ -4,14 +4,11 @@
 param(
   [string]$PackagesPath,
   [string[]]$CrateNames,
-  [string[]]$AdditionalOwners,
-  [string]$Token
+  [string[]]$AdditionalOwners
 )
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
-
-$env:CARGO_REGISTRY_TOKEN = $Token
 
 foreach ($crateName in $CrateNames) {
   Write-Host "Publishing packae: '$crateName'"
