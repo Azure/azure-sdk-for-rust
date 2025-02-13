@@ -51,7 +51,14 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 .container_id(id)
                 .max_frame_size(65536);
 
+            let mut endpoint = url.clone();
+
             if let Some(options) = options {
+                if let Some(custom_endpoint) = options.custom_endpoint {
+                    endpoint = custom_endpoint.clone();
+                    builder = builder.hostname(url.host_str().unwrap());
+                }
+
                 if let Some(frame_size) = options.max_frame_size {
                     builder = builder.max_frame_size(frame_size);
                 }
@@ -101,7 +108,12 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 }
             }
             self.connection
-                .set(Mutex::new(builder.open(url).await.map_err(AmqpOpen::from)?))
+                .set(Mutex::new(
+                    builder
+                        .open(endpoint.clone())
+                        .await
+                        .map_err(AmqpOpen::from)?,
+                ))
                 .map_err(|_| {
                     azure_core::Error::new(
                         azure_core::error::ErrorKind::Other,

@@ -24,6 +24,7 @@ pub struct AmqpConnectionOptions {
     pub desired_capabilities: Option<Vec<AmqpSymbol>>,
     pub properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
     pub buffer_size: Option<usize>,
+    pub custom_endpoint: Option<Url>,
 }
 
 impl AmqpConnectionOptions {}
@@ -206,6 +207,7 @@ mod tests {
             incoming_locales: Some(vec!["en-US".to_string()]),
             offered_capabilities: Some(vec!["capability".into()]),
             desired_capabilities: Some(vec!["capability".into()]),
+            custom_endpoint: None,
             properties: Some(
                 vec![("key", "value")]
                     .into_iter()

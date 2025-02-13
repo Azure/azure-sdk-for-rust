@@ -47,6 +47,9 @@ pub struct ProducerClientOptions {
 
     /// The maximum size of a message that can be sent to the Event Hub.
     pub max_message_size: Option<u64>,
+
+    /// A custom endpoint to connect to. Use this to connect through a TCP proxy.
+    pub custom_endpoint: Option<String>,
 }
 
 impl ProducerClientOptions {}
@@ -367,6 +370,7 @@ impl ProducerClient {
     async fn ensure_connection(&self, url: &str) -> Result<()> {
         if self.connection.get().is_none() {
             let connection = AmqpConnection::new();
+
             connection
                 .open(
                     self.options
@@ -386,6 +390,10 @@ impl ProducerClient {
                             .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
                             .collect(),
                         ),
+                        custom_endpoint: Some(Url::parse(
+                            // TODO: yeah...probably not right.
+                            self.options.custom_endpoint.as_ref().unwrap().as_str(),
+                        )?),
                         ..Default::default()
                     }),
                 )
