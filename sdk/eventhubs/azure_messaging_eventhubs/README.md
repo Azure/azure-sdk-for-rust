@@ -123,11 +123,11 @@ Additional examples for various scenarios can be found on in the examples direct
 ## Open an Event Hubs message producer on an Event Hub instance
 
 ```rust no_run
-use azure_core;
+use azure_core::Error;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::ProducerClient;
 
-async fn open_producer_client() -> Result<ProducerClient, azure_core::Error> {
+async fn open_producer_client() -> Result<ProducerClient, Error> {
     let host = "<EVENTHUBS_HOST>";
     let eventhub = "<EVENTHUB_NAME>";
 
@@ -150,7 +150,7 @@ send multiple messages in a single network request to the service.
 ### Send events directly to the Event Hub
 
 ```rust no_run
-use azure_core::Error
+use azure_core::Error;
 use azure_messaging_eventhubs::ProducerClient;
 
 async fn send_events(producer: &ProducerClient) -> Result<(), Error> {
