@@ -380,8 +380,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     let version = key.resource_id()?.version.unwrap_or_default();
 
     // Generate a data encryption key.
-    // TODO: Replace with recorded randomness similar to .NET's: https://github.com/Azure/azure-sdk-for-net/blob/fefa057116832364695ca010216f66f198182647/sdk/core/Azure.Core.TestFramework/src/TestRecording.cs#L165
-    let dek = b"17cf8194356442099ef7482b0f22340e".to_vec();
+    let dek = recording.random::<[u8; 32]>().to_vec();
 
     // Wrap the DEK.
     let mut parameters = KeyOperationsParameters {

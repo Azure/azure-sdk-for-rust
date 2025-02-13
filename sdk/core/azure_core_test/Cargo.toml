@@ -24,6 +24,8 @@ azure_core = { workspace = true, features = ["test"] }
 azure_core_test_macros.workspace = true
 azure_identity.workspace = true
 futures.workspace = true
+rand.workspace = true
+rand_chacha.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
@@ -44,6 +46,8 @@ tokio = { workspace = true, features = [
 ] }
 
 [dev-dependencies]
+# Crate used in README.md example.
+azure_security_keyvault_secrets = { path = "../../keyvault/azure_security_keyvault_secrets" }
 clap.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
