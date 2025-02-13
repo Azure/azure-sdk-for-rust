@@ -11,10 +11,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventhub_name = std::env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::new(eventhub_namespace, eventhub_name, credential.clone(), None);
-
-    // Open the client
-    client.open().await?;
+    let client = ProducerClient::builder()
+        .open(
+            eventhub_namespace.as_str(),
+            eventhub_name.as_str(),
+            credential.clone(),
+        )
+        .await?;
 
     // Get the partition IDs
     let properties = client.get_eventhub_properties().await?;
@@ -25,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Send the message to each partition using a batch sender.
     for partition_id in properties.partition_ids {
-        let mut batch = client
+        let batch = client
             .create_batch(Some(EventDataBatchOptions {
                 partition_id: Some(partition_id.clone()),
                 ..Default::default()
@@ -42,19 +45,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Send an event built using the `EventData` builder which allows for more control over the event.
         if batch.try_add_event_data(
             EventData::builder()
-                .with_content_type("text/plain".to_string())
+                .with_content_type("text/plain")
                 .with_correlation_id(Uuid::new_v4())
                 .with_body("This is some text")
-                .add_property("Event Property".to_string(), "Property Value")
-                .add_property("Pi".to_string(), std::f32::consts::PI)
-                .add_property("Binary".to_string(), vec![0x08, 0x09, 0x0A])
+                .add_property("Event Property", "Property Value")
+                .add_property("Pi", std::f32::consts::PI)
+                .add_property("Binary", vec![0x08, 0x09, 0x0A])
                 .build(),
             None,
         )? {
             println!("EventData message sent to partition: {}", partition_id);
         }
 
-        client.submit_batch(&batch, None).await?;
+        client.send_batch(&batch, None).await?;
     }
 
     Ok(())

@@ -203,14 +203,14 @@ impl From<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             #[cfg(feature = "cplusplus")]
             AmqpValue::Composite(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
                 serde_amqp::described::Described {
-                    descriptor: d.descriptor.clone().into(),
-                    value: d.value.clone().into(),
+                    descriptor: d.descriptor().clone().into(),
+                    value: d.value().clone().into(),
                 },
             )),
             AmqpValue::Described(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
                 serde_amqp::described::Described {
-                    descriptor: d.descriptor.clone().into(),
-                    value: d.value.clone().into(),
+                    descriptor: d.descriptor().clone().into(),
+                    value: d.value().clone().into(),
                 },
             )),
             AmqpValue::Unknown => todo!(),
@@ -268,7 +268,7 @@ impl From<fe2o3_amqp_types::primitives::Value> for AmqpValue {
                         AmqpDescriptor::Name(symbol.into())
                     }
                 };
-                AmqpValue::Described(Box::new(AmqpDescribed { descriptor, value }))
+                AmqpValue::Described(Box::new(AmqpDescribed::new(descriptor, value)))
             }
             fe2o3_amqp_types::primitives::Value::Decimal128(_) => todo!(),
             fe2o3_amqp_types::primitives::Value::Decimal32(_) => todo!(),
@@ -281,7 +281,7 @@ impl PartialEq<AmqpDescribed>
     for serde_amqp::described::Described<fe2o3_amqp_types::primitives::Value>
 {
     fn eq(&self, other: &AmqpDescribed) -> bool {
-        self.descriptor == other.descriptor && self.value == other.value
+        self.descriptor == *other.descriptor() && self.value == *other.value()
     }
 }
 
