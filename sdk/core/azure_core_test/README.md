@@ -46,7 +46,7 @@ but mock credentials when playing back - there are a number of other helpful fea
 * `add_sanitizer` will add custom sanitizers. There are many pre-configured by the [Test Proxy] as well.
 * `remove_sanitizers` will remove named sanitizers, like `AZSDK3430` that sanitizes all `$..id` fields and may cause playback to fail.
 * `add_matcher` adds a custom matcher to match headers, path segments, and or body content.
-* `random` gets random data (numbers, arrays, etc.) that is initializes from the OS when running live or recording,
+* `random` gets random data (numbers, arrays, etc.) that is initialized from the OS when running live or recording,
   but the seed is saved with the recording and used during play back so that sequential generation of random data is deterministic.
   ChaCha20 is used to provide a deterministic, portable sequence of seeded random data.
 * `var` gets a required variable with optional `ValueOptions` you can use to sanitize values.
