@@ -134,7 +134,7 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
 
   $additionalPackages += $affectedPackages | Where-Object { $packagesWithChanges -notcontains $_ }
 
-  # if the change affected no packags, e.g. eng/common change, we use core and template for validation
+  # if the change affected no packages, e.g. eng/common change, we use core and template for validation
   if ($additionalPackages.Length -eq 0) {
     $additionalPackages += $allPackageProperties | Where-Object { $_.Name -eq "azure_core" -or $_.Name -eq "azure_template" }
   }
