@@ -474,6 +474,7 @@ dependencies = [
  "rustc_version",
  "serde",
  "serde_json",
+ "sha2",
  "time",
  "tokio",
  "typespec_client_core",

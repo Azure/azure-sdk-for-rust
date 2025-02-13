@@ -282,6 +282,71 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### Encrypt and decrypt
+
+You can create an asymmetric key in Azure Key Vault (Managed HSM also supports AES symmetric key encryption) and encrypt or decrypt data
+without the private key ever leaving the HSM.
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_keys::{
+    models::{KeyBundle, KeyCreateParameters, KeyOperationsParameters, JsonWebKeyEncryptionAlgorithm, JsonWebKeyType},
+    ResourceExt, KeyClient,
+};
+use rand::random;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = KeyClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Create a key encryption key (KEK) using RSA.
+    let body = KeyCreateParameters {
+        kty: Some(JsonWebKeyType::RSA),
+        key_size: Some(2048),
+        ..Default::default()
+    };
+
+    let key = client
+        .create_key("key-name", body.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    let version = key.resource_id()?.version.unwrap_or_default();
+
+    // Generate a symmetric data encryption key (DEK). You'd encrypt your data using this DEK.
+    let dek = random::<u32>().to_le_bytes().to_vec();
+
+    // Wrap the DEK. You'd store the wrapped DEK along with your encrypted data.
+    let mut parameters = KeyOperationsParameters {
+        algorithm: Some(JsonWebKeyEncryptionAlgorithm::RsaOAEP256),
+        value: Some(dek.clone()),
+        ..Default::default()
+    };
+    let wrapped = client
+        .wrap_key("key-name", version.as_ref(), parameters.clone().try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+
+    // Unwrap the DEK and decrypt your data.
+    parameters.value = wrapped.result;
+    let unwrapped = client
+        .unwrap_key("key-name", version.as_ref(), parameters.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+
+    assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));
+
+    Ok(())
+}
+```
+
 ## Troubleshooting
 
 ### General

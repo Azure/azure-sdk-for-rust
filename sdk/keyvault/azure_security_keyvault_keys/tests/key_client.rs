@@ -6,7 +6,11 @@
 use azure_core::{Result, StatusCode};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_security_keyvault_keys::{
-    models::{JsonWebKeyCurveName, JsonWebKeyType, KeyCreateParameters, KeyUpdateParameters},
+    models::{
+        JsonWebKeyCurveName, JsonWebKeyEncryptionAlgorithm, JsonWebKeySignatureAlgorithm,
+        JsonWebKeyType, KeyCreateParameters, KeyOperationsParameters, KeySignParameters,
+        KeyUpdateParameters, KeyVerifyParameters,
+    },
     KeyClient, KeyClientOptions, ResourceExt as _,
 };
 use azure_security_keyvault_test::Retry;
@@ -219,6 +223,187 @@ async fn purge_key(ctx: TestContext) -> Result<()> {
             Err(err) => return Err(err),
         }
     }
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
+
+    let mut options = KeyClientOptions::default();
+    recording.instrument(&mut options.client_options);
+
+    let client = KeyClient::new(
+        recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+        recording.credential(),
+        Some(options),
+    )?;
+
+    // Create an RSA key.
+    let body = KeyCreateParameters {
+        kty: Some(JsonWebKeyType::RSA),
+        key_size: Some(2048),
+        ..Default::default()
+    };
+
+    const NAME: &str = "encrypt-decrypt";
+
+    let key = client
+        .create_key(NAME, body.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    let version = key.resource_id()?.version.unwrap_or_default();
+
+    // Encrypt plaintext.
+    let plaintext = b"plaintext".to_vec();
+    let mut parameters = KeyOperationsParameters {
+        algorithm: Some(JsonWebKeyEncryptionAlgorithm::RsaOAEP256),
+        value: Some(plaintext.clone()),
+        ..Default::default()
+    };
+    let encrypted = client
+        .encrypt(NAME, version.as_ref(), parameters.clone().try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    assert!(matches!(encrypted.result.as_ref(), Some(ciphertext) if !ciphertext.is_empty()));
+
+    // Decrypt ciphertext.
+    parameters.value = encrypted.result;
+    let decrypted = client
+        .decrypt(NAME, version.as_ref(), parameters.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    assert!(matches!(decrypted.result, Some(result) if result.eq(&plaintext)));
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn sign_verify(ctx: TestContext) -> Result<()> {
+    use sha2::{Digest as _, Sha256};
+
+    let recording = ctx.recording();
+    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
+
+    let mut options = KeyClientOptions::default();
+    recording.instrument(&mut options.client_options);
+
+    let client = KeyClient::new(
+        recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+        recording.credential(),
+        Some(options),
+    )?;
+
+    // Create an EC key.
+    let body = KeyCreateParameters {
+        kty: Some(JsonWebKeyType::EC),
+        curve: Some(JsonWebKeyCurveName::P256),
+        ..Default::default()
+    };
+
+    const NAME: &str = "sign-verify";
+    const ALG: Option<JsonWebKeySignatureAlgorithm> = Some(JsonWebKeySignatureAlgorithm::ES256);
+
+    let key = client
+        .create_key(NAME, body.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    let version = key.resource_id()?.version.unwrap_or_default();
+
+    // Hash and sign plaintext.
+    let plaintext = b"plaintext".to_vec();
+    let digest = Sha256::digest(plaintext).to_vec();
+
+    let parameters = KeySignParameters {
+        algorithm: ALG,
+        value: Some(digest.clone()),
+    };
+    let signed = client
+        .sign(NAME, version.as_ref(), parameters.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    assert!(matches!(signed.result.as_ref(), Some(signature) if !signature.is_empty()));
+
+    // Verify signature.
+    let parameters = KeyVerifyParameters {
+        algorithm: ALG,
+        digest: Some(digest),
+        signature: signed.result,
+    };
+    let verified = client
+        .verify(NAME, version.as_ref(), parameters.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    assert_eq!(verified.value, Some(true));
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
+
+    let mut options = KeyClientOptions::default();
+    recording.instrument(&mut options.client_options);
+
+    let client = KeyClient::new(
+        recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+        recording.credential(),
+        Some(options),
+    )?;
+
+    // Create a KEK using RSA.
+    let body = KeyCreateParameters {
+        kty: Some(JsonWebKeyType::RSA),
+        key_size: Some(2048),
+        ..Default::default()
+    };
+
+    const NAME: &str = "wrap-key-unwrap-key";
+    const ALG: Option<JsonWebKeyEncryptionAlgorithm> =
+        Some(JsonWebKeyEncryptionAlgorithm::RsaOAEP256);
+
+    let key = client
+        .create_key(NAME, body.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    let version = key.resource_id()?.version.unwrap_or_default();
+
+    // Generate a data encryption key.
+    // TODO: Replace with recorded randomness similar to .NET's: https://github.com/Azure/azure-sdk-for-net/blob/fefa057116832364695ca010216f66f198182647/sdk/core/Azure.Core.TestFramework/src/TestRecording.cs#L165
+    let dek = b"17cf8194356442099ef7482b0f22340e".to_vec();
+
+    // Wrap the DEK.
+    let mut parameters = KeyOperationsParameters {
+        algorithm: ALG,
+        value: Some(dek.clone()),
+        ..Default::default()
+    };
+    let wrapped = client
+        .wrap_key(NAME, version.as_ref(), parameters.clone().try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    assert!(matches!(wrapped.result.as_ref(), Some(result) if !result.is_empty()));
+
+    // Unwrap the DEK.
+    parameters.value = wrapped.result;
+    let unwrapped = client
+        .unwrap_key(NAME, version.as_ref(), parameters.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));
 
     Ok(())
 }
