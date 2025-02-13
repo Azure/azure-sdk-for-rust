@@ -1,147 +1,104 @@
 <!-- cspell:words pwsh yourgroup westus servicebus checkpointing  -->
 
-# Azure Event Hubs Client Package for Rust
-
-Azure Event Hubs crate for the Microsoft Azure SDK for Rust.
+# Azure Event Hubs client library for Rust
 
 [Azure Event Hubs](https://azure.microsoft.com/services/event-hubs/) is a big data streaming platform and event ingestion service from Microsoft. For more information about Event Hubs see: [link](https://learn.microsoft.com/azure/event-hubs/event-hubs-about).
 
-Use the client library `azure_messaging_eventhubs` in your application to:
+The Azure Event Hubs client library allows you to send single events or batches of events to an event hub and consume events from an event hub.
 
--   Send events to an event hub.
--   Consume events from an event hub.
-
-Key links:
-
--   [Source code][source]
--   [API Reference Documentation][rustdoc]
--   [Product documentation](https://azure.microsoft.com/services/event-hubs/)
--   [Samples][rustdoc_examples]
+[Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation]
 
 ## Getting started
 
 ### Install the package
 
-Add the Azure Event Hubs client package for rust to your `cargo.toml` file:
+Install the Azure Event Hubs client library for Rust with [Cargo]:
 
-```bash
+```sh
 cargo add azure_messaging_eventhubs
 ```
 
 ### Prerequisites
 
--   A Rust Compiler. See [here](https://www.rust-lang.org/tools/install) for installation instructions.
--   An [Azure subscription](https://azure.microsoft.com/free/)
--   An [Event Hub namespace](https://learn.microsoft.com/azure/event-hubs/).
--   An Event Hub instance. You can create an Event Hub instance in your Event Hubs Namespace using the [Azure Portal](https://learn.microsoft.com/azure/event-hubs/event-hubs-create), or the [Azure CLI](https://learn.microsoft.com/azure/event-hubs/event-hubs-quickstart-cli).
+* A Rust Compiler. See [here](https://www.rust-lang.org/tools/install) for installation instructions.
+* An [Azure subscription]
+* The [Azure CLI]
+* An [Event Hub namespace](https://learn.microsoft.com/azure/event-hubs/).
+* An Event Hub instance. You can create an Event Hub instance in your Event Hubs Namespace using the [Azure Portal](https://learn.microsoft.com/azure/event-hubs/event-hubs-create), or the [Azure CLI](https://learn.microsoft.com/azure/event-hubs/event-hubs-quickstart-cli).
 
-#### Create a namespace using the Azure CLI
+If you use the Azure CLI, replace `<your-resource-group-name>`, `<your-eventhubs-namespace-name>`, and `<your-eventhub-name>` with your own, unique names:
 
-Login to the CLI:
+Create an Event Hubs Namespace:
 
-```pwsh
-az login
+```azurecli
+az eventhubs namespace create --resource-group <your-resource-group-name> --name <your-eventhubs-namespace-name> --sku Standard 
 ```
 
-Create a resource group:
+Create an Event Hub Instance:
 
-```pwsh
-az group create --name <your group name> --location <your location> --subscription <your subscription>
+```azurecli
+az eventhubs eventhub create --resource-group <your-resource-group-name> --namespace-name <your-eventhubs-namespace-name> --name <your-eventhub-name>
 ```
 
-This should output something like:
+### Install dependencies
 
-```json
-{
-    "id": "/subscriptions/<your subscription ID>/resourceGroups/<your group name>",
-    "location": "<your location>",
-    "managedBy": null,
-    "name": "<yourgroup name>",
-    "properties": {
-        "provisioningState": "Succeeded"
-    },
-    "tags": null,
-    "type": "Microsoft.Resources/resourceGroups"
-}
-```
+Add the following crates to your project:
 
-Create an Event Hubs namespace:
-
-```pwsh
- az eventhubs namespace create --resource-group <your group name> --name <your namespace name> --sku Standard  --subscription <your subscription>
-```
-
-This should output something like:
-
-```json
-{
-    "createdAt": "2023-08-10T18:41:54.19Z",
-    "disableLocalAuth": false,
-    "id": "/subscriptions/<your subscription ID>/resourceGroups/<your group name>/providers/Microsoft.EventHub/namespaces/<your namespace>",
-    "isAutoInflateEnabled": false,
-    "kafkaEnabled": true,
-    "location": "West US",
-    "maximumThroughputUnits": 0,
-    "metricId": "REDACTED",
-    "minimumTlsVersion": "1.2",
-    "name": "<your namespace name>",
-    "provisioningState": "Succeeded",
-    "publicNetworkAccess": "Enabled",
-    "resourceGroup": "<your resource group>",
-    "serviceBusEndpoint": "https://<your namespace name>.servicebus.windows.net:443/",
-    "sku": {
-        "capacity": 1,
-        "name": "Standard",
-        "tier": "Standard"
-    },
-    "status": "Active",
-    "tags": {},
-    "type": "Microsoft.EventHub/Namespaces",
-    "updatedAt": "2023-08-10T18:42:41.343Z",
-    "zoneRedundant": false
-}
-```
-
-Create an EventHub:
-
-```pwsh
-az eventhubs eventhub create --resource-group <your resource group> --namespace-name <your namespace name> --name <your eventhub name>
-```
-
-That should output something like:
-
-```json
-{
-    "createdAt": "2023-08-10T21:02:07.62Z",
-    "id": "/subscriptions/<your subscription>/resourceGroups/<your group name>/providers/Microsoft.EventHub/namespaces/<your namespace name>/eventhubs/<your eventhub name>",
-    "location": "westus",
-    "messageRetentionInDays": 7,
-    "name": "<your eventhub name>",
-    "partitionCount": 4,
-    "partitionIds": ["0", "1", "2", "3"],
-    "resourceGroup": "<your group name>",
-    "retentionDescription": {
-        "cleanupPolicy": "Delete",
-        "retentionTimeInHours": 168
-    },
-    "status": "Active",
-    "type": "Microsoft.EventHub/namespaces/eventhubs",
-    "updatedAt": "2023-08-10T21:02:16.29Z"
-}
+```sh
+cargo add azure_identity tokio
 ```
 
 ### Authenticate the client
 
-Event Hubs clients are created using a credential from the [Azure Identity package][azure_identity_pkg], like [DefaultAzureCredential][default_azure_credential].
+In order to interact with the Azure Event Hubs service, you'll need to create an instance of the `ProducerClient` or the `ConsumerClient`. You need an **event hub namespace host URL** (which you may see as `serviceBusEndpoint` in the Azure CLI response when creating the Even Hubs Namespace), an **Event Hub name** (which you may see as `name` in the Azure CLI response when crating the Event Hub instance), and credentials to instantiate a client object.
+
+The example shown below uses a [`DefaultAzureCredential`][default_cred_ref], which is appropriate for most local development environments. Additionally, we recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
+
+The `DefaultAzureCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
+
+```azurecli
+az login
+```
+
+Instantiate a `DefaultAzureCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
+
+### Create an Event Hubs message producer on an Event Hub instance
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_messaging_eventhubs::ProducerClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let host = "<EVENTHUBS_NAMESPACE_HOST>";
+    let eventhub = "<EVENTHUB_NAME>";
+
+    // Create new credential
+    let credential = DefaultAzureCredential::new()?;
+
+        // Create and open new Producer Client
+    let producer = ProducerClient::new(
+        host.to_string(),
+        eventhub.to_string(),
+        credential.clone(),
+        None,
+    );
+    producer.open().await?;
+
+    producer.send_event(vec![1, 2, 3, 4], None).await?;
+
+    Ok(())
+}
+```
 
 # Key concepts
 
-An Event Hub [**namespace**](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#namespace) can have multiple event hubs.
+An Event Hub [**namespace**](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#namespace) can have multiple Event Hub instances.
 Each Event Hub instance, in turn, contains [**partitions**](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#partitions) which store events.
 
 <!-- NOTE: Fix dead links -->
 
-Events are published to an Event Hub instance using an [event publisher](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#event-publishers). In this package, the event publisher is the [ProducerClient]()
+Events are published to an Event Hub instance using an [event publisher](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#event-publishers). In this package, the event publisher is the [`ProducerClient`][producer_client]
 
 Events can be consumed from an Event Hub instance using an [event consumer](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#event-consumers).
 
@@ -156,10 +113,18 @@ More information about Event Hubs features and terminology can be found here: [l
 
 # Examples
 
-Examples for various scenarios can be found on in the samples directory in our GitHub repo for
-[Event Hubs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure-messaging-eventhubs/samples).
+Additional examples for various scenarios can be found on in the examples directory in our GitHub repo for
+[Event Hubs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/examples).
 
-## Open an Event Hubs message producer on an Event Hubs instance.
+<!-- no toc -->
+* [Open an Event Hubs message producer on an Event Hub instance](#open-an-event-hubs-message-producer-on-an-event-hub-instance)
+* [Send events](#send-events)
+  * [Send events directly to the Event Hub](#send-events-directly-to-the-event-hub)
+  * [Send events using a batch operation](#send-events-using-a-batch-operation)
+* [Open an Event Hubs message consumer on an Event Hubs instance](#open-an-event-hubs-message-consumer-on-an-event-hub-instance)
+* [Receive events](#receive-events)
+
+## Open an Event Hubs message producer on an Event Hub instance
 
 ```rust no_run
 use azure_messaging_eventhubs::ProducerClient;
@@ -179,33 +144,13 @@ async fn open_producer_client() -> Result<ProducerClient, azure_core::Error> {
 }
 ```
 
-## Open an Event Hubs message consumer on an Event Hubs instance.
-
-```rust no_run
-use azure_messaging_eventhubs::ConsumerClient;
-
-async fn open_consumer_client() -> Result<ConsumerClient, azure_core::Error> {
-    let host = "<EVENTHUBS_HOST>";
-    let eventhub = "<EVENTHUB_NAME>";
-
-    let credential = azure_identity::DefaultAzureCredential::new()?;
-
-    let consumer = azure_messaging_eventhubs::ConsumerClient::builder()
-        .open(host,
-              eventhub,
-              credential.clone()
-        ).await?;
-    Ok(consumer)
-}
-```
-
 ## Send events
 
 There are two mechanisms used to send events to an Event Hub instance. The first directly
 sends individual messages to the Event Hub, the second uses a "batch" operation to
 send multiple messages in a single network request to the service.
 
-### Send events directly to the Event Hub.
+### Send events directly to the Event Hub
 
 ```rust no_run
 use azure_messaging_eventhubs::ProducerClient;
@@ -229,6 +174,26 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error
     let res = producer.send_batch(&batch, None).await;
     assert!(res.is_ok());
     Ok(())
+}
+```
+
+## Open an Event Hubs message consumer on an Event Hub instance
+
+```rust no_run
+use azure_messaging_eventhubs::ConsumerClient;
+
+async fn open_consumer_client() -> Result<ConsumerClient, azure_core::Error> {
+    let host = "<EVENTHUBS_HOST>";
+    let eventhub = "<EVENTHUB_NAME>";
+
+    let credential = azure_identity::DefaultAzureCredential::new()?;
+
+    let consumer = azure_messaging_eventhubs::ConsumerClient::builder()
+        .open(host,
+              eventhub,
+              credential.clone()
+        ).await?;
+    Ok(consumer)
 }
 ```
 
@@ -282,57 +247,46 @@ async fn receive_events(client: &ConsumerClient) -> Result<(), Box<dyn std::erro
 
 # Troubleshooting
 
+## General
+
+When you interact with the Azure Event Hubs client library using the Rust SDK, errors returned by the service correspond to the same HTTP status codes returned for [REST API] requests.
+
 ## Logging
 
 The Event Hubs SDK client uses the [tracing](https://docs.rs/tracing/latest/tracing/) package to
 enable diagnostics.
 
-## Contributing
+# Contributing
 
-For details on contributing to this repository, see the [contributing guide][azure_sdk_for_cpp_contributing].
+See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.
 
-This project welcomes contributions and suggestions. Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit [the contributor license agreement page](https://cla.microsoft.com).
+This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit <https://opensource.microsoft.com/cla/>.
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA.
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+This project has adopted the [Microsoft Open Source Code of Conduct]. For more information see the [Code of Conduct FAQ] or contact <opencode@microsoft.com> with any additional questions or comments.
 
-### Additional Helpful Links for Contributors
-
-Many people all over the world have helped make this project better. You'll want to check out:
-
--   [What are some good first issues for new contributors to the repo?](https://github.com/azure/azure-sdk-for-rust/issues?q=is%3Aopen+is%3Aissue+label%3A%22up+for+grabs%22)
--   [How to build and test your change][azure_sdk_for_cpp_contributing_developer_guide]
--   [How you can make a change happen!][azure_sdk_for_cpp_contributing_pull_requests]
--   Frequently Asked Questions (FAQ) and Conceptual Topics in the detailed [Azure SDK for C++ wiki](https://github.com/azure/azure-sdk-for-cpp/wiki).
-
-<!-- ### Community-->
-
-### Reporting security issues and security bugs
+## Reporting security issues and security bugs
 
 Security issues and bugs should be reported privately, via email, to the Microsoft Security Response Center (MSRC) <secure@microsoft.com>. You should receive a response within 24 hours. If for some reason you do not, please follow up via email to ensure we received your original message. Further information, including the MSRC PGP key, can be found in the [Security TechCenter](https://www.microsoft.com/msrc/faqs-report-an-issue).
 
-### License
+## License
 
-Azure SDK for C++ is licensed under the [MIT](https://github.com/Azure/azure-sdk-for-cpp/blob/main/LICENSE.txt) license.
+Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sdk-for-cpp/blob/main/LICENSE.txt) license.
 
 <!-- LINKS -->
-
-[azure_sdk_for_cpp_contributing]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
-[azure_sdk_for_cpp_contributing_developer_guide]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md#developer-guide
-[azure_sdk_for_cpp_contributing_pull_requests]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md#pull-requests
-[consumer_client]: https://azuresdkdocs.blob.core.windows.net/$web/cpp/azure-messaging-eventhubs/latest/class_azure_1_1_messaging_1_1_event_hubs_1_1_consumer_client.html
-[producer_client]: https://azuresdkdocs.blob.core.windows.net/$web/cpp/azure-messaging-eventhubs/1.0.0-beta.1/class_azure_1_1_messaging_1_1_event_hubs_1_1_producer_client.html
-[source]: https://github.com/Azure/azure-sdk-for-rust/tree/feature/track2/sdk/eventhubs/azure_messaging_eventhubs
-[azure_identity_pkg]: https://docs.rs/azure_identity/latest/azure_identity/
-[default_azure_credential]: https://docs.rs/azure_identity/latest/azure_identity/struct.DefaultAzureCredential.html
-[rustdoc]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs
-[rustdoc_examples]: https://github.com/Azure/azure-sdk-for-cpp/tree/main/sdk/eventhubs/azure-messaging-eventhubs/samples
-
-![Impressions](https://azure-sdk-impressions.azurewebsites.net/api/impressions/azure-sdk-for-cpp%2Fsdk%2Feventhubs%2FREADME.png)
+[producer_client]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs/struct.ProducerClient.html
+[consumer_client]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs/struct.ConsumerClient.html
+[API reference documentation]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs
+[Azure CLI]: https://learn.microsoft.com/cli/azure
+[Azure subscription]: https://azure.microsoft.com/free/
+[Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
+[Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
+[Product documentation]: https://learn.microsoft.com/azure/event-hubs/
+[REST API]: https://learn.microsoft.com/rest/api/eventhub/
+[Cargo]: https://crates.io/
+[Package (crates.io)]: https://crates.io/crates/azure_messaging_eventhubs
+[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/src
+[CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
+[Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
+[default_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.DefaultAzureCredential.html
