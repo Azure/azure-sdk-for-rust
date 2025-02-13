@@ -42,8 +42,7 @@ impl BlobContainerClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client =
-            GeneratedBlobClient::new(endpoint, credential, container_name.clone(), Some(options))?;
+        let client = GeneratedBlobClient::new(endpoint, credential, Some(options))?;
 
         Ok(Self {
             endpoint: endpoint.parse()?,
@@ -56,8 +55,8 @@ impl BlobContainerClient {
         &self.endpoint
     }
 
-    pub fn container_name(&self) -> &String {
-        &self.container_name
+    pub fn container_name(&self) -> String {
+        self.container_name.clone()
     }
 
     pub async fn create_container(
@@ -66,8 +65,8 @@ impl BlobContainerClient {
     ) -> Result<Response<()>> {
         let response = self
             .client
-            .get_blob_container_client()
-            .create(self.container_name(), options)
+            .get_blob_container_client(self.container_name())
+            .create(options)
             .await?;
         Ok(response)
     }
@@ -78,8 +77,8 @@ impl BlobContainerClient {
     ) -> Result<Response<()>> {
         let response = self
             .client
-            .get_blob_container_client()
-            .delete(self.container_name(), options)
+            .get_blob_container_client(self.container_name())
+            .delete(options)
             .await?;
         Ok(response)
     }
@@ -90,8 +89,8 @@ impl BlobContainerClient {
     ) -> Result<ContainerProperties> {
         let response = self
             .client
-            .get_blob_container_client()
-            .get_properties(self.container_name(), options)
+            .get_blob_container_client(self.container_name())
+            .get_properties(options)
             .await?;
 
         Ok(ContainerProperties::build_from_response_headers(

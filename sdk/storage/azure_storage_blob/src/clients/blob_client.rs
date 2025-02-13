@@ -48,8 +48,7 @@ impl BlobClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client =
-            GeneratedBlobClient::new(endpoint, credential, container_name.clone(), Some(options))?;
+        let client = GeneratedBlobClient::new(endpoint, credential, Some(options))?;
         Ok(Self {
             endpoint: endpoint.parse()?,
             container_name,
@@ -62,12 +61,12 @@ impl BlobClient {
         &self.endpoint
     }
 
-    pub fn container_name(&self) -> &String {
-        &self.container_name
+    pub fn container_name(&self) -> String {
+        self.container_name.clone()
     }
 
-    pub fn blob_name(&self) -> &String {
-        &self.blob_name
+    pub fn blob_name(&self) -> String {
+        self.blob_name.clone()
     }
 
     pub async fn get_blob_properties(
@@ -76,8 +75,8 @@ impl BlobClient {
     ) -> Result<BlobProperties> {
         let response = self
             .client
-            .get_blob_blob_client()
-            .get_properties(self.container_name(), self.blob_name(), options)
+            .get_blob_blob_client(self.container_name(), self.blob_name())
+            .get_properties(options)
             .await?;
 
         let blob_properties: Option<BlobProperties> = response.headers().get_optional()?;
@@ -90,8 +89,8 @@ impl BlobClient {
     ) -> Result<Response> {
         let response = self
             .client
-            .get_blob_blob_client()
-            .download(self.container_name(), self.blob_name(), options)
+            .get_blob_blob_client(self.container_name(), self.blob_name())
+            .download(options)
             .await?;
         Ok(response)
     }
@@ -113,14 +112,8 @@ impl BlobClient {
 
         let response = self
             .client
-            .get_blob_block_blob_client()
-            .upload(
-                self.container_name(),
-                self.blob_name(),
-                data,
-                content_length,
-                Some(options),
-            )
+            .get_blob_block_blob_client(self.container_name(), self.blob_name())
+            .upload(data, content_length, Some(options))
             .await?;
         Ok(response)
     }

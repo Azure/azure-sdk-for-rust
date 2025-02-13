@@ -13,7 +13,6 @@ pub mod clients {
     pub use blob_client::BlobClient;
     pub use blob_container_client::BlobContainerClient;
     // pub use blob_service_client::BlobServiceClient;
-
     pub use crate::generated::clients::{
         BlobAppendBlobClient, BlobBlobClient, BlobBlockBlobClient,
         BlobClient as GeneratedBlobClient, BlobClientOptions,
@@ -23,7 +22,6 @@ pub mod clients {
 }
 
 pub mod models {
-
     pub use crate::generated::clients::method_options::{
         BlobAppendBlobClientAppendBlockFromUrlOptions, BlobAppendBlobClientAppendBlockOptions,
         BlobAppendBlobClientCreateOptions, BlobAppendBlobClientSealOptions,
@@ -60,6 +58,7 @@ pub mod models {
     };
     pub use crate::generated::enums::*;
     pub use crate::generated::models::*;
+
     mod blob_properties;
     pub use blob_properties::BlobProperties;
     mod container_properties;

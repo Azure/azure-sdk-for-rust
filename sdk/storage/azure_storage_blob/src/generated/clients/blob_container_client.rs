@@ -22,22 +22,20 @@ impl BlobContainerClient {
         &self.endpoint
     }
 
-    /// [Update] establishes and manages a lock on a container for delete operations. The lock duration can be 15 to 60 seconds,
-    /// or can be infinite
+    /// The Acquire Lease operation requests a new lease on a container. The lease lock duration can be 15 to 60 seconds, or can
+    /// be infinite.
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `options` - Optional parameters for the request.
     pub async fn acquire_lease(
         &self,
-        container_name: &str,
         options: Option<BlobContainerClientAcquireLeaseOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_key_only("acquire")
             .append_pair("comp", "lease")
@@ -68,22 +66,20 @@ impl BlobContainerClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
-    /// [Update] establishes and manages a lock on a container for delete operations. The lock duration can be 15 to 60 seconds,
-    /// or can be infinite
+    /// The Break Lease operation ends a lease and ensures that another client can't acquire a new lease until the current lease
+    /// period has expired.
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `options` - Optional parameters for the request.
     pub async fn break_lease(
         &self,
-        container_name: &str,
         options: Option<BlobContainerClientBreakLeaseOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_key_only("break")
             .append_pair("comp", "lease")
@@ -111,19 +107,16 @@ impl BlobContainerClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
-    /// [Update] establishes and manages a lock on a container for delete operations. The lock duration can be 15 to 60 seconds,
-    /// or can be infinite
+    /// The Change Lease operation is used to change the ID of an existing lease.
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
     ///   lease ID must match.
     /// * `proposed_lease_id` - Required. The proposed lease ID for the container.
     /// * `options` - Optional parameters for the request.
     pub async fn change_lease(
         &self,
-        container_name: &str,
         lease_id: &str,
         proposed_lease_id: &str,
         options: Option<BlobContainerClientChangeLeaseOptions<'_>>,
@@ -131,7 +124,7 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_key_only("change")
             .append_pair("comp", "lease")
@@ -163,17 +156,15 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `options` - Optional parameters for the request.
     pub async fn create(
         &self,
-        container_name: &str,
         options: Option<BlobContainerClientCreateOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut().append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
@@ -203,10 +194,6 @@ impl BlobContainerClient {
             }
         }
         request.insert_header("x-ms-version", &self.version);
-
-        // Handedit (do not release)
-        request.insert_header("content-length", "0");
-
         self.pipeline.send(&ctx, &mut request).await
     }
 
@@ -215,17 +202,15 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `options` - Optional parameters for the request.
     pub async fn delete(
         &self,
-        container_name: &str,
         options: Option<BlobContainerClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut().append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
@@ -255,17 +240,15 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `options` - Optional parameters for the request.
     pub async fn filter_blobs(
         &self,
-        container_name: &str,
         options: Option<BlobContainerClientFilterBlobsOptions<'_>>,
     ) -> Result<Response<FilterBlobSegment>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_pair("comp", "blobs")
             .append_pair("restype", "container");
@@ -307,17 +290,15 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `options` - Optional parameters for the request.
     pub async fn get_access_policy(
         &self,
-        container_name: &str,
         options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>,
     ) -> Result<Response<Vec<SignedIdentifier>>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_pair("comp", "acl")
             .append_pair("restype", "container");
@@ -342,17 +323,15 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `options` - Optional parameters for the request.
     pub async fn get_account_info(
         &self,
-        container_name: &str,
         options: Option<BlobContainerClientGetAccountInfoOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_pair("comp", "properties")
             .append_pair("restype", "account");
@@ -375,17 +354,15 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `options` - Optional parameters for the request.
     pub async fn get_properties(
         &self,
-        container_name: &str,
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut().append_pair("restype", "container");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
@@ -404,25 +381,23 @@ impl BlobContainerClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
-    /// [Update] establishes and manages a lock on a container for delete operations. The lock duration can be 15 to 60 seconds,
-    /// or can be infinite
+    /// The Release Lease operation frees the lease if it's no longer needed, so that another client can immediately acquire a
+    /// lease against the container.
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
     ///   lease ID must match.
     /// * `options` - Optional parameters for the request.
     pub async fn release_lease(
         &self,
-        container_name: &str,
         lease_id: &str,
         options: Option<BlobContainerClientReleaseLeaseOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_pair("comp", "lease")
             .append_key_only("release")
@@ -452,19 +427,17 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `source_container_name` - Required. Specifies the name of the container to rename.
     /// * `options` - Optional parameters for the request.
     pub async fn rename(
         &self,
-        container_name: &str,
         source_container_name: &str,
         options: Option<BlobContainerClientRenameOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_pair("comp", "rename")
             .append_pair("restype", "container");
@@ -489,25 +462,22 @@ impl BlobContainerClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
-    /// [Update] establishes and manages a lock on a container for delete operations. The lock duration can be 15 to 60 seconds,
-    /// or can be infinite
+    /// The Renew Lease operation renews an existing lease.
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
     ///   lease ID must match.
     /// * `options` - Optional parameters for the request.
     pub async fn renew_lease(
         &self,
-        container_name: &str,
         lease_id: &str,
         options: Option<BlobContainerClientRenewLeaseOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_pair("comp", "lease")
             .append_key_only("renew")
@@ -537,17 +507,15 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `options` - Optional parameters for the request.
     pub async fn restore(
         &self,
-        container_name: &str,
         options: Option<BlobContainerClientRestoreOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_pair("comp", "undelete")
             .append_pair("restype", "container");
@@ -576,19 +544,17 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `container_acl` - The access control list for the container.
     /// * `options` - Optional parameters for the request.
     pub async fn set_access_policy(
         &self,
-        container_name: &str,
         container_acl: RequestContent<Vec<SignedIdentifier>>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_pair("comp", "acl")
             .append_pair("restype", "container");
@@ -623,17 +589,15 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `options` - Optional parameters for the request.
     pub async fn set_metadata(
         &self,
-        container_name: &str,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_pair("comp", "metadata")
             .append_pair("restype", "container");
@@ -666,13 +630,11 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_name` - The name of the container.
     /// * `body` - The body of the request.
     /// * `content_length` - The length of the request.
     /// * `options` - Optional parameters for the request.
     pub async fn submit_batch(
         &self,
-        container_name: &str,
         body: RequestContent<Bytes>,
         content_length: i64,
         options: Option<BlobContainerClientSubmitBatchOptions<'_>>,
@@ -680,7 +642,7 @@ impl BlobContainerClient {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        url = url.join(container_name)?;
+        url = url.join(&self.container_name)?;
         url.query_pairs_mut()
             .append_pair("comp", "batch")
             .append_pair("restype", "container");
