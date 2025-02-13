@@ -16,7 +16,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let consumer = ConsumerClient::builder(
         eventhub_namespace.as_str(),
         eventhub_name.as_str(),
-        None,
         credential.clone(),
     )
     .open()

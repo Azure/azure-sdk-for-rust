@@ -100,7 +100,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     assert!(producer.send_batch(&batch, None).await.is_ok());
 
     let credential = DefaultAzureCredential::new()?;
-    let consumer = ConsumerClient::builder(host.as_str(), eventhub.as_str(), None, credential)
+    let consumer = ConsumerClient::builder(host.as_str(), eventhub.as_str(), credential)
         .with_application_id(TEST_NAME)
         .open()
         .await?;

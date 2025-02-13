@@ -22,12 +22,12 @@ async fn main() -> Result<()> {
         .open()
         .await;
     if let Err(err) = result {
-        println!("Error opening client: {:?}", err);
-        return Ok(());
+        eprintln!("Error opening client: {err}");
+        return Err(err);
     }
     let client = result?;
     let properties = client.get_eventhub_properties().await.unwrap();
-    println!("Eventhub Properties for: {eventhub} {:?}", properties);
+    println!("Eventhub Properties for: {eventhub} {properties:?}");
 
     Ok(())
 }

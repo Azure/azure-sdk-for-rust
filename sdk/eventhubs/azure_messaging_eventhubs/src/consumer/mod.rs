@@ -89,15 +89,9 @@ impl ConsumerClient {
     pub fn builder(
         fully_qualified_namespace: &str,
         eventhub_name: &str,
-        consumer_group: Option<String>,
         credential: Arc<dyn TokenCredential>,
     ) -> builders::ConsumerClientBuilder {
-        builders::ConsumerClientBuilder::new(
-            fully_qualified_namespace,
-            eventhub_name,
-            consumer_group,
-            credential,
-        )
+        builders::ConsumerClientBuilder::new(fully_qualified_namespace, eventhub_name, credential)
     }
 
     fn new(
@@ -706,14 +700,13 @@ pub mod builders {
         pub(super) fn new(
             fully_qualified_namespace: &str,
             eventhub_name: &str,
-            consumer_group: Option<String>,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> Self {
             Self {
                 fully_qualified_namespace: fully_qualified_namespace.to_string(),
                 eventhub_name: eventhub_name.to_string(),
-                consumer_group,
                 credential,
+                consumer_group: None,
                 application_id: None,
                 instance_id: None,
                 retry_options: None,
@@ -723,6 +716,35 @@ pub mod builders {
         /// Specifies the name of the application creating the [`ConsumerClient`].
         pub fn with_application_id(mut self, application_id: &str) -> Self {
             self.application_id = Some(application_id.to_string());
+            self
+        }
+
+        /// Specifies the consumer group for the [`ConsumerClient`].
+        ///
+        /// If not specified, the default consumer group will be used.
+        ///
+        /// For more information on Event Hubs consumer groups, see
+        /// [Consumer groups](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#consumer-groups).
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use azure_messaging_eventhubs::ConsumerClient;
+        /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+        ///
+        /// #[tokio::main]
+        /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+        ///    let my_credential = DefaultAzureCredential::new()?;
+        ///    let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
+        ///      .with_consumer_group("my_consumer_group")
+        ///      .open().await?;
+        ///   Ok(())
+        /// }
+        ///
+        /// ```
+        ///
+        pub fn with_consumer_group(mut self, consumer_group: &str) -> Self {
+            self.consumer_group = Some(consumer_group.to_string());
             self
         }
 
