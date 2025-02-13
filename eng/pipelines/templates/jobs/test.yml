@@ -1,0 +1,47 @@
+parameters:
+- name: ServiceDirectory
+  type: string
+- name: Toolchain
+  type: string
+- name: Matrix
+  type: object
+- name: TimeoutInMinutes
+  type: number
+
+jobs:
+- job: Test_${{ parameters.Matrix.pool.os }}_${{ parameters.Toolchain }}
+  displayName: "Test: ${{ parameters.Matrix.pool.os }} ${{ parameters.Toolchain }}"
+  timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+  condition: and(succeeded(), ne(variables['Skip.Tests'],'true'))
+
+  pool: ${{ parameters.Matrix.pool }}
+
+  steps:
+  - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+    parameters:
+      paths:
+      - "/*"
+
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      Toolchain: ${{ parameters.Toolchain }}
+
+  - template: /eng/common/pipelines/templates/steps/set-default-branch.yml@self
+
+  - template: /eng/common/pipelines/templates/steps/save-package-properties.yml@self
+    parameters:
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
+      PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
+
+  - task: Powershell@2
+    displayName: "Test Packages"
+    condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
+    timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+    env:
+      CIBW_BUILD_VERBOSITY: 3
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
+      arguments: >
+        -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        -Toolchain '$(Toolchain)'

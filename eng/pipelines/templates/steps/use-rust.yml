@@ -32,7 +32,9 @@ steps:
         } else {
           Write-Host "Failed to install $toolchain after $attempts attempts."
           exit 1
-        }        
+        }
+
+        Start-Sleep -Seconds 3
       }
 
     displayName: "Use Rust ${{ parameters.Toolchain }}"
