@@ -8,22 +8,10 @@ parameters:
 - name: PipelineArtifactName
   type: string
   default: packages
-- name: BeforeTestSteps
-  type: object
-  default: []
-- name: AfterTestSteps
-  type: object
-  default: []
 - name: TestTimeoutInMinutes
   type: number
   default: 60
-- name: TestProxy
-  type: boolean
-  default: false
 - name: TestPipeline
-  type: boolean
-  default: false
-- name: GenerateApiReviewForManualOnly
   type: boolean
   default: false
 - name: BuildMatrix
@@ -49,128 +37,24 @@ parameters:
   default: stable
 
 jobs:
-- job: Pack
-  displayName: "Pack Crates"
-  timeoutInMinutes: 90
-
-  pool:
-    name: $(LINUXPOOL)
-    image: $(LINUXVMIMAGE)
-    os: linux
-
-  templateContext:
-    sdl:
-      sbom:
-        enabled: true
-        additionalComponentDetectorArgs: '--DirectoryExclusionList **/target/vendor/**'
-
-  steps:
-  - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
-    parameters:
-      paths:
-      - "/*"
-
-  - ${{ if and(eq(variables['System.TeamProject'], 'internal'), ne(variables['Build.Reason'], '')) }}:
-    - script: |
-        echo "##vso[build.addbuildtag]$(Build.Reason)"
-      displayName: Tag build reason
-
-  - ${{ if eq(parameters.TestPipeline, 'true') }}:
-    - template: /eng/common/pipelines/templates/steps/set-test-pipeline-version.yml
-      parameters:
-        PackageNames: ${{ join(',', parameters.Artifacts.*.name) }}
-        ServiceDirectory: ${{parameters.ServiceDirectory}}
-        # Crate names contain '_' and prerelease versions contain '-' e.g., `azure_core@1.0.1-beta.1`.
-        TagSeparator: '@'
-        TestPipeline: true
-
-  - template: /eng/pipelines/templates/steps/pack-crates.yml
-    parameters:
-      ServiceDirectory: ${{ parameters.ServiceDirectory }}
-
-  - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
-    parameters:
-      ArtifactPath: $(Build.ArtifactStagingDirectory)
-      ArtifactName: ${{ parameters.PipelineArtifactName }}
-      CustomCondition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'))
+- template: /eng/pipelines/templates/jobs/pack.yml
+  parameters:
+    ServiceDirectory: ${{ parameters.ServiceDirectory }}
+    Artifacts: ${{ parameters.Artifacts }}
+    TestPipeline: ${{ parameters.TestPipeline }}
+    PipelineArtifactName: ${{ parameters.PipelineArtifactName }}
 
 - ${{ each matrix in parameters.BuildMatrix }}:
   - ${{ each toolchain in matrix.Toolchains }}:
-    - job: Test_${{ matrix.pool.os }}_${{ toolchain }}
-      displayName: "Test: ${{ matrix.pool.os }} ${{ toolchain }}"
-      timeoutInMinutes: 90
-      dependsOn: Pack
-      condition: and(succeeded(), ne(variables['SkipTests'],'true'))
+    - template: /eng/pipelines/templates/jobs/test.yml
+      parameters:
+        ServiceDirectory: ${{ parameters.ServiceDirectory }}
+        Toolchain: ${{ toolchain }}
+        Matrix: ${{ matrix }}
+        TimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
 
-      pool: ${{ matrix.pool }}
-
-      steps:
-      - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
-        parameters:
-          paths:
-          - "/*"
-
-      - download: current
-        artifact: ${{ parameters.PipelineArtifactName }}
-
-      - template: /eng/common/pipelines/templates/steps/set-default-branch.yml@self
-
-      - template: /eng/pipelines/templates/steps/test-packages.yml
-        parameters:
-          Toolchain: ${{ toolchain }}
-          BuildArtifactName: ${{ parameters.PipelineArtifactName }}
-          UnitTests: true
-          FunctionalTests: true
-
-- job: "Analyze"
-  condition: and(succeededOrFailed(), ne(variables['Skip.Analyze'], 'true'))
-  timeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
-
-  pool:
-    os: linux
-    name: $(LINUXPOOL)
-    image: $(LINUXVMIMAGE)
-
-  steps:
-  - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
-    parameters:
-      paths:
-      - "/*"
-      
-  - ${{ if ne(parameters.AnalyzeToolchain, 'nightly') }}:
-      - template: /eng/pipelines/templates/steps/use-rust.yml@self
-        parameters:
-          Toolchain: nightly
-
-  - template: /eng/pipelines/templates/steps/use-rust.yml@self
-    parameters:
-      Toolchain: ${{ parameters.AnalyzeToolchain }}
-
-  - template: /eng/common/pipelines/templates/steps/save-package-properties.yml
-
-  - task: Powershell@2
-    displayName: "Run source analysis"
-    inputs:
-      pwsh: true
-      filePath: $(Build.SourcesDirectory)/eng/scripts/Analyze-Code.ps1
-      arguments: >
-        -Toolchain '$(Toolchain)'
-        -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
-        -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
-
-  - template: /eng/common/pipelines/templates/steps/check-spelling.yml
-    parameters:
-      ContinueOnError: false
-
-  # Disabled until we fix crates.io link checking
-  # - template: /eng/common/pipelines/templates/steps/verify-links.yml
-  #   parameters:
-  #     ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-  #       Directory: ""
-  #       Urls: (eng/common/scripts/get-markdown-files-from-changed-files.ps1)
-  #     ${{ elseif eq(parameters.ServiceDirectory, 'auto') }}:
-  #       Directory: ""
-  #     ${{ else }}:
-  #       Directory: sdk/${{ parameters.ServiceDirectory }}
-  #     CheckLinkGuidance: $true
-  #     Condition: succeededOrFailed()
+- template: /eng/pipelines/templates/jobs/analyze.yml
+  parameters:
+    ServiceDirectory: ${{ parameters.ServiceDirectory }}
+    Toolchain: ${{ parameters.AnalyzeToolchain }}
+    TimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
