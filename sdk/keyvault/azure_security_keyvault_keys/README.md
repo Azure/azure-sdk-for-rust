@@ -77,12 +77,6 @@ Use the `az keyvault security-domain download` command to download the security 
 az keyvault security-domain download --hsm-name <your-key-vault-name> --sd-wrapping-keys ./certs/cert_0.cer ./certs/cert_1.cer ./certs/cert_2.cer --sd-quorum 2 --security-domain-file ContosoHSM-SD.json
 ```
 
-### Create a key and sign plaintext
-
-```rust no_run
-// TODO
-```
-
 ## Key concepts
 
 ### KeyBundle
