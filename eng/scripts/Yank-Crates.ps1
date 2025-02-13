@@ -3,8 +3,7 @@
 #Requires -Version 7.0
 param(
   [string]$PackageInfoDirectory,
-  [string[]]$CrateNames,
-  [string]$Token
+  [string[]]$CrateNames
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,8 +16,8 @@ foreach ($crateName in $crateNames) {
 
   Write-Host "Yanking crate: '$crateName@$crateVersion'"
 
-  Write-Host "cargo yank $crateName --version $crateVersion --token <TOKEN>"
-  cargo yank $crateName --version $crateVersion --token $Token
+  Write-Host "cargo yank $crateName --version $crateVersion"
+  cargo yank $crateName --version $crateVersion
 
   if (!$?) {
     Write-Host "Failed to yank crate: '$crateName@$crateVersion'"

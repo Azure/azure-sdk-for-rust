@@ -93,13 +93,14 @@ stages:
 
                 - task: PowerShell@2
                   displayName: Publish Crate
+                  env:
+                    CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
                   inputs:
                     targetType: filePath
                     filePath: $(Build.SourcesDirectory)/eng/scripts/Publish-Crates.ps1
                     arguments: >
                       -PackagesPath '$(Pipeline.Workspace)/drop'
                       -CrateNames '${{artifact.name}}'
-                      -Token $(azure-sdk-cratesio-token)
                       -AdditionalOwners 'heaths','hallipr'
 
         # - job: CreateApiReview
@@ -158,10 +159,11 @@ stages:
               
             - task: PowerShell@2
               displayName: Yank Crates
+              env:
+                CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
               inputs:
                 targetType: filePath
                 filePath: $(Build.SourcesDirectory)/eng/scripts/Yank-Crates.ps1
                 arguments:
                   -CrateNames '${{artifact.name}}'
-                  -PackagesPath '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}'
-                  -Token $(azure-sdk-cratesio-token)
+                  -PackageInfoDirectory '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo'
