@@ -15,15 +15,15 @@
       "signature": "40f143c4587e7f4d006ddddc5cd76cbb815237d6abbb7f4980030e24e3604a8c",
       "alternativeSignatures": [],
       "target": "sdk/keyvault/azure_security_keyvault_secrets/README.md",
-      "line": 88,
+      "line": 92,
       "memberOf": [
         "default"
       ],
       "tool": "credscan",
       "ruleId": "CSCAN-GENERAL0060",
-      "createdDate": "2025-02-13 20:32:06Z",
-      "expirationDate": "2025-08-02 20:56:16Z",
-      "justification": "This error is baselined with an expiration date of 180 days from 2025-02-13 20:56:16Z"
+      "createdDate": "2025-02-13 21:54:58Z",
+      "expirationDate": "2025-08-02 22:14:36Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2025-02-13 22:14:36Z"
     },
     "5daf403c163908218b44ba4e6c8e767b58ffcc942d9f824bb0aab289df6bf62f": {
       "signature": "5daf403c163908218b44ba4e6c8e767b58ffcc942d9f824bb0aab289df6bf62f",
