@@ -121,13 +121,11 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 }
 
 function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
-  InstallAndImport-ModuleIfNotInstalled "PSToml" "0.3.1"
-
   #$pkg will be a FileInfo object for the Cargo.toml file in a package artifact directory
-  $toml = Get-Content -Path $pkg.FullName -Raw | ConvertFrom-Toml
+  $package = cargo read-manifest --manifest-path $pkg.FullName
   
-  $packageName = $toml.package.name
-  $packageVersion = $toml.package.version
+  $packageName = $package.name
+  $packageVersion = $package.version
 
   $changeLogLoc = Get-ChildItem -Path $pkg.DirectoryName -Filter "CHANGELOG.md" | Select-Object -First 1
   $readmeContentLoc = Get-ChildItem -Path $pkg.DirectoryName -Filter "README.md" | Select-Object -First 1

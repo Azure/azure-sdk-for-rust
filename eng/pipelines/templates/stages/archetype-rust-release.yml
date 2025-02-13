@@ -63,6 +63,13 @@ stages:
         - deployment: PublishPackage
           displayName: "Publish to Crates.io"
           condition: and(succeeded(), ne(variables['Skip.PublishPackage'], 'true'))
+          templateContext:
+            type: releaseJob  # Required, this indicates this deployment job is a release job
+            isProduction: true  # Required, must be 'true' or 'false'
+            inputs:  # All input build artifacts must be declared here
+            - input: pipelineArtifact  # Required, type of the input artifact
+              artifactName: ${{parameters.PipelineArtifactName}}  # Required, name of the pipeline artifact
+              targetPath: $(Pipeline.Workspace)/drop  # Optional, specifies where the artifact is downloaded to
           environment: ${{parameters.Environment}}
           # This timeout shouldn't be necessary once we're able to parallelize better. Right now,
           # this is here to ensure larger areas (30+) libraries don't time out.
@@ -77,10 +84,8 @@ stages:
               deploy:
                 steps:
                 - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
-
-                - download: current
-                  displayName: Download ${{parameters.PipelineArtifactName}} artifact
-                  artifact: ${{parameters.PipelineArtifactName}}
+                  parameters:
+                    skipCheckoutNone: true
 
                 - template: /eng/pipelines/templates/steps/use-rust.yml@self
                   parameters:
@@ -92,7 +97,7 @@ stages:
                     targetType: filePath
                     filePath: $(Build.SourcesDirectory)/eng/scripts/Publish-Crates.ps1
                     arguments: >
-                      -PackagesPath '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}'
+                      -PackagesPath '$(Pipeline.Workspace)/drop'
                       -CrateNames '${{artifact.name}}'
                       -Token $(azure-sdk-cratesio-token)
                       -AdditionalOwners 'heaths','hallipr'
