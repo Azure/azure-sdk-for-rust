@@ -8,15 +8,14 @@ trigger:
     - release/*
   paths:
     include:
-    - sdk/storage/
+    - sdk/keyvault/
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
-    ServiceDirectory: storage
-    TestTimeoutInMinutes: 120
+    ServiceDirectory: keyvault
     Artifacts:
-    - name: azure_storage_common
-      safeName: AzureStorageCommon
-    - name: azure_storage_blob
-      safeName: AzureStorageBlob
+    - name: azure_security_keyvault_secrets
+      safeName: AzureSecurityKeyvaultSecrets
+    - name: azure_security_keyvault_keys
+      safeName: AzureSecurityKeyvaultKeys
