@@ -22,7 +22,7 @@ foreach ($crateName in $CrateNames) {
     exit 1
   }
 
-  $existingOwners = (Invoke-LoggedCommand cargo owner --list $crateName) -replace " \(.*", ""
+  $existingOwners = (cargo owner --list $crateName) -replace " \(.*", ""
   $missingOwners = $AdditionalOwners | Where-Object { $existingOwners -notcontains $_ }
 
   foreach ($owner in $missingOwners) {
