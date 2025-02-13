@@ -1,19 +1,17 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-// cspell: words
 
 use azure_core::error::Result;
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
 
 use std::env;
 use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .finish();
+    // Initialize tracing subscriber from environment.
+    tracing_subscriber::fmt().init();
 
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
@@ -23,7 +21,7 @@ async fn main() -> Result<()> {
     let client = ProducerClient::new(
         host,
         eventhub.clone(),
-        credential,
+        credential.clone(),
         Some(ProducerClientOptions {
             application_id: Some("test_get_properties".to_string()),
             ..Default::default()

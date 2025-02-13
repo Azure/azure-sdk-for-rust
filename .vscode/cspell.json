@@ -41,14 +41,17 @@
     "hmac",
     "iothub",
     "keyvault",
+    "lldb",
     "maxresults",
     "maxsize",
     "msrc",
     "newtonsoft",
     "oidc",
     "pageable",
+    "pageables",
     "pkce",
     "pkcs",
+    "pwsh",
     "posix",
     "reqwest",
     "rustup",
@@ -60,7 +63,8 @@
     "upvote",
     "userdelegationkey",
     "versionid",
-    "virtualmachine"
+    "virtualmachine",
+    "worktree"
   ],
   "dictionaryDefinitions": [
     {
@@ -75,13 +79,28 @@
       "noSuggest": true
     },
     {
+      "name": "azure_core_amqp",
+      "path": "../sdk/core/azure_core_amqp/.dict.txt",
+      "noSuggest": true
+    },
+    {
       "name": "cosmos",
       "path": "../sdk/cosmos/.dict.txt",
       "noSuggest": true
     },
     {
+      "name": "eventhubs",
+      "path": "../sdk/eventhubs/.dict.txt",
+      "noSuggest": true
+    },
+    {
       "name": "identity",
       "path": "../sdk/identity/.dict.txt",
+      "noSuggest": true
+    },
+    {
+      "name": "keyvault",
+      "path": "../sdk/keyvault/.dict.txt",
       "noSuggest": true
     },
     {
@@ -116,11 +135,35 @@
       ]
     },
     {
+      "filename": "sdk/core/azure_core_amqp/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "azure_core_amqp"
+      ]
+    },
+    {
+      "filename": "sdk/eventhubs/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "eventhubs"
+      ]
+    },
+    {
       "filename": "sdk/identity/**",
       "dictionaries": [
         "crates",
         "rust-custom",
         "identity"
+      ]
+    },
+    {
+      "filename": "sdk/keyvault/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "keyvault"
       ]
     },
     {

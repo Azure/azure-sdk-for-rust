@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-// cspell: words AZSDK RUSTC consts
-
 use std::env::consts::{ARCH, OS};
 
 const UNKNOWN: &str = "unknown";

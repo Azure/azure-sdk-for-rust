@@ -1,0 +1,6 @@
+{
+  "AssetsRepo": "Azure/azure-sdk-assets",
+  "AssetsRepoPrefixPath": "rust",
+  "TagPrefix": "rust/keyvault",
+  "Tag": "rust/keyvault_9add154b5a"
+}

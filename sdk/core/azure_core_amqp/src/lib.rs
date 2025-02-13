@@ -1,5 +1,4 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
-// cspell: words amqp sasl
 #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
 mod fe2o3;
 

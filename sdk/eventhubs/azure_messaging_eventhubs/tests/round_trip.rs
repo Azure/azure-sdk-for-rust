@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words eventdata amqp
-
 use async_std::stream::StreamExt;
 use azure_core_amqp::{
     messaging::{AmqpMessage, AmqpMessageProperties},
@@ -11,29 +9,29 @@ use azure_core_amqp::{
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
-    consumer::{
-        ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartLocation, StartPosition,
-    },
     models::{EventData, MessageId},
-    producer::{batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions},
+    {
+        ConsumerClient, ConsumerClientOptions, EventDataBatchOptions, OpenReceiverOptions,
+        ProducerClient, ProducerClientOptions, StartLocation, StartPosition,
+    },
 };
 use futures::pin_mut;
-use std::env;
+use std::{env, error::Error};
 use tracing::info;
 
 mod common;
 
 #[recorded::test(live)]
-async fn test_round_trip_batch() {
+async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     const EVENTHUB_PARTITION: &str = "1";
     const TEST_NAME: &str = "test_round_trip_batch";
     common::setup();
-    let host = env::var("EVENTHUBS_HOST").unwrap();
-    let eventhub = env::var("EVENTHUB_NAME").unwrap();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
     let producer = ProducerClient::new(
         host.clone(),
         eventhub.clone(),
-        DefaultAzureCredential::new().unwrap(),
+        DefaultAzureCredential::new()?,
         Some(ProducerClientOptions {
             application_id: Some(TEST_NAME.to_string()),
             ..Default::default()
@@ -44,8 +42,7 @@ async fn test_round_trip_batch() {
 
     let partition_properties = producer
         .get_partition_properties(EVENTHUB_PARTITION.to_string())
-        .await
-        .unwrap();
+        .await?;
 
     info!(
         "Start receiving messages from sequence: {:?}",
@@ -59,72 +56,63 @@ async fn test_round_trip_batch() {
             partition_key: Some("My Partition Key.".to_string()),
             ..Default::default()
         }))
-        .await
-        .unwrap();
+        .await?;
 
-    assert!(batch
-        .try_add_event_data(
-            EventData::builder()
-                .with_body(b"Hello, World!")
-                .add_property("Message#".to_string(), 1)
-                .with_message_id(1)
-                .build(),
-            None
-        )
-        .unwrap());
+    assert!(batch.try_add_event_data(
+        EventData::builder()
+            .with_body(b"Hello, World!")
+            .add_property("Message#".to_string(), 1)
+            .with_message_id(1)
+            .build(),
+        None
+    )?);
 
-    assert!(batch
-        .try_add_amqp_message(
-            AmqpMessage::builder()
-                .with_body(AmqpValue::from("Hello, World!"))
-                .add_application_property("Message#".to_string(), 2)
-                .with_properties(AmqpMessageProperties {
-                    message_id: Some(2.into()),
-                    ..Default::default()
-                })
-                .build(),
-            None,
-        )
-        .unwrap());
+    assert!(batch.try_add_amqp_message(
+        AmqpMessage::builder()
+            .with_body(AmqpValue::from("Hello, World!"))
+            .add_application_property("Message#".to_string(), 2)
+            .with_properties(AmqpMessageProperties {
+                message_id: Some(2.into()),
+                ..Default::default()
+            })
+            .build(),
+        None,
+    )?);
 
-    assert!(batch
-        .try_add_amqp_message(
-            AmqpMessage::builder()
-                .with_body(AmqpList::from(vec![
-                    AmqpValue::from("Hello, World!"),
-                    3.into(),
-                    5.into()
-                ]))
-                .add_application_property("Message#".to_string(), 3)
-                .with_properties(AmqpMessageProperties {
-                    message_id: Some(3.into()),
-                    ..Default::default()
-                })
-                .build(),
-            None,
-        )
-        .unwrap());
+    assert!(batch.try_add_amqp_message(
+        AmqpMessage::builder()
+            .with_body(AmqpList::from(vec![
+                AmqpValue::from("Hello, World!"),
+                3.into(),
+                5.into()
+            ]))
+            .add_application_property("Message#".to_string(), 3)
+            .with_properties(AmqpMessageProperties {
+                message_id: Some(3.into()),
+                ..Default::default()
+            })
+            .build(),
+        None,
+    )?);
 
-    assert!(batch
-        .try_add_amqp_message(
-            AmqpMessage::builder()
-                .add_application_property("Message#".to_string(), 4)
-                .with_properties(AmqpMessageProperties {
-                    message_id: Some(4.into()),
-                    ..Default::default()
-                })
-                .build(),
-            None
-        )
-        .unwrap());
+    assert!(batch.try_add_amqp_message(
+        AmqpMessage::builder()
+            .add_application_property("Message#".to_string(), 4)
+            .with_properties(AmqpMessageProperties {
+                message_id: Some(4.into()),
+                ..Default::default()
+            })
+            .build(),
+        None
+    )?);
 
-    assert!(producer.submit_batch(&batch).await.is_ok());
+    assert!(producer.submit_batch(&batch, None).await.is_ok());
 
     let consumer = ConsumerClient::new(
         host,
         eventhub,
         None,
-        DefaultAzureCredential::new().unwrap(),
+        DefaultAzureCredential::new()?,
         Some(ConsumerClientOptions {
             application_id: Some(TEST_NAME.to_string()),
             ..Default::default()
@@ -133,10 +121,10 @@ async fn test_round_trip_batch() {
 
     assert!(consumer.open().await.is_ok());
 
-    let receive_stream = consumer
-        .receive_events_on_partition(
+    let receiver = consumer
+        .open_receiver_on_partition(
             EVENTHUB_PARTITION.to_string(),
-            Some(ReceiveOptions {
+            Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::SequenceNumber(start_sequence),
                     ..Default::default()
@@ -144,7 +132,9 @@ async fn test_round_trip_batch() {
                 ..Default::default()
             }),
         )
-        .await;
+        .await?;
+
+    let receive_stream = receiver.stream_events();
 
     pin_mut!(receive_stream);
 
@@ -155,8 +145,9 @@ async fn test_round_trip_batch() {
             assert!(f.is_ok());
             let received_event_data = f.unwrap();
             info!("Received: {:?}", received_event_data);
+            assert!(received_event_data.sequence_number().is_some());
             assert_eq!(
-                received_event_data.sequence_number(),
+                received_event_data.sequence_number().unwrap(),
                 start_sequence + message_index
             );
             if let Some(message_id) = received_event_data.event_data().message_id() {
@@ -176,4 +167,6 @@ async fn test_round_trip_batch() {
             }
         })
         .await;
+
+    Ok(())
 }

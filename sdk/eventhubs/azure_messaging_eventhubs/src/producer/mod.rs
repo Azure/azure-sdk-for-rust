@@ -1,15 +1,13 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words amqp amqps servicebus mgmt
-
 use crate::{
     common::{
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
         ManagementInstance,
     },
     error::ErrorKind,
-    models::{EventHubPartitionProperties, EventHubProperties},
+    models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
 };
 use async_std::sync::Mutex;
 use azure_core::{
@@ -26,8 +24,8 @@ use azure_core_amqp::{
     value::{AmqpSymbol, AmqpValue},
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
-use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
+use std::{collections::HashMap, fmt::Debug};
 use tracing::{debug, trace};
 use url::Url;
 
@@ -57,16 +55,23 @@ struct SenderInstance {
     sender: Arc<Mutex<AmqpSender>>,
 }
 
-/// A client that can be used to send events to an Event Hub.
+#[derive(Default, Debug, Clone)]
+/// Represents the options that can be set when submitting a batch of event data.
+pub struct SubmitBatchOptions {}
+
+/// A client that can be used to send events to an Event Hubs instance.
 ///
-/// The `ProducerClient` is used to send events to an Event Hub. It can be used to send events to a specific partition or to allow the Event Hub to automatically select the partition.
+/// The [`ProducerClient`] is used to send events to an Event Hub. It can be used to send events to a specific partition
+/// or to allow the Event Hubs instance to automatically select the partition.
 ///
-/// The `ProducerClient` can be created using the `new` method. The `new` method requires the fully qualified namespace of the Event Hub, the name of the Event Hub, a `TokenCredential` implementation, and `ProducerClientOptions`.
+/// The [`ProducerClient`] can be created with the fully qualified namespace of the Event
+/// Hubs instance, the name of the Event Hub, a `TokenCredential` implementation,
+/// and [`ProducerClientOptions`].
 ///
 /// # Examples
 ///
 /// ```no_run
-/// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+/// use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 /// use std::error::Error;
 ///
@@ -79,7 +84,7 @@ struct SenderInstance {
 ///      application_id: Some("your_application_id".to_string()),
 ///      ..Default::default()
 ///   };
-///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, Some(options));
+///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials.clone(), Some(options));
 ///   producer.open().await?;
 ///   Ok(())
 /// }
@@ -95,19 +100,34 @@ pub struct ProducerClient {
     authorization_scopes: Mutex<HashMap<String, AccessToken>>,
 }
 
+/// Options used when sending a message to an Event Hub.
+///
+/// The `SendMessageOptions` can be used to specify the partition to which the message should be sent.
+/// If the partition is not specified, the Event Hub will automatically select a partition.
+///
+#[derive(Default, Debug)]
+pub struct SendEventOptions {
+    /// The id of the partition to which the message should be sent.
+    pub partition_id: Option<String>,
+}
+
+/// Options used when sending an AMQP message to an Event Hub.
+#[derive(Default, Debug)]
+pub struct SendMessageOptions {}
+
 impl ProducerClient {
-    /// Creates a new instance of `ProducerClient`.
+    /// Creates a new instance of [`ProducerClient`].
     ///
     /// # Arguments
     ///
     /// * `fully_qualified_namespace` - The fully qualified namespace of the Event Hubs instance.
     /// * `eventhub` - The name of the Event Hub.
     /// * `credential` - The token credential used for authorization.
-    /// * `options` - The options for configuring the `ProducerClient`.
+    /// * `options` - The options for configuring the [`ProducerClient`].
     ///
     /// # Returns
     ///
-    /// A new instance of `ProducerClient`.
+    /// A new instance of [`ProducerClient`].
     pub fn new(
         fully_qualified_namespace: String,
         eventhub: String,
@@ -128,7 +148,7 @@ impl ProducerClient {
 
     /// Opens the connection to the Event Hub.
     ///
-    /// This method must be called before any other operation.
+    /// This method must be called before any other operation on the EventHub producer.
     ///
     pub async fn open(&self) -> Result<()> {
         self.ensure_connection(&self.url).await?;
@@ -148,6 +168,76 @@ impl ProducerClient {
             .await?;
         Ok(())
     }
+
+    /// Sends an event to the Event Hub.
+    ///
+    /// # Arguments
+    /// * `event` - The event data to send.
+    /// * `options` - The options to use when sending the event.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or failure.
+    ///
+    /// Note:
+    /// - If the event being sent does not have a message ID, a new message ID will be generated.
+    /// - If the event options contain a partition ID, the event will be sent to the specified partition.
+    ///
+    pub async fn send_event(
+        &self,
+        event: impl Into<EventData>,
+        options: Option<SendEventOptions>,
+    ) -> Result<()> {
+        let event = event.into();
+        let mut message = AmqpMessage::from(event);
+
+        if message.properties().is_none() || message.properties().unwrap().message_id.is_none() {
+            message.set_message_id(Uuid::new_v4());
+        }
+        if let Some(options) = options {
+            if let Some(partition_id) = options.partition_id {
+                message.add_message_annotation(
+                    AmqpSymbol::from("x-opt-partition-id"),
+                    partition_id.clone(),
+                );
+            }
+        }
+
+        self.send_message(message, None).await
+    }
+
+    /// Sends an AMQP message to the Event Hub.
+    ///
+    /// # Arguments
+    /// * `message` - The event to send.
+    /// * `options` - The options to use when sending the event.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or failure.
+    ///
+    /// Note:
+    /// - The message is sent to the service unmodified.
+    ///
+    pub async fn send_message(
+        &self,
+        message: impl Into<AmqpMessage> + Debug,
+        #[allow(unused_variables)] options: Option<SendMessageOptions>,
+    ) -> Result<()> {
+        let sender = self.ensure_sender(self.url.clone()).await.unwrap();
+
+        sender
+            .lock()
+            .await
+            .send(
+                message,
+                Some(AmqpSendOptions {
+                    message_format: None,
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(())
+    }
+
     const BATCH_MESSAGE_FORMAT: u32 = 0x80013700;
 
     /// Creates a new batch of events to send to the Event Hub.
@@ -162,7 +252,7 @@ impl ProducerClient {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
@@ -175,7 +265,7 @@ impl ProducerClient {
     ///     application_id: Some("your_application_id".to_string()),
     ///     ..Default::default()
     ///   };
-    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, Some(options));
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials.clone(), Some(options));
     ///   producer.open().await?;
     ///   let mut batch = producer.create_batch(None).await?;
     ///   Ok(())
@@ -197,6 +287,7 @@ impl ProducerClient {
     /// # Arguments
     ///
     /// * `batch` - The batch of events to submit.
+    /// * `options` - The options to use when submitting the batch.
     ///
     /// # Returns
     ///
@@ -205,7 +296,7 @@ impl ProducerClient {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
@@ -218,16 +309,20 @@ impl ProducerClient {
     ///     application_id: Some("your_application_id".to_string()),
     ///     ..Default::default()
     ///   };
-    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, Some(options));
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials.clone(), Some(options));
     ///   producer.open().await?;
     ///   let mut batch = producer.create_batch(None).await?;
     ///   batch.try_add_event_data("Hello, World!", None)?;
-    ///   producer.submit_batch(&batch).await?;
+    ///   producer.submit_batch(&batch, None).await?;
     ///   Ok(())
     /// }
     /// ```
     ///
-    pub async fn submit_batch(&self, batch: &EventDataBatch<'_>) -> Result<()> {
+    pub async fn submit_batch(
+        &self,
+        batch: &EventDataBatch<'_>,
+        #[allow(unused_variables)] options: Option<SubmitBatchOptions>,
+    ) -> Result<()> {
         let sender = self.ensure_sender(batch.get_batch_path()).await?;
         let messages = batch.get_messages();
 
@@ -252,7 +347,7 @@ impl ProducerClient {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
@@ -261,7 +356,7 @@ impl ProducerClient {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///   let my_credentials = DefaultAzureCredential::new()?;
-    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, None);
+    ///   let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials.clone(), None);
     ///   producer.open().await?;
     ///   let properties = producer.get_eventhub_properties().await?;
     ///   println!("Event Hub: {:?}", properties);
@@ -289,7 +384,7 @@ impl ProducerClient {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::producer::{ProducerClient, ProducerClientOptions};
+    /// use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
@@ -299,7 +394,7 @@ impl ProducerClient {
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let my_credentials = DefaultAzureCredential::new()?;
-    ///     let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials, None);
+    ///     let producer = ProducerClient::new(fully_qualified_namespace, eventhub_name, my_credentials.clone(), None);
     ///     producer.open().await?;
     ///     let partition_properties = producer.get_partition_properties("0".to_string()).await?;
     ///     println!("Event Hub: {:?}", partition_properties);

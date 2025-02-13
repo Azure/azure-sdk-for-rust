@@ -6,7 +6,7 @@
 
   When you run `cargo build`, toolchain version [1.80](https://releases.rs/docs/1.80.0/) and necessary components will be installed automatically.
 
-- (Recommended) If you use [Visual Studio Code](https://code.visualstudio.com), install recommended extensions to improve your development experience.
+- (Recommended) If you use [Visual Studio Code], install recommended extensions to improve your development experience.
 
 ## Generated code
 
@@ -20,6 +20,77 @@ To build any library in the Azure SDK for Rust navigate to the library's project
 
 [TODO] Add instructions on how to run tests for a specific project.
 [TODO] Add instructions for write new tests.
+
+### Debugging with Visual Studio Code
+
+[Visual Studio Code] with recommended extensions installed can be used to run and debug tests for a module or individual tests.
+
+If you need to debug a test, you can use the LLDB extension and set environment variables as needed. For example, to debug recording a specific test,
+your `.vscode/launch.json` file might look something like:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Record secret_roundtrip",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=secret_client",
+          "--package=azure_security_keyvault_secrets",
+          "secret_roundtrip"
+        ],
+        "filter": {
+          "name": "secret_client",
+          "kind": "test"
+        },
+        "env": {
+        }
+      },
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "AZURE_KEYVAULT_URL": "https://my-vault.vault.azure.net/",
+        "PROXY_MANUAL_START": "true",
+        "RUST_LOG": "trace"
+      }
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Play back secret_roundtrip",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=secret_client",
+          "--package=azure_security_keyvault_secrets",
+          "secret_roundtrip"
+        ],
+        "filter": {
+          "name": "secret_client",
+          "kind": "test"
+        },
+        "env": {
+          "AZURE_TEST_MODE": "playback"
+        }
+      },
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_LOG": "trace"
+      }
+    }
+  ]
+}
+```
+
+You can also start the [Test Proxy] manually, in which can you add to the outer `env` above to `"PROXY_MANUAL_START": "true"`.
+
+To enable tracing, you can add the `RUST_LOG` environment variable as shown above using the [same format supported by `env_logger`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging).
+The targets are the crate names if you want to trace more or less for specific targets e.g., `RUST_LOG=info,azure_core=trace` to trace information messages by default but detailed traces for the `azure_core` crate.
 
 ## Code Review Process
 
@@ -94,3 +165,6 @@ Samples may take the following categories of dependencies:
 - **Tiered licensed**: Offerings that enable readers to use the license tier that corresponds to their characteristics. For example, tiers may be available for students, hobbyists, or companies with defined revenue  thresholds. For offerings with tiered licenses, strive to limit our use in tutorials to the features available in the lowest tier. This policy enables the widest audience for the article. [Docker](https://www.docker.com/), [IdentityServer](https://duendesoftware.com/products/identityserver), [ImageSharp](https://sixlabors.com/products/imagesharp/), and [Visual Studio](https://visualstudio.com) are examples of this license type.
 
 In general, we prefer taking dependencies on licensed components in the order of the listed categories. In cases where the category may not be well known, we'll document the category so that readers understand the choice that they're making by using that dependency.
+
+[Test Proxy]: https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md
+[Visual Studio Code]: https://code.visualstudio.com
