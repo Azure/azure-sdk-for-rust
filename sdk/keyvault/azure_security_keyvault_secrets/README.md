@@ -86,11 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Retrieve a secret using the secret client.
     let secret: SecretBundle = client
-<<<<<<< HEAD
-        .get_secret("secret-name".into(), &version, None)
-=======
         .get_secret("secret-name", version.as_ref(), None)
->>>>>>> ef613eed550cbf46140b34e6ff5dc861506c6bcf
         .await?
         .into_body()
         .await?;
@@ -150,17 +146,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-<<<<<<< HEAD
-    let secret = client
-        .set_secret(
-            "secret-name".into(),
-            secret_set_parameters.try_into()?,
-            None,
-        )
-=======
     let secret: SecretBundle = client
         .set_secret("secret-name", secret_set_parameters.try_into()?, None)
->>>>>>> ef613eed550cbf46140b34e6ff5dc861506c6bcf
         .await?
         .into_body()
         .await?;
@@ -194,13 +181,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Retrieve a secret using the secret client.
-<<<<<<< HEAD
-    let secret = client
-        .get_secret("secret-name".into(), "secret-version".into(), None)
-=======
     let secret: SecretBundle = client
         .get_secret("secret-name", "secret-version", None)
->>>>>>> ef613eed550cbf46140b34e6ff5dc861506c6bcf
         .await?
         .into_body()
         .await?;
@@ -217,10 +199,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{
-    models::{SecretAttributes, SecretUpdateParameters},
-    SecretClient,
-};
+use azure_security_keyvault_secrets::{models::SecretUpdateParameters, SecretClient};
 use std::collections::HashMap;
 
 #[tokio::main]

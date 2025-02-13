@@ -62,7 +62,7 @@ az login
 
 Instantiate a `DefaultAzureCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
 
-### Create an Event Hubs message producer on an Event Hub instance
+### Create an Event Hubs message producer and send an event
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
@@ -70,20 +70,16 @@ use azure_messaging_eventhubs::ProducerClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let host = "<EVENTHUBS_NAMESPACE_HOST>";
+    let host = "<EVENTHUBS_HOST>";
     let eventhub = "<EVENTHUB_NAME>";
 
     // Create new credential
     let credential = DefaultAzureCredential::new()?;
 
-        // Create and open new Producer Client
-    let producer = ProducerClient::new(
-        host.to_string(),
-        eventhub.to_string(),
-        credential.clone(),
-        None,
-    );
-    producer.open().await?;
+    // Create and open a new ProducerClient
+    let producer = ProducerClient::builder()
+        .open(host, eventhub, credential.clone())
+        .await?;
 
     producer.send_event(vec![1, 2, 3, 4], None).await?;
 
@@ -127,18 +123,19 @@ Additional examples for various scenarios can be found on in the examples direct
 ## Open an Event Hubs message producer on an Event Hub instance
 
 ```rust no_run
+use azure_core;
+use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::ProducerClient;
 
 async fn open_producer_client() -> Result<ProducerClient, azure_core::Error> {
     let host = "<EVENTHUBS_HOST>";
     let eventhub = "<EVENTHUB_NAME>";
 
-    let credential = azure_identity::DefaultAzureCredential::new()?;
+    let credential = DefaultAzureCredential::new()?;
 
-    let producer =
-        azure_messaging_eventhubs::ProducerClient::builder()
-            .open(host, eventhub, credential.clone())
-            .await?;
+    let producer = ProducerClient::builder()
+        .open(host, eventhub, credential.clone())
+        .await?;
 
     Ok(producer)
 }
@@ -157,6 +154,7 @@ use azure_messaging_eventhubs::ProducerClient;
 
 async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error::Error>> {
     producer.send_event(vec![1, 2, 3, 4], None).await?;
+
     Ok(())
 }
 ```
@@ -167,12 +165,13 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error
 use azure_messaging_eventhubs::ProducerClient;
 
 async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error::Error>> {
-    let mut batch = producer.create_batch(None).await?;
+    let batch = producer.create_batch(None).await?;
     assert_eq!(batch.len(), 0);
     assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None)?);
 
     let res = producer.send_batch(&batch, None).await;
     assert!(res.is_ok());
+
     Ok(())
 }
 ```
@@ -180,19 +179,20 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error
 ## Open an Event Hubs message consumer on an Event Hub instance
 
 ```rust no_run
+use azure_core::Error;
+use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::ConsumerClient;
 
-async fn open_consumer_client() -> Result<ConsumerClient, azure_core::Error> {
+async fn open_consumer_client() -> Result<ConsumerClient, Error> {
     let host = "<EVENTHUBS_HOST>";
     let eventhub = "<EVENTHUB_NAME>";
 
-    let credential = azure_identity::DefaultAzureCredential::new()?;
+    let credential = DefaultAzureCredential::new()?;
 
     let consumer = azure_messaging_eventhubs::ConsumerClient::builder()
-        .open(host,
-              eventhub,
-              credential.clone()
-        ).await?;
+        .open(host, eventhub, credential.clone())
+        .await?;
+
     Ok(consumer)
 }
 ```
@@ -208,16 +208,18 @@ Each message receiver can only receive messages from a single Event Hubs partiti
 
 ```rust no_run
 use async_std::stream::StreamExt;
-use azure_messaging_eventhubs::ConsumerClient;
+use azure_messaging_eventhubs::{
+    ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
+};
 use futures::pin_mut;
 
 async fn receive_events(client: &ConsumerClient) -> Result<(), Box<dyn std::error::Error>> {
     let message_receiver = client
         .open_receiver_on_partition(
             "0",
-            Some(azure_messaging_eventhubs::OpenReceiverOptions {
-                start_position: Some(azure_messaging_eventhubs::StartPosition {
-                    location: azure_messaging_eventhubs::StartLocation::Earliest,
+            Some(OpenReceiverOptions {
+                start_position: Some(StartPosition {
+                    location: StartLocation::Earliest,
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -241,6 +243,7 @@ async fn receive_events(client: &ConsumerClient) -> Result<(), Box<dyn std::erro
             }
         }
     }
+
     Ok(())
 }
 ```
