@@ -14,7 +14,7 @@ use crate::{
 };
 use bytes::Bytes;
 use serde::Serialize;
-use std::{fmt::Debug, marker::PhantomData, str::FromStr};
+use std::{fmt, marker::PhantomData, str::FromStr};
 
 /// An HTTP Body.
 #[derive(Clone)]
@@ -53,12 +53,15 @@ impl Body {
     }
 }
 
-impl Debug for Body {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Debug for Body {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Bytes(v) => write!(f, "Bytes(len: {})", v.len()),
+            Self::Bytes(v) if !v.is_empty() => f.write_str("Bytes { ... }"),
+            Self::Bytes(_) => f.write_str("Bytes {}"),
             #[cfg(not(target_arch = "wasm32"))]
-            Self::SeekableStream(v) => write!(f, "SeekableStream(len: {})", v.len()),
+            Self::SeekableStream(v) if !v.is_empty() => f.write_str("SeekableStream { ... }"),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::SeekableStream(_) => f.write_str("SeekableStream {}"),
         }
     }
 }
@@ -82,6 +85,7 @@ impl From<Box<dyn SeekableStream>> for Body {
 #[cfg(test)]
 impl PartialEq for Body {
     fn eq(&self, other: &Self) -> bool {
+        #[cfg_attr(target_arch = "wasm32", allow(irrefutable_let_patterns))]
         if let Self::Bytes(this) = self {
             if let Self::Bytes(other) = other {
                 return this.eq(other);
@@ -95,7 +99,7 @@ impl PartialEq for Body {
 ///
 /// A pipeline request is composed by a destination (uri), a method, a collection of headers and a
 /// body. Policies are expected to enrich the request by mutating it.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Request {
     pub(crate) url: Url,
     pub(crate) method: Method,
@@ -178,6 +182,18 @@ impl Request {
 
     pub fn add_mandatory_header<T: Header>(&mut self, item: &T) {
         self.insert_header(item.name(), item.value());
+    }
+}
+
+impl fmt::Debug for Request {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Request")
+            // Format URL as simple string instead of struct.
+            .field("url", &self.url.as_str())
+            .field("method", &self.method)
+            .field("headers", &self.headers)
+            .field("body", &self.body)
+            .finish()
     }
 }
 

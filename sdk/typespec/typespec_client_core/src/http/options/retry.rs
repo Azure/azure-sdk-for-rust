@@ -32,8 +32,8 @@ impl Debug for RetryMode {
         match self {
             RetryMode::Exponential(o) => write!(f, "Exponential({o:?})"),
             RetryMode::Fixed(o) => write!(f, "Fixed({o:?})"),
-            RetryMode::Custom(_) => write!(f, "Custom"),
-            RetryMode::None => write!(f, "None"),
+            RetryMode::Custom(_) => f.write_str("Custom"),
+            RetryMode::None => f.write_str("None"),
         }
     }
 }

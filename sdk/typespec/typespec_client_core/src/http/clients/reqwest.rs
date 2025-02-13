@@ -15,7 +15,7 @@ use typespec::error::{Error, ErrorKind, Result, ResultExt};
 
 /// Create a new [`HttpClient`] with the `reqwest` backend.
 pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
-    debug!("instantiating an http client using the reqwest backend");
+    debug!("creating an http client using `reqwest`");
 
     // Set `pool_max_idle_per_host` to `0` to avoid an issue in the underlying
     // `hyper` library that causes the `reqwest` client to hang in some cases.

@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words amqp mgmt amqps
-
 #![doc = include_str!("README.md")]
 use super::{
     common::{
@@ -10,11 +8,10 @@ use super::{
         ManagementInstance,
     },
     error::ErrorKind,
-    models::{EventHubPartitionProperties, EventHubProperties, ReceivedEventData},
+    models::{EventHubPartitionProperties, EventHubProperties},
 };
 
 use async_std::sync::Mutex;
-use async_stream::try_stream;
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::{Error, Result},
@@ -24,20 +21,24 @@ use azure_core_amqp::{
     cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis},
     connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions},
     management::{AmqpManagement, AmqpManagementApis},
-    messaging::{AmqpDeliveryApis, AmqpSource, AmqpSourceFilter},
+    messaging::{AmqpSource, AmqpSourceFilter},
     receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::{AmqpSession, AmqpSessionApis},
     value::{AmqpDescribed, AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
-use futures::stream::Stream;
+pub use event_receiver::EventReceiver;
 use std::{
     collections::HashMap,
     default::Default,
     fmt::Debug,
     sync::{Arc, OnceLock},
+    time::Duration,
 };
 use tracing::{debug, trace};
 use url::Url;
+
+/// Receive messages from a partition.
+mod event_receiver;
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
@@ -51,9 +52,9 @@ pub struct ConsumerClient {
     authorization_scopes: Mutex<HashMap<String, AccessToken>>,
 }
 impl ConsumerClient {
-    /// Creates a new `ConsumerClient` instance.
+    /// Creates a new [`ConsumerClient`] instance.
     ///
-    /// This function creates a new `ConsumerClient` instance with the specified parameters.
+    /// This function creates a new [`ConsumerClient`] instance with the specified parameters.
     ///
     /// # Arguments
     ///
@@ -61,22 +62,22 @@ impl ConsumerClient {
     /// * `eventhub_name` - The name of the Event Hub.
     /// * `consumer_group` - Optional consumer group name. If not provided, the default consumer group will be used.
     /// * `credential` - The token credential used to authenticate with the Event Hubs service.
-    /// * `options` - Optional `ConsumerClientOptions` to configure the behavior of the consumer client.
+    /// * `options` - Optional [`ConsumerClientOptions`] to configure the behavior of the consumer client.
     ///
     /// # Returns
     ///
-    /// A new `ConsumerClient` instance.
+    /// A new [`ConsumerClient`] instance.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```no_run
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     ///     let my_credential = DefaultAzureCredential::new()?;
-    /// let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
+    /// let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential.clone(), None);
     /// # Ok(())}
     /// ```
     pub fn new(
@@ -105,17 +106,18 @@ impl ConsumerClient {
 
     /// Opens a connection to the Event Hub.
     ///
-    /// This method establishes a connection to the Event Hub associated with the `ConsumerClient`.
-    /// It returns a `Result` indicating whether the operation was successful or not.
+    /// This method establishes a connection to the Event Hubs instance associated
+    /// with the [`ConsumerClient`]. It returns a `Result` indicating whether the
+    /// operation was successful or not.
     ///
     /// # Returns
     ///
     /// A `Result` indicating whether the operation was successful or not.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
@@ -144,19 +146,19 @@ impl ConsumerClient {
 
     /// Closes the connection to the Event Hub.
     ///
-    /// This method closes the connection to the Event Hub associated with the `ConsumerClient`.
-    /// It returns a `Result` indicating whether the operation was successful or not.
+    /// This method closes the connection to the Event Hubs instance associated with the [`ConsumerClient`].
+    /// It returns a [`Result`] indicating whether the operation was successful or not.
     ///
     /// Note that closing a consumer will cancel all outstanding receive requests.
     ///
     /// # Returns
     ///
-    /// A `Result` indicating whether the operation was successful or not.
+    /// A [`Result`] indicating whether the operation was successful or not.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ``` no_run
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
@@ -169,7 +171,7 @@ impl ConsumerClient {
     ///     let result = consumer.close().await;
     ///
     ///     match result {
-    ///         Ok(()) => {
+    ///         Ok(_) => {
     ///             // Connection closed successfully
     ///             println!("Connection closed successfully");
     ///         }
@@ -189,39 +191,44 @@ impl ConsumerClient {
         Ok(())
     }
 
-    /// Receives events from a specific partition of the Event Hub.
+    /// Attaches a message receiver to a specific partition of the Event Hub.
     ///
-    /// This function establishes a connection to the specified partition of the Event Hub and starts receiving events from it.
-    /// It returns a stream of `ReceivedEventData` items, representing the events received from the partition.
+    /// This function establishes a connection to the specified partition of the Event Hubs instance and returns a MessageReceiver which can be used to receive messages from it.
     ///
     /// # Arguments
     ///
     /// * `partition_id` - The ID of the partition to receive events from.
-    /// * `options` - Optional `ReceiveOptions` to configure the behavior of the receiver.
+    /// * `options` - Optional [`OpenReceiverOptions`] to configure the behavior of the receiver.
     ///
     /// # Returns
     ///
-    /// A stream of `Result<ReceivedEventData>`, where each item represents an event received from the partition.
+    /// A MessageReceiver which can be used to receive messages from the partition.
     ///
-    /// # Example
+    /// Note that by default, a message receiver will receive events starting from the latest event in the partition (in
+    /// other words, it will receive new events only). To receive events from another location within the partition you can
+    /// specify a different starting position using the `options` parameter.
+    ///
+    /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use async_std::stream::StreamExt;
+    /// use futures::pin_mut;
     ///
     /// #[tokio::main]
-    /// async fn main() {
-    ///     let my_credential = DefaultAzureCredential::new().unwrap();
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     let my_credential = DefaultAzureCredential::new()?;
     ///     let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
     ///     let partition_id = "0";
-    ///     let options = None;
     ///
-    ///     consumer.open().await.unwrap();
+    ///     consumer.open().await?;
     ///
-    ///     let event_stream = consumer.receive_events_on_partition(partition_id.to_string(), options).await;
+    ///     let receiver  = consumer.open_receiver_on_partition(partition_id.to_string(), None).await?;
     ///
-    ///     tokio::pin!(event_stream);
+    ///     let event_stream = receiver.stream_events();
+    ///
+    ///     pin_mut!(event_stream);
     ///     while let Some(event_result) = event_stream.next().await {
     ///         match event_result {
     ///             Ok(event) => {
@@ -234,13 +241,14 @@ impl ConsumerClient {
     ///             }
     ///         }
     ///     }
+    ///     Ok(())
     /// }
     /// ```
-    pub async fn receive_events_on_partition(
+    pub async fn open_receiver_on_partition(
         &self,
         partition_id: String,
-        options: Option<ReceiveOptions>,
-    ) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
+        options: Option<OpenReceiverOptions>,
+    ) -> Result<EventReceiver> {
         let options = options.unwrap_or_default();
 
         let receiver_name = self
@@ -251,8 +259,6 @@ impl ConsumerClient {
         let start_expression = StartPosition::start_expression(&options.start_position);
         let source_url = format!("{}/Partitions/{}", self.url, partition_id);
 
-        try_stream! {
-            // Authorize access to the source address.
         self.authorize_path(source_url.clone()).await?;
 
         let session = self.get_session(&partition_id).await?;
@@ -266,16 +272,17 @@ impl ConsumerClient {
                 )),
             )
             .build();
-        let mut receiver_properties : AmqpOrderedMap<AmqpSymbol, AmqpValue> = vec![("com.microsoft.com:receiver-name", receiver_name.clone())]
-            .into_iter()
-            .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
-            .collect();
+        let mut receiver_properties: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
+            vec![("com.microsoft.com:receiver-name", receiver_name.clone())]
+                .into_iter()
+                .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
+                .collect();
 
         if let Some(owner_level) = options.owner_level {
             receiver_properties.insert("com.microsoft:epoch".into(), AmqpValue::from(owner_level));
         }
 
-        let receiver_options = AmqpReceiverOptions{
+        let receiver_options = AmqpReceiverOptions {
             name: Some(receiver_name),
             properties: Some(receiver_properties),
             credit_mode: Some(ReceiverCreditMode::Auto(options.prefetch.unwrap_or(300))),
@@ -285,37 +292,25 @@ impl ConsumerClient {
 
         let receiver = AmqpReceiver::new();
         receiver
-            .attach(
-                &session,
-                message_source,
-                Some(receiver_options),
-            )
+            .attach(&session, message_source, Some(receiver_options))
             .await?;
 
-            loop{
-                let delivery = receiver.receive_delivery().await?;
-
-                receiver.accept_delivery(&delivery).await?;
-                let message = delivery.into_message();
-                let event = ReceivedEventData::from(message);
-                yield event;
-            }
-        }
+        Ok(EventReceiver::new(receiver, options.receive_timeout))
     }
 
     /// Retrieves the properties of the Event Hub.
     ///
-    /// This function retrieves the properties of the Event Hub associated with the `ConsumerClient`.
-    /// It returns a `Result` containing the `EventHubProperties` if the operation is successful.
+    /// This function retrieves the properties of the Event Hub associated with the [`ConsumerClient`].
+    /// It returns a [`Result`] containing the [`EventHubProperties`] if the operation is successful.
     ///
     /// # Returns
     ///
-    /// A `Result` containing the `EventHubProperties` if the operation is successful.
+    /// A [`Result`] containing the [`EventHubProperties`] if the operation is successful.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ``` no_run
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
@@ -327,12 +322,12 @@ impl ConsumerClient {
     ///
     ///     match eventhub_properties {
     ///         Ok(properties) => {
-    ///             // Process the Event Hub properties
+    ///             // Process the Event Hub instance properties
     ///             println!("Event Hub properties: {:?}", properties);
     ///         }
     ///         Err(err) => {
     ///             // Handle the error
-    ///             eprintln!("Error retrieving Event Hub properties: {:?}", err);
+    ///             eprintln!("Error retrieving Event Hubs properties: {:?}", err);
     ///         }
     ///     }
     /// }
@@ -352,7 +347,7 @@ impl ConsumerClient {
     /// Retrieves the properties of a specific partition in the Event Hub.
     ///
     /// This function retrieves the properties of the specified partition in the Event Hub.
-    /// It returns a `Result` containing the `EventHubPartitionProperties` if the operation is successful.
+    /// It returns a [`Result`] containing the [`EventHubPartitionProperties`] if the operation is successful.
     ///
     /// # Arguments
     ///
@@ -360,12 +355,12 @@ impl ConsumerClient {
     ///
     /// # Returns
     ///
-    /// A `Result` containing the `EventHubPartitionProperties` if the operation is successful.
+    /// A [`Result`] containing the [`EventHubPartitionProperties`] if the operation is successful.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ``` no_run
-    /// use azure_messaging_eventhubs::consumer::ConsumerClient;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
@@ -562,16 +557,22 @@ impl ConsumerClientOptions {}
 
 /// Represents the options for receiving events from an Event Hub.
 #[derive(Debug, Clone, Default)]
-pub struct ReceiveOptions {
+pub struct OpenReceiverOptions {
     /// The owner level for messages being retrieved.
     pub owner_level: Option<i64>,
     /// The prefetch count for messages being retrieved.
     pub prefetch: Option<u32>,
     /// The starting position for messages being retrieved.
     pub start_position: Option<StartPosition>,
+
+    /// Optional timeout for receiving messages. If not provided, the default timeout is infinite.
+    ///
+    /// Note: This is the timeout for individual messages, not the entire receive operation.
+    /// As long as there are messages available, then they will be included in the stream events regardless of the timeout.
+    pub receive_timeout: Option<Duration>,
 }
 /// Represents the options for receiving events from an Event Hub.
-impl ReceiveOptions {}
+impl OpenReceiverOptions {}
 
 /// Represents the starting position of a consumer when receiving events from an Event Hub.
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -605,7 +606,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// Basic usage:
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
+/// use azure_messaging_eventhubs::{StartPosition, StartLocation};
 ///
 /// let start_position = StartPosition{
 ///   location: StartLocation::SequenceNumber(12345),
@@ -613,7 +614,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// ```
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
+/// use azure_messaging_eventhubs::{StartPosition, StartLocation};
 ///
 /// let start_position = StartPosition{
 ///  location: StartLocation::EnqueuedTime(std::time::SystemTime::now()),
@@ -622,7 +623,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// ```
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
+/// use azure_messaging_eventhubs::{StartPosition, StartLocation};
 ///
 /// let start_position = StartPosition{
 ///   location: StartLocation::Offset("12345".to_string()),
@@ -631,7 +632,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// ```
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
+/// use azure_messaging_eventhubs::{StartPosition, StartLocation};
 ///
 /// let start_position = StartPosition{
 ///   location: StartLocation::Earliest,
@@ -640,7 +641,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// ```
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::{StartPosition, StartLocation};
+/// use azure_messaging_eventhubs::{StartPosition, StartLocation};
 ///
 /// let start_position = StartPosition{
 ///   location: StartLocation::Latest,
@@ -649,7 +650,7 @@ const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number"
 /// ```
 ///
 /// ```
-/// use azure_messaging_eventhubs::consumer::StartPosition;
+/// use azure_messaging_eventhubs::StartPosition;
 ///
 /// let start_position = StartPosition::default();
 /// ```

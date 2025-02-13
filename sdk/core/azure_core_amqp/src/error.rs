@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-// cspell: words amqp
 
 pub enum ErrorKind {
     AmqpReceiverAlreadyAttached,
@@ -32,7 +31,7 @@ impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
             ErrorKind::AmqpReceiverAlreadyAttached => {
-                write!(f, "AMQP Receiver is already attached")
+                f.write_str("AMQP Receiver is already attached")
             }
             ErrorKind::TransportImplementationError { source } => {
                 write!(f, "Transport Implementation Error: {:?}", source)

@@ -26,8 +26,6 @@ pub struct ClientOptions {
     /// Retry options.
     pub retry: Option<RetryOptions>,
 
-    // /// Telemetry options.
-    // pub telemetry: Option<TelemetryOptions>,
     /// Transport options.
     pub transport: Option<TransportOptions>,
 }
