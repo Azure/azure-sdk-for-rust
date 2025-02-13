@@ -16,8 +16,8 @@ use azure_messaging_eventhubs::ConsumerClient;
 #[tokio::main]
 async fn main() -> Result<(), azure_core::Error> {
     let my_credential = DefaultAzureCredential::new()?;
-    let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-        .open()
+    let consumer = ConsumerClient::builder()
+        .open("my_namespace", "my_eventhub", my_credential)
         .await?;
     Ok(())
 }
