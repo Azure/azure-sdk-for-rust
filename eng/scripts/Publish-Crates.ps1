@@ -11,12 +11,14 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
+$env:CARGO_REGISTRY_TOKEN = $Token
+
 foreach ($crateName in $CrateNames) {
   Write-Host "Publishing packae: '$crateName'"
   $manifestPath = "$PackagesPath/$crateName/Cargo.toml"
   # https://doc.rust-lang.org/cargo/reference/registry-web-api.html#publish
-  Write-Host "> cargo publish --manifest-path `"$manifestPath`" --token <TOKEN>"
-  cargo publish --manifest-path $manifestPath --token $Token
+  Write-Host "> cargo publish --manifest-path `"$manifestPath`""
+  cargo publish --manifest-path $manifestPath
   if (!$?) {
     Write-Error "Failed to publish package: '$crateName'"
     exit 1
@@ -26,7 +28,7 @@ foreach ($crateName in $CrateNames) {
   $missingOwners = $AdditionalOwners | Where-Object { $existingOwners -notcontains $_ }
 
   foreach ($owner in $missingOwners) {
-    Write-Host "> cargo owner --add $owner $crateName --token <TOKEN>"
-    cargo owner --add $owner $crateName --token $Token
+    Write-Host "> cargo owner --add $owner $crateName"
+    cargo owner --add $owner $crateName
   }
 }
