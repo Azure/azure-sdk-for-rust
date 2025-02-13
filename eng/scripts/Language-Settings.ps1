@@ -144,7 +144,7 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
 
 function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
   #$pkg will be a FileInfo object for the Cargo.toml file in a package artifact directory
-  $package = cargo read-manifest --manifest-path $pkg.FullName
+  $package = cargo read-manifest --manifest-path $pkg.FullName | ConvertFrom-Json
   
   $packageName = $package.name
   $packageVersion = $package.version
