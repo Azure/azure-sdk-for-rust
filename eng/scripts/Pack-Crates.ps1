@@ -119,7 +119,7 @@ function Get-PackagesToBuild() {
 
 function Initialize-VendorDirectory() {
   $path = "$RepoRoot/target/vendor"
-  Invoke-LoggedCommand "cargo vendor $path" | Out-Host
+  Invoke-LoggedCommand "cargo vendor $path" -GroupOutput | Out-Host
   return $path
 }
 
@@ -206,7 +206,7 @@ try {
 
       Write-Host "Copying package '$packageName' to '$packageOutputPath'"
       New-Item -ItemType Directory -Path $packageOutputPath -Force | Out-Null
-      Copy-Item -Path $targetPackagePath -Destination $packageOutputPath -Recurse -Exclude "Cargo.toml.orig"
+      Copy-Item -Path $targetPackagePath/* -Destination $packageOutputPath -Recurse -Exclude "Cargo.toml.orig"
     }
   }
 
