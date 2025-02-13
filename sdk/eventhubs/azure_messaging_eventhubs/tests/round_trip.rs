@@ -26,9 +26,9 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
-    let producer = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let producer = ProducerClient::builder()
         .with_application_id(TEST_NAME)
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     let partition_properties = producer
@@ -100,9 +100,9 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     assert!(producer.send_batch(&batch, None).await.is_ok());
 
     let credential = DefaultAzureCredential::new()?;
-    let consumer = ConsumerClient::builder(host.as_str(), eventhub.as_str(), credential)
+    let consumer = ConsumerClient::builder()
         .with_application_id(TEST_NAME)
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential)
         .await?;
     let receiver = consumer
         .open_receiver_on_partition(

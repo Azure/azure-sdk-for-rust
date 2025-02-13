@@ -24,8 +24,8 @@ use tracing::trace;
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///     let my_credential = DefaultAzureCredential::new()?;
-///     let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-///        .open().await?;
+///     let consumer = ConsumerClient::builder()
+///        .open("my_namespace", "my_eventhub", my_credential).await?;
 ///     let partition_id = "0";
 ///
 ///     let receiver  = consumer.open_receiver_on_partition(partition_id, None).await?;

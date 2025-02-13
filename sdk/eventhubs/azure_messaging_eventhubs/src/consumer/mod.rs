@@ -61,12 +61,6 @@ impl ConsumerClient {
     /// This function returns a builder which enables creation of a new [`ConsumerClient`]
     /// instance with the specified parameters.
     ///
-    /// # Arguments
-    ///
-    /// * `fully_qualified_namespace` - The fully qualified namespace of the Event Hubs instance.
-    /// * `eventhub_name` - The name of the Event Hub.
-    /// * `consumer_group` - Optional consumer group name. If not provided, the default consumer group will be used.
-    /// * `credential` - The token credential used to authenticate with the Event Hubs service.
     ///
     /// # Returns
     ///
@@ -81,17 +75,13 @@ impl ConsumerClient {
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     ///     let my_credential = DefaultAzureCredential::new()?;
-    /// let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential.clone())
-    ///    .open().await?;
+    /// let consumer = ConsumerClient::builder()
+    ///    .open("my_namespace", "my_eventhub", my_credential.clone()).await?;
     /// # Ok(())}
     /// ```
     ///
-    pub fn builder(
-        fully_qualified_namespace: &str,
-        eventhub_name: &str,
-        credential: Arc<dyn TokenCredential>,
-    ) -> builders::ConsumerClientBuilder {
-        builders::ConsumerClientBuilder::new(fully_qualified_namespace, eventhub_name, credential)
+    pub fn builder() -> builders::ConsumerClientBuilder {
+        builders::ConsumerClientBuilder::new()
     }
 
     fn new(
@@ -142,8 +132,8 @@ impl ConsumerClient {
     /// #[tokio::main]
     /// async fn main() {
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
-    ///     let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-    ///         .open().await.unwrap();
+    ///     let consumer = ConsumerClient::builder()
+    ///         .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
     ///
     ///     let result = consumer.close().await;
     ///
@@ -196,8 +186,8 @@ impl ConsumerClient {
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///     let my_credential = DefaultAzureCredential::new()?;
-    ///     let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-    ///        .open().await?;
+    ///     let consumer = ConsumerClient::builder()
+    ///        .open("my_namespace", "my_eventhub", my_credential).await?;
     ///     let partition_id = "0";
     ///
     ///     let receiver  = consumer.open_receiver_on_partition(partition_id, None).await?;
@@ -291,8 +281,8 @@ impl ConsumerClient {
     /// #[tokio::main]
     /// async fn main(){
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
-    ///     let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-    ///         .open().await.unwrap();
+    ///     let consumer = ConsumerClient::builder()
+    ///         .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
     ///
     ///     let eventhub_properties = consumer.get_eventhub_properties().await;
     ///
@@ -342,8 +332,8 @@ impl ConsumerClient {
     /// #[tokio::main]
     /// async fn main() {
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
-    ///     let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-    ///         .open().await.unwrap();
+    ///     let consumer = ConsumerClient::builder()
+    ///         .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
     ///     let partition_id = "0";
     ///
     ///     let partition_properties = consumer.get_partition_properties(partition_id).await;
@@ -681,31 +671,21 @@ pub mod builders {
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///    let my_credential = DefaultAzureCredential::new().unwrap();
-    ///   let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-    ///      .open().await?;
+    ///   let consumer = ConsumerClient::builder()
+    ///      .open("my_namespace", "my_eventhub", my_credential).await?;
     ///   Ok(())
     /// }
     /// ```
     pub struct ConsumerClientBuilder {
-        fully_qualified_namespace: String,
-        eventhub_name: String,
         consumer_group: Option<String>,
-        credential: Arc<dyn azure_core::credentials::TokenCredential>,
         application_id: Option<String>,
         instance_id: Option<String>,
         retry_options: Option<RetryOptions>,
     }
 
     impl ConsumerClientBuilder {
-        pub(super) fn new(
-            fully_qualified_namespace: &str,
-            eventhub_name: &str,
-            credential: Arc<dyn azure_core::credentials::TokenCredential>,
-        ) -> Self {
+        pub(super) fn new() -> Self {
             Self {
-                fully_qualified_namespace: fully_qualified_namespace.to_string(),
-                eventhub_name: eventhub_name.to_string(),
-                credential,
                 consumer_group: None,
                 application_id: None,
                 instance_id: None,
@@ -735,9 +715,9 @@ pub mod builders {
         /// #[tokio::main]
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ///    let my_credential = DefaultAzureCredential::new()?;
-        ///    let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
+        ///    let consumer = ConsumerClient::builder()
         ///      .with_consumer_group("my_consumer_group")
-        ///      .open().await?;
+        ///      .open("my_namespace", "my_eventhub", my_credential).await?;
         ///   Ok(())
         /// }
         ///
@@ -779,8 +759,8 @@ pub mod builders {
         /// #[tokio::main]
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ///     let my_credential = DefaultAzureCredential::new().unwrap();
-        ///     let result = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-        ///         .open().await;
+        ///     let result = ConsumerClient::builder()
+        ///         .open("my_namespace", "my_eventhub", my_credential).await;
         ///
         ///     match result {
         ///         Ok(_connection) => {
@@ -795,12 +775,17 @@ pub mod builders {
         ///     Ok(())
         /// }
         /// ```
-        pub async fn open(self) -> Result<super::ConsumerClient> {
+        pub async fn open(
+            self,
+            fully_qualified_namespace: &str,
+            eventhub_name: &str,
+            credential: Arc<dyn azure_core::credentials::TokenCredential>,
+        ) -> Result<super::ConsumerClient> {
             let consumer = super::ConsumerClient::new(
-                self.fully_qualified_namespace,
-                self.eventhub_name,
+                fully_qualified_namespace.to_string(),
+                eventhub_name.to_string(),
                 self.consumer_group,
-                self.credential,
+                credential,
                 self.application_id,
                 self.instance_id,
                 self.retry_options,

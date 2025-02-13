@@ -16,9 +16,9 @@ async fn test_new() -> Result<(), Box<dyn Error>> {
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
-    let _client = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let _client = ProducerClient::builder()
         .with_application_id("test_new")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     Ok(())
@@ -28,14 +28,14 @@ async fn test_new() -> Result<(), Box<dyn Error>> {
 async fn test_new_with_error() -> Result<(), Box<dyn Error>> {
     common::setup();
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let result = ProducerClient::builder(
-        "invalid_host",
-        eventhub.as_str(),
-        azure_identity::DefaultAzureCredential::new()?,
-    )
-    .with_application_id("test_new_with_error")
-    .open()
-    .await;
+    let result = ProducerClient::builder()
+        .with_application_id("test_new_with_error")
+        .open(
+            "invalid_host",
+            eventhub.as_str(),
+            azure_identity::DefaultAzureCredential::new()?,
+        )
+        .await;
     assert!(result.is_err());
     info!("Error: {:?}", result.err());
 
@@ -48,9 +48,9 @@ async fn test_open() -> Result<(), Box<dyn Error>> {
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
-    let _client = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let _client = ProducerClient::builder()
         .with_application_id("test_open")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     Ok(())
@@ -61,9 +61,9 @@ async fn test_close() -> Result<(), Box<dyn Error>> {
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
-    let client = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ProducerClient::builder()
         .with_application_id("test_close")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     client.close().await?;
 
@@ -78,9 +78,9 @@ async fn test_get_properties() -> Result<(), Box<dyn Error>> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ProducerClient::builder()
         .with_application_id("test_get_properties")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
     info!("Properties: {:?}", properties);
@@ -97,9 +97,9 @@ async fn test_get_partition_properties() -> Result<(), Box<dyn Error>> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ProducerClient::builder()
         .with_application_id("test_get_partition_properties")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
 
@@ -148,9 +148,9 @@ async fn send_eventdata() -> Result<(), Box<dyn Error>> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ProducerClient::builder()
         .with_application_id("send_eventdata")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     {
         let data = b"hello world";
@@ -190,9 +190,9 @@ async fn send_message() -> Result<(), Box<dyn Error>> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ProducerClient::builder()
         .with_application_id("send_eventdata")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     {
         let data = b"hello world";
@@ -234,9 +234,9 @@ async fn test_create_batch() -> Result<(), Box<dyn Error>> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ProducerClient::builder()
         .with_application_id("test_create_batch")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     {
         let batch = client.create_batch(None).await?;
@@ -254,9 +254,9 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ProducerClient::builder()
         .with_application_id("test_create_and_send_batch")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     {
@@ -304,9 +304,9 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
 
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ProducerClient::builder()
         .with_application_id("test_add_amqp_messages_to_batch")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     let batch = client.create_batch(None).await?;
@@ -374,9 +374,9 @@ async fn test_overload_batch() -> Result<(), Box<dyn Error>> {
 
     info!("Create producer client...");
 
-    let client = ProducerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ProducerClient::builder()
         .with_application_id("test_overload_batch")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     info!("Client is open.");

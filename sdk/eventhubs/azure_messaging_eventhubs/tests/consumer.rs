@@ -16,14 +16,14 @@ async fn test_new() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let _client = ConsumerClient::builder(
-        host.as_str(),
-        eventhub.as_str(),
-        DefaultAzureCredential::new()?,
-    )
-    .with_application_id("test_new")
-    .open()
-    .await?;
+    let _client = ConsumerClient::builder()
+        .with_application_id("test_new")
+        .open(
+            host.as_str(),
+            eventhub.as_str(),
+            DefaultAzureCredential::new()?,
+        )
+        .await?;
 
     Ok(())
 }
@@ -33,14 +33,14 @@ async fn test_new_with_error() -> Result<(), Box<dyn Error>> {
     common::setup();
     trace!("test_new_with_error");
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let result = ConsumerClient::builder(
-        "invalid_host",
-        eventhub.as_str(),
-        DefaultAzureCredential::new()?,
-    )
-    .with_application_id("test_new")
-    .open()
-    .await;
+    let result = ConsumerClient::builder()
+        .with_application_id("test_new")
+        .open(
+            "invalid_host",
+            eventhub.as_str(),
+            DefaultAzureCredential::new()?,
+        )
+        .await;
     assert!(result.is_err());
     info!("Error: {:?}", result.err());
 
@@ -52,14 +52,14 @@ async fn test_open() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let _client = ConsumerClient::builder(
-        host.as_str(),
-        eventhub.as_str(),
-        azure_identity::DefaultAzureCredential::new()?,
-    )
-    .with_application_id("test_open")
-    .open()
-    .await?;
+    let _client = ConsumerClient::builder()
+        .with_application_id("test_open")
+        .open(
+            host.as_str(),
+            eventhub.as_str(),
+            azure_identity::DefaultAzureCredential::new()?,
+        )
+        .await?;
 
     Ok(())
 }
@@ -68,14 +68,14 @@ async fn test_close() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let client = ConsumerClient::builder(
-        host.as_str(),
-        eventhub.as_str(),
-        azure_identity::DefaultAzureCredential::new()?,
-    )
-    .with_application_id("test_open")
-    .open()
-    .await?;
+    let client = ConsumerClient::builder()
+        .with_application_id("test_open")
+        .open(
+            host.as_str(),
+            eventhub.as_str(),
+            azure_identity::DefaultAzureCredential::new()?,
+        )
+        .await?;
     client.close().await?;
 
     Ok(())
@@ -89,9 +89,9 @@ async fn test_get_properties() -> Result<(), Box<dyn Error>> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ConsumerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ConsumerClient::builder()
         .with_application_id("test_open")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
     info!("Properties: {:?}", properties);
@@ -108,9 +108,9 @@ async fn test_get_partition_properties() -> Result<(), Box<dyn Error>> {
 
     let credential = DefaultAzureCredential::new()?;
 
-    let client = ConsumerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ConsumerClient::builder()
         .with_application_id("test_open")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
 
@@ -137,9 +137,9 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
     let credential = DefaultAzureCredential::new()?;
 
     info!("Creating client.");
-    let client = ConsumerClient::builder(host.as_str(), eventhub.as_str(), credential.clone())
+    let client = ConsumerClient::builder()
         .with_application_id("test_open")
-        .open()
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     let receiver = client

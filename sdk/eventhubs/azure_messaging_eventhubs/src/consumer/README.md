@@ -32,8 +32,8 @@ use azure_messaging_eventhubs::ConsumerClient;
 #[tokio::main]
 async fn main() -> Result<(), azure_core::Error> {
     let my_credential = DefaultAzureCredential::new()?;
-    let result = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-        .open()
+    let result = ConsumerClient::builder()
+        .open("my_namespace", "my_eventhub", my_credential)
         .await;
 
     match result {
@@ -59,8 +59,8 @@ use azure_messaging_eventhubs::ConsumerClient;
 #[tokio::main]
 async fn main() -> Result<(), azure_core::Error> {
     let my_credential = DefaultAzureCredential::new()?;
-    let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-        .open()
+    let consumer = ConsumerClient::builder()
+        .open("my_namespace", "my_eventhub", my_credential)
         .await?;
 
     let result = consumer.close().await;
@@ -90,8 +90,8 @@ use futures::pin_mut;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let my_credential = DefaultAzureCredential::new().unwrap();
-    let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-        .open()
+    let consumer = ConsumerClient::builder()
+        .open("my_namespace", "my_eventhub", my_credential)
         .await?;
     let partition_id = "0";
 

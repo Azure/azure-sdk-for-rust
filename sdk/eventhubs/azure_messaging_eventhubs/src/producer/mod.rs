@@ -61,9 +61,9 @@ pub struct SendBatchOptions {}
 ///    let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
 ///    let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
 ///    let my_credentials = DefaultAzureCredential::new()?;
-///   let producer = ProducerClient::builder(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone())
+///   let producer = ProducerClient::builder()
 ///    .with_application_id("your_application_id")
-///    .open().await?;
+///    .open(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone()).await?;
 ///   Ok(())
 /// }
 /// ```
@@ -131,12 +131,8 @@ impl ProducerClient {
     /// # Returns
     ///
     /// A new instance of [`ProducerClient`].
-    pub fn builder(
-        fully_qualified_namespace: &str,
-        eventhub: &str,
-        credential: Arc<dyn azure_core::credentials::TokenCredential>,
-    ) -> builders::ProducerClientBuilder {
-        builders::ProducerClientBuilder::new(fully_qualified_namespace, eventhub, credential)
+    pub fn builder() -> builders::ProducerClientBuilder {
+        builders::ProducerClientBuilder::new()
     }
 
     /// Closes the connection to the Event Hub.
@@ -246,9 +242,9 @@ impl ProducerClient {
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///   let my_credentials = DefaultAzureCredential::new()?;
     ///
-    ///   let producer = ProducerClient::builder(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone())
+    ///   let producer = ProducerClient::builder()
     ///    .with_application_id("your_application_id")
-    ///    .open().await?;
+    ///    .open(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone()).await?;
     ///   let mut batch = producer.create_batch(None).await?;
     ///   Ok(())
     /// }
@@ -288,9 +284,9 @@ impl ProducerClient {
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///   let my_credentials = DefaultAzureCredential::new()?;
     ///
-    ///   let producer = ProducerClient::builder(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone())
+    ///   let producer = ProducerClient::builder()
     ///    .with_application_id("your_application_id")
-    ///    .open().await?;
+    ///    .open(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone()).await?;
     ///
     ///   let mut batch = producer.create_batch(None).await?;
     ///   batch.try_add_event_data("Hello, World!", None)?;
@@ -337,8 +333,8 @@ impl ProducerClient {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///   let my_credentials = DefaultAzureCredential::new()?;
-    ///   let producer = ProducerClient::builder(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone())
-    ///     .open().await?;
+    ///   let producer = ProducerClient::builder()
+    ///     .open(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone()).await?;
     ///
     ///   let properties = producer.get_eventhub_properties().await?;
     ///   println!("Event Hub: {:?}", properties);
@@ -376,8 +372,8 @@ impl ProducerClient {
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let my_credentials = DefaultAzureCredential::new()?;
-    ///     let producer = ProducerClient::builder(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone())
-    ///        .open().await?;
+    ///     let producer = ProducerClient::builder()
+    ///        .open(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone()).await?;
     ///     let partition_properties = producer.get_partition_properties("0").await?;
     ///     println!("Event Hub: {:?}", partition_properties);
     ///     Ok(())
@@ -587,14 +583,11 @@ pub mod builders {
     /// #[tokio::main]
     /// async fn main() {
     ///   let my_credential = DefaultAzureCredential::new().unwrap();
-    ///   let producer = ProducerClient::builder("my_namespace", "my_eventhub", my_credential)
-    ///      .open().await.unwrap();
+    ///   let producer = ProducerClient::builder()
+    ///      .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
     /// }
     /// ```
     pub struct ProducerClientBuilder {
-        url: String,
-        eventhub: String,
-        credential: Arc<dyn azure_core::credentials::TokenCredential>,
         /// The application id that will be used to identify the client.
         application_id: Option<String>,
 
@@ -613,15 +606,8 @@ pub mod builders {
         /// # Returns
         ///
         /// A new instance of [`ProducerClientBuilder`].
-        pub(super) fn new(
-            fully_qualified_namespace: &str,
-            eventhub: &str,
-            credential: Arc<dyn azure_core::credentials::TokenCredential>,
-        ) -> Self {
+        pub(super) fn new() -> Self {
             Self {
-                credential: credential.clone(),
-                url: format!("amqps://{}/{}", fully_qualified_namespace, eventhub),
-                eventhub: eventhub.to_string(),
                 application_id: None,
                 retry_options: None,
             }
@@ -651,16 +637,23 @@ pub mod builders {
         ///
         /// This method must be called before any other operation on the EventHub producer.
         ///
-        pub async fn open(self) -> azure_core::Result<ProducerClient> {
+        pub async fn open(
+            self,
+            fully_qualified_namespace: &str,
+            eventhub: &str,
+            credential: Arc<dyn azure_core::credentials::TokenCredential>,
+        ) -> azure_core::Result<ProducerClient> {
+            let url = format!("amqps://{}/{}", fully_qualified_namespace, eventhub);
+
             let client = ProducerClient::new(
-                self.url.clone(),
-                self.eventhub,
-                self.credential,
-                self.application_id.clone(),
-                self.retry_options.clone(),
+                url.clone(),
+                eventhub.to_string(),
+                credential,
+                self.application_id,
+                self.retry_options,
             );
 
-            client.ensure_connection(&self.url).await?;
+            client.ensure_connection(&url).await?;
             Ok(client)
         }
     }

@@ -171,8 +171,8 @@ async fn open_producer_client() -> Result<ProducerClient, azure_core::Error> {
     let credential = azure_identity::DefaultAzureCredential::new()?;
 
     let producer =
-        azure_messaging_eventhubs::ProducerClient::builder(host, eventhub, credential.clone())
-            .open()
+        azure_messaging_eventhubs::ProducerClient::builder()
+            .open(host, eventhub, credential.clone())
             .await?;
 
     Ok(producer)
@@ -190,14 +190,11 @@ async fn open_consumer_client() -> Result<ConsumerClient, azure_core::Error> {
 
     let credential = azure_identity::DefaultAzureCredential::new()?;
 
-    let consumer = azure_messaging_eventhubs::ConsumerClient::builder(
-        host,
-        eventhub,
-        None,
-        credential.clone(),
-    )
-    .open()
-    .await?;
+    let consumer = azure_messaging_eventhubs::ConsumerClient::builder()
+        .open(host,
+              eventhub,
+              credential.clone()
+        ).await?;
     Ok(consumer)
 }
 ```
