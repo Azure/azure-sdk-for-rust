@@ -19,6 +19,7 @@ paste
 pin-project
 quick-xml
 rand
+rand_chacha
 reqwest
 rustc_version
 serde
