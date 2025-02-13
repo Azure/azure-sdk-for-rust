@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-pub mod cbs;
-pub mod connection;
-pub mod error;
-pub mod management;
-pub mod messaging;
-pub mod receiver;
-pub mod sender;
-pub mod session;
-pub mod value;
+pub(crate) mod cbs;
+pub(crate) mod connection;
+pub(crate) mod error;
+pub(crate) mod management;
+pub(crate) mod messaging;
+pub(crate) mod receiver;
+pub(crate) mod sender;
+pub(crate) mod session;
+pub(crate) mod value;

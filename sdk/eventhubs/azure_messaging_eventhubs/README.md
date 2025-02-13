@@ -162,47 +162,39 @@ Examples for various scenarios can be found on in the samples directory in our G
 ## Open an Event Hubs message producer on an Event Hubs instance.
 
 ```rust no_run
-use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
+use azure_messaging_eventhubs::ProducerClient;
 
-async fn open_producer_client() -> Result<ProducerClient,azure_core::Error>
-{
+async fn open_producer_client() -> Result<ProducerClient, azure_core::Error> {
     let host = "<EVENTHUBS_HOST>";
     let eventhub = "<EVENTHUB_NAME>";
 
     let credential = azure_identity::DefaultAzureCredential::new()?;
 
-    let producer = azure_messaging_eventhubs::ProducerClient::new(
-        host.to_string(),
-        eventhub.to_string(),
-        credential.clone(),
-        None,
-        );
-    producer.open().await?;
+    let producer =
+        azure_messaging_eventhubs::ProducerClient::builder()
+            .open(host, eventhub, credential.clone())
+            .await?;
 
     Ok(producer)
-    }
+}
 ```
 
 ## Open an Event Hubs message consumer on an Event Hubs instance.
 
 ```rust no_run
-use azure_messaging_eventhubs::{ConsumerClient, ConsumerClientOptions};
+use azure_messaging_eventhubs::ConsumerClient;
 
-async fn open_consumer_client() -> Result<ConsumerClient, azure_core::Error>
-{
+async fn open_consumer_client() -> Result<ConsumerClient, azure_core::Error> {
     let host = "<EVENTHUBS_HOST>";
     let eventhub = "<EVENTHUB_NAME>";
 
     let credential = azure_identity::DefaultAzureCredential::new()?;
 
-    let consumer = azure_messaging_eventhubs::ConsumerClient::new(
-        host.to_string(),
-        eventhub.to_string(),
-        None,
-        credential.clone(),
-        None
-        );
-    consumer.open().await?;
+    let consumer = azure_messaging_eventhubs::ConsumerClient::builder()
+        .open(host,
+              eventhub,
+              credential.clone()
+        ).await?;
     Ok(consumer)
 }
 ```
@@ -218,8 +210,9 @@ send multiple messages in a single network request to the service.
 ```rust no_run
 use azure_messaging_eventhubs::ProducerClient;
 
-async fn send_events(producer: &ProducerClient) {
-    let res = producer.send_event(vec![1,2,3,4], None).await;
+async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error::Error>> {
+    producer.send_event(vec![1, 2, 3, 4], None).await?;
+    Ok(())
 }
 ```
 
@@ -228,13 +221,14 @@ async fn send_events(producer: &ProducerClient) {
 ```rust no_run
 use azure_messaging_eventhubs::ProducerClient;
 
-async fn send_events(producer: &ProducerClient) {
-    let mut batch = producer.create_batch(None).await.unwrap();
+async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error::Error>> {
+    let mut batch = producer.create_batch(None).await?;
     assert_eq!(batch.len(), 0);
-    assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None).unwrap());
+    assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None)?);
 
-    let res = producer.submit_batch(&batch, None).await;
+    let res = producer.send_batch(&batch, None).await;
     assert!(res.is_ok());
+    Ok(())
 }
 ```
 
@@ -248,25 +242,23 @@ events.
 Each message receiver can only receive messages from a single Event Hubs partition
 
 ```rust no_run
-
+use async_std::stream::StreamExt;
 use azure_messaging_eventhubs::ConsumerClient;
 use futures::pin_mut;
-use async_std::stream::StreamExt;
 
-async fn receive_events(client : &ConsumerClient) {
+async fn receive_events(client: &ConsumerClient) -> Result<(), Box<dyn std::error::Error>> {
     let message_receiver = client
         .open_receiver_on_partition(
-            "0".to_string(),
-            Some(
-                azure_messaging_eventhubs::OpenReceiverOptions{
-                    start_position: Some(azure_messaging_eventhubs::StartPosition{
-                        location: azure_messaging_eventhubs::StartLocation::Earliest,
-                        ..Default::default()
-                    }),
+            "0",
+            Some(azure_messaging_eventhubs::OpenReceiverOptions {
+                start_position: Some(azure_messaging_eventhubs::StartPosition {
+                    location: azure_messaging_eventhubs::StartLocation::Earliest,
                     ..Default::default()
-                },
-            ))
-        .await.unwrap();
+                }),
+                ..Default::default()
+            }),
+        )
+        .await?;
 
     let event_stream = message_receiver.stream_events();
 
@@ -284,6 +276,7 @@ async fn receive_events(client : &ConsumerClient) {
             }
         }
     }
+    Ok(())
 }
 ```
 

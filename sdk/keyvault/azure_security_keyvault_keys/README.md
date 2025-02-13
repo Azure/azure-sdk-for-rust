@@ -1,66 +1,364 @@
-# Azure KeyVault keys client library for Rust
+# Azure Key Vault keys client library for Rust
 
-Azure Key Vault is a cloud service that provides secure storage and management of sensitive information such as API keys, passwords, certificates, and cryptographic keys. The `azure_security_keyvault_keys` crate provides a client library for interacting with the Azure Key Vault Keys service.
+Azure Key Vault is a cloud service that provides secure storage of keys for encrypting your data. Multiple keys, and multiple versions of the same key, can be kept in the Azure Key Vault. Cryptographic keys in Azure Key Vault are represented as [JSON Web Key (JWK)](https://tools.ietf.org/html/rfc7517) objects.
+
+Azure Key Vault Managed HSM is a fully-managed, highly-available, single-tenant, standards-compliant cloud service that enables you to safeguard cryptographic keys for your cloud applications using FIPS 140-2 Level 3 validated HSMs.
+
+The Azure Key Vault keys library client supports RSA keys and Elliptic Curve (EC) keys, each with corresponding support in hardware security modules (HSM). It offers operations to create, retrieve, update, delete, purge, backup, restore, and list the keys and its versions.
+
+[Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation]
 
 ## Getting started
 
-### Install the crate
+### Install the package
 
-Install the Azure Key Vault keys library for Rust with cargo: 
+Install the Azure Key Vault keys client library for Rust with [Cargo]:
 
-```bash
+```sh
 cargo add azure_security_keyvault_keys
 ```
 
 ### Prerequisites
 
-- An [Azure subscription](https://azure.microsoft.com/free/)
-- A [Key Vault resource](https://docs.microsoft.com/azure/key-vault/quick-create-portal)
+* An [Azure subscription].
+* An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
+* Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
 
-### Authentication
+If you use the Azure CLI, replace `<your-resource-group-name>` and `<your-key-vault-name>` with your own, unique names:
 
-This crate uses the [azure_identity](https://crates.io/crates/azure_identity) crate for authentication. You can authenticate using a variety of methods, including environment variables, managed identity, and more.
+```azurecli
+az keyvault create --resource-group <your-resource-group-name> --name <your-key-vault-name>
+```
+
+### Install dependencies
+
+Add the following crates to your project:
+
+```sh
+cargo add azure_identity tokio
+```
+
+### Authenticate the client
+
+In order to interact with the Azure Key Vault service, you'll need to create an instance of the `KeyClient`. You need a **vault url**, which you may see as "DNS Name" in the portal, and credentials to instantiate a client object.
+
+The example shown below uses a `DefaultAzureCredential`, which is appropriate for local development environments. We recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
+
+The `DefaultAzureCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
+
+```azurecli
+az login
+```
+
+Instantiate a `DefaultAzureCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
+
+#### Activate your Managed HSM
+
+This section only applies if you are creating a Managed HSM. All data plane commands are disabled until the HSM is activated. You will not be able to create keys or assign roles. Only the designated administrators that were assigned during the create command can activate the HSM. To activate the HSM you must download the security domain.
+
+To activate your HSM you need:
+
+* Minimum 3 RSA key-pairs (maximum 10)
+* Specify minimum number of keys required to decrypt the security domain (quorum)
+
+To activate the HSM you send at least 3 (maximum 10) RSA public keys to the HSM. The HSM encrypts the security domain with these keys and sends it back. Once this security domain is successfully downloaded, your HSM is ready to use. You also need to specify quorum, which is the minimum number of private keys required to decrypt the security domain.
+
+The example below shows how to use openssl to generate 3 self-signed certificate.
+
+```sh
+openssl req -newkey rsa:2048 -nodes -keyout cert_0.key -x509 -days 365 -out cert_0.cer
+openssl req -newkey rsa:2048 -nodes -keyout cert_1.key -x509 -days 365 -out cert_1.cer
+openssl req -newkey rsa:2048 -nodes -keyout cert_2.key -x509 -days 365 -out cert_2.cer
+```
+
+Use the `az keyvault security-domain download` command to download the security domain and activate your managed HSM. The example below uses 3 RSA key pairs (only public keys are needed for this command) and sets the quorum to 2.
+
+```azurecli
+az keyvault security-domain download --hsm-name <your-key-vault-name> --sd-wrapping-keys ./certs/cert_0.cer ./certs/cert_1.cer ./certs/cert_2.cer --sd-quorum 2 --security-domain-file ContosoHSM-SD.json
+```
 
 ## Key concepts
 
+### KeyBundle
+
+Azure Key Vault supports multiple key types and algorithms, and enables the use of hardware security modules (HSM) for high value keys.
+
 ### KeyClient
 
-The `KeyClient` struct provides methods to manage keys in the Azure Key Vault. You can create, retrieve, update, and delete keys, as well as perform cryptographic operations.
+The `KeyClient` provides asynchronous operations for working with Key Vault keys.
+
+### Thread safety
+
+We guarantee that all client instance methods are thread-safe and independent of each other. This ensures that the recommendation of reusing client instances is always safe, even across threads.
 
 ## Examples
 
-### Creating a key
+The following section provides several code snippets using the `KeyClient`, covering some of the most common Azure Key Vault keys service related tasks:
+
+* [Create a key](#create-a-key)
+* [Retrieve a key](#retrieve-a-key)
+* [Update an existing key](#update-an-existing-key)
+* [Delete a key](#delete-a-key)
+* [List keys](#list-keys)
+
+### Create a key
+
+`create_key` creates a Key Vault key to be stored in the Azure Key Vault. If a key with the same name already exists, then a new version of the key is created.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_keys::{models::KeyCreateParameters, KeyClient};
+use azure_security_keyvault_keys::{
+    models::{KeyBundle, KeyCreateParameters, JsonWebKeyCurveName, JsonWebKeyType},
+    ResourceExt, KeyClient,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
-
     let client = KeyClient::new(
-        "https://<your-key-vault-name>.vault.azure.net",
+        "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
         None,
     )?;
 
+    // Create an EC key.
+    let body = KeyCreateParameters {
+        kty: Some(JsonWebKeyType::EC),
+        curve: Some(JsonWebKeyCurveName::P256),
+        ..Default::default()
+    };
+
     let key = client
-        .create_key("my-key", KeyCreateParameters::default().try_into()?, None)
+        .create_key("key-name", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
-    
-    println!("Created key: {:?}", key);
+
+    println!(
+        "Key Name: {:?}, Type: {:?}, Version: {:?}",
+        key.resource_id()?.name,
+        key.key.as_ref().map(|k| k.kty.as_ref()),
+        key.resource_id()?.version,
+    );
 
     Ok(())
 }
 ```
 
+### Retrieve a key
+
+`get_key` retrieves a public key (or only metadata for symmetric keys) previously stored in the Azure Key Vault. Setting the `key-version` to an empty string will return the latest version.
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_keys::{models::KeyBundle, KeyClient};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = KeyClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Retrieve a public key as a JWK using the key client.
+    let key = client
+        .get_key("key-name".into(), "key-version".into(), None)
+        .await?
+        .into_body()
+        .await?;
+
+    println!("Key: {:#?}", key.key);
+
+    Ok(())
+}
+```
+
+### Update an existing key
+
+`update_key` updates a key previously stored in the Azure Key Vault. Only the attributes of the key are updated. To update the value, call `KeyClient::create_key` on a key with the same name.
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_keys::{
+    models::{KeyAttributes, KeyUpdateParameters},
+    KeyClient,
+};
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = KeyClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Update a key using the key client.
+    let key_update_parameters = KeyUpdateParameters {
+        tags: Some(HashMap::from_iter(vec![(
+            "tag-name".into(),
+            "tag-value".into(),
+        )])),
+        ..Default::default()
+    };
+
+    client
+        .update_key(
+            "key-name".into(),
+            "".into(),
+            key_update_parameters.try_into()?,
+            None,
+        )
+        .await?
+        .into_body()
+        .await?;
+
+    Ok(())
+}
+```
+
+### Delete a key
+
+`delete_key` will tell Key Vault to delete a key but it is not deleted immediately. It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_key` on the returned `DeletedKeyBundle.id`.
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_keys::KeyClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = KeyClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Delete a key using the key client.
+    client
+        .delete_key("key-name".into(), None)
+        .await?;
+
+    Ok(())
+}
+```
+
+### List keys
+
+This example lists all the keys in the specified Azure Key Vault.
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_keys::{ResourceExt, KeyClient};
+use futures::TryStreamExt;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a new key client
+    let credential = DefaultAzureCredential::new()?;
+    let client = KeyClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    let mut pager = client.get_keys(None)?.into_stream();
+    while let Some(keys) = pager.try_next().await? {
+        let Some(keys) = keys.into_body().await?.value else {
+            continue;
+        };
+
+        for key in keys {
+            // Get the key name from the ID.
+            let name = key.resource_id()?.name;
+            println!("Found Key with Name: {}", name);
+        }
+    }
+
+    Ok(())
+}
+```
+
+## Troubleshooting
+
+### General
+
+When you interact with the Azure Key Vault keys client library using the Rust SDK, errors returned by the service correspond to the same HTTP status codes returned for [REST API] requests.
+
+For example, if you try to retrieve a key that doesn't exist in your Azure Key Vault, a `404` error is returned, indicating `Not Found`.
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_keys::KeyClient;
+
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = KeyClient::new(
+        "https://ronnieg-keyvault.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    match client
+        .get_key(
+            "key-name".into(),
+            "".into(),
+            None,
+        )
+        .await
+    {
+        Ok(response) => println!("Key: {:#?}", response.into_body().await?.key),
+        Err(err) => println!("Error: {:#?}", err.into_inner()?),
+    }
+
+    Ok(())
+}
+```
+
+You will notice that additional information is logged, like the Client Request ID of the operation.
+
+```text
+Error: HttpError {
+    status: NotFound,
+    details: ErrorDetails {
+        code: Some(
+            "KeyNotFound",
+        ),
+        message: Some(
+            "A key with (name/id) key-name1 was not found in this key vault. If you recently deleted this key you may be able to recover it using the correct recovery command. For help resolving this issue, please see https://go.microsoft.com/fwlink/?linkid=2125182",
+        ),
+    },
+    ..
+}
+```
+
 ## Contributing
 
-This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit [https://cla.microsoft.com](https://cla.microsoft.com).
+See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.
+
+This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit <https://opensource.microsoft.com/cla/>.
 
 When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA.
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+This project has adopted the [Microsoft Open Source Code of Conduct]. For more information see the [Code of Conduct FAQ] or contact <opencode@microsoft.com> with any additional questions or comments.
+
+<!-- LINKS -->
+[API reference documentation]: https://docs.rs/azure_security_keyvault_keys/latest/azure_security_keyvault_keys
+[Azure CLI]: https://learn.microsoft.com/cli/azure
+[Azure subscription]: https://azure.microsoft.com/free/
+[Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
+[Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
+[Product documentation]: https://learn.microsoft.com/azure/key-vault/
+[REST API]: https://learn.microsoft.com/rest/api/keyvault/
+[Cargo]: https://crates.io/
+[Package (crates.io)]: https://crates.io/crates/azure_security_keyvault_keys
+[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_keys/src
+[CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
+[Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
+[access control]: https://learn.microsoft.com/azure/key-vault/general/assign-access-policy
+[RBAC]: https://learn.microsoft.com/azure/key-vault/general/rbac-guide

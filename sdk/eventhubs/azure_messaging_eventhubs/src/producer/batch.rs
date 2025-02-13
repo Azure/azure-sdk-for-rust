@@ -7,11 +7,7 @@ use super::ProducerClient;
 
 use crate::{error::ErrorKind, models::EventData};
 use azure_core::{error::Result, Error};
-use azure_core_amqp::{
-    messaging::{AmqpMessage, AmqpMessageBody},
-    sender::AmqpSenderApis,
-    value::AmqpSymbol,
-};
+use azure_core_amqp::{AmqpMessage, AmqpSenderApis, AmqpSymbol};
 use tracing::debug;
 use uuid::Uuid;
 
@@ -35,19 +31,20 @@ struct EventDataBatchState {
 ///
 /// ``` no_run
 /// # use azure_messaging_eventhubs::ProducerClient;
-/// # use azure_messaging_eventhubs::ProducerClientOptions;
 /// # use azure_identity::TokenCredentialOptions;
 ///
 /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credentials = azure_identity::DefaultAzureCredential::new()?;
-/// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), credentials.clone(), None);
+/// # let producer_client = ProducerClient::builder()
+/// #     .open("fully_qualified_domain_name", "event_hub_name", credentials.clone()).await?;
+/// #
 ///
 /// let mut batch = producer_client.create_batch(None).await?;
 ///
 /// batch.try_add_event_data("Hello, Event Hub!", None)?;
 /// batch.try_add_event_data("This is another event.", None)?;
 ///
-/// producer_client.submit_batch(&batch, None).await?;
+/// producer_client.send_batch(&batch, None).await?;
 ///
 /// # Ok(())
 /// # }
@@ -158,12 +155,12 @@ impl<'a> EventDataBatch<'a> {
     ///
     /// ```no_run
     ///
-    /// # use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
+    /// # use azure_messaging_eventhubs::ProducerClient;
     /// # use azure_messaging_eventhubs::models::EventData;
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone(), None);
+    /// # let producer_client = ProducerClient::builder().open("fully_qualified_domain_name", "event_hub_name", my_credential.clone()).await?;
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let event_data = EventData::builder().build();
@@ -175,7 +172,7 @@ impl<'a> EventDataBatch<'a> {
     /// # use azure_messaging_eventhubs::EventDataBatch;
     ///
     pub fn try_add_event_data(
-        &mut self,
+        &self,
         event_data: impl Into<EventData>,
         options: Option<AddEventDataOptions>,
     ) -> Result<bool> {
@@ -201,13 +198,13 @@ impl<'a> EventDataBatch<'a> {
     /// # Examples
     ///
     /// ```no_run
-    /// # use azure_messaging_eventhubs::{ProducerClient, ProducerClientOptions};
+    /// # use azure_messaging_eventhubs::ProducerClient;
     /// # use azure_messaging_eventhubs::models::EventData;
     /// # use azure_messaging_eventhubs::models::AmqpMessage;
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::new("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone(), None);
+    /// # let producer_client = ProducerClient::builder().open("fully_qualified_domain_name", "event_hub_name", my_credential.clone()).await?;
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let amqp_message = AmqpMessage::builder().build();
@@ -281,7 +278,7 @@ impl<'a> EventDataBatch<'a> {
         let mut serialized_messages = Vec::<Vec<u8>>::new();
         serialized_messages.append(&mut batch_state.serialized_messages);
 
-        batch_envelope.set_message_body(AmqpMessageBody::Binary(serialized_messages));
+        batch_envelope.set_message_body(serialized_messages);
 
         // Reset the batch state for the next batch
         batch_state.batch_envelope = None;
