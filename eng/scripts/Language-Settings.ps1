@@ -125,7 +125,8 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
   [array]$serviceFiles = ($diff.ChangedFiles + $diff.DeletedFiles) | ForEach-Object { $_ -replace '\\', '/' } | Where-Object { $_ -match "^sdk/.+/" }
   # remove files that target any specific package
   foreach ($package in $allPackageProperties) {
-    $serviceFiles = $serviceFiles | Where-Object { "$RepoRoot/$_" -notmatch "^$($package.DirectoryPath)/" }
+    $packagePathPattern = "^$( [Regex]::Escape($package.DirectoryPath.Replace('\', '/')) )/"
+    $serviceFiles = $serviceFiles | Where-Object { "$RepoRoot/$_".Replace('\', '/') -notmatch $packagePathPattern }
   }
 
   $affectedServiceDirectories = $serviceFiles | ForEach-Object { $_ -replace '^sdk/(.+?)/.*', '$1' } | Sort-Object -Unique
