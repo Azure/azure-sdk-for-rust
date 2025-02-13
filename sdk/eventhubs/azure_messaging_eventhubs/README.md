@@ -150,9 +150,10 @@ send multiple messages in a single network request to the service.
 ### Send events directly to the Event Hub
 
 ```rust no_run
+use azure_core::Error
 use azure_messaging_eventhubs::ProducerClient;
 
-async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error::Error>> {
+async fn send_events(producer: &ProducerClient) -> Result<(), Error> {
     producer.send_event(vec![1, 2, 3, 4], None).await?;
 
     Ok(())
@@ -162,9 +163,10 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error
 ### Send events using a batch operation
 
 ```rust no_run
+use azure_core::Error;
 use azure_messaging_eventhubs::ProducerClient;
 
-async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error::Error>> {
+async fn send_events(producer: &ProducerClient) -> Result<(), Error> {
     let batch = producer.create_batch(None).await?;
     assert_eq!(batch.len(), 0);
     assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None)?);
@@ -208,12 +210,16 @@ Each message receiver can only receive messages from a single Event Hubs partiti
 
 ```rust no_run
 use async_std::stream::StreamExt;
+use azure_core::Error;
 use azure_messaging_eventhubs::{
     ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
 };
 use futures::pin_mut;
 
-async fn receive_events(client: &ConsumerClient) -> Result<(), Box<dyn std::error::Error>> {
+// By default, an event receiver only receives new events from the event hub. To receive events from earlier, specify
+// a `start_position` which represents the position from which to start receiving events. 
+// In this example, events are received from the start of the partition.
+async fn receive_events(client: &ConsumerClient) -> Result<(), Error> {
     let message_receiver = client
         .open_receiver_on_partition(
             "0",
@@ -252,7 +258,7 @@ async fn receive_events(client: &ConsumerClient) -> Result<(), Box<dyn std::erro
 
 ## General
 
-When you interact with the Azure Event Hubs client library using the Rust SDK, errors returned by the service correspond to the same HTTP status codes returned for [REST API] requests.
+When you interact with the Azure Event Hubs client library using the Rust SDK, errors returned by the service are returned as `azure_core::Error` values using `ErrorKind::Other` which are `azure_messaging_eventhubs::Error` values.
 
 ## Logging
 
