@@ -90,7 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Retrieve a secret using the secret client.
     let secret: SecretBundle = client
-        .get_secret("secret-name".into(), version, None)
+        .get_secret("secret-name".into(), &version, None)
         .await?
         .into_body()
         .await?;
@@ -150,7 +150,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let secret: SecretBundle = client
+    let secret = client
         .set_secret(
             "secret-name".into(),
             secret_set_parameters.try_into()?,
@@ -189,7 +189,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Retrieve a secret using the secret client.
-    let secret: SecretBundle = client
+    let secret = client
         .get_secret("secret-name".into(), "secret-version".into(), None)
         .await?
         .into_body()
@@ -225,11 +225,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Update a secret using the secret client.
     let secret_update_parameters = SecretUpdateParameters {
         content_type: Some("text/plain".into()),
-        secret_attributes: Some(SecretAttributes::default()),
         tags: Some(HashMap::from_iter(vec![(
             "tag-name".into(),
             "tag-value".into(),
         )])),
+        ..Default::default()
     };
 
     client
@@ -379,9 +379,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [Azure CLI]: https://learn.microsoft.com/cli/azure
 [Azure subscription]: https://azure.microsoft.com/free/
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
-[Certificates client library]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_certificates
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
-[Keys client library]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_keys
 [Product documentation]: https://learn.microsoft.com/azure/key-vault/
 [REST API]: https://learn.microsoft.com/rest/api/keyvault/
 [Cargo]: https://crates.io/
