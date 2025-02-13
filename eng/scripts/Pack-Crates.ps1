@@ -191,11 +191,6 @@ try {
       -GroupOutput `
       -Command "cargo publish --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
 
-    if (-not (Test-Path -Path $crateFile)) {
-      Write-Error "Building the package '$packageName' didn't produce a crate file in the expected location: '$crateFile'"
-      exit 1
-    }
-
     # copy the package to the local registry
     Add-CrateToLocalRegistry `
       -LocalRegistryPath $localRegistryPath `
