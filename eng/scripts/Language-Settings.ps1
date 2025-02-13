@@ -172,7 +172,7 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
   return @{
     PackageId      = $packageName
     PackageVersion = $packageVersion
-    ReleaseTag     = "$packageName-$packageVersion"
+    ReleaseTag     = "$packageName@$packageVersion"
     Deployable     = $existingVersions -notcontains $packageVersion
     ReleaseNotes   = $releaseNotes
     ReadmeContent  = $readmeContent
