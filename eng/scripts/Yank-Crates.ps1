@@ -10,6 +10,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
+$env:CARGO_REGISTRY_TOKEN = $Token
+
 $hasErrors = $false
 foreach ($crateName in $crateNames) {
   $crate = Get-Content "$PackageInfoDirectory/$crateName.json" -Raw | ConvertFrom-Json
@@ -17,8 +19,8 @@ foreach ($crateName in $crateNames) {
 
   Write-Host "Yanking crate: '$crateName@$crateVersion'"
 
-  Write-Host "cargo yank $crateName --version $crateVersion --token <TOKEN>"
-  cargo yank $crateName --version $crateVersion --token $Token
+  Write-Host "cargo yank $crateName --version $crateVersion"
+  cargo yank $crateName --version $crateVersion
 
   if (!$?) {
     Write-Host "Failed to yank crate: '$crateName@$crateVersion'"

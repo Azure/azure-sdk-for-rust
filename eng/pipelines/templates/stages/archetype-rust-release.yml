@@ -163,5 +163,5 @@ stages:
                 filePath: $(Build.SourcesDirectory)/eng/scripts/Yank-Crates.ps1
                 arguments:
                   -CrateNames '${{artifact.name}}'
-                  -PackagesPath '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}'
+                  -PackageInfoDirectory '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo'
                   -Token $(azure-sdk-cratesio-token)
