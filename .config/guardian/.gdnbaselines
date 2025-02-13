@@ -21,9 +21,9 @@
       ],
       "tool": "credscan",
       "ruleId": "CSCAN-GENERAL0060",
-      "createdDate": "2025-02-13 01:27:29Z",
-      "expirationDate": "2025-08-02 01:39:17Z",
-      "justification": "This error is baselined with an expiration date of 180 days from 2025-02-13 01:39:17Z"
+      "createdDate": "2025-02-13 01:33:57Z",
+      "expirationDate": "2025-08-02 01:46:01Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2025-02-13 01:46:01Z"
     }
   }
 }
