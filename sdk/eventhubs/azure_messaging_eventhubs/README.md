@@ -215,6 +215,7 @@ use azure_messaging_eventhubs::ProducerClient;
 
 async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error::Error>> {
     producer.send_event(vec![1, 2, 3, 4], None).await?;
+    Ok(())
 }
 ```
 
@@ -224,12 +225,13 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error
 use azure_messaging_eventhubs::ProducerClient;
 
 async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error::Error>> {
-    let mut batch = producer.create_batch(None).await;
+    let mut batch = producer.create_batch(None).await?;
     assert_eq!(batch.len(), 0);
     assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None)?);
 
     let res = producer.send_batch(&batch, None).await;
     assert!(res.is_ok());
+    Ok(())
 }
 ```
 
@@ -277,6 +279,7 @@ async fn receive_events(client: &ConsumerClient) -> Result<(), Box<dyn std::erro
             }
         }
     }
+    Ok(())
 }
 ```
 

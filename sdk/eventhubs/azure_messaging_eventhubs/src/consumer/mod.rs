@@ -685,10 +685,11 @@ pub mod builders {
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
-    /// async fn main() {
+    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///    let my_credential = DefaultAzureCredential::new().unwrap();
     ///   let consumer = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
-    ///      .open().await.unwrap();
+    ///      .open().await?;
+    ///   Ok(())
     /// }
     /// ```
     pub struct ConsumerClientBuilder {
@@ -754,7 +755,7 @@ pub mod builders {
         /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
         ///
         /// #[tokio::main]
-        /// async fn main() {
+        /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ///     let my_credential = DefaultAzureCredential::new().unwrap();
         ///     let result = ConsumerClient::builder("my_namespace", "my_eventhub", None, my_credential)
         ///         .open().await;
@@ -769,6 +770,7 @@ pub mod builders {
         ///             eprintln!("Error opening connection: {:?}", err);
         ///         }
         ///     }
+        ///     Ok(())
         /// }
         /// ```
         pub async fn open(self) -> Result<super::ConsumerClient> {
