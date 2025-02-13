@@ -12,7 +12,6 @@ param(
 $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
-. (Join-Path $EngCommonScriptsDir 'Helpers' 'CommandInvocation-Helpers.ps1')
 
 if ($OutputPath) {
   $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
@@ -168,61 +167,6 @@ function Add-PathVersions($packages) {
   }
 }
 
-function Get-ApiMetadata($package) {
-  $packagePath = Split-Path -Path $package.manifest_path -Parent
-  $readmePath = Join-Path -Path $packagePath -ChildPath $package.readme
-  $jsonBody = [ordered]@{
-    'name'          = $package.name
-    'vers'          = $package.version
-    'deps'          = @()
-    'features'      = $package.features
-    'authors'       = $package.authors
-    'description'   = $package.description
-    'documentation' = $package.documentation
-    'homepage'      = $package.homepage
-    'readme'        = if ($package.readme -and (Test-Path -Path $readmePath)) {
-      Get-Content -Path $readmePath -Raw
-    }
-    else {
-      $null
-    }
-    'readme_file'   = $package.readme
-    'keywords'      = $package.keywords
-    'categories'    = $package.categories
-    'license'       = $package.license
-    'license_file'  = $package.license_file
-    'repository'    = $package.repository
-    'links'         = $package.links
-    'rust_version'  = $package.rust_version
-  }
-
-  foreach ($dependency in $package.dependencies) {
-    $jsonBody.deps += @{
-      'name'                  = $dependency.name
-      'version_req'           = $dependency.req
-      'features'              = $dependency.features
-      'optional'              = $dependency.optional
-      'default_features'      = $dependency.default_features
-      'target'                = $dependency.target
-      'kind'                  = $dependency.kind
-      'explicit_name_in_toml' = $dependency.rename
-    }
-  }
-
-  return $jsonBody
-}
-
-function New-ApiPutFile($crateMetadata, $CrateFilePath) {
-  $metadataBytes = [Text.Encoding]::Utf8.GetBytes($crateMetadata)
-  $metadataLengthBytes = [BitConverter]::GetBytes([UInt32]$metadataBytes.Length)
-  $crateBytes = [IO.File]::ReadAllBytes($CrateFilePath)
-  $crateLengthBytes = [BitConverter]::GetBytes([UInt32]$crateBytes.Length)
-
-  $bytes += $metadataLengthBytes + $metadataBytes + $crateLengthBytes + $crateBytes
-
-  return $bytes
-}
-
 Push-Location $RepoRoot
 try {
   $localRegistryPath = Initialize-VendorDirectory
@@ -245,14 +189,7 @@ try {
 
     Invoke-LoggedCommand `
       -GroupOutput `
-      -Command "cargo package --package $packageName --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
-
-    $crateFile = "$RepoRoot/target/package/$packageName-$packageVersion.crate"
-
-    if (-not (Test-Path -Path $crateFile)) {
-      Write-Error "Building the package '$packageName' didn't produce a crate file in the expected location: '$crateFile'"
-      exit 1
-    }
+      -Command "cargo publish --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
 
     # copy the package to the local registry
     Add-CrateToLocalRegistry `
@@ -261,31 +198,15 @@ try {
 
     if ($OutputPath -and $package.OutputPackage) {
       $packageOutputPath = "$OutputPath/$packageName"
+      $targetPackagePath = "$RepoRoot/target/package/$packageName-$packageVersion"
+
       if (Test-Path -Path $packageOutputPath) {
         Remove-Item -Path $packageOutputPath -Recurse -Force
       }
 
       Write-Host "Copying package '$packageName' to '$packageOutputPath'"
-
       New-Item -ItemType Directory -Path $packageOutputPath -Force | Out-Null
-      Copy-Item -Path $crateFile -Destination $packageOutputPath
-      # Copy package's Cargo.toml to the output directory
-      Copy-Item -Path "$RepoRoot/target/package/$packageName-$packageVersion/Cargo.toml" -Destination $packageOutputPath
-      # Write package metadata to the output directory
-
-      $metadataFile = "$packageOutputPath/cargo-metadata.json"
-      $uploadFile = "$packageOutputPath/cargo-put.bin"
-
-      $crateMetadata = Get-ApiMetadata $package | ConvertTo-Json -Depth 10
-
-      Write-Host "Writing crates.io request metadata to '$metadataFile'"
-      $crateMetadata | Out-File -FilePath "$metadataFile" -Encoding utf8
-
-      $uploadBytes = New-ApiPutFile $crateMetadata $crateFile
-      Write-Host "Writing crates.io request bundle to '$uploadFile'"
-      [IO.File]::WriteAllBytes($uploadFile, $uploadBytes)
-      
-      Get-ApiMetadata $package | ConvertTo-Json -Depth 100 | Out-File -FilePath "$packageOutputPath/cargo-metadata.json" -Encoding utf8
+      Copy-Item -Path $targetPackagePath -Destination $packageOutputPath -Recurse -Exclude "Cargo.toml.orig"
     }
   }
 

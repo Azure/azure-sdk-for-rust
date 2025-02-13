@@ -5,28 +5,27 @@ param(
   [string]$Toolchain = 'stable',
   [bool]$UnitTests = $true,
   [bool]$FunctionalTests = $true,
-  [string]$PackageInfoPath
+  [string]$PackageInfoDirectory
 )
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
 . "$PSScriptRoot\..\common\scripts\common.ps1"
-. (Join-Path $EngCommonScriptsDir "Helpers" CommandInvocation-Helpers.ps1)
 
 Write-Host "Testing packages with
     Toolchain: '$Toolchain'
     UnitTests: '$UnitTests'
     FunctionalTests: '$FunctionalTests'
-    PackageInfoPath: '$PackageInfoPath'"
+    PackageInfoDirectory: '$PackageInfoDirectory'"
 
-if ($PackageInfoPath) {
-  if (!(Test-Path $PackageInfoPath)) {
-    Write-Error "Package info path '$PackageInfoPath' does not exist."
+if ($PackageInfoDirectory) {
+  if (!(Test-Path $PackageInfoDirectory)) {
+    Write-Error "Package info path '$PackageInfoDirectory' does not exist."
     exit 1
   }
 
-  $packagesToTest = Get-ChildItem $PackageInfoPath -Filter "*.json" -Recurse
+  $packagesToTest = Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse
   | Get-Content -Raw
   | ConvertFrom-Json
 }
