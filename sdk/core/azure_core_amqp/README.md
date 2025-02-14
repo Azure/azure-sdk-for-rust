@@ -1,6 +1,6 @@
 # azure_core_amqp
 
-Azure AMQP crate for consumption of AMQP based packages in the Azure SDK for C++.
+Azure AMQP crate for consumption of AMQP based packages in the Azure SDK for Rust.
 
 NOTE: THIS IS NOT A GENERAL PURPOSE AMQP LIBRARY AND SHOULD NOT BE USED AS SUCH.
 
