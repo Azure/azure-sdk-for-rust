@@ -137,9 +137,8 @@ More on response types in [response samples](https://github.com/Azure/azure-sdk-
 To create an Azure SDK log listener that outputs messages to console use `AzureEventSourceListener::create_console_logger` method.
 
 ```rust no_run
-// Setup a listener to monitor logged events.
-let listener = AzureEventSourceListener::create_console_logger();
-```
+// Setup a subscriber to listen for trace events.
+tracing_subscriber::fmt::init();
 
 More on logging in [diagnostics samples](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/Diagnostics.md).
 
