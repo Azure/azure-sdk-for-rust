@@ -127,22 +127,27 @@ impl TestContext {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let path = match find_ancestor_file(self.crate_dir, ASSETS_FILE) {
-                Ok(path) => path,
-                Err(_) if mode == TestMode::Record => {
-                    return Path::new("sdk")
-                        .join(self.service_dir)
-                        .join(ASSETS_FILE)
-                        .as_path()
+            match mode {
+                TestMode::Live => None,
+                _ => {
+                    let path = match find_ancestor_file(self.crate_dir, ASSETS_FILE) {
+                        Ok(path) => path,
+                        Err(_) if mode == TestMode::Record => {
+                            return Path::new("sdk")
+                                .join(self.service_dir)
+                                .join(ASSETS_FILE)
+                                .as_path()
+                                .to_str()
+                                .map(String::from);
+                        }
+                        Err(err) => panic!("{err}"),
+                    };
+                    path.strip_prefix(self.repo_dir)
+                        .expect("not rooted within repo")
                         .to_str()
-                        .map(String::from);
+                        .map(String::from)
                 }
-                Err(err) => panic!("{err}"),
-            };
-            path.strip_prefix(self.repo_dir)
-                .expect("not rooted within repo")
-                .to_str()
-                .map(String::from)
+            }
         }
     }
 
