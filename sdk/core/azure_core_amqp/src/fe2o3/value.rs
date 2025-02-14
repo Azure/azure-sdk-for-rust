@@ -7,6 +7,7 @@ use crate::value::{
 use serde_amqp::primitives::Timestamp;
 use serde_bytes::ByteBuf;
 use std::time::UNIX_EPOCH;
+use tracing::debug;
 
 impl From<fe2o3_amqp_types::primitives::Symbol> for AmqpSymbol {
     fn from(s: fe2o3_amqp_types::primitives::Symbol) -> AmqpSymbol {
@@ -41,6 +42,18 @@ const CE_ZERO_MILLISECONDS: i64 = -62_135_596_800_000;
 
 impl From<fe2o3_amqp_types::primitives::Timestamp> for AmqpTimestamp {
     fn from(timestamp: fe2o3_amqp_types::primitives::Timestamp) -> Self {
+        debug!(
+            "Converting AMQP timestamp {} to Rust timestamp",
+            timestamp.milliseconds()
+        );
+        // The AMQP timestamp is the number of milliseconds since the Unix epoch.
+        // AMQP brokers represent the lowest value as -62_135_596_800_000 (the
+        // number of milliseconds between the Unix epoch (1/1/1970) and year 1 CE) as
+        // a sentinel for a time which is not set.
+        if (timestamp.milliseconds() as u64) == CE_ZERO_MILLISECONDS as u64 {
+            debug!("AMQP timestamp is CE_ZERO_MILLISECONDS, returning None");
+            return AmqpTimestamp(None);
+        }
         AmqpTimestamp(
             std::time::UNIX_EPOCH.checked_add(std::time::Duration::from_millis(
                 timestamp.milliseconds() as u64,
