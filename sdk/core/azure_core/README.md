@@ -112,6 +112,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The into_body() function for accessing the deserialized result of the call
     let secret = response.into_body().await?;
 
+        // get response again because it was moved in above statement
+    let response: Response<SecretBundle> = client.get_secret("SecretName", "", None).await?;
+
     // .. and the deconstruct() method for accessing all the details of the HTTP response
     let (status, headers, body) = response.deconstruct();
 
