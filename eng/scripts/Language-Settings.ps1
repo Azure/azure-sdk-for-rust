@@ -1,10 +1,12 @@
 $Language = "rust"
 $LanguageDisplayName = "Rust"
 $PackageRepository = "crates.io"
-$packagePattern = "cargo-metadata.json"
+$packagePattern = "Cargo.toml"
 #$MetadataUri = "https://raw.githubusercontent.com/Azure/azure-sdk/main/_data/releases/latest/rust-packages.csv"
 $GithubUri = "https://github.com/Azure/azure-sdk-for-rust"
 $PackageRepositoryUri = "https://crates.io/crates"
+
+. (Join-Path $EngCommonScriptsDir "Helpers" "PSModule-Helpers.ps1")
 
 function SetPackageVersion ($PackageName, $Version, $ServiceDirectory, $ReleaseDate, $ReplaceLatestEntryTitle = $true) {
   if ($null -eq $ReleaseDate) {
@@ -118,29 +120,43 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
   return $allPackageProps
 }
 
-function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
-  #$pkg will be a FileInfo object for the cargo-metadata.json file in a package artifact directory
-  $package = Get-Content -Path $pkg.FullName -Raw | ConvertFrom-Json
-  $packageName = $package.name
-  $packageVersion = $package.vers
-
-  $crateFile = Get-ChildItem $pkg.DirectoryName -Filter '*.crate'
-  
-  New-Item -Path $workingDirectory -ItemType Directory -Force | Out-Null
-  $workFolder = Join-Path $workingDirectory $crateFile.BaseName
-  if (Test-Path $workFolder) {
-    Remove-item $workFolder -Recurse -Force | Out-Null
+function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChanges, $diff, $allPackageProperties) {
+  # if the change was in a service directory, but not in a package directory, test all the packages in the service directory
+  [array]$serviceFiles = ($diff.ChangedFiles + $diff.DeletedFiles) | ForEach-Object { $_ -replace '\\', '/' } | Where-Object { $_ -match "^sdk/.+/" }
+  # remove files that target any specific package
+  foreach ($package in $allPackageProperties) {
+    $packagePathPattern = "^$( [Regex]::Escape($package.DirectoryPath.Replace('\', '/')) )/"
+    $serviceFiles = $serviceFiles | Where-Object { "$RepoRoot/$_".Replace('\', '/') -notmatch $packagePathPattern }
   }
 
-  # This will extract the contents of the crate file into a folder matching the file name
-  tar -xvzf $crateFile.FullName -C $workingDirectory | Out-Null
+  $affectedServiceDirectories = $serviceFiles | ForEach-Object { $_ -replace '^sdk/(.+?)/.*', '$1' } | Sort-Object -Unique
 
-  $changeLogLoc = Get-ChildItem -Path $workFolder -Filter "CHANGELOG.md" | Select-Object -First 1
+  $affectedPackages = $allPackageProperties | Where-Object { $affectedServiceDirectories -contains $_.ServiceDirectory }
+
+  [array]$additionalPackages = $affectedPackages | Where-Object { $packagesWithChanges -notcontains $_ }
+
+  # if the change affected no packages, e.g. eng/common change, we use core and template for validation
+  if ($additionalPackages.Length -eq 0) {
+    $additionalPackages += $allPackageProperties | Where-Object { $_.Name -eq "azure_core" -or $_.Name -eq "azure_template" }
+  }
+
+  return $additionalPackages
+}
+
+function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
+  #$pkg will be a FileInfo object for the Cargo.toml file in a package artifact directory
+  $package = cargo read-manifest --manifest-path $pkg.FullName | ConvertFrom-Json
+  
+  $packageName = $package.name
+  $packageVersion = $package.version
+
+  $changeLogLoc = Get-ChildItem -Path $pkg.DirectoryName -Filter "CHANGELOG.md" | Select-Object -First 1
+  $readmeContentLoc = Get-ChildItem -Path $pkg.DirectoryName -Filter "README.md" | Select-Object -First 1
+
   if ($changeLogLoc) {
     $releaseNotes = Get-ChangeLogEntryAsString -ChangeLogLocation $changeLogLoc -VersionString $packageVersion
   }
 
-  $readmeContentLoc = Get-ChildItem -Path $workFolder -Filter "README.md" | Select-Object -First 1
   if ($readmeContentLoc) {
     $readmeContent = Get-Content -Raw $readmeContentLoc
   }
@@ -150,7 +166,7 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
   return @{
     PackageId      = $packageName
     PackageVersion = $packageVersion
-    ReleaseTag     = "$packageName-$packageVersion"
+    ReleaseTag     = "$packageName@$packageVersion"
     Deployable     = $existingVersions -notcontains $packageVersion
     ReleaseNotes   = $releaseNotes
     ReadmeContent  = $readmeContent

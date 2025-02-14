@@ -2,17 +2,14 @@
 // Licensed under the MIT license.
 
 use async_std::stream::StreamExt;
-use azure_core_amqp::{
-    messaging::{AmqpMessage, AmqpMessageProperties},
-    value::{AmqpList, AmqpValue},
-};
+use azure_core_amqp::{AmqpList, AmqpMessageProperties};
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
-    models::{EventData, MessageId},
+    models::{AmqpMessage, AmqpValue, EventData, MessageId},
     {
-        ConsumerClient, ConsumerClientOptions, EventDataBatchOptions, OpenReceiverOptions,
-        ProducerClient, ProducerClientOptions, StartLocation, StartPosition,
+        ConsumerClient, EventDataBatchOptions, OpenReceiverOptions, ProducerClient, StartLocation,
+        StartPosition,
     },
 };
 use futures::pin_mut;
@@ -28,20 +25,14 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let producer = ProducerClient::new(
-        host.clone(),
-        eventhub.clone(),
-        DefaultAzureCredential::new()?,
-        Some(ProducerClientOptions {
-            application_id: Some(TEST_NAME.to_string()),
-            ..Default::default()
-        }),
-    );
-
-    assert!(producer.open().await.is_ok());
+    let credential = DefaultAzureCredential::new()?;
+    let producer = ProducerClient::builder()
+        .with_application_id(TEST_NAME)
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .await?;
 
     let partition_properties = producer
-        .get_partition_properties(EVENTHUB_PARTITION.to_string())
+        .get_partition_properties(EVENTHUB_PARTITION)
         .await?;
 
     info!(
@@ -50,7 +41,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     );
 
     let start_sequence = partition_properties.last_enqueued_sequence_number;
-    let mut batch = producer
+    let batch = producer
         .create_batch(Some(EventDataBatchOptions {
             partition_id: Some(EVENTHUB_PARTITION.to_string()),
             partition_key: Some("My Partition Key.".to_string()),
@@ -61,7 +52,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     assert!(batch.try_add_event_data(
         EventData::builder()
             .with_body(b"Hello, World!")
-            .add_property("Message#".to_string(), 1)
+            .add_property("Message#", 1)
             .with_message_id(1)
             .build(),
         None
@@ -106,24 +97,16 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
         None
     )?);
 
-    assert!(producer.submit_batch(&batch, None).await.is_ok());
+    assert!(producer.send_batch(&batch, None).await.is_ok());
 
-    let consumer = ConsumerClient::new(
-        host,
-        eventhub,
-        None,
-        DefaultAzureCredential::new()?,
-        Some(ConsumerClientOptions {
-            application_id: Some(TEST_NAME.to_string()),
-            ..Default::default()
-        }),
-    );
-
-    assert!(consumer.open().await.is_ok());
-
+    let credential = DefaultAzureCredential::new()?;
+    let consumer = ConsumerClient::builder()
+        .with_application_id(TEST_NAME)
+        .open(host.as_str(), eventhub.as_str(), credential)
+        .await?;
     let receiver = consumer
         .open_receiver_on_partition(
-            EVENTHUB_PARTITION.to_string(),
+            EVENTHUB_PARTITION,
             Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::SequenceNumber(start_sequence),

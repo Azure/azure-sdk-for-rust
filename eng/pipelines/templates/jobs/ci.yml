@@ -17,9 +17,6 @@ parameters:
 - name: TestTimeoutInMinutes
   type: number
   default: 60
-- name: BuildDocs
-  type: boolean
-  default: true
 - name: TestProxy
   type: boolean
   default: false
@@ -83,6 +80,8 @@ jobs:
       parameters:
         PackageNames: ${{ join(',', parameters.Artifacts.*.name) }}
         ServiceDirectory: ${{parameters.ServiceDirectory}}
+        # Crate names contain '_' and prerelease versions contain '-' e.g., `azure_core@1.0.1-beta.1`.
+        TagSeparator: '@'
         TestPipeline: true
 
   - template: /eng/pipelines/templates/steps/pack-crates.yml
@@ -156,7 +155,7 @@ jobs:
       filePath: $(Build.SourcesDirectory)/eng/scripts/Analyze-Code.ps1
       arguments: >
         -Toolchain '$(Toolchain)'
-        -PackageInfoPath '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
         -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
 
   - template: /eng/common/pipelines/templates/steps/check-spelling.yml

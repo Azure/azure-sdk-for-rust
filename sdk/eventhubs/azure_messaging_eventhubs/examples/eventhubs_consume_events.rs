@@ -13,17 +13,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventhub_name = std::env::var("EVENTHUB_NAME")?;
     let credential = DefaultAzureCredential::new()?;
 
-    let consumer = ConsumerClient::new(
-        eventhub_namespace,
-        eventhub_name,
-        None,
-        credential.clone(),
-        None,
-    );
+    let consumer = ConsumerClient::builder()
+        .open(
+            eventhub_namespace.as_str(),
+            eventhub_name.as_str(),
+            credential.clone(),
+        )
+        .await?;
 
-    println!("Created consumer client");
-    // Open the client
-    consumer.open().await?;
+    println!("Opened consumer client");
 
     // Get the partition IDs
     let properties = consumer.get_eventhub_properties().await?;
@@ -32,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The default is to receive messages from the end of the partition, so specify a start position at the start of the partition.
     let receiver = consumer
         .open_receiver_on_partition(
-            properties.partition_ids[0].clone(),
+            properties.partition_ids[0].as_str(),
             Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::Earliest,
@@ -56,7 +54,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Receive events until the receive_timeout has been reached.
     while let Some(event) = receive_stream.next().await {
-        println!("Received: {:?}", event?);
+        let event = event?;
+        println!("Received: {:?}", event);
+
+        println!("Partition ID: {:?}", event.partition_key());
+        println!("Event offset: {:?}", event.offset());
     }
 
     consumer.close().await?;

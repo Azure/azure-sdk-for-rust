@@ -8,26 +8,28 @@
 pub(crate) mod common;
 
 /// Types related to consuming events from an Event Hubs instance.
-pub mod consumer;
+pub(crate) mod consumer;
 
 /// Types related to errors processing events.
-pub mod error;
+mod error;
 
 /// Types to create and send events to an Event Hubs instance.
-pub mod producer;
+pub(crate) mod producer;
 
 /// Types sent to and received from the Event Hubs service.
 pub mod models;
 
-pub use producer::batch::*;
-pub use producer::ProducerClient;
-pub use producer::ProducerClientOptions;
-pub use producer::SendEventOptions;
-pub use producer::SendMessageOptions;
-pub use producer::SubmitBatchOptions;
+pub use producer::{
+    batch::{EventDataBatch, EventDataBatchOptions},
+    ProducerClient, SendBatchOptions, SendEventOptions, SendMessageOptions,
+};
 
-pub use consumer::ConsumerClient;
-pub use consumer::ConsumerClientOptions;
-pub use consumer::OpenReceiverOptions;
-pub use consumer::StartLocation;
-pub use consumer::StartPosition;
+pub use consumer::{
+    ConsumerClient, EventReceiver, OpenReceiverOptions, StartLocation, StartPosition,
+};
+
+/// Builders for producer client and consumer client.
+pub mod builders {
+    pub use crate::consumer::builders::ConsumerClientBuilder;
+    pub use crate::producer::builders::ProducerClientBuilder;
+}

@@ -3,6 +3,7 @@
 
 //! The [`Recording`] and other types used in recorded tests.
 
+// cspell:ignore csprng seedable
 use crate::{
     proxy::{
         client::{
@@ -16,6 +17,7 @@ use crate::{
     Matcher, MockCredential, Sanitizer,
 };
 use azure_core::{
+    base64,
     credentials::TokenCredential,
     error::ErrorKind,
     headers::{AsHeaders, HeaderName, HeaderValue},
@@ -23,12 +25,17 @@ use azure_core::{
     ClientOptions, Header,
 };
 use azure_identity::DefaultAzureCredential;
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng, SeedableRng,
+};
+use rand_chacha::ChaCha20Rng;
 use std::{
     borrow::Cow,
     cell::OnceCell,
     collections::HashMap,
     env,
-    sync::{Arc, RwLock},
+    sync::{Arc, Mutex, OnceLock, RwLock},
 };
 use tracing::span::EnteredSpan;
 
@@ -47,6 +54,7 @@ pub struct Recording {
     recording_assets_file: Option<String>,
     id: Option<RecordingId>,
     variables: RwLock<HashMap<String, Value>>,
+    rand: OnceLock<Mutex<ChaCha20Rng>>,
 }
 
 impl Recording {
@@ -125,6 +133,75 @@ impl Recording {
             .clone();
 
         options.per_try_policies.push(policy);
+    }
+
+    /// Get random data from the OS or recording.
+    ///
+    /// This will always be the OS cryptographically secure pseudo-random number generator (CSPRNG) when running live.
+    /// When recording, it will initialize from the OS CSPRNG but save the seed value to the recording file.
+    /// When playing back, the saved seed value is read from the recording to reproduce the same sequence of random data.
+    ///
+    /// # Examples
+    ///
+    /// Generate a symmetric data encryption key (DEK).
+    ///
+    /// ```no_compile
+    /// let dek: [u8; 32] = recording.random();
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the recording variables cannot be locked for reading or writing,
+    /// or if the random seed cannot be encoded or decoded properly.
+    ///
+    pub fn random<T>(&self) -> T
+    where
+        Standard: Distribution<T>,
+    {
+        const NAME: &str = "RandomSeed";
+
+        // Use ChaCha20 for a deterministic, portable CSPRNG.
+        let rng = self.rand.get_or_init(|| match self.test_mode {
+            TestMode::Live => ChaCha20Rng::from_entropy().into(),
+            TestMode::Playback => {
+                let variables = self
+                    .variables
+                    .read()
+                    .map_err(read_lock_error)
+                    .unwrap_or_else(|err| panic!("{err}"));
+                let seed: String = variables
+                    .get(NAME)
+                    .map(Into::into)
+                    .unwrap_or_else(|| panic!("random seed variable not set"));
+                let seed = base64::decode(seed)
+                    .unwrap_or_else(|err| panic!("failed to decode random seed: {err}"));
+                let seed = seed
+                    .first_chunk::<32>()
+                    .unwrap_or_else(|| panic!("insufficient random seed variable"));
+
+                ChaCha20Rng::from_seed(*seed).into()
+            }
+            TestMode::Record => {
+                let rng = ChaCha20Rng::from_entropy();
+                let seed = rng.get_seed();
+                let seed = base64::encode(seed);
+
+                let mut variables = self
+                    .variables
+                    .write()
+                    .map_err(write_lock_error)
+                    .unwrap_or_else(|err| panic!("{err}"));
+                variables.insert(NAME.to_string(), Value::from(Some(seed), None));
+
+                rng.into()
+            }
+        });
+
+        let Ok(mut rng) = rng.lock() else {
+            panic!("failed to lock RNG");
+        };
+
+        rng.gen()
     }
 
     /// Removes the list of sanitizers from the recording.
@@ -229,6 +306,7 @@ impl Recording {
             recording_assets_file,
             id: None,
             variables: RwLock::new(HashMap::new()),
+            rand: OnceLock::new(),
         }
     }
 

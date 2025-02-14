@@ -5,10 +5,7 @@ use crate::models::ReceivedEventData;
 use async_std::future::timeout;
 use async_stream::try_stream;
 use azure_core::error::Result;
-use azure_core_amqp::{
-    messaging::AmqpDeliveryApis,
-    receiver::{AmqpReceiver, AmqpReceiverApis},
-};
+use azure_core_amqp::{AmqpDeliveryApis, AmqpReceiver, AmqpReceiverApis};
 use futures::stream::Stream;
 use tracing::trace;
 
@@ -27,12 +24,11 @@ use tracing::trace;
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///     let my_credential = DefaultAzureCredential::new()?;
-///     let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
+///     let consumer = ConsumerClient::builder()
+///        .open("my_namespace", "my_eventhub", my_credential).await?;
 ///     let partition_id = "0";
 ///
-///     consumer.open().await?;
-///
-///     let receiver  = consumer.open_receiver_on_partition(partition_id.to_string(), None).await?;
+///     let receiver  = consumer.open_receiver_on_partition(partition_id, None).await?;
 ///
 ///     let event_stream = receiver.stream_events();
 ///
@@ -76,7 +72,7 @@ impl EventReceiver {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_messaging_eventhubs::consumer::EventReceiver;
+    /// use azure_messaging_eventhubs::EventReceiver;
     /// use async_std::stream::StreamExt;
     /// use futures::pin_mut;
     ///

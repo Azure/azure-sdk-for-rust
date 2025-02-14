@@ -1,5 +1,5 @@
 use crate::models::{AmqpMessage, AmqpValue, MessageId};
-use azure_core_amqp::messaging::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
+use azure_core_amqp::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
 use std::{
     collections::HashMap,
     fmt::{Debug, Formatter},
@@ -19,10 +19,10 @@ use std::{
 ///
 /// let event_data = EventData::builder()
 ///    .with_body(b"Hello, world!")
-///    .with_content_type("text/plain".to_string())
+///    .with_content_type("text/plain")
 ///    .with_correlation_id("correlation_id")
 ///    .with_message_id("message_id")
-///    .add_property("key".to_string(), "value")
+///    .add_property("key", "value")
 ///    .build();
 ///
 /// println!("{:?}", event_data);
@@ -84,7 +84,7 @@ impl EventData {
         if let Some(properties) = message.properties() {
             if let Some(content_type) = &properties.content_type {
                 event_data_builder = event_data_builder
-                    .with_content_type(Into::<String>::into(content_type.clone()));
+                    .with_content_type(Into::<String>::into(content_type.clone()).as_str());
             }
             if let Some(correlation_id) = &properties.correlation_id {
                 event_data_builder = event_data_builder.with_correlation_id(correlation_id.clone());
@@ -95,7 +95,7 @@ impl EventData {
         }
         if let Some(application_properties) = message.application_properties() {
             for (key, value) in application_properties.0.clone() {
-                event_data_builder = event_data_builder.add_property(key, value);
+                event_data_builder = event_data_builder.add_property(key.as_str(), value);
             }
         }
         event_data_builder.build()
@@ -345,8 +345,8 @@ pub mod builders {
         ///
         /// A reference to the updated builder.
         ///
-        pub fn with_content_type(mut self, content_type: String) -> Self {
-            self.event_data.content_type = Some(content_type);
+        pub fn with_content_type(mut self, content_type: &str) -> Self {
+            self.event_data.content_type = Some(content_type.to_string());
             self
         }
 
@@ -391,13 +391,13 @@ pub mod builders {
         ///
         /// A reference to the updated builder.
         ///
-        pub fn add_property(mut self, key: String, value: impl Into<AmqpValue>) -> Self {
+        pub fn add_property(mut self, key: &str, value: impl Into<AmqpValue>) -> Self {
             if let Some(mut properties) = self.event_data.properties {
-                properties.insert(key, value.into());
+                properties.insert(key.to_string(), value.into());
                 self.event_data.properties = Some(properties);
             } else {
                 let mut properties = HashMap::new();
-                properties.insert(key, value.into());
+                properties.insert(key.to_string(), value.into());
                 self.event_data.properties = Some(properties);
             }
             self
@@ -430,9 +430,7 @@ mod tests {
     #[test]
     fn test_event_data_builder_with_content_type() {
         let content_type = "application/json";
-        let event_data = EventData::builder()
-            .with_content_type(content_type.to_string())
-            .build();
+        let event_data = EventData::builder().with_content_type(content_type).build();
 
         assert_eq!(event_data.content_type(), Some(content_type));
     }
@@ -459,13 +457,13 @@ mod tests {
 
     #[test]
     fn test_event_data_builder_add_property() {
-        let key = "key".to_string();
+        let key = "key";
         let value: AmqpValue = "value".into();
         let event_data = EventData::builder()
-            .add_property(key.clone(), value.clone())
+            .add_property(key, value.clone())
             .build();
 
-        assert_eq!(event_data.properties().unwrap().get(&key), Some(&value));
+        assert_eq!(event_data.properties().unwrap().get(key), Some(&value));
     }
 
     #[test]
@@ -474,21 +472,21 @@ mod tests {
         let content_type = "application/json";
         let correlation_id = MessageId::String("correlation-id".to_string());
         let message_id = MessageId::String("message-id".to_string());
-        let key = "key".to_string();
+        let key = "key";
         let value: AmqpValue = "value".into();
 
         let event_data = EventData::builder()
             .with_body(body.clone())
-            .with_content_type(content_type.to_string())
+            .with_content_type(content_type)
             .with_correlation_id(correlation_id.clone())
             .with_message_id(message_id.clone())
-            .add_property(key.clone(), value.clone())
+            .add_property(key, value.clone())
             .build();
 
         assert_eq!(event_data.body().unwrap(), &body);
         assert_eq!(event_data.content_type(), Some(content_type));
         assert_eq!(event_data.correlation_id(), Some(&correlation_id));
         assert_eq!(event_data.message_id(), Some(&message_id));
-        assert_eq!(event_data.properties().unwrap().get(&key), Some(&value));
+        assert_eq!(event_data.properties().unwrap().get(key), Some(&value));
     }
 }

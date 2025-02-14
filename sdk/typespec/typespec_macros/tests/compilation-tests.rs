@@ -141,7 +141,7 @@ pub fn compilation_tests() {
                         file_name: relative_span_path
                             .to_str()
                             .expect("failed to convert span path to string")
-                            .into(),
+                            .replace("\\", "/"),
                         line: span.line_start,
                     }
                 })

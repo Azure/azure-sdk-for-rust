@@ -8,15 +8,12 @@ trigger:
     - release/*
   paths:
     include:
-    - sdk/storage/
+    - sdk/cosmos/
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
-    ServiceDirectory: storage
-    TestTimeoutInMinutes: 120
+    ServiceDirectory: cosmos
     Artifacts:
-    - name: azure_storage_common
-      safeName: AzureStorageCommon
-    - name: azure_storage_blob
-      safeName: AzureStorageBlob
+    - name: azure_data_cosmos
+      safeName: AzureDataCosmos

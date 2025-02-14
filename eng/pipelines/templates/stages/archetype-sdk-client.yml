@@ -10,9 +10,6 @@ parameters:
 - name: TestProxy
   type: boolean
   default: true
-- name: BuildDocs
-  type: boolean
-  default: true
 - name: GenerateApiReviewForManualOnly
   type: boolean
   default: false
@@ -36,7 +33,6 @@ extends:
           ${{ if eq(parameters.ServiceDirectory, 'template') }}:
             TestPipeline: true
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
-          BuildDocs: ${{ parameters.BuildDocs }}
           TestProxy: ${{ parameters.TestProxy }}
           PipelineArtifactName: packages
           GenerateApiReviewForManualOnly: ${{ parameters.GenerateApiReviewForManualOnly }}

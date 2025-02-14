@@ -8,15 +8,14 @@ trigger:
     - release/*
   paths:
     include:
-    - sdk/storage/
+    - sdk/core/
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
-    ServiceDirectory: storage
-    TestTimeoutInMinutes: 120
+    ServiceDirectory: core
     Artifacts:
-    - name: azure_storage_common
-      safeName: AzureStorageCommon
-    - name: azure_storage_blob
-      safeName: AzureStorageBlob
+    - name: azure_core
+      safeName: AzureCore
+    - name: azure_core_amqp
+      safeName: AzureCoreAmqp

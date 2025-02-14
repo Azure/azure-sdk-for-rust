@@ -3,7 +3,7 @@
 #Requires -Version 7.0
 param(
   [string]$Toolchain = 'stable',
-  [string]$PackageInfoPath,
+  [string]$PackageInfoDirectory,
   [switch]$CheckWasm = $true,
   [switch]$SkipPackageAnalysis
 )
@@ -12,7 +12,6 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
 . (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
-. (Join-Path $EngCommonScriptsDir 'Helpers' 'CommandInvocation-Helpers.ps1')
 
 Write-Host "Analyzing code with
     Toolchain: '$Toolchain'`n"
@@ -41,12 +40,12 @@ Invoke-LoggedCommand "cargo +$Toolchain doc --workspace --no-deps --all-features
 $verifyDependenciesScript = Join-Path $RepoRoot 'eng' 'scripts' 'verify-dependencies.rs' -Resolve
 
 if (!$SkipPackageAnalysis) {
-  if (!(Test-Path $PackageInfoPath)) {
-    Write-Error "Package info path '$PackageInfoPath' does not exist."
+  if (!(Test-Path $PackageInfoDirectory)) {
+    Write-Error "Package info path '$PackageInfoDirectory' does not exist."
     exit 1
   }
 
-  $packagesToTest = Get-ChildItem $PackageInfoPath -Filter "*.json" -Recurse
+  $packagesToTest = Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse
   | Get-Content -Raw
   | ConvertFrom-Json
 

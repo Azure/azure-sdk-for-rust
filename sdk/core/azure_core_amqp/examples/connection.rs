@@ -13,10 +13,7 @@
 //      cargo run --example connection --package azure_core_amqp
 
 use azure_core::Url;
-use azure_core_amqp::{
-    connection::{AmqpConnection, AmqpConnectionApis},
-    value::AmqpSymbol,
-};
+use azure_core_amqp::{AmqpConnection, AmqpConnectionApis, AmqpSymbol};
 
 async fn amqp_connection_open() {
     let connection = AmqpConnection::new();

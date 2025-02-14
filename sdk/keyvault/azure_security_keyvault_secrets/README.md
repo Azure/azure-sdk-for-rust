@@ -33,14 +33,14 @@ az keyvault create --resource-group <your-resource-group-name> --name <your-key-
 Add the following crates to your project:
 
 ```sh
-cargo add azure_identity azure_core tokio
+cargo add azure_identity tokio
 ```
 
 ### Authenticate the client
 
 In order to interact with the Azure Key Vault service, you'll need to create an instance of the `SecretClient`. You need a **vault url**, which you may see as "DNS Name" in the portal, and credentials to instantiate a client object.
 
-The example shown below use a `DefaultAzureCredential`, which is appropriate for most scenarios including local development and production environments. Additionally, we recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
+The example shown below use a `DefaultAzureCredential`, which is appropriate for most local development environments. Additionally, we recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
 
 The `DefaultAzureCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
 
@@ -76,11 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let secret: SecretBundle = client
-        .set_secret(
-            "secret-name".into(),
-            secret_set_parameters.try_into()?,
-            None,
-        )
+        .set_secret("secret-name", secret_set_parameters.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -90,7 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Retrieve a secret using the secret client.
     let secret: SecretBundle = client
-        .get_secret("secret-name".into(), version, None)
+        .get_secret("secret-name", version.as_ref(), None)
         .await?
         .into_body()
         .await?;
@@ -130,10 +126,7 @@ The following section provides several code snippets using the `SecretClient`, c
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{
-    models::{SecretBundle, SecretSetParameters},
-    ResourceExt, SecretClient,
-};
+use azure_security_keyvault_secrets::{models::SecretSetParameters, ResourceExt, SecretClient};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -150,12 +143,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let secret: SecretBundle = client
-        .set_secret(
-            "secret-name".into(),
-            secret_set_parameters.try_into()?,
-            None,
-        )
+    let secret = client
+        .set_secret("secret-name", secret_set_parameters.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -177,7 +166,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{models::SecretBundle, SecretClient};
+use azure_security_keyvault_secrets::SecretClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -189,8 +178,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Retrieve a secret using the secret client.
-    let secret: SecretBundle = client
-        .get_secret("secret-name".into(), "secret-version".into(), None)
+    let secret = client
+        .get_secret("secret-name", "secret-version", None)
         .await?
         .into_body()
         .await?;
@@ -207,10 +196,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{
-    models::{SecretAttributes, SecretUpdateParameters},
-    SecretClient,
-};
+use azure_security_keyvault_secrets::{models::SecretUpdateParameters, SecretClient};
 use std::collections::HashMap;
 
 #[tokio::main]
@@ -225,17 +211,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Update a secret using the secret client.
     let secret_update_parameters = SecretUpdateParameters {
         content_type: Some("text/plain".into()),
-        secret_attributes: Some(SecretAttributes::default()),
         tags: Some(HashMap::from_iter(vec![(
             "tag-name".into(),
             "tag-value".into(),
         )])),
+        ..Default::default()
     };
 
     client
         .update_secret(
-            "secret-name".into(),
-            "".into(),
+            "secret-name",
+            "",
             secret_update_parameters.try_into()?,
             None,
         )
@@ -265,9 +251,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Delete a secret using the secret client.
-    client
-        .delete_secret("secret-name".into(), None)
-        .await?;
+    client.delete_secret("secret-name", None).await?;
 
     Ok(())
 }
@@ -321,7 +305,6 @@ For example, if you try to retrieve a secret that doesn't exist in your Azure Ke
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::SecretClient;
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
@@ -331,14 +314,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    match client
-        .get_secret(
-            "secret-name".into(),
-            "".into(),
-            None,
-        )
-        .await
-    {
+    match client.get_secret("secret-name", "", None).await {
         Ok(response) => println!("Secret Value: {:?}", response.into_body().await?.value),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }
@@ -379,9 +355,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [Azure CLI]: https://learn.microsoft.com/cli/azure
 [Azure subscription]: https://azure.microsoft.com/free/
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
-[Certificates client library]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_certificates
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
-[Keys client library]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_keys
 [Product documentation]: https://learn.microsoft.com/azure/key-vault/
 [REST API]: https://learn.microsoft.com/rest/api/keyvault/
 [Cargo]: https://crates.io/

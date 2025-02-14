@@ -127,6 +127,9 @@ impl TestContext {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
+            if mode == TestMode::Live {
+                return None;
+            }
             let path = match find_ancestor_file(self.crate_dir, ASSETS_FILE) {
                 Ok(path) => path,
                 Err(_) if mode == TestMode::Record => {

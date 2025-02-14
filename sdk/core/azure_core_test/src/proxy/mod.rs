@@ -146,7 +146,8 @@ mod bootstrap {
 
             if let Some(idx) = line.find(LISTENING_PATTERN) {
                 let idx = idx + LISTENING_PATTERN.len();
-                let url = line[idx..].parse()?;
+                let mut url: Url = line[idx..].parse()?;
+                url.set_host(Some("localhost"))?;
                 tracing::event!(target: crate::SPAN_TARGET, Level::INFO, "listening on {url}");
 
                 return Ok(url);

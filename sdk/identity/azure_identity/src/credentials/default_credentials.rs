@@ -3,31 +3,27 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::AzureCliCredential;
-use crate::{
-    credentials::cache::TokenCache, timeout::TimeoutExt, AppServiceManagedIdentityCredential,
-    ImdsId, TokenCredentialOptions, VirtualMachineManagedIdentityCredential,
-};
+use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
+#[cfg(not(target_arch = "wasm32"))]
+use azure_core::error::ResultExt;
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
-    error::{Error, ErrorKind, ResultExt},
+    error::{Error, ErrorKind},
 };
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
 pub struct DefaultAzureCredentialBuilder {
     options: TokenCredentialOptions,
-    include_app_service_managed_identity_credential: bool,
-    include_virtual_machine_managed_identity_credential: bool,
     #[cfg(not(target_arch = "wasm32"))]
     include_azure_cli_credential: bool,
 }
 
+#[cfg_attr(target_arch = "wasm32", allow(clippy::derivable_impls))]
 impl Default for DefaultAzureCredentialBuilder {
     fn default() -> Self {
         Self {
             options: TokenCredentialOptions::default(),
-            include_app_service_managed_identity_credential: true,
-            include_virtual_machine_managed_identity_credential: true,
             #[cfg(not(target_arch = "wasm32"))]
             include_azure_cli_credential: true,
         }
@@ -45,31 +41,6 @@ impl DefaultAzureCredentialBuilder {
         self
     }
 
-    /// Exclude using any managed identity credential
-    pub fn exclude_managed_identity_credential(&mut self) -> &mut Self {
-        self.include_app_service_managed_identity_credential = false;
-        self.include_virtual_machine_managed_identity_credential = false;
-        self
-    }
-
-    /// Exclude using virtual machine managed identity credential
-    pub fn exclude_virtual_machine_managed_identity_credential(&mut self) -> &mut Self {
-        self.include_virtual_machine_managed_identity_credential = false;
-        self
-    }
-
-    /// Include using virtual machine managed identity credential
-    pub fn include_virtual_machine_managed_identity_credential(&mut self) -> &mut Self {
-        self.include_virtual_machine_managed_identity_credential = true;
-        self
-    }
-
-    /// Include using app service managed identity credential
-    pub fn include_app_service_managed_identity_credential(&mut self) -> &mut Self {
-        self.include_app_service_managed_identity_credential = true;
-        self
-    }
-
     /// Exclude using credential from the cli
     #[cfg(not(target_arch = "wasm32"))]
     pub fn exclude_azure_cli_credential(&mut self) -> &mut Self {
@@ -79,13 +50,8 @@ impl DefaultAzureCredentialBuilder {
 
     /// Get a list of the credential types to include.
     fn included(&self) -> Vec<DefaultAzureCredentialType> {
+        #[cfg_attr(target_arch = "wasm32", allow(unused_mut))]
         let mut sources = Vec::new();
-        if self.include_app_service_managed_identity_credential {
-            sources.push(DefaultAzureCredentialType::AppService);
-        }
-        if self.include_virtual_machine_managed_identity_credential {
-            sources.push(DefaultAzureCredentialType::VirtualMachine);
-        }
         #[cfg(not(target_arch = "wasm32"))]
         if self.include_azure_cli_credential {
             sources.push(DefaultAzureCredentialType::AzureCli);
@@ -99,31 +65,24 @@ impl DefaultAzureCredentialBuilder {
         &self,
         included: &Vec<DefaultAzureCredentialType>,
     ) -> azure_core::Result<Vec<DefaultAzureCredentialKind>> {
+        #[cfg_attr(target_arch = "wasm32", allow(unused_mut))]
         let mut sources = Vec::<DefaultAzureCredentialKind>::with_capacity(included.len());
-        let mut errors = Vec::new();
+        let errors = Vec::new();
+
+        #[cfg_attr(target_arch = "wasm32", allow(clippy::never_loop))]
         for source in included {
             match source {
-                DefaultAzureCredentialType::AppService => {
-                    match AppServiceManagedIdentityCredential::new(self.options.clone()) {
-                        Ok(credential) => {
-                            sources.push(DefaultAzureCredentialKind::AppService(credential))
-                        }
-                        Err(error) => errors.push(error),
-                    }
-                }
-                DefaultAzureCredentialType::VirtualMachine => {
-                    sources.push(DefaultAzureCredentialKind::VirtualMachine(
-                        VirtualMachineManagedIdentityCredential::new(
-                            ImdsId::SystemAssigned,
-                            self.options.clone(),
-                        )?,
-                    ));
-                }
                 #[cfg(not(target_arch = "wasm32"))]
                 DefaultAzureCredentialType::AzureCli => {
                     if let Ok(credential) = AzureCliCredential::new() {
                         sources.push(DefaultAzureCredentialKind::AzureCli(credential));
                     }
+                }
+                #[cfg(target_arch = "wasm32")]
+                _ => {
+                    return Err(Error::with_message(ErrorKind::Credential, || {
+                        "No credential providers available"
+                    }));
                 }
             }
         }
@@ -149,8 +108,6 @@ impl DefaultAzureCredentialBuilder {
 /// Types that may be enabled for use by `DefaultAzureCredential`.
 #[derive(Debug, PartialEq)]
 enum DefaultAzureCredentialType {
-    AppService,
-    VirtualMachine,
     #[cfg(not(target_arch = "wasm32"))]
     AzureCli,
 }
@@ -158,41 +115,16 @@ enum DefaultAzureCredentialType {
 /// Types of `TokenCredential` supported by `DefaultAzureCredential`
 #[derive(Debug)]
 pub(crate) enum DefaultAzureCredentialKind {
-    /// `TokenCredential` from managed identity that has been assigned to an App Service.
-    AppService(Arc<AppServiceManagedIdentityCredential>),
-    /// `TokenCredential` from managed identity that has been assigned to a virtual machine.
-    VirtualMachine(Arc<VirtualMachineManagedIdentityCredential>),
     #[cfg(not(target_arch = "wasm32"))]
     /// `TokenCredential` from Azure CLI.
     AzureCli(Arc<AzureCliCredential>),
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send), allow(unused_variables))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for DefaultAzureCredentialKind {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         match self {
-            DefaultAzureCredentialKind::AppService(credential) => {
-                credential.get_token(scopes).await.context(
-                    ErrorKind::Credential,
-                    "error getting managed identity credential for App Service",
-                )
-            }
-            DefaultAzureCredentialKind::VirtualMachine(credential) => {
-                // IMDS timeout is only limited to 1 second when used in DefaultAzureCredential
-                credential
-                    .get_token(scopes)
-                    .timeout(Duration::from_secs(1))
-                    .await
-                    .context(
-                        ErrorKind::Credential,
-                        "getting virtual machine managed identity credential timed out",
-                    )?
-                    .context(
-                        ErrorKind::Credential,
-                        "error getting virtual machine managed identity credential",
-                    )
-            }
             #[cfg(not(target_arch = "wasm32"))]
             DefaultAzureCredentialKind::AzureCli(credential) => {
                 credential.get_token(scopes).await.context(
@@ -200,18 +132,26 @@ impl TokenCredential for DefaultAzureCredentialKind {
                     "error getting token credential from Azure CLI",
                 )
             }
+            #[cfg(target_arch = "wasm32")]
+            _ => {
+                return Err(Error::with_message(ErrorKind::Credential, || {
+                    "No credential providers available"
+                }));
+            }
         }
     }
 
     /// Clear the credential's cache.
     async fn clear_cache(&self) -> azure_core::Result<()> {
         match self {
-            DefaultAzureCredentialKind::AppService(credential) => credential.clear_cache().await,
-            DefaultAzureCredentialKind::VirtualMachine(credential) => {
-                credential.clear_cache().await
-            }
             #[cfg(not(target_arch = "wasm32"))]
             DefaultAzureCredentialKind::AzureCli(credential) => credential.clear_cache().await,
+            #[cfg(target_arch = "wasm32")]
+            _ => {
+                return Err(Error::with_message(ErrorKind::Credential, || {
+                    "No credential providers available"
+                }));
+            }
         }
     }
 }
@@ -324,24 +264,17 @@ mod tests {
         let builder = DefaultAzureCredentialBuilder::new();
         #[cfg(not(target_arch = "wasm32"))]
         assert!(builder.include_azure_cli_credential);
-        assert!(builder.include_app_service_managed_identity_credential);
-        assert!(builder.include_virtual_machine_managed_identity_credential);
 
         #[cfg(not(target_arch = "wasm32"))]
         {
             let mut builder = DefaultAzureCredentialBuilder::new();
             builder.exclude_azure_cli_credential();
             assert!(!builder.include_azure_cli_credential);
-            assert!(builder.include_app_service_managed_identity_credential);
-            assert!(builder.include_virtual_machine_managed_identity_credential);
         }
 
-        let mut builder = DefaultAzureCredentialBuilder::new();
-        builder.exclude_managed_identity_credential();
+        let builder = DefaultAzureCredentialBuilder::new();
         #[cfg(not(target_arch = "wasm32"))]
         assert!(builder.include_azure_cli_credential);
-        assert!(!builder.include_app_service_managed_identity_credential);
-        assert!(!builder.include_virtual_machine_managed_identity_credential);
     }
 
     #[test]
@@ -350,25 +283,7 @@ mod tests {
         let builder = DefaultAzureCredentialBuilder::new();
         assert_eq!(
             builder.included(),
-            vec![
-                DefaultAzureCredentialType::AppService,
-                DefaultAzureCredentialType::VirtualMachine,
-                DefaultAzureCredentialType::AzureCli,
-            ]
-        );
-    }
-
-    /// test excluding virtual machine managed identity credential
-    #[test]
-    fn test_exclude_virtual_machine_managed_identity_credential() {
-        let mut builder = DefaultAzureCredentialBuilder::new();
-        builder.exclude_virtual_machine_managed_identity_credential();
-        assert_eq!(
-            builder.included(),
-            vec![
-                DefaultAzureCredentialType::AppService,
-                DefaultAzureCredentialType::AzureCli,
-            ]
+            vec![DefaultAzureCredentialType::AzureCli,]
         );
     }
 
@@ -377,23 +292,6 @@ mod tests {
     fn test_exclude_azure_cli_credential() {
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_azure_cli_credential();
-        assert_eq!(
-            builder.included(),
-            vec![
-                DefaultAzureCredentialType::AppService,
-                DefaultAzureCredentialType::VirtualMachine,
-            ]
-        );
-    }
-
-    /// test excluding managed identity credential
-    #[test]
-    fn test_exclude_managed_identity_credential() {
-        let mut builder = DefaultAzureCredentialBuilder::new();
-        builder.exclude_managed_identity_credential();
-        assert_eq!(
-            builder.included(),
-            vec![DefaultAzureCredentialType::AzureCli,]
-        );
+        assert!(builder.included().is_empty());
     }
 }
