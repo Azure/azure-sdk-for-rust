@@ -2,7 +2,7 @@
 
 `azure_core` provides shared primitives, abstractions, and helpers for modern Rust Azure SDK client libraries.
 These libraries follow the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html)
-and can be easily identified by package and namespaces names starting with 'azure_', e.g. `azure_identity`.
+and can be easily identified by package and namespaces names starting with `azure_`, e.g. `azure_identity`.
 
 `azure_core` allows client libraries to expose common functionality in a consistent fashion,
 so that once you learn how to use these APIs in one client library, you will know how to use them in other client libraries.
