@@ -54,60 +54,76 @@ We guarantee that all client instance methods are thread-safe and independent of
 Azure SDK client libraries typically expose one or more _service client_ types that
 are the main starting points for calling corresponding Azure services.
 You can easily find these client types as their names end with the word _Client_.
-For example, `BlockBlobClient` can be used to call blob storage service,
+For example, `SecretClient` can be used to call the Key Vault service and interact with secrets,
 and `KeyClient` can be used to access Key Vault service cryptographic keys.
 
-These client types can be instantiated by calling a simple constructor,
-or its overload that takes various configuration options.
-These options are passed as a parameter that extends `ClientOptions` class exposed by `azure_core`.
+These client types can be instantiated by calling a simple `new` or `builder` function that takes various configuration options.These options are passed as a parameter that extends `ClientOptions` class exposed by `azure_core`.
 Various service specific options are usually added to its subclasses, but a set of SDK-wide options are
 available directly on `ClientOptions`.
 
 ```rust no_run
-let options = SecretClientOptions {
-    retry: RetryOptions {
-        delay: Duration::from_secs(2),
-        max_retries: 10,
-        mode: RetryMode::Fixed,
-    },
-    diagnostics: DiagnosticsOptions {
-        is_logging_content_enabled: true,
-        application_id: Some("myApplicationId".to_string()),
-    },
-};
+use azure_core::ClientOptions;
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 
-let client = SecretClient::new("http://example.com", DefaultAzureCredential::default(), options);
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let options = SecretClientOptions {
+        api_version: "7.0".to_string(),
+        client_options: ClientOptions::default(),
+    };
+
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        Some(options),
+    )?;
+
+    Ok(())
+}
 ```
-
-More on client configuration in [client configuration samples](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/Configuration.md).
 
 ### Accessing HTTP Response Details Using `Response<T>`
 
-_Service clients_ have methods that can be used to call Azure services. We refer to these client methods _service methods_.
+_Service clients_ have methods that can be used to call Azure services. We refer to these client methods as _service methods_.
 _Service methods_ return a shared `azure_core` type `Response<T>` (in rare cases its non-generic sibling, a raw `Response`).
-This type provides access to both the deserialized result of the service call,
-and to the details of the HTTP response returned from the server.
+This type provides access to both the deserialized result of the service call, and to the details of the HTTP response returned from the server.
 
 ```rust no_run
-// create a client
-let client = SecretClient::new("http://example.com", DefaultAzureCredential::default(), Default::default());
+use azure_core::Response;
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::{models::SecretBundle, SecretClient};
 
-// call a service method, which returns Response<T>
-let response: Response<KeyVaultSecret> = client.get_secret("SecretName").await?;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // create a client
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
 
-// Response<T> has two main accessors.
-// Value property for accessing the deserialized result of the call
-let secret = response.value;
+    // call a service method, which returns Response<T>
+    let response: Response<SecretBundle> = client.get_secret("SecretName", "", None).await?;
 
-// .. and get_raw_response method for accessing all the details of the HTTP response
-let http = response.get_raw_response();
+    // Response<T> has two main accessors.
+    // The into_body() function for accessing the deserialized result of the call
+    let secret = response.into_body().await?;
 
-// for example, you can access HTTP status
-let status = http.status();
+    // .. and the deconstruct() method for accessing all the details of the HTTP response
+    let (status, headers, body) = response.deconstruct();
 
-// or the headers
-for header in http.headers() {
-    println!("{}: {}", header.name(), header.value());
+    // for example, you can access HTTP status
+    println!("Status: {}", status);
+
+    // or the headers
+    for (header_name, header_value) in headers.iter() {
+        println!("{}: {}", header_name.as_str(), header_value.as_str());
+    }
+
+    Ok(())
 }
 ```
 
