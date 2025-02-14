@@ -63,7 +63,7 @@ These options are passed as a parameter that extends `ClientOptions` class expos
 Various service specific options are usually added to its subclasses, but a set of SDK-wide options are
 available directly on `ClientOptions`.
 
-```rust
+```rust no_run
 let options = SecretClientOptions {
     retry: RetryOptions {
         delay: Duration::from_secs(2),
@@ -88,7 +88,7 @@ _Service methods_ return a shared `azure_core` type `Response<T>` (in rare cases
 This type provides access to both the deserialized result of the service call,
 and to the details of the HTTP response returned from the server.
 
-```rust
+```rust no_run
 // create a client
 let client = SecretClient::new("http://example.com", DefaultAzureCredential::default(), Default::default());
 
@@ -117,7 +117,7 @@ More on response types in [response samples](https://github.com/Azure/azure-sdk-
 
 To create an Azure SDK log listener that outputs messages to console use `AzureEventSourceListener::create_console_logger` method.
 
-```rust
+```rust no_run
 // Setup a listener to monitor logged events.
 let listener = AzureEventSourceListener::create_console_logger();
 ```
@@ -128,7 +128,7 @@ More on logging in [diagnostics samples](https://github.com/Azure/azure-sdk-for-
 
 When a service call fails `Azure.RequestFailedException` would get thrown. The exception type provides a status property with an HTTP status code and an error_code property with a service-specific error code.
 
-```rust
+```rust no_run
 match client.get_secret("NonexistentSecret").await {
     Ok(secret) => println!("Secret: {:?}", secret),
     Err(e) => match e {
@@ -147,7 +147,7 @@ More on handling responses in [response samples](https://github.com/Azure/azure-
 
 If a service call returns multiple values in pages, it would return `Pageable<T>/AsyncPageable<T>` as a result. You can iterate over `AsyncPageable` directly or in pages.
 
-```rust
+```rust no_run
 // call a service method, which returns AsyncPageable<T>
 let all_secret_properties = client.get_properties_of_secrets().await?;
 
@@ -164,7 +164,7 @@ Some operations take long time to complete and require polling for their status.
 
 The `wait_for_completion` method is an easy way to wait for operation completion and get the resulting value.
 
-```rust
+```rust no_run
 // create a client
 let client = SecretClient::new("http://example.com", DefaultAzureCredential::default(), Default::default());
 
@@ -186,7 +186,7 @@ More on long-running operations in [long-running operation samples](https://gith
 Besides general configuration of _service clients_ through `ClientOptions`, it is possible to customize the requests sent by _service clients_
 using protocol methods or convenience APIs that expose `RequestContext` as a parameter.
 
-```rust
+```rust no_run
 let mut context = RequestContext::new();
 context.add_classifier(404, false);
 
@@ -206,7 +206,7 @@ Mocking is enabled by:
 
 For example, the ConfigurationClient.get method can be mocked (with [Mockall](https://github.com/asomers/mockall)) as follows:
 
-```rust
+```rust no_run
 // Create a mock response
 let mock_response = MockResponse::new();
 
