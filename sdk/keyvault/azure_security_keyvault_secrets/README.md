@@ -126,10 +126,7 @@ The following section provides several code snippets using the `SecretClient`, c
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{
-    models::{SecretBundle, SecretSetParameters},
-    ResourceExt, SecretClient,
-};
+use azure_security_keyvault_secrets::{models::SecretSetParameters, ResourceExt, SecretClient};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -146,7 +143,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let secret: SecretBundle = client
+    let secret = client
         .set_secret("secret-name", secret_set_parameters.try_into()?, None)
         .await?
         .into_body()
@@ -169,7 +166,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{models::SecretBundle, SecretClient};
+use azure_security_keyvault_secrets::SecretClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -181,7 +178,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Retrieve a secret using the secret client.
-    let secret: SecretBundle = client
+    let secret = client
         .get_secret("secret-name", "secret-version", None)
         .await?
         .into_body()
