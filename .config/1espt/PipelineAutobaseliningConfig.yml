@@ -66,11 +66,11 @@ pipelines:
           lastModifiedDate: 2025-02-13
       binary:
         credscan:
-          lastModifiedDate: 2025-02-13
+          lastModifiedDate: 2025-02-14
         binskim:
-          lastModifiedDate: 2025-02-13
+          lastModifiedDate: 2025-02-14
         spotbugs:
-          lastModifiedDate: 2025-02-13
+          lastModifiedDate: 2025-02-14
   7471:
     retail:
       source:
