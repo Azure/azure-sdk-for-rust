@@ -93,8 +93,8 @@ impl BlobContainerClient {
             .get_properties(options)
             .await?;
 
-        Ok(ContainerProperties::build_from_response_headers(
-            response.headers(),
-        ))
+        let container_properties: Option<ContainerProperties> =
+            response.headers().get_optional()?;
+        Ok(container_properties.unwrap())
     }
 }

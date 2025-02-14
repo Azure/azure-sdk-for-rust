@@ -5,7 +5,8 @@ use azure_core::StatusCode;
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredentialBuilder;
 use azure_storage_blob::{
-    clients::BlobContainerClient, models::BlobContainerClientGetPropertiesOptions,
+    clients::BlobContainerClient,
+    models::{BlobContainerClientGetPropertiesOptions, LeaseState},
     BlobClientOptions,
 };
 use std::{env, error::Error};
@@ -37,7 +38,13 @@ mod tests {
 
         // Assert
         assert!(response.is_ok());
-        //TODO: Assert fields
+
+        let container_properties = response?;
+        assert_eq!(
+            container_properties.lease_state,
+            Some(LeaseState::Available)
+        );
+        assert!(container_properties.version.is_some());
 
         container_client.delete_container(None).await?;
         Ok(())
