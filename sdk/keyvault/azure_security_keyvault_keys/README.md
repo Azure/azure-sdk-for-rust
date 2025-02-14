@@ -100,6 +100,7 @@ The following section provides several code snippets using the `KeyClient`, cove
 * [Update an existing key](#update-an-existing-key)
 * [Delete a key](#delete-a-key)
 * [List keys](#list-keys)
+* [Encrypt and decrypt](#encrypt-and-decrypt)
 
 ### Create a key
 
