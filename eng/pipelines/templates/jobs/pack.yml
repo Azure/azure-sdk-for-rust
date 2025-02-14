@@ -64,3 +64,4 @@ jobs:
       ArtifactPath: $(Build.ArtifactStagingDirectory)
       ArtifactName: ${{ parameters.PipelineArtifactName }}
       CustomCondition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'))
+      
