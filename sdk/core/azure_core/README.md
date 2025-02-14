@@ -2,7 +2,7 @@
 
 `azure_core` provides shared primitives, abstractions, and helpers for modern Rust Azure SDK client libraries.
 These libraries follow the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html)
-and can be easily identified by package and namespaces names starting with 'azure_', e.g. `azure_identity`.
+and can be easily identified by package and namespaces names starting with `azure_`, e.g. `azure_identity`.
 
 `azure_core` allows client libraries to expose common functionality in a consistent fashion,
 so that once you learn how to use these APIs in one client library, you will know how to use them in other client libraries.
@@ -57,7 +57,7 @@ You can easily find these client types as their names end with the word _Client_
 For example, `SecretClient` can be used to call the Key Vault service and interact with secrets,
 and `KeyClient` can be used to access Key Vault service cryptographic keys.
 
-These client types can be instantiated by calling a simple `new` or `builder` function that takes various configuration options.These options are passed as a parameter that extends `ClientOptions` class exposed by `azure_core`.
+These client types can be instantiated by calling a simple `new` function that takes various configuration options.These options are passed as a parameter that extends `ClientOptions` class exposed by `azure_core`.
 Various service specific options are usually added to its subclasses, but a set of SDK-wide options are
 available directly on `ClientOptions`.
 
@@ -130,75 +130,84 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-More on response types in [response samples](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/Response.md).
+### Handling Errors Results
 
-### Setting up console logging
-
-To create an Azure SDK log listener that outputs messages to console use `AzureEventSourceListener::create_console_logger` method.
+When a service call fails, the returned `Result` will contain an `Error`. The `Error` type provides a status property with an HTTP status code and an error_code property with a service-specific error code.
 
 ```rust no_run
-// Setup a listener to monitor logged events.
-let listener = AzureEventSourceListener::create_console_logger();
-```
+use azure_core::{error::HttpError, Response, StatusCode};
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::SecretClient;
 
-More on logging in [diagnostics samples](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/Diagnostics.md).
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // create a client
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
 
-### Reporting Errors `RequestFailedException`
-
-When a service call fails `Azure.RequestFailedException` would get thrown. The exception type provides a status property with an HTTP status code and an error_code property with a service-specific error code.
-
-```rust no_run
-match client.get_secret("NonexistentSecret").await {
-    Ok(secret) => println!("Secret: {:?}", secret),
-    Err(e) => match e {
-        RequestFailedException { status: 404, error_code, .. } => {
-            // handle not found error
-            println!("ErrorCode: {}", error_code);
+    match client.get_secret("secret_name", "", None).await {
+        Ok(secret) => println!("Secret: {:?}", secret.into_body().await?.value),
+        Err(e) => match e {
+            azure_core::Error::HttpResponse { status, error_code, .. } if status == StatusCode::NotFound => {
+                // handle not found error
+                if let Some(code) = error_code {
+                    println!("ErrorCode: {}", code);
+                } else {
+                    println!("Secret not found, but no error code provided.");
+                }
+            },
+            _ => println!("An error occurred: {:?}", e),
         },
-        _ => println!("An error occurred: {:?}", e),
-    },
+    }
+    
+    Ok(())
 }
 ```
 
-More on handling responses in [response samples](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/Response.md).
+### Consuming Service Methods Returning `Pager<T>`
 
-### Consuming Service Methods Returning `AsyncPageable<T>`
-
-If a service call returns multiple values in pages, it would return `Pageable<T>/AsyncPageable<T>` as a result. You can iterate over `AsyncPageable` directly or in pages.
+If a service call returns multiple values in pages, it would return `Result<Pager<T>>` as a result. You can iterate over `AsyncPageable` directly or in pages.
 
 ```rust no_run
-// call a service method, which returns AsyncPageable<T>
-let all_secret_properties = client.get_properties_of_secrets().await?;
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::{ResourceExt, SecretClient};
+use futures::TryStreamExt;
 
-while let Some(secret_properties) = all_secret_properties.next().await {
-    println!("{}", secret_properties.name);
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a new secret client
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Get pager stream
+    let mut pager = client.get_secrets(None)?.into_stream();
+
+    // Poll pager until there are no more SecretListResults
+    while let Some(secrets) = pager.try_next().await? {
+        // If Secrets List is None try next page
+        let Some(secrets) = secrets.into_body().await?.value else {
+            continue;
+        };
+
+        // Loop through secrets in Secrets List
+        for secret in secrets {
+            // Get the secret name from the ID.
+            let name = secret.resource_id()?.name;
+            println!("Found Secret with Name: {}", name);
+        }
+    }
+
+    Ok(())
 }
 ```
-
-For more information on paged responses, see [Pagination with the Azure SDK for Rust](https://learn.microsoft.com/rust/azure/sdk/pagination).
-
-### Consuming Long-Running Operations Using `Operation<T>`
-
-Some operations take long time to complete and require polling for their status. Methods starting long-running operations return `*Operation<T>` types.
-
-The `wait_for_completion` method is an easy way to wait for operation completion and get the resulting value.
-
-```rust no_run
-// create a client
-let client = SecretClient::new("http://example.com", DefaultAzureCredential::default(), Default::default());
-
-// Start the operation
-let mut operation = client.start_delete_secret("SecretName").await?;
-
-// Wait for the operation to complete
-let response = operation.wait_for_completion().await?;
-let value = response.value;
-
-println!("{}", value.name);
-println!("{:?}", value.scheduled_purge_date);
-```
-
-More on long-running operations in [long-running operation samples](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/LongRunningOperations.md).
 
 ### Customizing Requests Using `RequestContext`
 
@@ -211,8 +220,6 @@ context.add_classifier(404, false);
 
 let response = client.get_pet("pet1", context).await?;
 ```
-
-More on request customization in [RequestContext samples](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/RequestContext.md).
 
 ### Mocking
 
@@ -247,23 +254,7 @@ let client = mock;
 let secret = client.get_secret("Name").await?;
 ```
 
-More on mocking in [Unit testing and mocking with the Azure SDK for Rust](https://learn.microsoft.com/rust/azure/sdk/unit-testing-mocking).
-
-## Distributed tracing with OpenTelemetry
-
-Azure SDKs are instrumented for distributed tracing using [OpenTelemetry](https://opentelemetry.io/). Distributed tracing allows to follow request through multiple services, record how long network or logical call take along with structured properties describing such operations.
-
-More on diagnostics in [diagnostics samples](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/Diagnostics.md).
-
-To setup distributed tracing for your application follow your observability vendor documentation. If you use Azure Monitor, follow the [Start Monitoring Application](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-enable?tabs=aspnetcore) guide.
-
-## Troubleshooting
-
-Three main ways of troubleshooting failures are [inspecting exceptions](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/Response.md#handling-exceptions), enabling [logging](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/Diagnostics.md#Logging), and [distributed tracing](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/Diagnostics.md#Distributed-tracing)
-
-## Next steps
-
-Explore and install [available Azure SDK libraries](https://azure.github.io/azure-sdk/releases/latest/rust.html).
+<!-- ## Troubleshooting -->
 
 ## Contributing
 
@@ -274,7 +265,6 @@ This project welcomes contributions and suggestions. Most contributions require 
 When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA.
 
 This project has adopted the [Microsoft Open Source Code of Conduct]. For more information see the [Code of Conduct FAQ] or contact <opencode@microsoft.com> with any additional questions or comments.
-
 
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/core/azure_core/src
 [Package (crates.io)]: https://crates.io/crates/azure_core
