@@ -21,6 +21,8 @@ pub mod iso8601;
 pub mod rfc7231;
 pub mod unix_time;
 
+pub use unix_time::parse_unix_time;
+
 /// RFC 3339: Date and Time on the Internet: Timestamps.
 ///
 /// <https://www.rfc-editor.org/rfc/rfc3339>
