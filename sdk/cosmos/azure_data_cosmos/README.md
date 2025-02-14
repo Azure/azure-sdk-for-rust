@@ -10,7 +10,7 @@ This client library enables client applications to connect to Azure Cosmos DB vi
 
 Install the Azure Cosmos DB SDK for Rust with cargo:
 
-```bash
+```sh
 cargo add azure_data_cosmos
 ```
 
@@ -43,16 +43,19 @@ The following section provides several code snippets covering some of the most c
 
 ### Create Cosmos DB Client
 
-The clients support different forms of authentication. The Azure Cosmos DB SDK for Rust supports authorization via Microsoft Entra identities or an account key. However, support for account keys is only available when the `key_auth` feature is enabled in your Cargo.toml file.
-
-```toml
-[dependencies]
-azure_data_cosmos = { version = "...", features = ["key_auth"] }
-```
-
-We **strongly** recommend using Microsoft Entra ID for authentication, rather than account keys.
+In order to interact with the Azure Cosmos DB service, you'll need to create an instance of the `CosmosClient`. You need an endpoint URL and credentials to instantiate a client object.
 
 **Using Microsoft Entra ID**
+
+The example shown below use a `DefaultAzureCredential`, which is appropriate for most local development environments. Additionally, we recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
+
+The `DefaultAzureCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
+
+```sh
+az login
+```
+
+Instantiate a `DefaultAzureCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
 
 ```rust
 use azure_identity::DefaultAzureCredential;
@@ -60,12 +63,20 @@ use azure_data_cosmos::CosmosClient;
 
 async fn example() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
-    let cosmos_client = CosmosClient::new("myAccountEndpointURL", credential, None)?;
+    let cosmos_client = CosmosClient::new("myAccountEndpointURL", credential.clone(), None)?;
     Ok(())
 }
 ```
 
 **Using account keys**
+
+Cosmos DB also supports account keys, though we strongly recommend using Entra ID authentication. To use account keys, you will need to enable the `key_auth` feature:
+
+```sh
+cargo add azure_data_cosmos --features key_auth
+```
+
+Once that feature is enabled, you can create a client like this:
 
 ```rust
 use azure_core::credentials::Secret;
@@ -102,9 +113,9 @@ Using the above created database for creating a container, like this:
 
 ```rust
 use azure_data_cosmos::models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties};
-use azure_data_cosmos::CreateContainerOptions;
+use azure_data_cosmos::{CosmosClient, CreateContainerOptions};
 
-async fn example(cosmos_client: azure_data_cosmos::CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
+async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
     let properties = ContainerProperties {
         id: "aContainer".into(),
         partition_key: PartitionKeyDefinition::new(vec!["/id".into()]),
@@ -124,7 +135,7 @@ async fn example(cosmos_client: azure_data_cosmos::CosmosClient) -> Result<(), B
 
 ```rust
 use serde::{Serialize, Deserialize};
-use azure_data_cosmos::models::PatchDocument;
+use azure_data_cosmos::{CosmosClient, models::PatchDocument};
 
 #[derive(Serialize, Deserialize)]
 struct Item {
@@ -133,7 +144,7 @@ struct Item {
     pub value: String,
 }
 
-async fn example(cosmos_client: azure_data_cosmos::CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
+async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
     let item = Item {
         id: "1".into(),
         partition_key: "partition1".into(),
@@ -176,10 +187,6 @@ async fn example(cosmos_client: azure_data_cosmos::CosmosClient) -> Result<(), B
 
 ## Next steps
 
-### Client library support
-
-Client and management libraries <!-- TODO: Update link and uncomment when Rust SDK has a page on the releases site.> listed on the [Azure SDK release page](https://azure.github.io/azure-sdk/releases/latest/python.html)</!--> that support Microsoft Entra authentication accept credentials from this library. You can learn more about using these libraries in their documentation, which is <!-- TODO: uncomment when Rust SDK has a release page.>linked from the release page</!-->available at [Docs.rs](https://Docs.rs/azure_data_cosmos).
-
 ### Provide feedback
 
 If you encounter bugs or have suggestions, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues).
@@ -194,6 +201,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 <!-- LINKS -->
 [Azure subscription]: https://azure.microsoft.com/free/
+[Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [API reference documentation]: https://docs.rs/azure_data_cosmos/latest/azure_data_cosmos/
 [Azure Cosmos DB for NoSQL documentation]: https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/
 [Package (crates.io)]: https://crates.io/crates/azure_data_cosmos
