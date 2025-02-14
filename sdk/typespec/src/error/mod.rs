@@ -247,8 +247,8 @@ impl From<std::io::Error> for Error {
     }
 }
 
-impl From<core::str::ParseBoolError> for Error {
-    fn from(error: core::str::ParseBoolError) -> Self {
+impl From<std::str::ParseBoolError> for Error {
+    fn from(error: std::str::ParseBoolError) -> Self {
         Self::new(ErrorKind::DataConversion, error)
     }
 }
