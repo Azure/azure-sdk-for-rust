@@ -124,16 +124,17 @@ async fn test_download_blob() -> Result<(), Box<dyn Error>> {
         .await?;
     let response = blob_client
         .download_blob(Some(BlobBlobClientDownloadOptions::default()))
-        .await;
+        .await?;
 
     // Assert
-    assert!(response.is_ok());
-    let (status_code, headers, response_body) = response.unwrap().deconstruct();
+    // assert!(response.is_ok());
+    let (status_code, headers, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(
         "21",
         headers.get_str(&HeaderName::from_static("content-length"))?
     );
+    // TODO: Collect bytes
     assert_eq!(
         "test download content",
         response_body.collect_string().await?
