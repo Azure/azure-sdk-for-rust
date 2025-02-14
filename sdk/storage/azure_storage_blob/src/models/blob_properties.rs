@@ -6,7 +6,7 @@ use azure_core::{
         FromHeaders, HeaderName, Headers, BLOB_ACCESS_TIER, BLOB_TYPE, CREATION_TIME, LEASE_STATE,
         LEASE_STATUS, SERVER_ENCRYPTED,
     },
-    Etag, LeaseStatus,
+    Error, Etag, LeaseStatus,
 };
 use typespec_client_core::fmt::SafeDebug;
 
@@ -39,8 +39,7 @@ pub struct BlobProperties {
 }
 
 impl FromHeaders for BlobProperties {
-    type Error = url::ParseError;
-
+    type Error = Error;
     fn header_names() -> &'static [&'static str] {
         &[
             "content-length",
@@ -52,48 +51,46 @@ impl FromHeaders for BlobProperties {
         ]
     }
 
-    fn from_headers(headers: &Headers) -> Result<Option<Self>, Self::Error> {
+    fn from_headers(headers: &Headers) -> Result<Option<Self>, Error> {
         let mut properties = BlobProperties {
             ..Default::default()
         };
 
-        let access_tier_inferred: bool = headers
-            .get_optional_as(&BLOB_ACCESS_TIER_INFERRED)
-            .unwrap()
-            .unwrap();
-        properties.access_tier_inferred = Some(access_tier_inferred);
+        let access_tier_inferred: Option<bool> =
+            headers.get_optional_as(&BLOB_ACCESS_TIER_INFERRED)?;
+        properties.access_tier_inferred = access_tier_inferred;
 
-        let access_tier: Option<AccessTier> = headers.get_optional_as(&BLOB_ACCESS_TIER).unwrap();
+        let access_tier: Option<AccessTier> = headers.get_optional_as(&BLOB_ACCESS_TIER)?;
         properties.access_tier = access_tier;
 
-        let blob_type: Option<BlobType> = headers.get_optional_as(&BLOB_TYPE).unwrap();
+        let blob_type: Option<BlobType> = headers.get_optional_as(&BLOB_TYPE)?;
         properties.blob_type = blob_type;
 
-        let content_length: Option<i64> = headers.get_optional_as(&CONTENT_LENGTH).unwrap();
+        let content_length: Option<i64> = headers.get_optional_as(&CONTENT_LENGTH)?;
         properties.content_length = content_length;
 
-        let content_md5: Option<String> = headers.get_optional_as(&CONTENT_MD5).unwrap();
-        properties.content_md5 = content_md5;
+        let content_md5 = headers.get_optional_str(&CONTENT_MD5);
+        properties.content_md5 = content_md5.map(|s| s.to_string());
 
-        let content_type: Option<String> = headers.get_optional_as(&CONTENT_TYPE).unwrap();
-        properties.content_type = content_type;
+        let content_type = headers.get_optional_str(&CONTENT_TYPE);
+        properties.content_type = content_type.map(|s| s.to_string());
 
-        let creation_time: Option<String> = headers.get_optional_as(&CREATION_TIME).unwrap();
-        properties.creation_time = creation_time;
+        let creation_time = headers.get_optional_str(&CREATION_TIME);
+        properties.creation_time = creation_time.map(|s| s.to_string());
 
-        let etag: Option<Etag> = headers.get_optional_as(&ETAG).unwrap();
+        let etag: Option<Etag> = headers.get_optional_as(&ETAG)?;
         properties.etag = etag;
 
-        let last_modified: Option<String> = headers.get_optional_as(&LAST_MODIFIED).unwrap();
-        properties.last_modified = last_modified;
+        let last_modified = headers.get_optional_str(&LAST_MODIFIED);
+        properties.last_modified = last_modified.map(|s| s.to_string());
 
-        let lease_state: Option<LeaseState> = headers.get_optional_as(&LEASE_STATE).unwrap();
+        let lease_state: Option<LeaseState> = headers.get_optional_as(&LEASE_STATE)?;
         properties.lease_state = lease_state;
 
-        let lease_status: Option<LeaseStatus> = headers.get_optional_as(&LEASE_STATUS).unwrap();
+        let lease_status: Option<LeaseStatus> = headers.get_optional_as(&LEASE_STATUS)?;
         properties.lease_status = lease_status;
 
-        let server_encrypted: Option<bool> = headers.get_optional_as(&SERVER_ENCRYPTED).unwrap();
+        let server_encrypted: Option<bool> = headers.get_optional_as(&SERVER_ENCRYPTED)?;
         properties.server_encrypted = server_encrypted;
 
         Ok(Some(properties))
