@@ -55,8 +55,8 @@ impl BlobContainerClient {
         &self.endpoint
     }
 
-    pub fn container_name(&self) -> String {
-        self.container_name.clone()
+    pub fn container_name(&self) -> &String {
+        &self.container_name
     }
 
     pub async fn create_container(
@@ -65,7 +65,7 @@ impl BlobContainerClient {
     ) -> Result<Response<()>> {
         let response = self
             .client
-            .get_blob_container_client(self.container_name())
+            .get_blob_container_client(self.container_name.clone())
             .create(options)
             .await?;
         Ok(response)
@@ -77,7 +77,7 @@ impl BlobContainerClient {
     ) -> Result<Response<()>> {
         let response = self
             .client
-            .get_blob_container_client(self.container_name())
+            .get_blob_container_client(self.container_name.clone())
             .delete(options)
             .await?;
         Ok(response)
@@ -89,7 +89,7 @@ impl BlobContainerClient {
     ) -> Result<ContainerProperties> {
         let response = self
             .client
-            .get_blob_container_client(self.container_name())
+            .get_blob_container_client(self.container_name.clone())
             .get_properties(options)
             .await?;
 

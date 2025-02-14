@@ -61,12 +61,12 @@ impl BlobClient {
         &self.endpoint
     }
 
-    pub fn container_name(&self) -> String {
-        self.container_name.clone()
+    pub fn container_name(&self) -> &String {
+        &self.container_name
     }
 
-    pub fn blob_name(&self) -> String {
-        self.blob_name.clone()
+    pub fn blob_name(&self) -> &String {
+        &self.blob_name
     }
 
     pub async fn get_blob_properties(
@@ -75,7 +75,7 @@ impl BlobClient {
     ) -> Result<BlobProperties> {
         let response = self
             .client
-            .get_blob_blob_client(self.container_name(), self.blob_name())
+            .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
             .get_properties(options)
             .await?;
 
@@ -89,7 +89,7 @@ impl BlobClient {
     ) -> Result<Response> {
         let response = self
             .client
-            .get_blob_blob_client(self.container_name(), self.blob_name())
+            .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
             .download(options)
             .await?;
         Ok(response)
@@ -112,7 +112,7 @@ impl BlobClient {
 
         let response = self
             .client
-            .get_blob_block_blob_client(self.container_name(), self.blob_name())
+            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
             .upload(data, content_length, Some(options))
             .await?;
         Ok(response)

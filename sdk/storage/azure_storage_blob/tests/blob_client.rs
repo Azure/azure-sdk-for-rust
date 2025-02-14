@@ -40,7 +40,7 @@ async fn test_get_blob_properties() -> Result<(), Box<dyn Error>> {
         .upload_blob(
             RequestContent::from(data.to_vec()),
             true,
-            data.len() as i64,
+            i64::try_from(data.len())?,
             None,
         )
         .await?;
@@ -118,7 +118,7 @@ async fn test_download_blob() -> Result<(), Box<dyn Error>> {
         .upload_blob(
             RequestContent::from(data.to_vec()),
             true,
-            data.len() as i64,
+            i64::try_from(data.len())?,
             None,
         )
         .await?;
@@ -174,7 +174,7 @@ async fn test_upload_blob() -> Result<(), Box<dyn Error>> {
         .upload_blob(
             RequestContent::from(data.to_vec()),
             false,
-            data.len() as i64,
+            i64::try_from(data.len())?,
             None,
         )
         .await?;
@@ -216,7 +216,7 @@ async fn test_upload_blob_overwrite() -> Result<(), Box<dyn Error>> {
         .upload_blob(
             RequestContent::from(data.to_vec()),
             false,
-            data.len() as i64,
+            i64::try_from(data.len())?,
             None,
         )
         .await?;
@@ -226,7 +226,7 @@ async fn test_upload_blob_overwrite() -> Result<(), Box<dyn Error>> {
         .upload_blob(
             RequestContent::from(data2.to_vec()),
             true,
-            data2.len() as i64,
+            i64::try_from(data2.len())?,
             None,
         )
         .await?;
