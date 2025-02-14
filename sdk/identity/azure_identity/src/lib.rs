@@ -3,6 +3,8 @@
 
 #![doc = include_str!("../README.md")]
 
+mod run_command;
+
 mod authorization_code_flow;
 mod credentials;
 mod env;

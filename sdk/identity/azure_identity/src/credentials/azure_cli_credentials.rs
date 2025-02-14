@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::credentials::cache::TokenCache;
-use async_process::Command;
+use crate::{credentials::cache::TokenCache, run_command::run_command};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
@@ -193,7 +192,7 @@ impl AzureCliCredential {
             args.join(" "),
         );
 
-        match Command::new(program).args(args).output().await {
+        match run_command(program, args).await {
             Ok(az_output) if az_output.status.success() => {
                 let output = str::from_utf8(&az_output.stdout)?;
 

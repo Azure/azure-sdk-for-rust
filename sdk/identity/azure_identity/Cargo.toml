@@ -25,9 +25,7 @@ async-trait.workspace = true
 openssl = { workspace = true, optional = true }
 pin-project.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-async-process.workspace = true
+tokio = { workspace = true, optional = true }
 
 [target.'cfg(unix)'.dependencies]
 tz-rs = { workspace = true, optional = true }
@@ -46,6 +44,7 @@ default = ["reqwest", "old_azure_cli"]
 reqwest = ["azure_core/reqwest"]
 reqwest_rustls = ["azure_core/reqwest_rustls"]
 client_certificate = ["openssl"]
+tokio_process = ["tokio"]
 
 # If you are using and Azure CLI version older than 2.54.0 from November 2023,
 # upgrade your Azure CLI version or enable this feature.
