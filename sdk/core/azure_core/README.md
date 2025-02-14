@@ -21,18 +21,17 @@ you can find the crates.io package [here][Package (crates.io)].
 The main shared concepts of `azure_core` (and so Azure SDK libraries using `azure_core`) include:
 
 - Configuring service clients, e.g. configuring retries, logging (`ClientOptions`).
-- Accessing HTTP response details (`Response`, `Response<T>`).
-- Calling long-running operations (`Operation<T>`).
-- Paging and asynchronous streams (`AsyncPageable<T>`).
-- Exceptions for reporting errors from service requests in a consistent fashion. (`RequestFailedException`).
-- Customizing requests (`RequestContext`).
+- Accessing HTTP response details (`Response<T>`).
+- Paging and asynchronous streams (`Pager<T>`).
+- Errors from service requests in a consistent fashion. (`azure_core::Error`).
+- Customizing requests (`ClientMethodOptions`).
 - Abstractions for representing Azure SDK credentials. (`TokenCredentials`).
 
 Below, you will find sections explaining these shared concepts in more detail.
 
 ### Thread safety
 
-We guarantee that all client instance methods are thread-safe and independent of each other ([guideline](https://azure.github.io/azure-sdk/rust_introduction.html#rust-service-methods-thread-safety)). This ensures that the recommendation of reusing client instances is always safe, even across threads.
+We guarantee that all client instance methods are thread-safe and independent of each other ([guideline](https://azure.github.io/azure-sdk/rust_introduction.html)). This ensures that the recommendation of reusing client instances is always safe, even across threads.
 
 ### Additional concepts
 <!-- CLIENT COMMON BAR -->
@@ -69,7 +68,7 @@ use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = SecretClientOptions {
-        api_version: "7.0".to_string(),
+        api_version: "7.5".to_string(),
         client_options: ClientOptions::default(),
     };
 
@@ -112,7 +111,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The into_body() function for accessing the deserialized result of the call
     let secret = response.into_body().await?;
 
-        // get response again because it was moved in above statement
+    // get response again because it was moved in above statement
     let response: Response<SecretBundle> = client.get_secret("SecretName", "", None).await?;
 
     // .. and the deconstruct() method for accessing all the details of the HTTP response
