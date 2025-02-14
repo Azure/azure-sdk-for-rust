@@ -21,11 +21,11 @@ you can find the crates.io package [here][Package (crates.io)].
 The main shared concepts of `azure_core` (and so Azure SDK libraries using `azure_core`) include:
 
 - Configuring service clients, e.g. configuring retries, logging (`ClientOptions`).
-- Accessing HTTP response details (`Response`, `Response<T>`).
-- Calling long-running operations (`Operation<T>`).
-- Paging and asynchronous streams (`AsyncPageable<T>`).
-- Exceptions for reporting errors from service requests in a consistent fashion. (`RequestFailedException`).
-- Customizing requests (`RequestContext`).
+- Accessing HTTP response details (`Response<T>`).
+- Calling long-running operations (`Poller<T>`).
+- Paging and asynchronous streams (`Pager<T>`).
+- Errors from service requests in a consistent fashion. (`azure_core::Error`).
+- Customizing requests (`ClientMethodOptions`).
 - Abstractions for representing Azure SDK credentials. (`TokenCredentials`).
 
 Below, you will find sections explaining these shared concepts in more detail.
