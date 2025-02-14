@@ -10,15 +10,15 @@ pub mod clients {
     pub mod blob_client;
     pub mod blob_container_client;
     pub mod blob_service_client;
-    pub use blob_client::BlobClient;
-    pub use blob_container_client::BlobContainerClient;
-    // pub use blob_service_client::BlobServiceClient;
     pub use crate::generated::clients::{
         BlobAppendBlobClient, BlobBlobClient, BlobBlockBlobClient,
         BlobClient as GeneratedBlobClient, BlobClientOptions,
         BlobContainerClient as GeneratedContainerClient, BlobPageBlobClient,
         BlobServiceClient as GeneratedServiceClient,
     };
+    pub use blob_client::BlobClient;
+    pub use blob_container_client::BlobContainerClient;
+    pub use blob_service_client::BlobServiceClient;
 }
 
 pub mod models {

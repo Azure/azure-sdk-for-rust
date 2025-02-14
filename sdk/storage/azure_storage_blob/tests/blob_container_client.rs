@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::StatusCode;
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredentialBuilder;
 use azure_storage_blob::{
@@ -45,8 +46,6 @@ mod tests {
     #[recorded::test(live)]
     async fn test_get_container_properties_invalid_container() -> Result<(), Box<dyn Error>> {
         // Setup
-
-        use azure_core::StatusCode;
         let storage_account_name = env::var("AZURE_STORAGE_ACCOUNT_NAME")
             .expect("Failed to get environment variable: AZURE_STORAGE_ACCOUNT_NAME");
         let endpoint = format!("https://{}.blob.core.windows.net/", storage_account_name);
