@@ -151,7 +151,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_keys::{models::KeyBundle, KeyClient};
+use azure_security_keyvault_keys::KeyClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -181,10 +181,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_keys::{
-    models::{KeyAttributes, KeyUpdateParameters},
-    KeyClient,
-};
+use azure_security_keyvault_keys::{models::KeyUpdateParameters, KeyClient};
 use std::collections::HashMap;
 
 #[tokio::main]
@@ -238,9 +235,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Delete a key using the key client.
-    client
-        .delete_key("key-name".into(), None)
-        .await?;
+    client.delete_key("key-name".into(), None).await?;
 
     Ok(())
 }
@@ -252,7 +247,7 @@ This example lists all the keys in the specified Azure Key Vault.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_keys::{ResourceExt, KeyClient};
+use azure_security_keyvault_keys::{KeyClient, ResourceExt};
 use futures::TryStreamExt;
 
 #[tokio::main]
@@ -359,7 +354,6 @@ For example, if you try to retrieve a key that doesn't exist in your Azure Key V
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_keys::KeyClient;
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
@@ -369,14 +363,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    match client
-        .get_key(
-            "key-name".into(),
-            "".into(),
-            None,
-        )
-        .await
-    {
+    match client.get_key("key-name".into(), "".into(), None).await {
         Ok(response) => println!("Key: {:#?}", response.into_body().await?.key),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }
