@@ -24,10 +24,8 @@ The main shared concepts of `azure_core` (and so Azure SDK libraries using `azur
 - Accessing HTTP response details (`Response<T>`).
 - Paging and asynchronous streams (`Pager<T>`).
 - Errors from service requests in a consistent fashion. (`azure_core::Error`).
-- Customizing requests (`ClientMethodOptions`).
+- Customizing requests (`ClientOptions`).
 - Abstractions for representing Azure SDK credentials. (`TokenCredentials`).
-
-Below, you will find sections explaining these shared concepts in more detail.
 
 ### Thread safety
 
@@ -37,11 +35,9 @@ We guarantee that all client instance methods are thread-safe and independent of
 <!-- CLIENT COMMON BAR -->
 [Client options](#configuring-service-clients-using-clientoptions) |
 [Accessing the response](#accessing-http-response-details-using-responset) |
-[Long-running operations](#consuming-long-running-operations-using-operationt) |
-<!-- [Handling failures](#reporting-errors-requestfailedexception) |
-[Diagnostics](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/samples/Diagnostics.md) |
-[Mocking](https://learn.microsoft.com/rust/azure/sdk/unit-testing-mocking) |
-[Client lifetime](https://devblogs.microsoft.com/azure-sdk/lifetime-management-and-thread-safety-guarantees-of-azure-sdk-rust-clients/) -->
+[Handling Errors Results](#handling-errors-results) |
+[Consuming Service Methods Returning `Pager<T>`](#consuming-service-methods-returning-pagert)
+
 <!-- CLIENT COMMON BAR -->
 
 ## Examples
@@ -206,51 +202,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-```
-
-### Customizing Requests Using `RequestContext`
-
-Besides general configuration of _service clients_ through `ClientOptions`, it is possible to customize the requests sent by _service clients_
-using protocol methods or convenience APIs that expose `RequestContext` as a parameter.
-
-```rust no_run
-let mut context = RequestContext::new();
-context.add_classifier(404, false);
-
-let response = client.get_pet("pet1", context).await?;
-```
-
-### Mocking
-
-One of the most important cross-cutting features of our new client libraries using `azure_core` is that they are designed for mocking.
-Mocking is enabled by:
-
-- providing a protected parameterless constructor on client types.
-- making service methods virtual.
-- providing APIs for constructing model types returned from virtual service methods. To find these factory methods look for types with the _ModelFactory_ suffix, e.g. `SecretModelFactory`.
-
-For example, the ConfigurationClient.get method can be mocked (with [Mockall](https://github.com/asomers/mockall)) as follows:
-
-```rust no_run
-// Create a mock response
-let mock_response = MockResponse::new();
-
-// Create a mock value
-let mock_value = SecretModelFactory::key_vault_secret(
-    SecretModelFactory::secret_properties("http://example.com".parse().unwrap())
-);
-
-// Create a client mock
-let mut mock = MockSecretClient::new();
-
-// Setup client method
-mock.expect_get_secret()
-    .with(eq("Name"), eq(None), eq(Default::default()))
-    .returning(move |_, _, _| Ok(Response::from_value(mock_value.clone(), mock_response.clone())));
-
-// Use the client mock
-let client = mock;
-let secret = client.get_secret("Name").await?;
 ```
 
 <!-- ## Troubleshooting -->
