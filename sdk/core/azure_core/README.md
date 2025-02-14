@@ -69,7 +69,7 @@ use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = SecretClientOptions {
-        api_version: "7.0".to_string(),
+        api_version: "7.5".to_string(),
         client_options: ClientOptions::default(),
     };
 
