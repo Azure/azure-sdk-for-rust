@@ -1,4 +1,8 @@
-// Copyright (c) Microsoft Corporation. All Rights reserved
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+#![doc = include_str!("../README.md")]
+
 #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
 mod fe2o3;
 
