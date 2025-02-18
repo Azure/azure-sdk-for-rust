@@ -1,5 +1,4 @@
 async-lock
-async-process
 async-stream
 async-trait
 azure_core
