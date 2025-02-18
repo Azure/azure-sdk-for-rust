@@ -13,6 +13,9 @@ parameters:
 - name: GenerateApiReviewForManualOnly
   type: boolean
   default: false
+- name: IsMainPipeline
+  type: boolean
+  default: false
 - name: oneESTemplateTag
   type: string
   default: release
@@ -21,6 +24,7 @@ extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
   parameters:
     oneESTemplateTag: ${{ parameters.oneESTemplateTag }}
+    isMainPipeline: ${{ parameters.IsMainPipeline }}
     stages:
     - stage: Build
       variables:
