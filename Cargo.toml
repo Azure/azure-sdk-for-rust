@@ -73,7 +73,6 @@ path = "sdk/identity/azure_identity"
 
 [workspace.dependencies]
 async-lock = "3.0"
-async-process = "2.0"
 async-stream = { version = "0.3.5" }
 async-trait = "0.1"
 base64 = "0.22"
