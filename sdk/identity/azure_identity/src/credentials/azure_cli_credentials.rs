@@ -6,10 +6,10 @@ use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
     json::from_json,
-    process::run_command,
+    process::ProcessRunner,
 };
 use serde::Deserialize;
-use std::{str, sync::Arc};
+use std::{ffi::OsStr, fmt::Debug, str, sync::Arc};
 use time::OffsetDateTime;
 use tracing::trace;
 
@@ -151,19 +151,31 @@ impl CliTokenResponse {
 #[derive(Debug)]
 pub struct AzureCliCredential {
     cache: TokenCache,
+    process_runner: Box<dyn ProcessRunner>,
 }
 
 impl AzureCliCredential {
     /// Create a new `AzureCliCredential`.
     pub fn new() -> azure_core::Result<Arc<Self>> {
+        Self::new_with_process_runner(azure_core::process::new_process_runner())
+    }
+
+    /// Create a new `AzureCliCredential`.
+    pub fn new_with_process_runner(
+        process_runner: Box<dyn ProcessRunner>,
+    ) -> azure_core::Result<Arc<Self>> {
         // TODO check `az version` to see if it's installed
         Ok(Arc::new(Self {
             cache: TokenCache::new(),
+            process_runner,
         }))
     }
 
     /// Get an access token for an optional resource
-    async fn get_access_token(scopes: Option<&[&str]>) -> azure_core::Result<CliTokenResponse> {
+    async fn get_access_token(
+        process_runner: &dyn ProcessRunner,
+        scopes: Option<&[&str]>,
+    ) -> azure_core::Result<CliTokenResponse> {
         // on window az is a cmd and it should be called like this
         // see https://doc.rust-lang.org/nightly/std/process/struct.Command.html
         let program = if cfg!(target_os = "windows") {
@@ -193,7 +205,10 @@ impl AzureCliCredential {
             args.join(" "),
         );
 
-        match run_command(program, args).await {
+        let args = args.iter().map(|arg| arg.as_ref()).collect::<Vec<&OsStr>>();
+
+        let fut = std::pin::pin!(process_runner.run_command(program.as_ref(), &args));
+        match fut.await {
             Ok(az_output) if az_output.status.success() => {
                 let output = str::from_utf8(&az_output.stdout)?;
 
@@ -219,18 +234,18 @@ impl AzureCliCredential {
 
     /// Returns the current subscription ID from the Azure CLI.
     pub async fn get_subscription() -> azure_core::Result<String> {
-        let tr = Self::get_access_token(None).await?;
+        let tr = Self::get_access_token(&*azure_core::process::new_process_runner(), None).await?;
         Ok(tr.subscription)
     }
 
     /// Returns the current tenant ID from the Azure CLI.
     pub async fn get_tenant() -> azure_core::Result<String> {
-        let tr = Self::get_access_token(None).await?;
+        let tr = Self::get_access_token(&*azure_core::process::new_process_runner(), None).await?;
         Ok(tr.tenant)
     }
 
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        let tr = Self::get_access_token(Some(scopes)).await?;
+        let tr = Self::get_access_token(&*self.process_runner, Some(scopes)).await?;
         let expires_on = tr.expires_on()?;
         Ok(AccessToken::new(tr.access_token, expires_on))
     }
