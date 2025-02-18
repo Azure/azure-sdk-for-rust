@@ -76,60 +76,7 @@ Cosmos DB also supports account keys, though we strongly recommend using Entra I
 cargo add azure_data_cosmos --features key_auth
 ```
 
-Once that feature is enabled, you can create a client like this:
-
-```rust
-use azure_core::credentials::Secret;
-use azure_data_cosmos::CosmosClient;
-
-const COSMOS_DB_ENDPOINT: &str = "someEndpoint";
-const COSMOS_DB_KEY: &str = "someKey";
-
-async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    let key = Secret::from(COSMOS_DB_KEY);
-    let cosmos_client = CosmosClient::with_key(COSMOS_DB_ENDPOINT, key, None)?;
-    Ok(())
-}
-```
-
-### Create Database
-
-**NOTE:** Creating a database requires authenticating with an account key, which requires the `key_auth` feature to be enabled. See [Create Cosmos DB Client](#create-cosmos-db-client "Create Cosmos DB client") for more information.
-
-Using the client created in previous example, you can create a database like this:
-
-```rust
-async fn example(cosmos_client: azure_data_cosmos::CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
-    let response = cosmos_client.create_database("myDatabase", None).await?;
-    Ok(())
-}
-```
-
-### Create Container
-
-**NOTE:** Creating a container requires authenticating with an account key, which requires the `key_auth` feature to be enabled. See [Create Cosmos DB Client](#create-cosmos-db-client "Create Cosmos DB client") for more information.
-
-Using the above created database for creating a container, like this:
-
-```rust
-use azure_data_cosmos::models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties};
-use azure_data_cosmos::{CosmosClient, CreateContainerOptions};
-
-async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::Error>> {
-    let properties = ContainerProperties {
-        id: "aContainer".into(),
-        partition_key: PartitionKeyDefinition::new(vec!["/id".into()]),
-        ..Default::default()
-    };
-    let options = CreateContainerOptions {
-        throughput: Some(ThroughputProperties::manual(400)),
-        ..Default::default()
-    };
-    let database = cosmos_client.database_client("myDatabase");
-    let response = database.create_container(properties, Some(options)).await?;
-    Ok(())
-}
-```
+For more information, see the [API reference documentation].
 
 ### CRUD operation on Items
 
