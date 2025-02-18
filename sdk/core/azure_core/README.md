@@ -1,10 +1,10 @@
 # Azure Core shared client library for Rust
 
 `azure_core` provides shared primitives, abstractions, and helpers for modern Rust Azure SDK client libraries.
-These libraries follow the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html)
-and can be easily identified by package and namespaces names starting with `azure_`, e.g. `azure_identity`.
+These libraries follow the [Azure SDK Design Guidelines for Rust][guidelines]
+and can typically be identified by package and namespaces names starting with `azure_`, e.g. `azure_identity`.
 
-`azure_core` allows client libraries to expose common functionality in a consistent fashion,
+`azure_core` allows client libraries to expose common functionality in a consistent fashion
 so that once you learn how to use these APIs in one client library, you will know how to use them in other client libraries.
 
 [Source code] | [Package (crates.io)] | [API Reference Documentation]
@@ -13,12 +13,12 @@ so that once you learn how to use these APIs in one client library, you will kno
 
 Typically, you will not need to install `azure_core`;
 it will be installed for you when you install one of the client libraries using it.
-In case you want to install it explicitly (to implement your own client library, for example),
+In case you want to install it explicitly - to implement your own client library, for example -
 you can find the crates.io package [here][Package (crates.io)].
 
 ## Key concepts
 
-The main shared concepts of `azure_core` (and so Azure SDK libraries using `azure_core`) include:
+The main shared concepts of `azure_core` - and Azure SDK libraries using `azure_core` - include:
 
 - Configuring service clients, e.g. configuring retries, logging (`ClientOptions`).
 - Accessing HTTP response details (`Response<T>`).
@@ -29,22 +29,22 @@ The main shared concepts of `azure_core` (and so Azure SDK libraries using `azur
 
 ### Thread safety
 
-We guarantee that all client instance methods are thread-safe and independent of each other ([guideline](https://azure.github.io/azure-sdk/rust_introduction.html)). This ensures that the recommendation of reusing client instances is always safe, even across threads.
+We guarantee that all client instance methods are thread-safe and independent of each other ([guidelines]). This ensures that the recommendation of reusing client instances is always safe, even across threads.
 
 ### Additional concepts
+
 <!-- CLIENT COMMON BAR -->
 [Client options](#configuring-service-clients-using-clientoptions) |
 [Accessing the response](#accessing-http-response-details-using-responset) |
 [Handling Errors Results](#handling-errors-results) |
 [Consuming Service Methods Returning `Pager<T>`](#consuming-service-methods-returning-pagert)
-
 <!-- CLIENT COMMON BAR -->
 
 ## Examples
 
-**NOTE:** Samples in this file apply only to packages that follow [Azure SDK Design Guidelines](https://azure.github.io/azure-sdk/rust_introduction.html). Names of such packages usually start with `azure_`.
+**NOTE:** Samples in this file apply only to packages that follow [Azure SDK Design Guidelines][guidelines]. Names of such packages typically start with `azure_`.
 
-### Configuring Service Clients Using `ClientOptions`
+### Configuring service clients using `ClientOptions`
 
 Azure SDK client libraries typically expose one or more _service client_ types that
 are the main starting points for calling corresponding Azure services.
@@ -63,12 +63,13 @@ use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+
     let options = SecretClientOptions {
         api_version: "7.5".to_string(),
-        client_options: ClientOptions::default(),
+        ..Default::default()
     };
 
-    let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
         "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
@@ -79,10 +80,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-### Accessing HTTP Response Details Using `Response<T>`
+### Accessing HTTP response details using `Response<T>`
 
 _Service clients_ have methods that can be used to call Azure services. We refer to these client methods as _service methods_.
-_Service methods_ return a shared `azure_core` type `Response<T>` (in rare cases its non-generic sibling, a raw `Response`).
+_Service methods_ return a shared `azure_core` type `Response<T>` where `T` is either a `Model` type or a `ResponseBody` representing a raw stream of bytes.
 This type provides access to both the deserialized result of the service call, and to the details of the HTTP response returned from the server.
 
 ```rust no_run
@@ -101,16 +102,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // call a service method, which returns Response<T>
-    let response: Response<SecretBundle> = client.get_secret("SecretName", "", None).await?;
+    let response = client.get_secret("secret-name", "", None).await?;
 
-    // Response<T> has two main accessors.
-    // The into_body() function for accessing the deserialized result of the call
+    // Response<T> has two main accessors:
+    // 1. The `into_body()` function consumes self to deserialize into a model type
     let secret = response.into_body().await?;
 
     // get response again because it was moved in above statement
-    let response: Response<SecretBundle> = client.get_secret("SecretName", "", None).await?;
+    let response: Response<SecretBundle> = client.get_secret("secret-name", "", None).await?;
 
-    // .. and the deconstruct() method for accessing all the details of the HTTP response
+    // 2. The deconstruct() method for accessing all the details of the HTTP response
     let (status, headers, body) = response.deconstruct();
 
     // for example, you can access HTTP status
@@ -125,12 +126,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-### Handling Errors Results
+### Handling errors results
 
 When a service call fails, the returned `Result` will contain an `Error`. The `Error` type provides a status property with an HTTP status code and an error_code property with a service-specific error code.
 
 ```rust no_run
-use azure_core::{error::HttpError, Response, StatusCode};
+use azure_core::{error::{ErrorKind, HttpError}, Response, StatusCode};
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::SecretClient;
 
@@ -144,10 +145,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    match client.get_secret("secret_name", "", None).await {
+    match client.get_secret("secret-name", "", None).await {
         Ok(secret) => println!("Secret: {:?}", secret.into_body().await?.value),
-        Err(e) => match e {
-            azure_core::Error::HttpResponse { status, error_code, .. } if status == StatusCode::NotFound => {
+        Err(e) => match e.kind() {
+            ErrorKind::HttpResponse { status, error_code, .. } if *status == StatusCode::NotFound => {
                 // handle not found error
                 if let Some(code) = error_code {
                     println!("ErrorCode: {}", code);
@@ -155,17 +156,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     println!("Secret not found, but no error code provided.");
                 }
             },
-            _ => println!("An error occurred: {:?}", e),
+            _ => println!("An error occurred: {e:?}"),
         },
     }
-    
+
     Ok(())
 }
 ```
 
-### Consuming Service Methods Returning `Pager<T>`
+### Consuming service methods returning `Pager<T>`
 
-If a service call returns multiple values in pages, it would return `Result<Pager<T>>` as a result. You can iterate over `AsyncPageable` directly or in pages.
+If a service call returns multiple values in pages, it would return `Result<Pager<T>>` as a result. You can iterator over each page's vector of results.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
@@ -174,7 +175,7 @@ use futures::TryStreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a new secret client
+    // create a client
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
         "https://your-key-vault-name.vault.azure.net/",
@@ -182,21 +183,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    // Get pager stream
+    // get a stream
     let mut pager = client.get_secrets(None)?.into_stream();
 
-    // Poll pager until there are no more SecretListResults
+    // poll the pager until there are no more SecretListResults
     while let Some(secrets) = pager.try_next().await? {
-        // If Secrets List is None try next page
         let Some(secrets) = secrets.into_body().await?.value else {
             continue;
         };
 
-        // Loop through secrets in Secrets List
+        // loop through secrets in SecretsListResults
         for secret in secrets {
-            // Get the secret name from the ID.
+            // get the secret name from the ID
             let name = secret.resource_id()?.name;
-            println!("Found Secret with Name: {}", name);
+            println!("Found secret with name: {}", name);
         }
     }
 
@@ -221,3 +221,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [API Reference Documentation]: https://docs.rs/azure_core
 [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
+[guidelines]: https://azure.github.io/azure-sdk/rust_introduction.html
