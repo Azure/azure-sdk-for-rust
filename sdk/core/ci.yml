@@ -13,6 +13,7 @@ trigger:
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
+    IsMainPipeline: true
     ServiceDirectory: core
     Artifacts:
     - name: azure_core
