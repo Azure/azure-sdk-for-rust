@@ -65,7 +65,7 @@
 ###########
 # Eng Sys
 ###########
-/eng/                    @weshaggard @heaths @RickWinter
+/eng/                    @hallipr @weshaggard @heaths @RickWinter
 /eng/common/             @Azure/azure-sdk-eng
 /.github/workflows/      @Azure/azure-sdk-eng
 /.github/CODEOWNERS      @RickWinter @ronniegeraghty @Azure/azure-sdk-eng

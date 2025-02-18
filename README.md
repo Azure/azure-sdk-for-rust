@@ -1,6 +1,10 @@
 # Azure SDK for Rust
 
-This repository is for the active development of the Azure SDK for Rust. For consumers of the SDK we recommend visiting [Docs.rs](https://docs.rs/) and looking up the docs for any of libraries in the SDK.
+This repository is for the active development of the Azure SDK for Rust. For consumers of the SDK, we recommend visiting [Docs.rs](https://docs.rs/) and looking up the docs for any of libraries in the SDK.
+
+## Crates 📦
+
+[All Azure SDK for Rust crates](https://crates.io/users/azure-sdk) are published on crates.io.
 
 ## Getting started
 
@@ -8,22 +12,19 @@ To get started with a library, see the `README.md` file located in the library's
 
 For full file code examples, check out the `/examples` directory in any library project folder.
 
-> Microsoft is developing the official Azure SDK for Rust crates and has no plans to update this unofficial crate.
-> In the future we may release an official version that may have a different package name.
-> If releasing an official version of this crate is important to you [let us know](https://github.com/Azure/azure-sdk-for-rust/issues/new/choose).
->
-> Source for this crate can now be found in <https://github.com/Azure/azure-sdk-for-rust/tree/legacy>.
-> To monitor for an official, supported version of this crate, see <https://aka.ms/azsdk/releases>.
+### Installing crates
 
-## Crates
+Use `cargo` to install crates from the Azure SDK for Rust.
 
-[All Azure SDK for Rust crates](https://crates.io/teams/github:azure:azure-sdk-publish-rust) are published on crates.io.
+```sh
+cargo add azure_identity azure_security_keyvault_secrets tokio
+```
 
 ## Status
 
 🚨 WARNING 🚨: This project is under active development. Be aware that large breaking changes may happen before 1.0 is reached.
 
-This project is the successor to the `azure_sdk*` crates from [MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust). The crates have been renamed, so those older crates should be considered fully deprecated. See [history](HISTORY.md) for more details.
+This project is the successor to the `azure_sdk*` crates from [MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust). The crates have been renamed, so those older crates should be considered fully deprecated.
 
 ## Project Structure
 
