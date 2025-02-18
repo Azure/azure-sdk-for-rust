@@ -56,7 +56,7 @@ reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
 reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
 test = ["typespec_client_core/test"]
 tokio_fs = ["typespec_client_core/tokio_fs"]
-tokio_process = ["dep:tokio"]
+tokio_process = ["dep:tokio", "tokio/process"]
 tokio_sleep = ["typespec_client_core/tokio_sleep"]
 xml = ["typespec_client_core/xml"]
 
