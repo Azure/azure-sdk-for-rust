@@ -1,39 +1,43 @@
-<!-- cspell: words -->
+# Consumer Module Overview
 
-# consumer Module Overview
+This module contains the [`ConsumerClient`] struct and related types, which are used for receiving events from an Event Hub.
 
-This module contains the `ConsumerClient` struct and related types, which are used for receiving events from an Event Hub.
-
-The `ConsumerClient` provides functionality to establish a connection to an Event Hub, receive events from a specific partition,
+The [`ConsumerClient`] provides functionality to establish a connection to an Event Hub, receive events from a specific partition,
 and manage the lifecycle of the consumer client.
 
 ## Examples
 
-### Creating a new `ConsumerClient` instance
+### Creating a new [`ConsumerClient`] instance
 
 ```rust no_run
-use azure_messaging_eventhubs::consumer::ConsumerClient;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_messaging_eventhubs::ConsumerClient;
 
-let my_credential = DefaultAzureCredential::new().unwrap();
-let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
+#[tokio::main]
+async fn main() -> Result<(), azure_core::Error> {
+    let my_credential = DefaultAzureCredential::new()?;
+    let consumer = ConsumerClient::builder()
+        .open("my_namespace", "my_eventhub", my_credential)
+        .await?;
+    Ok(())
+}
 ```
 
 ### Opening a connection to the Event Hub
 
 ```rust no_run
-use azure_messaging_eventhubs::consumer::ConsumerClient;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_messaging_eventhubs::ConsumerClient;
 
 #[tokio::main]
-async fn main() {
-    let my_credential = DefaultAzureCredential::new().unwrap();
-    let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
+async fn main() -> Result<(), azure_core::Error> {
+    let my_credential = DefaultAzureCredential::new()?;
+    let result = ConsumerClient::builder()
+        .open("my_namespace", "my_eventhub", my_credential)
+        .await;
 
-    let result = consumer.open().await;
-
-     match result {
-        Ok(()) => {
+    match result {
+        Ok(consumer) => {
             // Connection opened successfully
             println!("Connection opened successfully");
         }
@@ -42,21 +46,22 @@ async fn main() {
             eprintln!("Error opening connection: {:?}", err);
         }
     }
+    Ok(())
 }
 ```
 
 ### Closing the connection to the Event Hub
 
 ```rust no_run
-use azure_messaging_eventhubs::consumer::ConsumerClient;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_messaging_eventhubs::ConsumerClient;
 
 #[tokio::main]
-async fn main() {
-    let my_credential = DefaultAzureCredential::new().unwrap();
-    let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
-
-    consumer.open().await.unwrap();
+async fn main() -> Result<(), azure_core::Error> {
+    let my_credential = DefaultAzureCredential::new()?;
+    let consumer = ConsumerClient::builder()
+        .open("my_namespace", "my_eventhub", my_credential)
+        .await?;
 
     let result = consumer.close().await;
 
@@ -70,28 +75,34 @@ async fn main() {
             eprintln!("Error closing connection: {:?}", err);
         }
     }
+    Ok(())
 }
 ```
 
 ### Receiving events from a specific partition of the Event Hub
 
 ```rust no_run
-use azure_messaging_eventhubs::consumer::ConsumerClient;
-use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 use async_std::stream::StreamExt;
+use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_messaging_eventhubs::ConsumerClient;
+use futures::pin_mut;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let my_credential = DefaultAzureCredential::new().unwrap();
-    let consumer = ConsumerClient::new("my_namespace".to_string(), "my_eventhub".to_string(), None, my_credential, None);
+    let consumer = ConsumerClient::builder()
+        .open("my_namespace", "my_eventhub", my_credential)
+        .await?;
     let partition_id = "0";
-    let options = None;
 
-    consumer.open().await.unwrap();
+    let message_receiver = consumer
+        .open_receiver_on_partition(partition_id, None)
+        .await?;
 
-    let event_stream = consumer.receive_events_on_partition(partition_id.to_string(), options).await;
+    let event_stream = message_receiver.stream_events();
 
-    tokio::pin!(event_stream);
+    pin_mut!(event_stream);
+
     while let Some(event_result) = event_stream.next().await {
         match event_result {
             Ok(event) => {
@@ -104,5 +115,6 @@ async fn main() {
             }
         }
     }
+    Ok(())
 }
 ```

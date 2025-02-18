@@ -1,4 +1,5 @@
 # Copyright (c) Microsoft Corp. All Rights Reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 [package]
 name = "azure_messaging_eventhubs"
@@ -11,21 +12,21 @@ repository = "https://github.com/azure/azure-sdk-for-rust"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_messaging_eventhubs"
 
-keywords = ["sdk", "azure", "rest", "iot", "cloud", "eventhubs"]
+keywords = ["sdk", "azure", "messaging", "cloud", "eventhubs"]
 categories = ["api-bindings"]
 
 edition = "2021"
 
 [dependencies]
+async-std.workspace = true
+async-stream.workspace = true
 azure_core.workspace = true
 azure_core_amqp.workspace = true
+futures.workspace = true
 time.workspace = true
 tracing.workspace = true
 url.workspace = true
 uuid.workspace = true
-futures.workspace = true
-async-std.workspace = true
-async-stream.workspace = true
 
 [build-dependencies]
 rustc_version.workspace = true

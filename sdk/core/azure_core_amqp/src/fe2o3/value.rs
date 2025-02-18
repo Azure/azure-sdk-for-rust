@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-// cspell: words amqp
 
 use crate::value::{
     AmqpDescribed, AmqpDescriptor, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue,
@@ -42,6 +41,13 @@ const CE_ZERO_MILLISECONDS: i64 = -62_135_596_800_000;
 
 impl From<fe2o3_amqp_types::primitives::Timestamp> for AmqpTimestamp {
     fn from(timestamp: fe2o3_amqp_types::primitives::Timestamp) -> Self {
+        // The AMQP timestamp is the number of milliseconds since the Unix epoch.
+        // AMQP brokers represent the lowest value as -62_135_596_800_000 (the
+        // number of milliseconds between the Unix epoch (1/1/1970) and year 1 CE) as
+        // a sentinel for a time which is not set.
+        if (timestamp.milliseconds() as u64) == CE_ZERO_MILLISECONDS as u64 {
+            return AmqpTimestamp(None);
+        }
         AmqpTimestamp(
             std::time::UNIX_EPOCH.checked_add(std::time::Duration::from_millis(
                 timestamp.milliseconds() as u64,
@@ -204,14 +210,14 @@ impl From<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             #[cfg(feature = "cplusplus")]
             AmqpValue::Composite(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
                 serde_amqp::described::Described {
-                    descriptor: d.descriptor.clone().into(),
-                    value: d.value.clone().into(),
+                    descriptor: d.descriptor().clone().into(),
+                    value: d.value().clone().into(),
                 },
             )),
             AmqpValue::Described(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
                 serde_amqp::described::Described {
-                    descriptor: d.descriptor.clone().into(),
-                    value: d.value.clone().into(),
+                    descriptor: d.descriptor().clone().into(),
+                    value: d.value().clone().into(),
                 },
             )),
             AmqpValue::Unknown => todo!(),
@@ -269,7 +275,7 @@ impl From<fe2o3_amqp_types::primitives::Value> for AmqpValue {
                         AmqpDescriptor::Name(symbol.into())
                     }
                 };
-                AmqpValue::Described(Box::new(AmqpDescribed { descriptor, value }))
+                AmqpValue::Described(Box::new(AmqpDescribed::new(descriptor, value)))
             }
             fe2o3_amqp_types::primitives::Value::Decimal128(_) => todo!(),
             fe2o3_amqp_types::primitives::Value::Decimal32(_) => todo!(),
@@ -282,7 +288,7 @@ impl PartialEq<AmqpDescribed>
     for serde_amqp::described::Described<fe2o3_amqp_types::primitives::Value>
 {
     fn eq(&self, other: &AmqpDescribed) -> bool {
-        self.descriptor == other.descriptor && self.value == other.value
+        self.descriptor == *other.descriptor() && self.value == *other.value()
     }
 }
 

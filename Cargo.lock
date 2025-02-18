@@ -322,6 +322,8 @@ version = "0.22.0"
 dependencies = [
  "async-lock",
  "async-trait",
+ "azure_identity",
+ "azure_security_keyvault_secrets",
  "bytes",
  "futures",
  "hmac",
@@ -370,8 +372,11 @@ dependencies = [
  "azure_core",
  "azure_core_test_macros",
  "azure_identity",
+ "azure_security_keyvault_secrets",
  "clap",
  "futures",
+ "rand 0.8.5",
+ "rand_chacha 0.3.1",
  "serde",
  "serde_json",
  "tokio",
@@ -422,6 +427,7 @@ dependencies = [
  "async-process",
  "async-trait",
  "azure_core",
+ "azure_security_keyvault_secrets",
  "clap",
  "futures",
  "oauth2",
@@ -461,6 +467,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_security_keyvault_keys"
+version = "0.1.0"
+dependencies = [
+ "azure_core",
+ "azure_core_test",
+ "azure_identity",
+ "azure_security_keyvault_test",
+ "futures",
+ "rand 0.8.5",
+ "rustc_version",
+ "serde",
+ "serde_json",
+ "sha2",
+ "time",
+ "tokio",
+ "typespec_client_core",
+]
+
+[[package]]
 name = "azure_security_keyvault_secrets"
 version = "0.1.0"
 dependencies = [
@@ -468,6 +493,7 @@ dependencies = [
  "azure_core",
  "azure_core_test",
  "azure_identity",
+ "azure_security_keyvault_test",
  "futures",
  "rand 0.8.5",
  "rustc_version",
@@ -476,6 +502,13 @@ dependencies = [
  "time",
  "tokio",
  "typespec_client_core",
+]
+
+[[package]]
+name = "azure_security_keyvault_test"
+version = "0.1.0"
+dependencies = [
+ "tokio",
 ]
 
 [[package]]
@@ -492,6 +525,20 @@ dependencies = [
 [[package]]
 name = "azure_storage_common"
 version = "0.1.0"
+
+[[package]]
+name = "azure_template"
+version = "0.1.0"
+dependencies = [
+ "azure_template_core",
+]
+
+[[package]]
+name = "azure_template_core"
+version = "0.1.0"
+dependencies = [
+ "azure_template",
+]
 
 [[package]]
 name = "backtrace"
@@ -721,6 +768,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "core-foundation"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b55271e5c8c478ad3f38ad24ef34923091e0548492a266d19b3c0b4d82574c63"
+dependencies = [
+ "core-foundation-sys",
+ "libc",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -826,10 +883,6 @@ dependencies = [
  "quote",
  "syn 2.0.90",
 ]
-
-[[package]]
-name = "docs"
-version = "0.1.0"
 
 [[package]]
 name = "dyn-clone"
@@ -1310,11 +1363,11 @@ dependencies = [
  "hyper",
  "hyper-util",
  "rustls",
+ "rustls-native-certs",
  "rustls-pki-types",
  "tokio",
  "tokio-rustls",
  "tower-service",
- "webpki-roots",
 ]
 
 [[package]]
@@ -1694,7 +1747,7 @@ dependencies = [
  "openssl-probe",
  "openssl-sys",
  "schannel",
- "security-framework",
+ "security-framework 2.11.1",
  "security-framework-sys",
  "tempfile",
 ]
@@ -2216,6 +2269,7 @@ dependencies = [
  "pin-project-lite",
  "quinn",
  "rustls",
+ "rustls-native-certs",
  "rustls-pemfile",
  "rustls-pki-types",
  "serde",
@@ -2232,7 +2286,6 @@ dependencies = [
  "wasm-bindgen-futures",
  "wasm-streams",
  "web-sys",
- "webpki-roots",
  "windows-registry",
 ]
 
@@ -2297,6 +2350,18 @@ dependencies = [
  "rustls-webpki",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "rustls-native-certs"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fcff2dd52b58a8d98a70243663a0d234c4e2b79235637849d15913394a247d3"
+dependencies = [
+ "openssl-probe",
+ "rustls-pki-types",
+ "schannel",
+ "security-framework 3.0.1",
 ]
 
 [[package]]
@@ -2371,7 +2436,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "897b2245f0b511c87893af39b033e5ca9cce68824c4d7e7630b5a1d339658d02"
 dependencies = [
  "bitflags 2.6.0",
- "core-foundation",
+ "core-foundation 0.9.4",
+ "core-foundation-sys",
+ "libc",
+ "security-framework-sys",
+]
+
+[[package]]
+name = "security-framework"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1415a607e92bec364ea2cf9264646dcce0f91e6d65281bd6f2819cca3bf39c8"
+dependencies = [
+ "bitflags 2.6.0",
+ "core-foundation 0.10.0",
  "core-foundation-sys",
  "libc",
  "security-framework-sys",
@@ -3223,15 +3301,6 @@ checksum = "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "webpki-roots"
-version = "0.26.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d642ff16b7e79272ae451b7322067cdc17cadf68c23264be9d94a32319efe7e"
-dependencies = [
- "rustls-pki-types",
 ]
 
 [[package]]

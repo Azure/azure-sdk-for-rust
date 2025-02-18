@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-// cspell: words rustc AZSDK
 use rustc_version::version;
 
 fn main() {

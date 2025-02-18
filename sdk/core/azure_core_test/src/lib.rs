@@ -3,12 +3,14 @@
 
 #![doc = include_str!("../README.md")]
 
+mod credential;
 pub mod proxy;
 pub mod recorded;
 mod recording;
 
 use azure_core::Error;
 pub use azure_core::{error::ErrorKind, test::TestMode};
+pub use credential::*;
 pub use proxy::{matchers::*, sanitizers::*};
 pub use recording::*;
 use std::path::{Path, PathBuf};
@@ -125,6 +127,9 @@ impl TestContext {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
+            if mode == TestMode::Live {
+                return None;
+            }
             let path = match find_ancestor_file(self.crate_dir, ASSETS_FILE) {
                 Ok(path) => path,
                 Err(_) if mode == TestMode::Record => {

@@ -1,114 +1,176 @@
 parameters:
-  - name: ServiceDirectory
-    type: string
-    default: auto
-  - name: BeforeTestSteps
-    type: object
-    default: []
-  - name: AfterTestSteps
-    type: object
-    default: []
-  - name: TestTimeoutInMinutes
-    type: number
-    default: 60
-  - name: BuildDocs
-    type: boolean
-    default: true
-  - name: TestProxy
-    type: boolean
-    default: false
-  - name: TestPipeline
-    type: boolean
-    default: false
-  - name: GenerateApiReviewForManualOnly
-    type: boolean
-    default: false
-  - name: BuildMatrix
-    type: object
-    default:
-      - pool:
-          os: linux
-          name: $(LINUXPOOL)
-          image: $(LINUXVMIMAGE)
-        Toolchains:
-          - name: stable
-            publish: true
-          - name: msrv
-          - name: nightly
-      - pool:
-          os: windows
-          name: $(WINDOWSPOOL)
-          image: $(WINDOWSVMIMAGE)
-        Toolchains:
-          - name: stable
-          - name: msrv
-          - name: nightly
-      - pool:
-          os: macOS
-          name: $(MACPOOL)
-          vmImage: $(MACVMIMAGE)
-        Toolchains:
-          - name: stable
-          - name: msrv
-          - name: nightly
-  - name: AnalyzeToolchains
-    type: object
-    default: [stable]
+- name: ServiceDirectory
+  type: string
+  default: auto
+- name: Artifacts
+  type: object
+  default: []
+- name: PipelineArtifactName
+  type: string
+  default: packages
+- name: BeforeTestSteps
+  type: object
+  default: []
+- name: AfterTestSteps
+  type: object
+  default: []
+- name: TestTimeoutInMinutes
+  type: number
+  default: 60
+- name: TestProxy
+  type: boolean
+  default: false
+- name: TestPipeline
+  type: boolean
+  default: false
+- name: GenerateApiReviewForManualOnly
+  type: boolean
+  default: false
+- name: BuildMatrix
+  type: object
+  default:
+  - pool:
+      os: linux
+      name: $(LINUXPOOL)
+      image: $(LINUXVMIMAGE)
+    Toolchains: [stable, msrv, nightly]
+  - pool:
+      os: windows
+      name: $(WINDOWSPOOL)
+      image: $(WINDOWSVMIMAGE)
+    Toolchains: [stable, msrv, nightly]
+  - pool:
+      os: macOS
+      name: $(MACPOOL)
+      vmImage: $(MACVMIMAGE)
+    Toolchains: [stable, msrv, nightly]
+- name: AnalyzeToolchain
+  type: string
+  default: stable
 
 jobs:
-  - ${{ each matrix in parameters.BuildMatrix }}:
-      - ${{ each toolchain in matrix.Toolchains }}:
-          - job: Build_${{ matrix.pool.os }}_${{ toolchain.name }}
-            timeoutInMinutes: 90
+- job: Pack
+  displayName: "Pack Crates"
+  timeoutInMinutes: 90
 
-            pool: ${{ matrix.pool }}
+  pool:
+    name: $(LINUXPOOL)
+    image: $(LINUXVMIMAGE)
+    os: linux
 
-            steps:
-              - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
-                parameters:
-                  Paths: [/*]
+  templateContext:
+    sdl:
+      sbom:
+        enabled: true
+        additionalComponentDetectorArgs: '--DirectoryExclusionList **/target/vendor/**'
 
-              - template: /eng/pipelines/templates/steps/test-packages.yml
-                parameters:
-                  ServiceDirectory: ${{ parameters.ServiceDirectory }}
-                  Toolchain: ${{ toolchain.name }}
-                  ArtifactSuffix: ${{ matrix.pool.os }}_${{ toolchain.name }}
-                  PublishArtifacts: ${{ eq(toolchain.publish, 'true') }}
-                  UnitTests: true
-                  FunctionalTests: ${{ ne(variables['Build.Reason'], 'PullRequest') }}
+  steps:
+  - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+    parameters:
+      paths:
+      - "/*"
 
-  - ${{ each toolchain in parameters.AnalyzeToolchains }}:
-      - job: "Analyze_${{ toolchain }}"
-        condition: and(succeededOrFailed(), ne(variables['Skip.Analyze'], 'true'))
-        timeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+  - ${{ if and(eq(variables['System.TeamProject'], 'internal'), ne(variables['Build.Reason'], '')) }}:
+    - script: |
+        echo "##vso[build.addbuildtag]$(Build.Reason)"
+      displayName: Tag build reason
 
-        pool:
-          os: linux
-          name: $(LINUXPOOL)
-          image: $(LINUXVMIMAGE)
+  - ${{ if eq(parameters.TestPipeline, 'true') }}:
+    - template: /eng/common/pipelines/templates/steps/set-test-pipeline-version.yml
+      parameters:
+        PackageNames: ${{ join(',', parameters.Artifacts.*.name) }}
+        ServiceDirectory: ${{parameters.ServiceDirectory}}
+        # Crate names contain '_' and prerelease versions contain '-' e.g., `azure_core@1.0.1-beta.1`.
+        TagSeparator: '@'
+        TestPipeline: true
 
-        steps:
-          - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
-            parameters:
-              Paths: [/*]
+  - template: /eng/pipelines/templates/steps/pack-crates.yml
+    parameters:
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
 
-          - template: /eng/pipelines/templates/steps/analyze.yml
-            parameters:
-              Toolchain: ${{ toolchain }}
+  - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
+    parameters:
+      ArtifactPath: $(Build.ArtifactStagingDirectory)
+      ArtifactName: ${{ parameters.PipelineArtifactName }}
+      CustomCondition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'))
 
-          - template: /eng/common/pipelines/templates/steps/check-spelling.yml
-            parameters:
-              ContinueOnError: false
+- ${{ each matrix in parameters.BuildMatrix }}:
+  - ${{ each toolchain in matrix.Toolchains }}:
+    - job: Test_${{ matrix.pool.os }}_${{ toolchain }}
+      displayName: "Test: ${{ matrix.pool.os }} ${{ toolchain }}"
+      timeoutInMinutes: 90
+      dependsOn: Pack
+      condition: and(succeeded(), ne(variables['SkipTests'],'true'))
 
-          # Disabled until we fix crates.io link checking
-          # - template: /eng/common/pipelines/templates/steps/verify-links.yml
-          #   parameters:
-          #     ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-          #       Directory: ""
-          #       Urls: (eng/common/scripts/get-markdown-files-from-changed-files.ps1)
-          #     ${{ elseif eq(parameters.ServiceDirectory, 'auto') }}:
-          #       Directory: ""
-          #     ${{ else }}:
-          #       Directory: sdk/${{ parameters.ServiceDirectory }}
-          #     CheckLinkGuidance: $true
-          #     Condition: succeededOrFailed()
+      pool: ${{ matrix.pool }}
+
+      steps:
+      - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+        parameters:
+          paths:
+          - "/*"
+
+      - download: current
+        artifact: ${{ parameters.PipelineArtifactName }}
+
+      - template: /eng/common/pipelines/templates/steps/set-default-branch.yml@self
+
+      - template: /eng/pipelines/templates/steps/test-packages.yml
+        parameters:
+          Toolchain: ${{ toolchain }}
+          BuildArtifactName: ${{ parameters.PipelineArtifactName }}
+          UnitTests: true
+          FunctionalTests: ${{ ne(variables['Build.Reason'], 'PullRequest') }}
+
+- job: "Analyze"
+  condition: and(succeededOrFailed(), ne(variables['Skip.Analyze'], 'true'))
+  timeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+
+  pool:
+    os: linux
+    name: $(LINUXPOOL)
+    image: $(LINUXVMIMAGE)
+
+  steps:
+  - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+    parameters:
+      paths:
+      - "/*"
+      
+  - ${{ if ne(parameters.AnalyzeToolchain, 'nightly') }}:
+      - template: /eng/pipelines/templates/steps/use-rust.yml@self
+        parameters:
+          Toolchain: nightly
+
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      Toolchain: ${{ parameters.AnalyzeToolchain }}
+
+  - template: /eng/common/pipelines/templates/steps/save-package-properties.yml
+
+  - task: Powershell@2
+    displayName: "Run source analysis"
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/eng/scripts/Analyze-Code.ps1
+      arguments: >
+        -Toolchain '$(Toolchain)'
+        -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
+
+  - template: /eng/common/pipelines/templates/steps/check-spelling.yml
+    parameters:
+      ContinueOnError: false
+
+  # Disabled until we fix crates.io link checking
+  # - template: /eng/common/pipelines/templates/steps/verify-links.yml
+  #   parameters:
+  #     ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+  #       Directory: ""
+  #       Urls: (eng/common/scripts/get-markdown-files-from-changed-files.ps1)
+  #     ${{ elseif eq(parameters.ServiceDirectory, 'auto') }}:
+  #       Directory: ""
+  #     ${{ else }}:
+  #       Directory: sdk/${{ parameters.ServiceDirectory }}
+  #     CheckLinkGuidance: $true
+  #     Condition: succeededOrFailed()

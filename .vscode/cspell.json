@@ -5,6 +5,7 @@
   "ignorePaths": [
     "**/test-resources.bicep",
     "**/test-resources.json",
+    ".config",
     ".devcontainer/devcontainer.json",
     ".devcontainer/Dockerfile",
     ".devcontainer/oncreate",
@@ -51,6 +52,7 @@
     "pageables",
     "pkce",
     "pkcs",
+    "pwsh",
     "posix",
     "reqwest",
     "rustup",
@@ -78,8 +80,18 @@
       "noSuggest": true
     },
     {
+      "name": "azure_core_amqp",
+      "path": "../sdk/core/azure_core_amqp/.dict.txt",
+      "noSuggest": true
+    },
+    {
       "name": "cosmos",
       "path": "../sdk/cosmos/.dict.txt",
+      "noSuggest": true
+    },
+    {
+      "name": "eventhubs",
+      "path": "../sdk/eventhubs/.dict.txt",
       "noSuggest": true
     },
     {
@@ -121,6 +133,22 @@
       "dictionaries": [
         "crates",
         "rust-custom"
+      ]
+    },
+    {
+      "filename": "sdk/core/azure_core_amqp/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "azure_core_amqp"
+      ]
+    },
+    {
+      "filename": "sdk/eventhubs/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "eventhubs"
       ]
     },
     {

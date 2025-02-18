@@ -1,11 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-// cspell: words amqp servicebus eventhub mgmt
 
-pub mod message_fields;
-pub mod message_source;
-pub mod message_target;
-pub mod messaging_types;
+pub(crate) mod message_fields;
+pub(crate) mod message_source;
+pub(crate) mod message_target;
+pub(crate) mod messaging_types;
 
 use crate::{
     messaging::{AmqpMessage, AmqpMessageBody},

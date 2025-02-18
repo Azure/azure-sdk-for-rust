@@ -6,18 +6,17 @@ $packagePattern = "Cargo.toml"
 $GithubUri = "https://github.com/Azure/azure-sdk-for-rust"
 $PackageRepositoryUri = "https://crates.io/crates"
 
-function SetPackageVersion ($PackageName, $Version, $ServiceDirectory, $ReleaseDate, $ReplaceLatestEntryTitle=$true)
-{
-  if($null -eq $ReleaseDate)
-  {
+. (Join-Path $EngCommonScriptsDir "Helpers" "PSModule-Helpers.ps1")
+
+function SetPackageVersion ($PackageName, $Version, $ServiceDirectory, $ReleaseDate, $ReplaceLatestEntryTitle = $true) {
+  if ($null -eq $ReleaseDate) {
     $ReleaseDate = Get-Date -Format "yyyy-MM-dd"
   }
   & "$EngDir/scripts/Update-PackageVersion.ps1" -ServiceDirectory $ServiceDirectory -PackageName $PackageName `
-      -NewVersionString $Version -ReleaseDate $ReleaseDate -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle
+    -NewVersionString $Version -ReleaseDate $ReleaseDate -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle
 }
 
-function GetExistingPackageVersions ($PackageName, $GroupId=$null)
-{
+function GetExistingPackageVersions ($PackageName, $GroupId = $null) {
   try {
     $PackageName = $PackageName.ToLower()
     $response = Invoke-RestMethod -Method GET -Uri "https://crates.io/api/v1/crates/${PackageName}/versions"
@@ -27,29 +26,29 @@ function GetExistingPackageVersions ($PackageName, $GroupId=$null)
     return $existingVersions
   }
   catch {
-    if ($_.Exception.Response.StatusCode -ne 404)
-    {
+    if ($_.Exception.Response.StatusCode -ne 404) {
       LogError "Failed to retrieve package versions for ${PackageName}. $($_.Exception.Message)"
     }
     return $null
   }
 }
 
-function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory)
-{
+function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
   $allPackageProps = @()
   Push-Location $RepoRoot
   try {
     $searchPath = Join-Path $RepoRoot 'sdk' -Resolve
 
     if ($ServiceDirectory -and $ServiceDirectory -ne 'auto') {
-      $searchPath = Join-Path 'sdk' $ServiceDirectory -Resolve
+      $searchPath = Join-Path $searchPath $ServiceDirectory -Resolve
     }
 
+    # when a package is marked `publish = false` in the Cargo.toml, `cargo metadata` returns an empty array for
+    # `publish`, otherwise it returns null. We only want to include packages where `publish` is null.
     $packages = cargo metadata --format-version 1
     | ConvertFrom-Json -AsHashtable
     | Select-Object -ExpandProperty packages
-    | Where-Object { $_.manifest_path.StartsWith($searchPath) }
+    | Where-Object { $_.manifest_path.StartsWith($searchPath) -and $null -eq $_.publish }
 
     $packageManifests = @{}
     foreach ($package in $packages) {
@@ -119,4 +118,57 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory)
   }
 
   return $allPackageProps
+}
+
+function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChanges, $diff, $allPackageProperties) {
+  # if the change was in a service directory, but not in a package directory, test all the packages in the service directory
+  [array]$serviceFiles = ($diff.ChangedFiles + $diff.DeletedFiles) | ForEach-Object { $_ -replace '\\', '/' } | Where-Object { $_ -match "^sdk/.+/" }
+  # remove files that target any specific package
+  foreach ($package in $allPackageProperties) {
+    $packagePathPattern = "^$( [Regex]::Escape($package.DirectoryPath.Replace('\', '/')) )/"
+    $serviceFiles = $serviceFiles | Where-Object { "$RepoRoot/$_".Replace('\', '/') -notmatch $packagePathPattern }
+  }
+
+  $affectedServiceDirectories = $serviceFiles | ForEach-Object { $_ -replace '^sdk/(.+?)/.*', '$1' } | Sort-Object -Unique
+
+  $affectedPackages = $allPackageProperties | Where-Object { $affectedServiceDirectories -contains $_.ServiceDirectory }
+
+  [array]$additionalPackages = $affectedPackages | Where-Object { $packagesWithChanges -notcontains $_ }
+
+  # if the change affected no packages, e.g. eng/common change, we use core and template for validation
+  if ($additionalPackages.Length -eq 0) {
+    $additionalPackages += $allPackageProperties | Where-Object { $_.Name -eq "azure_core" -or $_.Name -eq "azure_template" }
+  }
+
+  return $additionalPackages
+}
+
+function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
+  #$pkg will be a FileInfo object for the Cargo.toml file in a package artifact directory
+  $package = cargo read-manifest --manifest-path $pkg.FullName | ConvertFrom-Json
+  
+  $packageName = $package.name
+  $packageVersion = $package.version
+
+  $changeLogLoc = Get-ChildItem -Path $pkg.DirectoryName -Filter "CHANGELOG.md" | Select-Object -First 1
+  $readmeContentLoc = Get-ChildItem -Path $pkg.DirectoryName -Filter "README.md" | Select-Object -First 1
+
+  if ($changeLogLoc) {
+    $releaseNotes = Get-ChangeLogEntryAsString -ChangeLogLocation $changeLogLoc -VersionString $packageVersion
+  }
+
+  if ($readmeContentLoc) {
+    $readmeContent = Get-Content -Raw $readmeContentLoc
+  }
+
+  $existingVersions = GetExistingPackageVersions -PackageName $packageName
+
+  return @{
+    PackageId      = $packageName
+    PackageVersion = $packageVersion
+    ReleaseTag     = "$packageName@$packageVersion"
+    Deployable     = $existingVersions -notcontains $packageVersion
+    ReleaseNotes   = $releaseNotes
+    ReadmeContent  = $readmeContent
+  }
 }

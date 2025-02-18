@@ -3,12 +3,13 @@
 
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
-use azure_core::Result;
-use azure_core_test::{recorded, TestContext};
+use azure_core::{Result, StatusCode};
+use azure_core_test::{recorded, TestContext, TestMode};
 use azure_security_keyvault_secrets::{
     models::{SecretSetParameters, SecretUpdateParameters},
     ResourceExt as _, SecretClient, SecretClientOptions,
 };
+use azure_security_keyvault_test::Retry;
 use futures::TryStreamExt;
 use std::collections::HashMap;
 
@@ -37,8 +38,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let secret = client
-        // TODO: https://github.com/Azure/typespec-rust/issues/223
-        .set_secret("secret-roundtrip".into(), body.try_into()?, None)
+        .set_secret("secret-roundtrip", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -47,8 +47,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
     // Get a specific version of a secret.
     let version = secret.resource_id()?.version.unwrap_or_default();
     let secret = client
-        // TODO: https://github.com/Azure/typespec-rust/issues/223
-        .get_secret("secret-roundtrip".into(), version, None)
+        .get_secret("secret-roundtrip", version.as_ref(), None)
         .await?
         .into_body()
         .await?;
@@ -77,8 +76,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let secret = client
-        // TODO: https://github.com/Azure/typespec-rust/issues/223
-        .set_secret("update-secret".into(), body.try_into()?, None)
+        .set_secret("update-secret", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -94,13 +92,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
         )])),
     };
     let secret = client
-        .update_secret(
-            // TODO: https://github.com/Azure/typespec-rust/issues/223
-            "update-secret".into(),
-            "".into(),
-            properties.try_into()?,
-            None,
-        )
+        .update_secret("update-secret", "", properties.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -130,22 +122,14 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
     // Create several secrets.
     let mut names = vec!["list-secrets-1", "list-secrets-2"];
     let secret1 = client
-        .set_secret(
-            names[0].into(),
-            r#"{"value":"secret-value-1"}"#.try_into()?,
-            None,
-        )
+        .set_secret(names[0], r#"{"value":"secret-value-1"}"#.try_into()?, None)
         .await?
         .into_body()
         .await?;
     assert_eq!(secret1.value, Some("secret-value-1".into()));
 
     let secret2 = client
-        .set_secret(
-            names[1].into(),
-            r#"{"value":"secret-value-2"}"#.try_into()?,
-            None,
-        )
+        .set_secret(names[1], r#"{"value":"secret-value-2"}"#.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -167,6 +151,67 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
         }
     }
     assert!(names.is_empty());
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn purge_secret(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
+
+    let mut options = SecretClientOptions::default();
+    recording.instrument(&mut options.client_options);
+
+    let client = SecretClient::new(
+        recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+        recording.credential(),
+        Some(options),
+    )?;
+
+    // Create a secret.
+    let secret = client
+        .set_secret(
+            "purge-secret",
+            SecretSetParameters {
+                value: Some("secret-value".into()),
+                ..Default::default()
+            }
+            .try_into()?,
+            None,
+        )
+        .await?
+        .into_body()
+        .await?;
+
+    // Delete the secret.
+    let name = secret.resource_id()?.name;
+    client.delete_secret(name.as_ref(), None).await?;
+
+    // Because deletes may not happen right away, try purging in a loop.
+    let mut retry = match recording.test_mode() {
+        TestMode::Playback => Retry::immediate(),
+        _ => Retry::progressive(None),
+    };
+
+    loop {
+        match client.purge_deleted_secret(name.as_ref(), None).await {
+            Ok(_) => {
+                println!("{name} has been purged");
+                break;
+            }
+            Err(err) if matches!(err.http_status(), Some(StatusCode::Conflict)) => {
+                println!(
+                    "Retrying in {} seconds",
+                    retry.duration().unwrap_or_default().as_secs_f32()
+                );
+                if retry.next().await.is_none() {
+                    return Err(err);
+                }
+            }
+            Err(err) => return Err(err),
+        }
+    }
 
     Ok(())
 }

@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-//cspell: words amqp SMALLUINT SMALLULONG
 
 use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 #[cfg(feature = "cplusplus")]
@@ -1082,7 +1081,7 @@ impl AmqpMessage {
     /// # Examples
     ///
     /// ```
-    /// use azure_core_amqp::messaging::AmqpMessage;
+    /// use azure_core_amqp::AmqpMessage;
     ///
     /// let mut message = AmqpMessage::default();
     /// message.set_message_id(uuid::Uuid::new_v4());
@@ -1111,8 +1110,8 @@ impl AmqpMessage {
     ///
     /// # Examples
     /// ```
-    /// use azure_core_amqp::messaging::AmqpMessage;
-    /// use azure_core_amqp::value::AmqpSymbol;
+    /// use azure_core_amqp::AmqpMessage;
+    /// use azure_core_amqp::AmqpSymbol;
     /// let mut message = AmqpMessage::default();
     /// message.add_message_annotation(AmqpSymbol::from("key"), "value");
     /// ```
@@ -1139,8 +1138,8 @@ impl AmqpMessage {
     /// # Examples
     ///
     /// ```
-    /// use azure_core_amqp::messaging::AmqpMessage;
-    /// use azure_core_amqp::messaging::AmqpMessageBody;
+    /// use azure_core_amqp::AmqpMessage;
+    /// use azure_core_amqp::AmqpMessageBody;
     ///
     /// let mut message = AmqpMessage::default();
     /// message.set_message_body(AmqpMessageBody::Value("Hello, world!".into()));
@@ -1230,7 +1229,7 @@ impl Deserializable<AmqpMessage> for AmqpMessage {
     }
 }
 
-pub mod builders {
+mod builders {
     use super::*;
 
     pub struct AmqpSourceBuilder {

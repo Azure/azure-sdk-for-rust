@@ -1,21 +1,16 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//cspell: words eventdata amqp
-
 use async_std::stream::StreamExt;
-use azure_core_amqp::{
-    messaging::{AmqpMessage, AmqpMessageProperties},
-    value::{AmqpList, AmqpValue},
-};
+use azure_core_amqp::{AmqpList, AmqpMessageProperties};
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
-    consumer::{
-        ConsumerClient, ConsumerClientOptions, ReceiveOptions, StartLocation, StartPosition,
+    models::{AmqpMessage, AmqpValue, EventData, MessageId},
+    {
+        ConsumerClient, EventDataBatchOptions, OpenReceiverOptions, ProducerClient, StartLocation,
+        StartPosition,
     },
-    models::{EventData, MessageId},
-    producer::{batch::EventDataBatchOptions, ProducerClient, ProducerClientOptions},
 };
 use futures::pin_mut;
 use std::{env, error::Error};
@@ -30,20 +25,14 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let producer = ProducerClient::new(
-        host.clone(),
-        eventhub.clone(),
-        DefaultAzureCredential::new()?,
-        Some(ProducerClientOptions {
-            application_id: Some(TEST_NAME.to_string()),
-            ..Default::default()
-        }),
-    );
-
-    assert!(producer.open().await.is_ok());
+    let credential = DefaultAzureCredential::new()?;
+    let producer = ProducerClient::builder()
+        .with_application_id(TEST_NAME)
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .await?;
 
     let partition_properties = producer
-        .get_partition_properties(EVENTHUB_PARTITION.to_string())
+        .get_partition_properties(EVENTHUB_PARTITION)
         .await?;
 
     info!(
@@ -52,7 +41,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     );
 
     let start_sequence = partition_properties.last_enqueued_sequence_number;
-    let mut batch = producer
+    let batch = producer
         .create_batch(Some(EventDataBatchOptions {
             partition_id: Some(EVENTHUB_PARTITION.to_string()),
             partition_key: Some("My Partition Key.".to_string()),
@@ -63,7 +52,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
     assert!(batch.try_add_event_data(
         EventData::builder()
             .with_body(b"Hello, World!")
-            .add_property("Message#".to_string(), 1)
+            .add_property("Message#", 1)
             .with_message_id(1)
             .build(),
         None
@@ -108,25 +97,17 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
         None
     )?);
 
-    assert!(producer.submit_batch(&batch).await.is_ok());
+    assert!(producer.send_batch(&batch, None).await.is_ok());
 
-    let consumer = ConsumerClient::new(
-        host,
-        eventhub,
-        None,
-        DefaultAzureCredential::new()?,
-        Some(ConsumerClientOptions {
-            application_id: Some(TEST_NAME.to_string()),
-            ..Default::default()
-        }),
-    );
-
-    assert!(consumer.open().await.is_ok());
-
-    let receive_stream = consumer
-        .receive_events_on_partition(
-            EVENTHUB_PARTITION.to_string(),
-            Some(ReceiveOptions {
+    let credential = DefaultAzureCredential::new()?;
+    let consumer = ConsumerClient::builder()
+        .with_application_id(TEST_NAME)
+        .open(host.as_str(), eventhub.as_str(), credential)
+        .await?;
+    let receiver = consumer
+        .open_receiver_on_partition(
+            EVENTHUB_PARTITION,
+            Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::SequenceNumber(start_sequence),
                     ..Default::default()
@@ -134,7 +115,9 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
                 ..Default::default()
             }),
         )
-        .await;
+        .await?;
+
+    let receive_stream = receiver.stream_events();
 
     pin_mut!(receive_stream);
 
@@ -145,8 +128,9 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
             assert!(f.is_ok());
             let received_event_data = f.unwrap();
             info!("Received: {:?}", received_event_data);
+            assert!(received_event_data.sequence_number().is_some());
             assert_eq!(
-                received_event_data.sequence_number(),
+                received_event_data.sequence_number().unwrap(),
                 start_sequence + message_index
             );
             if let Some(message_id) = received_event_data.event_data().message_id() {

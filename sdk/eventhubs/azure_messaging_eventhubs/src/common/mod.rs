@@ -1,15 +1,13 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-// cspell: words amqp
 use crate::{
     error::ErrorKind,
     models::{EventHubPartitionProperties, EventHubProperties},
 };
 use azure_core::error::Result;
 use azure_core_amqp::{
-    management::{AmqpManagement, AmqpManagementApis},
-    value::{AmqpOrderedMap, AmqpTimestamp, AmqpValue},
+    AmqpManagement, AmqpManagementApis, AmqpOrderedMap, AmqpTimestamp, AmqpValue,
 };
 use std::time::SystemTime;
 
@@ -43,7 +41,7 @@ impl ManagementInstance {
         Self { management }
     }
 
-    pub async fn get_eventhub_properties(&self, eventhub: String) -> Result<EventHubProperties> {
+    pub async fn get_eventhub_properties(&self, eventhub: &str) -> Result<EventHubProperties> {
         let mut application_properties: AmqpOrderedMap<String, AmqpValue> = AmqpOrderedMap::new();
         application_properties.insert(EVENTHUB_PROPERTY_NAME.to_string(), eventhub.into());
 
@@ -93,8 +91,8 @@ impl ManagementInstance {
 
     pub async fn get_eventhub_partition_properties(
         &self,
-        eventhub: String,
-        partition_id: String,
+        eventhub: &str,
+        partition_id: &str,
     ) -> Result<EventHubPartitionProperties> {
         let mut application_properties: AmqpOrderedMap<String, AmqpValue> = AmqpOrderedMap::new();
         application_properties.insert(EVENTHUB_PROPERTY_NAME.to_string(), eventhub.into());
