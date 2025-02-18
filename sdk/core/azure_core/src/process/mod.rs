@@ -15,7 +15,7 @@ pub use tokio::TokioRunner;
 mod tokio {
     use super::*;
 
-    /// Implement [`ProcessRunner`] via [`tokio::process`]
+    /// Implement [`ProcessRunner`] via [`::tokio::process`]
     #[derive(Debug)]
     pub struct TokioRunner;
 
