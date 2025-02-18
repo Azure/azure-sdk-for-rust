@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 use crate::credentials::cache::TokenCache;
-use async_process::Command;
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
     json::from_json,
+    process::run_command,
 };
 use serde::Deserialize;
 use std::{str, sync::Arc};
@@ -193,7 +193,7 @@ impl AzureCliCredential {
             args.join(" "),
         );
 
-        match Command::new(program).args(args).output().await {
+        match run_command(program, args).await {
             Ok(az_output) if az_output.status.success() => {
                 let output = str::from_utf8(&az_output.stdout)?;
 
