@@ -106,25 +106,25 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         }
     }
 
-    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()> {
+    async fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()> {
         let receiver = self.receiver.get().ok_or_else(|| {
             azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
                 "Message receiver is not set.",
             )
         })?;
-        receiver.blocking_lock().set_credit_mode(credit_mode.into());
+        receiver.lock().await.set_credit_mode(credit_mode.into());
         Ok(())
     }
 
-    fn credit_mode(&self) -> Result<ReceiverCreditMode> {
+    async fn credit_mode(&self) -> Result<ReceiverCreditMode> {
         let receiver = self.receiver.get().ok_or_else(|| {
             azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
                 "Message receiver is not set.",
             )
         })?;
-        Ok(receiver.blocking_lock().credit_mode().into())
+        Ok(receiver.lock().await.credit_mode().into())
     }
 
     async fn receive_delivery(&self) -> Result<AmqpDelivery> {

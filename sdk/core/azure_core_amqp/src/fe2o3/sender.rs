@@ -103,7 +103,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         }
     }
 
-    fn max_message_size(&self) -> azure_core::Result<Option<u64>> {
+    async fn max_message_size(&self) -> azure_core::Result<Option<u64>> {
         Ok(self
             .sender
             .get()
@@ -113,7 +113,8 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
                     "Message Sender not set.",
                 )
             })?
-            .blocking_lock()
+            .lock()
+            .await
             .max_message_size())
     }
 
