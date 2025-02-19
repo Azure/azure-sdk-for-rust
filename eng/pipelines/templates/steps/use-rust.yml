@@ -32,7 +32,11 @@ steps:
         } else {
           Write-Host "Failed to install $toolchain after $attempts attempts."
           exit 1
-        }        
+        }
+
+        # Failures to update are usually caused by file locks in Windows.
+        # Sleep for a few seconds to give the blocking process a chance to release the lock.
+        Start-Sleep -Seconds 3
       }
 
     displayName: "Use Rust ${{ parameters.Toolchain }}"
