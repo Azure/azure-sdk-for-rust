@@ -6,7 +6,11 @@ use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredentialBuilder;
 use azure_storage_blob::{
     clients::{BlobClient, BlobContainerClient},
-    models::{BlobBlobClientGetPropertiesOptions, BlobType},
+    models::{
+        BlobBlobClientGetPropertiesOptions, BlobBlockBlobClientCommitBlockListOptions,
+        BlobBlockBlobClientGetBlockListOptions, BlobBlockBlobClientStageBlockOptions, BlobType,
+        BlockListType, BlockLookupList,
+    },
     BlobClientOptions,
 };
 use std::{env, error::Error};
@@ -235,5 +239,96 @@ async fn test_upload_blob_overwrite() -> Result<(), Box<dyn Error>> {
     assert_eq!(response.status(), StatusCode::Created);
 
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn test_put_block_list() -> Result<(), Box<dyn Error>> {
+    // Setup
+    let storage_account_name = env::var("AZURE_STORAGE_ACCOUNT_NAME")
+        .expect("Failed to get environment variable: AZURE_STORAGE_ACCOUNT_NAME");
+    let endpoint = format!("https://{}.blob.core.windows.net/", storage_account_name);
+    let credential = DefaultAzureCredentialBuilder::default().build()?;
+
+    // Act
+    let container_client = BlobContainerClient::new(
+        &endpoint,
+        String::from("testcontainerpbl000"),
+        credential.clone(),
+        None,
+    )?;
+    // container_client.create_container(None).await?;
+
+    let blob_client = BlobClient::new(
+        &endpoint,
+        String::from("testcontainerpbl000"),
+        String::from("testblob"),
+        credential,
+        Some(BlobClientOptions::default()),
+    )?;
+
+    let block_1 = b"AAA";
+    let block_2 = b"BBB";
+    let block_3 = b"CCC";
+
+    let res = blob_client
+        .stage_block(
+            "1",
+            i64::try_from(block_1.len())?,
+            RequestContent::from(block_1.to_vec()),
+            Some(BlobBlockBlobClientStageBlockOptions::default()),
+        )
+        .await?;
+    println!("{:?}", res);
+    blob_client
+        .stage_block(
+            "2",
+            i64::try_from(block_2.len())?,
+            RequestContent::from(block_2.to_vec()),
+            Some(BlobBlockBlobClientStageBlockOptions::default()),
+        )
+        .await?;
+    blob_client
+        .stage_block(
+            "3",
+            i64::try_from(block_3.len())?,
+            RequestContent::from(block_3.to_vec()),
+            Some(BlobBlockBlobClientStageBlockOptions::default()),
+        )
+        .await?;
+
+    let put_block_list = blob_client
+        .get_block_list(
+            BlockListType::Uncommitted,
+            Some(BlobBlockBlobClientGetBlockListOptions::default()),
+        )
+        .await?;
+    let put_block_list: BlockLookupList = put_block_list.into_body().await?;
+    println!("PBL: {:?}", put_block_list);
+    println!(
+        "Commited: {:?}",
+        put_block_list.committed.unwrap_or_default()
+    );
+    println!("Latest: {:?}", put_block_list.latest.unwrap_or_default());
+    println!(
+        "Uncommit: {:?}",
+        put_block_list.uncommitted.unwrap_or_default()
+    );
+    // let put_block_list: RequestContent<BlockLookupList> = put_block_list.try_into()?;
+
+    // blob_client
+    //     .commit_block_list(
+    //         put_block_list,
+    //         Some(BlobBlockBlobClientCommitBlockListOptions::default()),
+    //     )
+    //     .await?;
+
+    // let response = blob_client
+    //     .get_blob_properties(Some(BlobBlobClientGetPropertiesOptions::default()))
+    //     .await?;
+
+    // println!("{:?}", response);
+
+    // container_client.delete_container(None).await?;
     Ok(())
 }

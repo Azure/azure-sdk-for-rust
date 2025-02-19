@@ -22,7 +22,7 @@ pub const BLOB_ACCESS_TIER_INFERRED: HeaderName =
 
 /// Properties of an Azure Storage blob.
 ///
-#[derive(Clone, Default, SafeDebug)]
+#[derive(Clone, Default, Debug)]
 pub struct BlobProperties {
     pub access_tier_inferred: Option<bool>,
     pub access_tier: Option<AccessTier>,

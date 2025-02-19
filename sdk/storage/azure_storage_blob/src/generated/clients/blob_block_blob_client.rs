@@ -190,6 +190,7 @@ impl BlobBlockBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
+        println!("Get_block_list: {:?}", request);
         self.pipeline.send(&ctx, &mut request).await
     }
 

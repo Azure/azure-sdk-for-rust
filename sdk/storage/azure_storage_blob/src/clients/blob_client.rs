@@ -5,14 +5,16 @@ use crate::{
     clients::GeneratedBlobClient,
     models::{
         BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions,
-        BlobBlockBlobClientUploadOptions, BlobProperties,
+        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientGetBlockListOptions,
+        BlobBlockBlobClientStageBlockOptions, BlobBlockBlobClientUploadOptions, BlobProperties,
+        BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions,
 };
 use azure_core::{
-    credentials::TokenCredential, BearerTokenCredentialPolicy, Bytes, Policy, RequestContent,
-    Response, Result, Url,
+    base64, credentials::TokenCredential, BearerTokenCredentialPolicy, Bytes, Policy,
+    RequestContent, Response, Result, Url,
 };
 use std::sync::Arc;
 
@@ -114,6 +116,49 @@ impl BlobClient {
             .client
             .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
             .upload(data, content_length, Some(options))
+            .await?;
+        Ok(response)
+    }
+
+    pub async fn commit_block_list(
+        &self,
+        blocks: RequestContent<BlockLookupList>,
+        options: Option<BlobBlockBlobClientCommitBlockListOptions<'_>>,
+    ) -> Result<Response<()>> {
+        let response = self
+            .client
+            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
+            .commit_block_list(blocks, options)
+            .await?;
+        Ok(response)
+    }
+
+    // Returns back empty
+    pub async fn get_block_list(
+        &self,
+        list_type: BlockListType,
+        options: Option<BlobBlockBlobClientGetBlockListOptions<'_>>,
+    ) -> Result<Response<BlockLookupList>> {
+        let response = self
+            .client
+            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
+            .get_block_list(list_type, options)
+            .await?;
+        Ok(response)
+    }
+
+    pub async fn stage_block(
+        &self,
+        block_id: &str,
+        content_length: i64,
+        body: RequestContent<Bytes>,
+        options: Option<BlobBlockBlobClientStageBlockOptions<'_>>,
+    ) -> Result<Response<()>> {
+        let block_id = base64::encode(block_id);
+        let response = self
+            .client
+            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
+            .stage_block(&block_id, content_length, body, options)
             .await?;
         Ok(response)
     }
