@@ -7,12 +7,6 @@ parameters:
 - name: TestTimeoutInMinutes
   type: number
   default: 60
-- name: TestProxy
-  type: boolean
-  default: true
-- name: GenerateApiReviewForManualOnly
-  type: boolean
-  default: false
 - name: oneESTemplateTag
   type: string
   default: release
@@ -33,9 +27,7 @@ extends:
           ${{ if eq(parameters.ServiceDirectory, 'template') }}:
             TestPipeline: true
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
-          TestProxy: ${{ parameters.TestProxy }}
           PipelineArtifactName: packages
-          GenerateApiReviewForManualOnly: ${{ parameters.GenerateApiReviewForManualOnly }}
 
     - template: archetype-rust-release.yml
       parameters:
