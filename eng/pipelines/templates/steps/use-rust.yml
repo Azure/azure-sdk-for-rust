@@ -34,7 +34,7 @@ steps:
           exit 1
         }
 
-        # Failures to update are usually caused by file lockes in windows.
+        # Failures to update are usually caused by file locks in Windows.
         # Sleep for a few seconds to give the blocking process a chance to release the lock.
         Start-Sleep -Seconds 3
       }
