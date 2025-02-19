@@ -7,7 +7,7 @@ parameters:
   type: boolean
 - name: PipelineArtifactName
   type: string
-  
+
 jobs:
 - job: Pack
   displayName: "Pack Crates"
@@ -64,4 +64,3 @@ jobs:
       ArtifactPath: $(Build.ArtifactStagingDirectory)
       ArtifactName: ${{ parameters.PipelineArtifactName }}
       CustomCondition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'))
-      
