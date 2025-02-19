@@ -65,10 +65,6 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
       $packageManifests[$package.name] = $package
     }
   }
-  catch {
-    # This is soft error and failure is expected for python metapackages
-    LogError "Failed to get all package properties"
-  }
   finally {
     Pop-Location
   }
@@ -146,7 +142,7 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
 function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
   #$pkg will be a FileInfo object for the Cargo.toml file in a package artifact directory
   $package = cargo read-manifest --manifest-path $pkg.FullName | ConvertFrom-Json
-  
+
   $packageName = $package.name
   $packageVersion = $package.version
 
