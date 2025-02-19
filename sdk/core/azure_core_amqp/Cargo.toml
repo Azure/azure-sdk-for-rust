@@ -18,7 +18,7 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-async-std.workspace = true
+tokio = { workspace = true }
 azure_core.workspace = true
 time.workspace = true
 tracing.workspace = true
@@ -33,7 +33,6 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
-tokio = { workspace = true }
 
 [features]
 default = ["fe2o3-amqp"]

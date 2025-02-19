@@ -16,7 +16,6 @@ use super::{
     models::{EventHubPartitionProperties, EventHubProperties},
 };
 
-use async_std::sync::Mutex;
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::{Error, Result},
@@ -35,6 +34,7 @@ use std::{
     sync::{Arc, OnceLock},
     time::Duration,
 };
+use tokio::sync::Mutex;
 use tracing::{debug, trace};
 use url::Url;
 
@@ -180,7 +180,7 @@ impl ConsumerClient {
     /// ```no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
-    /// use async_std::stream::StreamExt;
+    /// use futures::stream::StreamExt;
     /// use futures::pin_mut;
     ///
     /// #[tokio::main]

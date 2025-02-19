@@ -31,7 +31,7 @@ If you use the Azure CLI, replace `<your-resource-group-name>`, `<your-eventhubs
 Create an Event Hubs Namespace:
 
 ```azurecli
-az eventhubs namespace create --resource-group <your-resource-group-name> --name <your-eventhubs-namespace-name> --sku Standard 
+az eventhubs namespace create --resource-group <your-resource-group-name> --name <your-eventhubs-namespace-name> --sku Standard
 ```
 
 Create an Event Hub Instance:
@@ -209,7 +209,7 @@ events.
 Each message receiver can only receive messages from a single Event Hubs partition
 
 ```rust no_run
-use async_std::stream::StreamExt;
+use futures::stream::StreamExt;
 use azure_core::Error;
 use azure_messaging_eventhubs::{
     ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
@@ -217,7 +217,7 @@ use azure_messaging_eventhubs::{
 use futures::pin_mut;
 
 // By default, an event receiver only receives new events from the event hub. To receive events from earlier, specify
-// a `start_position` which represents the position from which to start receiving events. 
+// a `start_position` which represents the position from which to start receiving events.
 // In this example, events are received from the start of the partition.
 async fn receive_events(client: &ConsumerClient) -> Result<(), Error> {
     let message_receiver = client

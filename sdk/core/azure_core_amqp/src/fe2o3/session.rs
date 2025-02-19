@@ -6,12 +6,12 @@ use crate::{
     connection::AmqpConnection,
     session::{AmqpSessionApis, AmqpSessionOptions},
 };
-use async_std::sync::Mutex;
 use azure_core::{error::ErrorKind, Error, Result};
 use std::{
     borrow::BorrowMut,
     sync::{Arc, OnceLock},
 };
+use tokio::sync::Mutex;
 use tracing::{debug, trace};
 
 #[derive(Debug, Clone, Default)]

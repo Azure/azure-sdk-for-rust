@@ -2,11 +2,11 @@
 // Licensed under the MIT license.
 
 use crate::models::ReceivedEventData;
-use async_std::future::timeout;
 use async_stream::try_stream;
 use azure_core::error::Result;
 use azure_core_amqp::{AmqpDeliveryApis, AmqpReceiver, AmqpReceiverApis};
 use futures::stream::Stream;
+use tokio::time::timeout;
 use tracing::trace;
 
 /// A message receiver that can be used to receive messages from an Event Hub.
@@ -18,7 +18,7 @@ use tracing::trace;
 /// ```no_run
 /// use azure_messaging_eventhubs::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
-/// use async_std::stream::StreamExt;
+/// use futures::StreamExt;
 /// use futures::pin_mut;
 ///
 /// #[tokio::main]
@@ -73,7 +73,7 @@ impl EventReceiver {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::EventReceiver;
-    /// use async_std::stream::StreamExt;
+    /// use futures::StreamExt;
     /// use futures::pin_mut;
     ///
     /// async fn receive_events(receiver: &EventReceiver) {

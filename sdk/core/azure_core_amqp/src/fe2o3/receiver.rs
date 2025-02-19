@@ -7,10 +7,10 @@ use crate::{
     receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::AmqpSession,
 };
-use async_std::sync::Mutex;
 use azure_core::error::Result;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
+use tokio::sync::Mutex;
 use tracing::{info, trace, warn};
 
 #[derive(Default)]
@@ -113,7 +113,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
                 "Message receiver is not set.",
             )
         })?;
-        receiver.lock_blocking().set_credit_mode(credit_mode.into());
+        receiver.blocking_lock().set_credit_mode(credit_mode.into());
         Ok(())
     }
 
@@ -124,7 +124,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
                 "Message receiver is not set.",
             )
         })?;
-        Ok(receiver.lock_blocking().credit_mode().into())
+        Ok(receiver.blocking_lock().credit_mode().into())
     }
 
     async fn receive_delivery(&self) -> Result<AmqpDelivery> {
