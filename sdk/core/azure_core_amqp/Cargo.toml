@@ -18,7 +18,7 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-tokio = { workspace = true }
+tokio.workspace = true
 azure_core.workspace = true
 time.workspace = true
 tracing.workspace = true

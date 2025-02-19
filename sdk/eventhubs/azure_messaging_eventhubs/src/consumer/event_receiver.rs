@@ -18,7 +18,7 @@ use tracing::trace;
 /// ```no_run
 /// use azure_messaging_eventhubs::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
-/// use futures::StreamExt;
+/// use futures::stream::StreamExt;
 /// use futures::pin_mut;
 ///
 /// #[tokio::main]
@@ -73,7 +73,7 @@ impl EventReceiver {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::EventReceiver;
-    /// use futures::StreamExt;
+    /// use futures::stream::StreamExt;
     /// use futures::pin_mut;
     ///
     /// async fn receive_events(receiver: &EventReceiver) {
