@@ -14,11 +14,17 @@ parameters:
   - name: TestTimeoutInMinutes
     type: number
     default: 60
+  - name: TestProxy
+    type: boolean
+    default: true
 
 steps:
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
       Toolchain: ${{ parameters.Toolchain }}
+
+  - ${{ if eq(parameters.TestProxy, true) }}:
+    - template: /eng/common/testproxy/test-proxy-standalone-tool.yml
 
   - task: Powershell@2
     displayName: "Test Packages"

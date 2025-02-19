@@ -120,7 +120,7 @@ jobs:
           Toolchain: ${{ toolchain }}
           BuildArtifactName: ${{ parameters.PipelineArtifactName }}
           UnitTests: true
-          FunctionalTests: ${{ ne(variables['Build.Reason'], 'PullRequest') }}
+          FunctionalTests: true
 
 - job: "Analyze"
   condition: and(succeededOrFailed(), ne(variables['Skip.Analyze'], 'true'))
