@@ -26,9 +26,6 @@ openssl = { workspace = true, optional = true }
 pin-project.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-async-process.workspace = true
-
 [target.'cfg(unix)'.dependencies]
 tz-rs = { workspace = true, optional = true }
 
