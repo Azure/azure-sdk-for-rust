@@ -1,15 +1,9 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-pub struct AmqpManagementError {
-    pub source: Box<dyn std::error::Error + Send + Sync>,
-    pub management_operation: String,
-    pub management_status: i16,
-    pub management_description: String,
-}
+pub use crate::management::error::AmqpManagementError;
+
 pub enum AmqpErrorKind {
-    AmqpManagementAlreadyAttached,
-    AmqpManagementNotAttached,
     AmqpReceiverAlreadyAttached,
     AmqpManagementError(AmqpManagementError),
     TransportImplementationError {
@@ -30,9 +24,9 @@ impl AmqpError {
 impl std::error::Error for AmqpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.kind {
-            AmqpErrorKind::TransportImplementationError { source } => source.source(),
-            AmqpErrorKind::AmqpManagementError(err) => err.source.source(),
-            _ => None,
+            AmqpErrorKind::TransportImplementationError { source } => Some(source.as_ref()),
+            AmqpErrorKind::AmqpManagementError(e) => e.source(),
+            AmqpErrorKind::AmqpReceiverAlreadyAttached => None,
         }
     }
 }
@@ -40,18 +34,8 @@ impl std::error::Error for AmqpError {
 impl std::fmt::Display for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            AmqpErrorKind::AmqpManagementAlreadyAttached => {
-                f.write_str("AMQP Management is already attached")
-            }
-            AmqpErrorKind::AmqpManagementNotAttached => {
-                f.write_str("AMQP Management is not attached")
-            }
             AmqpErrorKind::AmqpManagementError(err) => {
-                write!(
-                    f,
-                    "AMQP Management Error: {}: {}: {}",
-                    err.management_operation, err.management_status, err.management_description
-                )
+                write!(f, "AMQP Management Error: {} ", err)
             }
             AmqpErrorKind::AmqpReceiverAlreadyAttached => {
                 f.write_str("AMQP Receiver is already attached")
@@ -65,7 +49,7 @@ impl std::fmt::Display for AmqpError {
 
 impl std::fmt::Debug for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "AmqpError: {}", self);
+        write!(f, "AmqpError: {}", self)?;
         Ok(())
     }
 }

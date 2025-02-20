@@ -6,7 +6,7 @@ use crate::{
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
         ManagementInstance,
     },
-    error::ErrorKind,
+    error::{ErrorKind, EventHubsError},
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
 };
 use azure_core::{
@@ -143,7 +143,7 @@ impl ProducerClient {
     pub async fn close(self) -> Result<()> {
         self.connection
             .get()
-            .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingConnection))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
             .close()
             .await?;
         Ok(())
@@ -348,7 +348,7 @@ impl ProducerClient {
             .lock()
             .await
             .get()
-            .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingManagementClient))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
             .get_eventhub_properties(self.eventhub.as_str())
             .await
     }
@@ -389,7 +389,7 @@ impl ProducerClient {
             .lock()
             .await
             .get()
-            .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingManagementClient))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
             .get_eventhub_partition_properties(self.eventhub.as_str(), partition_id)
             .await
     }
@@ -410,14 +410,14 @@ impl ProducerClient {
 
         // Clients must call ensure_connection before calling ensure_management_client.
         if self.connection.get().is_none() {
-            return Err(ErrorKind::MissingConnection.into());
+            return Err(EventHubsError::from(ErrorKind::MissingConnection).into());
         }
 
         trace!("Create management session.");
         let connection = self
             .connection
             .get()
-            .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingConnection))?;
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
 
         let session = AmqpSession::new();
         session.begin(connection, None).await?;
@@ -432,7 +432,7 @@ impl ProducerClient {
         management.attach().await?;
         mgmt_client
             .set(ManagementInstance::new(management))
-            .map_err(|_| azure_core::Error::from(ErrorKind::MissingManagementClient))?;
+            .map_err(|_| EventHubsError::from(ErrorKind::MissingManagementClient))?;
         trace!("Management client created.");
         Ok(())
     }
@@ -464,7 +464,7 @@ impl ProducerClient {
                 .await?;
             self.connection
                 .set(connection)
-                .map_err(|_| azure_core::Error::from(ErrorKind::MissingConnection))?;
+                .map_err(|_| EventHubsError::from(ErrorKind::MissingConnection))?;
         }
         Ok(())
     }
@@ -476,7 +476,7 @@ impl ProducerClient {
             let connection = self
                 .connection
                 .get()
-                .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingConnection))?;
+                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
 
             self.authorize_path(path.clone()).await?;
             let session = AmqpSession::new();
@@ -514,7 +514,7 @@ impl ProducerClient {
         }
         Ok(sender_instances
             .get(&path)
-            .ok_or_else(|| Error::from(ErrorKind::MissingMessageSender))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingMessageSender))?
             .sender
             .clone())
     }
@@ -523,13 +523,13 @@ impl ProducerClient {
         debug!("Authorizing path: {:?}", url);
         let mut scopes = self.authorization_scopes.lock().await;
         if self.connection.get().is_none() {
-            return Err(ErrorKind::MissingConnection.into());
+            return Err(EventHubsError::from(ErrorKind::MissingConnection).into());
         }
         if !scopes.contains_key(url.as_str()) {
             let connection = self
                 .connection
                 .get()
-                .ok_or_else(|| azure_core::Error::from(ErrorKind::MissingConnection))?;
+                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
 
             // Create an ephemeral session to host the authentication.
             let session = AmqpSession::new();
@@ -555,12 +555,12 @@ impl ProducerClient {
             let present = scopes.insert(url.clone(), token);
             // insert returns some if it *fails* to insert, None if it succeeded.
             if present.is_some() {
-                return Err(Error::from(ErrorKind::UnableToAddAuthenticationToken));
+                return Err(EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken).into());
             }
         }
         Ok(scopes
             .get(url.as_str())
-            .ok_or_else(|| Error::from(ErrorKind::UnableToAddAuthenticationToken))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken))?
             .clone())
     }
 }

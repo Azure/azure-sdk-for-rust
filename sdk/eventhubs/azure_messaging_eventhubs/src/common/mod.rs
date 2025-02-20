@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::{
-    error::ErrorKind,
+    error::{ErrorKind, EventHubsError},
     models::{EventHubPartitionProperties, EventHubProperties},
 };
 use azure_core::error::Result;
@@ -51,17 +51,17 @@ impl ManagementInstance {
             .await?;
 
         if !response.contains_key(EVENTHUB_PROPERTY_PARTITION_COUNT) {
-            return Err(ErrorKind::InvalidManagementResponse.into());
+            return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse).into());
         }
         let name: String = response
             .get(EVENTHUB_PROPERTY_NAME)
-            .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
             .clone()
             .into();
         let created_at: Option<SystemTime> = Into::<AmqpTimestamp>::into(
             response
                 .get(EVENTHUB_PROPERTY_CREATED_AT)
-                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
                 .clone(),
         )
         .0;
@@ -70,17 +70,17 @@ impl ManagementInstance {
 
         let partition_ids = response
             .get(EVENTHUB_PROPERTY_PARTITION_IDS)
-            .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?;
+            .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?;
 
         let partition_ids = match partition_ids {
             AmqpValue::Array(partition_ids) => partition_ids
                 .iter()
                 .map(|id| match id {
                     AmqpValue::String(id) => Ok(id.clone()),
-                    _ => Err(ErrorKind::InvalidManagementResponse.into()),
+                    _ => Err(EventHubsError::from(ErrorKind::InvalidManagementResponse).into()),
                 })
                 .collect::<Result<Vec<String>>>()?,
-            _ => return Err(ErrorKind::InvalidManagementResponse.into()),
+            _ => return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse).into()),
         };
         Ok(EventHubProperties {
             name,
@@ -108,46 +108,46 @@ impl ManagementInstance {
             || !response
                 .contains_key(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_SEQUENCE_NUMBER_EPOCH)
         {
-            return Err(ErrorKind::InvalidManagementResponse.into());
+            return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse).into());
         }
 
         Ok(EventHubPartitionProperties {
             beginning_sequence_number: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_BEGIN_SEQUENCE_NUMBER)
-                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
                 .clone()
                 .into(),
             id: response
                 .get(EVENTHUB_PROPERTY_PARTITION)
-                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
                 .clone()
                 .into(),
             eventhub: response
                 .get(EVENTHUB_PROPERTY_NAME)
-                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
                 .clone()
                 .into(),
 
             last_enqueued_sequence_number: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_SEQUENCE_NUMBER)
-                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
                 .clone()
                 .into(),
             last_enqueued_offset: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_OFFSET)
-                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
                 .clone()
                 .into(),
             last_enqueued_time_utc: Into::<AmqpTimestamp>::into(
                 response
                     .get(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_TIME_UTC)
-                    .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                    .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
                     .clone(),
             )
             .0,
             is_empty: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_IS_EMPTY)
-                .ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
                 .clone()
                 .into(),
         })
