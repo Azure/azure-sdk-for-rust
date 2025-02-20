@@ -3,6 +3,7 @@
 
 //! Unix timestamp serde helpers.
 use serde::{de, Deserialize, Deserializer, Serializer};
+use std::str::FromStr;
 use time::{OffsetDateTime, UtcOffset};
 
 /// Deserialize a Unix timestamp into an [`OffsetDateTime`].
@@ -20,6 +21,13 @@ where
     S: Serializer,
 {
     serializer.serialize_i64(date.to_offset(UtcOffset::UTC).unix_timestamp())
+}
+
+/// Parses the provided Unix time-stamp str into an OffsetDateTime.
+pub fn parse_unix_time(s: &str) -> crate::Result<OffsetDateTime> {
+    let i = i64::from_str(s)?;
+    OffsetDateTime::from_unix_timestamp(i)
+        .map_err(|e| crate::Error::new(typespec::error::ErrorKind::DataConversion, e))
 }
 
 pub mod option {
@@ -51,6 +59,7 @@ pub mod option {
 
 #[cfg(test)]
 mod tests {
+    use crate::date::parse_unix_time;
     use crate::json::{from_json, to_json};
     use serde::{Deserialize, Serialize};
     use time::macros::datetime;
@@ -129,6 +138,17 @@ mod tests {
             json_body,
             r#"{"optional_timestamp":1625136302,"required_timestamp":1627904772}"#
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_unix_time() -> crate::Result<()> {
+        assert_eq!(
+            parse_unix_time("1627904772").unwrap(),
+            datetime!(2021-08-02 11:46:12 UTC)
+        );
+        assert!(parse_unix_time("not-a-timestamp").is_err());
+        assert!(parse_unix_time("99999999999999").is_err());
         Ok(())
     }
 }
