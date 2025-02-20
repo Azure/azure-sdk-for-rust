@@ -3,10 +3,11 @@
 pub use azure_template_core::NumericCore;
 pub use azure_template_macros::numeric_operation;
 
+pub mod configuration;
 pub mod data; // Enums and variants
 pub mod ffi;
-pub mod numeric;
 pub mod module_example; // Traits and generics // FFI bindings
+pub mod numeric;
 
 pub use data::{DataProcessor, Status, StatusVariant};
 pub use numeric::{IntOrFloat, NumericOps, Vector3};
