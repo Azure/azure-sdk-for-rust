@@ -4,6 +4,7 @@
 use std::borrow::BorrowMut;
 
 use crate::{
+    error::{AmqpError, AmqpErrorKind, AmqpManagementError},
     management::AmqpManagementApis,
     session::AmqpSession,
     value::{AmqpOrderedMap, AmqpValue},
@@ -62,20 +63,16 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .map_err(AmqpManagementAttach::from)?;
 
         self.management.set(Mutex::new(management)).map_err(|_| {
-            azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "Management is already set.",
-            )
+            azure_core::Error::from(AmqpError::new(AmqpErrorKind::AmqpManagementAlreadyAttached))
         })?;
         Ok(())
     }
 
     async fn detach(mut self) -> Result<()> {
         // Detach the management client from the session.
-        let management = self
-            .management
-            .take()
-            .ok_or_else(|| Error::message(ErrorKind::Other, "Unattached management node."))?;
+        let management = self.management.take().ok_or_else(|| {
+            azure_core::Error::from(AmqpError::new(AmqpErrorKind::AmqpManagementNotAttached))
+        })?;
         let management = management.into_inner();
         management.close().await.map_err(AmqpLinkDetach::from)?;
         Ok(())
@@ -90,10 +87,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .management
             .get()
             .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "management is not set.",
-                )
+                azure_core::Error::from(AmqpError::new(AmqpErrorKind::AmqpManagementNotAttached))
             })?
             .lock()
             .await;
@@ -104,11 +98,54 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             application_properties,
         );
 
-        let response = management
-            .call(request)
-            .await
-            .map_err(AmqpManagement::from)?;
+        let response = management.call(request).await.map_err(|e| {
+            azure_core::Error::from(AmqpError::new(AmqpErrorKind::AmqpManagementError(e.into())))
+        })?;
         Ok(response.entity_attributes.into())
+    }
+}
+
+impl From<fe2o3_amqp_management::error::Error> for AmqpManagementError {
+    fn from(e: fe2o3_amqp_management::error::Error) -> Self {
+        match e {
+            #[error("Correlation ID or Message ID is not found")]
+            fe2o3_amqp_management::error::Error::CorrelationIdAndMessageIdAreNone,
+
+            /// StatusCode is not found
+            #[error("StatusCode is nor found")]
+            fe2o3_amqp_management::error::Error::StatusCodeNotFound,
+
+            /// Error with decoding from message
+            #[error("Decode error: {:?}", .0)]
+            fe2o3_amqp_management::error::Error::DecodeError(Option<InvalidType>),
+
+            /// Status code is different from expected
+            fe2o3_amqp_management::error::Error::Status(StatusError) => {
+                StatusError::from(StatusError)
+            }
+
+            /// Error with sending the request
+            #[error(transparent)]
+            fe2o3_amqp_management::error::Error::Send(#[from] SendError),
+
+            /// Request is not accepted
+            #[error("Request is not accepted: {:?}", .0)]
+            fe2o3_amqp_management::error::Error::NotAccepted(Outcome),
+
+            /// Error with receiving the response
+            #[error(transparent)]
+            fe2o3_amqp_management::error::Error::Recv(#[from] RecvError),
+
+            /// Error with accepting the response
+            #[error(transparent)]
+            fe2o3_amqp_management::error::Error::Disposition(#[from] DispositionError),
+
+        }
+        AmqpManagementError {
+            management_operation: e.management_operation,
+            management_status: e.management_status,
+            management_description: e.management_description,
+        }
     }
 }
 

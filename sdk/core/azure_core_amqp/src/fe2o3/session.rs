@@ -39,7 +39,7 @@ impl Fe2o3AmqpSession {
             .get()
             .ok_or_else(|| {
                 azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
+                    azure_core::error::ErrorKind::Amqp,
                     "Session Handle was not set",
                 )
             })?
@@ -59,7 +59,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             .get()
             .ok_or_else(|| {
                 azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
+                    azure_core::error::ErrorKind::Amqp,
                     "Connection already set.",
                 )
             })?

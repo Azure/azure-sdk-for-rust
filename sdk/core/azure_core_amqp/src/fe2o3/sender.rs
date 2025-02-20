@@ -5,9 +5,12 @@ use super::error::{
     AmqpDeliveryRejected, AmqpLinkDetach, AmqpNotAccepted, AmqpSenderAttach, AmqpSenderSend,
     Fe2o3AmqpError,
 };
-use crate::messaging::{AmqpMessage, AmqpTarget};
-use crate::sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions};
-use crate::session::AmqpSession;
+use crate::{
+    error::{AmqpError, AmqpErrorKind},
+    messaging::{AmqpMessage, AmqpTarget},
+    sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions},
+    session::AmqpSession,
+};
 use azure_core::Result;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
@@ -109,7 +112,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .get()
             .ok_or_else(|| {
                 azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
+                    azure_core::error::ErrorKind::Amqp,
                     "Message Sender not set.",
                 )
             })?
@@ -143,8 +146,8 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .sender
             .get()
             .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Amqp,
                     "Message Sender not set.",
                 )
             })?
@@ -160,7 +163,11 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => {
                 Err(AmqpDeliveryRejected(rejected).into())
             }
-            _ => Err(Fe2o3AmqpError::from(AmqpNotAccepted::from(outcome)).into()),
+            _ => Err(azure_core::Error::from(AmqpError::new(
+                AmqpErrorKind::TransportImplementationError {
+                    source: Box::new(Fe2o3AmqpError::from(AmqpNotAccepted::from(outcome))),
+                },
+            ))),
         }
     }
 }

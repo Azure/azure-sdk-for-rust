@@ -34,9 +34,11 @@ macro_rules! impl_from_external_error {
 
             impl From<$amqp_error> for azure_core::Error {
                 fn from(e: $amqp_error) -> Self {
+                    let fe = Fe2o3AmqpError::from(e);
+                    let ak = AmqpErrorKind::from(fe);
                     Self::new(
                         azure_core::error::ErrorKind::Amqp,
-                        AmqpError::new(AmqpErrorKind::from(Fe2o3AmqpError::from(e))),
+                        AmqpError::new(ak),
                     )
                 }
             }
@@ -213,8 +215,10 @@ impl std::fmt::Debug for Fe2o3AmqpError {
     }
 }
 
-impl From<Fe2o3AmqpError> for AmqpError {
+impl From<Fe2o3AmqpError> for AmqpErrorKind {
     fn from(e: Fe2o3AmqpError) -> Self {
-        Self::new(AmqpErrorKind::TransportImplementationError(e))
+        AmqpErrorKind::TransportImplementationError {
+            source: Box::new(e),
+        }
     }
 }
