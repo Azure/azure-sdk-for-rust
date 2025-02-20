@@ -12,6 +12,9 @@ foreach ($serviceDirectory in (Join-Path $SdkRoot 'sdk' -Resolve | Get-ChildItem
   foreach ($packageDirectory in (Get-ChildItem $serviceDirectory -Directory)) {
     foreach ($projectFile in (Join-Path $packageDirectory 'src' -Resolve -ErrorAction SilentlyContinue | Get-ChildItem -Filter *.csproj)) {
       $packageName = $projectFile.BaseName.ToLowerInvariant().Replace('.', '_')
+      if (-not $packageName.StartsWith("azure")) {
+        continue
+      }
       $existingPackageName = $packageName
 
       [xml] $projectXml = Get-Content $projectFile
@@ -27,6 +30,9 @@ foreach ($serviceDirectory in (Join-Path $SdkRoot 'sdk' -Resolve | Get-ChildItem
       }
 
       $exists = $resp.StatusCode -eq 200
+      $microsoftOwned = $false
+      [string[]] $owners = $()
+
       if ($exists) {
         # If we found a package, get the publisher. There is a 1s per request rate limit.
         Start-Sleep -Seconds 1
@@ -53,6 +59,7 @@ foreach ($serviceDirectory in (Join-Path $SdkRoot 'sdk' -Resolve | Get-ChildItem
         ExistingPackageName = $existingPackageName
         MicrosoftOwned      = $microsoftOwned -or $false
         Owners              = $owners -join ';'
+        Publish             = $true
       }
     }
   }
