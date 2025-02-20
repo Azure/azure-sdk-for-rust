@@ -10,6 +10,7 @@ rust-version.workspace = true
 
 [dependencies]
 azure_template_core = { path = "../azure_template_core" }
+azure_template_macros = { path = "../azure_template_macros" }
 
 [lints]
 workspace = true

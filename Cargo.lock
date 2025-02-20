@@ -531,6 +531,7 @@ name = "azure_template"
 version = "0.1.0"
 dependencies = [
  "azure_template_core",
+ "azure_template_macros",
 ]
 
 [[package]]
@@ -538,6 +539,15 @@ name = "azure_template_core"
 version = "0.1.0"
 dependencies = [
  "azure_template",
+]
+
+[[package]]
+name = "azure_template_macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.90",
 ]
 
 [[package]]
