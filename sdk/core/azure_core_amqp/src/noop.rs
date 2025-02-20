@@ -156,7 +156,7 @@ impl AmqpSenderApis for NoopAmqpSender {
     async fn detach(self) -> Result<()> {
         unimplemented!();
     }
-    fn max_message_size(&self) -> Result<Option<u64>> {
+    async fn max_message_size(&self) -> Result<Option<u64>> {
         unimplemented!();
     }
 
@@ -190,11 +190,11 @@ impl AmqpReceiverApis for NoopAmqpReceiver {
     }
 
     #[allow(unused_variables)]
-    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()> {
+    async fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()> {
         unimplemented!();
     }
 
-    fn credit_mode(&self) -> Result<ReceiverCreditMode> {
+    async fn credit_mode(&self) -> Result<ReceiverCreditMode> {
         unimplemented!();
     }
 
