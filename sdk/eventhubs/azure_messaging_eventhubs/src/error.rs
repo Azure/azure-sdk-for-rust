@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 // Licensed under the MIT License.
 
-use azure_core_amqp::Error;
+use azure_core_amqp::AmqpError;
 
 /// Represents the different kinds of errors that can occur in the Eventhubs module.
 pub enum ErrorKind {
@@ -43,7 +43,7 @@ pub enum ErrorKind {
     /// Represents the source of the AMQP error.
     /// This is used to wrap an AMQP error in an Even Hubs error.
     ///
-    AmqpError(Error),
+    AmqpError(AmqpError),
 }
 
 /// Represents an error that can occur in the Event Hubs module.

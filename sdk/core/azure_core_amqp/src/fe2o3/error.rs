@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+use crate::error::{AmqpError, AmqpErrorKind};
+
 macro_rules! impl_from_external_error {
     ($(($amqp_error:ident, $foreign_error:ty)),*) => {
         $(
@@ -15,7 +17,7 @@ macro_rules! impl_from_external_error {
             impl From<$amqp_error> for Fe2o3AmqpError {
                 fn from(e: $amqp_error) -> Self {
                     Fe2o3AmqpError {
-                        kind: ErrorKind::$amqp_error { source: e },
+                        kind: Fe2o3ErrorKind::$amqp_error { source: e },
                     }
                 }
             }
@@ -23,7 +25,7 @@ macro_rules! impl_from_external_error {
             impl From<$foreign_error> for Fe2o3AmqpError {
                 fn from(e: $foreign_error) -> Self {
                     Fe2o3AmqpError {
-                        kind: ErrorKind::$amqp_error {
+                        kind: Fe2o3ErrorKind::$amqp_error {
                             source: $amqp_error(e),
                         },
                     }
@@ -33,8 +35,8 @@ macro_rules! impl_from_external_error {
             impl From<$amqp_error> for azure_core::Error {
                 fn from(e: $amqp_error) -> Self {
                     Self::new(
-                        azure_core::error::ErrorKind::Other,
-                        Box::new(Fe2o3AmqpError::from(e)),
+                        azure_core::error::ErrorKind::Amqp,
+                        AmqpError::new(AmqpErrorKind::from(Fe2o3AmqpError::from(e))),
                     )
                 }
             }
@@ -101,12 +103,12 @@ impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpNotAccepted {
 impl From<AmqpNotAccepted> for Fe2o3AmqpError {
     fn from(e: AmqpNotAccepted) -> Self {
         Fe2o3AmqpError {
-            kind: ErrorKind::NotAccepted { source: e },
+            kind: Fe2o3ErrorKind::NotAccepted { source: e },
         }
     }
 }
 
-pub enum ErrorKind {
+pub enum Fe2o3ErrorKind {
     AmqpSerialization { source: AmqpSerialization },
     AmqpDeliveryRejected { source: AmqpDeliveryRejected },
     NotAccepted { source: AmqpNotAccepted },
@@ -126,34 +128,28 @@ pub enum ErrorKind {
 }
 
 pub struct Fe2o3AmqpError {
-    kind: ErrorKind,
-}
-
-impl From<ErrorKind> for Fe2o3AmqpError {
-    fn from(e: ErrorKind) -> Self {
-        Fe2o3AmqpError { kind: e }
-    }
+    kind: Fe2o3ErrorKind,
 }
 
 impl std::error::Error for Fe2o3AmqpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.kind {
-            ErrorKind::AmqpSerialization { source } => source.0.source(),
-            ErrorKind::AmqpDeliveryRejected { source: _ } => None,
-            ErrorKind::NotAccepted { source: _ } => None,
-            ErrorKind::TimeError { source } => source.0.source(),
-            ErrorKind::AmqpOpen { source } => source.0.source(),
-            ErrorKind::AmqpManagementAttach { source } => source.0.source(),
-            ErrorKind::AmqpBegin { source } => source.0.source(),
-            ErrorKind::AmqpManagement { source } => source.0.source(),
-            ErrorKind::AmqpConnection { source } => source.0.source(),
-            ErrorKind::AmqpLinkDetach { source } => source.0.source(),
-            ErrorKind::AmqpSession { source } => source.0.source(),
-            ErrorKind::AmqpSenderAttach { source } => source.0.source(),
-            ErrorKind::AmqpSenderSend { source } => source.0.source(),
-            ErrorKind::AmqpReceiverAttach { source } => source.0.source(),
-            ErrorKind::AmqpReceiver { source } => source.0.source(),
-            ErrorKind::AmqpIllegalLinkState { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpSerialization { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpDeliveryRejected { source: _ } => None,
+            Fe2o3ErrorKind::NotAccepted { source: _ } => None,
+            Fe2o3ErrorKind::TimeError { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpOpen { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpManagementAttach { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpBegin { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpManagement { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpConnection { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpLinkDetach { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpSession { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpSenderAttach { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpSenderSend { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpReceiverAttach { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpReceiver { source } => source.0.source(),
+            Fe2o3ErrorKind::AmqpIllegalLinkState { source } => source.0.source(),
         };
         None
     }
@@ -162,49 +158,49 @@ impl std::error::Error for Fe2o3AmqpError {
 impl std::fmt::Display for Fe2o3AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            ErrorKind::TimeError { source } => {
+            Fe2o3ErrorKind::TimeError { source } => {
                 write!(f, "Time Component Range Error {:?}", source.0)
             }
-            ErrorKind::AmqpIllegalLinkState { source } => {
+            Fe2o3ErrorKind::AmqpIllegalLinkState { source } => {
                 write!(f, "Illegal Link State Error {:?}", source.0)
             }
-            ErrorKind::AmqpDeliveryRejected { source } => {
+            Fe2o3ErrorKind::AmqpDeliveryRejected { source } => {
                 write!(f, "Delivery Rejected Error: {:?}", source.0)
             }
-            ErrorKind::AmqpOpen { source } => {
+            Fe2o3ErrorKind::AmqpOpen { source } => {
                 write!(f, "Connection Open Error: {:?}", source.0)
             }
-            ErrorKind::AmqpManagementAttach { source } => {
+            Fe2o3ErrorKind::AmqpManagementAttach { source } => {
                 write!(f, "Management Attach Error: {:?}", source.0)
             }
-            ErrorKind::AmqpLinkDetach { source } => {
+            Fe2o3ErrorKind::AmqpLinkDetach { source } => {
                 write!(f, "Link Detach Error: {:?}", source.0)
             }
-            ErrorKind::AmqpReceiverAttach { source } => {
+            Fe2o3ErrorKind::AmqpReceiverAttach { source } => {
                 write!(f, "Receiver attach error {:?}", source.0)
             }
-            ErrorKind::AmqpBegin { source } => write!(f, "BeginError: {:?}", source.0),
-            ErrorKind::AmqpManagement { source } => {
+            Fe2o3ErrorKind::AmqpBegin { source } => write!(f, "BeginError: {:?}", source.0),
+            Fe2o3ErrorKind::AmqpManagement { source } => {
                 write!(f, "Management Error: {:?}", source.0)
             }
-            ErrorKind::AmqpConnection { source } => {
+            Fe2o3ErrorKind::AmqpConnection { source } => {
                 write!(f, "Connection : {:?}", source.0)
             }
-            ErrorKind::AmqpSession { source } => write!(f, "Session error: {:?}", source.0),
-            ErrorKind::AmqpSenderAttach { source } => {
+            Fe2o3ErrorKind::AmqpSession { source } => write!(f, "Session error: {:?}", source.0),
+            Fe2o3ErrorKind::AmqpSenderAttach { source } => {
                 write!(f, "Sender attach error {:?}", source.0)
             }
             // ErrorKind::AmqpSerializationError { source } => {
-            ErrorKind::NotAccepted { source } => {
+            Fe2o3ErrorKind::NotAccepted { source } => {
                 write!(f, "Not accepted error: {:?}", source)
             }
-            ErrorKind::AmqpReceiver { source } => {
+            Fe2o3ErrorKind::AmqpReceiver { source } => {
                 write!(f, "Receiver error: {:?}", source.0)
             }
-            ErrorKind::AmqpSenderSend { source } => {
+            Fe2o3ErrorKind::AmqpSenderSend { source } => {
                 write!(f, "Sender send error {:?}", source.0)
             }
-            ErrorKind::AmqpSerialization { source } => {
+            Fe2o3ErrorKind::AmqpSerialization { source } => {
                 write!(f, "Serialization error: {:?}", source.0)
             }
         }
@@ -217,17 +213,8 @@ impl std::fmt::Debug for Fe2o3AmqpError {
     }
 }
 
-impl From<Fe2o3AmqpError> for azure_core::Error {
+impl From<Fe2o3AmqpError> for AmqpError {
     fn from(e: Fe2o3AmqpError) -> Self {
-        Self::new(azure_core::error::ErrorKind::Other, Box::new(e))
-    }
-}
-
-impl From<ErrorKind> for azure_core::Error {
-    fn from(e: ErrorKind) -> Self {
-        Self::new(
-            azure_core::error::ErrorKind::Other,
-            Box::new(Fe2o3AmqpError { kind: e }),
-        )
+        Self::new(AmqpErrorKind::TransportImplementationError(e))
     }
 }

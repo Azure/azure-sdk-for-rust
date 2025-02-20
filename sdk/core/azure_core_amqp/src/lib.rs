@@ -21,7 +21,7 @@ pub(crate) mod value;
 
 pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
 pub use connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions};
-pub use error::Error;
+pub use error::AmqpError;
 pub use management::{AmqpManagement, AmqpManagementApis};
 pub use messaging::{
     AmqpAnnotationKey, AmqpAnnotations, AmqpDelivery, AmqpDeliveryApis, AmqpMessage,

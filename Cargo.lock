@@ -294,6 +294,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "typespec",
  "uuid",
 ]
 
