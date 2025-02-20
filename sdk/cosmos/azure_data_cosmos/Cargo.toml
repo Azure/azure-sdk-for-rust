@@ -25,7 +25,7 @@ url.workspace = true
 
 [dev-dependencies]
 azure_identity.path = "../../identity/azure_identity"
-azure_core_test.path = "../../core/azure_core_test"
+azure_core_test = { path = "../../core/azure_core_test", features = ["tracing"] }
 clap.workspace = true
 reqwest.workspace = true
 time.workspace = true

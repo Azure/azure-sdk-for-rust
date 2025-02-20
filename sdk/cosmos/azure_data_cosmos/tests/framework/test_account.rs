@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
-use std::sync::{Arc, Once};
+use std::sync::Arc;
 
 use azure_core::{credentials::Secret, TransportOptions, Uuid};
 use azure_core_test::TestContext;
@@ -8,7 +8,6 @@ use azure_data_cosmos::{CosmosClientOptions, Query};
 use futures::StreamExt;
 use reqwest::ClientBuilder;
 use time::{macros::format_description, OffsetDateTime};
-use tracing::span::EnteredSpan;
 
 /// Represents a Cosmos DB account for testing purposes.
 ///
@@ -21,8 +20,9 @@ pub struct TestAccount {
     key: Secret,
     options: TestAccountOptions,
 
-    #[allow(dead_code)] // We hold this so it can be dropped at the end of the test.
-    test_span: EnteredSpan,
+    // Even if we don't use it, keep the context alive because it owns the recording span
+    #[allow(dead_code)]
+    context: TestContext,
 }
 
 #[derive(Default)]
@@ -33,8 +33,6 @@ pub struct TestAccountOptions {
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
-
-static TRACING: Once = Once::new();
 
 impl TestAccount {
     /// Creates a new [`TestAccount`] from local environment variables.
@@ -66,18 +64,6 @@ impl TestAccount {
         context: TestContext,
         options: Option<TestAccountOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        TRACING.call_once(|| {
-            // Enable tracing for tests, if it's not already enabled
-            _ = tracing_subscriber::fmt()
-                .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-                .try_init();
-
-            // Ignore the failure. The most likely failure is that a global default trace dispatcher has already been set.
-            // And we don't want the tracing support to bring down the tests.
-        });
-        let test_span =
-            tracing::info_span!("cosmos_test", test_name=%context.test_name()).entered();
-
         let options = options.unwrap_or_default();
         let splat = connection_string.split(';');
         let mut account_endpoint = None;
@@ -118,7 +104,7 @@ impl TestAccount {
             endpoint,
             key,
             options,
-            test_span,
+            context,
         })
     }
 
