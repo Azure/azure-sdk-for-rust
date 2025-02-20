@@ -37,8 +37,6 @@ In order to interact with the Azure Cosmos DB service you'll need to create an i
 
 The following section provides several code snippets covering some of the most common Azure Cosmos DB NoSQL API tasks, including:
 * [Create Client](#create-cosmos-db-client "Create Cosmos DB client")
-* [Create Database](#create-database "Create Database")
-* [Create Container](#create-container "Create Container")
 * [CRUD operation on Items](#crud-operation-on-items "CRUD operation on Items")
 
 ### Create Cosmos DB Client
