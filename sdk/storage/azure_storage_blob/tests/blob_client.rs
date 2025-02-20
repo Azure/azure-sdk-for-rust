@@ -271,7 +271,7 @@ async fn test_put_block_list() -> Result<(), Box<dyn Error>> {
     let block_2 = b"BBB";
     let block_3 = b"CCC";
 
-    let res = blob_client
+    blob_client
         .stage_block(
             "1",
             i64::try_from(block_1.len())?,
@@ -279,7 +279,7 @@ async fn test_put_block_list() -> Result<(), Box<dyn Error>> {
             Some(BlobBlockBlobClientStageBlockOptions::default()),
         )
         .await?;
-    println!("{:?}", res);
+
     blob_client
         .stage_block(
             "2",
@@ -303,17 +303,21 @@ async fn test_put_block_list() -> Result<(), Box<dyn Error>> {
             Some(BlobBlockBlobClientGetBlockListOptions::default()),
         )
         .await?;
-    let put_block_list: BlockLookupList = put_block_list.into_body().await?;
-    println!("PBL: {:?}", put_block_list);
-    println!(
-        "Commited: {:?}",
-        put_block_list.committed.unwrap_or_default()
-    );
-    println!("Latest: {:?}", put_block_list.latest.unwrap_or_default());
-    println!(
-        "Uncommit: {:?}",
-        put_block_list.uncommitted.unwrap_or_default()
-    );
+
+    let res = put_block_list.into_raw_body().collect_string().await?;
+    println!("Raw Response Body: {:?}", res);
+
+    // let put_block_list: BlockLookupList = put_block_list.into_body().await?;
+    // println!("PBL: {:?}", put_block_list);
+    // println!(
+    //     "Committed: {:?}",
+    //     put_block_list.committed.unwrap_or_default()
+    // );
+    // println!("Latest: {:?}", put_block_list.latest.unwrap_or_default());
+    // println!(
+    //     "Uncommit: {:?}",
+    //     put_block_list.uncommitted.unwrap_or_default()
+    // );
     // let put_block_list: RequestContent<BlockLookupList> = put_block_list.try_into()?;
 
     // blob_client
