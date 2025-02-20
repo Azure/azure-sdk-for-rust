@@ -8,6 +8,7 @@ use azure_data_cosmos::{CosmosClientOptions, Query};
 use futures::StreamExt;
 use reqwest::ClientBuilder;
 use time::{macros::format_description, OffsetDateTime};
+use tracing::span::EnteredSpan;
 
 /// Represents a Cosmos DB account for testing purposes.
 ///
@@ -19,6 +20,9 @@ pub struct TestAccount {
     endpoint: String,
     key: Secret,
     options: TestAccountOptions,
+
+    #[allow(dead_code)] // We hold this so it can be dropped at the end of the test.
+    test_span: EnteredSpan,
 }
 
 #[derive(Default)]
@@ -62,6 +66,18 @@ impl TestAccount {
         context: TestContext,
         options: Option<TestAccountOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        TRACING.call_once(|| {
+            // Enable tracing for tests, if it's not already enabled
+            _ = tracing_subscriber::fmt()
+                .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+                .try_init();
+
+            // Ignore the failure. The most likely failure is that a global default trace dispatcher has already been set.
+            // And we don't want the tracing support to bring down the tests.
+        });
+        let test_span =
+            tracing::info_span!("cosmos_test", test_name=%context.test_name()).entered();
+
         let options = options.unwrap_or_default();
         let splat = connection_string.split(';');
         let mut account_endpoint = None;
@@ -97,21 +113,12 @@ impl TestAccount {
             Uuid::new_v4().as_simple()
         );
 
-        TRACING.call_once(|| {
-            // Enable tracing for tests, if it's not already enabled
-            _ = tracing_subscriber::fmt()
-                .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-                .try_init();
-
-            // Ignore the failure. The most likely failure is that a global default trace dispatcher has already been set.
-            // And we don't want the tracing support to bring down the tests.
-        });
-
         Ok(TestAccount {
             context_id,
             endpoint,
             key,
             options,
+            test_span,
         })
     }
 

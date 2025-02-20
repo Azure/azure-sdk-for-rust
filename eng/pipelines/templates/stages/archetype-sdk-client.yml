@@ -10,6 +10,9 @@ parameters:
 - name: oneESTemplateTag
   type: string
   default: release
+- name: AdditionalStages
+  type: object
+  default: []
 
 extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
@@ -28,6 +31,8 @@ extends:
             TestPipeline: true
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           PipelineArtifactName: packages
+
+    - ${{ parameters.AdditionalStages }}
 
     - template: archetype-rust-release.yml
       parameters:
