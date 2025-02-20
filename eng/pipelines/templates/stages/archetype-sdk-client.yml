@@ -32,8 +32,6 @@ extends:
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           PipelineArtifactName: packages
 
-    - ${{ parameters.AdditionalStages }}
-
     - template: archetype-rust-release.yml
       parameters:
         DependsOn: "Build"
