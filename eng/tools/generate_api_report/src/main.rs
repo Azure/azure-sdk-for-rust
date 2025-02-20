@@ -44,14 +44,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
 
-    // -------- Prettifying package_name.json - starts -----
+    // Prettifying the JSON
     // Parse the JSON to ensure it's valid
     let json_value: serde_json::Value = serde_json::from_str(&contents)?;
 
     // Write the pretty-printed JSON back to the file
     let mut file = File::create(path)?;
     serde_json::to_writer_pretty(&mut file, &json_value)?;
-    // -------- Prettifying package_name.json - ends -----
 
     let mut root: Crate = serde_json::from_str(&contents)?;
 
@@ -73,13 +72,40 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         true
     });
+    
+    // Navigate to Cargo.toml and get the path for the package
+    let cargo_toml_path = Path::new("Cargo.toml");
+    let cargo_toml_content = std::fs::read_to_string(cargo_toml_path)?;
+    let cargo_toml: toml::Value = toml::from_str(&cargo_toml_content)?;
 
-    let output_path_str = format!("./target/doc/{}.rust.json", package_name);
+    let package_path = cargo_toml
+        .get("workspace")
+        .and_then(|ws| ws.get("members"))
+        .and_then(|members| members.as_array())
+        .and_then(|members| {
+            members.iter().find_map(|member| {
+                if member.as_str()?.ends_with(package_name) {
+                    Some(member.as_str()?.to_string())
+                } else {
+                    None
+                }
+            })
+        })
+        .ok_or("Package path not found in Cargo.toml")?;
+
+    // Create the review/ folder under the obtained path if it doesn't exist
+    let review_folder_path = Path::new(&package_path).join("review");
+    if !review_folder_path.exists() {
+        std::fs::create_dir_all(&review_folder_path)?;
+    }
+
+    // Create the package_name.rust.json in the review/ folder
+    let output_path_str = review_folder_path.join(format!("{}.rust.json", package_name));
     let output_path = Path::new(&output_path_str);
     let mut output_file = File::create(output_path)?;
     serde_json::to_writer_pretty(&mut output_file, &root)?;
 
-    println!("File has been generated at: {}", output_path_str);
+    println!("File has been generated at: {}", output_path_str.display());
 
     Ok(())
 }
