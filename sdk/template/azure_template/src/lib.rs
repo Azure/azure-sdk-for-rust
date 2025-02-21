@@ -1,8 +1,6 @@
 //! Azure Template crate demonstrating Rust patterns
 
 pub use azure_template_core::NumericCore;
-pub use azure_template_macros::numeric_operation;
-
 pub mod configuration;
 pub mod data; // Enums and variants
 pub mod ffi;

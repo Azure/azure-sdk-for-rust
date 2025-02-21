@@ -7,7 +7,8 @@
 //! It demonstrates FFI-compatible types and generic numeric traits.
 
 use azure_template_core::NumericCore;
-use azure_template_macros::numeric_operation;
+use proc_macro2::TokenStream;
+use quote::quote;
 use std::ops::{Add, Sub};
 
 /// Trait demonstrating associated constants
@@ -40,12 +41,27 @@ macro_rules! implement_numeric {
     };
 }
 
-/// Struct using proc macro attribute
+/// Struct with proc-macro2 example
 #[derive(Debug, Clone)]
-#[numeric_operation]
 pub struct NumericWrapper<T> {
     value: T,
     precision: u8,
+}
+
+// Implement token generation for NumericWrapper
+impl<T> NumericWrapper<T> {
+    pub fn generate_tokens() -> TokenStream {
+        quote! {
+            impl<T: NumericCore> NumericWrapper<T> {
+                pub fn new(value: T) -> Self {
+                    Self {
+                        value,
+                        precision: 2,
+                    }
+                }
+            }
+        }
+    }
 }
 
 impl<T: NumericCore> NumericWrapper<T> {
