@@ -21,5 +21,8 @@ pub fn use_sample_struct2() {
     };
 
     // Use the instance in some way
-    println!("SampleStruct2: field1 = {}, field2 = {}", instance.field1, instance.field2);
+    println!(
+        "SampleStruct2: field1 = {}, field2 = {}",
+        instance.field1, instance.field2
+    );
 }
