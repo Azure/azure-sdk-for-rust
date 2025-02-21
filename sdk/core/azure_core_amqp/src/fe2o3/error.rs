@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::error::{AmqpError, AmqpErrorKind};
+use crate::error::{AmqpDescribedError, AmqpDetachError, AmqpError, AmqpErrorKind};
 
 macro_rules! impl_from_external_error {
     ($(($amqp_error:ident, $foreign_error:ty)),*) => {
@@ -59,13 +59,12 @@ impl_from_external_error! {
     (AmqpLinkDetach, fe2o3_amqp::link::DetachError),
     (AmqpOpen, fe2o3_amqp::connection::OpenError),
     (AmqpConnection, fe2o3_amqp::connection::Error),
-//    (AmqpManagementAttach, fe2o3_amqp_management::error::AttachError),
     (AmqpBegin, fe2o3_amqp::session::BeginError),
-    (AmqpSenderAttach, fe2o3_amqp::link::SenderAttachError),
+//    (AmqpSenderAttach, fe2o3_amqp::link::SenderAttachError),
     (AmqpReceiverAttach, fe2o3_amqp::link::ReceiverAttachError),
     (AmqpReceiver, fe2o3_amqp::link::RecvError),
     (AmqpIllegalLinkState, fe2o3_amqp::link::IllegalLinkStateError),
-    (AmqpSenderSend, fe2o3_amqp::link::SendError),
+//    (AmqpSenderSend, fe2o3_amqp::link::SendError),
     (AmqpDeliveryRejected, fe2o3_amqp::types::messaging::Rejected)
 }
 
@@ -115,13 +114,12 @@ pub enum Fe2o3ErrorKind {
     NotAccepted { source: AmqpNotAccepted },
     TimeError { source: TimeError },
     AmqpOpen { source: AmqpOpen },
-    //    AmqpManagementAttach { source: AmqpManagementAttach },
     AmqpBegin { source: AmqpBegin },
     AmqpConnection { source: AmqpConnection },
     AmqpLinkDetach { source: AmqpLinkDetach },
     AmqpSession { source: AmqpSession },
-    AmqpSenderAttach { source: AmqpSenderAttach },
-    AmqpSenderSend { source: AmqpSenderSend },
+    //    AmqpSenderAttach { source: AmqpSenderAttach },
+    //    AmqpSenderSend { source: AmqpSenderSend },
     AmqpReceiverAttach { source: AmqpReceiverAttach },
     AmqpReceiver { source: AmqpReceiver },
     AmqpIllegalLinkState { source: AmqpIllegalLinkState },
@@ -143,8 +141,6 @@ impl std::error::Error for Fe2o3AmqpError {
             Fe2o3ErrorKind::AmqpConnection { source } => source.0.source(),
             Fe2o3ErrorKind::AmqpLinkDetach { source } => source.0.source(),
             Fe2o3ErrorKind::AmqpSession { source } => source.0.source(),
-            Fe2o3ErrorKind::AmqpSenderAttach { source } => source.0.source(),
-            Fe2o3ErrorKind::AmqpSenderSend { source } => source.0.source(),
             Fe2o3ErrorKind::AmqpReceiverAttach { source } => source.0.source(),
             Fe2o3ErrorKind::AmqpReceiver { source } => source.0.source(),
             Fe2o3ErrorKind::AmqpIllegalLinkState { source } => source.0.source(),
@@ -179,18 +175,12 @@ impl std::fmt::Display for Fe2o3AmqpError {
                 write!(f, "Connection : {:?}", source.0)
             }
             Fe2o3ErrorKind::AmqpSession { source } => write!(f, "Session error: {:?}", source.0),
-            Fe2o3ErrorKind::AmqpSenderAttach { source } => {
-                write!(f, "Sender attach error {:?}", source.0)
-            }
             // ErrorKind::AmqpSerializationError { source } => {
             Fe2o3ErrorKind::NotAccepted { source } => {
                 write!(f, "Not accepted error: {:?}", source)
             }
             Fe2o3ErrorKind::AmqpReceiver { source } => {
                 write!(f, "Receiver error: {:?}", source.0)
-            }
-            Fe2o3ErrorKind::AmqpSenderSend { source } => {
-                write!(f, "Sender send error {:?}", source.0)
             }
             Fe2o3ErrorKind::AmqpSerialization { source } => {
                 write!(f, "Serialization error: {:?}", source.0)
@@ -209,6 +199,47 @@ impl From<Fe2o3AmqpError> for AmqpErrorKind {
     fn from(e: Fe2o3AmqpError) -> Self {
         AmqpErrorKind::TransportImplementationError {
             source: Box::new(e),
+        }
+    }
+}
+
+impl From<fe2o3_amqp_types::definitions::Error> for AmqpDescribedError {
+    fn from(e: fe2o3_amqp_types::definitions::Error) -> Self {
+        AmqpDescribedError::new(
+            match e.condition {
+                fe2o3_amqp_types::definitions::ErrorCondition::AmqpError(amqp_error) => {
+                    fe2o3_amqp_types::primitives::Symbol::from(&amqp_error).into()
+                }
+                fe2o3_amqp_types::definitions::ErrorCondition::ConnectionError(
+                    connection_error,
+                ) => fe2o3_amqp_types::primitives::Symbol::from(&connection_error).into(),
+                fe2o3_amqp_types::definitions::ErrorCondition::SessionError(session_error) => {
+                    fe2o3_amqp_types::primitives::Symbol::from(&session_error).into()
+                }
+                fe2o3_amqp_types::definitions::ErrorCondition::LinkError(link_error) => {
+                    fe2o3_amqp_types::primitives::Symbol::from(&link_error).into()
+                }
+                fe2o3_amqp_types::definitions::ErrorCondition::Custom(symbol) => symbol.into(),
+            },
+            e.description,
+            e.info.unwrap_or_default().into(),
+        )
+    }
+}
+
+impl From<fe2o3_amqp::link::DetachError> for AmqpDetachError {
+    fn from(e: fe2o3_amqp::link::DetachError) -> Self {
+        match e {
+            fe2o3_amqp::link::DetachError::IllegalState => Self::IllegalState,
+            fe2o3_amqp::link::DetachError::IllegalSessionState => Self::IllegalSessionState,
+            fe2o3_amqp::link::DetachError::RemoteDetachedWithError(error) => {
+                Self::RemoteDetachedWithError(error.into())
+            }
+            fe2o3_amqp::link::DetachError::ClosedByRemote => Self::ClosedByRemote,
+            fe2o3_amqp::link::DetachError::DetachedByRemote => Self::DetachedByRemote,
+            fe2o3_amqp::link::DetachError::RemoteClosedWithError(error) => {
+                Self::RemoteClosedWithError(error.into())
+            }
         }
     }
 }

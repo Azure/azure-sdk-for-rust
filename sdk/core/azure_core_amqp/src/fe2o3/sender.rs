@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::error::{
-    AmqpDeliveryRejected, AmqpLinkDetach, AmqpNotAccepted, AmqpSenderAttach, AmqpSenderSend,
-    Fe2o3AmqpError,
-};
+use super::error::{AmqpDeliveryRejected, AmqpLinkDetach, AmqpNotAccepted, Fe2o3AmqpError};
 use crate::{
-    error::{AmqpError, AmqpErrorKind},
+    error::{AmqpDetachError, AmqpError, AmqpErrorKind, AmqpSenderError},
     messaging::{AmqpMessage, AmqpTarget},
     sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions},
     session::AmqpSession,
@@ -69,22 +66,20 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .target(target.into())
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
-            .map_err(AmqpSenderAttach::from)?;
+            .map_err(|e| AmqpError::new(AmqpErrorKind::SenderError(e.into())))?;
         self.sender.set(Mutex::new(sender)).map_err(|_| {
-            azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "Could not set message sender.",
-            )
+            AmqpError::new(AmqpErrorKind::SenderError(
+                AmqpSenderError::CouldNotSetMessageSender,
+            ))
         })?;
         Ok(())
     }
 
     async fn detach(mut self) -> Result<()> {
         let sender = self.sender.take().ok_or_else(|| {
-            azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "Message Sender not set.",
-            )
+            AmqpError::new(AmqpErrorKind::SenderError(
+                AmqpSenderError::CouldNotGetMessageSender,
+            ))
         })?;
         let res = sender
             .into_inner()
@@ -111,10 +106,9 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .sender
             .get()
             .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Amqp,
-                    "Message Sender not set.",
-                )
+                AmqpError::new(AmqpErrorKind::SenderError(
+                    AmqpSenderError::CouldNotGetMessageSender,
+                ))
             })?
             .lock()
             .await
@@ -146,17 +140,16 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .sender
             .get()
             .ok_or_else(|| {
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Amqp,
-                    "Message Sender not set.",
-                )
+                AmqpError::new(AmqpErrorKind::SenderError(
+                    AmqpSenderError::CouldNotGetMessageSender,
+                ))
             })?
             .lock()
             .await
             .borrow_mut()
             .send(sendable)
             .await
-            .map_err(AmqpSenderSend::from)?;
+            .map_err(AmqpError::from)?;
 
         match outcome {
             fe2o3_amqp_types::messaging::Outcome::Accepted(_) => Ok(()),
@@ -176,6 +169,104 @@ impl Fe2o3AmqpSender {
     pub fn new() -> Self {
         Self {
             sender: OnceLock::new(),
+        }
+    }
+}
+
+impl From<fe2o3_amqp::link::DetachError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::DetachError) -> Self {
+        AmqpError::new(AmqpErrorKind::DetachError(AmqpDetachError::from(e)))
+    }
+}
+
+impl From<fe2o3_amqp::link::SendError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::SendError) -> Self {
+        match e {
+            fe2o3_amqp::link::SendError::LinkStateError(link_state_error) => {
+                link_state_error.into()
+            }
+            fe2o3_amqp::link::SendError::Detached(detach_error) => detach_error.into(),
+            fe2o3_amqp::link::SendError::NonTerminalDeliveryState => AmqpError::new(
+                AmqpErrorKind::SenderError(AmqpSenderError::NonTerminalDeliveryState),
+            ),
+            fe2o3_amqp::link::SendError::IllegalDeliveryState => AmqpError::new(
+                AmqpErrorKind::SenderError(AmqpSenderError::IllegalDeliveryState),
+            ),
+            fe2o3_amqp::link::SendError::MessageEncodeError => AmqpError::new(
+                AmqpErrorKind::SenderError(AmqpSenderError::MessageEncodeError),
+            ),
+        }
+    }
+}
+
+impl From<fe2o3_amqp::link::SenderAttachError> for AmqpSenderError {
+    fn from(e: fe2o3_amqp::link::SenderAttachError) -> Self {
+        match e {
+            fe2o3_amqp::link::SenderAttachError::IllegalSessionState => {
+                AmqpSenderError::IllegalSessionState
+            }
+            fe2o3_amqp::link::SenderAttachError::DuplicatedLinkName => {
+                AmqpSenderError::DuplicatedLinkName
+            }
+            fe2o3_amqp::link::SenderAttachError::IllegalState => AmqpSenderError::IllegalState,
+            fe2o3_amqp::link::SenderAttachError::NonAttachFrameReceived => {
+                AmqpSenderError::NonAttachFrameReceived
+            }
+            fe2o3_amqp::link::SenderAttachError::ExpectImmediateDetach => {
+                AmqpSenderError::ExpectImmediateDetach
+            }
+            fe2o3_amqp::link::SenderAttachError::IncomingTargetIsNone => {
+                AmqpSenderError::IncomingTargetIsNone
+            }
+            fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented => {
+                AmqpSenderError::CoordinatorIsNotImplemented
+            }
+            fe2o3_amqp::link::SenderAttachError::SndSettleModeNotSupported => {
+                AmqpSenderError::SndSettleModeNotSupported
+            }
+            fe2o3_amqp::link::SenderAttachError::RcvSettleModeNotSupported => {
+                AmqpSenderError::RcvSettleModeNotSupported
+            }
+            fe2o3_amqp::link::SenderAttachError::TargetAddressIsNoneWhenDynamicIsTrue => {
+                AmqpSenderError::TargetAddressIsNoneWhenDynamicIsTrue
+            }
+            fe2o3_amqp::link::SenderAttachError::SourceAddressIsSomeWhenDynamicIsTrue => {
+                AmqpSenderError::SourceAddressIsSomeWhenDynamicIsTrue
+            }
+            fe2o3_amqp::link::SenderAttachError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse => {
+                AmqpSenderError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse
+            }
+            fe2o3_amqp::link::SenderAttachError::RemoteClosedWithError(error) => {
+                AmqpSenderError::RemoteClosedWithError(error.into())
+            }
+        }
+    }
+}
+
+impl From<fe2o3_amqp::link::LinkStateError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::LinkStateError) -> Self {
+        match e {
+            fe2o3_amqp::link::LinkStateError::IllegalState => {
+                AmqpError::new(AmqpErrorKind::SenderError(AmqpSenderError::IllegalState))
+            }
+            fe2o3_amqp::link::LinkStateError::IllegalSessionState => AmqpError::new(
+                AmqpErrorKind::SenderError(AmqpSenderError::IllegalSessionState),
+            ),
+            fe2o3_amqp::link::LinkStateError::ExpectImmediateDetach => AmqpError::new(
+                AmqpErrorKind::SenderError(AmqpSenderError::ExpectImmediateDetach),
+            ),
+            fe2o3_amqp::link::LinkStateError::RemoteDetachedWithError(error) => AmqpError::new(
+                AmqpErrorKind::DetachError(AmqpDetachError::RemoteDetachedWithError(error.into())),
+            ),
+            fe2o3_amqp::link::LinkStateError::RemoteClosedWithError(error) => AmqpError::new(
+                AmqpErrorKind::SenderError(AmqpSenderError::RemoteClosedWithError(error.into())),
+            ),
+            fe2o3_amqp::link::LinkStateError::RemoteDetached => AmqpError::new(
+                AmqpErrorKind::DetachError(AmqpDetachError::DetachedByRemote),
+            ),
+            fe2o3_amqp::link::LinkStateError::RemoteClosed => {
+                AmqpError::new(AmqpErrorKind::DetachError(AmqpDetachError::ClosedByRemote))
+            }
         }
     }
 }
