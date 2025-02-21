@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use async_std::stream::StreamExt;
 use azure_core_amqp::{AmqpList, AmqpMessageProperties};
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
@@ -13,6 +12,7 @@ use azure_messaging_eventhubs::{
     },
 };
 use futures::pin_mut;
+use futures::stream::StreamExt;
 use std::{env, error::Error};
 use tracing::info;
 
@@ -148,6 +148,8 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
             if received_event_data.event_data().body().is_none() {
                 info!("AMQP Body: {:?}", received_event_data.raw_amqp_message());
             }
+
+            futures::future::ready(())
         })
         .await;
 

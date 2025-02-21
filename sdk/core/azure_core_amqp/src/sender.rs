@@ -36,7 +36,7 @@ pub trait AmqpSenderApis {
         options: Option<AmqpSenderOptions>,
     ) -> impl std::future::Future<Output = Result<()>>;
     fn detach(self) -> impl std::future::Future<Output = Result<()>>;
-    fn max_message_size(&self) -> Result<Option<u64>>;
+    fn max_message_size(&self) -> impl std::future::Future<Output = Result<Option<u64>>>;
     fn send(
         &self,
         message: impl Into<AmqpMessage> + std::fmt::Debug,
@@ -65,8 +65,8 @@ impl AmqpSenderApis for AmqpSender {
         self.implementation.detach().await
     }
 
-    fn max_message_size(&self) -> Result<Option<u64>> {
-        self.implementation.max_message_size()
+    async fn max_message_size(&self) -> Result<Option<u64>> {
+        self.implementation.max_message_size().await
     }
     async fn send(
         &self,

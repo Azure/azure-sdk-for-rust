@@ -9,7 +9,6 @@ use crate::{
     error::ErrorKind,
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
 };
-use async_std::sync::Mutex;
 use azure_core::{
     credentials::AccessToken,
     error::{Error, Result},
@@ -23,6 +22,7 @@ use azure_core_amqp::{
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::sync::{Arc, OnceLock};
 use std::{collections::HashMap, fmt::Debug};
+use tokio::sync::Mutex;
 use tracing::{debug, trace};
 use url::Url;
 

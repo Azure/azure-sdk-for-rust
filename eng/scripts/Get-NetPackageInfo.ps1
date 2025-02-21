@@ -53,6 +53,7 @@ foreach ($serviceDirectory in (Join-Path $SdkRoot 'sdk' -Resolve | Get-ChildItem
       }
 
       [pscustomobject] @{
+        ServiceDirectory    = $serviceDirectory.BaseName.ToLowerInvariant()
         Name                = $packageName
         Description         = $description
         Exists              = $exists

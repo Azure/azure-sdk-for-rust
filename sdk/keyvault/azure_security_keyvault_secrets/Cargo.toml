@@ -16,7 +16,7 @@ categories = ["api-bindings"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-std = { workspace = true, features = ["attributes", "tokio1"] }
+tokio = { workspace = true }
 azure_core = { workspace = true }
 futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

@@ -8,10 +8,10 @@ use super::error::{
 use crate::messaging::{AmqpMessage, AmqpTarget};
 use crate::sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions};
 use crate::session::AmqpSession;
-use async_std::sync::Mutex;
 use azure_core::Result;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
+use tokio::sync::Mutex;
 use tracing::{info, warn};
 
 #[derive(Default)]
@@ -103,7 +103,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         }
     }
 
-    fn max_message_size(&self) -> azure_core::Result<Option<u64>> {
+    async fn max_message_size(&self) -> azure_core::Result<Option<u64>> {
         Ok(self
             .sender
             .get()
@@ -113,7 +113,8 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
                     "Message Sender not set.",
                 )
             })?
-            .lock_blocking()
+            .lock()
+            .await
             .max_message_size())
     }
 

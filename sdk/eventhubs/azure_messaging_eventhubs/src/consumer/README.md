@@ -82,7 +82,7 @@ async fn main() -> Result<(), azure_core::Error> {
 ### Receiving events from a specific partition of the Event Hub
 
 ```rust no_run
-use async_std::stream::StreamExt;
+use futures::stream::StreamExt;
 use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 use azure_messaging_eventhubs::ConsumerClient;
 use futures::pin_mut;

@@ -4,12 +4,12 @@
 
 use super::error::{AmqpLinkDetach, AmqpManagement, AmqpManagementAttach};
 use crate::{cbs::AmqpClaimsBasedSecurityApis, session::AmqpSession};
-use async_std::sync::Mutex;
 use azure_core::error::Result;
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
+use tokio::sync::Mutex;
 use tracing::{debug, trace};
 
 pub(crate) struct Fe2o3ClaimsBasedSecurity<'a> {

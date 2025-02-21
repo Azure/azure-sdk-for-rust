@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use async_std::future::timeout;
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{ConsumerClient, OpenReceiverOptions, StartPosition};
 use futures::{pin_mut, StreamExt};
 use std::{env, error::Error, time::Duration};
+use tokio::time::timeout;
 use tracing::{info, trace};
 
 mod common;
