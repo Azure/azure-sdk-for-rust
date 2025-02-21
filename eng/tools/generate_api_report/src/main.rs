@@ -44,14 +44,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
 
-    // Prettifying the JSON
-    // Parse the JSON to ensure it's valid
-    let json_value: serde_json::Value = serde_json::from_str(&contents)?;
-
-    // Write the pretty-printed JSON back to the file
-    let mut file = File::create(path)?;
-    serde_json::to_writer_pretty(&mut file, &json_value)?;
-
     let mut root: Crate = serde_json::from_str(&contents)?;
 
     // Remove items
@@ -72,7 +64,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         true
     });
-    
+
     // Navigate to Cargo.toml and get the path for the package
     let cargo_toml_path = Path::new("Cargo.toml");
     let cargo_toml_content = std::fs::read_to_string(cargo_toml_path)?;
@@ -103,7 +95,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let output_path_str = review_folder_path.join(format!("{}.rust.json", package_name));
     let output_path = Path::new(&output_path_str);
     let mut output_file = File::create(output_path)?;
-    serde_json::to_writer_pretty(&mut output_file, &root)?;
+    serde_json::to_writer(&mut output_file, &root)?;
 
     println!("File has been generated at: {}", output_path_str.display());
 

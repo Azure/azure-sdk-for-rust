@@ -27,4 +27,4 @@ tests/data/
 # Temporary folder to refresh SDK with TypeSpec.
 TempTypeSpecFiles/
 
-/review/*.rust.json
+sdk/**/review/*.rust.json
