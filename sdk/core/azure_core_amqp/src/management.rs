@@ -27,19 +27,19 @@ pub trait AmqpManagementApis {
 pub(crate) mod error {
     use std::{error::Error, fmt::Debug};
 
+    use crate::error::AmqpSenderError;
+
     pub enum AmqpManagementError {
         AmqpManagementAlreadyAttached,
         AmqpManagementNotAttached,
 
-        // mapped low level errors.
-        /// An error occurred when attaching the sender link.
-        SenderAttachError(Box<dyn std::error::Error + Sync + Send>),
+        /// An error has occurred with Sending the management request.
+        SendError(AmqpSenderError),
 
         /// An error occurred when attaching the receiver link.
         ReceiverAttachError(Box<dyn std::error::Error + Sync + Send>),
 
         InvalidManagementResponse(String),
-        SendError(Box<dyn std::error::Error + Sync + Send>),
         ReceiveError(Box<dyn std::error::Error + Sync + Send>),
         DecodingError,
         NotAccepted,
@@ -65,9 +65,6 @@ pub(crate) mod error {
                 }
                 AmqpManagementError::SendError(s) => {
                     f.write_fmt(format_args!("Error sending management request: {s}"))
-                }
-                AmqpManagementError::SenderAttachError(s) => {
-                    f.write_fmt(format_args!("Error attaching management sender: {s}"))
                 }
                 AmqpManagementError::ReceiverAttachError(s) => {
                     f.write_fmt(format_args!("Error attaching management receiver: {s}"))
@@ -103,9 +100,6 @@ pub(crate) mod error {
                     .debug_tuple("InvalidManagementResponse")
                     .field(arg0)
                     .finish(),
-                Self::SenderAttachError(arg0) => {
-                    f.debug_tuple("SenderAttachError").field(arg0).finish()
-                }
                 Self::ReceiverAttachError(arg0) => {
                     f.debug_tuple("ReceiverAttachError").field(arg0).finish()
                 }
@@ -126,17 +120,16 @@ pub(crate) mod error {
     impl std::error::Error for AmqpManagementError {
         fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
             match self {
-                AmqpManagementError::AmqpManagementAlreadyAttached => None,
-                AmqpManagementError::AmqpManagementNotAttached => None,
-                AmqpManagementError::InvalidManagementResponse(_) => None,
-                AmqpManagementError::SendError(error) => Some(error.as_ref()),
-                AmqpManagementError::ReceiveError(error) => Some(error.as_ref()),
-                AmqpManagementError::SenderAttachError(error) => Some(error.as_ref()),
-                AmqpManagementError::ReceiverAttachError(error) => Some(error.as_ref()),
-                AmqpManagementError::DecodingError => None,
-                AmqpManagementError::NotAccepted => None,
-                AmqpManagementError::Disposition => None,
+                AmqpManagementError::AmqpManagementAlreadyAttached
+                | AmqpManagementError::AmqpManagementNotAttached
+                | AmqpManagementError::DecodingError
+                | AmqpManagementError::NotAccepted
+                | AmqpManagementError::Disposition => None,
                 AmqpManagementError::HttpStatusCode(_, _) => None,
+                AmqpManagementError::InvalidManagementResponse(_) => None,
+                AmqpManagementError::SendError(error) => error.source(),
+                AmqpManagementError::ReceiveError(error) => Some(error.as_ref()),
+                AmqpManagementError::ReceiverAttachError(error) => Some(error.as_ref()),
             }
         }
     }

@@ -99,7 +99,7 @@ impl AmqpSendOptions {}
 
 pub(crate) mod error {
     use crate::{
-        error::{AmqpDescribedError, AmqpErrorKind},
+        error::{AmqpDescribedError, AmqpDetachError, AmqpErrorKind, AmqpLinkStateError},
         AmqpError,
     };
 
@@ -163,6 +163,12 @@ pub(crate) mod error {
 
         /// Remote peer closed the link with an error
         RemoteClosedWithError(AmqpDescribedError),
+
+        /// Remote peer detached
+        DetachError(AmqpDetachError),
+
+        /// Link state error
+        LinkStateError(AmqpLinkStateError),
     }
 
     impl std::error::Error for AmqpSenderError {
@@ -231,6 +237,8 @@ pub(crate) mod error {
                 }
                 AmqpSenderError::IllegalDeliveryState => write!(f, "Illegal delivery state"),
                 AmqpSenderError::MessageEncodeError => write!(f, "Message encode error"),
+                AmqpSenderError::DetachError(e) => write!(f, "Error detaching sender: {:?}", e),
+                AmqpSenderError::LinkStateError(e) => write!(f, "Link state error: {:?}", e),
             }
         }
     }

@@ -11,8 +11,6 @@ pub enum AmqpErrorKind {
     CbsAlreadyAttached,
     CbsNotSet,
     CbsNotAttached,
-    LinkStateError(AmqpLinkStateError),
-    DetachError(AmqpDetachError),
     ManagementError(AmqpManagementError),
     SenderError(AmqpSenderError),
     TransportImplementationError {
@@ -67,8 +65,6 @@ impl std::error::Error for AmqpError {
             AmqpErrorKind::TransportImplementationError { source } => Some(source.as_ref()),
             AmqpErrorKind::ManagementError(e) => e.source(),
             AmqpErrorKind::SenderError(e) => e.source(),
-            AmqpErrorKind::DetachError(e) => e.source(),
-            AmqpErrorKind::LinkStateError(e) => e.source(),
             AmqpErrorKind::ReceiverAlreadyAttached
             | AmqpErrorKind::CouldNotSetMessageReceiver
             | AmqpErrorKind::CbsAlreadyAttached
@@ -81,9 +77,6 @@ impl std::error::Error for AmqpError {
 impl std::fmt::Display for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            AmqpErrorKind::DetachError(err) => {
-                write!(f, "AMQP Detach Error: {} ", err)
-            }
             AmqpErrorKind::ManagementError(err) => {
                 write!(f, "AMQP Management Error: {} ", err)
             }
@@ -103,9 +96,6 @@ impl std::fmt::Display for AmqpError {
             }
             AmqpErrorKind::SenderError(err) => {
                 write!(f, "AMQP Sender Error: {} ", err)
-            }
-            AmqpErrorKind::LinkStateError(err) => {
-                write!(f, "AMQP Link State Error: {} ", err)
             }
         }
     }

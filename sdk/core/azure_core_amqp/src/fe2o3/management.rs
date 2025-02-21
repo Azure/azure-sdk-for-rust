@@ -147,7 +147,7 @@ impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpManagementError {
             }
 
             fe2o3_amqp_management::error::Error::Send(s) => {
-                Ok(AmqpManagementError::SendError(Box::new(s)))
+                Ok(AmqpManagementError::SendError(s.into()))
             }
 
             fe2o3_amqp_management::error::Error::NotAccepted(_o) => {
@@ -169,7 +169,7 @@ impl From<fe2o3_amqp_management::error::AttachError> for AmqpManagementError {
     fn from(e: fe2o3_amqp_management::error::AttachError) -> Self {
         match e {
             fe2o3_amqp_management::error::AttachError::Sender(s) => {
-                AmqpManagementError::SenderAttachError(Box::new(s))
+                AmqpManagementError::SendError(s.into())
             }
             fe2o3_amqp_management::error::AttachError::Receiver(r) => {
                 AmqpManagementError::ReceiverAttachError(Box::new(r))

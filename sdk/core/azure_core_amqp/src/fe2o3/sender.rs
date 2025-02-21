@@ -3,7 +3,7 @@
 
 use super::error::{AmqpDeliveryRejected, AmqpLinkDetach, AmqpNotAccepted, Fe2o3AmqpError};
 use crate::{
-    error::{AmqpDetachError, AmqpError, AmqpErrorKind, AmqpSenderError},
+    error::{AmqpDetachError, AmqpError, AmqpErrorKind, AmqpLinkStateError, AmqpSenderError},
     messaging::{AmqpMessage, AmqpTarget},
     sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions},
     session::AmqpSession,
@@ -149,7 +149,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .borrow_mut()
             .send(sendable)
             .await
-            .map_err(AmqpError::from)?;
+            .map_err(|e| AmqpError::new(AmqpErrorKind::SenderError(e.into())))?;
 
         match outcome {
             fe2o3_amqp_types::messaging::Outcome::Accepted(_) => Ok(()),
@@ -173,28 +173,30 @@ impl Fe2o3AmqpSender {
     }
 }
 
-impl From<fe2o3_amqp::link::DetachError> for AmqpError {
+impl From<fe2o3_amqp::link::DetachError> for AmqpSenderError {
     fn from(e: fe2o3_amqp::link::DetachError) -> Self {
-        AmqpError::new(AmqpErrorKind::DetachError(AmqpDetachError::from(e)))
+        AmqpSenderError::DetachError(AmqpDetachError::from(e))
     }
 }
 
-impl From<fe2o3_amqp::link::SendError> for AmqpError {
+impl From<fe2o3_amqp::link::SendError> for AmqpSenderError {
     fn from(e: fe2o3_amqp::link::SendError) -> Self {
         match e {
             fe2o3_amqp::link::SendError::LinkStateError(link_state_error) => {
                 link_state_error.into()
             }
-            fe2o3_amqp::link::SendError::Detached(detach_error) => detach_error.into(),
-            fe2o3_amqp::link::SendError::NonTerminalDeliveryState => AmqpError::new(
-                AmqpErrorKind::SenderError(AmqpSenderError::NonTerminalDeliveryState),
-            ),
-            fe2o3_amqp::link::SendError::IllegalDeliveryState => AmqpError::new(
-                AmqpErrorKind::SenderError(AmqpSenderError::IllegalDeliveryState),
-            ),
-            fe2o3_amqp::link::SendError::MessageEncodeError => AmqpError::new(
-                AmqpErrorKind::SenderError(AmqpSenderError::MessageEncodeError),
-            ),
+            fe2o3_amqp::link::SendError::Detached(detach_error) => {
+                AmqpSenderError::DetachError(detach_error.into())
+            }
+            fe2o3_amqp::link::SendError::NonTerminalDeliveryState => {
+                AmqpSenderError::NonTerminalDeliveryState
+            }
+
+            fe2o3_amqp::link::SendError::IllegalDeliveryState => {
+                AmqpSenderError::IllegalDeliveryState
+            }
+
+            fe2o3_amqp::link::SendError::MessageEncodeError => AmqpSenderError::MessageEncodeError,
         }
     }
 }
@@ -243,29 +245,31 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpSenderError {
     }
 }
 
-impl From<fe2o3_amqp::link::LinkStateError> for AmqpError {
+impl From<fe2o3_amqp::link::LinkStateError> for AmqpSenderError {
     fn from(e: fe2o3_amqp::link::LinkStateError) -> Self {
         match e {
             fe2o3_amqp::link::LinkStateError::IllegalState => {
-                AmqpError::new(AmqpErrorKind::SenderError(AmqpSenderError::IllegalState))
+                AmqpSenderError::LinkStateError(AmqpLinkStateError::IllegalState)
             }
-            fe2o3_amqp::link::LinkStateError::IllegalSessionState => AmqpError::new(
-                AmqpErrorKind::SenderError(AmqpSenderError::IllegalSessionState),
-            ),
-            fe2o3_amqp::link::LinkStateError::ExpectImmediateDetach => AmqpError::new(
-                AmqpErrorKind::SenderError(AmqpSenderError::ExpectImmediateDetach),
-            ),
-            fe2o3_amqp::link::LinkStateError::RemoteDetachedWithError(error) => AmqpError::new(
-                AmqpErrorKind::DetachError(AmqpDetachError::RemoteDetachedWithError(error.into())),
-            ),
-            fe2o3_amqp::link::LinkStateError::RemoteClosedWithError(error) => AmqpError::new(
-                AmqpErrorKind::SenderError(AmqpSenderError::RemoteClosedWithError(error.into())),
-            ),
-            fe2o3_amqp::link::LinkStateError::RemoteDetached => AmqpError::new(
-                AmqpErrorKind::DetachError(AmqpDetachError::DetachedByRemote),
-            ),
+            fe2o3_amqp::link::LinkStateError::IllegalSessionState => {
+                AmqpSenderError::LinkStateError(AmqpLinkStateError::IllegalSessionState)
+            }
+            fe2o3_amqp::link::LinkStateError::ExpectImmediateDetach => {
+                AmqpSenderError::LinkStateError(AmqpLinkStateError::ExpectImmediateDetach)
+            }
+            fe2o3_amqp::link::LinkStateError::RemoteDetachedWithError(error) => {
+                AmqpSenderError::DetachError(AmqpDetachError::RemoteDetachedWithError(error.into()))
+            }
+
+            fe2o3_amqp::link::LinkStateError::RemoteClosedWithError(error) => {
+                AmqpSenderError::RemoteClosedWithError(error.into())
+            }
+
+            fe2o3_amqp::link::LinkStateError::RemoteDetached => {
+                AmqpSenderError::DetachError(AmqpDetachError::DetachedByRemote)
+            }
             fe2o3_amqp::link::LinkStateError::RemoteClosed => {
-                AmqpError::new(AmqpErrorKind::DetachError(AmqpDetachError::ClosedByRemote))
+                AmqpSenderError::DetachError(AmqpDetachError::ClosedByRemote)
             }
         }
     }
