@@ -26,4 +26,4 @@ workspace = true
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros"] }
 azure_identity.workspace = true
-azure_core_test.workspace = true
+azure_core_test.path = "../../core/azure_core_test"
