@@ -17,16 +17,6 @@
 // This function is unsafe because it calls into C code. The caller must ensure:
 // * The input value is a valid i32
 // * The resulting absolute value can be represented as an i32
-//
-// # Examples
-//
-// ```
-// # use azure_template::ffi::abs;
-// unsafe {
-//     assert_eq!(abs(-42), 42);
-//     assert_eq!(abs(0), 0);
-// }
-// ```
 extern "C" {
     pub fn abs(input: i32) -> i32;
 }

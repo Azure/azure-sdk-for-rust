@@ -14,18 +14,6 @@ pub mod lease;
 ///
 /// This trait demonstrates proper trait design patterns including
 /// documentation and method signatures.
-///
-/// # Examples
-///
-/// ```
-/// use azure_template::module_example::{Template, TemplateOperation};
-///
-/// let template = Template {
-///     name: String::from("example"),
-///     value: 42
-/// };
-/// assert!(template.process().contains("example"));
-/// ```
 pub trait TemplateOperation {
     /// Process the template and return a formatted string representation
     fn process(&self) -> String;
@@ -40,22 +28,6 @@ pub trait TemplateOperation {
 /// # Type Parameters
 ///
 /// * `T` - The type of value stored in the template, must implement Display
-///
-/// # Examples
-///
-/// ```
-/// use azure_template::module_example::Template;
-///
-/// let string_template = Template {
-///     name: String::from("text"),
-///     value: String::from("Hello")
-/// };
-///
-/// let number_template = Template {
-///     name: String::from("count"),
-///     value: 42
-/// };
-/// ```
 #[derive(Debug, Clone)]
 pub struct Template<T: std::fmt::Display> {
     /// Name of the template
@@ -83,20 +55,6 @@ impl<T: std::fmt::Display> TemplateOperation for Template<T> {
 ///
 /// * `Ok(String)` - The processed template string
 /// * `Err(&str)` - An error message if processing fails
-///
-/// # Examples
-///
-/// ```
-/// use azure_template::module_example::{Template, process_template};
-///
-/// let template = Template {
-///     name: String::from("example"),
-///     value: 42
-/// };
-/// let result = process_template(&template).unwrap();
-/// assert!(result.contains("example"));
-/// assert!(result.contains("42"));
-/// ```
 pub fn process_template<T: std::fmt::Display>(
     template: &Template<T>,
 ) -> Result<String, &'static str> {

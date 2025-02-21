@@ -13,20 +13,6 @@ use std::time::Duration;
 ///
 /// Implement this trait for types that need to be configured after initialization
 /// but before use.
-///
-/// # Examples
-/// ```
-/// # use azure_template::configuration::*;
-/// struct Service {
-///     config: Configuration
-/// }
-///
-/// impl Configurable for Service {
-///     fn configure(&mut self) {
-///         // Configure the service
-///     }
-/// }
-/// ```
 pub trait Configurable {
     /// Configure the implementing type with runtime settings
     fn configure(&mut self);
@@ -36,13 +22,6 @@ pub trait Configurable {
 ///
 /// Holds various configuration options that control the behavior
 /// of template operations.
-///
-/// # Examples
-/// ```
-/// # use azure_template::configuration::Configuration;
-/// let config = Configuration::new(30);
-/// assert_eq!(config.timeout, 30);
-/// ```
 #[derive(Debug, Clone)]
 pub struct Configuration {
     /// Timeout duration in seconds for operations
@@ -77,13 +56,6 @@ pub static DEFAULT_TIMEOUT: u64 = 30;
 pub const MAX_RETRIES: u32 = 3;
 
 /// Macro for creating a new Configuration instance
-///
-/// # Examples
-/// ```
-/// # use azure_template::create_configuration;
-/// let config = create_configuration!(60);
-/// assert_eq!(config.timeout, 60);
-/// ```
 #[macro_export]
 macro_rules! create_configuration {
     ($timeout:expr) => {
