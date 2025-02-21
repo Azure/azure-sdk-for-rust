@@ -54,7 +54,7 @@ impl BlobAppendBlobClient {
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", transactional_content_md5);
         }
-        request.insert_header("content-type", "application/xml");
+        request.insert_header("content-type", "application/octet-stream");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -214,7 +214,10 @@ impl BlobAppendBlobClient {
             request.insert_header("x-ms-source-if-match", source_if_match);
         }
         if let Some(source_if_modified_since) = options.source_if_modified_since {
-            request.insert_header("x-ms-source-if-modified-since", source_if_modified_since);
+            request.insert_header(
+                "x-ms-source-if-modified-since",
+                date::to_rfc7231(&source_if_modified_since),
+            );
         }
         if let Some(source_if_none_match) = options.source_if_none_match {
             request.insert_header("x-ms-source-if-none-match", source_if_none_match);
@@ -222,7 +225,7 @@ impl BlobAppendBlobClient {
         if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
             request.insert_header(
                 "x-ms-source-if-unmodified-since",
-                source_if_unmodified_since,
+                date::to_rfc7231(&source_if_unmodified_since),
             );
         }
         if let Some(source_range) = options.source_range {
@@ -323,7 +326,7 @@ impl BlobAppendBlobClient {
         if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
             request.insert_header(
                 "x-ms-immutability-policy-until-date",
-                immutability_policy_expiry,
+                date::to_rfc7231(&immutability_policy_expiry),
             );
         }
         if let Some(lease_id) = options.lease_id {

@@ -10,15 +10,17 @@ pub mod clients {
     pub mod blob_client;
     pub mod blob_container_client;
     pub mod blob_service_client;
+
+    pub use blob_client::BlobClient;
+    pub use blob_container_client::BlobContainerClient;
+    pub use blob_service_client::BlobServiceClient;
+
     pub use crate::generated::clients::{
         BlobAppendBlobClient, BlobBlobClient, BlobBlockBlobClient,
         BlobClient as GeneratedBlobClient, BlobClientOptions,
         BlobContainerClient as GeneratedContainerClient, BlobPageBlobClient,
         BlobServiceClient as GeneratedServiceClient,
     };
-    pub use blob_client::BlobClient;
-    pub use blob_container_client::BlobContainerClient;
-    pub use blob_service_client::BlobServiceClient;
 }
 
 pub mod models {
@@ -31,30 +33,33 @@ pub mod models {
         BlobBlobClientDeleteImmutabilityPolicyOptions, BlobBlobClientDeleteOptions,
         BlobBlobClientDownloadOptions, BlobBlobClientGetAccountInfoOptions,
         BlobBlobClientGetPropertiesOptions, BlobBlobClientGetTagsOptions,
-        BlobBlobClientQueryOptions, BlobBlobClientReleaseLeaseOptions,
-        BlobBlobClientRenewLeaseOptions, BlobBlobClientSetExpiryOptions,
-        BlobBlobClientSetHttpHeadersOptions, BlobBlobClientSetImmutabilityPolicyOptions,
-        BlobBlobClientSetLegalHoldOptions, BlobBlobClientSetMetadataOptions,
-        BlobBlobClientSetTagsOptions, BlobBlobClientSetTierOptions,
-        BlobBlobClientStartCopyFromUrlOptions, BlobBlobClientUndeleteOptions,
-        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientGetBlockListOptions,
-        BlobBlockBlobClientPutBlobFromUrlOptions, BlobBlockBlobClientStageBlockFromUrlOptions,
+        BlobBlobClientReleaseLeaseOptions, BlobBlobClientRenewLeaseOptions,
+        BlobBlobClientSetExpiryOptions, BlobBlobClientSetHttpHeadersOptions,
+        BlobBlobClientSetImmutabilityPolicyOptions, BlobBlobClientSetLegalHoldOptions,
+        BlobBlobClientSetMetadataOptions, BlobBlobClientSetTagsOptions,
+        BlobBlobClientSetTierOptions, BlobBlobClientStartCopyFromUrlOptions,
+        BlobBlobClientUndeleteOptions, BlobBlockBlobClientCommitBlockListOptions,
+        BlobBlockBlobClientGetBlockListOptions, BlobBlockBlobClientPutBlobFromUrlOptions,
+        BlobBlockBlobClientQueryOptions, BlobBlockBlobClientStageBlockFromUrlOptions,
         BlobBlockBlobClientStageBlockOptions, BlobBlockBlobClientUploadOptions,
         BlobContainerClientAcquireLeaseOptions, BlobContainerClientBreakLeaseOptions,
         BlobContainerClientChangeLeaseOptions, BlobContainerClientCreateOptions,
         BlobContainerClientDeleteOptions, BlobContainerClientFilterBlobsOptions,
         BlobContainerClientGetAccessPolicyOptions, BlobContainerClientGetAccountInfoOptions,
-        BlobContainerClientGetPropertiesOptions, BlobContainerClientReleaseLeaseOptions,
+        BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
+        BlobContainerClientListBlobHierarchySegmentOptions, BlobContainerClientReleaseLeaseOptions,
         BlobContainerClientRenameOptions, BlobContainerClientRenewLeaseOptions,
         BlobContainerClientRestoreOptions, BlobContainerClientSetAccessPolicyOptions,
         BlobContainerClientSetMetadataOptions, BlobContainerClientSubmitBatchOptions,
         BlobPageBlobClientClearPagesOptions, BlobPageBlobClientCopyIncrementalOptions,
-        BlobPageBlobClientCreateOptions, BlobPageBlobClientResizeOptions,
+        BlobPageBlobClientCreateOptions, BlobPageBlobClientGetPageRangesDiffOptions,
+        BlobPageBlobClientGetPageRangesOptions, BlobPageBlobClientResizeOptions,
         BlobPageBlobClientUpdateSequenceNumberOptions, BlobPageBlobClientUploadPagesFromUrlOptions,
         BlobPageBlobClientUploadPagesOptions, BlobServiceClientFilterBlobsOptions,
         BlobServiceClientGetAccountInfoOptions, BlobServiceClientGetPropertiesOptions,
         BlobServiceClientGetStatisticsOptions, BlobServiceClientGetUserDelegationKeyOptions,
-        BlobServiceClientSetPropertiesOptions, BlobServiceClientSubmitBatchOptions,
+        BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
+        BlobServiceClientSubmitBatchOptions,
     };
     pub use crate::generated::enums::*;
     pub use crate::generated::models::*;

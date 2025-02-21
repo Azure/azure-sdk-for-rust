@@ -1,5 +1,5 @@
 [package]
-name = "azure_storage_blob"
+name = "azure_storage_blobs"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
@@ -15,6 +15,7 @@ azure_storage_common.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
 azure_identity = { workspace = true }
 serde.workspace = true
+serde_json = { workspace = true, optional = true }
 time.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
 uuid.workspace = true
@@ -27,3 +28,4 @@ workspace = true
 tokio = { workspace = true, features = ["macros"] }
 azure_identity.workspace = true
 azure_core_test.workspace = true
+serde_json = { workspace = true }

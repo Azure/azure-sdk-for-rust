@@ -6,7 +6,8 @@
 use super::internal_models::{GetUserDelegationKeyRequest, SetPropertiesRequest};
 use crate::generated::clients::method_options::*;
 use crate::models::{
-    FilterBlobSegment, StorageServiceProperties, StorageServiceStats, UserDelegationKey,
+    FilterBlobSegment, ListContainersSegmentResponse, StorageServiceProperties,
+    StorageServiceStats, UserDelegationKey,
 };
 use azure_core::{
     Bytes, Context, Method, Pipeline, Request, RequestContent, Response, Result, Url,
@@ -201,6 +202,54 @@ impl BlobServiceClient {
         }
         .try_into()?;
         request.set_body(body);
+        self.pipeline.send(&ctx, &mut request).await
+    }
+
+    /// The List Containers Segment operation returns a list of the containers under the specified account
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    pub async fn list_containers_segment(
+        &self,
+        options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
+    ) -> Result<Response<ListContainersSegmentResponse>> {
+        let options = options.unwrap_or_default();
+        let ctx = Context::with_context(&options.method_options.context);
+        let mut url = self.endpoint.clone();
+        url = url.join("")?;
+        url.query_pairs_mut().append_pair("comp", "list");
+        if let Some(include) = options.include {
+            url.query_pairs_mut().append_pair(
+                "include",
+                &include
+                    .iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            );
+        }
+        if let Some(marker) = options.marker {
+            url.query_pairs_mut().append_pair("marker", &marker);
+        }
+        if let Some(maxresults) = options.maxresults {
+            url.query_pairs_mut()
+                .append_pair("maxresults", &maxresults.to_string());
+        }
+        if let Some(prefix) = options.prefix {
+            url.query_pairs_mut().append_pair("prefix", &prefix);
+        }
+        if let Some(timeout) = options.timeout {
+            url.query_pairs_mut()
+                .append_pair("timeout", &timeout.to_string());
+        }
+        let mut request = Request::new(url, Method::Get);
+        request.insert_header("accept", "application/xml");
+        request.insert_header("content-type", "application/xml");
+        if let Some(client_request_id) = options.client_request_id {
+            request.insert_header("x-ms-client-request-id", client_request_id);
+        }
+        request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await
     }
 

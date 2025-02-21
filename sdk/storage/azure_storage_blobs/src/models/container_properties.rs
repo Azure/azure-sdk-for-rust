@@ -3,15 +3,14 @@
 
 use azure_core::{
     headers::{
-        FromHeaders, HeaderName, Headers, BLOB_ACCESS_TIER, BLOB_TYPE, CREATION_TIME, ETAG,
-        HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_STATE, LEASE_STATUS, SERVER_ENCRYPTED,
-        VERSION,
+        FromHeaders, HeaderName, Headers, ETAG, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD,
+        LEASE_STATE, LEASE_STATUS, VERSION,
     },
     Error, Etag, LeaseStatus,
 };
 use typespec_client_core::fmt::SafeDebug;
 
-use crate::models::{AccessTier, BlobType, LeaseState};
+use crate::models::LeaseState;
 
 pub const LAST_MODIFIED: HeaderName = HeaderName::from_static("last-modified");
 pub const IMMUTABLE_STORAGE_WITH_VERSIONING_ENABLED: HeaderName =
@@ -19,7 +18,7 @@ pub const IMMUTABLE_STORAGE_WITH_VERSIONING_ENABLED: HeaderName =
 
 /// Properties of an Azure Storage container.
 ///
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct ContainerProperties {
     pub last_modified: Option<String>,
     pub lease_state: Option<LeaseState>,

@@ -4,7 +4,7 @@
 use azure_core::StatusCode;
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredentialBuilder;
-use azure_storage_blob::{
+use azure_storage_blobs::{
     clients::BlobContainerClient,
     models::{BlobContainerClientGetPropertiesOptions, LeaseState},
     BlobClientOptions,

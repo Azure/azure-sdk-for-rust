@@ -1,18 +1,19 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{headers::HeaderName, RequestContent, StatusCode};
+use azure_core::{base64, headers::HeaderName, Request, RequestContent, StatusCode};
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredentialBuilder;
-use azure_storage_blob::{
+use azure_storage_blobs::{
     clients::{BlobClient, BlobContainerClient},
     models::{
-        BlobBlobClientGetPropertiesOptions, BlobBlockBlobClientCommitBlockListOptions,
-        BlobBlockBlobClientGetBlockListOptions, BlobBlockBlobClientStageBlockOptions, BlobType,
-        BlockListType, BlockLookupList,
+        BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions,
+        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientGetBlockListOptions,
+        BlobBlockBlobClientStageBlockOptions, BlobType, BlockList, BlockListType, BlockLookupList,
     },
     BlobClientOptions,
 };
+use serde_json;
 use std::{env, error::Error};
 
 #[recorded::test(live)]
@@ -95,7 +96,6 @@ async fn test_get_blob_properties_invalid_container() -> Result<(), Box<dyn Erro
 async fn test_download_blob() -> Result<(), Box<dyn Error>> {
     // Setup
 
-    use azure_storage_blob::models::BlobBlobClientDownloadOptions;
     let storage_account_name = env::var("AZURE_STORAGE_ACCOUNT_NAME")
         .expect("Failed to get environment variable: AZURE_STORAGE_ACCOUNT_NAME");
     let endpoint = format!("https://{}.blob.core.windows.net/", storage_account_name);
@@ -297,35 +297,26 @@ async fn test_put_block_list() -> Result<(), Box<dyn Error>> {
         )
         .await?;
 
-    let put_block_list = blob_client
-        .get_block_list(
-            BlockListType::Uncommitted,
-            Some(BlobBlockBlobClientGetBlockListOptions::default()),
+    let latest_blocks: Vec<String> = vec![
+        base64::encode("1"),
+        base64::encode("2"),
+        base64::encode("3"),
+    ];
+    let block_lookup_list = BlockLookupList {
+        committed: None,
+        latest: Some(latest_blocks),
+        uncommitted: None,
+    };
+
+    let serialized = serde_json::to_vec(&block_lookup_list)?;
+    let rq: RequestContent<BlockLookupList> = RequestContent::from(serialized);
+
+    blob_client
+        .commit_block_list(
+            rq,
+            Some(BlobBlockBlobClientCommitBlockListOptions::default()),
         )
         .await?;
-
-    let res = put_block_list.into_raw_body().collect_string().await?;
-    println!("Raw Response Body: {:?}", res);
-
-    // let put_block_list: BlockLookupList = put_block_list.into_body().await?;
-    // println!("PBL: {:?}", put_block_list);
-    // println!(
-    //     "Committed: {:?}",
-    //     put_block_list.committed.unwrap_or_default()
-    // );
-    // println!("Latest: {:?}", put_block_list.latest.unwrap_or_default());
-    // println!(
-    //     "Uncommit: {:?}",
-    //     put_block_list.uncommitted.unwrap_or_default()
-    // );
-    // let put_block_list: RequestContent<BlockLookupList> = put_block_list.try_into()?;
-
-    // blob_client
-    //     .commit_block_list(
-    //         put_block_list,
-    //         Some(BlobBlockBlobClientCommitBlockListOptions::default()),
-    //     )
-    //     .await?;
 
     // let response = blob_client
     //     .get_blob_properties(Some(BlobBlobClientGetPropertiesOptions::default()))

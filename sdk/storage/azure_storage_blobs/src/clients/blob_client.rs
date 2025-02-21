@@ -7,7 +7,7 @@ use crate::{
         BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions,
         BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientGetBlockListOptions,
         BlobBlockBlobClientStageBlockOptions, BlobBlockBlobClientUploadOptions, BlobProperties,
-        BlockListType, BlockLookupList,
+        BlockList, BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions,
@@ -133,12 +133,11 @@ impl BlobClient {
         Ok(response)
     }
 
-    // Returns back empty
     pub async fn get_block_list(
         &self,
         list_type: BlockListType,
         options: Option<BlobBlockBlobClientGetBlockListOptions<'_>>,
-    ) -> Result<Response<BlockLookupList>> {
+    ) -> Result<Response<BlockList>> {
         let response = self
             .client
             .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
