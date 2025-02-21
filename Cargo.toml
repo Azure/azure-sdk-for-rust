@@ -18,7 +18,6 @@ members = [
   "sdk/storage/azure_storage_blob",
   "sdk/template/azure_template_core",
   "sdk/template/azure_template",
-  "sdk/template/azure_template_macros",
 ]
 
 [workspace.package]
