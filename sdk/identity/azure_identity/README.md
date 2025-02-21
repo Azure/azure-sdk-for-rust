@@ -82,7 +82,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 |Credential|Usage
 |-|-
-|[`ImdsManagedIdentityCredential`][managed_id_cred_ref]| Authenticates the managed identity of an Azure resource.
 |[`WorkloadIdentityCredential`][workload_id_cred_ref]| Supports [Microsoft Entra Workload ID](https://learn.microsoft.com/azure/aks/workload-identity-overview) on Kubernetes.
 
 ### Authenticate service principals
@@ -101,7 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Client library support
 
-Client and management libraries listed on the [Azure SDK release page](https://azure.github.io/azure-sdk/releases/latest/rust.html)that support Microsoft Entra authentication accept credentials from this library. You can learn more about using these libraries in their documentation, which is available at [Docs.rs](https://Docs.rs).
+Client and management libraries listed on the [Azure SDK release page](https://azure.github.io/azure-sdk/releases/latest/#rust)that support Microsoft Entra authentication accept credentials from this library. You can learn more about using these libraries in their documentation, which is available at [Docs.rs](https://Docs.rs).
 
 ### Provide feedback
 
@@ -120,12 +119,11 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [azure_security_keyvault_secrets]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets
 [Azure subscription]: https://azure.microsoft.com/free/
 [cert_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientCertificateCredential.html
-[cli_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.AzureauthCliCredential.html
+[cli_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.AzureCliCredential.html
 [default_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.DefaultAzureCredential.html
 [Microsoft Entra ID documentation]: https://learn.microsoft.com/entra/identity/
 [API reference documentation]: https://docs.rs/azure_identity/latest/azure_identity/
-[managed_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ImdsManagedIdentityCredential.html
 [Package (crates.io)]: https://crates.io/crates/azure_identity
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
-[token_cred_ref]: https://docs.rs/azure_core/latest/azure_core/struct.TokenCredential.html
+[token_cred_ref]: https://docs.rs/azure_core/latest/azure_core/credentials/trait.TokenCredential.html
 [workload_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.WorkloadIdentityCredential.html
