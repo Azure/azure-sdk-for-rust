@@ -68,7 +68,6 @@ path = "sdk/storage"
 [workspace.dependencies]
 async-lock = "3.0"
 async-process = "2.0"
-async-std = { version = "1.12", features = ["attributes"] }
 async-stream = { version = "0.3.5" }
 async-trait = "0.1"
 base64 = "0.22"
