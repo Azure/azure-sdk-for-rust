@@ -48,6 +48,12 @@ impl FromHeaders for BlobProperties {
             "etag",
             "last-modified",
             "x-ms-access-tier-inferred",
+            "x-ms-access-tier",
+            "x-ms-blob-type",
+            "x-ms-creation-time",
+            "x-ms-lease-state",
+            "x-ms-lease-status",
+            "x-ms-server-encrypted",
         ]
     }
 
