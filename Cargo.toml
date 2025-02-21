@@ -19,7 +19,6 @@ members = [
   "sdk/template/azure_template_core",
   "sdk/template/azure_template",
 ]
-exclude = ["eng/tools/generate_api_report"]
 
 [workspace.package]
 authors = ["Microsoft"]
