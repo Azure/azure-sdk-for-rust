@@ -53,6 +53,8 @@ json = ["typespec/json"]
 reqwest = ["reqwest/native-tls"]
 reqwest_gzip = ["reqwest/gzip"]
 reqwest_rustls = ["reqwest/rustls-tls-native-roots"]
+# Enables extra tracing including error bodies that may contain PII.
+test = []
 tokio_fs = ["tokio/fs", "tokio/sync", "tokio/io-util"]
 tokio_sleep = ["tokio/time"]
 xml = ["dep:quick-xml"]
