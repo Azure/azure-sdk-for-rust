@@ -11,3 +11,7 @@ missingcontainer
 RAGRS
 restype
 testcontainer
+testcontainerpbl
+testcontainergbl
+testblob
+AAABBBCCC
