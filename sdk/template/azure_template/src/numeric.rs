@@ -209,11 +209,10 @@ impl IntOrFloat {
 
     /// Returns true if the value was stored as an integer
     pub fn is_int(&self) -> bool {
-        // Implementation detail: We use a simple heuristic by checking
-        // if the float representation would be a whole number
         unsafe {
             let as_float = self.float;
-            as_float.fract() == 0.0 && as_float >= i32::MIN as f32 && as_float <= i32::MAX as f32
+            let as_int = as_float as i32;
+            as_float == as_int as f32 && as_float >= i32::MIN as f32 && as_float <= i32::MAX as f32
         }
     }
 
