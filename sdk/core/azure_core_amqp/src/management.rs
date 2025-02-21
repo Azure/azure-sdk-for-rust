@@ -32,6 +32,12 @@ pub(crate) mod error {
         AmqpManagementNotAttached,
 
         // mapped low level errors.
+        /// An error occurred when attaching the sender link.
+        SenderAttachError(Box<dyn std::error::Error + Sync + Send>),
+
+        /// An error occurred when attaching the receiver link.
+        ReceiverAttachError(Box<dyn std::error::Error + Sync + Send>),
+
         InvalidManagementResponse(String),
         SendError(Box<dyn std::error::Error + Sync + Send>),
         ReceiveError(Box<dyn std::error::Error + Sync + Send>),
@@ -59,6 +65,12 @@ pub(crate) mod error {
                 }
                 AmqpManagementError::SendError(s) => {
                     f.write_fmt(format_args!("Error sending management request: {s}"))
+                }
+                AmqpManagementError::SenderAttachError(s) => {
+                    f.write_fmt(format_args!("Error attaching management sender: {s}"))
+                }
+                AmqpManagementError::ReceiverAttachError(s) => {
+                    f.write_fmt(format_args!("Error attaching management receiver: {s}"))
                 }
                 AmqpManagementError::ReceiveError(r) => {
                     f.write_fmt(format_args!("Error receiving request: {r}"))
@@ -91,6 +103,12 @@ pub(crate) mod error {
                     .debug_tuple("InvalidManagementResponse")
                     .field(arg0)
                     .finish(),
+                Self::SenderAttachError(arg0) => {
+                    f.debug_tuple("SenderAttachError").field(arg0).finish()
+                }
+                Self::ReceiverAttachError(arg0) => {
+                    f.debug_tuple("ReceiverAttachError").field(arg0).finish()
+                }
                 Self::SendError(arg0) => f.debug_tuple("SendError").field(arg0).finish(),
                 Self::ReceiveError(arg0) => f.debug_tuple("ReceiveError").field(arg0).finish(),
                 Self::DecodingError => write!(f, "DecodingError"),
@@ -113,6 +131,8 @@ pub(crate) mod error {
                 AmqpManagementError::InvalidManagementResponse(_) => None,
                 AmqpManagementError::SendError(error) => Some(error.as_ref()),
                 AmqpManagementError::ReceiveError(error) => Some(error.as_ref()),
+                AmqpManagementError::SenderAttachError(error) => Some(error.as_ref()),
+                AmqpManagementError::ReceiverAttachError(error) => Some(error.as_ref()),
                 AmqpManagementError::DecodingError => None,
                 AmqpManagementError::NotAccepted => None,
                 AmqpManagementError::Disposition => None,

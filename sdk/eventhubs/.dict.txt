@@ -2,3 +2,6 @@ amqps
 consts
 eventdata
 mgmt
+amqp
+rustc
+eventhubs

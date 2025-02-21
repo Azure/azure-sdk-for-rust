@@ -16,7 +16,7 @@ use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 use tracing::debug;
 
-use super::error::{AmqpLinkDetach, AmqpManagementAttach};
+use super::error::AmqpLinkDetach;
 
 #[derive(Debug)]
 pub(crate) struct Fe2o3AmqpManagement {
@@ -56,10 +56,12 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .client_node_addr(&self.client_node_name)
             .attach(self.session.lock().await.borrow_mut())
             .await
-            .map_err(AmqpManagementAttach::from)?;
+            .map_err(|e| {
+                AmqpError::new(AmqpErrorKind::ManagementError(AmqpManagementError::from(e)))
+            })?;
 
         self.management.set(Mutex::new(management)).map_err(|_| {
-            azure_core::Error::from(AmqpError::new(AmqpErrorKind::AmqpManagementError(
+            azure_core::Error::from(AmqpError::new(AmqpErrorKind::ManagementError(
                 AmqpManagementError::AmqpManagementAlreadyAttached,
             )))
         })?;
@@ -69,7 +71,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
     async fn detach(mut self) -> Result<()> {
         // Detach the management client from the session.
         let management = self.management.take().ok_or_else(|| {
-            azure_core::Error::from(AmqpError::new(AmqpErrorKind::AmqpManagementError(
+            azure_core::Error::from(AmqpError::new(AmqpErrorKind::ManagementError(
                 AmqpManagementError::AmqpManagementNotAttached,
             )))
         })?;
@@ -87,7 +89,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .management
             .get()
             .ok_or_else(|| {
-                azure_core::Error::from(AmqpError::new(AmqpErrorKind::AmqpManagementError(
+                azure_core::Error::from(AmqpError::new(AmqpErrorKind::ManagementError(
                     AmqpManagementError::AmqpManagementNotAttached,
                 )))
             })?
@@ -104,7 +106,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
         if let Err(e) = response {
             let e = AmqpManagementError::try_from(e)?;
             Err(azure_core::Error::from(AmqpError::new(
-                AmqpErrorKind::AmqpManagementError(e),
+                AmqpErrorKind::ManagementError(e),
             )))
         } else {
             Ok(response.unwrap().entity_attributes.into())
@@ -158,6 +160,19 @@ impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpManagementError {
 
             fe2o3_amqp_management::error::Error::Disposition(_d) => {
                 Ok(AmqpManagementError::Disposition)
+            }
+        }
+    }
+}
+
+impl From<fe2o3_amqp_management::error::AttachError> for AmqpManagementError {
+    fn from(e: fe2o3_amqp_management::error::AttachError) -> Self {
+        match e {
+            fe2o3_amqp_management::error::AttachError::Sender(s) => {
+                AmqpManagementError::SenderAttachError(Box::new(s))
+            }
+            fe2o3_amqp_management::error::AttachError::Receiver(r) => {
+                AmqpManagementError::ReceiverAttachError(Box::new(r))
             }
         }
     }

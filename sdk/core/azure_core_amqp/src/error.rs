@@ -4,8 +4,12 @@
 pub use crate::management::error::AmqpManagementError;
 
 pub enum AmqpErrorKind {
-    AmqpReceiverAlreadyAttached,
-    AmqpManagementError(AmqpManagementError),
+    ReceiverAlreadyAttached,
+    CouldNotSetMessageReceiver,
+    CbsAlreadyAttached,
+    CbsNotSet,
+    CbsNotAttached,
+    ManagementError(AmqpManagementError),
     TransportImplementationError {
         source: Box<dyn std::error::Error + Send + Sync>,
     },
@@ -25,8 +29,12 @@ impl std::error::Error for AmqpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.kind {
             AmqpErrorKind::TransportImplementationError { source } => Some(source.as_ref()),
-            AmqpErrorKind::AmqpManagementError(e) => e.source(),
-            AmqpErrorKind::AmqpReceiverAlreadyAttached => None,
+            AmqpErrorKind::ManagementError(e) => e.source(),
+            AmqpErrorKind::ReceiverAlreadyAttached
+            | AmqpErrorKind::CouldNotSetMessageReceiver
+            | AmqpErrorKind::CbsAlreadyAttached
+            | AmqpErrorKind::CbsNotSet
+            | AmqpErrorKind::CbsNotAttached => None,
         }
     }
 }
@@ -34,12 +42,20 @@ impl std::error::Error for AmqpError {
 impl std::fmt::Display for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            AmqpErrorKind::AmqpManagementError(err) => {
+            AmqpErrorKind::ManagementError(err) => {
                 write!(f, "AMQP Management Error: {} ", err)
             }
-            AmqpErrorKind::AmqpReceiverAlreadyAttached => {
+            AmqpErrorKind::ReceiverAlreadyAttached => {
                 f.write_str("AMQP Receiver is already attached")
             }
+            AmqpErrorKind::CouldNotSetMessageReceiver => {
+                f.write_str("Could not set message receiver.")
+            }
+            AmqpErrorKind::CbsAlreadyAttached => {
+                f.write_str("Claims Based Security is already attached")
+            }
+            AmqpErrorKind::CbsNotSet => f.write_str("Claims Based Security is not set"),
+            AmqpErrorKind::CbsNotAttached => f.write_str("Claims Based Security is not attached"),
             AmqpErrorKind::TransportImplementationError { source } => {
                 write!(f, "Transport Implementation Error: {:?}", source)
             }

@@ -49,7 +49,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
     ) -> Result<()> {
         if self.receiver.get().is_some() {
             return Err(crate::error::AmqpError::new(
-                crate::error::AmqpErrorKind::AmqpReceiverAlreadyAttached,
+                crate::error::AmqpErrorKind::ReceiverAlreadyAttached,
             )
             .into());
         }

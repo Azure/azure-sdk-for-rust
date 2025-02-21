@@ -25,6 +25,7 @@ azure_core_amqp.workspace = true
 futures.workspace = true
 time.workspace = true
 tracing.workspace = true
+typespec = { workspace = true, features = ["eventhubs_errors"] }
 url.workspace = true
 uuid.workspace = true
 

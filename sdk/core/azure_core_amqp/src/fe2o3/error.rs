@@ -59,8 +59,7 @@ impl_from_external_error! {
     (AmqpLinkDetach, fe2o3_amqp::link::DetachError),
     (AmqpOpen, fe2o3_amqp::connection::OpenError),
     (AmqpConnection, fe2o3_amqp::connection::Error),
-    (AmqpManagementAttach, fe2o3_amqp_management::error::AttachError),
-    (AmqpManagement, fe2o3_amqp_management::error::Error),
+//    (AmqpManagementAttach, fe2o3_amqp_management::error::AttachError),
     (AmqpBegin, fe2o3_amqp::session::BeginError),
     (AmqpSenderAttach, fe2o3_amqp::link::SenderAttachError),
     (AmqpReceiverAttach, fe2o3_amqp::link::ReceiverAttachError),
@@ -116,9 +115,8 @@ pub enum Fe2o3ErrorKind {
     NotAccepted { source: AmqpNotAccepted },
     TimeError { source: TimeError },
     AmqpOpen { source: AmqpOpen },
-    AmqpManagementAttach { source: AmqpManagementAttach },
+    //    AmqpManagementAttach { source: AmqpManagementAttach },
     AmqpBegin { source: AmqpBegin },
-    AmqpManagement { source: AmqpManagement },
     AmqpConnection { source: AmqpConnection },
     AmqpLinkDetach { source: AmqpLinkDetach },
     AmqpSession { source: AmqpSession },
@@ -141,9 +139,7 @@ impl std::error::Error for Fe2o3AmqpError {
             Fe2o3ErrorKind::NotAccepted { source: _ } => None,
             Fe2o3ErrorKind::TimeError { source } => source.0.source(),
             Fe2o3ErrorKind::AmqpOpen { source } => source.0.source(),
-            Fe2o3ErrorKind::AmqpManagementAttach { source } => source.0.source(),
             Fe2o3ErrorKind::AmqpBegin { source } => source.0.source(),
-            Fe2o3ErrorKind::AmqpManagement { source } => source.0.source(),
             Fe2o3ErrorKind::AmqpConnection { source } => source.0.source(),
             Fe2o3ErrorKind::AmqpLinkDetach { source } => source.0.source(),
             Fe2o3ErrorKind::AmqpSession { source } => source.0.source(),
@@ -172,9 +168,6 @@ impl std::fmt::Display for Fe2o3AmqpError {
             Fe2o3ErrorKind::AmqpOpen { source } => {
                 write!(f, "Connection Open Error: {:?}", source.0)
             }
-            Fe2o3ErrorKind::AmqpManagementAttach { source } => {
-                write!(f, "Management Attach Error: {:?}", source.0)
-            }
             Fe2o3ErrorKind::AmqpLinkDetach { source } => {
                 write!(f, "Link Detach Error: {:?}", source.0)
             }
@@ -182,9 +175,6 @@ impl std::fmt::Display for Fe2o3AmqpError {
                 write!(f, "Receiver attach error {:?}", source.0)
             }
             Fe2o3ErrorKind::AmqpBegin { source } => write!(f, "BeginError: {:?}", source.0),
-            Fe2o3ErrorKind::AmqpManagement { source } => {
-                write!(f, "Management Error: {:?}", source.0)
-            }
             Fe2o3ErrorKind::AmqpConnection { source } => {
                 write!(f, "Connection : {:?}", source.0)
             }
