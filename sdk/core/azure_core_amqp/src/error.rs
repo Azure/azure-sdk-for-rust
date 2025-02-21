@@ -2,17 +2,17 @@
 // Licensed under the MIT license.
 
 pub use crate::management::error::AmqpManagementError;
+pub use crate::receiver::error::AmqpReceiverError;
 pub use crate::sender::error::AmqpSenderError;
 use crate::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 
 pub enum AmqpErrorKind {
-    ReceiverAlreadyAttached,
-    CouldNotSetMessageReceiver,
     CbsAlreadyAttached,
     CbsNotSet,
     CbsNotAttached,
     ManagementError(AmqpManagementError),
     SenderError(AmqpSenderError),
+    ReceiverError(AmqpReceiverError),
     TransportImplementationError {
         source: Box<dyn std::error::Error + Send + Sync>,
     },
@@ -59,15 +59,20 @@ impl AmqpError {
     }
 }
 
+impl From<AmqpErrorKind> for AmqpError {
+    fn from(kind: AmqpErrorKind) -> Self {
+        Self::new(kind)
+    }
+}
+
 impl std::error::Error for AmqpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.kind {
             AmqpErrorKind::TransportImplementationError { source } => Some(source.as_ref()),
             AmqpErrorKind::ManagementError(e) => e.source(),
             AmqpErrorKind::SenderError(e) => e.source(),
-            AmqpErrorKind::ReceiverAlreadyAttached
-            | AmqpErrorKind::CouldNotSetMessageReceiver
-            | AmqpErrorKind::CbsAlreadyAttached
+            AmqpErrorKind::ReceiverError(e) => e.source(),
+            AmqpErrorKind::CbsAlreadyAttached
             | AmqpErrorKind::CbsNotSet
             | AmqpErrorKind::CbsNotAttached => None,
         }
@@ -80,12 +85,6 @@ impl std::fmt::Display for AmqpError {
             AmqpErrorKind::ManagementError(err) => {
                 write!(f, "AMQP Management Error: {} ", err)
             }
-            AmqpErrorKind::ReceiverAlreadyAttached => {
-                f.write_str("AMQP Receiver is already attached")
-            }
-            AmqpErrorKind::CouldNotSetMessageReceiver => {
-                f.write_str("Could not set message receiver.")
-            }
             AmqpErrorKind::CbsAlreadyAttached => {
                 f.write_str("Claims Based Security is already attached")
             }
@@ -96,6 +95,9 @@ impl std::fmt::Display for AmqpError {
             }
             AmqpErrorKind::SenderError(err) => {
                 write!(f, "AMQP Sender Error: {} ", err)
+            }
+            AmqpErrorKind::ReceiverError(err) => {
+                write!(f, "AMQP Receiver Error: {} ", err)
             }
         }
     }
@@ -114,6 +116,7 @@ impl From<AmqpError> for azure_core::Error {
     }
 }
 
+/// Errors from detaching a link. Common to both sender and receiver.
 pub enum AmqpDetachError {
     /// ILlegal link state
     IllegalState,
@@ -167,6 +170,7 @@ impl std::error::Error for AmqpDetachError {
     }
 }
 
+/// State management errors from the AMQP link - common for both sender and receiver
 pub enum AmqpLinkStateError {
     /// Illegal link state
     IllegalState,

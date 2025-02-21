@@ -79,6 +79,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             partition_properties
         );
 
+        println!("Partition ID: {}", partition_properties.id);
+        println!(
+            "Partition last enqueued time UTC: {:?}",
+            partition_properties.last_enqueued_time_utc
+        );
+
         if let Some(last_enqueued_time_utc) = partition_properties.last_enqueued_time_utc {
             println!("Last enqueued offset: {last_enqueued_time_utc:?}");
             // Print the last enqueued time for the partition.

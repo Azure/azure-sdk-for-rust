@@ -1,9 +1,12 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::error::{AmqpDeliveryRejected, AmqpLinkDetach, AmqpNotAccepted, Fe2o3AmqpError};
+use super::error::{AmqpNotAccepted, Fe2o3AmqpError};
 use crate::{
-    error::{AmqpDetachError, AmqpError, AmqpErrorKind, AmqpLinkStateError, AmqpSenderError},
+    error::{
+        AmqpDescribedError, AmqpDetachError, AmqpError, AmqpErrorKind, AmqpLinkStateError,
+        AmqpSenderError,
+    },
     messaging::{AmqpMessage, AmqpTarget},
     sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions},
     session::AmqpSession,
@@ -66,30 +69,27 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .target(target.into())
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
-            .map_err(|e| AmqpError::new(AmqpErrorKind::SenderError(e.into())))?;
-        self.sender.set(Mutex::new(sender)).map_err(|_| {
-            AmqpError::new(AmqpErrorKind::SenderError(
-                AmqpSenderError::CouldNotSetMessageSender,
-            ))
-        })?;
+            .map_err(AmqpSenderError::from)?;
+        self.sender
+            .set(Mutex::new(sender))
+            .map_err(|_| AmqpSenderError::CouldNotSetMessageSender)?;
         Ok(())
     }
 
     async fn detach(mut self) -> Result<()> {
-        let sender = self.sender.take().ok_or_else(|| {
-            AmqpError::new(AmqpErrorKind::SenderError(
-                AmqpSenderError::CouldNotGetMessageSender,
-            ))
-        })?;
+        let sender = self
+            .sender
+            .take()
+            .ok_or(AmqpSenderError::CouldNotGetMessageSender)?;
         let res = sender
             .into_inner()
             .detach()
             .await
-            .map_err(|e| AmqpLinkDetach::from(e.1));
+            .map_err(|e| AmqpSenderError::DetachError(e.1.into()));
         match res {
             Ok(_) => Ok(()),
-            Err(e) => match e.0 {
-                fe2o3_amqp::link::DetachError::ClosedByRemote => {
+            Err(e) => match e {
+                AmqpSenderError::DetachError(AmqpDetachError::ClosedByRemote) => {
                     info!("Error detaching sender: {:?}", e);
                     Ok(())
                 }
@@ -105,11 +105,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         Ok(self
             .sender
             .get()
-            .ok_or_else(|| {
-                AmqpError::new(AmqpErrorKind::SenderError(
-                    AmqpSenderError::CouldNotGetMessageSender,
-                ))
-            })?
+            .ok_or(AmqpSenderError::CouldNotGetMessageSender)?
             .lock()
             .await
             .max_message_size())
@@ -139,11 +135,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         let outcome = self
             .sender
             .get()
-            .ok_or_else(|| {
-                AmqpError::new(AmqpErrorKind::SenderError(
-                    AmqpSenderError::CouldNotGetMessageSender,
-                ))
-            })?
+            .ok_or(AmqpSenderError::CouldNotGetMessageSender)?
             .lock()
             .await
             .borrow_mut()
@@ -153,9 +145,9 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
 
         match outcome {
             fe2o3_amqp_types::messaging::Outcome::Accepted(_) => Ok(()),
-            fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => {
-                Err(AmqpDeliveryRejected(rejected).into())
-            }
+            fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => Err(
+                AmqpSenderError::NotAccepted(rejected.error.map(AmqpDescribedError::from)).into(),
+            ),
             _ => Err(azure_core::Error::from(AmqpError::new(
                 AmqpErrorKind::TransportImplementationError {
                     source: Box::new(Fe2o3AmqpError::from(AmqpNotAccepted::from(outcome))),

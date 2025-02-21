@@ -27,7 +27,10 @@ pub trait AmqpManagementApis {
 pub(crate) mod error {
     use std::{error::Error, fmt::Debug};
 
-    use crate::error::AmqpSenderError;
+    use crate::{
+        error::{AmqpDetachError, AmqpErrorKind, AmqpReceiverError, AmqpSenderError},
+        AmqpError,
+    };
 
     pub enum AmqpManagementError {
         AmqpManagementAlreadyAttached,
@@ -35,12 +38,10 @@ pub(crate) mod error {
 
         /// An error has occurred with Sending the management request.
         SendError(AmqpSenderError),
-
-        /// An error occurred when attaching the receiver link.
-        ReceiverAttachError(Box<dyn std::error::Error + Sync + Send>),
+        ReceiveError(AmqpReceiverError),
+        DetachError(AmqpDetachError),
 
         InvalidManagementResponse(String),
-        ReceiveError(Box<dyn std::error::Error + Sync + Send>),
         DecodingError,
         NotAccepted,
         Disposition,
@@ -66,11 +67,11 @@ pub(crate) mod error {
                 AmqpManagementError::SendError(s) => {
                     f.write_fmt(format_args!("Error sending management request: {s}"))
                 }
-                AmqpManagementError::ReceiverAttachError(s) => {
-                    f.write_fmt(format_args!("Error attaching management receiver: {s}"))
-                }
                 AmqpManagementError::ReceiveError(r) => {
                     f.write_fmt(format_args!("Error receiving request: {r}"))
+                }
+                AmqpManagementError::DetachError(r) => {
+                    f.write_fmt(format_args!("Error detaching request: {r}"))
                 }
                 AmqpManagementError::DecodingError => f.write_str("Error decoding response."),
                 AmqpManagementError::NotAccepted => f.write_str("Management request not accepted."),
@@ -93,27 +94,8 @@ pub(crate) mod error {
 
     impl Debug for AmqpManagementError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Self::AmqpManagementAlreadyAttached => write!(f, "AmqpManagementAlreadyAttached"),
-                Self::AmqpManagementNotAttached => write!(f, "AmqpManagementNotAttached"),
-                Self::InvalidManagementResponse(arg0) => f
-                    .debug_tuple("InvalidManagementResponse")
-                    .field(arg0)
-                    .finish(),
-                Self::ReceiverAttachError(arg0) => {
-                    f.debug_tuple("ReceiverAttachError").field(arg0).finish()
-                }
-                Self::SendError(arg0) => f.debug_tuple("SendError").field(arg0).finish(),
-                Self::ReceiveError(arg0) => f.debug_tuple("ReceiveError").field(arg0).finish(),
-                Self::DecodingError => write!(f, "DecodingError"),
-                Self::NotAccepted => write!(f, "NotAccepted"),
-                Self::Disposition => write!(f, "Disposition"),
-                Self::HttpStatusCode(arg0, arg1) => f
-                    .debug_tuple("HttpStatusCode")
-                    .field(arg0)
-                    .field(arg1)
-                    .finish(),
-            }
+            write!(f, "AmqpManagementError: {}", self)?;
+            Ok(())
         }
     }
 
@@ -128,9 +110,21 @@ pub(crate) mod error {
                 AmqpManagementError::HttpStatusCode(_, _) => None,
                 AmqpManagementError::InvalidManagementResponse(_) => None,
                 AmqpManagementError::SendError(error) => error.source(),
-                AmqpManagementError::ReceiveError(error) => Some(error.as_ref()),
-                AmqpManagementError::ReceiverAttachError(error) => Some(error.as_ref()),
+                AmqpManagementError::ReceiveError(error) => error.source(),
+                AmqpManagementError::DetachError(error) => error.source(),
             }
+        }
+    }
+
+    impl From<AmqpManagementError> for AmqpErrorKind {
+        fn from(e: AmqpManagementError) -> Self {
+            AmqpErrorKind::ManagementError(e)
+        }
+    }
+
+    impl From<AmqpManagementError> for azure_core::Error {
+        fn from(e: AmqpManagementError) -> Self {
+            AmqpError::new(e.into()).into()
         }
     }
 }

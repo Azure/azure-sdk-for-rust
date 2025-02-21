@@ -16,8 +16,6 @@ use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 use tracing::debug;
 
-use super::error::AmqpLinkDetach;
-
 #[derive(Debug)]
 pub(crate) struct Fe2o3AmqpManagement {
     client_node_name: String,
@@ -76,7 +74,10 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             )))
         })?;
         let management = management.into_inner();
-        management.close().await.map_err(AmqpLinkDetach::from)?;
+        management
+            .close()
+            .await
+            .map_err(AmqpManagementError::from)?;
         Ok(())
     }
 
@@ -155,7 +156,7 @@ impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpManagementError {
             }
 
             fe2o3_amqp_management::error::Error::Recv(r) => {
-                Ok(AmqpManagementError::ReceiveError(Box::new(r)))
+                Ok(AmqpManagementError::ReceiveError(r.into()))
             }
 
             fe2o3_amqp_management::error::Error::Disposition(_d) => {
@@ -172,9 +173,15 @@ impl From<fe2o3_amqp_management::error::AttachError> for AmqpManagementError {
                 AmqpManagementError::SendError(s.into())
             }
             fe2o3_amqp_management::error::AttachError::Receiver(r) => {
-                AmqpManagementError::ReceiverAttachError(Box::new(r))
+                AmqpManagementError::ReceiveError(r.into())
             }
         }
+    }
+}
+
+impl From<fe2o3_amqp::link::DetachError> for AmqpManagementError {
+    fn from(e: fe2o3_amqp::link::DetachError) -> Self {
+        AmqpManagementError::DetachError(e.into())
     }
 }
 

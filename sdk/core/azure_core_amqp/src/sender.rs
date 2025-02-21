@@ -169,6 +169,9 @@ pub(crate) mod error {
 
         /// Link state error
         LinkStateError(AmqpLinkStateError),
+
+        /// Remote peer rejected delivery of the message
+        NotAccepted(Option<AmqpDescribedError>),
     }
 
     impl std::error::Error for AmqpSenderError {
@@ -187,6 +190,7 @@ pub(crate) mod error {
     impl std::fmt::Display for AmqpSenderError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
+                AmqpSenderError::NotAccepted(e) => write!(f, "Message delivery was not accepted: {:?}", e),
                 AmqpSenderError::IllegalSessionState => {
                     write!(f, "Illegal session state. Session might have stopped.")
                 }
@@ -246,6 +250,12 @@ pub(crate) mod error {
     impl From<AmqpSenderError> for AmqpError {
         fn from(e: AmqpSenderError) -> Self {
             AmqpError::new(AmqpErrorKind::SenderError(e))
+        }
+    }
+
+    impl From<AmqpSenderError> for azure_core::Error {
+        fn from(e: AmqpSenderError) -> Self {
+            AmqpError::from(e).into()
         }
     }
 }

@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 // cspell:: words amqp servicebus sastoken
 
-use super::error::AmqpLinkDetach;
 use crate::{
     cbs::AmqpClaimsBasedSecurityApis,
     error::{AmqpErrorKind, AmqpManagementError},
@@ -62,7 +61,9 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
             )
         })?;
         let cbs = cbs.into_inner();
-        cbs.close().await.map_err(AmqpLinkDetach::from)?;
+        cbs.close()
+            .await
+            .map_err(|e| AmqpManagementError::DetachError(e.into()))?;
         Ok(())
     }
 
