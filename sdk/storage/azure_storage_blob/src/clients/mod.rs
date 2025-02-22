@@ -4,3 +4,5 @@
 mod blob_client;
 mod blob_container_client;
 mod blob_service_client;
+
+pub use blob_client::BlobClient;

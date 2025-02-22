@@ -7,5 +7,7 @@ copyid
 deletetype
 incrementalcopy
 legalhold
+missingcontainer
 RAGRS
 restype
+testcontainer
