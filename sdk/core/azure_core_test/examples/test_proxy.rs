@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .from_env_lossy();
     tracing_subscriber::fmt().with_env_filter(filter).init();
 
-    let mut proxy = proxy::start(env!("CARGO_MANIFEST_DIR"), Some(args.into())).await?;
+    let mut proxy = proxy::start(None, env!("CARGO_MANIFEST_DIR"), Some(args.into())).await?;
 
     let code = tokio::select! {
         _ = tokio::signal::ctrl_c() => {

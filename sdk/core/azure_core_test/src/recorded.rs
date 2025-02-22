@@ -49,7 +49,9 @@ pub async fn start(
                                 .init();
                         }
 
-                        crate::proxy::start(crate_dir, options).await.map(Arc::new)
+                        crate::proxy::start(Some(test_mode), crate_dir, options)
+                            .await
+                            .map(Arc::new)
                     })
                     .await
                     .as_ref()
