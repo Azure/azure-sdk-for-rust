@@ -12,7 +12,6 @@ pub use azure_core_test_macros::test;
 use std::sync::Arc;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::sync::OnceCell;
-use tracing::debug_span;
 
 #[cfg(not(target_arch = "wasm32"))]
 static TEST_PROXY: OnceCell<Result<Arc<Proxy>>> = OnceCell::const_new();
@@ -21,31 +20,32 @@ static TEST_PROXY: OnceCell<Result<Arc<Proxy>>> = OnceCell::const_new();
 ///
 /// The [Test Proxy](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md) service will be started as needed.
 /// Every `#[recorded::test]` will call this automatically, but it can also be called manually by any other test e.g., those attributed with `#[tokio::test]`.
+#[tracing::instrument(level = "debug", err)]
 pub async fn start(
-    test_mode: TestMode,
+    mode: TestMode,
     crate_dir: &'static str,
-    test_module: &'static str,
-    test_name: &'static str,
+    module_dir: &'static str,
+    name: &'static str,
     #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] options: Option<ProxyOptions>,
 ) -> Result<TestContext> {
-    let mut ctx = TestContext::new(crate_dir, test_module, test_name)?;
+    let mut ctx = TestContext::new(crate_dir, module_dir, name)?;
 
     #[cfg(target_arch = "wasm32")]
     let proxy: Option<Arc<Proxy>> = None;
 
     #[cfg(not(target_arch = "wasm32"))]
     let proxy = {
-        match test_mode {
+        match mode {
             TestMode::Live => None,
             _ => Some(
                 TEST_PROXY
                     .get_or_init(|| async move {
                         #[cfg(feature = "tracing")]
                         {
-                            use tracing_subscriber::EnvFilter;
-
+                            use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
                             tracing_subscriber::fmt()
                                 .with_env_filter(EnvFilter::from_default_env())
+                                .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
                                 .init();
                         }
 
@@ -65,17 +65,15 @@ pub async fn start(
         client = Some(Client::new(proxy.endpoint().clone())?);
     }
 
-    let span =
-        debug_span!(target: crate::SPAN_TARGET, "recording", mode = ?test_mode, test = ?test_name);
-
+    let span = tracing::debug_span!("recording", ?mode, name);
     let mut recording = Recording::new(
-        test_mode,
+        mode,
         span.entered(),
         proxy.clone(),
         client,
         ctx.service_dir(),
         ctx.test_recording_file(),
-        ctx.test_recording_assets_file(test_mode),
+        ctx.test_recording_assets_file(mode),
     );
     recording.start().await?;
 
