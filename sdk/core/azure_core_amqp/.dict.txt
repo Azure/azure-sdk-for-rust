@@ -1,6 +1,7 @@
 mgmt
 sasl
 amqp
+amqps
 sastoken
 smallulong
 smalluint

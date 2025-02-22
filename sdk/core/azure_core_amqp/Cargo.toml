@@ -31,6 +31,7 @@ serde_amqp = { workspace = true, optional = true }
 serde_bytes = { workspace = true, optional = true }
 typespec = { workspace = true, features = ["amqp_errors"] }
 uuid = { workspace = true }
+url = { workspace = true }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter"] }

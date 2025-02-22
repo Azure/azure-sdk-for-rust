@@ -46,7 +46,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
             .client_node_addr("rust_amqp_cbs")
             .attach(session.borrow_mut())
             .await
-            .map_err(|e| AmqpError::new(AmqpErrorKind::ManagementError(e.into())))?;
+            .map_err(AmqpManagementError::from)?;
         self.cbs
             .set(Mutex::new(cbs_client))
             .map_err(|_| AmqpError::new(AmqpErrorKind::CbsAlreadyAttached))?;
@@ -54,12 +54,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
     }
 
     async fn detach(mut self) -> Result<()> {
-        let cbs = self.cbs.take().ok_or_else(|| {
-            azure_core::Error::message(
-                azure_core::error::ErrorKind::Amqp,
-                "Claims Based Security was not set.",
-            )
-        })?;
+        let cbs = self.cbs.take().ok_or(AmqpErrorKind::CbsNotSet)?;
         let cbs = cbs.into_inner();
         cbs.close()
             .await
@@ -109,7 +104,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
                     debug!("Failed to convert error: {:?}", e);
                     return e;
                 }
-                AmqpError::new(AmqpErrorKind::ManagementError(me.unwrap())).into()
+                AmqpErrorKind::ManagementError(me.unwrap()).into()
             })?;
         Ok(())
     }

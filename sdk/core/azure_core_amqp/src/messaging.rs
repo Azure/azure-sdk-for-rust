@@ -4,7 +4,7 @@
 use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 #[cfg(feature = "cplusplus")]
 use crate::Deserializable;
-use crate::Uuid;
+use crate::{fe2o3::error::Fe2o3SerializationError, Uuid};
 #[cfg(feature = "cplusplus")]
 use azure_core::error::ErrorKind;
 use azure_core::Result;
@@ -1160,7 +1160,7 @@ impl AmqpMessage {
             let res = serde_amqp::ser::to_vec(
                 &fe2o3_amqp_types::messaging::message::__private::Serializable(amqp_message),
             )
-            .map_err(crate::fe2o3::error::AmqpSerialization::from)?;
+            .map_err(|e| azure_core::Error::from(Fe2o3SerializationError(e)))?;
             Ok(res)
         }
         #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]

@@ -1,15 +1,19 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+pub use crate::connection::error::AmqpConnectionError;
 pub use crate::management::error::AmqpManagementError;
 pub use crate::receiver::error::AmqpReceiverError;
 pub use crate::sender::error::AmqpSenderError;
+pub use crate::session::error::AmqpSessionError;
 use crate::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 
 pub enum AmqpErrorKind {
     CbsAlreadyAttached,
     CbsNotSet,
     CbsNotAttached,
+    ConnectionError(AmqpConnectionError),
+    SessionError(AmqpSessionError),
     ManagementError(AmqpManagementError),
     SenderError(AmqpSenderError),
     ReceiverError(AmqpReceiverError),
@@ -72,6 +76,8 @@ impl std::error::Error for AmqpError {
             AmqpErrorKind::ManagementError(e) => e.source(),
             AmqpErrorKind::SenderError(e) => e.source(),
             AmqpErrorKind::ReceiverError(e) => e.source(),
+            AmqpErrorKind::SessionError(e) => e.source(),
+            AmqpErrorKind::ConnectionError(e) => e.source(),
             AmqpErrorKind::CbsAlreadyAttached
             | AmqpErrorKind::CbsNotSet
             | AmqpErrorKind::CbsNotAttached => None,
@@ -82,6 +88,12 @@ impl std::error::Error for AmqpError {
 impl std::fmt::Display for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
+            AmqpErrorKind::ConnectionError(err) => {
+                write!(f, "AMQP Connection Error: {} ", err)
+            }
+            AmqpErrorKind::SessionError(err) => {
+                write!(f, "AMQP Session Error: {} ", err)
+            }
             AmqpErrorKind::ManagementError(err) => {
                 write!(f, "AMQP Management Error: {} ", err)
             }
@@ -113,6 +125,12 @@ impl std::fmt::Debug for AmqpError {
 impl From<AmqpError> for azure_core::Error {
     fn from(e: AmqpError) -> Self {
         Self::new(azure_core::error::ErrorKind::Amqp, Box::new(e))
+    }
+}
+
+impl From<AmqpErrorKind> for azure_core::Error {
+    fn from(e: AmqpErrorKind) -> Self {
+        AmqpError::new(e).into()
     }
 }
 

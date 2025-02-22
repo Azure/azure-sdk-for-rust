@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::error::{AmqpDescribedError, AmqpDetachError, AmqpError, AmqpErrorKind};
+use crate::error::{AmqpDescribedError, AmqpDetachError, AmqpErrorKind};
 
 macro_rules! impl_from_external_error {
     ($(($amqp_error:ident, $foreign_error:ty)),*) => {
@@ -53,12 +53,29 @@ macro_rules! impl_from_external_error {
 }
 
 impl_from_external_error! {
-    (AmqpSerialization, serde_amqp::error::Error),
-    (TimeError, time::error::ComponentRange),
-    (AmqpSession, fe2o3_amqp::session::Error),
-    (AmqpOpen, fe2o3_amqp::connection::OpenError),
-    (AmqpConnection, fe2o3_amqp::connection::Error),
-    (AmqpBegin, fe2o3_amqp::session::BeginError)
+//    (AmqpOpen, fe2o3_amqp::connection::OpenError),
+//    (AmqpConnection, fe2o3_amqp::connection::Error)
+}
+
+pub struct Fe2o3SerializationError(pub serde_amqp::error::Error);
+impl From<serde_amqp::error::Error> for Fe2o3SerializationError {
+    fn from(e: serde_amqp::error::Error) -> Self {
+        Fe2o3SerializationError(e)
+    }
+}
+
+pub struct Fe2o3ConnectionOpenError(pub fe2o3_amqp::connection::OpenError);
+impl From<fe2o3_amqp::connection::OpenError> for Fe2o3ConnectionOpenError {
+    fn from(e: fe2o3_amqp::connection::OpenError) -> Self {
+        Fe2o3ConnectionOpenError(e)
+    }
+}
+
+pub struct Fe2o3ConnectionError(pub fe2o3_amqp::connection::Error);
+impl From<fe2o3_amqp::connection::Error> for Fe2o3ConnectionError {
+    fn from(e: fe2o3_amqp::connection::Error) -> Self {
+        Fe2o3ConnectionError(e)
+    }
 }
 
 #[derive(Debug)]
@@ -102,13 +119,7 @@ impl From<AmqpNotAccepted> for Fe2o3AmqpError {
 }
 
 pub enum Fe2o3ErrorKind {
-    AmqpSerialization { source: AmqpSerialization },
     NotAccepted { source: AmqpNotAccepted },
-    TimeError { source: TimeError },
-    AmqpOpen { source: AmqpOpen },
-    AmqpBegin { source: AmqpBegin },
-    AmqpConnection { source: AmqpConnection },
-    AmqpSession { source: AmqpSession },
 }
 
 pub struct Fe2o3AmqpError {
@@ -117,15 +128,6 @@ pub struct Fe2o3AmqpError {
 
 impl std::error::Error for Fe2o3AmqpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self.kind {
-            Fe2o3ErrorKind::AmqpSerialization { source } => source.0.source(),
-            Fe2o3ErrorKind::NotAccepted { source: _ } => None,
-            Fe2o3ErrorKind::TimeError { source } => source.0.source(),
-            Fe2o3ErrorKind::AmqpOpen { source } => source.0.source(),
-            Fe2o3ErrorKind::AmqpBegin { source } => source.0.source(),
-            Fe2o3ErrorKind::AmqpConnection { source } => source.0.source(),
-            Fe2o3ErrorKind::AmqpSession { source } => source.0.source(),
-        };
         None
     }
 }
@@ -133,22 +135,8 @@ impl std::error::Error for Fe2o3AmqpError {
 impl std::fmt::Display for Fe2o3AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            Fe2o3ErrorKind::TimeError { source } => {
-                write!(f, "Time Component Range Error {}", source.0)
-            }
-            Fe2o3ErrorKind::AmqpOpen { source } => {
-                write!(f, "Connection Open Error: {}", source.0)
-            }
-            Fe2o3ErrorKind::AmqpBegin { source } => write!(f, "BeginError: {:?}", source.0),
-            Fe2o3ErrorKind::AmqpConnection { source } => {
-                write!(f, "Connection : {}", source.0)
-            }
-            Fe2o3ErrorKind::AmqpSession { source } => write!(f, "Session error: {:?}", source.0),
             Fe2o3ErrorKind::NotAccepted { source } => {
                 write!(f, "Not accepted error: {:?}", source)
-            }
-            Fe2o3ErrorKind::AmqpSerialization { source } => {
-                write!(f, "Serialization error: {}", source.0)
             }
         }
     }

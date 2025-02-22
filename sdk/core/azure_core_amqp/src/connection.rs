@@ -79,6 +79,105 @@ impl AmqpConnection {
     }
 }
 
+pub(crate) mod error {
+
+    use crate::{
+        error::{AmqpDescribedError, AmqpErrorKind},
+        AmqpError,
+    };
+
+    pub enum AmqpConnectionError {
+        /// Domain is invalid or not found
+        InvalidDomain,
+
+        /// Missing client config for TLS connection
+        TlsConnectorNotFound,
+
+        /// Scheme is invalid or not found
+        InvalidScheme,
+
+        /// Protocol negotiation failed due to protocol header mismatch
+        ProtocolHeaderMismatch(Box<dyn std::error::Error + Send + Sync>),
+
+        /// SASL negotiation failed
+        SaslError(Box<dyn std::error::Error + Send + Sync>),
+
+        /// Illegal local connection state
+        IllegalState,
+
+        /// Not implemented
+        NotImplemented(Option<String>),
+
+        /// Decode error
+        DecodeError(String),
+
+        /// Transport error
+        TransportError(Box<dyn std::error::Error + Send + Sync>),
+
+        /// Remote peer closed connection during opening process
+        RemoteClosed,
+
+        /// Remote peer closed connection with error during opening process
+        RemoteClosedWithError(AmqpDescribedError),
+    }
+
+    impl From<AmqpConnectionError> for AmqpErrorKind {
+        fn from(e: AmqpConnectionError) -> Self {
+            AmqpErrorKind::ConnectionError(e)
+        }
+    }
+
+    impl From<AmqpConnectionError> for azure_core::Error {
+        fn from(e: AmqpConnectionError) -> Self {
+            AmqpError::new(e.into()).into()
+        }
+    }
+    impl std::fmt::Display for AmqpConnectionError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                AmqpConnectionError::InvalidDomain => write!(f, "Invalid domain"),
+                AmqpConnectionError::TlsConnectorNotFound => {
+                    write!(f, "TLS connector is not found")
+                }
+                AmqpConnectionError::InvalidScheme => {
+                    write!(
+                        f,
+                        r#"Invalid scheme. Only "amqp" and "amqps" are supported."#
+                    )
+                }
+                AmqpConnectionError::ProtocolHeaderMismatch(e) => {
+                    write!(f, "Protocol header mismatch: {:?}", e)
+                }
+                AmqpConnectionError::SaslError(e) => {
+                    write!(f, "SASL error code {}", e)
+                }
+                AmqpConnectionError::IllegalState => write!(f, "Illegal local state"),
+                AmqpConnectionError::NotImplemented(e) => {
+                    if let Some(e) = e {
+                        write!(f, "Not implemented: {}", e)
+                    } else {
+                        write!(f, "Not implemented")
+                    }
+                }
+                AmqpConnectionError::DecodeError(e) => write!(f, "Decode error: {}", e),
+                AmqpConnectionError::TransportError(e) => write!(f, "Transport error: {}", e),
+                AmqpConnectionError::RemoteClosed => write!(f, "Remote peer closed"),
+                AmqpConnectionError::RemoteClosedWithError(e) => {
+                    write!(f, "Remote peer closed connection with error: {:?}", e)
+                }
+            }
+        }
+    }
+
+    impl std::fmt::Debug for AmqpConnectionError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "AmqpConnectionError: {}", self)
+        }
+    }
+
+    impl std::error::Error for AmqpConnectionError {}
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::error::AmqpBegin;
 use crate::{
     connection::AmqpConnection,
+    error::AmqpSessionError,
     session::{AmqpSessionApis, AmqpSessionOptions},
+    AmqpError,
 };
-use azure_core::{error::ErrorKind, Error, Result};
+use azure_core::Result;
 use std::{
     borrow::BorrowMut,
     sync::{Arc, OnceLock},
@@ -37,12 +38,7 @@ impl Fe2o3AmqpSession {
         Ok(self
             .session
             .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Amqp,
-                    "Session Handle was not set",
-                )
-            })?
+            .ok_or(AmqpSessionError::SessionNotSet)?
             .clone())
     }
 }
@@ -57,12 +53,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             .implementation
             .get()
             .get()
-            .ok_or_else(|| {
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Amqp,
-                    "Connection already set.",
-                )
-            })?
+            .ok_or(AmqpSessionError::SessionAlreadyAttached)?
             .lock()
             .await;
 
@@ -109,10 +100,10 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         let session = session_builder
             .begin(connection.borrow_mut())
             .await
-            .map_err(AmqpBegin::from)?;
+            .map_err(AmqpSessionError::from)?;
         self.session
             .set(Arc::new(Mutex::new(session)))
-            .map_err(|_| Error::message(ErrorKind::Other, "Could not set session instance."))?;
+            .map_err(|_| AmqpError::new(AmqpSessionError::CouldNotSetSession.into()))?;
         Ok(())
     }
 
@@ -120,17 +111,51 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         let mut session = self
             .session
             .get()
-            .ok_or_else(|| Error::message(ErrorKind::Other, "Session Handle was not set"))?
+            .ok_or(AmqpSessionError::SessionNotSet)?
             .lock()
             .await;
         if session.is_ended() {
             trace!("Session already ended, returning.");
             return Ok(());
         }
-        session
-            .end()
-            .await
-            .map_err(super::error::AmqpSession::from)?;
+        session.end().await.map_err(AmqpSessionError::from)?;
         Ok(())
+    }
+}
+
+impl From<fe2o3_amqp::session::BeginError> for AmqpSessionError {
+    fn from(e: fe2o3_amqp::session::BeginError) -> Self {
+        match e {
+            fe2o3_amqp::session::BeginError::IllegalState
+            | fe2o3_amqp::session::BeginError::IllegalConnectionState => {
+                AmqpSessionError::SessionImplementationError(Box::new(e))
+            }
+            fe2o3_amqp::session::BeginError::RemoteEnded => AmqpSessionError::RemoteEnded,
+            fe2o3_amqp::session::BeginError::RemoteEndedWithError(error) => {
+                AmqpSessionError::RemoteEndedWithError(error.into())
+            }
+            fe2o3_amqp::session::BeginError::LocalChannelMaxReached => {
+                AmqpSessionError::LocalChannelMaxReached
+            }
+        }
+    }
+}
+
+impl From<fe2o3_amqp::session::Error> for AmqpSessionError {
+    fn from(e: fe2o3_amqp::session::Error) -> Self {
+        match e {
+            fe2o3_amqp::session::Error::UnattachedHandle
+            | fe2o3_amqp::session::Error::RemoteAttachingLinkNameNotFound
+            | fe2o3_amqp::session::Error::HandleInUse
+            | fe2o3_amqp::session::Error::IllegalState
+            | fe2o3_amqp::session::Error::IllegalConnectionState
+            | fe2o3_amqp::session::Error::TransferFrameToSender => {
+                AmqpSessionError::SessionImplementationError(Box::new(e))
+            }
+            fe2o3_amqp::session::Error::RemoteEnded => AmqpSessionError::RemoteEnded,
+            fe2o3_amqp::session::Error::RemoteEndedWithError(error) => {
+                AmqpSessionError::RemoteEndedWithError(error.into())
+            }
+        }
     }
 }

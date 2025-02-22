@@ -4,7 +4,6 @@
 use std::borrow::BorrowMut;
 
 use crate::{
-    error::{AmqpError, AmqpErrorKind},
     management::{error::AmqpManagementError, AmqpManagementApis},
     session::AmqpSession,
     value::{AmqpOrderedMap, AmqpValue},
@@ -54,25 +53,20 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .client_node_addr(&self.client_node_name)
             .attach(self.session.lock().await.borrow_mut())
             .await
-            .map_err(|e| {
-                AmqpError::new(AmqpErrorKind::ManagementError(AmqpManagementError::from(e)))
-            })?;
+            .map_err(AmqpManagementError::from)?;
 
-        self.management.set(Mutex::new(management)).map_err(|_| {
-            azure_core::Error::from(AmqpError::new(AmqpErrorKind::ManagementError(
-                AmqpManagementError::AmqpManagementAlreadyAttached,
-            )))
-        })?;
+        self.management
+            .set(Mutex::new(management))
+            .map_err(|_| AmqpManagementError::AmqpManagementAlreadyAttached)?;
         Ok(())
     }
 
     async fn detach(mut self) -> Result<()> {
         // Detach the management client from the session.
-        let management = self.management.take().ok_or_else(|| {
-            azure_core::Error::from(AmqpError::new(AmqpErrorKind::ManagementError(
-                AmqpManagementError::AmqpManagementNotAttached,
-            )))
-        })?;
+        let management = self
+            .management
+            .take()
+            .ok_or(AmqpManagementError::AmqpManagementNotAttached)?;
         let management = management.into_inner();
         management
             .close()
@@ -89,11 +83,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
         let mut management = self
             .management
             .get()
-            .ok_or_else(|| {
-                azure_core::Error::from(AmqpError::new(AmqpErrorKind::ManagementError(
-                    AmqpManagementError::AmqpManagementNotAttached,
-                )))
-            })?
+            .ok_or(AmqpManagementError::AmqpManagementNotAttached)?
             .lock()
             .await;
 
@@ -106,9 +96,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
         let response = management.call(request).await;
         if let Err(e) = response {
             let e = AmqpManagementError::try_from(e)?;
-            Err(azure_core::Error::from(AmqpError::new(
-                AmqpErrorKind::ManagementError(e),
-            )))
+            Err(e.into())
         } else {
             Ok(response.unwrap().entity_attributes.into())
         }

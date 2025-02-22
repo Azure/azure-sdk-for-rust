@@ -295,6 +295,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "typespec",
+ "url",
  "uuid",
 ]
 

@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+use super::error::Fe2o3ConnectionOpenError;
 use crate::connection::{AmqpConnectionApis, AmqpConnectionOptions};
+use crate::error::AmqpConnectionError;
 use crate::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
-
+use crate::AmqpError;
 use azure_core::{Result, Url};
 use fe2o3_amqp::connection::ConnectionHandle;
 use std::{borrow::BorrowMut, sync::OnceLock};
 use tokio::sync::Mutex;
 use tracing::{debug, warn};
-
-use super::error::{AmqpConnection, AmqpOpen};
 
 #[derive(Debug, Default)]
 pub(crate) struct Fe2o3AmqpConnection {
@@ -100,7 +100,9 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 }
             }
             self.connection
-                .set(Mutex::new(builder.open(url).await.map_err(AmqpOpen::from)?))
+                .set(Mutex::new(builder.open(url).await.map_err(|e| {
+                    azure_core::Error::from(Fe2o3ConnectionOpenError(e))
+                })?))
                 .map_err(|_| {
                     azure_core::Error::new(
                         azure_core::error::ErrorKind::Other,
@@ -176,6 +178,61 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                     Err(e.into())
                 }
             },
+        }
+    }
+}
+
+impl From<Fe2o3ConnectionOpenError> for azure_core::Error {
+    fn from(e: Fe2o3ConnectionOpenError) -> Self {
+        match e.0 {
+            fe2o3_amqp::connection::OpenError::Io(e) => azure_core::Error::from(e),
+            fe2o3_amqp::connection::OpenError::UrlError(parse_error) => {
+                azure_core::Error::from(parse_error)
+            }
+            fe2o3_amqp::connection::OpenError::TransportError(error) => match error {
+                fe2o3_amqp::transport::Error::Io(e) => azure_core::Error::from(e),
+                fe2o3_amqp::transport::Error::IdleTimeoutElapsed => todo!(),
+                fe2o3_amqp::transport::Error::DecodeError(s) => todo!(),
+                fe2o3_amqp::transport::Error::NotImplemented(o) => todo!(),
+                fe2o3_amqp::transport::Error::FramingError => todo!(),
+            },
+            _ => AmqpError::new(AmqpConnectionError::from(e.0).into()).into(),
+        }
+    }
+}
+
+impl From<fe2o3_amqp::connection::OpenError> for AmqpConnectionError {
+    fn from(e: fe2o3_amqp::connection::OpenError) -> Self {
+        match e {
+            fe2o3_amqp::connection::OpenError::Io(e) => panic!(
+                "Io error: {:?} cannot be directly mapped to AmqpConnectionError.",
+                e
+            ),
+            fe2o3_amqp::connection::OpenError::UrlError(parse_error) => panic!(
+                "Url error: {:?} cannot be directly mapped to AmqpConnectionError.",
+                parse_error
+            ),
+            fe2o3_amqp::connection::OpenError::TransportError(error) => panic!(
+                "Transport error: {:?} cannot be directly mapped to AmqpConnectionError.",
+                error
+            ),
+            fe2o3_amqp::connection::OpenError::InvalidDomain => Self::InvalidDomain,
+            fe2o3_amqp::connection::OpenError::TlsConnectorNotFound => Self::TlsConnectorNotFound,
+            fe2o3_amqp::connection::OpenError::InvalidScheme => Self::InvalidScheme,
+            fe2o3_amqp::connection::OpenError::ProtocolHeaderMismatch(_) => {
+                Self::ProtocolHeaderMismatch(Box::new(e))
+            }
+            fe2o3_amqp::connection::OpenError::SaslError {
+                code: _,
+                additional_data: _,
+            } => Self::SaslError(Box::new(e)),
+            fe2o3_amqp::connection::OpenError::IllegalState => Self::IllegalState,
+            fe2o3_amqp::connection::OpenError::NotImplemented(s) => Self::NotImplemented(s),
+            fe2o3_amqp::connection::OpenError::DecodeError(d) => Self::DecodeError(d),
+            fe2o3_amqp::connection::OpenError::RemoteClosed => Self::RemoteClosed,
+            fe2o3_amqp::connection::OpenError::RemoteClosedWithError(error) => {
+                Self::RemoteClosedWithError(error.into())
+            }
         }
     }
 }
