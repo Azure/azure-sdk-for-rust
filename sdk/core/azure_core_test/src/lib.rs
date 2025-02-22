@@ -195,7 +195,7 @@ fn find_ancestor_file(dir: impl AsRef<Path>, name: &str) -> azure_core::Result<P
         let path = dir.join(".git");
         if path.exists() {
             return Err(azure_core::Error::message(
-                ErrorKind::Other,
+                ErrorKind::Io,
                 format!("{name} not found under repo {}", dir.display()),
             ));
         }

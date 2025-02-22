@@ -36,9 +36,11 @@ pub use bootstrap::start;
 #[cfg(not(target_arch = "wasm32"))]
 mod bootstrap {
     use super::*;
-    use azure_core::Result;
+    use azure_core::{test::TestMode, Result};
+    use serde_json::json;
     use std::{env, io, path::Path, process::Stdio, time::Duration};
     use tokio::{
+        fs,
         io::{AsyncBufReadExt, BufReader},
         process::{ChildStdout, Command},
     };
@@ -59,6 +61,7 @@ mod bootstrap {
     ///
     /// This is intended for internal use only and should not be called directly in tests.
     pub async fn start(
+        test_mode: Option<TestMode>,
         crate_dir: impl AsRef<Path>,
         options: Option<ProxyOptions>,
     ) -> Result<Proxy> {
@@ -68,11 +71,41 @@ mod bootstrap {
         }
 
         // Find root of git repo or work tree: a ".git" directory or file will exist either way.
-        let git_dir = crate::find_ancestor_file(crate_dir, ".git")?;
+        let git_dir = crate::find_ancestor_file(crate_dir.as_ref(), ".git")?;
         let git_dir = git_dir.parent().ok_or_else(|| {
             io::Error::new(io::ErrorKind::NotFound, "parent git repository not found")
         })?;
 
+        // Create an assets.json file in the crate_dir if a parent doesn't already exist.
+        #[cfg(not(target_arch = "wasm32"))]
+        if test_mode == Some(TestMode::Record)
+            && matches!(crate::find_ancestor_file(crate_dir.as_ref(), "assets.json"), Err(err) if err.kind() == &ErrorKind::Io)
+        {
+            let assets_file = crate_dir.as_ref().join("assets.json");
+            tracing::trace!("creating {path}", path = assets_file.display());
+
+            let assets_dir = assets_file
+                .parent()
+                .and_then(Path::file_name)
+                .map(|dir| dir.to_ascii_lowercase())
+                .ok_or_else(|| {
+                    azure_core::Error::message(
+                        ErrorKind::Io,
+                        "failed to get assets.json parent directory name",
+                    )
+                })?;
+            let assets_dir = assets_dir.to_string_lossy();
+            let assets_content = json!({
+                "AssetsRepo": "Azure/azure-sdk-assets",
+                "AssetsRepoPrefixPath": "rust",
+                "TagPrefix": format!("rust/{assets_dir}"),
+                "Tag": "",
+            });
+            let file = fs::File::create_new(assets_file).await?;
+            serde_json::to_writer_pretty(file.into_std().await, &assets_content)?;
+        }
+
+        // Construct the command line arguments and start the test-proxy service.
         let mut args: Vec<String> = Vec::new();
         args.extend_from_slice(&[
             "start".into(),
