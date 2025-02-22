@@ -28,14 +28,14 @@ repository = "https://github.com/azure/azure-sdk-for-rust"
 rust-version = "1.80"
 
 [workspace.dependencies.typespec]
+default-features = false
 path = "sdk/typespec"
 version = "0.2.0"
-default-features = false
 
 [workspace.dependencies.typespec_client_core]
+default-features = false
 path = "sdk/typespec/typespec_client_core"
 version = "0.1.0"
-default-features = false
 
 [workspace.dependencies.typespec_macros]
 version = "0.1.0"
