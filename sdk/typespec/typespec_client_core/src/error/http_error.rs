@@ -10,7 +10,7 @@ use crate::{
 };
 use bytes::Bytes;
 use serde::Deserialize;
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, fmt, str};
 
 /// An HTTP error response.
 pub struct HttpError {
@@ -91,38 +91,90 @@ impl HttpError {
     }
 }
 
+struct Unquote<'a>(&'a str);
+impl fmt::Debug for Unquote<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.0)
+    }
+}
+
 impl fmt::Debug for HttpError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Elide potential PII since it's too easily to accidentally leak through Debug or Display.
-        f.debug_struct("HttpError")
+        let mut dbg = f.debug_struct("HttpError");
+
+        #[cfg_attr(not(feature = "test"), allow(unused_mut))]
+        let mut dbg = dbg
             .field("status", &self.status)
-            .field("details", &self.details)
-            .finish_non_exhaustive()
+            .field("details", &self.details);
+
+        #[cfg(feature = "test")]
+        {
+            dbg = dbg.field(
+                "body",
+                &Unquote(
+                    String::from_utf8(self.body.to_vec())
+                        .as_deref()
+                        .unwrap_or("(bytes)"),
+                ),
+            );
+        }
+
+        dbg.finish_non_exhaustive()
     }
 }
 
 impl fmt::Display for HttpError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        struct Unquote<'a>(&'a str);
-        impl fmt::Debug for Unquote<'_> {
+        struct Status(StatusCode);
+        impl fmt::Debug for Status {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                f.write_str(self.0)
+                f.write_fmt(format_args!(
+                    "{} ({})",
+                    std::convert::Into::<u16>::into(self.0),
+                    self.0.canonical_reason()
+                ))
             }
         }
 
         // Elide potential PII since it's too easily to accidentally leak through Debug or Display.
-        f.debug_struct("HttpError")
-            .field("Status", &Unquote(&self.status.to_string()))
+        let mut dbg = f.debug_struct("HttpError");
+
+        #[cfg_attr(not(feature = "test"), allow(unused_mut))]
+        let mut dbg = dbg
+            .field("Status", &Status(self.status))
             .field(
                 "Error Code",
                 &Unquote(
                     self.details
                         .code
                         .as_deref()
-                        .unwrap_or("(unknown error code)"),
+                        .unwrap_or("(error code unavailable)"),
                 ),
             )
-            .finish_non_exhaustive()
+            .field(
+                "Message",
+                &Unquote(
+                    self.details
+                        .message
+                        .as_deref()
+                        .unwrap_or("(message unavailable)"),
+                ),
+            );
+
+        #[cfg(feature = "test")]
+        {
+            dbg = dbg.field(
+                "Body",
+                &Unquote(
+                    String::from_utf8(self.body.to_vec())
+                        .as_deref()
+                        .unwrap_or("(bytes)"),
+                ),
+            );
+        }
+
+        dbg.finish_non_exhaustive()
     }
 }
 
@@ -228,10 +280,15 @@ mod tests {
                 ("x-ms-request-id".to_string(), "abcd1234".to_string()),
             ]),
         };
-        let actual = format!("{err:?}");
+        #[cfg(not(feature = "test"))]
         assert_eq!(
-            actual,
+            format!("{err:?}"),
             r#"HttpError { status: NotFound, details: ErrorDetails { code: Some("Not Found"), message: Some("Resource not found") }, .. }"#
+        );
+        #[cfg(feature = "test")]
+        assert_eq!(
+            format!("{err:?}"),
+            r#"HttpError { status: NotFound, details: ErrorDetails { code: Some("Not Found"), message: Some("Resource not found") }, body: resource not found, .. }"#
         );
     }
 
@@ -249,10 +306,16 @@ mod tests {
                 ("x-ms-request-id".to_string(), "abcd1234".to_string()),
             ]),
         };
-        let actual = format!("{err}");
+        #[cfg(not(feature = "test"))]
         assert_eq!(
-            actual,
-            r#"HttpError { Status: 404, Error Code: (unknown error code), .. }"#
+            format!("{err:}"),
+            r#"HttpError { Status: 404 (Not Found), Error Code: (error code unavailable), Message: (message unavailable), .. }"#
+        );
+
+        #[cfg(feature = "test")]
+        assert_eq!(
+            format!("{err:}"),
+            r#"HttpError { Status: 404 (Not Found), Error Code: (error code unavailable), Message: (message unavailable), Body: resource not found, .. }"#
         );
     }
 
