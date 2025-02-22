@@ -17,6 +17,9 @@ use tracing::debug_span;
 #[cfg(not(target_arch = "wasm32"))]
 static TEST_PROXY: OnceCell<Result<Arc<Proxy>>> = OnceCell::const_new();
 
+#[cfg(feature = "tracing")]
+static TRACING: std::sync::Once = std::sync::Once::new();
+
 /// Starts playback or recording of live recordings.
 ///
 /// The [Test Proxy](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md) service will be started as needed.
@@ -28,8 +31,18 @@ pub async fn start(
     test_name: &'static str,
     #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] options: Option<ProxyOptions>,
 ) -> Result<TestContext> {
-    let mut ctx = TestContext::new(crate_dir, test_module, test_name)?;
+    #[cfg(feature = "tracing")]
+    TRACING.call_once(|| {
+        // Enable tracing for tests, if it's not already enabled
+        _ = tracing_subscriber::fmt()
+            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+            .try_init();
 
+        // Ignore the failure. The most likely failure is that a global default trace dispatcher has already been set.
+        // And we don't want the tracing support to bring down the tests.
+    });
+
+    let mut ctx = TestContext::new(crate_dir, test_module, test_name)?;
     #[cfg(target_arch = "wasm32")]
     let proxy: Option<Arc<Proxy>> = None;
 
@@ -40,15 +53,6 @@ pub async fn start(
             _ => Some(
                 TEST_PROXY
                     .get_or_init(|| async move {
-                        #[cfg(feature = "tracing")]
-                        {
-                            use tracing_subscriber::EnvFilter;
-
-                            tracing_subscriber::fmt()
-                                .with_env_filter(EnvFilter::from_default_env())
-                                .init();
-                        }
-
                         crate::proxy::start(crate_dir, options).await.map(Arc::new)
                     })
                     .await

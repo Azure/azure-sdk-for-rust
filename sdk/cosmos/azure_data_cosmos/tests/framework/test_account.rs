@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
-use std::sync::{Arc, Once};
+use std::sync::Arc;
 
 use azure_core::{credentials::Secret, TransportOptions, Uuid};
 use azure_core_test::TestContext;
@@ -19,6 +19,10 @@ pub struct TestAccount {
     endpoint: String,
     key: Secret,
     options: TestAccountOptions,
+
+    // Even if we don't use it, keep the context alive because it owns the recording span
+    #[allow(dead_code)]
+    context: TestContext,
 }
 
 #[derive(Default)]
@@ -29,8 +33,6 @@ pub struct TestAccountOptions {
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
-
-static TRACING: Once = Once::new();
 
 impl TestAccount {
     /// Creates a new [`TestAccount`] from local environment variables.
@@ -97,21 +99,12 @@ impl TestAccount {
             Uuid::new_v4().as_simple()
         );
 
-        TRACING.call_once(|| {
-            // Enable tracing for tests, if it's not already enabled
-            _ = tracing_subscriber::fmt()
-                .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-                .try_init();
-
-            // Ignore the failure. The most likely failure is that a global default trace dispatcher has already been set.
-            // And we don't want the tracing support to bring down the tests.
-        });
-
         Ok(TestAccount {
             context_id,
             endpoint,
             key,
             options,
+            context,
         })
     }
 

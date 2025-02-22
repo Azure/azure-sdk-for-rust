@@ -51,6 +51,7 @@ async fn create_container(
 }
 
 #[recorded::test(live)]
+#[tracing::instrument(skip_all)]
 pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(), Box<dyn Error>> {
     let account = TestAccount::from_env(context, None)?;
     let cosmos_client = account.connect_with_key(None)?;
@@ -132,6 +133,7 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
 }
 
 #[recorded::test(live)]
+#[tracing::instrument(skip_all)]
 pub async fn item_create_content_response_on_write(
     context: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -171,6 +173,7 @@ pub async fn item_create_content_response_on_write(
 }
 
 #[recorded::test(live)]
+#[tracing::instrument(skip_all)]
 pub async fn item_read_system_properties(context: TestContext) -> Result<(), Box<dyn Error>> {
     let account = TestAccount::from_env(context, None)?;
     let cosmos_client = account.connect_with_key(None)?;

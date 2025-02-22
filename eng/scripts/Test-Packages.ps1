@@ -60,7 +60,7 @@ foreach ($package in $packagesToTest) {
     Invoke-LoggedCommand "cargo +$Toolchain test --doc --no-fail-fast" -GroupOutput
     Write-Host "`n`n"
 
-    Invoke-LoggedCommand "cargo +$Toolchain test --all-targets --no-fail-fast" -GroupOutput
+    Invoke-LoggedCommand "cargo +$Toolchain test --all-targets --no-fail-fast --all-features" -GroupOutput
     Write-Host "`n`n"
 
     $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"
