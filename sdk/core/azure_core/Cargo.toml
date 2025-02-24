@@ -47,8 +47,6 @@ default = [
   "reqwest",
   "reqwest_deflate",
   "reqwest_gzip",
-  "tokio_fs",
-  "tokio_sleep",
 ]
 azurite_workaround = []
 hmac_openssl = ["dep:openssl"]
