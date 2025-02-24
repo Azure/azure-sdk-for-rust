@@ -47,7 +47,9 @@ async fn consumer_new_with_error() -> Result<(), Box<dyn Error>> {
     match result {
         Err(err) => {
             info!("Error: {:?}", err);
+            assert_eq!(*err.kind(), azure_core::error::ErrorKind::Io);
             if matches!(err.kind(), azure_core::error::ErrorKind::Io) {
+                // Dig into the I/O error to determine the type.
                 let e = err
                     .source()
                     .unwrap()
@@ -58,7 +60,7 @@ async fn consumer_new_with_error() -> Result<(), Box<dyn Error>> {
                 let e = e.source();
                 info!("IO Error Source: {:?}", e);
             } else {
-                panic!("Expected Error (cannot hit due to previous assert)");
+                panic!("Expected IO Error");
             }
         }
         _ => panic!("Expected Error (cannot hit due to previous assert)"),
