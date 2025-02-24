@@ -941,6 +941,7 @@ dependencies = [
  "fe2o3-amqp-types",
  "serde",
  "thiserror 1.0.69",
+ "tracing",
 ]
 
 [[package]]

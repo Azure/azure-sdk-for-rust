@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+// cspell::ignore Uncategorized
+
 use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{ConsumerClient, OpenReceiverOptions, StartPosition};
@@ -12,7 +14,7 @@ use tracing::{info, trace};
 mod common;
 
 #[recorded::test(live)]
-async fn test_new() -> Result<(), Box<dyn Error>> {
+async fn consumer_new() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -29,7 +31,7 @@ async fn test_new() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn test_new_with_error() -> Result<(), Box<dyn Error>> {
+async fn consumer_new_with_error() -> Result<(), Box<dyn Error>> {
     common::setup();
     trace!("test_new_with_error");
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -42,13 +44,31 @@ async fn test_new_with_error() -> Result<(), Box<dyn Error>> {
         )
         .await;
     assert!(result.is_err());
-    info!("Error: {:?}", result.err());
+    match result {
+        Err(err) => {
+            info!("Error: {:?}", err);
+            if matches!(err.kind(), azure_core::error::ErrorKind::Io) {
+                let e = err
+                    .source()
+                    .unwrap()
+                    .downcast_ref::<std::io::Error>()
+                    .unwrap();
+                info!("IO Error: {}", e);
+                info!("IO Error Kind: {:?}", e.kind());
+                let e = e.source();
+                info!("IO Error Source: {:?}", e);
+            } else {
+                panic!("Expected Error (cannot hit due to previous assert)");
+            }
+        }
+        _ => panic!("Expected Error (cannot hit due to previous assert)"),
+    }
 
     Ok(())
 }
 
 #[recorded::test(live)]
-async fn test_open() -> Result<(), Box<dyn Error>> {
+async fn consumer_open() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -64,7 +84,7 @@ async fn test_open() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 #[recorded::test(live)]
-async fn test_close() -> Result<(), Box<dyn Error>> {
+async fn consumer_close() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -82,7 +102,7 @@ async fn test_close() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn test_get_properties() -> Result<(), Box<dyn Error>> {
+async fn consumer_get_properties() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -101,7 +121,7 @@ async fn test_get_properties() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn test_get_partition_properties() -> Result<(), Box<dyn Error>> {
+async fn consumer_get_partition_properties() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
