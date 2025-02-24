@@ -49,13 +49,13 @@ Write-Host "  ChangeLogPath: $($pkgProperties.ChangeLogPath)"
 
 #If we're just bumping the version with no release date, we want to set the changelog entry to unreleased
 $setChangeLogEntryToUnreleased = !$ReleaseDate -and !$NewVersionString
+$packageSemVer = [AzureEngSemanticVersion]::new($pkgProperties.Version)
 
-if ($NewVersionString) {
-  $packageSemVer = [AzureEngSemanticVersion]::new($NewVersionString)
+if (!$NewVersionString) {
+  $packageSemVer.IncrementAndSetToPrerelease();
 }
 else {
-  $packageSemVer = [AzureEngSemanticVersion]::new($pkgProperties.Version)
-  $packageSemVer.IncrementAndSetToPrerelease();
+  $packageSemVer = [AzureEngSemanticVersion]::new($NewVersionString)
 }
 
 if ($packageSemVer.HasValidPrereleaseLabel() -ne $true) {
