@@ -3,10 +3,7 @@
 
 use super::error::{AmqpNotAccepted, Fe2o3AmqpError};
 use crate::{
-    error::{
-        AmqpDescribedError, AmqpDetachError, AmqpError, AmqpErrorKind, AmqpLinkStateError,
-        AmqpSenderError,
-    },
+    error::{AmqpDescribedError, AmqpError, AmqpErrorKind, AmqpSenderError},
     messaging::{AmqpMessage, AmqpTarget},
     sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions},
     session::AmqpSession,
@@ -85,11 +82,11 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .into_inner()
             .detach()
             .await
-            .map_err(|e| AmqpSenderError::DetachError(e.1.into()));
+            .map_err(|e| AmqpError::from(e.1));
         match res {
             Ok(_) => Ok(()),
-            Err(e) => match e {
-                AmqpSenderError::DetachError(AmqpDetachError::ClosedByRemote) => {
+            Err(e) => match e.kind() {
+                AmqpErrorKind::ClosedByRemote => {
                     info!("Error detaching sender: {:?}", e);
                     Ok(())
                 }
@@ -141,14 +138,14 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .borrow_mut()
             .send(sendable)
             .await
-            .map_err(|e| AmqpError::new(AmqpErrorKind::SenderError(e.into())))?;
+            .map_err(AmqpError::from)?;
 
         match outcome {
             fe2o3_amqp_types::messaging::Outcome::Accepted(_) => Ok(()),
             fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => Err(
                 AmqpSenderError::NotAccepted(rejected.error.map(AmqpDescribedError::from)).into(),
             ),
-            _ => Err(azure_core::Error::from(AmqpError::new(
+            _ => Err(azure_core::Error::from(AmqpError::from(
                 AmqpErrorKind::TransportImplementationError {
                     source: Box::new(Fe2o3AmqpError::from(AmqpNotAccepted::from(outcome))),
                 },
@@ -165,20 +162,26 @@ impl Fe2o3AmqpSender {
     }
 }
 
-impl From<fe2o3_amqp::link::DetachError> for AmqpSenderError {
-    fn from(e: fe2o3_amqp::link::DetachError) -> Self {
-        AmqpSenderError::DetachError(AmqpDetachError::from(e))
+impl From<fe2o3_amqp::link::SendError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::SendError) -> Self {
+        match e {
+            fe2o3_amqp::link::SendError::LinkStateError(link_state_error) => {
+                AmqpError::from(link_state_error)
+            }
+            fe2o3_amqp::link::SendError::Detached(detach_error) => AmqpError::from(detach_error),
+            _ => AmqpError::from(AmqpSenderError::from(e)),
+        }
     }
 }
 
 impl From<fe2o3_amqp::link::SendError> for AmqpSenderError {
     fn from(e: fe2o3_amqp::link::SendError) -> Self {
         match e {
-            fe2o3_amqp::link::SendError::LinkStateError(link_state_error) => {
-                link_state_error.into()
-            }
-            fe2o3_amqp::link::SendError::Detached(detach_error) => {
-                AmqpSenderError::DetachError(detach_error.into())
+            fe2o3_amqp::link::SendError::LinkStateError(_) =>
+                panic!("LinkStateError should not be converted to AmqpSenderError - it should be handled by the caller")
+            ,
+            fe2o3_amqp::link::SendError::Detached(_) => {
+                panic!("Detached should not be converted to AmqpSenderError - it should be handled by the caller")
             }
             fe2o3_amqp::link::SendError::NonTerminalDeliveryState => {
                 AmqpSenderError::NonTerminalDeliveryState
@@ -189,6 +192,17 @@ impl From<fe2o3_amqp::link::SendError> for AmqpSenderError {
             }
 
             fe2o3_amqp::link::SendError::MessageEncodeError => AmqpSenderError::MessageEncodeError,
+        }
+    }
+}
+
+impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::SenderAttachError) -> Self {
+        match e {
+            fe2o3_amqp::link::SenderAttachError::RemoteClosedWithError(e) => {
+                AmqpErrorKind::ClosedByRemoteWithError(e.into()).into()
+            }
+            _ => AmqpErrorKind::SenderError(e.into()).into(),
         }
     }
 }
@@ -230,39 +244,10 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpSenderError {
             fe2o3_amqp::link::SenderAttachError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse => {
                 AmqpSenderError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse
             }
-            fe2o3_amqp::link::SenderAttachError::RemoteClosedWithError(error) => {
-                AmqpSenderError::RemoteClosedWithError(error.into())
-            }
-        }
-    }
-}
-
-impl From<fe2o3_amqp::link::LinkStateError> for AmqpSenderError {
-    fn from(e: fe2o3_amqp::link::LinkStateError) -> Self {
-        match e {
-            fe2o3_amqp::link::LinkStateError::IllegalState => {
-                AmqpSenderError::LinkStateError(AmqpLinkStateError::IllegalState)
-            }
-            fe2o3_amqp::link::LinkStateError::IllegalSessionState => {
-                AmqpSenderError::LinkStateError(AmqpLinkStateError::IllegalSessionState)
-            }
-            fe2o3_amqp::link::LinkStateError::ExpectImmediateDetach => {
-                AmqpSenderError::LinkStateError(AmqpLinkStateError::ExpectImmediateDetach)
-            }
-            fe2o3_amqp::link::LinkStateError::RemoteDetachedWithError(error) => {
-                AmqpSenderError::DetachError(AmqpDetachError::RemoteDetachedWithError(error.into()))
-            }
-
-            fe2o3_amqp::link::LinkStateError::RemoteClosedWithError(error) => {
-                AmqpSenderError::RemoteClosedWithError(error.into())
-            }
-
-            fe2o3_amqp::link::LinkStateError::RemoteDetached => {
-                AmqpSenderError::DetachError(AmqpDetachError::DetachedByRemote)
-            }
-            fe2o3_amqp::link::LinkStateError::RemoteClosed => {
-                AmqpSenderError::DetachError(AmqpDetachError::ClosedByRemote)
-            }
+            fe2o3_amqp::link::SenderAttachError::RemoteClosedWithError(_) => panic!(
+                "
+                RemoteClosedWithError should be handled by the caller, not here"
+            ),
         }
     }
 }

@@ -99,7 +99,7 @@ impl AmqpSendOptions {}
 
 pub(crate) mod error {
     use crate::{
-        error::{AmqpDescribedError, AmqpDetachError, AmqpErrorKind, AmqpLinkStateError},
+        error::{AmqpDescribedError, AmqpErrorKind},
         AmqpError,
     };
 
@@ -161,15 +161,6 @@ pub(crate) mod error {
         /// If the dynamic field is not set to true this field MUST be left unset.
         DynamicNodePropertiesIsSomeWhenDynamicIsFalse,
 
-        /// Remote peer closed the link with an error
-        RemoteClosedWithError(AmqpDescribedError),
-
-        /// Remote peer detached
-        DetachError(AmqpDetachError),
-
-        /// Link state error
-        LinkStateError(AmqpLinkStateError),
-
         /// Remote peer rejected delivery of the message
         NotAccepted(Option<AmqpDescribedError>),
     }
@@ -227,9 +218,6 @@ pub(crate) mod error {
                     f,
                     "If the dynamic field is not set to true this field MUST be left unset."
                 ),
-                AmqpSenderError::RemoteClosedWithError(e) => {
-                    write!(f, "Remote peer closed with error {:?}", e)
-                }
                 AmqpSenderError::CouldNotSetMessageSender => {
                     write!(f, "Could not set message sender")
                 }
@@ -241,15 +229,13 @@ pub(crate) mod error {
                 }
                 AmqpSenderError::IllegalDeliveryState => write!(f, "Illegal delivery state"),
                 AmqpSenderError::MessageEncodeError => write!(f, "Message encode error"),
-                AmqpSenderError::DetachError(e) => write!(f, "Error detaching sender: {:?}", e),
-                AmqpSenderError::LinkStateError(e) => write!(f, "Link state error: {:?}", e),
             }
         }
     }
 
     impl From<AmqpSenderError> for AmqpError {
         fn from(e: AmqpSenderError) -> Self {
-            AmqpError::new(AmqpErrorKind::SenderError(e))
+            AmqpError::from(AmqpErrorKind::SenderError(e))
         }
     }
 

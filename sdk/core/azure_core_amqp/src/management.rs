@@ -124,7 +124,7 @@ pub(crate) mod error {
 
     impl From<AmqpManagementError> for azure_core::Error {
         fn from(e: AmqpManagementError) -> Self {
-            AmqpError::new(e.into()).into()
+            AmqpError::from(AmqpErrorKind::from(e)).into()
         }
     }
 }

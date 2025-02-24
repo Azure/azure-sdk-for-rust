@@ -49,16 +49,14 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
             .map_err(AmqpManagementError::from)?;
         self.cbs
             .set(Mutex::new(cbs_client))
-            .map_err(|_| AmqpError::new(AmqpErrorKind::CbsAlreadyAttached))?;
+            .map_err(|_| AmqpError::from(AmqpErrorKind::CbsAlreadyAttached))?;
         Ok(())
     }
 
     async fn detach(mut self) -> Result<()> {
         let cbs = self.cbs.take().ok_or(AmqpErrorKind::CbsNotSet)?;
         let cbs = cbs.into_inner();
-        cbs.close()
-            .await
-            .map_err(|e| AmqpManagementError::DetachError(e.into()))?;
+        cbs.close().await.map_err(AmqpError::from)?;
         Ok(())
     }
 
@@ -92,7 +90,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
         );
         self.cbs
             .get()
-            .ok_or_else(|| AmqpError::new(AmqpErrorKind::CbsNotAttached))?
+            .ok_or::<azure_core::Error>(AmqpErrorKind::CbsNotAttached.into())?
             .lock()
             .await
             .borrow_mut()
@@ -101,7 +99,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
             .map_err(|e| {
                 let me = AmqpManagementError::try_from(e);
                 if let Err(e) = me {
-                    debug!("Failed to convert error: {:?}", e);
+                    debug!("Failed to convert management error to azure error: {:?}", e);
                     return e;
                 }
                 AmqpErrorKind::ManagementError(me.unwrap()).into()

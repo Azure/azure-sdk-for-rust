@@ -136,10 +136,7 @@ impl AmqpReceiver {
 }
 
 pub(crate) mod error {
-    use crate::{
-        error::{AmqpDescribedError, AmqpDetachError, AmqpErrorKind, AmqpLinkStateError},
-        AmqpError,
-    };
+    use crate::error::AmqpErrorKind;
 
     /// Receiver Errors
     #[derive(Debug)]
@@ -199,17 +196,8 @@ pub(crate) mod error {
         /// If the dynamic field is not set to true this field MUST be left unset.
         DynamicNodePropertiesIsSomeWhenDynamicIsFalse,
 
-        /// Remote peer closed the link with an error
-        RemoteClosedWithError(AmqpDescribedError),
-
         /// The desired filter(s) on the receiver is not supported by the remote peer
         DesiredFilterNotSupported,
-
-        /// Errors found in link state
-        LinkStateError(AmqpLinkStateError),
-
-        /// An error has occurred with Detaching the link.
-        DetachError(AmqpDetachError),
 
         /// The peer sent more message transfers than currently allowed on the link.
         TransferLimitExceeded,
@@ -274,16 +262,9 @@ pub(crate) mod error {
                 AmqpReceiverError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse => {
                     f.write_str("If the dynamic field is not set to true this field MUST be left unset")
                 }
-                AmqpReceiverError::RemoteClosedWithError(e) => {
-                    f.write_fmt(format_args!("Remote peer closed the link with an error: {:?}", e))
-                }
                 AmqpReceiverError::DesiredFilterNotSupported => {
                     f.write_fmt(format_args!("The desired filter(s) on the receiver is not supported by the remote peer."))
                 }
-                AmqpReceiverError::LinkStateError(e) =>
-                    f.write_fmt(format_args!("Link state error: {:?}", e)),
-
-                AmqpReceiverError::DetachError(e) => f.write_fmt(format_args!("Detach error: {:?}", e)),
                 AmqpReceiverError::TransferLimitExceeded => {
                     f.write_str("The peer sent more message transfers than currently allowed on the link")
                 }
@@ -314,11 +295,6 @@ pub(crate) mod error {
     impl From<AmqpReceiverError> for AmqpErrorKind {
         fn from(e: AmqpReceiverError) -> Self {
             AmqpErrorKind::ReceiverError(e)
-        }
-    }
-    impl From<AmqpReceiverError> for azure_core::Error {
-        fn from(e: AmqpReceiverError) -> Self {
-            AmqpError::from(AmqpErrorKind::ReceiverError(e)).into()
         }
     }
 }

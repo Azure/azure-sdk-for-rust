@@ -3,7 +3,7 @@
 
 use crate::{
     connection::AmqpConnection,
-    error::AmqpSessionError,
+    error::{AmqpErrorKind, AmqpSessionError},
     session::{AmqpSessionApis, AmqpSessionOptions},
     AmqpError,
 };
@@ -103,7 +103,9 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             .map_err(AmqpSessionError::from)?;
         self.session
             .set(Arc::new(Mutex::new(session)))
-            .map_err(|_| AmqpError::new(AmqpSessionError::CouldNotSetSession.into()))?;
+            .map_err(|_| {
+                AmqpError::from(AmqpErrorKind::from(AmqpSessionError::CouldNotSetSession))
+            })?;
         Ok(())
     }
 

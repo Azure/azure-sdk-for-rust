@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::{
-    error::{AmqpDetachError, AmqpErrorKind, AmqpLinkStateError, AmqpReceiverError},
+    error::{AmqpErrorKind, AmqpReceiverError},
     messaging::{AmqpDelivery, AmqpSource},
     receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::AmqpSession,
@@ -49,7 +49,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         options: Option<AmqpReceiverOptions>,
     ) -> Result<()> {
         if self.receiver.get().is_some() {
-            return Err(AmqpError::new(AmqpErrorKind::ReceiverError(
+            return Err(AmqpError::from(AmqpErrorKind::ReceiverError(
                 AmqpReceiverError::ReceiverAlreadyAttached,
             ))
             .into());
@@ -70,10 +70,12 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .name(name)
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
-            .map_err(AmqpReceiverError::from)?;
-        self.receiver
-            .set(Mutex::new(receiver))
-            .map_err(|_| AmqpReceiverError::CouldNotSetMessageReceiver)?;
+            .map_err(|e| AmqpError::from(AmqpErrorKind::from(AmqpReceiverError::from(e))))?;
+        self.receiver.set(Mutex::new(receiver)).map_err(|_| {
+            AmqpError::from(AmqpErrorKind::from(
+                AmqpReceiverError::CouldNotSetMessageReceiver,
+            ))
+        })?;
         Ok(())
     }
 
@@ -81,16 +83,18 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .take()
-            .ok_or(AmqpReceiverError::ReceiverNotSet)?;
+            .ok_or(AmqpError::from(AmqpErrorKind::from(
+                AmqpReceiverError::ReceiverNotSet,
+            )))?;
         let res = receiver
             .into_inner()
             .detach()
             .await
-            .map_err(|e| AmqpReceiverError::DetachError(e.1.into()));
+            .map_err(|e| AmqpError::from(e.1));
         match res {
             Ok(_) => Ok(()),
-            Err(e) => match e {
-                AmqpReceiverError::DetachError(AmqpDetachError::ClosedByRemote) => {
+            Err(e) => match e.kind() {
+                AmqpErrorKind::ClosedByRemote => {
                     info!("Error detaching receiver: {:?} - ignored", e);
                     Ok(())
                 }
@@ -106,7 +110,9 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .get()
-            .ok_or(AmqpReceiverError::ReceiverNotSet)?;
+            .ok_or(AmqpError::from(AmqpErrorKind::from(
+                AmqpReceiverError::ReceiverNotSet,
+            )))?;
         receiver.lock().await.set_credit_mode(credit_mode.into());
         Ok(())
     }
@@ -115,7 +121,9 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .get()
-            .ok_or(AmqpReceiverError::ReceiverNotSet)?;
+            .ok_or(AmqpError::from(AmqpErrorKind::from(
+                AmqpReceiverError::ReceiverNotSet,
+            )))?;
         Ok(receiver.lock().await.credit_mode().into())
     }
 
@@ -123,16 +131,19 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let mut receiver = self
             .receiver
             .get()
-            .ok_or(AmqpReceiverError::ReceiverNotSet)?
+            .ok_or(AmqpError::from(AmqpErrorKind::from(
+                AmqpReceiverError::ReceiverNotSet,
+            )))?
             .lock()
             .await;
 
         let delivery: fe2o3_amqp::link::delivery::Delivery<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-        > = receiver.recv().await.map_err(AmqpReceiverError::from)?;
-
+        > = receiver
+            .recv()
+            .await
+            .map_err(|e| AmqpError::from(AmqpErrorKind::from(AmqpReceiverError::from(e))))?;
         trace!("Received delivery: {:?}", delivery);
-
         Ok(delivery.into())
     }
 
@@ -140,7 +151,9 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .get()
-            .ok_or(AmqpReceiverError::ReceiverNotSet)?
+            .ok_or(AmqpError::from(AmqpErrorKind::from(
+                AmqpReceiverError::ReceiverNotSet,
+            )))?
             .lock()
             .await;
 
@@ -148,7 +161,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         receiver
             .accept(&delivery.0.delivery)
             .await
-            .map_err(AmqpReceiverError::from)?;
+            .map_err(|e| AmqpError::from(AmqpErrorKind::from(AmqpReceiverError::from(e))))?;
         trace!("Accepted delivery.");
 
         Ok(())
@@ -158,7 +171,9 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .get()
-            .ok_or(AmqpReceiverError::ReceiverNotSet)?
+            .ok_or(AmqpError::from(AmqpErrorKind::from(
+                AmqpReceiverError::ReceiverNotSet,
+            )))?
             .lock()
             .await;
 
@@ -166,7 +181,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         receiver
             .reject(&delivery.0.delivery, None)
             .await
-            .map_err(AmqpReceiverError::from)?;
+            .map_err(|e| AmqpError::from(AmqpErrorKind::from(AmqpReceiverError::from(e))))?;
         trace!("Rejected delivery.");
 
         Ok(())
@@ -176,7 +191,9 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .get()
-            .ok_or(AmqpReceiverError::ReceiverNotSet)?
+            .ok_or(AmqpError::from(AmqpErrorKind::from(
+                AmqpReceiverError::ReceiverNotSet,
+            )))?
             .lock()
             .await;
 
@@ -184,7 +201,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         receiver
             .release(&delivery.0.delivery)
             .await
-            .map_err(AmqpReceiverError::from)?;
+            .map_err(|e| AmqpError::from(AmqpErrorKind::from(AmqpReceiverError::from(e))))?;
         trace!("Released delivery.");
 
         Ok(())
@@ -199,9 +216,22 @@ impl Fe2o3AmqpReceiver {
     }
 }
 
+impl From<fe2o3_amqp::link::ReceiverAttachError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::ReceiverAttachError) -> Self {
+        match e {
+            fe2o3_amqp::link::ReceiverAttachError::RemoteClosedWithError(e) => {
+                AmqpErrorKind::ClosedByRemoteWithError(e.into()).into()
+            }
+            _ => AmqpErrorKind::ReceiverError(e.into()).into(),
+        }
+    }
+}
+
 impl From<fe2o3_amqp::link::ReceiverAttachError> for AmqpReceiverError {
     fn from(e: fe2o3_amqp::link::ReceiverAttachError) -> Self {
         match e {
+            fe2o3_amqp::link::ReceiverAttachError::RemoteClosedWithError(_) => panic!("Cannot convert RemoteClosedWithError to AmqpReceiverError."),
+
             fe2o3_amqp::link::ReceiverAttachError::IllegalSessionState => AmqpReceiverError::IllegalSessionState,
             fe2o3_amqp::link::ReceiverAttachError::DuplicatedLinkName => AmqpReceiverError::DuplicatedLinkName,
             fe2o3_amqp::link::ReceiverAttachError::IllegalState => AmqpReceiverError::IllegalState,
@@ -214,7 +244,6 @@ impl From<fe2o3_amqp::link::ReceiverAttachError> for AmqpReceiverError {
             fe2o3_amqp::link::ReceiverAttachError::TargetAddressIsSomeWhenDynamicIsTrue => AmqpReceiverError::TargetAddressIsSomeWhenDynamicIsTrue,
             fe2o3_amqp::link::ReceiverAttachError::SourceAddressIsNoneWhenDynamicIsTrue => AmqpReceiverError::SourceAddressIsNoneWhenDynamicIsTrue,
             fe2o3_amqp::link::ReceiverAttachError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse => AmqpReceiverError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse,
-            fe2o3_amqp::link::ReceiverAttachError::RemoteClosedWithError(error) => AmqpReceiverError::RemoteClosedWithError(error.into()),
             fe2o3_amqp::link::ReceiverAttachError::DesiredFilterNotSupported(_desired_filter_not_supported) =>
                 AmqpReceiverError::DesiredFilterNotSupported,
         }
@@ -237,8 +266,8 @@ impl From<fe2o3_amqp::link::IllegalLinkStateError> for AmqpReceiverError {
 impl From<fe2o3_amqp::link::RecvError> for AmqpReceiverError {
     fn from(e: fe2o3_amqp::link::RecvError) -> Self {
         match e {
-            fe2o3_amqp::link::RecvError::LinkStateError(link_state_error) => {
-                link_state_error.into()
+            fe2o3_amqp::link::RecvError::LinkStateError(_) => {
+                panic!("LinkStateError should be handled by the caller, not here")
             }
             fe2o3_amqp::link::RecvError::TransferLimitExceeded => {
                 AmqpReceiverError::TransferLimitExceeded
@@ -262,34 +291,20 @@ impl From<fe2o3_amqp::link::RecvError> for AmqpReceiverError {
     }
 }
 
-impl From<fe2o3_amqp::link::LinkStateError> for AmqpReceiverError {
+impl From<fe2o3_amqp::link::LinkStateError> for AmqpError {
     fn from(e: fe2o3_amqp::link::LinkStateError) -> Self {
         match e {
-            fe2o3_amqp::link::LinkStateError::IllegalState => {
-                AmqpReceiverError::LinkStateError(AmqpLinkStateError::IllegalState)
+            fe2o3_amqp::link::LinkStateError::RemoteClosedWithError(e) => {
+                AmqpErrorKind::ClosedByRemoteWithError(e.into()).into()
             }
-            fe2o3_amqp::link::LinkStateError::IllegalSessionState => {
-                AmqpReceiverError::LinkStateError(AmqpLinkStateError::IllegalSessionState)
+            fe2o3_amqp::link::LinkStateError::RemoteDetachedWithError(e) => {
+                AmqpErrorKind::DetachedByRemoteWithError(e.into()).into()
             }
-            fe2o3_amqp::link::LinkStateError::ExpectImmediateDetach => {
-                AmqpReceiverError::LinkStateError(AmqpLinkStateError::ExpectImmediateDetach)
-            }
-            fe2o3_amqp::link::LinkStateError::RemoteDetachedWithError(error) => {
-                AmqpReceiverError::DetachError(AmqpDetachError::RemoteDetachedWithError(
-                    error.into(),
-                ))
-            }
-
-            fe2o3_amqp::link::LinkStateError::RemoteClosedWithError(error) => {
-                AmqpReceiverError::RemoteClosedWithError(error.into())
-            }
-
+            fe2o3_amqp::link::LinkStateError::RemoteClosed => AmqpErrorKind::ClosedByRemote.into(),
             fe2o3_amqp::link::LinkStateError::RemoteDetached => {
-                AmqpReceiverError::DetachError(AmqpDetachError::DetachedByRemote)
+                AmqpErrorKind::DetachedByRemote.into()
             }
-            fe2o3_amqp::link::LinkStateError::RemoteClosed => {
-                AmqpReceiverError::DetachError(AmqpDetachError::ClosedByRemote)
-            }
+            _ => AmqpErrorKind::LinkStateError(e.into()).into(),
         }
     }
 }

@@ -12,6 +12,17 @@ pub enum AmqpErrorKind {
     CbsAlreadyAttached,
     CbsNotSet,
     CbsNotAttached,
+    ClosedByRemote,
+    ClosedByRemoteWithError(AmqpDescribedError),
+    /// Remote peer detached
+    DetachedByRemote,
+
+    /// Remote peer detached with error
+    DetachedByRemoteWithError(AmqpDescribedError),
+
+    /// Link State error.
+    LinkStateError(Box<dyn std::error::Error + Send + Sync>),
+    DetachError(AmqpDetachError),
     ConnectionError(AmqpConnectionError),
     SessionError(AmqpSessionError),
     ManagementError(AmqpManagementError),
@@ -58,14 +69,18 @@ pub struct AmqpError {
 }
 
 impl AmqpError {
-    pub fn new(kind: AmqpErrorKind) -> Self {
-        Self { kind }
+    //    pub fn new(kind: AmqpErrorKind) -> Self {
+    //        Self { kind }
+    //    }
+
+    pub fn kind(&self) -> &AmqpErrorKind {
+        &self.kind
     }
 }
 
 impl From<AmqpErrorKind> for AmqpError {
     fn from(kind: AmqpErrorKind) -> Self {
-        Self::new(kind)
+        Self { kind }
     }
 }
 
@@ -78,9 +93,15 @@ impl std::error::Error for AmqpError {
             AmqpErrorKind::ReceiverError(e) => e.source(),
             AmqpErrorKind::SessionError(e) => e.source(),
             AmqpErrorKind::ConnectionError(e) => e.source(),
+            AmqpErrorKind::LinkStateError(e) => Some(e.as_ref()),
+            AmqpErrorKind::ClosedByRemoteWithError(_)
+            | AmqpErrorKind::DetachedByRemoteWithError(_)
+            | AmqpErrorKind::DetachError(_) => None,
             AmqpErrorKind::CbsAlreadyAttached
             | AmqpErrorKind::CbsNotSet
-            | AmqpErrorKind::CbsNotAttached => None,
+            | AmqpErrorKind::CbsNotAttached
+            | AmqpErrorKind::DetachedByRemote
+            | AmqpErrorKind::ClosedByRemote => None,
         }
     }
 }
@@ -88,8 +109,19 @@ impl std::error::Error for AmqpError {
 impl std::fmt::Display for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
+            AmqpErrorKind::ClosedByRemote => f.write_str("Remote closed"),
+            AmqpErrorKind::DetachedByRemote => f.write_str("Remote detached"),
+            AmqpErrorKind::DetachedByRemoteWithError(err) => {
+                write!(f, "Remote detached with error: {:?}", err)
+            }
+            AmqpErrorKind::ClosedByRemoteWithError(err) => {
+                write!(f, "Remote closed with error: {:?}", err)
+            }
             AmqpErrorKind::ConnectionError(err) => {
                 write!(f, "AMQP Connection Error: {} ", err)
+            }
+            AmqpErrorKind::DetachError(err) => {
+                write!(f, "AMQP Detach Error: {} ", err)
             }
             AmqpErrorKind::SessionError(err) => {
                 write!(f, "AMQP Session Error: {} ", err)
@@ -111,6 +143,9 @@ impl std::fmt::Display for AmqpError {
             AmqpErrorKind::ReceiverError(err) => {
                 write!(f, "AMQP Receiver Error: {} ", err)
             }
+            AmqpErrorKind::LinkStateError(err) => {
+                write!(f, "AMQP Link State Error: {} ", err)
+            }
         }
     }
 }
@@ -130,32 +165,31 @@ impl From<AmqpError> for azure_core::Error {
 
 impl From<AmqpErrorKind> for azure_core::Error {
     fn from(e: AmqpErrorKind) -> Self {
-        AmqpError::new(e).into()
+        AmqpError::from(e).into()
     }
 }
 
 /// Errors from detaching a link. Common to both sender and receiver.
 pub enum AmqpDetachError {
-    /// ILlegal link state
+    /// Illegal link state
     IllegalState,
 
     /// Session has dropped
     IllegalSessionState,
+    // // /// Expecting a detach but found other frame
+    // // #[error("Expecting a Detach")]
+    // // NonDetachFrameReceived,
+    // /// Remote peer detached with error
+    // RemoteDetachedWithError(AmqpDescribedError),
 
-    // /// Expecting a detach but found other frame
-    // #[error("Expecting a Detach")]
-    // NonDetachFrameReceived,
-    /// Remote peer detached with error
-    RemoteDetachedWithError(AmqpDescribedError),
+    // /// Remote peer sent a closing detach when the local terminus sent a non-closing detach
+    // ClosedByRemote,
 
-    /// Remote peer sent a closing detach when the local terminus sent a non-closing detach
-    ClosedByRemote,
+    // /// Remote peer sent a non-closing detach when the local terminus is sending a closing detach
+    // DetachedByRemote,
 
-    /// Remote peer sent a non-closing detach when the local terminus is sending a closing detach
-    DetachedByRemote,
-
-    /// Remote peer closed the link with an error
-    RemoteClosedWithError(AmqpDescribedError),
+    // /// Remote peer closed the link with an error
+    // RemoteClosedWithError(AmqpDescribedError),
 }
 
 impl std::fmt::Display for AmqpDetachError {
@@ -163,16 +197,6 @@ impl std::fmt::Display for AmqpDetachError {
         match self {
             AmqpDetachError::IllegalState => f.write_str("Illegal local state"),
             AmqpDetachError::IllegalSessionState => f.write_str("Illegal session state"),
-            AmqpDetachError::RemoteDetachedWithError(e) => {
-                write!(f, "Remote detached with an error: {:?}", e)
-            }
-            AmqpDetachError::ClosedByRemote => f.write_str("Link closed by remote"),
-            AmqpDetachError::DetachedByRemote => {
-                f.write_str("Link will be closed by local terminus")
-            }
-            AmqpDetachError::RemoteClosedWithError(e) => {
-                write!(f, "Remote peer closed the link with an error: {:?}", e)
-            }
         }
     }
 }
@@ -196,18 +220,6 @@ pub enum AmqpLinkStateError {
     /// Session has dropped
     IllegalSessionState,
 
-    /// Remote peer detached
-    RemoteDetached,
-
-    /// Remote peer detached with error
-    RemoteDetachedWithError(AmqpDescribedError),
-
-    /// Remote peer closed
-    RemoteClosed,
-
-    /// Remote peer closed the link with an error
-    RemoteClosedWithError(AmqpDescribedError),
-
     /// The link is expected to be detached immediately but didn't receive
     /// an incoming Detach frame
     ExpectImmediateDetach,
@@ -218,14 +230,6 @@ impl std::fmt::Display for AmqpLinkStateError {
         match self {
             AmqpLinkStateError::IllegalState => f.write_str("Illegal local state"),
             AmqpLinkStateError::IllegalSessionState => f.write_str("Illegal session state"),
-            AmqpLinkStateError::RemoteDetached => f.write_str("Remote detached"),
-            AmqpLinkStateError::RemoteDetachedWithError(e) => {
-                write!(f, "Remote detached with an error: {:?}", e)
-            }
-            AmqpLinkStateError::RemoteClosed => f.write_str("Remote closed"),
-            AmqpLinkStateError::RemoteClosedWithError(e) => {
-                write!(f, "Remote peer closed the link with an error: {:?}", e)
-            }
             AmqpLinkStateError::ExpectImmediateDetach => {
                 f.write_str("Expecting an immediate detach")
             }

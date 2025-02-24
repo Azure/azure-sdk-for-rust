@@ -81,12 +81,13 @@ impl AmqpConnection {
 
 pub(crate) mod error {
 
-    use crate::{
-        error::{AmqpDescribedError, AmqpErrorKind},
-        AmqpError,
-    };
+    use crate::{error::AmqpErrorKind, AmqpError};
 
     pub enum AmqpConnectionError {
+        ConnectionNotSet,
+
+        ConnectionAlreadySet,
+
         /// Domain is invalid or not found
         InvalidDomain,
 
@@ -110,15 +111,6 @@ pub(crate) mod error {
 
         /// Decode error
         DecodeError(String),
-
-        /// Transport error
-        TransportError(Box<dyn std::error::Error + Send + Sync>),
-
-        /// Remote peer closed connection during opening process
-        RemoteClosed,
-
-        /// Remote peer closed connection with error during opening process
-        RemoteClosedWithError(AmqpDescribedError),
 
         /// Session is not found
         NotFound(Option<String>),
@@ -144,12 +136,14 @@ pub(crate) mod error {
 
     impl From<AmqpConnectionError> for azure_core::Error {
         fn from(e: AmqpConnectionError) -> Self {
-            AmqpError::new(e.into()).into()
+            AmqpError::from(AmqpErrorKind::from(e)).into()
         }
     }
     impl std::fmt::Display for AmqpConnectionError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
+                Self::ConnectionNotSet => write!(f, "Connection not set"),
+                Self::ConnectionAlreadySet => write!(f, "Connection already set"),
                 Self::FramingError => write!(f, "Framing error"),
                 Self::IdleTimeoutElapsed => write!(f, "Idle timeout elapsed"),
                 Self::NotFound(e) => {
@@ -194,11 +188,11 @@ pub(crate) mod error {
                     }
                 }
                 Self::DecodeError(e) => write!(f, "Decode error: {}", e),
-                Self::TransportError(e) => write!(f, "Transport error: {}", e),
-                Self::RemoteClosed => write!(f, "Remote peer closed"),
-                Self::RemoteClosedWithError(e) => {
-                    write!(f, "Remote peer closed connection with error: {:?}", e)
-                }
+                //                Self::TransportError(e) => write!(f, "Transport error: {}", e),
+                //                Self::RemoteClosed => write!(f, "Remote peer closed"),
+                //                Self::RemoteClosedWithError(e) => {
+                //                    write!(f, "Remote peer closed connection with error: {:?}", e)
+                //                }
             }
         }
     }
@@ -425,6 +419,7 @@ mod tests {
 
     #[tokio::test]
     async fn amqp_connection_close_with_error() {
+        tracing_subscriber::fmt::init();
         let address = std::env::var("TEST_BROKER_ADDRESS");
         if address.is_ok() {
             let connection = AmqpConnection::new();
@@ -443,6 +438,7 @@ mod tests {
             match res {
                 Ok(_) => {}
                 Err(err) => {
+                    println!("Error: {:?}", err);
                     assert!(err.to_string().contains("Internal error."));
                 }
             }

@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::error::{AmqpDescribedError, AmqpDetachError, AmqpErrorKind};
+use crate::{
+    error::{AmqpDescribedError, AmqpDetachError, AmqpErrorKind, AmqpLinkStateError},
+    AmqpError,
+};
 
 macro_rules! impl_from_external_error {
     ($(($amqp_error:ident, $foreign_error:ty)),*) => {
@@ -180,18 +183,53 @@ impl From<fe2o3_amqp_types::definitions::Error> for AmqpDescribedError {
     }
 }
 
-impl From<fe2o3_amqp::link::DetachError> for AmqpDetachError {
+impl From<fe2o3_amqp::link::DetachError> for AmqpError {
     fn from(e: fe2o3_amqp::link::DetachError) -> Self {
         match e {
-            fe2o3_amqp::link::DetachError::IllegalState => Self::IllegalState,
-            fe2o3_amqp::link::DetachError::IllegalSessionState => Self::IllegalSessionState,
-            fe2o3_amqp::link::DetachError::RemoteDetachedWithError(error) => {
-                Self::RemoteDetachedWithError(error.into())
+            fe2o3_amqp::link::DetachError::IllegalState => {
+                Self::from(AmqpErrorKind::DetachError(AmqpDetachError::IllegalState))
             }
-            fe2o3_amqp::link::DetachError::ClosedByRemote => Self::ClosedByRemote,
-            fe2o3_amqp::link::DetachError::DetachedByRemote => Self::DetachedByRemote,
+            fe2o3_amqp::link::DetachError::IllegalSessionState => Self::from(
+                AmqpErrorKind::DetachError(AmqpDetachError::IllegalSessionState),
+            ),
+            fe2o3_amqp::link::DetachError::RemoteDetachedWithError(error) => {
+                Self::from(AmqpErrorKind::DetachedByRemoteWithError(error.into()))
+            }
+            fe2o3_amqp::link::DetachError::ClosedByRemote => {
+                Self::from(AmqpErrorKind::ClosedByRemote)
+            }
+            fe2o3_amqp::link::DetachError::DetachedByRemote => {
+                Self::from(AmqpErrorKind::DetachedByRemote)
+            }
             fe2o3_amqp::link::DetachError::RemoteClosedWithError(error) => {
-                Self::RemoteClosedWithError(error.into())
+                Self::from(AmqpErrorKind::ClosedByRemoteWithError(error.into()))
+            }
+        }
+    }
+}
+
+impl From<fe2o3_amqp::link::LinkStateError> for AmqpLinkStateError {
+    fn from(e: fe2o3_amqp::link::LinkStateError) -> Self {
+        match e {
+            fe2o3_amqp::link::LinkStateError::RemoteClosedWithError(_) => {
+                panic!("RemoteClosedWithError should be handled by the caller, not here")
+            }
+            fe2o3_amqp::link::LinkStateError::RemoteDetachedWithError(_) => {
+                panic!("RemoteDetachedWithError should be handled by the caller, not here")
+            }
+            fe2o3_amqp::link::LinkStateError::RemoteDetached => {
+                panic!("RemoteDetached should be handled by the caller, not here")
+            }
+            fe2o3_amqp::link::LinkStateError::RemoteClosed => {
+                panic!("RemoteClosed should be handled by the caller, not here")
+            }
+
+            fe2o3_amqp::link::LinkStateError::IllegalState => AmqpLinkStateError::IllegalState,
+            fe2o3_amqp::link::LinkStateError::IllegalSessionState => {
+                AmqpLinkStateError::IllegalSessionState
+            }
+            fe2o3_amqp::link::LinkStateError::ExpectImmediateDetach => {
+                AmqpLinkStateError::ExpectImmediateDetach
             }
         }
     }

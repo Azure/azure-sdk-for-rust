@@ -7,6 +7,7 @@ use crate::{
     management::{error::AmqpManagementError, AmqpManagementApis},
     session::AmqpSession,
     value::{AmqpOrderedMap, AmqpValue},
+    AmqpError,
 };
 use azure_core::{credentials::AccessToken, Result};
 use fe2o3_amqp_management::operations::ReadResponse;
@@ -68,10 +69,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .take()
             .ok_or(AmqpManagementError::AmqpManagementNotAttached)?;
         let management = management.into_inner();
-        management
-            .close()
-            .await
-            .map_err(AmqpManagementError::from)?;
+        management.close().await.map_err(AmqpError::from)?;
         Ok(())
     }
 
@@ -164,12 +162,6 @@ impl From<fe2o3_amqp_management::error::AttachError> for AmqpManagementError {
                 AmqpManagementError::ReceiveError(r.into())
             }
         }
-    }
-}
-
-impl From<fe2o3_amqp::link::DetachError> for AmqpManagementError {
-    fn from(e: fe2o3_amqp::link::DetachError) -> Self {
-        AmqpManagementError::DetachError(e.into())
     }
 }
 
