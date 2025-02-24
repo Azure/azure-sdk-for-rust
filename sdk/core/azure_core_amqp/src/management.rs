@@ -28,7 +28,7 @@ pub(crate) mod error {
     use std::{error::Error, fmt::Debug};
 
     use crate::{
-        error::{AmqpDetachError, AmqpErrorKind, AmqpReceiverError, AmqpSenderError},
+        error::{AmqpErrorKind, AmqpReceiverError, AmqpSenderError},
         AmqpError,
     };
 
@@ -39,7 +39,6 @@ pub(crate) mod error {
         /// An error has occurred with Sending the management request.
         SendError(AmqpSenderError),
         ReceiveError(AmqpReceiverError),
-        DetachError(AmqpDetachError),
 
         InvalidManagementResponse(String),
         DecodingError,
@@ -69,9 +68,6 @@ pub(crate) mod error {
                 }
                 AmqpManagementError::ReceiveError(r) => {
                     f.write_fmt(format_args!("Error receiving request: {r}"))
-                }
-                AmqpManagementError::DetachError(r) => {
-                    f.write_fmt(format_args!("Error detaching request: {r}"))
                 }
                 AmqpManagementError::DecodingError => f.write_str("Error decoding response."),
                 AmqpManagementError::NotAccepted => f.write_str("Management request not accepted."),
@@ -111,7 +107,6 @@ pub(crate) mod error {
                 AmqpManagementError::InvalidManagementResponse(_) => None,
                 AmqpManagementError::SendError(error) => error.source(),
                 AmqpManagementError::ReceiveError(error) => error.source(),
-                AmqpManagementError::DetachError(error) => error.source(),
             }
         }
     }

@@ -8,6 +8,7 @@ pub use crate::sender::error::AmqpSenderError;
 pub use crate::session::error::AmqpSessionError;
 use crate::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 
+/// Type of AMQP error.
 pub enum AmqpErrorKind {
     CbsAlreadyAttached,
     CbsNotSet,
@@ -22,7 +23,7 @@ pub enum AmqpErrorKind {
 
     /// Link State error.
     LinkStateError(Box<dyn std::error::Error + Send + Sync>),
-    DetachError(AmqpDetachError),
+    DetachError(Box<dyn std::error::Error + Send + Sync>),
     ConnectionError(AmqpConnectionError),
     SessionError(AmqpSessionError),
     ManagementError(AmqpManagementError),
@@ -64,15 +65,13 @@ impl AmqpDescribedError {
     }
 }
 
+/// An AMQP error from the AMQP stack.
 pub struct AmqpError {
+    /// Type of error.
     kind: AmqpErrorKind,
 }
 
 impl AmqpError {
-    //    pub fn new(kind: AmqpErrorKind) -> Self {
-    //        Self { kind }
-    //    }
-
     pub fn kind(&self) -> &AmqpErrorKind {
         &self.kind
     }
@@ -94,9 +93,9 @@ impl std::error::Error for AmqpError {
             AmqpErrorKind::SessionError(e) => e.source(),
             AmqpErrorKind::ConnectionError(e) => e.source(),
             AmqpErrorKind::LinkStateError(e) => Some(e.as_ref()),
+            AmqpErrorKind::DetachError(e) => Some(e.as_ref()),
             AmqpErrorKind::ClosedByRemoteWithError(_)
-            | AmqpErrorKind::DetachedByRemoteWithError(_)
-            | AmqpErrorKind::DetachError(_) => None,
+            | AmqpErrorKind::DetachedByRemoteWithError(_) => None,
             AmqpErrorKind::CbsAlreadyAttached
             | AmqpErrorKind::CbsNotSet
             | AmqpErrorKind::CbsNotAttached
@@ -166,84 +165,5 @@ impl From<AmqpError> for azure_core::Error {
 impl From<AmqpErrorKind> for azure_core::Error {
     fn from(e: AmqpErrorKind) -> Self {
         AmqpError::from(e).into()
-    }
-}
-
-/// Errors from detaching a link. Common to both sender and receiver.
-pub enum AmqpDetachError {
-    /// Illegal link state
-    IllegalState,
-
-    /// Session has dropped
-    IllegalSessionState,
-    // // /// Expecting a detach but found other frame
-    // // #[error("Expecting a Detach")]
-    // // NonDetachFrameReceived,
-    // /// Remote peer detached with error
-    // RemoteDetachedWithError(AmqpDescribedError),
-
-    // /// Remote peer sent a closing detach when the local terminus sent a non-closing detach
-    // ClosedByRemote,
-
-    // /// Remote peer sent a non-closing detach when the local terminus is sending a closing detach
-    // DetachedByRemote,
-
-    // /// Remote peer closed the link with an error
-    // RemoteClosedWithError(AmqpDescribedError),
-}
-
-impl std::fmt::Display for AmqpDetachError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            AmqpDetachError::IllegalState => f.write_str("Illegal local state"),
-            AmqpDetachError::IllegalSessionState => f.write_str("Illegal session state"),
-        }
-    }
-}
-impl std::fmt::Debug for AmqpDetachError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "AmqpDetachError: {}", self)?;
-        Ok(())
-    }
-}
-impl std::error::Error for AmqpDetachError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
-
-/// State management errors from the AMQP link - common for both sender and receiver
-pub enum AmqpLinkStateError {
-    /// Illegal link state
-    IllegalState,
-
-    /// Session has dropped
-    IllegalSessionState,
-
-    /// The link is expected to be detached immediately but didn't receive
-    /// an incoming Detach frame
-    ExpectImmediateDetach,
-}
-
-impl std::fmt::Display for AmqpLinkStateError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            AmqpLinkStateError::IllegalState => f.write_str("Illegal local state"),
-            AmqpLinkStateError::IllegalSessionState => f.write_str("Illegal session state"),
-            AmqpLinkStateError::ExpectImmediateDetach => {
-                f.write_str("Expecting an immediate detach")
-            }
-        }
-    }
-}
-impl std::fmt::Debug for AmqpLinkStateError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "AmqpLinkStateError: {}", self)?;
-        Ok(())
-    }
-}
-impl std::error::Error for AmqpLinkStateError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
     }
 }
