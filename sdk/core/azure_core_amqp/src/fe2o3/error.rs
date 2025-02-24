@@ -6,60 +6,6 @@ use crate::{
     AmqpError,
 };
 
-macro_rules! impl_from_external_error {
-    ($(($amqp_error:ident, $foreign_error:ty)),*) => {
-        $(
-            pub struct $amqp_error(pub $foreign_error);
-
-            impl From<$foreign_error> for $amqp_error {
-                fn from(e: $foreign_error) -> Self {
-                    $amqp_error(e)
-                }
-            }
-
-            impl From<$amqp_error> for Fe2o3AmqpError {
-                fn from(e: $amqp_error) -> Self {
-                    Fe2o3AmqpError {
-                        kind: Fe2o3ErrorKind::$amqp_error { source: e },
-                    }
-                }
-            }
-
-            impl From<$foreign_error> for Fe2o3AmqpError {
-                fn from(e: $foreign_error) -> Self {
-                    Fe2o3AmqpError {
-                        kind: Fe2o3ErrorKind::$amqp_error {
-                            source: $amqp_error(e),
-                        },
-                    }
-                }
-            }
-
-            impl From<$amqp_error> for azure_core::Error {
-                fn from(e: $amqp_error) -> Self {
-                    let fe = Fe2o3AmqpError::from(e);
-                    let ak = AmqpErrorKind::from(fe);
-                    Self::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        AmqpError::new(ak),
-                    )
-                }
-            }
-
-            impl std::fmt::Debug for $amqp_error {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    write!(f, "{:?}", self.0)
-                }
-            }
-        )*
-    }
-}
-
-impl_from_external_error! {
-//    (AmqpOpen, fe2o3_amqp::connection::OpenError),
-//    (AmqpConnection, fe2o3_amqp::connection::Error)
-}
-
 pub struct Fe2o3SerializationError(pub serde_amqp::error::Error);
 impl From<serde_amqp::error::Error> for Fe2o3SerializationError {
     fn from(e: serde_amqp::error::Error) -> Self {
@@ -81,84 +27,7 @@ impl From<fe2o3_amqp::connection::Error> for Fe2o3ConnectionError {
     }
 }
 
-#[derive(Debug)]
-pub enum AmqpNotAccepted {
-    Rejected {
-        source: fe2o3_amqp_types::messaging::Rejected,
-    },
-    Released {
-        source: fe2o3_amqp_types::messaging::Released,
-    },
-    Modified {
-        source: fe2o3_amqp_types::messaging::Modified,
-    },
-}
-
-impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpNotAccepted {
-    fn from(outcome: fe2o3_amqp_types::messaging::Outcome) -> Self {
-        match outcome {
-            fe2o3_amqp_types::messaging::Outcome::Accepted(_) => {
-                panic!("Accepted outcomes should not be converted to errors")
-            }
-            fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => {
-                AmqpNotAccepted::Rejected { source: rejected }
-            }
-            fe2o3_amqp_types::messaging::Outcome::Released(released) => {
-                AmqpNotAccepted::Released { source: released }
-            }
-            fe2o3_amqp_types::messaging::Outcome::Modified(modified) => {
-                AmqpNotAccepted::Modified { source: modified }
-            }
-        }
-    }
-}
-
-impl From<AmqpNotAccepted> for Fe2o3AmqpError {
-    fn from(e: AmqpNotAccepted) -> Self {
-        Fe2o3AmqpError {
-            kind: Fe2o3ErrorKind::NotAccepted { source: e },
-        }
-    }
-}
-
-pub enum Fe2o3ErrorKind {
-    NotAccepted { source: AmqpNotAccepted },
-}
-
-pub struct Fe2o3AmqpError {
-    kind: Fe2o3ErrorKind,
-}
-
-impl std::error::Error for Fe2o3AmqpError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
-
-impl std::fmt::Display for Fe2o3AmqpError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.kind {
-            Fe2o3ErrorKind::NotAccepted { source } => {
-                write!(f, "Not accepted error: {:?}", source)
-            }
-        }
-    }
-}
-
-impl std::fmt::Debug for Fe2o3AmqpError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Fe2o3 Error: {}", self)
-    }
-}
-
-impl From<Fe2o3AmqpError> for AmqpErrorKind {
-    fn from(e: Fe2o3AmqpError) -> Self {
-        AmqpErrorKind::TransportImplementationError {
-            source: Box::new(e),
-        }
-    }
-}
-
+// Specializations of From for common AMQP types.
 impl From<fe2o3_amqp_types::definitions::Error> for AmqpDescribedError {
     fn from(e: fe2o3_amqp_types::definitions::Error) -> Self {
         AmqpDescribedError::new(
@@ -199,6 +68,24 @@ impl From<fe2o3_amqp::link::DetachError> for AmqpError {
                 Self::from(AmqpErrorKind::ClosedByRemoteWithError(error.into()))
             }
             _ => Self::from(AmqpErrorKind::DetachError(Box::new(e))),
+        }
+    }
+}
+
+impl From<fe2o3_amqp::link::LinkStateError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::LinkStateError) -> Self {
+        match e {
+            fe2o3_amqp::link::LinkStateError::RemoteClosedWithError(e) => {
+                AmqpErrorKind::ClosedByRemoteWithError(e.into()).into()
+            }
+            fe2o3_amqp::link::LinkStateError::RemoteDetachedWithError(e) => {
+                AmqpErrorKind::DetachedByRemoteWithError(e.into()).into()
+            }
+            fe2o3_amqp::link::LinkStateError::RemoteClosed => AmqpErrorKind::ClosedByRemote.into(),
+            fe2o3_amqp::link::LinkStateError::RemoteDetached => {
+                AmqpErrorKind::DetachedByRemote.into()
+            }
+            _ => AmqpErrorKind::LinkStateError(e.into()).into(),
         }
     }
 }

@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::error::{AmqpNotAccepted, Fe2o3AmqpError};
 use crate::{
     error::{AmqpDescribedError, AmqpError, AmqpErrorKind, AmqpSenderError},
     messaging::{AmqpMessage, AmqpTarget},
-    sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions},
+    sender::{
+        AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis, AmqpSenderOptions, SendModification,
+    },
     session::AmqpSession,
+    AmqpOrderedMap, AmqpSymbol, AmqpValue,
 };
 use azure_core::Result;
 use std::borrow::BorrowMut;
@@ -112,7 +114,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         &self,
         message: impl Into<AmqpMessage> + std::fmt::Debug,
         options: Option<AmqpSendOptions>,
-    ) -> Result<()> {
+    ) -> Result<AmqpSendOutcome> {
         let message: AmqpMessage = message.into();
         let message: fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
@@ -140,16 +142,27 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .await
             .map_err(AmqpError::from)?;
 
-        match outcome {
-            fe2o3_amqp_types::messaging::Outcome::Accepted(_) => Ok(()),
-            fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => Err(
-                AmqpSenderError::NotAccepted(rejected.error.map(AmqpDescribedError::from)).into(),
-            ),
-            _ => Err(azure_core::Error::from(AmqpError::from(
-                AmqpErrorKind::TransportImplementationError {
-                    source: Box::new(Fe2o3AmqpError::from(AmqpNotAccepted::from(outcome))),
-                },
-            ))),
+        Ok(match outcome {
+            fe2o3_amqp_types::messaging::Outcome::Accepted(_) => AmqpSendOutcome::Accepted,
+            fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => {
+                AmqpSendOutcome::Rejected(rejected.error.map(AmqpDescribedError::from))
+            }
+            fe2o3_amqp_types::messaging::Outcome::Released(_) => AmqpSendOutcome::Released,
+            fe2o3_amqp_types::messaging::Outcome::Modified(m) => {
+                AmqpSendOutcome::Modified(m.into())
+            }
+        })
+    }
+}
+
+impl From<fe2o3_amqp_types::messaging::Modified> for SendModification {
+    fn from(m: fe2o3_amqp_types::messaging::Modified) -> Self {
+        Self {
+            delivery_failed: m.delivery_failed,
+            undeliverable_here: m.undeliverable_here,
+            message_annotations: m
+                .message_annotations
+                .map(AmqpOrderedMap::<AmqpSymbol, AmqpValue>::from),
         }
     }
 }

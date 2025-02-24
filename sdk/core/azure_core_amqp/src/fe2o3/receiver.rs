@@ -290,21 +290,3 @@ impl From<fe2o3_amqp::link::RecvError> for AmqpReceiverError {
         }
     }
 }
-
-impl From<fe2o3_amqp::link::LinkStateError> for AmqpError {
-    fn from(e: fe2o3_amqp::link::LinkStateError) -> Self {
-        match e {
-            fe2o3_amqp::link::LinkStateError::RemoteClosedWithError(e) => {
-                AmqpErrorKind::ClosedByRemoteWithError(e.into()).into()
-            }
-            fe2o3_amqp::link::LinkStateError::RemoteDetachedWithError(e) => {
-                AmqpErrorKind::DetachedByRemoteWithError(e.into()).into()
-            }
-            fe2o3_amqp::link::LinkStateError::RemoteClosed => AmqpErrorKind::ClosedByRemote.into(),
-            fe2o3_amqp::link::LinkStateError::RemoteDetached => {
-                AmqpErrorKind::DetachedByRemote.into()
-            }
-            _ => AmqpErrorKind::LinkStateError(e.into()).into(),
-        }
-    }
-}

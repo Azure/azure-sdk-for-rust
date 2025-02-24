@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 // Licensed under the MIT License.
 
-use azure_core_amqp::AmqpError;
+use azure_core_amqp::{AmqpDescribedError, AmqpError};
 
 /// Represents the different kinds of errors that can occur in the Eventhubs module.
 pub enum ErrorKind {
@@ -40,6 +40,9 @@ pub enum ErrorKind {
     /// Unable to add authentication token.
     UnableToAddAuthenticationToken,
 
+    /// The message was rejected.
+    SendRejected(Option<AmqpDescribedError>),
+
     /// Represents the source of the AMQP error.
     /// This is used to wrap an AMQP error in an Even Hubs error.
     ///
@@ -48,7 +51,7 @@ pub enum ErrorKind {
 
 /// Represents an error that can occur in the Event Hubs module.
 pub struct EventHubsError {
-    kind: ErrorKind,
+    pub kind: ErrorKind,
 }
 
 impl std::error::Error for EventHubsError {
@@ -64,6 +67,7 @@ impl std::fmt::Display for EventHubsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
             ErrorKind::MissingMessageSender => f.write_str("Missing message sender."),
+            ErrorKind::SendRejected(e) => write!(f, "Send rejected: {:?}", e),
             ErrorKind::ArithmeticError => f.write_str("Arithmetic overflow has occurred."),
             ErrorKind::InvalidManagementResponse => f.write_str("Invalid management response"),
             ErrorKind::UnableToAddAuthenticationToken => {

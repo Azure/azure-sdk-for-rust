@@ -204,7 +204,7 @@ impl ProducerClient {
     ) -> Result<()> {
         let sender = self.ensure_sender(self.url.clone()).await.unwrap();
 
-        sender
+        let outcome = sender
             .lock()
             .await
             .send(
@@ -215,7 +215,19 @@ impl ProducerClient {
                 }),
             )
             .await?;
-        Ok(())
+
+        // We treat all outcomes other than "rejected" as successful.
+        match outcome {
+            azure_core_amqp::AmqpSendOutcome::Rejected(error) => Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::EventHubs,
+                EventHubsError {
+                    kind: ErrorKind::SendRejected(error),
+                },
+            )),
+            azure_core_amqp::AmqpSendOutcome::Accepted => Ok(()),
+            azure_core_amqp::AmqpSendOutcome::Released => Ok(()),
+            azure_core_amqp::AmqpSendOutcome::Modified(_) => Ok(()),
+        }
     }
 
     const BATCH_MESSAGE_FORMAT: u32 = 0x80013700;
@@ -303,7 +315,7 @@ impl ProducerClient {
         let sender = self.ensure_sender(batch.get_batch_path()).await?;
         let messages = batch.get_messages();
 
-        sender
+        let outcome = sender
             .lock()
             .await
             .send(
@@ -314,7 +326,18 @@ impl ProducerClient {
                 }),
             )
             .await?;
-        Ok(())
+        // We treat all outcomes other than "rejected" as successful.
+        match outcome {
+            azure_core_amqp::AmqpSendOutcome::Rejected(error) => Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::EventHubs,
+                EventHubsError {
+                    kind: ErrorKind::SendRejected(error),
+                },
+            )),
+            azure_core_amqp::AmqpSendOutcome::Accepted => Ok(()),
+            azure_core_amqp::AmqpSendOutcome::Released => Ok(()),
+            azure_core_amqp::AmqpSendOutcome::Modified(_) => Ok(()),
+        }
     }
 
     /// Gets the properties of the Event Hub.
