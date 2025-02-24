@@ -1,4 +1,5 @@
-//! Azure Template crate demonstrating Rust patterns
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 pub use azure_template_core::NumericCore;
 pub mod configuration;
