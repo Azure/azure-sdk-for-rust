@@ -119,6 +119,21 @@ pub(crate) mod error {
 
         /// Remote peer closed connection with error during opening process
         RemoteClosedWithError(AmqpDescribedError),
+
+        /// Session is not found
+        NotFound(Option<String>),
+
+        /// Not allowed
+        NotAllowed(Option<String>),
+
+        /// This could occur only when the user attempts to close the connection
+        JoinError(Box<dyn std::error::Error + Send + Sync>),
+
+        /// Idle timeout elapsed
+        IdleTimeoutElapsed,
+
+        /// Framing error
+        FramingError,
     }
 
     impl From<AmqpConnectionError> for AmqpErrorKind {
@@ -135,34 +150,53 @@ pub(crate) mod error {
     impl std::fmt::Display for AmqpConnectionError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
-                AmqpConnectionError::InvalidDomain => write!(f, "Invalid domain"),
-                AmqpConnectionError::TlsConnectorNotFound => {
+                Self::FramingError => write!(f, "Framing error"),
+                Self::IdleTimeoutElapsed => write!(f, "Idle timeout elapsed"),
+                Self::NotFound(e) => {
+                    if let Some(e) = e {
+                        write!(f, "Not found: {}", e)
+                    } else {
+                        write!(f, "Not found")
+                    }
+                }
+                Self::NotAllowed(e) => {
+                    if let Some(e) = e {
+                        write!(f, "Not allowed: {}", e)
+                    } else {
+                        write!(f, "Not allowed")
+                    }
+                }
+                Self::JoinError(e) => {
+                    write!(f, "Join error: {}", e)
+                }
+                Self::InvalidDomain => write!(f, "Invalid domain"),
+                Self::TlsConnectorNotFound => {
                     write!(f, "TLS connector is not found")
                 }
-                AmqpConnectionError::InvalidScheme => {
+                Self::InvalidScheme => {
                     write!(
                         f,
                         r#"Invalid scheme. Only "amqp" and "amqps" are supported."#
                     )
                 }
-                AmqpConnectionError::ProtocolHeaderMismatch(e) => {
+                Self::ProtocolHeaderMismatch(e) => {
                     write!(f, "Protocol header mismatch: {:?}", e)
                 }
-                AmqpConnectionError::SaslError(e) => {
+                Self::SaslError(e) => {
                     write!(f, "SASL error code {}", e)
                 }
-                AmqpConnectionError::IllegalState => write!(f, "Illegal local state"),
-                AmqpConnectionError::NotImplemented(e) => {
+                Self::IllegalState => write!(f, "Illegal local state"),
+                Self::NotImplemented(e) => {
                     if let Some(e) = e {
                         write!(f, "Not implemented: {}", e)
                     } else {
                         write!(f, "Not implemented")
                     }
                 }
-                AmqpConnectionError::DecodeError(e) => write!(f, "Decode error: {}", e),
-                AmqpConnectionError::TransportError(e) => write!(f, "Transport error: {}", e),
-                AmqpConnectionError::RemoteClosed => write!(f, "Remote peer closed"),
-                AmqpConnectionError::RemoteClosedWithError(e) => {
+                Self::DecodeError(e) => write!(f, "Decode error: {}", e),
+                Self::TransportError(e) => write!(f, "Transport error: {}", e),
+                Self::RemoteClosed => write!(f, "Remote peer closed"),
+                Self::RemoteClosedWithError(e) => {
                     write!(f, "Remote peer closed connection with error: {:?}", e)
                 }
             }
