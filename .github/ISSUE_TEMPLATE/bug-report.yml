@@ -16,6 +16,24 @@ body:
       description: A short summary of the bug
       placeholder: "Enter the bug title"
 
+  - type: input
+    id: CrateName
+    attributes:
+      label: Crate Name
+      description: The name of the crate where the bug was found. e.g. `azure_core`, `azure_identity`, etc.
+      placeholder: "Enter the crate name"
+    validations:
+      required: true
+
+  - type: input
+    id: CrateVersion
+    attributes:
+      label: Crate Version
+      description: The version of the crate where the bug was found. e.g. `0.1.0`, `1.1.0-beta.1`, etc.
+      placeholder: "Enter the crate version"
+    validations:
+      required: true
+
   - type: textarea
     id: description
     attributes:
