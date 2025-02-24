@@ -33,7 +33,7 @@ Param (
   [string] $PackageName,
   [string] $NewVersionString,
   [string] $ReleaseDate,
-  [boolean] $ReplaceLatestEntryTitle = $false
+  [boolean] $ReplaceLatestEntryTitle
 )
 
 . (Join-Path $PSScriptRoot '../common/scripts/common.ps1')
