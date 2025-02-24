@@ -1,0 +1,16 @@
+[formatting]
+align_single_comments = false
+array_auto_collapse = false
+array_trailing_comma = true
+indent_string = "  "
+
+[[rule]]
+include = ["**/Cargo.toml"]
+keys = [
+  "dependencies",
+  "build-dependencies",
+  "dev-dependencies",
+]
+
+[rule.formatting]
+reorder_keys = true
