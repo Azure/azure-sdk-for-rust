@@ -29,9 +29,7 @@ pub enum AmqpErrorKind {
     ManagementError(AmqpManagementError),
     SenderError(AmqpSenderError),
     ReceiverError(AmqpReceiverError),
-    TransportImplementationError {
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
+    TransportImplementationError(Box<dyn std::error::Error + Send + Sync>),
 }
 
 #[derive(Debug, Clone)]
@@ -86,7 +84,7 @@ impl From<AmqpErrorKind> for AmqpError {
 impl std::error::Error for AmqpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.kind {
-            AmqpErrorKind::TransportImplementationError { source } => Some(source.as_ref()),
+            AmqpErrorKind::TransportImplementationError(s) => Some(s.as_ref()),
             AmqpErrorKind::ManagementError(e) => e.source(),
             AmqpErrorKind::SenderError(e) => e.source(),
             AmqpErrorKind::ReceiverError(e) => e.source(),
@@ -133,8 +131,8 @@ impl std::fmt::Display for AmqpError {
             }
             AmqpErrorKind::CbsNotSet => f.write_str("Claims Based Security is not set"),
             AmqpErrorKind::CbsNotAttached => f.write_str("Claims Based Security is not attached"),
-            AmqpErrorKind::TransportImplementationError { source } => {
-                write!(f, "Transport Implementation Error: {:?}", source)
+            AmqpErrorKind::TransportImplementationError(s) => {
+                write!(f, "Transport Implementation Error: {:?}", s)
             }
             AmqpErrorKind::SenderError(err) => {
                 write!(f, "AMQP Sender Error: {} ", err)

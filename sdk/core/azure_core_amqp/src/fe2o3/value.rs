@@ -1,8 +1,13 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::value::{
-    AmqpDescribed, AmqpDescriptor, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue,
+use crate::{
+    error::AmqpErrorKind,
+    value::{
+        AmqpDescribed, AmqpDescriptor, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp,
+        AmqpValue,
+    },
+    AmqpError,
 };
 use serde_amqp::primitives::Timestamp;
 use serde_bytes::ByteBuf;
@@ -542,9 +547,10 @@ impl From<Fe2o3SerializationError> for azure_core::Error {
             | serde_amqp::Error::SequenceLengthMismatch
             | serde_amqp::Error::InvalidLength
             | serde_amqp::Error::InvalidValue
-            | serde_amqp::Error::IsDescribedType => {
-                azure_core::Error::new(ErrorKind::Amqp, Box::new(err.0))
-            }
+            | serde_amqp::Error::IsDescribedType => azure_core::Error::new(
+                ErrorKind::Amqp,
+                AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(err.0))),
+            ),
         }
     }
 }
