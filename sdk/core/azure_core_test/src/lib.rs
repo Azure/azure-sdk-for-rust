@@ -17,7 +17,6 @@ use std::path::{Path, PathBuf};
 
 #[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 const ASSETS_FILE: &str = "assets.json";
-const SPAN_TARGET: &str = "test-proxy";
 
 /// Context information required by recorded client library tests.
 ///
@@ -28,20 +27,20 @@ pub struct TestContext {
     repo_dir: &'static Path,
     crate_dir: &'static Path,
     service_dir: &'static str,
-    test_module: &'static str,
-    test_name: &'static str,
+    module_name: &'static str,
+    name: &'static str,
     recording: Option<Recording>,
 }
 
 impl TestContext {
     pub(crate) fn new(
         crate_dir: &'static str,
-        test_module: &'static str,
-        test_name: &'static str,
+        module_dir: &'static str,
+        name: &'static str,
     ) -> azure_core::Result<Self> {
         let service_dir = parent_of(crate_dir, "sdk")
             .ok_or_else(|| Error::message(ErrorKind::Other, "not under 'sdk' folder in repo"))?;
-        let test_module = Path::new(test_module)
+        let test_module = Path::new(module_dir)
             .file_stem()
             .ok_or_else(|| Error::message(ErrorKind::Other, "invalid test module"))?
             .to_str()
@@ -50,8 +49,8 @@ impl TestContext {
             repo_dir: find_ancestor_of(crate_dir, ".git")?,
             crate_dir: Path::new(crate_dir),
             service_dir,
-            test_module,
-            test_name,
+            module_name: test_module,
+            name,
             recording: None,
         })
     }
@@ -100,13 +99,13 @@ impl TestContext {
     }
 
     /// Gets the module name containing the current test.
-    pub fn test_module(&self) -> &'static str {
-        self.test_module
+    pub fn module_name(&self) -> &'static str {
+        self.module_name
     }
 
     /// Gets the current test function name.
-    pub fn test_name(&self) -> &'static str {
-        self.test_name
+    pub fn name(&self) -> &'static str {
+        self.name
     }
 
     /// Gets the recording assets file under the crate directory.
@@ -153,8 +152,8 @@ impl TestContext {
     pub(crate) fn test_recording_file(&self) -> String {
         let path = self
             .test_data_dir()
-            .join(self.test_module)
-            .join(self.test_name)
+            .join(self.module_name)
+            .join(self.name)
             .as_path()
             .with_extension("json");
         path.to_str()
@@ -238,8 +237,8 @@ mod tests {
             .unwrap()
             .replace("\\", "/")
             .ends_with("sdk/core/azure_core_test"));
-        assert_eq!(ctx.test_module(), "lib");
-        assert_eq!(ctx.test_name(), "test_context_new");
+        assert_eq!(ctx.module_name(), "lib");
+        assert_eq!(ctx.name(), "test_context_new");
         assert_eq!(
             ctx.test_recording_file().replace("\\", "/"),
             "sdk/core/azure_core_test/tests/data/lib/test_context_new.json"

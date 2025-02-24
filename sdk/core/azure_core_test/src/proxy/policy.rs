@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    proxy::{RecordingId, RECORDING_UPSTREAM_BASE_URI},
+    proxy::{RecordingId, RECORDING_MODE, RECORDING_UPSTREAM_BASE_URI},
     Skip,
 };
 use async_trait::async_trait;
@@ -16,10 +16,8 @@ use std::{
     convert::Infallible,
     sync::{Arc, RwLock},
 };
-use tracing::{debug_span, Instrument};
+use tracing::Instrument;
 use url::Origin;
-
-use super::RECORDING_MODE;
 
 #[derive(Debug, Default)]
 pub struct RecordingPolicy {
@@ -38,7 +36,7 @@ impl Policy for RecordingPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        let span = debug_span!(target: crate::SPAN_TARGET, "request", mode = ?self.test_mode);
+        let span = tracing::trace_span!("request", mode = ?self.test_mode);
 
         // Replace the upstream host with the test-proxy host, which will make and record the upstream call.
         let mut origin = None;
