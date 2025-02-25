@@ -84,10 +84,9 @@ pub(crate) mod error {
     use crate::{error::AmqpErrorKind, AmqpError};
 
     pub enum AmqpConnectionError {
-        ConnectionNotSet,
+        //        ConnectionNotSet,
 
-        ConnectionAlreadySet,
-
+        //        ConnectionAlreadySet,
         /// Domain is invalid or not found
         InvalidDomain,
 
@@ -142,8 +141,6 @@ pub(crate) mod error {
     impl std::fmt::Display for AmqpConnectionError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
-                Self::ConnectionNotSet => write!(f, "Connection not set"),
-                Self::ConnectionAlreadySet => write!(f, "Connection already set"),
                 Self::FramingError => write!(f, "Framing error"),
                 Self::IdleTimeoutElapsed => write!(f, "Idle timeout elapsed"),
                 Self::NotFound(e) => {
@@ -188,11 +185,6 @@ pub(crate) mod error {
                     }
                 }
                 Self::DecodeError(e) => write!(f, "Decode error: {}", e),
-                //                Self::TransportError(e) => write!(f, "Transport error: {}", e),
-                //                Self::RemoteClosed => write!(f, "Remote peer closed"),
-                //                Self::RemoteClosedWithError(e) => {
-                //                    write!(f, "Remote peer closed connection with error: {:?}", e)
-                //                }
             }
         }
     }

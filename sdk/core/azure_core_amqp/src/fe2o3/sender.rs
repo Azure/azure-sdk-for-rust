@@ -88,7 +88,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         match res {
             Ok(_) => Ok(()),
             Err(e) => match e.kind() {
-                AmqpErrorKind::ClosedByRemote => {
+                AmqpErrorKind::ClosedByRemote(_) => {
                     info!("Error detaching sender: {:?}", e);
                     Ok(())
                 }
@@ -213,7 +213,7 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
     fn from(e: fe2o3_amqp::link::SenderAttachError) -> Self {
         match e {
             fe2o3_amqp::link::SenderAttachError::RemoteClosedWithError(e) => {
-                AmqpErrorKind::ClosedByRemoteWithError(e.into()).into()
+                AmqpErrorKind::ClosedByRemote(Some(e.into())).into()
             }
             _ => AmqpErrorKind::SenderError(e.into()).into(),
         }

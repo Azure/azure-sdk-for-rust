@@ -3,9 +3,7 @@
 // cspell:: words amqp servicebus sastoken
 
 use crate::{
-    cbs::AmqpClaimsBasedSecurityApis,
-    error::{AmqpErrorKind, AmqpManagementError},
-    session::AmqpSession,
+    cbs::AmqpClaimsBasedSecurityApis, fe2o3::error::Fe2o3ManagementError, session::AmqpSession,
     AmqpError,
 };
 use azure_core::error::Result;
@@ -28,6 +26,25 @@ impl<'a> Fe2o3ClaimsBasedSecurity<'a> {
             session,
         })
     }
+
+    fn cbs_already_attached() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "Claims Based Security is already attached",
+        )
+    }
+    fn cbs_not_set() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "Claims Based Security is not set",
+        )
+    }
+    fn cbs_not_attached() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "Claims Based Security is not attached",
+        )
+    }
 }
 
 impl Fe2o3ClaimsBasedSecurity<'_> {}
@@ -46,15 +63,15 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
             .client_node_addr("rust_amqp_cbs")
             .attach(session.borrow_mut())
             .await
-            .map_err(AmqpManagementError::from)?;
+            .map_err(|e| azure_core::Error::from(AmqpError::from(e)))?;
         self.cbs
             .set(Mutex::new(cbs_client))
-            .map_err(|_| AmqpError::from(AmqpErrorKind::CbsAlreadyAttached))?;
+            .map_err(|_| Self::cbs_already_attached())?;
         Ok(())
     }
 
     async fn detach(mut self) -> Result<()> {
-        let cbs = self.cbs.take().ok_or(AmqpErrorKind::CbsNotSet)?;
+        let cbs = self.cbs.take().ok_or(Self::cbs_not_set())?;
         let cbs = cbs.into_inner();
         cbs.close().await.map_err(AmqpError::from)?;
         Ok(())
@@ -90,19 +107,19 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
         );
         self.cbs
             .get()
-            .ok_or::<azure_core::Error>(AmqpErrorKind::CbsNotAttached.into())?
+            .ok_or::<azure_core::Error>(Self::cbs_not_attached())?
             .lock()
             .await
             .borrow_mut()
             .put_token(path, cbs_token)
             .await
             .map_err(|e| {
-                let me = AmqpManagementError::try_from(e);
+                let me = azure_core::Error::try_from(Fe2o3ManagementError(e));
                 if let Err(e) = me {
                     debug!("Failed to convert management error to azure error: {:?}", e);
                     return e;
                 }
-                AmqpErrorKind::ManagementError(me.unwrap()).into()
+                me.unwrap()
             })?;
         Ok(())
     }

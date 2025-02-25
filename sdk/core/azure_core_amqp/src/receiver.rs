@@ -141,160 +141,25 @@ pub(crate) mod error {
     /// Receiver Errors
     #[derive(Debug)]
     pub enum AmqpReceiverError {
-        ReceiverAlreadyAttached,
-        CouldNotSetMessageReceiver,
-        ReceiverNotSet,
-
-        // Errors that should end the session
-        /// The associated session has dropped
-        IllegalSessionState,
-
-        /// Link name is already in use
-        DuplicatedLinkName,
-
-        /// Illegal link state
-        IllegalState,
-
-        /// The local terminus is expecting an Attach from the remote peer
-        NonAttachFrameReceived,
-
-        /// The link is expected to be detached immediately but didn't receive
-        /// an incoming Detach frame
-        ExpectImmediateDetach,
-
-        // Errors that should reject Attach
-        /// Incoming Attach frame's Source field is None
-        IncomingSourceIsNone,
-
-        /// The remote Attach contains a [`Coordinator`] in the Target
-        CoordinatorIsNotImplemented,
-
-        /// This MUST NOT be null if role is sender
-        InitialDeliveryCountIsNone,
-
-        // /// When set at the sender this indicates the actual settlement mode in use.
-        // ///
-        // /// The sender SHOULD respect the receiver’s desired settlement mode ***if
-        // /// the receiver initiates*** the attach exchange and the sender supports the desired mode
-        // #[error("When set at the sender this indicates the actual settlement mode in use")]
-        // SndSettleModeNotSupported,
-        /// "When set at the receiver this indicates the actual settlement mode in use"
-        ///
-        /// The receiver SHOULD respect the sender’s desired settlement mode ***if
-        /// the sender initiates*** the attach exchange and the receiver supports the desired mode
-        RcvSettleModeNotSupported,
-
-        /// When dynamic is set to true by the sending link endpoint, this field constitutes a request
-        /// for the receiving peer to dynamically create a node at the target. In this case the address
-        /// field MUST NOT be set.
-        TargetAddressIsSomeWhenDynamicIsTrue,
-
-        /// When set to true by the sending link endpoint this field indicates creation of a dynamically created
-        /// node. In this case the address field will contain the address of the created node
-        SourceAddressIsNoneWhenDynamicIsTrue,
-
-        /// If the dynamic field is not set to true this field MUST be left unset.
-        DynamicNodePropertiesIsSomeWhenDynamicIsFalse,
-
-        /// The desired filter(s) on the receiver is not supported by the remote peer
-        DesiredFilterNotSupported,
-
         /// The peer sent more message transfers than currently allowed on the link.
         TransferLimitExceeded,
-
-        /// The delivery-id is not found in Transfer
-        DeliveryIdIsNone,
-
-        /// The delivery-tag is not found in Transfer
-        DeliveryTagIsNone,
-
-        /// Decoding Message failed
-        MessageDecode,
-
-        /// If the negotiated link value is first, then it is illegal to set this
-        /// field to second.
-        IllegalRcvSettleModeInTransfer,
-
-        /// Field is inconsistent in multi-frame delivery
-        InconsistentFieldInMultiFrameDelivery,
-
-        /// Transactional acquisition is not supported yet
-        TransactionalAcquisitionIsNotImplemented,
     }
 
     impl std::fmt::Display for AmqpReceiverError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
-                AmqpReceiverError::ReceiverAlreadyAttached => {
-                    f.write_str("AMQP Receiver is already attached")
-                }
-                AmqpReceiverError::CouldNotSetMessageReceiver => {
-                    f.write_str("Could not set message receiver.")
-                }
-                AmqpReceiverError::ReceiverNotSet => f.write_str("Receiver is not set"),
-                AmqpReceiverError::IllegalSessionState => {
-                    f.write_str("Illegal session state. Session might have stopped.")
-                }
-                AmqpReceiverError::DuplicatedLinkName => f.write_str("Link name is not unique."),
-                AmqpReceiverError::IllegalState => f.write_str("Illegal session state"),
-                AmqpReceiverError::NonAttachFrameReceived => {
-                    f.write_str("Expecting an Attach frame but received a non-Attach frame")
-                }
-                AmqpReceiverError::ExpectImmediateDetach => {
-                    f.write_str("Expecting the remote peer to immediately detach")
-                }
-                AmqpReceiverError::IncomingSourceIsNone => f.write_str("Source field is None"),
-                AmqpReceiverError::CoordinatorIsNotImplemented => {
-                    f.write_str("Control link is not implemented without enabling the `transaction` feature")
-                }
-                AmqpReceiverError::InitialDeliveryCountIsNone => {
-                    f.write_str("Initial delivery count is None")
-                }
-                AmqpReceiverError::RcvSettleModeNotSupported => {
-                    f.write_str("The desired ReceiverSettleMode is not supported by the remote peer")
-                }
-                AmqpReceiverError::TargetAddressIsSomeWhenDynamicIsTrue => {
-                    f.write_str("Target address MUST not be set when dynamic is set to by a sending link endpoint")
-                }
-                AmqpReceiverError::SourceAddressIsNoneWhenDynamicIsTrue => {
-                    f.write_str("When set to true by the sending link endpoint this field indicates creation of a dynamically created node")
-                }
-                AmqpReceiverError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse => {
-                    f.write_str("If the dynamic field is not set to true this field MUST be left unset")
-                }
-                AmqpReceiverError::DesiredFilterNotSupported => {
-                    f.write_fmt(format_args!("The desired filter(s) on the receiver is not supported by the remote peer."))
-                }
-                AmqpReceiverError::TransferLimitExceeded => {
-                    f.write_str("The peer sent more message transfers than currently allowed on the link")
-                }
-                AmqpReceiverError::DeliveryIdIsNone => {
-                    f.write_str("The delivery-id is not found in Transfer")
-                }
-                AmqpReceiverError::DeliveryTagIsNone => {
-                    f.write_str("The delivery-tag is not found in Transfer")
-                }
-                AmqpReceiverError::MessageDecode => {
-                    f.write_str("Decoding Message failed")
-                }
-                AmqpReceiverError::IllegalRcvSettleModeInTransfer => {
-                    f.write_str("If the negotiated link value is first, then it is illegal to set this field to second")
-                }
-                AmqpReceiverError::InconsistentFieldInMultiFrameDelivery => {
-                    f.write_str("Field is inconsistent in multi-frame delivery")
-                }
-                AmqpReceiverError::TransactionalAcquisitionIsNotImplemented => {
-                    f.write_str("Transactional acquisition is not implemented")
-                }
+                AmqpReceiverError::TransferLimitExceeded => f.write_str(
+                    "The peer sent more message transfers than currently allowed on the link",
+                ),
             }
         }
     }
 
     impl std::error::Error for AmqpReceiverError {}
 
-    impl From<AmqpReceiverError> for AmqpErrorKind {
+    impl From<AmqpReceiverError> for azure_core::Error {
         fn from(e: AmqpReceiverError) -> Self {
-            AmqpErrorKind::ReceiverError(e)
+            AmqpErrorKind::ReceiverError(e).into()
         }
     }
 }

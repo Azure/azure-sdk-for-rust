@@ -10,16 +10,14 @@ use crate::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 
 /// Type of AMQP error.
 pub enum AmqpErrorKind {
-    CbsAlreadyAttached,
-    CbsNotSet,
-    CbsNotAttached,
-    ClosedByRemote,
-    ClosedByRemoteWithError(AmqpDescribedError),
-    /// Remote peer detached
-    DetachedByRemote,
+    /// Remote peer closed the link
+    ClosedByRemote(Option<AmqpDescribedError>),
 
-    /// Remote peer detached with error
-    DetachedByRemoteWithError(AmqpDescribedError),
+    /// Remote peer detached
+    DetachedByRemote(Option<AmqpDescribedError>),
+
+    /// The connection was dropped.
+    ConnectionDropped(Box<dyn std::error::Error + Send + Sync>),
 
     /// Link State error.
     LinkStateError(Box<dyn std::error::Error + Send + Sync>),
@@ -84,21 +82,16 @@ impl From<AmqpErrorKind> for AmqpError {
 impl std::error::Error for AmqpError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.kind {
-            AmqpErrorKind::TransportImplementationError(s) => Some(s.as_ref()),
+            AmqpErrorKind::TransportImplementationError(s)
+            | AmqpErrorKind::DetachError(s)
+            | AmqpErrorKind::LinkStateError(s)
+            | AmqpErrorKind::ConnectionDropped(s) => Some(s.as_ref()),
             AmqpErrorKind::ManagementError(e) => e.source(),
             AmqpErrorKind::SenderError(e) => e.source(),
             AmqpErrorKind::ReceiverError(e) => e.source(),
             AmqpErrorKind::SessionError(e) => e.source(),
             AmqpErrorKind::ConnectionError(e) => e.source(),
-            AmqpErrorKind::LinkStateError(e) => Some(e.as_ref()),
-            AmqpErrorKind::DetachError(e) => Some(e.as_ref()),
-            AmqpErrorKind::ClosedByRemoteWithError(_)
-            | AmqpErrorKind::DetachedByRemoteWithError(_) => None,
-            AmqpErrorKind::CbsAlreadyAttached
-            | AmqpErrorKind::CbsNotSet
-            | AmqpErrorKind::CbsNotAttached
-            | AmqpErrorKind::DetachedByRemote
-            | AmqpErrorKind::ClosedByRemote => None,
+            AmqpErrorKind::ClosedByRemote(_) | AmqpErrorKind::DetachedByRemote(_) => None,
         }
     }
 }
@@ -106,12 +99,10 @@ impl std::error::Error for AmqpError {
 impl std::fmt::Display for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            AmqpErrorKind::ClosedByRemote => f.write_str("Remote closed"),
-            AmqpErrorKind::DetachedByRemote => f.write_str("Remote detached"),
-            AmqpErrorKind::DetachedByRemoteWithError(err) => {
+            AmqpErrorKind::DetachedByRemote(err) => {
                 write!(f, "Remote detached with error: {:?}", err)
             }
-            AmqpErrorKind::ClosedByRemoteWithError(err) => {
+            AmqpErrorKind::ClosedByRemote(err) => {
                 write!(f, "Remote closed with error: {:?}", err)
             }
             AmqpErrorKind::ConnectionError(err) => {
@@ -126,13 +117,11 @@ impl std::fmt::Display for AmqpError {
             AmqpErrorKind::ManagementError(err) => {
                 write!(f, "AMQP Management Error: {} ", err)
             }
-            AmqpErrorKind::CbsAlreadyAttached => {
-                f.write_str("Claims Based Security is already attached")
-            }
-            AmqpErrorKind::CbsNotSet => f.write_str("Claims Based Security is not set"),
-            AmqpErrorKind::CbsNotAttached => f.write_str("Claims Based Security is not attached"),
             AmqpErrorKind::TransportImplementationError(s) => {
-                write!(f, "Transport Implementation Error: {:?}", s)
+                write!(f, "Transport Implementation Error: {}", s)
+            }
+            AmqpErrorKind::ConnectionDropped(s) => {
+                write!(f, "Connection dropped: {}", s)
             }
             AmqpErrorKind::SenderError(err) => {
                 write!(f, "AMQP Sender Error: {} ", err)

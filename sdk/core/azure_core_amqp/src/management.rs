@@ -25,55 +25,18 @@ pub trait AmqpManagementApis {
     ) -> impl std::future::Future<Output = Result<AmqpOrderedMap<String, AmqpValue>>>;
 }
 pub(crate) mod error {
-    use std::{error::Error, fmt::Debug};
+    use std::fmt::Debug;
 
-    use crate::{
-        error::{AmqpErrorKind, AmqpReceiverError, AmqpSenderError},
-        AmqpError,
-    };
+    use crate::{error::AmqpErrorKind, AmqpError};
 
     pub enum AmqpManagementError {
-        AmqpManagementAlreadyAttached,
-        AmqpManagementNotAttached,
-
         /// An error has occurred with Sending the management request.
-        SendError(AmqpSenderError),
-        ReceiveError(AmqpReceiverError),
-
-        InvalidManagementResponse(String),
-        DecodingError,
-        NotAccepted,
-        Disposition,
         HttpStatusCode(azure_core::StatusCode, Option<String>),
     }
 
     impl std::fmt::Display for AmqpManagementError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match &self {
-                AmqpManagementError::AmqpManagementAlreadyAttached => {
-                    f.write_str("AMQP Management is already attached")
-                }
-                AmqpManagementError::AmqpManagementNotAttached => {
-                    f.write_str("AMQP Management is not attached")
-                }
-                AmqpManagementError::InvalidManagementResponse(s) => {
-                    if let Some(e) = self.source() {
-                        f.write_fmt(format_args!("Invalid Management Response: {s}: {e}"))
-                    } else {
-                        f.write_fmt(format_args!("Invalid Management Response: {s}"))
-                    }
-                }
-                AmqpManagementError::SendError(s) => {
-                    f.write_fmt(format_args!("Error sending management request: {s}"))
-                }
-                AmqpManagementError::ReceiveError(r) => {
-                    f.write_fmt(format_args!("Error receiving request: {r}"))
-                }
-                AmqpManagementError::DecodingError => f.write_str("Error decoding response."),
-                AmqpManagementError::NotAccepted => f.write_str("Management request not accepted."),
-                AmqpManagementError::Disposition => {
-                    f.write_str("Management disposition not accepted.")
-                }
                 AmqpManagementError::HttpStatusCode(status_code, d) => {
                     if let Some(d) = d {
                         f.write_fmt(format_args!(
@@ -98,15 +61,7 @@ pub(crate) mod error {
     impl std::error::Error for AmqpManagementError {
         fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
             match self {
-                AmqpManagementError::AmqpManagementAlreadyAttached
-                | AmqpManagementError::AmqpManagementNotAttached
-                | AmqpManagementError::DecodingError
-                | AmqpManagementError::NotAccepted
-                | AmqpManagementError::Disposition => None,
                 AmqpManagementError::HttpStatusCode(_, _) => None,
-                AmqpManagementError::InvalidManagementResponse(_) => None,
-                AmqpManagementError::SendError(error) => error.source(),
-                AmqpManagementError::ReceiveError(error) => error.source(),
             }
         }
     }
