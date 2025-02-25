@@ -35,11 +35,26 @@ impl Fe2o3AmqpSession {
 
     /// Returns a reference to the session handle
     pub fn get(&self) -> Result<Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>>> {
-        Ok(self
-            .session
-            .get()
-            .ok_or(AmqpSessionError::SessionNotSet)?
-            .clone())
+        Ok(self.session.get().ok_or(Self::session_not_set())?.clone())
+    }
+
+    fn session_already_attached() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "AMQP Session is already attached",
+        )
+    }
+    fn session_not_set() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "AMQP Session is not set",
+        )
+    }
+    fn could_not_set_session() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "Could not set AMQP Session",
+        )
     }
 }
 
@@ -53,7 +68,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             .implementation
             .get()
             .get()
-            .ok_or(AmqpSessionError::SessionAlreadyAttached)?
+            .ok_or(Self::session_already_attached())?
             .lock()
             .await;
 
@@ -100,12 +115,10 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         let session = session_builder
             .begin(connection.borrow_mut())
             .await
-            .map_err(AmqpSessionError::from)?;
+            .map_err(|e| azure_core::Error::from(AmqpError::from(e)))?;
         self.session
             .set(Arc::new(Mutex::new(session)))
-            .map_err(|_| {
-                AmqpError::from(AmqpErrorKind::from(AmqpSessionError::CouldNotSetSession))
-            })?;
+            .map_err(|_| Self::could_not_set_session())?;
         Ok(())
     }
 
@@ -113,37 +126,42 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         let mut session = self
             .session
             .get()
-            .ok_or(AmqpSessionError::SessionNotSet)?
+            .ok_or(Self::session_not_set())?
             .lock()
             .await;
         if session.is_ended() {
             trace!("Session already ended, returning.");
             return Ok(());
         }
-        session.end().await.map_err(AmqpSessionError::from)?;
+        session
+            .end()
+            .await
+            .map_err(|e| azure_core::Error::from(AmqpError::from(e)))?;
         Ok(())
     }
 }
 
-impl From<fe2o3_amqp::session::BeginError> for AmqpSessionError {
+impl From<fe2o3_amqp::session::BeginError> for AmqpError {
     fn from(e: fe2o3_amqp::session::BeginError) -> Self {
         match e {
             fe2o3_amqp::session::BeginError::IllegalState
             | fe2o3_amqp::session::BeginError::IllegalConnectionState => {
-                AmqpSessionError::SessionImplementationError(Box::new(e))
+                AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
             }
-            fe2o3_amqp::session::BeginError::RemoteEnded => AmqpSessionError::RemoteEnded,
+            fe2o3_amqp::session::BeginError::RemoteEnded => {
+                AmqpErrorKind::ClosedByRemote(None).into()
+            }
             fe2o3_amqp::session::BeginError::RemoteEndedWithError(error) => {
-                AmqpSessionError::RemoteEndedWithError(error.into())
+                AmqpErrorKind::ClosedByRemote(Some(error.into())).into()
             }
             fe2o3_amqp::session::BeginError::LocalChannelMaxReached => {
-                AmqpSessionError::LocalChannelMaxReached
+                AmqpErrorKind::SessionError(AmqpSessionError::LocalChannelMaxReached).into()
             }
         }
     }
 }
 
-impl From<fe2o3_amqp::session::Error> for AmqpSessionError {
+impl From<fe2o3_amqp::session::Error> for AmqpError {
     fn from(e: fe2o3_amqp::session::Error) -> Self {
         match e {
             fe2o3_amqp::session::Error::UnattachedHandle
@@ -152,11 +170,11 @@ impl From<fe2o3_amqp::session::Error> for AmqpSessionError {
             | fe2o3_amqp::session::Error::IllegalState
             | fe2o3_amqp::session::Error::IllegalConnectionState
             | fe2o3_amqp::session::Error::TransferFrameToSender => {
-                AmqpSessionError::SessionImplementationError(Box::new(e))
+                AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
             }
-            fe2o3_amqp::session::Error::RemoteEnded => AmqpSessionError::RemoteEnded,
+            fe2o3_amqp::session::Error::RemoteEnded => AmqpErrorKind::ClosedByRemote(None).into(),
             fe2o3_amqp::session::Error::RemoteEndedWithError(error) => {
-                AmqpSessionError::RemoteEndedWithError(error.into())
+                AmqpErrorKind::ClosedByRemote(Some(error.into())).into()
             }
         }
     }

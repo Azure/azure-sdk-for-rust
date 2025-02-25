@@ -98,23 +98,10 @@ impl AmqpSession {
 }
 
 pub(crate) mod error {
-    use crate::{
-        error::{AmqpDescribedError, AmqpErrorKind},
-        AmqpError,
-    };
+    use crate::error::AmqpErrorKind;
 
     pub enum AmqpSessionError {
-        SessionNotAttached,
-        SessionNotSet,
-        SessionAlreadyAttached,
-        CouldNotSetSession,
         SessionImplementationError(Box<dyn std::error::Error + Send + Sync>),
-
-        /// Remote session ended
-        RemoteEnded,
-
-        /// Remote session ended with error
-        RemoteEndedWithError(AmqpDescribedError),
 
         /// Channel max reached
         LocalChannelMaxReached,
@@ -126,14 +113,6 @@ pub(crate) mod error {
                 AmqpSessionError::SessionImplementationError(e) => {
                     write!(f, "Session Implementation Error: {}", e.as_ref())
                 }
-                AmqpSessionError::CouldNotSetSession => write!(f, "Could not set session"),
-                AmqpSessionError::SessionNotAttached => write!(f, "Session not attached"),
-                AmqpSessionError::SessionNotSet => write!(f, "Session not set"),
-                AmqpSessionError::SessionAlreadyAttached => write!(f, "Session already attached"),
-                AmqpSessionError::RemoteEnded => write!(f, "Remote session ended"),
-                AmqpSessionError::RemoteEndedWithError(e) => {
-                    write!(f, "Remote ended with error: {:?}", e)
-                }
                 AmqpSessionError::LocalChannelMaxReached => {
                     write!(f, "Local channel-max reached")
                 }
@@ -141,25 +120,11 @@ pub(crate) mod error {
         }
     }
 
-    impl std::error::Error for AmqpSessionError {
-        fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-            match self {
-                AmqpSessionError::SessionImplementationError(e) => Some(e.as_ref()),
-                _ => None,
-            }
-        }
-    }
     impl std::fmt::Debug for AmqpSessionError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             write!(f, "AmqpSessionError: {}", self)
         }
     }
-    impl From<AmqpSessionError> for azure_core::error::Error {
-        fn from(e: AmqpSessionError) -> Self {
-            AmqpError::from(AmqpErrorKind::from(e)).into()
-        }
-    }
-
     impl From<AmqpSessionError> for AmqpErrorKind {
         fn from(e: AmqpSessionError) -> Self {
             AmqpErrorKind::SessionError(e)

@@ -89,7 +89,7 @@ impl std::error::Error for AmqpError {
             AmqpErrorKind::ManagementError(e) => e.source(),
             AmqpErrorKind::SenderError(e) => e.source(),
             AmqpErrorKind::ReceiverError(e) => e.source(),
-            AmqpErrorKind::SessionError(e) => e.source(),
+            AmqpErrorKind::SessionError(_) => None,
             AmqpErrorKind::ConnectionError(e) => e.source(),
             AmqpErrorKind::ClosedByRemote(_) | AmqpErrorKind::DetachedByRemote(_) => None,
         }
