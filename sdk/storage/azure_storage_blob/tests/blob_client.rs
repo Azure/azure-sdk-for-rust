@@ -22,12 +22,11 @@ async fn test_get_blob_properties() -> Result<(), Box<dyn Error>> {
         credential,
         Some(BlobClientOptions::default()),
     )?;
-    let response = blob_client
+    blob_client
         .get_blob_properties(Some(BlobBlobClientGetPropertiesOptions::default()))
-        .await;
+        .await?;
 
     // Assert
-    assert!(response.is_ok());
     Ok(())
 }
 
