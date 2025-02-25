@@ -16,7 +16,7 @@ pub struct Error {
 
 impl Error {
     fn default_status() -> StatusCode {
-        StatusCode::Ok
+        StatusCode::OK
     }
 }
 

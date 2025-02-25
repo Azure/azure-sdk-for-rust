@@ -132,7 +132,7 @@ impl fmt::Display for HttpError {
                 f.write_fmt(format_args!(
                     "{} ({})",
                     std::convert::Into::<u16>::into(self.0),
-                    self.0.canonical_reason()
+                    self.0.canonical_reason().unwrap_or("no canonical reason")
                 ))
             }
         }
@@ -243,23 +243,23 @@ mod tests {
 
     #[test]
     fn matching_against_http_error() {
-        let kind = http_response_from_body(StatusCode::ImATeapot, b"{}");
+        let kind = http_response_from_body(StatusCode::IM_A_TEAPOT, b"{}");
 
         assert!(matches!(
             kind,
             ErrorKind::HttpResponse {
-                status: StatusCode::ImATeapot,
+                status: StatusCode::IM_A_TEAPOT,
                 error_code: None
             }
         ));
 
         let kind =
-            http_response_from_body(StatusCode::ImATeapot, br#"{"error": {"code":"teapot"}}"#);
+            http_response_from_body(StatusCode::IM_A_TEAPOT, br#"{"error": {"code":"teapot"}}"#);
 
         assert!(matches!(
             kind,
             ErrorKind::HttpResponse {
-                status: StatusCode::ImATeapot,
+                status: StatusCode::IM_A_TEAPOT,
                 error_code
             }
             if error_code.as_deref() == Some("teapot")
@@ -269,7 +269,7 @@ mod tests {
     #[test]
     fn debug_is_sanitized() {
         let err = HttpError {
-            status: StatusCode::NotFound,
+            status: StatusCode::NOT_FOUND,
             details: ErrorDetails {
                 code: Some("Not Found".to_string()),
                 message: Some("Resource not found".to_string()),
@@ -295,7 +295,7 @@ mod tests {
     #[test]
     fn display_is_sanitized() {
         let err = HttpError {
-            status: StatusCode::NotFound,
+            status: StatusCode::NOT_FOUND,
             details: ErrorDetails {
                 code: None,
                 message: None,
@@ -342,13 +342,13 @@ mod tests {
         }
 
         let response: Response<()> = Response::from_bytes(
-            StatusCode::BadRequest,
+            StatusCode::BAD_REQUEST,
             Headers::new(),
             Bytes::from_static(br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey","key":"foo"}}}"#),
         );
         let err = HttpError::new(response).await;
 
-        assert_eq!(err.status(), StatusCode::BadRequest);
+        assert_eq!(err.status(), StatusCode::BAD_REQUEST);
         assert_eq!(err.error_code(), Some("InvalidRequest"));
         assert_eq!(
             err.error_message(),

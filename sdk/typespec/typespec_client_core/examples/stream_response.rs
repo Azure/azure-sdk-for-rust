@@ -67,7 +67,7 @@ mod client {
         };
 
         Ok(Response::new(
-            StatusCode::Ok,
+            StatusCode::OK,
             Headers::new(),
             Box::pin(response),
         ))
@@ -95,7 +95,7 @@ mod client {
         };
 
         Ok(Response::new(
-            StatusCode::Ok,
+            StatusCode::OK,
             Headers::new(),
             Box::pin(response),
         ))

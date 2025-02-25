@@ -46,7 +46,7 @@ impl PatchCommand {
             .patch_item(pk, &self.item_id, patch, None)
             .await;
         match response {
-            Err(e) if e.http_status() == Some(StatusCode::NotFound) => println!("Item not found!"),
+            Err(e) if e.http_status() == Some(StatusCode::NOT_FOUND) => println!("Item not found!"),
             Ok(r) => {
                 let item: serde_json::Value = r.into_json_body().await?;
                 println!("Patched item:");

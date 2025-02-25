@@ -62,7 +62,7 @@ impl DeleteCommand {
                     .delete_item(partition_key, &item_id, None)
                     .await;
                 match response {
-                    Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                    Err(e) if e.http_status() == Some(StatusCode::NOT_FOUND) => {
                         println!("Item not found!")
                     }
                     Ok(_) => println!("Item deleted"),

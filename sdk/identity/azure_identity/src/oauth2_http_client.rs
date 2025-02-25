@@ -8,7 +8,7 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     Body, Bytes, HttpClient, Request, Url,
 };
-use std::{collections::HashMap, str::FromStr, sync::Arc};
+use std::{collections::HashMap, os::macos::raw::stat, str::FromStr, sync::Arc};
 use tracing::warn;
 
 pub(crate) struct Oauth2HttpClient {
@@ -25,7 +25,7 @@ impl Oauth2HttpClient {
         &self,
         oauth2_request: oauth2::HttpRequest,
     ) -> Result<oauth2::HttpResponse, azure_core::error::Error> {
-        let method = try_from_method(oauth2_request.method())?;
+        let method = oauth2_request.method();
         let url: Url = oauth2_request.uri().to_string().parse().map_err(|e| {
             Error::full(
                 ErrorKind::Other,
@@ -33,7 +33,7 @@ impl Oauth2HttpClient {
                 "Failed to parse the http::Uri as a url::Url",
             )
         })?;
-        let mut request = Request::new(url, method);
+        let mut request = Request::new(url, method.clone());
         for (name, value) in to_headers(oauth2_request.headers()) {
             request.insert_header(name, value);
         }
@@ -50,23 +50,6 @@ impl Oauth2HttpClient {
         *oauth_response.status_mut() = status_code;
 
         Ok(oauth_response)
-    }
-}
-
-fn try_from_method(method: &oauth2::http::Method) -> azure_core::Result<azure_core::Method> {
-    match *method {
-        oauth2::http::Method::GET => Ok(azure_core::Method::Get),
-        oauth2::http::Method::POST => Ok(azure_core::Method::Post),
-        oauth2::http::Method::PUT => Ok(azure_core::Method::Put),
-        oauth2::http::Method::DELETE => Ok(azure_core::Method::Delete),
-        oauth2::http::Method::HEAD => Ok(azure_core::Method::Head),
-        oauth2::http::Method::OPTIONS => Ok(azure_core::Method::Options),
-        oauth2::http::Method::CONNECT => Ok(azure_core::Method::Connect),
-        oauth2::http::Method::PATCH => Ok(azure_core::Method::Patch),
-        oauth2::http::Method::TRACE => Ok(azure_core::Method::Trace),
-        _ => Err(Error::with_message(ErrorKind::DataConversion, || {
-            format!("unsupported oauth2::http::Method {method}")
-        })),
     }
 }
 
@@ -93,7 +76,7 @@ fn try_from_headers(
 }
 
 fn try_from_status(status: azure_core::StatusCode) -> azure_core::Result<oauth2::http::StatusCode> {
-    oauth2::http::StatusCode::from_u16(status as u16).map_kind(ErrorKind::DataConversion)
+    oauth2::http::StatusCode::from_u16(u16::from(status)).map_kind(ErrorKind::DataConversion)
 }
 
 fn to_headers(map: &oauth2::http::header::HeaderMap) -> azure_core::headers::Headers {

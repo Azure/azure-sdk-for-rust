@@ -11,7 +11,7 @@ dyn-clone
 futures
 getrandom
 hmac
-http-types
+http
 oauth2
 once_cell
 openssl

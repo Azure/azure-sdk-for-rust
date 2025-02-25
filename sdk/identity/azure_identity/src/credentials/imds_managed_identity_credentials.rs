@@ -87,7 +87,7 @@ impl ImdsManagedIdentityCredential {
         let mut url = self.endpoint.clone();
         url.query_pairs_mut().extend_pairs(query_items);
 
-        let mut req = Request::new(url, Method::Get);
+        let mut req = Request::new(url, Method::GET);
 
         req.insert_header("metadata", "true");
 
@@ -103,13 +103,13 @@ impl ImdsManagedIdentityCredential {
 
         if !rsp_status.is_success() {
             match rsp_status {
-                StatusCode::BadRequest => {
+                StatusCode::BAD_REQUEST => {
                     return Err(Error::message(
                         ErrorKind::Credential,
                         "the requested identity has not been assigned to this resource",
                     ))
                 }
-                StatusCode::BadGateway | StatusCode::GatewayTimeout => {
+                StatusCode::BAD_GATEWAY | StatusCode::GATEWAY_TIMEOUT => {
                     return Err(Error::message(
                         ErrorKind::Credential,
                         "the request failed due to a gateway error",

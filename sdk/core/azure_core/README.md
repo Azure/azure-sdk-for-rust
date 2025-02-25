@@ -148,7 +148,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.get_secret("secret-name", "", None).await {
         Ok(secret) => println!("Secret: {:?}", secret.into_body().await?.value),
         Err(e) => match e.kind() {
-            ErrorKind::HttpResponse { status, error_code, .. } if *status == StatusCode::NotFound => {
+            ErrorKind::HttpResponse { status, error_code, .. } if *status == StatusCode::NOT_FOUND => {
                 // handle not found error
                 if let Some(code) = error_code {
                     println!("ErrorCode: {}", code);

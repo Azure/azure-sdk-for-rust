@@ -67,7 +67,7 @@ impl<T> Pager<T> {
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// # struct MyModel;
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
-    /// let mut base_req = Request::new(url, Method::Get);
+    /// let mut base_req = Request::new(url, Method::GET);
     /// let pager = Pager::from_callback(move |continuation| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
@@ -171,7 +171,7 @@ mod tests {
             match continuation {
                 None => Ok(PagerResult::Continue {
                     response: Response::from_bytes(
-                        StatusCode::Ok,
+                        StatusCode::OK,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
                             HeaderValue::from_static("page-1"),
@@ -183,7 +183,7 @@ mod tests {
                 }),
                 Some("1") => Ok(PagerResult::Continue {
                     response: Response::from_bytes(
-                        StatusCode::Ok,
+                        StatusCode::OK,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
                             HeaderValue::from_static("page-2"),
@@ -195,7 +195,7 @@ mod tests {
                 }),
                 Some("2") => Ok(PagerResult::Complete {
                     response: Response::from_bytes(
-                        StatusCode::Ok,
+                        StatusCode::OK,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
                             HeaderValue::from_static("page-3"),
@@ -243,7 +243,7 @@ mod tests {
             match continuation {
                 None => Ok(PagerResult::Continue {
                     response: Response::from_bytes(
-                        StatusCode::Ok,
+                        StatusCode::OK,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
                             HeaderValue::from_static("page-1"),

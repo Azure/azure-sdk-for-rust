@@ -143,7 +143,7 @@ impl<T> Response<T> {
     /// # #[tokio::main]
     /// # async fn main() {
     /// #    let r: Response<GetSecretResponse> = typespec_client_core::http::Response::from_bytes(
-    /// #      http_types::StatusCode::Ok,
+    /// #      http_types::StatusCode::OK,
     /// #      typespec_client_core::http::headers::Headers::new(),
     /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
     /// #    );
@@ -185,7 +185,7 @@ impl<T> Response<T> {
     /// # #[tokio::main]
     /// # async fn main() {
     /// #    let r: Response<GetSecretResponse> = typespec_client_core::http::Response::from_bytes(
-    /// #      http_types::StatusCode::Ok,
+    /// #      http_types::StatusCode::OK,
     /// #      typespec_client_core::http::headers::Headers::new(),
     /// #      "<Response><name>database_password</name><value>hunter2</value></Response>",
     /// #    );
@@ -233,7 +233,7 @@ impl<T: Model> Response<T> {
     /// # impl SecretClient {
     /// #   pub async fn get_secret(&self) -> typespec_client_core::http::Response<GetSecretResponse> {
     /// #    typespec_client_core::http::Response::from_bytes(
-    /// #      http_types::StatusCode::Ok,
+    /// #      http_types::StatusCode::OK,
     /// #      typespec_client_core::http::headers::Headers::new(),
     /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
     /// #    )
@@ -247,7 +247,7 @@ impl<T: Model> Response<T> {
     /// # async fn main() {
     /// let secret_client = create_secret_client();
     /// let response = secret_client.get_secret().await;
-    /// assert_eq!(response.status(), http_types::StatusCode::Ok);
+    /// assert_eq!(response.status(), http_types::StatusCode::OK);
     /// let model = response.into_body().await.unwrap();
     /// assert_eq!(model.name, "database_password");
     /// assert_eq!(model.value, "hunter2");
@@ -348,7 +348,7 @@ impl fmt::Debug for ResponseBody {
 mod tests {
     use crate::http::headers::Headers;
     use crate::http::{response::ResponseBody, Model, Response};
-    use http_types::StatusCode;
+    use http::StatusCode;
 
     #[tokio::test]
     pub async fn can_extract_raw_body_regardless_of_t() -> Result<(), Box<dyn std::error::Error>> {
@@ -361,14 +361,14 @@ mod tests {
 
         {
             let response_raw: Response =
-                Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice());
+                Response::from_bytes(StatusCode::OK, Headers::new(), b"Hello".as_slice());
             let body = response_raw.into_raw_body();
             assert_eq!(b"Hello", &*body.collect().await?);
         }
 
         {
             let response_t: Response<MyModel> =
-                Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice())
+                Response::from_bytes(StatusCode::OK, Headers::new(), b"Hello".as_slice())
                     .with_default_deserialize_type();
             let body = response_t.into_raw_body();
             assert_eq!(b"Hello", &*body.collect().await?);
@@ -380,7 +380,7 @@ mod tests {
     mod json {
         use crate::http::headers::Headers;
         use crate::http::Response;
-        use http_types::StatusCode;
+        use http::StatusCode;
         use serde::Deserialize;
         use typespec_macros::Model;
 
@@ -404,7 +404,7 @@ mod tests {
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse> {
             Response::from_bytes(
-                StatusCode::Ok,
+                StatusCode::OK,
                 Headers::new(),
                 r#"{"name":"my_secret","value":"my_value"}"#,
             )
@@ -413,7 +413,7 @@ mod tests {
         /// A sample service client function to return a list of secrets.
         fn list_secrets() -> Response<GetSecretListResponse> {
             Response::from_bytes(
-                StatusCode::Ok,
+                StatusCode::OK,
                 Headers::new(),
                 r#"{"value":[{"name":"my_secret","value":"my_value"}],"nextLink":"?page=2"}"#,
             )
@@ -451,13 +451,13 @@ mod tests {
             let bytes = body.collect().await.expect("collect response");
             let model: GetSecretListResponse =
                 crate::json::from_json(bytes.clone()).expect("deserialize GetSecretListResponse");
-            assert_eq!(status, StatusCode::Ok);
+            assert_eq!(status, StatusCode::OK);
             assert_eq!(model.value.len(), 1);
             assert_eq!(model.next_link, Some("?page=2".to_string()));
 
             let response: Response<GetSecretListResponse> =
                 Response::from_bytes(status, headers, bytes);
-            assert_eq!(response.status(), StatusCode::Ok);
+            assert_eq!(response.status(), StatusCode::OK);
             let model = response
                 .into_body()
                 .await
@@ -470,7 +470,7 @@ mod tests {
     mod xml {
         use crate::http::headers::Headers;
         use crate::http::Response;
-        use http_types::StatusCode;
+        use http::StatusCode;
         use serde::Deserialize;
         use typespec_macros::Model;
 
@@ -486,7 +486,7 @@ mod tests {
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse> {
             Response::from_bytes(
-                StatusCode::Ok,
+                StatusCode::OK,
                 Headers::new(),
                 "<GetSecretResponse><name>my_secret</name><value>my_value</value></GetSecretResponse>",
             )

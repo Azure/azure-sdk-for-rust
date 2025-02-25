@@ -8,7 +8,7 @@ use crate::http::{
     Context, Header, Request,
 };
 use async_trait::async_trait;
-use http_types::Method;
+use http::Method;
 use std::sync::Arc;
 use tracing::debug;
 
@@ -38,7 +38,7 @@ impl Policy for TransportPolicy {
         if request.body().is_empty()
             && matches!(
                 *request.method(),
-                Method::Patch | Method::Post | Method::Put
+                Method::PATCH | Method::POST | Method::PUT
             )
         {
             request.add_mandatory_header(EMPTY_CONTENT_LENGTH);
@@ -68,7 +68,7 @@ impl Header for EmptyContentLength {
 mod tests {
     use super::*;
     use crate::http::{headers::Headers, Response};
-    use http_types::StatusCode;
+    use http::StatusCode;
 
     #[derive(Debug)]
     struct MockTransport;
@@ -82,7 +82,7 @@ mod tests {
             _next: &[Arc<dyn Policy>],
         ) -> PolicyResult {
             PolicyResult::Ok(Response::from_bytes(
-                StatusCode::Ok,
+                StatusCode::OK,
                 Headers::new(),
                 Vec::new(),
             ))
@@ -94,12 +94,12 @@ mod tests {
         let transport =
             TransportPolicy::new(TransportOptions::new_custom_policy(Arc::new(MockTransport)));
 
-        let mut request = Request::new("http://localhost".parse()?, Method::Get);
+        let mut request = Request::new("http://localhost".parse()?, Method::GET);
         transport.send(&Context::new(), &mut request, &[]).await?;
         assert!(!request.headers().iter().any(|h| CONTENT_LENGTH.eq(h.0)));
 
         request.headers = Headers::new();
-        request.method = Method::Patch;
+        request.method = Method::PATCH;
         transport.send(&Context::new(), &mut request, &[]).await?;
         assert_eq!(
             request
@@ -110,7 +110,7 @@ mod tests {
         );
 
         request.headers = Headers::new();
-        request.method = Method::Post;
+        request.method = Method::POST;
         transport.send(&Context::new(), &mut request, &[]).await?;
         assert_eq!(
             request
@@ -121,7 +121,7 @@ mod tests {
         );
 
         request.headers = Headers::new();
-        request.method = Method::Put;
+        request.method = Method::PUT;
         transport.send(&Context::new(), &mut request, &[]).await?;
         assert_eq!(
             request

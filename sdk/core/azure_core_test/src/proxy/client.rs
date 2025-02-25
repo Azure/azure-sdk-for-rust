@@ -56,7 +56,7 @@ impl Client {
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Record/Start")?;
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.set_body(body);
@@ -79,7 +79,7 @@ impl Client {
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Record/Stop")?;
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.insert_header(RECORDING_ID, recording_id.to_string());
@@ -102,7 +102,7 @@ impl Client {
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Playback/Start")?;
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.add_optional_header(&options.recording_id);
@@ -127,7 +127,7 @@ impl Client {
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Playback/Stop")?;
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.insert_header(RECORDING_ID, recording_id.to_string());
@@ -149,7 +149,7 @@ impl Client {
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/SetMatcher")?;
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.insert_headers(&matcher)?;
@@ -176,7 +176,7 @@ impl Client {
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/AddSanitizer")?;
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.insert_headers(&sanitizer)?;
@@ -199,7 +199,7 @@ impl Client {
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/RemoveSanitizers")?;
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.add_optional_header(&options.recording_id);
@@ -221,7 +221,7 @@ impl Client {
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/Reset")?;
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.add_optional_header(&options.recording_id);

@@ -129,7 +129,7 @@ impl CosmosPipeline {
         let mut results: Pager<OfferResults> = self.send_query_request(
             context.clone(),
             query,
-            Request::new(self.url(&offers_link), Method::Post),
+            Request::new(self.url(&offers_link), Method::POST),
             offers_link.clone(),
         )?;
         let offers = results
@@ -149,7 +149,7 @@ impl CosmosPipeline {
         let offer_url = self.url(&offer_link);
 
         // Now we can read the offer itself
-        let mut req = Request::new(offer_url, Method::Get);
+        let mut req = Request::new(offer_url, Method::GET);
         self.send(context, &mut req, offer_link).await.map(Some)
     }
 
@@ -177,7 +177,7 @@ impl CosmosPipeline {
         // NOTE: Offers API doesn't allow Enable Content Response On Write to be false, so once we support that option, we'll need to ignore it here.
         let offer_link =
             ResourceLink::root(ResourceType::Offers).item(&current_throughput.offer_id);
-        let mut req = Request::new(self.url(&offer_link), Method::Put);
+        let mut req = Request::new(self.url(&offer_link), Method::PUT);
         req.set_json(&current_throughput)?;
 
         self.send(context, &mut req, offer_link).await

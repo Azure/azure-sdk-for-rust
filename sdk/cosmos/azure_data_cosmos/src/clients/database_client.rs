@@ -76,7 +76,7 @@ impl DatabaseClient {
     ) -> azure_core::Result<Response<DatabaseProperties>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
-        let mut req = Request::new(url, Method::Get);
+        let mut req = Request::new(url, Method::GET);
         self.pipeline
             .send(options.method_options.context, &mut req, self.link.clone())
             .await
@@ -112,7 +112,7 @@ impl DatabaseClient {
     ) -> azure_core::Result<Pager<ContainerQueryResults>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
-        let base_request = Request::new(url, Method::Post);
+        let base_request = Request::new(url, Method::POST);
 
         self.pipeline.send_query_request(
             options.method_options.context,
@@ -136,7 +136,7 @@ impl DatabaseClient {
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
-        let mut req = Request::new(url, Method::Post);
+        let mut req = Request::new(url, Method::POST);
         req.insert_headers(&options.throughput)?;
         req.set_json(&properties)?;
 
@@ -161,7 +161,7 @@ impl DatabaseClient {
     ) -> azure_core::Result<Response> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
-        let mut req = Request::new(url, Method::Delete);
+        let mut req = Request::new(url, Method::DELETE);
         self.pipeline
             .send(options.method_options.context, &mut req, self.link.clone())
             .await

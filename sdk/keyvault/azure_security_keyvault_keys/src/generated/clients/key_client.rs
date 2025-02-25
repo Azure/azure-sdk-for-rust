@@ -102,7 +102,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         self.pipeline.send(&ctx, &mut request).await
     }
@@ -133,7 +133,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
@@ -172,7 +172,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
@@ -202,7 +202,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Delete);
+        let mut request = Request::new(url, Method::DELETE);
         request.insert_header("accept", "application/json");
         self.pipeline.send(&ctx, &mut request).await
     }
@@ -238,7 +238,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
@@ -267,7 +267,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Get);
+        let mut request = Request::new(url, Method::GET);
         request.insert_header("accept", "application/json");
         self.pipeline.send(&ctx, &mut request).await
     }
@@ -315,7 +315,7 @@ impl KeyClient {
                 }
                 None => first_url.clone(),
             };
-            let mut request = Request::new(url, Method::Get);
+            let mut request = Request::new(url, Method::GET);
             request.insert_header("accept", "application/json");
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
@@ -362,7 +362,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Get);
+        let mut request = Request::new(url, Method::GET);
         request.insert_header("accept", "application/json");
         self.pipeline.send(&ctx, &mut request).await
     }
@@ -393,7 +393,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Get);
+        let mut request = Request::new(url, Method::GET);
         request.insert_header("accept", "application/json");
         self.pipeline.send(&ctx, &mut request).await
     }
@@ -420,7 +420,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Get);
+        let mut request = Request::new(url, Method::GET);
         request.insert_header("accept", "application/json");
         self.pipeline.send(&ctx, &mut request).await
     }
@@ -469,7 +469,7 @@ impl KeyClient {
                 }
                 None => first_url.clone(),
             };
-            let mut request = Request::new(url, Method::Get);
+            let mut request = Request::new(url, Method::GET);
             request.insert_header("accept", "application/json");
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
@@ -532,7 +532,7 @@ impl KeyClient {
                 }
                 None => first_url.clone(),
             };
-            let mut request = Request::new(url, Method::Get);
+            let mut request = Request::new(url, Method::GET);
             request.insert_header("accept", "application/json");
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
@@ -572,7 +572,7 @@ impl KeyClient {
         url = url.join("rng")?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
@@ -604,7 +604,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Put);
+        let mut request = Request::new(url, Method::PUT);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
@@ -633,7 +633,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Delete);
+        let mut request = Request::new(url, Method::DELETE);
         request.insert_header("accept", "application/json");
         self.pipeline.send(&ctx, &mut request).await
     }
@@ -661,7 +661,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         self.pipeline.send(&ctx, &mut request).await
     }
@@ -693,7 +693,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
@@ -726,7 +726,7 @@ impl KeyClient {
         url = url.join("keys/restore")?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
@@ -754,7 +754,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         self.pipeline.send(&ctx, &mut request).await
     }
@@ -786,7 +786,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
@@ -821,7 +821,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
@@ -856,7 +856,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Patch);
+        let mut request = Request::new(url, Method::PATCH);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
@@ -886,7 +886,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Put);
+        let mut request = Request::new(url, Method::PUT);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(key_rotation_policy);
@@ -922,7 +922,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
@@ -959,7 +959,7 @@ impl KeyClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);

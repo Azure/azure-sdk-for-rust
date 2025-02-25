@@ -200,7 +200,7 @@ async fn purge_secret(ctx: TestContext) -> Result<()> {
                 println!("{name} has been purged");
                 break;
             }
-            Err(err) if matches!(err.http_status(), Some(StatusCode::Conflict)) => {
+            Err(err) if matches!(err.http_status(), Some(StatusCode::CONFLICT)) => {
                 println!(
                     "Retrying in {} seconds",
                     retry.duration().unwrap_or_default().as_secs_f32()

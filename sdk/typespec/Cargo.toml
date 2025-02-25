@@ -13,7 +13,7 @@ keywords = ["typespec"]
 
 [dependencies]
 base64.workspace = true
-http-types = { workspace = true, optional = true }
+http = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 url.workspace = true
 
@@ -22,5 +22,5 @@ thiserror.workspace = true
 
 [features]
 default = ["http", "json"]
-http = ["dep:http-types"]
+http = ["dep:http"]
 json = ["dep:serde_json"]

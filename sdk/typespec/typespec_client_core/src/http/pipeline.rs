@@ -117,7 +117,7 @@ mod tests {
             ) -> PolicyResult {
                 let buffer = Bytes::from_static(br#"{"foo":1,"bar":"baz"}"#);
                 let stream: BytesStream = buffer.into();
-                let response = Response::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
+                let response = Response::new(StatusCode::OK, Headers::new(), Box::pin(stream));
                 Ok(std::future::ready(response).await)
             }
         }
@@ -135,7 +135,7 @@ mod tests {
         };
         let pipeline = Pipeline::new(options, Vec::new(), Vec::new());
 
-        let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
+        let mut request = Request::new("http://localhost".parse().unwrap(), Method::GET);
         let model: Model = pipeline
             .send(&Context::default(), &mut request)
             .await
